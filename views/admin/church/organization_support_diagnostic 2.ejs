@@ -1,0 +1,166 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Support diagnostic', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Support diagnostic' }) %>
+<% var d = typeof diagnostic !== 'undefined' && diagnostic ? diagnostic : {}; %>
+<% var org = d.organisation || organization || {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <p class="muted"><a href="<%= orgDetailUrl %>">&larr; Back to organisation</a></p>
+            <h1 class="admin-dashboard__title">Support diagnostic</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Redacted tenant summary for authorised platform administrators. No secrets, credentials, session tokens, or personal member records are included. No impersonation or database edit actions.
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: exportJsonUrl, label: 'Export JSON' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: exportTxtUrl, label: 'Export text' }) %>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organisation identity</h2>
+          <dl class="admin-dl">
+            <dt>ID</dt><dd><%= org.id %></dd>
+            <dt>Name</dt><dd><%= org.name %></dd>
+            <dt>Slug</dt><dd><code><%= org.slug %></code></dd>
+            <dt>Platform tenant</dt><dd><%= org.platformTenantId || '—' %></dd>
+            <dt>Status</dt><dd><%= org.status %></dd>
+            <% if (org.statusReason) { %><dt>Status reason (redacted)</dt><dd><%= org.statusReason %></dd><% } %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Package</h2>
+          <dl class="admin-dl">
+            <dt>Package</dt><dd><%= d.package && d.package.label ? (d.package.label + ' (' + d.package.code + ')') : (d.package && d.package.code) || '—' %></dd>
+            <dt>Plan status</dt><dd><%= (d.package && d.package.planStatus) || '—' %></dd>
+            <dt>Stored plan code</dt><dd><code><%= (d.package && d.package.storedPlanCode) || '—' %></code></dd>
+            <dt>Entitlement source</dt><dd><code><%= (d.package && d.package.entitlementSource) || '—' %></code></dd>
+            <dt>Fallback used</dt><dd><%= d.package && d.package.fallback && d.package.fallback.used ? 'Yes' : 'No' %></dd>
+            <dt>Fallback reason</dt><dd><%= (d.package && d.package.fallback && d.package.fallback.reason) || '—' %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Branches &amp; membership</h2>
+          <dl class="admin-dl">
+            <dt>Active branches</dt><dd><%= (d.branches && d.branches.activeCount != null) ? d.branches.activeCount : '—' %></dd>
+            <dt>Verified members</dt><dd><%= (d.members && d.members.activeVerifiedCount != null) ? d.members.activeVerifiedCount : '—' %></dd>
+            <dt>Total members</dt><dd><%= (d.members && d.members.totalCount != null) ? d.members.totalCount : '—' %></dd>
+            <dt>Active HQ admins</dt><dd><%= (d.administrators && d.administrators.hqActive != null) ? d.administrators.hqActive : '—' %></dd>
+            <dt>Active branch admins</dt><dd><%= (d.administrators && d.administrators.branchActive != null) ? d.administrators.branchActive : '—' %></dd>
+            <dt>Privileged seats (quota)</dt><dd><%= (d.administrators && d.administrators.privilegedSeatTotal != null) ? d.administrators.privilegedSeatTotal : '—' %></dd>
+          </dl>
+          <% if (d.branches && d.branches.lifecycle && d.branches.lifecycle.byLifecyclePhase) { %>
+          <h3 class="section-title" style="font-size:1rem;margin-top:1rem;">Branch lifecycle summary</h3>
+          <dl class="admin-dl">
+            <% Object.keys(d.branches.lifecycle.byLifecyclePhase).forEach(function (phase) { %>
+            <dt><%= phase %></dt><dd><%= d.branches.lifecycle.byLifecyclePhase[phase] %></dd>
+            <% }); %>
+          </dl>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Usage &amp; quota</h2>
+          <% if (d.usageAndQuota && d.usageAndQuota.unavailable) { %>
+          <p class="muted">Usage snapshot unavailable for this organisation.</p>
+          <% } else if (d.usageAndQuota && d.usageAndQuota.meters) { %>
+          <dl class="admin-dl">
+            <% Object.keys(d.usageAndQuota.meters).forEach(function (key) { %>
+              <% var m = d.usageAndQuota.meters[key]; %>
+              <dt><%= key %></dt>
+              <dd><%= m && m.display ? m.display : (m ? (m.used + ' / ' + m.limit) : '—') %><% if (m && m.status) { %> · <%= m.status %><% } %></dd>
+            <% }); %>
+            <dt>Warning count</dt><dd><%= d.usageAndQuota.warningCount %></dd>
+            <dt>Blocked</dt><dd><%= d.usageAndQuota.blocked ? 'Yes' : 'No' %></dd>
+          </dl>
+          <% } else { %>
+          <p class="muted">No usage meters available.</p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent failed jobs</h2>
+          <% if (!(d.recentFailedJobs || []).length) { %>
+          <p class="muted">No recent failed jobs for this tenant.</p>
+          <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Job</th><th>Status</th><th>Finished</th><th>Error (redacted)</th></tr></thead>
+              <tbody>
+                <% d.recentFailedJobs.forEach(function (j) { %>
+                <tr>
+                  <td><code><%= j.ref %></code><div class="muted"><%= j.jobTypeLabel %></div></td>
+                  <td><%= j.status %></td>
+                  <td><%= j.finishedAt || '—' %></td>
+                  <td class="muted"><%= j.errorSummary || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent tenant-linked errors</h2>
+          <% var errBlock = d.recentTenantLinkedErrors || {}; %>
+          <% if (errBlock.unavailable) { %>
+          <p class="muted"><%= errBlock.note || 'Not available.' %></p>
+          <% } else if (!(errBlock.items || []).length) { %>
+          <p class="muted">No recent failure/quota audit signals for this tenant. Dedicated application exception logging is not stored per tenant.</p>
+          <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>When</th><th>Action</th><th>Code</th><th>Target</th></tr></thead>
+              <tbody>
+                <% errBlock.items.forEach(function (e) { %>
+                <tr>
+                  <td><%= e.createdAt || '—' %></td>
+                  <td><code><%= e.action %></code></td>
+                  <td><%= e.reasonCode || '—' %></td>
+                  <td class="muted"><%= e.targetLabel || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Application / migrations</h2>
+          <dl class="admin-dl">
+            <dt>App version</dt><dd><code><%= (d.application && d.application.version) || '—' %></code></dd>
+            <dt>Deployment label</dt><dd><code><%= (d.application && d.application.deploymentLabel) || '—' %></code></dd>
+            <dt>Latest church migration</dt><dd><code><%= (d.application && d.application.latestChurchMigration) || '—' %></code></dd>
+            <dt>NODE_ENV</dt><dd><code><%= (d.application && d.application.nodeEnv) || '—' %></code></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Custom domain</h2>
+          <dl class="admin-dl">
+            <dt>Status</dt><dd><%= (d.customDomain && d.customDomain.status) || '—' %></dd>
+            <dt>Note</dt><dd class="muted"><%= (d.customDomain && d.customDomain.note) || '—' %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Storage health</h2>
+          <dl class="admin-dl">
+            <dt>Kind</dt><dd><%= (d.storageHealth && d.storageHealth.kind) || '—' %></dd>
+            <dt>Bytes used</dt><dd><%= (d.storageHealth && d.storageHealth.bytesUsed != null) ? d.storageHealth.bytesUsed : '—' %></dd>
+            <dt>Reconciled at</dt><dd><%= (d.storageHealth && d.storageHealth.reconciledAt) || '—' %></dd>
+            <dt>Quota meter</dt><dd><%= (d.storageHealth && d.storageHealth.meter && d.storageHealth.meter.display) || '—' %></dd>
+            <dt>Note</dt><dd class="muted"><%= (d.storageHealth && d.storageHealth.note) || '—' %></dd>
+          </dl>
+          <p class="muted" style="margin-top:0.75rem;">Generated in <%= d.elapsedMs != null ? d.elapsedMs : '—' %> ms · access audited</p>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

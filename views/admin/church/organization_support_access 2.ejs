@@ -1,0 +1,100 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform_support_access', pageTitle: 'Support access' }) %>
+<header class="admin-dashboard__header">
+  <div>
+    <h1 class="admin-dashboard__title">Support access</h1>
+    <p class="admin-dashboard__subtitle muted"><%= organization.name %> — approved, time-limited tenant entry</p>
+  </div>
+  <div class="admin-toolbar">
+    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Back to organisation' }) %>
+    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/account-managers', label: 'Account managers' }) %>
+    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/support-diagnostic-redacted', label: 'Redacted diagnostics' }) %>
+  </div>
+</header>
+
+<% if (typeof notice !== 'undefined' && notice) { %><div class="flash flash--success" role="status"><%= notice %></div><% } %>
+<% if (typeof error !== 'undefined' && error) { %><div class="flash flash--error" role="alert"><%= error %></div><% } %>
+
+<% if (canRequest) { %>
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Request access</h2>
+  <form method="post" action="/admin/church/organizations/<%= organization.id %>/support-access" class="admin-form">
+    <%- include('./partials/csrf_field') %>
+    <div class="admin-form__row">
+      <label for="ticket_reference">Ticket / reference</label>
+      <input id="ticket_reference" name="ticket_reference" type="text" required maxlength="120"/>
+    </div>
+    <div class="admin-form__row">
+      <label for="reason">Reason</label>
+      <textarea id="reason" name="reason" rows="3" required minlength="3" maxlength="2000"></textarea>
+    </div>
+    <div class="admin-form__row">
+      <label for="requested_scope">Scope</label>
+      <select id="requested_scope" name="requested_scope" required>
+        <% (scopes || []).forEach(function (s) { %>
+        <option value="<%= s %>"><%= s %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="admin-form__row">
+      <label for="branch_id">Branch (optional)</label>
+      <select id="branch_id" name="branch_id">
+        <option value="">Organisation-wide</option>
+        <% (branches || []).forEach(function (b) { %>
+        <option value="<%= b.id %>"><%= b.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <button type="submit" class="btn btn--primary">Submit request</button>
+  </form>
+</section>
+<% } %>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Requests</h2>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Staff</th>
+        <th>Scope</th>
+        <th>Status</th>
+        <th>Ticket</th>
+        <th>Expires</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (grants || []).forEach(function (g) { %>
+      <tr>
+        <td><%= g.support_display_name || g.support_username %></td>
+        <td><code><%= g.requested_scope %></code></td>
+        <td><%= g.status %></td>
+        <td><%= g.ticket_reference %></td>
+        <td><%= g.expires_at || '—' %></td>
+        <td>
+          <% if (canApprove && g.status === 'pending') { %>
+          <form method="post" action="/admin/church/support-access/<%= g.id %>/approve" style="display:inline;">
+            <%- include('./partials/csrf_field') %>
+            <input type="hidden" name="duration_hours" value="8"/>
+            <button type="submit" class="btn btn--primary btn--small">Approve</button>
+          </form>
+          <form method="post" action="/admin/church/support-access/<%= g.id %>/reject" style="display:inline;">
+            <%- include('./partials/csrf_field') %>
+            <button type="submit" class="btn btn--small">Reject</button>
+          </form>
+          <% } %>
+          <% if (canApprove && g.status === 'approved') { %>
+          <form method="post" action="/admin/church/support-access/<%= g.id %>/revoke" style="display:inline;">
+            <%- include('./partials/csrf_field') %>
+            <button type="submit" class="btn btn--small">Revoke</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }); %>
+      <% if (!grants || !grants.length) { %>
+      <tr><td colspan="6" class="muted">No support access records yet.</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

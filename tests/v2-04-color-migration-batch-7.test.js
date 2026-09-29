@@ -52,7 +52,7 @@ describe("V2_04 color migration batch 7 — BlessBoard public", () => {
     const tok = read("public/blessboard/v5/design-tokens.css");
     assert.match(tok, /--bb-color-primary:\s*var\(--color-brand-primary\)/);
     assert.match(tok, /--bb-color-ink:\s*var\(--color-text-primary\)/);
-    assert.match(tok, /--bb-violet:\s*var\(--bb-color-primary\)/);
+    assert.doesNotMatch(tok, /--bb-violet\s*:/);
     assert.match(tok, /--bb-shadow-lg:/);
     assert.doesNotMatch(tok, /--bb-color-primary:\s*#6[Cc]5[Cc][Ee]7/);
   });

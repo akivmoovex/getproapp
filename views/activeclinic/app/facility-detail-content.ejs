@@ -103,7 +103,7 @@
       <% if (actions.archiveAction) { %>
       <details class="ac-destructive" data-ac-archive-confirm="1">
         <summary class="ac-btn ac-btn--danger" style="list-style:none;cursor:pointer">Archive facility…</summary>
-        <div class="ac-panel" style="margin-top:.75rem;border-color:#fecdca">
+        <div class="ac-panel" style="margin-top:.75rem;border-color:var(--color-danger-border)">
           <p>Archiving removes this facility from operational use. Staff assignment history is preserved. This cannot be undone from this screen.</p>
           <form method="post" action="<%= actions.archiveAction %>" data-ac-loading="1">
             <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>

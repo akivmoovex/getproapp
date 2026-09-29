@@ -78,7 +78,7 @@
           </p>
           <% if (typeof pilotFlags !== 'undefined' && pilotFlags && pilotFlags.length) { %>
           <% pilotFlags.forEach(function (f) { %>
-          <div style="border-top:1px solid #eee;padding:1rem 0;" data-tenant-pilot-flag="<%= f.flagKey %>">
+          <div style="border-top:1px solid var(--color-border-subtle);padding:1rem 0;" data-tenant-pilot-flag="<%= f.flagKey %>">
             <h3 style="margin:0 0 0.35rem;"><%= f.definition.label %> <code><%= f.flagKey %></code></h3>
             <p class="muted" style="margin:0 0 0.75rem;">
               Available now: <strong><%= f.available ? 'yes' : 'no' %></strong>

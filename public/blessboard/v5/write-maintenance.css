@@ -16,8 +16,8 @@
   font-family: "Hanken Grotesk", system-ui, sans-serif;
   color: var(--bb-maint-ink);
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(108, 92, 231, 0.18), transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, rgba(230, 126, 34, 0.08), transparent 50%),
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--color-brand-primary) 18%, transparent), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--color-brand-accent-readable) 8%, transparent), transparent 50%),
     var(--bb-maint-surface);
 }
 

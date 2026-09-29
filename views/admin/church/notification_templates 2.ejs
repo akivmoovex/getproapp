@@ -1,0 +1,43 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Notifications', activeNav: activeNav || 'church_platform_notification_templates', pageTitle: 'Notification templates' }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Notification templates</h1>
+            <p class="admin-dashboard__subtitle muted">Platform defaults for BlessBoard system messages. Organisations may override where permitted. Plain text is required; safe HTML is optional. Test delivery is recorded only (no messaging provider).</p>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Source</th>
+                  <th>Subject</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (templates || []).forEach(function (t) { %>
+                <tr>
+                  <td>
+                    <strong><%= t.label %></strong>
+                    <div class="muted"><%= t.description %></div>
+                  </td>
+                  <td><%= t.source === 'platform_default' ? 'Platform default' : 'Catalogue default' %></td>
+                  <td><%= t.subjectTemplate %></td>
+                  <td><%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/notification-templates/' + encodeURIComponent(t.key), label: 'Manage' }) %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

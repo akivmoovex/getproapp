@@ -74,7 +74,7 @@
                     <td>
                       <% if (r.status === 'approved') { %><strong>Approved</strong><% } else if (r.status === 'paid') { %><strong>Paid</strong><% } else { %><%= r.status %><% } %>
                       <% if (r.closed_at) { %>
-                        <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.7rem;">Closed</span>
+                        <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:var(--color-text-muted);background:color-mix(in srgb, var(--color-text-muted) 12%, transparent);font-size:0.7rem;">Closed</span>
                       <% } %>
                     </td>
                     <td class="muted"><%= r.created_at ? new Date(r.created_at).toLocaleString() : '—' %></td>

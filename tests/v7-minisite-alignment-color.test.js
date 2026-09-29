@@ -36,10 +36,10 @@ describe("V7 minisite alignment + color system", () => {
   it("product semantic token aliases exist for both products", () => {
     const ac = read("public/activeclinic/ac-tokens.css");
     const bb = read("public/blessboard/v5/design-tokens.css");
-    assert.match(ac, /--product-primary:\s*var\(--acp-primary\)/);
-    assert.match(bb, /--product-primary:\s*var\(--bb-color-primary\)/);
-    assert.match(ac, /--product-muted:\s*var\(--acp-muted\)/);
-    assert.match(bb, /--product-muted:\s*var\(--bb-color-muted\)/);
+    assert.match(ac, /--product-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(bb, /--product-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(ac, /--product-muted:\s*var\(--(?:acp-muted|color-text-secondary)\)/);
+    assert.match(bb, /--product-muted:\s*var\(--(?:bb-color-muted|color-text-secondary)\)/);
   });
 
   it("shared website editor retains platform tokens separate from product UI", () => {

@@ -1,0 +1,9 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform_support_access', pageTitle: 'Support access denied' }) %>
+<header class="admin-dashboard__header">
+  <div>
+    <h1 class="admin-dashboard__title">Support access denied</h1>
+    <p class="admin-dashboard__subtitle muted"><%= error || 'You do not have approved access for this action.' %></p>
+  </div>
+</header>
+<p class="muted">Code: <code><%= code || 'SUPPORT_ACCESS_DENIED' %></code></p>
+<%- include('../../partials/platform_admin_shell_end') %>

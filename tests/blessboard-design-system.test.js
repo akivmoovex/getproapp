@@ -32,16 +32,16 @@ describe("blessboard v5 design system", () => {
 
   it("defines canonical primary and Hanken font token", () => {
     const tokens = read("public/blessboard/v5/design-tokens.css");
-    assert.match(tokens, /--bb-color-primary:\s*#6c5ce7/i);
-    assert.match(tokens, /--bb-color-accent:\s*#ff9800/i);
+    assert.match(tokens, /--bb-color-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(tokens, /--bb-color-accent:\s*var\(--color-brand-accent\)/);
     assert.match(tokens, /--bb-font-sans:.*"Hanken Grotesk"/);
     assert.match(tokens, /--bb-max:\s*80rem/);
     assert.match(tokens, /--bb-control-h:\s*3rem/);
     assert.match(tokens, /--bb-header-h:\s*5rem/);
     assert.match(tokens, /--bb-gradient-page/);
     assert.match(tokens, /prefers-reduced-motion|@media \(max-width: 767px\)/);
-    // Legacy aliases for existing shells
-    assert.match(tokens, /--bb-violet:\s*var\(--bb-color-primary/);
+    // Appearance-named --bb-violet retired in V2.04 Batch 8
+    assert.doesNotMatch(tokens, /--bb-violet\s*:/);
   });
 
   it("provides shared component primitives and reduced-motion support", () => {

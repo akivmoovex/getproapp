@@ -198,11 +198,17 @@ Also: disabled state must not rely on color alone.
 - Using brand primary as the only “info” color in shared components (use `--color-info*`)
 - Editing `public/platform/theme/colors.css` without updating the canonical `src/platform/ui/theme/colors.css` (keep mirrors identical)
 
-## 12. Migration strategy
+## 12. Migration status (V2.04 COMPLETE)
 
-Foundation only is shipped in V2.04 first commit. Existing product CSS (`design-tokens.css`, `ac-tokens.css`, `church.css`, etc.) still drives most visuals.
+Migration batches 1–8 are **complete** on branch V4. Final freeze:
 
-Controlled batches are listed in `docs/qa/V2_04_COLOR_TOKEN_MIGRATION_PLAN.md`. Do not repository-wide replace literals without a batch plan and visual QA.
+- Report: `docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md`
+- Batch 8: `docs/qa/V2_04_COLOR_MIGRATION_BATCH_8.md`
+- Comparable baseline 1291 → final residual **41** justified exceptions
+- Foundation compatibility aliases (`--product-*`, `--gp-ops-*`) removed
+- Raw GUI guard: `tests/v2-04-color-migration-batch-8.test.js`
+
+Do not reintroduce unjustified platform GUI HEX/RGB. New exceptions require allowlist + rationale.
 
 ### Theme loading (rendering pipeline)
 

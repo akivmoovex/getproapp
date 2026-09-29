@@ -20,6 +20,7 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | After Batch 5 | **426** |
 | After Batch 6 | **321** |
 | After Batch 7 | **171** |
+| After Batch 8 (final freeze) | **41** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -143,11 +144,13 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | Residual SVG fills, rare JS style literals, `public/styles.css`, admin/field-agent views, dark-theme leftovers, dead aliases |
-| Approx hard-coded locations | **146** cleanup + **25** out-of-scope/justified (post–Batch 7 rescan → **171** total remaining) |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_8.md` + `docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md` |
+| Measured | Migrated **130** GUI locations; retained **41** justified (171 → 41) |
+| Foundation aliases | Removed **17** unused `--product-*` / `--gp-ops-*` |
+| Guard | `tests/v2-04-color-migration-batch-8.test.js` allowlist |
 | Risk | LOW–MEDIUM |
-| Visual QA | Spot-check previously migrated surfaces; grep gate for new HEX in `public/**/*.css` (allowlist token files) |
-| BB/AC regression | Full smoke both products |
+| Visual QA | Spot-check previously migrated surfaces + residual print/branding |
+| BB/AC regression | Full V2.04 color suite + design-system/branding smoke |
 
 ---
 

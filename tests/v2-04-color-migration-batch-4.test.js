@@ -50,7 +50,8 @@ describe("V2_04 color migration batch 4 — BlessBoard management/member", () =>
     const tok = read("public/blessboard/v5/design-tokens.css");
     assert.match(tok, /--bb-color-primary:\s*var\(--color-brand-primary\)/);
     assert.match(tok, /--bb-color-error:\s*var\(--color-danger-text\)/);
-    assert.match(tok, /--status-published-bg:\s*var\(--badge-success-bg\)/);
+    assert.match(tok, /--badge-success-bg|--bb-color-success/);
+    assert.doesNotMatch(tok, /--status-published-bg:/);
     assert.doesNotMatch(tok, /--bb-color-primary:\s*#6c5ce7/i);
 
     const church = read("public/church/church.css");

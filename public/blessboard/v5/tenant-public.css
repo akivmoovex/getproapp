@@ -32,7 +32,7 @@ html {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   padding: 0.5rem 1rem;
   border-radius: var(--bb-radius-sm);
@@ -90,7 +90,7 @@ html {
   align-items: center;
   gap: 0.65rem;
   text-decoration: none;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   min-width: 0;
   flex: 0 1 auto;
   max-width: min(16rem, 48vw);
@@ -136,7 +136,7 @@ html {
   letter-spacing: -0.02em;
   font-size: 1rem;
   line-height: 1.2;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   /* Long names: up to 2 lines, then ellipsis — never overflow the header */
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -192,13 +192,13 @@ html {
 }
 
 .bb-tp-nav__link:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-nav__link.is-active {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
-  border-bottom-color: var(--bb-violet);
+  border-bottom-color: var(--bb-color-primary);
 }
 
 .bb-tp-nav-dropdown {
@@ -226,14 +226,14 @@ html {
 }
 
 .bb-tp-nav-dropdown__trigger:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-nav-dropdown__trigger.is-active,
 .bb-tp-nav-dropdown.is-section-active .bb-tp-nav-dropdown__trigger {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
-  border-bottom-color: var(--bb-violet);
+  border-bottom-color: var(--bb-color-primary);
 }
 
 .bb-tp-nav-dropdown__chevron {
@@ -282,18 +282,18 @@ html {
 .bb-tp-nav-dropdown__link:hover,
 .bb-tp-nav-dropdown__link:focus-visible {
   background: var(--bb-surface-low);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   outline: none;
 }
 
 .bb-tp-nav-dropdown__link.is-active {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
 }
 
 .bb-tp-drawer__link--cta {
   font-weight: 700;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-header__actions {
@@ -363,17 +363,17 @@ html {
 }
 
 .bb-tp-btn--primary {
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
 }
 
 .bb-tp-btn--primary:hover {
-  background: var(--bb-violet-deep);
+  background: var(--bb-color-primary-hover);
 }
 
 .bb-tp-btn--ghost {
   background: transparent;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   border-color: var(--bb-line);
 }
 
@@ -497,16 +497,16 @@ html {
 
 .bb-tp-drawer__link:hover,
 .bb-tp-drawer__link:focus-visible {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   background: var(--bb-color-primary-soft);
   text-decoration: none;
 }
 
 .bb-tp-drawer__link.is-active {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
   background: var(--bb-color-primary-soft);
-  border-left-color: var(--bb-violet);
+  border-left-color: var(--bb-color-primary);
 }
 
 .bb-tp-drawer__actions {
@@ -562,7 +562,7 @@ html {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-eyebrow--pill {
@@ -620,7 +620,7 @@ html {
 .bb-tp-empty__icon {
   display: inline-flex;
   margin-bottom: 0.5rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 2rem;
 }
 
@@ -680,7 +680,7 @@ html {
 }
 
 .bb-tp-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-hero__lead {
@@ -782,7 +782,7 @@ html {
 .bb-tp-home-service-card {
   padding: 1.35rem 1.4rem 1.5rem;
   border-radius: var(--bb-radius);
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   box-shadow: var(--bb-shadow-md);
   min-width: 0;
@@ -815,18 +815,18 @@ html {
   margin-top: 1rem;
   width: 100%;
   background: var(--color-surface);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   border-color: var(--color-surface);
 }
 
 .bb-tp-home-service-card__cta:hover {
   background: var(--bb-color-primary-soft);
-  color: var(--bb-violet-deep);
+  color: var(--bb-color-primary-hover);
 }
 
 .bb-tp-btn--on-violet {
   background: var(--color-surface);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   border-color: var(--color-surface);
 }
 
@@ -888,7 +888,7 @@ html {
 }
 
 .bb-tp-home-resources__link:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   background: var(--bb-color-primary-soft);
 }
 
@@ -980,7 +980,7 @@ html {
 .bb-tp-home__teaser-link {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -1017,7 +1017,7 @@ html {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-home-sermon__title {
@@ -1061,12 +1061,12 @@ html {
 }
 
 .bb-tp-home-cta-card:hover {
-  border-color: var(--bb-violet);
+  border-color: var(--bb-color-primary);
   transform: translateY(-1px);
 }
 
 .bb-tp-home-cta-card .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 1.5rem;
 }
 
@@ -1098,7 +1098,7 @@ html {
 }
 
 .bb-tp-footer__social a:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-about-services {
@@ -1173,7 +1173,7 @@ html {
 
 .bb-tp-service-times-item__day {
   font-weight: 600;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-service-times-item__name {
@@ -1269,7 +1269,7 @@ html {
 
 .bb-tp-shortcut .material-symbols-outlined {
   grid-row: 1 / span 2;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 1.75rem;
 }
 
@@ -1434,7 +1434,7 @@ html {
 
   .bb-tp-leadership-cta__inner {
     padding: 1.75rem 1.25rem;
-    background: var(--bb-violet);
+    background: var(--bb-color-primary);
     border-radius: var(--bb-radius);
     text-align: center;
     justify-items: center;
@@ -1537,7 +1537,7 @@ html {
 }
 
 .bb-tp-about-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-about-hero__cta {
@@ -1566,7 +1566,7 @@ html {
 }
 
 .bb-tp-about-story__title {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-about-story__title::after {
@@ -1649,17 +1649,17 @@ html {
   margin-bottom: 0.85rem;
   border-radius: 0.75rem;
   background: var(--bb-color-primary-soft);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-purpose-card__title {
   margin: 0 0 0.65rem;
   font-size: 1.35rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-purpose-card--accent {
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   border-color: transparent;
   color: var(--color-text-inverse);
   box-shadow: var(--bb-shadow-md);
@@ -1690,7 +1690,7 @@ html {
 }
 
 .bb-tp-about-values__heading {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   margin-bottom: 1.25rem;
 }
 
@@ -1723,7 +1723,7 @@ html {
   height: 2.5rem;
   border-radius: 999px;
   background: var(--bb-surface-dim);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 1.25rem;
 }
 
@@ -1795,7 +1795,7 @@ html {
   font-size: clamp(1.75rem, 4vw, 2.25rem);
   letter-spacing: -0.02em;
   margin: 0 0 0.85rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-section {
@@ -1846,7 +1846,7 @@ html {
 }
 
 .bb-tp-item a {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-lead {
@@ -1880,7 +1880,7 @@ html {
   min-height: var(--bb-control-h, 3rem);
   border: 0;
   border-radius: var(--bb-radius);
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   font: inherit;
   cursor: pointer;
@@ -1970,7 +1970,7 @@ html {
 .bb-tp-footer__name {
   margin: 0 0 0.35rem;
   font-weight: 700;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 1.05rem;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -2005,7 +2005,7 @@ html {
 }
 
 .bb-tp-footer__list a:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-footer__list--contact li {
@@ -2019,7 +2019,7 @@ html {
 
 .bb-tp-footer__list--contact .material-symbols-outlined {
   font-size: 1.1rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-footer__bar {
@@ -2045,7 +2045,7 @@ html {
 }
 
 .bb-tp-footer__bar-links a {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   text-decoration: none;
 }
 
@@ -2466,13 +2466,13 @@ html {
   width: 1.5rem;
   height: 3px;
   border-radius: 999px;
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   flex: 0 0 auto;
 }
 
 .bb-tp-empty__icon {
   font-size: 2.5rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -2499,7 +2499,7 @@ html {
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   background: var(--bb-color-primary-soft);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -2517,7 +2517,7 @@ html {
 }
 
 .bb-tp-dir-cta--accent {
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   border-top: 0;
   color: var(--color-text-inverse);
 }
@@ -2555,16 +2555,16 @@ html {
 
 .bb-tp-btn--on-accent {
   background: var(--color-surface);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-btn--on-accent:hover {
   background: var(--bb-color-primary-soft);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-inline-link {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -2585,7 +2585,7 @@ html {
 
 .bb-tp-meta .material-symbols-outlined {
   font-size: 1.1rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 /* Leadership */
@@ -2602,7 +2602,7 @@ html {
 }
 
 .bb-tp-leadership-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-leadership-hero__media {
@@ -2639,7 +2639,7 @@ html {
   width: 1.5rem;
   height: 3px;
   border-radius: 999px;
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   flex: 0 0 auto;
 }
 
@@ -2682,7 +2682,7 @@ html {
   margin: 0 0 0.5rem;
   font-size: clamp(1.35rem, 3vw, 1.75rem);
   letter-spacing: -0.02em;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   overflow-wrap: anywhere;
 }
 
@@ -2691,7 +2691,7 @@ html {
   margin: 0 0 0.85rem;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   font-weight: 600;
   font-size: 0.85rem;
@@ -2705,7 +2705,7 @@ html {
   height: 5.5rem;
   border-radius: 999px;
   background: var(--bb-color-primary-soft);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
   font-size: 1.35rem;
 }
@@ -2795,7 +2795,7 @@ html {
 
 .bb-tp-leader-card__role {
   margin: 0 0 0.45rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -2831,7 +2831,7 @@ html {
 }
 
 .bb-tp-ministries-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-ministries-hero__media {
@@ -2898,7 +2898,7 @@ html {
 .bb-tp-ministry-card__fallback-icon,
 .bb-tp-ministry-card__media.is-fallback .material-symbols-outlined {
   font-size: 2.5rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-ministry-card__body {
@@ -2931,7 +2931,7 @@ html {
 }
 
 .bb-tp-ministry-card__contact a {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
   text-decoration: none;
   word-break: break-word;
@@ -3009,7 +3009,7 @@ html {
 
 /* Events — Stitch 05 list/featured (Batch 5) */
 .bb-tp-meta--accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
 }
 
@@ -3037,7 +3037,7 @@ html {
 }
 
 .bb-tp-events-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-events-hero__media {
@@ -3105,7 +3105,7 @@ html {
 
 .bb-tp-featured-event__badge {
   text-align: center;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-featured-event__badge span {
@@ -3123,7 +3123,7 @@ html {
 
 .bb-tp-featured-event__fallback-icon {
   font-size: 2.75rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-featured-event__copy {
@@ -3143,7 +3143,7 @@ html {
   margin: 0 0 0.75rem;
   font-size: clamp(1.35rem, 2.5vw, 1.75rem);
   letter-spacing: -0.02em;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   overflow-wrap: anywhere;
 }
 
@@ -3186,7 +3186,7 @@ html {
 
 .bb-tp-event-card__media.is-fallback .material-symbols-outlined {
   font-size: 2.25rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   opacity: 0.55;
 }
 
@@ -3207,7 +3207,7 @@ html {
   min-width: 3.25rem;
   padding: 0.4rem 0.45rem;
   border-radius: var(--bb-radius-sm);
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   text-align: center;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--bb-color-ink) 18%, transparent);
@@ -3334,7 +3334,7 @@ html {
 }
 
 .bb-tp-sermons-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-sermons-hero__media {
@@ -3400,7 +3400,7 @@ html {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-featured-sermon__label--desktop {
@@ -3502,7 +3502,7 @@ html {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 999px;
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   text-decoration: none;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--bb-color-ink) 35%, transparent);
@@ -3582,7 +3582,7 @@ html {
 }
 
 .bb-tp-sermon-card__media.is-fallback {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-sermon-card__fallback-icon {
@@ -3633,7 +3633,7 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
   text-decoration: none;
   font-size: 0.9rem;
@@ -3876,7 +3876,7 @@ html {
 }
 
 .bb-tp-contact-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-contact-cards {
@@ -3916,7 +3916,7 @@ html {
   height: 3rem;
   border-radius: var(--bb-radius-sm);
   background: color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   margin: 0;
   flex-shrink: 0;
 }
@@ -3949,7 +3949,7 @@ html {
 }
 
 .bb-tp-contact-card__value a {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
   text-decoration: none;
   word-break: break-word;
@@ -3989,8 +3989,8 @@ html {
   margin: 0 0 1rem;
   padding: 0.75rem 0.85rem;
   border-radius: var(--bb-radius-sm);
-  background: color-mix(in srgb, var(--bb-violet) 8%, var(--color-surface));
-  border: 1px solid color-mix(in srgb, var(--bb-violet) 18%, transparent);
+  background: color-mix(in srgb, var(--bb-color-primary) 8%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--bb-color-primary) 18%, transparent);
   color: var(--bb-ink);
   font-size: 0.95rem;
   line-height: 1.5;
@@ -4022,7 +4022,7 @@ html {
 }
 
 .bb-tp-contact-map__address > .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   flex-shrink: 0;
 }
 
@@ -4078,7 +4078,7 @@ html {
 }
 
 .bb-tp-contact-map__directions:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-contact-map__link-only {
@@ -4099,7 +4099,7 @@ html {
 }
 
 .bb-tp-contact-map__unavailable .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   flex-shrink: 0;
 }
 
@@ -4213,7 +4213,7 @@ html {
 }
 
 .bb-tp-giving-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-giving-hero__media {
@@ -4249,7 +4249,7 @@ html {
 }
 
 .bb-tp-giving-notice .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   flex-shrink: 0;
 }
 
@@ -4268,7 +4268,7 @@ html {
 .bb-tp-giving-editor-bar__title {
   margin: 0;
   font-weight: 700;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 0.95rem;
 }
 
@@ -4356,7 +4356,7 @@ html {
   height: 2.75rem;
   border-radius: 0.85rem;
   background: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   margin: 0;
   flex-shrink: 0;
 }
@@ -4376,7 +4376,7 @@ html {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-giving-card__label {
@@ -4432,7 +4432,7 @@ html {
   padding: 0.7rem 0.8rem;
   background: var(--bb-surface-low);
   border-radius: var(--bb-radius-sm);
-  border-left: 3px solid var(--bb-violet);
+  border-left: 3px solid var(--bb-color-primary);
   min-width: 0;
 }
 
@@ -4509,7 +4509,7 @@ html {
   border: 0;
   border-radius: var(--bb-radius-sm);
   background: transparent;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   cursor: pointer;
   font: inherit;
   font-size: 0.75rem;
@@ -4717,7 +4717,7 @@ html {
 .bb-tp-contact-card__value a:focus-visible,
 .bb-tp-contact-map__directions:focus-visible,
 .bb-tp-inline-link:focus-visible {
-  outline: 2px solid var(--bb-violet);
+  outline: 2px solid var(--bb-color-primary);
   outline-offset: 2px;
   box-shadow: var(--bb-shadow-focus);
 }
@@ -4868,7 +4868,7 @@ html {
 }
 
 .bb-tp-service-times--band {
-  background: var(--bb-violet);
+  background: var(--bb-color-primary);
   color: var(--color-text-inverse);
   padding: 1.35rem 0;
 }
@@ -4944,7 +4944,7 @@ html {
 
 .bb-tp-service-times--band .bb-tp-btn--primary {
   background: var(--color-surface);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-service-times--band .bb-tp-btn--ghost {
@@ -5013,7 +5013,7 @@ html {
 
 .bb-tp-section-head__link {
   font-weight: 650;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -5086,7 +5086,7 @@ a.bb-tp-content-card:hover {
 
 .bb-tp-content-card__media .material-symbols-outlined {
   font-size: 2rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-content-card__body {
@@ -5112,7 +5112,7 @@ a.bb-tp-content-card:hover {
   margin-top: auto;
   padding-top: 0.55rem;
   font-weight: 650;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 0.9rem;
 }
 
@@ -5172,7 +5172,7 @@ a.bb-tp-content-card:hover {
   height: 3.25rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   display: grid;
   place-items: center;
   font-size: 1.75rem;
@@ -5232,7 +5232,7 @@ a.bb-tp-content-card:hover {
 
 .bb-tp-cta-band .bb-tp-btn--primary {
   background: var(--color-surface);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-home-contact__grid {
@@ -5256,7 +5256,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-home-contact__item .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-home-contact__label {
@@ -5309,7 +5309,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-page-hero__title-accent {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-leader-card--featured {
@@ -5356,7 +5356,7 @@ a.bb-tp-content-card:hover {
 
 .bb-tp-leader-card__eyebrow {
   margin: 0 0 0.35rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -5367,7 +5367,7 @@ a.bb-tp-content-card:hover {
   display: inline-flex;
   margin-top: 0.65rem;
   font-weight: 650;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   text-decoration: none;
 }
 
@@ -5467,7 +5467,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-sermon-series__item .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-featured-sermon__media.is-fallback {
@@ -5476,7 +5476,7 @@ a.bb-tp-content-card:hover {
   justify-content: center;
   min-height: 12rem;
   background: linear-gradient(145deg, var(--bb-color-page), var(--bb-color-primary-soft));
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-contact-services--aside {
@@ -5540,7 +5540,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-giving-why__card .material-symbols-outlined {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-size: 1.75rem;
 }
 
@@ -6432,7 +6432,7 @@ a.bb-tp-content-card:hover {
 
 .bb-tp-contact-summary__list .material-symbols-outlined {
   font-size: 1.1rem;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   line-height: 1.35;
 }
 
@@ -6443,7 +6443,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-contact-summary__list a:hover {
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-contact-summary__empty {
@@ -6580,12 +6580,12 @@ a.bb-tp-content-card:hover {
 
 .bb-tp-branch-switcher__link:hover {
   background: var(--bb-surface-low);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
 }
 
 .bb-tp-branch-switcher__link.is-current {
   background: color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 700;
 }
 
@@ -6610,7 +6610,7 @@ a.bb-tp-content-card:hover {
   margin-top: 0.35rem;
   border-top: 1px solid var(--bb-line);
   border-radius: 0;
-  color: var(--bb-violet);
+  color: var(--bb-color-primary);
   font-weight: 600;
 }
 

@@ -64,12 +64,8 @@
   );
 
   /*
-   * @deprecated Appearance-named aliases — keep for Batch 7 public CSS + unmigrated shells.
-   * Completed Batch 4 consumers use --bb-color-primary / --color-brand-primary.
+   * Legacy short aliases (--bb-ink/--bb-bg/…) retained while consumers remain; appearance names (--bb-violet) removed in Batch 8.
    */
-  --bb-violet: var(--bb-color-primary);
-  --bb-violet-deep: var(--bb-color-primary-hover);
-  --bb-getpro: var(--bb-color-accent);
   --bb-primary: var(--bb-color-primary);
   --bb-accent: var(--bb-color-accent);
   --bb-ink: var(--bb-color-ink);
@@ -83,7 +79,6 @@
   --bb-border: var(--bb-color-border);
   --bb-ok: var(--bb-color-success);
   --bb-err: var(--bb-color-error);
-  --bb-warm: var(--color-surface-subtle);
   --bb-disabled: var(--color-disabled-text);
   /* HQ / platform-admin local chrome aliases */
   --bb-hq-border: var(--color-border-default);
@@ -185,15 +180,6 @@
    * Prefer --badge-success|warning|neutral-* in new CSS; keep these for
    * Batch 5 editor publish/draft semantics if product copy wants domain names.
    */
-  --status-published-bg: var(--badge-success-bg);
-  --status-published-text: var(--badge-success-text);
-  --status-published-border: var(--badge-success-border);
-  --status-draft-bg: var(--badge-warning-bg);
-  --status-draft-text: var(--badge-warning-text);
-  --status-draft-border: var(--badge-warning-border);
-  --status-inactive-bg: var(--badge-neutral-bg);
-  --status-inactive-text: var(--badge-neutral-text);
-  --status-inactive-border: var(--badge-neutral-border);
 }
 
 @media (max-width: 767px) {

@@ -109,7 +109,7 @@
                   </tr>
                   <% if (typeof canMutate !== 'undefined' && canMutate && !b.reconciled_at && b.status !== 'cancelled') { %>
                   <tr>
-                    <td colspan="9" style="background:rgba(0,0,0,0.02);padding:0.65rem 0.75rem;">
+                    <td colspan="9" style="background:color-mix(in srgb, var(--color-text-primary) 2%, transparent);padding:0.65rem 0.75rem;">
                       <form method="post" action="/admin/field-agent-bank-reconciliation/batch/<%= b.id %>/reconcile" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-end;">
                         <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
                         <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
@@ -184,7 +184,7 @@
                   </tr>
                   <% if (typeof canMutate !== 'undefined' && canMutate && !r.reconciled_at) { %>
                   <tr>
-                    <td colspan="9" style="background:rgba(0,0,0,0.02);padding:0.65rem 0.75rem;">
+                    <td colspan="9" style="background:color-mix(in srgb, var(--color-text-primary) 2%, transparent);padding:0.65rem 0.75rem;">
                       <form method="post" action="/admin/field-agent-bank-reconciliation/pay-run/<%= r.id %>/reconcile" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-end;">
                         <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
                         <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>

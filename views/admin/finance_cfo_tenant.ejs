@@ -65,7 +65,7 @@
           </div>
           <div class="card" style="padding:0.85rem;">
             <p class="muted" style="margin:0;font-size:0.8rem;">Outstanding</p>
-            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;color:<%= Number(rr.outstanding_total || 0) < 0 ? '#b45309' : 'inherit' %>;"><%= Number(rr.outstanding_total || 0).toFixed(2) %></p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;color:<%= Number(rr.outstanding_total || 0) < 0 ? 'var(--color-warning-text)' : 'inherit' %>;"><%= Number(rr.outstanding_total || 0).toFixed(2) %></p>
           </div>
           <div class="card" style="padding:0.85rem;">
             <p class="muted" style="margin:0;font-size:0.8rem;">Runs: unpaid / partial / paid / over</p>

@@ -43,12 +43,9 @@
   --ac-primary-strong: var(--color-brand-primary-active);
   /*
    * Staff secondary accent (public teal family under staff-blue brand).
-   * @deprecated --ac-teal / --ac-teal-soft — appearance names; prefer --ac-brand-accent*.
    */
   --ac-brand-accent: var(--color-brand-accent);
   --ac-brand-accent-soft: color-mix(in srgb, var(--color-brand-accent) 12%, var(--color-surface));
-  --ac-teal: var(--ac-brand-accent);
-  --ac-teal-soft: var(--ac-brand-accent-soft);
   --ac-focus: var(--color-focus);
   --ac-color-primary: var(--color-brand-primary);
 

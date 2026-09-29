@@ -423,21 +423,6 @@
   --color-focus: var(--color-brand-primary);
   --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
   --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
-
-  /*
-   * @deprecated Compatibility aliases for --product-* bridge tokens.
-   * Migrate consumers to --color-brand-* / --color-* / component tokens.
-   */
-  --product-primary: var(--color-brand-primary);
-  --product-primary-strong: var(--color-brand-primary-active);
-  --product-primary-hover: var(--color-brand-primary-hover);
-  --product-bg: var(--color-background);
-  --product-surface: var(--color-surface);
-  --product-text: var(--color-text-primary);
-  --product-muted: var(--color-text-secondary);
-  --product-border: var(--color-border-default);
-  --product-focus: var(--color-focus-ring);
-  --product-link: var(--color-link);
 }
 
 /* =========================================================
@@ -468,20 +453,6 @@
   --color-focus: var(--color-brand-primary);
   --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
   --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
-
-  /*
-   * @deprecated Compatibility aliases for --product-* bridge tokens.
-   */
-  --product-primary: var(--color-brand-primary);
-  --product-primary-strong: var(--color-brand-primary-active);
-  --product-primary-hover: var(--color-brand-primary-hover);
-  --product-bg: var(--color-background);
-  --product-surface: var(--color-surface);
-  --product-text: var(--color-text-primary);
-  --product-muted: var(--color-text-secondary);
-  --product-border: var(--color-border-default);
-  --product-focus: var(--color-focus);
-  --product-link: var(--color-link);
 }
 
 /* Explicit public surface (documents intent; same as AC default) */
@@ -527,29 +498,6 @@ body.ac-app-body {
   --color-focus: var(--color-brand-primary);
   --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
   --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
-
-  --product-primary: var(--color-brand-primary);
-  --product-primary-strong: var(--color-brand-primary-active);
-  --product-primary-hover: var(--color-brand-primary-hover);
-  --product-bg: var(--color-background);
-  --product-surface: var(--color-surface);
-  --product-text: var(--color-text-primary);
-  --product-muted: var(--color-text-secondary);
-  --product-border: var(--color-border-default);
-  --product-focus: var(--color-focus);
-  --product-link: var(--color-link);
-
-  /*
-   * @deprecated Soft bridge for gp-ops defaults when staff theme is active.
-   * Prefer --button-primary-* / --color-brand-*.
-   */
-  --gp-ops-primary: var(--color-brand-primary);
-  --gp-ops-primary-hover: var(--color-brand-primary-hover);
-  --gp-ops-border: var(--color-border-default);
-  --gp-ops-text: var(--color-text-primary);
-  --gp-ops-muted: var(--color-text-secondary);
-  --gp-ops-canvas: var(--color-background);
-  --gp-ops-surface: var(--color-surface);
 }
 
 /* =========================================================

@@ -43,7 +43,7 @@
             <p class="muted" style="margin:0.5rem 0 0;"><a href="<%= String(websiteQueueReportReturnHref).replace(/&/g, '&amp;') %>">Back to report</a> — resume the filters and column view you left from.</p>
             <% } %>
             <% if (typeof websiteQueueShareUrl !== 'undefined' && websiteQueueShareUrl) { %>
-            <div class="website-share-card website-share-card--copy-wrap website-share-card--focus-a11y website-share-card--group-focus-a11y" style="margin-top:0.65rem;padding-top:0.65rem;border-top:1px solid var(--line,#e6e8ee);max-width:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;gap:0;">
+            <div class="website-share-card website-share-card--copy-wrap website-share-card--focus-a11y website-share-card--group-focus-a11y" style="margin-top:0.65rem;padding-top:0.65rem;border-top:1px solid var(--line);max-width:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;gap:0;">
               <div id="website-queue-share-copy-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
               <div style="display:flex;flex-direction:column;gap:0.35rem;">
                 <p class="muted" style="margin:0;"><strong>Permalink</strong> — URL for this queue (current filters).</p>
@@ -52,7 +52,7 @@
                 <% } %>
                 <p class="muted" style="margin:0;font-size:0.88em;line-height:1.35;">Current quality filters and <code>report_return</code> when set. Bulk notices omitted. Not stored — bookmark or copy the URL.</p>
               </div>
-              <div class="website-share-a11y-group website-share-a11y-group--permalink" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Permalink: queue URL, copy, and open in new tab">
+              <div class="website-share-a11y-group website-share-a11y-group--permalink" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Permalink: queue URL, copy, and open in new tab">
                 <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:stretch;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
                   <input
                     type="text"
@@ -71,7 +71,7 @@
                 <% } %>
               </div>
               <% if (typeof websiteQueueShareSnippet !== 'undefined' && websiteQueueShareSnippet) { %>
-              <div class="website-share-a11y-group website-share-a11y-group--snippet" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Message snippet: text field and copy">
+              <div class="website-share-a11y-group website-share-a11y-group--snippet" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Message snippet: text field and copy">
                 <p class="muted" style="margin:0;font-size:0.88em;"><strong>Snippet</strong> — summary and URL (plain text).</p>
                 <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
                   <textarea
@@ -86,7 +86,7 @@
                 </div>
               </div>
               <% } %>
-              <div class="website-share-a11y-group website-share-a11y-group--operational" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.35rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Operational queue views: preset links">
+              <div class="website-share-a11y-group website-share-a11y-group--operational" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:0.35rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Operational queue views: preset links">
                 <p class="muted" id="website-queue-share-operational-hint" style="margin:0;font-size:0.88em;line-height:1.35;"><strong>Operational share states</strong> — preset filtered views (not saved). Keeps <code>report_return</code>, city, and category when set.</p>
                 <p id="website-queue-share-operational-states" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin:0;">
                   <a class="btn btn--secondary" href="/admin/crm?queue=websites&quality_tier=low&quality_sort=asc<%= _opPreserve %><%= _rrQ %>">Low quality queue</a>
@@ -100,12 +100,12 @@
               <% var _qBestEmail = typeof websiteQueueShareBundleEmailReady !== 'undefined' && websiteQueueShareBundleEmailReady; %>
               <% if (_qBestMd || _qBestChat || _qBestEmail) { %>
               <% var _qBestShareLbl = (typeof websiteQueueShareLabel !== 'undefined' && websiteQueueShareLabel) ? String(websiteQueueShareLabel).trim() : ''; %>
-              <div class="website-share-best-format-shortcuts website-share-a11y-group website-share-a11y-group--best-for" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px solid var(--line,#e6e8ee);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Best-for copy: Slack, email, and docs shortcuts">
+              <div class="website-share-best-format-shortcuts website-share-a11y-group website-share-a11y-group--best-for" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px solid var(--line);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Best-for copy: Slack, email, and docs shortcuts">
                 <p class="muted" id="website-queue-share-best-format-hint" style="margin:0 0 0.35rem;font-size:0.82em;line-height:1.35;"><strong>Best for</strong> — same copy as Advanced, one click (Slack / email / docs).</p>
                 <p class="muted website-share-best-for-copy-best-legend" id="website-queue-share-copy-best-legend" style="margin:0 0 0.38rem;font-size:0.78em;line-height:1.4;"><strong>Copy best</strong> — Slack uses chat bundle; Email uses plain bundle; Docs uses markdown bundle.</p>
                 <p id="website-queue-share-best-format-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:0;align-items:flex-start;min-width:0;width:100%;box-sizing:border-box;">
                   <% if (_qBestChat) { %>
-                  <div class="website-share-best-for-row website-share-best-for-row--slack website-share-a11y-group website-share-a11y-group--best-for-slack" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Slack — copy and related deep-link fields">
+                  <div class="website-share-best-for-row website-share-best-for-row--slack website-share-a11y-group website-share-a11y-group--best-for-slack" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.4rem 0.5rem;background:color-mix(in srgb, var(--color-surface) 50%, transparent);" role="group" aria-label="Best-for: Slack — copy and related deep-link fields">
                     <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
                       <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Slack</strong>
                       <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-queue-share-best-slack-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for Slack (chat snippet)">Copy for Slack</button>
@@ -162,7 +162,7 @@
                   </div>
                   <% } %>
                   <% if (_qBestEmail) { %>
-                  <div class="website-share-best-for-row website-share-best-for-row--email website-share-a11y-group website-share-a11y-group--best-for-email" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Email — copy and related deep-link fields">
+                  <div class="website-share-best-for-row website-share-best-for-row--email website-share-a11y-group website-share-a11y-group--best-for-email" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.4rem 0.5rem;background:color-mix(in srgb, var(--color-surface) 50%, transparent);" role="group" aria-label="Best-for: Email — copy and related deep-link fields">
                     <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
                       <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Email</strong>
                       <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-queue-share-best-email-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for email (email-ready bundle)">Copy for Email</button>
@@ -219,7 +219,7 @@
                   </div>
                   <% } %>
                   <% if (_qBestMd) { %>
-                  <div class="website-share-best-for-row website-share-best-for-row--docs website-share-a11y-group website-share-a11y-group--best-for-docs" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Docs — copy and related deep-link fields">
+                  <div class="website-share-best-for-row website-share-best-for-row--docs website-share-a11y-group website-share-a11y-group--best-for-docs" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.4rem 0.5rem;background:color-mix(in srgb, var(--color-surface) 50%, transparent);" role="group" aria-label="Best-for: Docs — copy and related deep-link fields">
                     <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
                       <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Docs</strong>
                       <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-queue-share-best-docs-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for docs (markdown link)">Copy for Docs</button>
@@ -280,13 +280,13 @@
               <% } %>
               <% if ((typeof websiteQueueShareSnippet !== 'undefined' && websiteQueueShareSnippet) || (typeof websiteQueueShareBundleQuickLink !== 'undefined' && websiteQueueShareBundleQuickLink)) { %>
               <% if (typeof websiteQueueShareDeepLinks !== 'undefined' && websiteQueueShareDeepLinks) { %>
-              <div class="website-share-a11y-group website-share-a11y-group--target-presets" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line,#e0e3ea);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Advanced target presets: open links and copy snippets by format">
+              <div class="website-share-a11y-group website-share-a11y-group--target-presets" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Advanced target presets: open links and copy snippets by format">
                 <p class="muted" id="website-queue-share-advanced-target-presets-hint" style="margin:0 0 0.35rem;font-size:0.82em;line-height:1.4;"><strong>Advanced target presets</strong> — opens this page with Advanced expanded and one format highlighted.</p>
                 <p id="website-queue-share-advanced-target-presets" class="website-share-advanced-target-presets" style="display:flex;gap:0.45rem;flex-wrap:wrap;margin:0;align-items:stretch;min-width:0;width:100%;box-sizing:border-box;">
                   <% var _qPresetSnippetLbl = (typeof websiteQueueShareLabel !== 'undefined' && websiteQueueShareLabel) ? String(websiteQueueShareLabel).trim() : ''; %>
-                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-markdown" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Markdown — open, copy snippets">
+                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-markdown" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:color-mix(in srgb, var(--color-surface) 55%, transparent);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Markdown — open, copy snippets">
                     <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-queue-share-advanced-target-preset-markdown" href="<%= websiteQueueShareDeepLinks.markdown %>">Markdown</a>
-                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line);padding-top:0.28rem;margin-top:0.06rem;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
                       <textarea
                         readonly
@@ -325,9 +325,9 @@
                     </div>
                     </div>
                   </div>
-                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-chat" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Chat — open, copy snippets">
+                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-chat" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:color-mix(in srgb, var(--color-surface) 55%, transparent);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Chat — open, copy snippets">
                     <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-queue-share-advanced-target-preset-chat" href="<%= websiteQueueShareDeepLinks.chat %>">Chat</a>
-                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line);padding-top:0.28rem;margin-top:0.06rem;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
                       <textarea
                         readonly
@@ -366,9 +366,9 @@
                     </div>
                     </div>
                   </div>
-                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-named" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Named link — open, copy snippets">
+                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-named" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:color-mix(in srgb, var(--color-surface) 55%, transparent);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Named link — open, copy snippets">
                     <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-queue-share-advanced-target-preset-named" href="<%= websiteQueueShareDeepLinks.named %>">Named</a>
-                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line);padding-top:0.28rem;margin-top:0.06rem;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
                       <textarea
                         readonly
@@ -407,9 +407,9 @@
                     </div>
                     </div>
                   </div>
-                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-email" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Email — open, copy snippets">
+                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-email" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:color-mix(in srgb, var(--color-surface) 55%, transparent);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Email — open, copy snippets">
                     <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-queue-share-advanced-target-preset-email" href="<%= websiteQueueShareDeepLinks.email %>">Email</a>
-                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line);padding-top:0.28rem;margin-top:0.06rem;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
                       <textarea
                         readonly
@@ -448,9 +448,9 @@
                     </div>
                     </div>
                   </div>
-                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-bundles" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Bundles — open, copy snippets">
+                  <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-bundles" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:color-mix(in srgb, var(--color-surface) 55%, transparent);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Bundles — open, copy snippets">
                     <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-queue-share-advanced-target-preset-bundles" href="<%= websiteQueueShareDeepLinks.bundles %>">Bundles</a>
-                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                    <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line);padding-top:0.28rem;margin-top:0.06rem;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
                       <textarea
                         readonly
@@ -492,7 +492,7 @@
                 </p>
               </div>
               <% } %>
-              <details class="website-share-card__advanced" style="margin-top:0.35rem;padding-top:0.55rem;border-top:1px solid var(--line,#e6e8ee);width:100%;min-width:0;box-sizing:border-box;"<% if (typeof websiteQueueShareAdvancedOpen !== 'undefined' && websiteQueueShareAdvancedOpen) { %> open<% } %>>
+              <details class="website-share-card__advanced" style="margin-top:0.35rem;padding-top:0.55rem;border-top:1px solid var(--line);width:100%;min-width:0;box-sizing:border-box;"<% if (typeof websiteQueueShareAdvancedOpen !== 'undefined' && websiteQueueShareAdvancedOpen) { %> open<% } %>>
                 <summary class="muted" style="cursor:pointer;font-size:0.95em;line-height:1.4;list-style-position:outside;">Advanced share formats (markdown, chat, email, bundles)</summary>
                 <div style="display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;padding-top:0.5rem;box-sizing:border-box;">
                 <% if (typeof websiteQueueShareDeepLinks !== 'undefined' && websiteQueueShareDeepLinks) { %>
@@ -609,7 +609,7 @@
                 </div>
                 <% } %>
                 <% var _qpt = (typeof websiteQueueShareTarget !== 'undefined' && websiteQueueShareTarget) ? String(websiteQueueShareTarget).trim().toLowerCase() : ''; %>
-                <% var _qptEm = 'outline:2px solid rgba(37,99,235,0.35);outline-offset:2px;background:rgba(37,99,235,0.08);border-radius:6px;padding:0.5rem 0.55rem 0.55rem;max-width:100%;box-sizing:border-box;'; %>
+                <% var _qptEm = 'outline:2px solid color-mix(in srgb, var(--color-info-text) 35%, transparent);outline-offset:2px;background:color-mix(in srgb, var(--color-info-text) 8%, transparent);border-radius:6px;padding:0.5rem 0.55rem 0.55rem;max-width:100%;box-sizing:border-box;'; %>
                 <% if (typeof websiteQueueShareSnippet !== 'undefined' && websiteQueueShareSnippet) { %>
                 <% if (typeof websiteQueueShareSnippetMarkdown !== 'undefined' && websiteQueueShareSnippetMarkdown) { %>
                 <div class="website-share-a11y-group website-share-a11y-group--optional-markdown" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;max-width:100%;min-width:0;box-sizing:border-box;<%= _qpt === 'markdown' ? _qptEm : '' %>" role="group" aria-label="Optional: Markdown link — field and copy">
@@ -663,7 +663,7 @@
                 </div>
                 <% } %>
                 <% if (typeof websiteQueueShareEmailSubject !== 'undefined' && websiteQueueShareEmailSubject != null && typeof websiteQueueShareEmailBody !== 'undefined' && websiteQueueShareEmailBody) { %>
-                <div class="website-share-a11y-group website-share-a11y-group--email-plain" style="padding-top:0.45rem;margin-top:0.2rem;border-top:1px dashed var(--line,#e0e3ea);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;<%= _qpt === 'email' ? _qptEm : '' %>" role="group" aria-label="Email (plain text): subject, body, and copy">
+                <div class="website-share-a11y-group website-share-a11y-group--email-plain" style="padding-top:0.45rem;margin-top:0.2rem;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;<%= _qpt === 'email' ? _qptEm : '' %>" role="group" aria-label="Email (plain text): subject, body, and copy">
                   <% if (_qpt === 'email') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
                   <p class="muted" style="margin:0;font-size:0.88em;">Email (plain text)</p>
                   <p class="muted" style="margin:0;font-size:0.82em;line-height:1.35;">Suggested subject and body — not sent automatically.</p>
@@ -703,7 +703,7 @@
                 <% } %>
                 <% } %>
                 <% if (typeof websiteQueueShareBundleQuickLink !== 'undefined' && websiteQueueShareBundleQuickLink) { %>
-                <div class="website-share-a11y-group website-share-a11y-group--copy-bundles" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line,#e0e3ea);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;<%= _qpt === 'bundles' ? _qptEm : '' %>" role="group" aria-label="Copy bundles: combined and format-specific blocks">
+                <div class="website-share-a11y-group website-share-a11y-group--copy-bundles" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;<%= _qpt === 'bundles' ? _qptEm : '' %>" role="group" aria-label="Copy bundles: combined and format-specific blocks">
                 <% if (_qpt === 'bundles') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
                 <p class="muted website-share-card__hint-line" id="website-queue-share-bundles-hint" style="margin:0;font-size:0.88em;line-height:1.35;"><strong>Copy bundles</strong> — combined blocks from the formats above.</p>
                 <% if (typeof websiteQueueShareBundleAllFormats !== 'undefined' && websiteQueueShareBundleAllFormats) { %>
@@ -778,23 +778,23 @@
               .website-share-card.website-share-card--focus-a11y input:focus-visible,
               .website-share-card.website-share-card--focus-a11y textarea:focus-visible,
               .website-share-card.website-share-card--focus-a11y summary:focus-visible {
-                outline: 2px solid var(--accent, #2563eb);
+                outline: 2px solid var(--accent);
                 outline-offset: 2px;
               }
               .website-share-card.website-share-card--group-focus-a11y .website-share-a11y-group:focus-within {
-                background-color: rgba(37, 99, 235, 0.045);
-                box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+                background-color: color-mix(in srgb, var(--color-info-text) 4%, transparent);
+                box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-info-text) 20%, transparent);
               }
               .website-share-card.website-share-card--group-focus-a11y .website-share-direct-link-block:focus-within {
-                background-color: rgba(37, 99, 235, 0.05);
-                box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24);
+                background-color: color-mix(in srgb, var(--color-info-text) 5%, transparent);
+                box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-info-text) 24%, transparent);
                 border-radius: 6px;
               }
               .website-share-card .btn.website-share-copy-btn--copied-state {
-                color: #15803d;
+                color: var(--color-success-text);
               }
               .website-share-card .btn.website-share-copy-btn--failed-state {
-                color: #b45309;
+                color: var(--color-warning-text);
               }
               .website-share-card .btn.website-share-copy-btn--busy {
                 opacity: 0.75;
@@ -1055,10 +1055,10 @@
         <% var _bulkNotice = typeof websiteBulkNotice !== 'undefined' ? String(websiteBulkNotice || '') : ''; %>
         <% var _bulkError = typeof websiteBulkError !== 'undefined' ? String(websiteBulkError || '') : ''; %>
         <% if (_webOnly && _bulkNotice) { %>
-          <p class="card" style="padding:0.6rem 0.8rem;border-color:#d9f2e3;background:#f3fcf7;margin:0 0 0.75rem;"><%= _bulkNotice %></p>
+          <p class="card" style="padding:0.6rem 0.8rem;border-color:var(--color-success-border);background:var(--color-success-bg);margin:0 0 0.75rem;"><%= _bulkNotice %></p>
         <% } %>
         <% if (_webOnly && _bulkError) { %>
-          <p class="card" style="padding:0.6rem 0.8rem;border-color:#f6d4d4;background:#fff6f6;margin:0 0 0.75rem;"><%= _bulkError %></p>
+          <p class="card" style="padding:0.6rem 0.8rem;border-color:var(--color-danger-border);background:var(--color-danger-bg);margin:0 0 0.75rem;"><%= _bulkError %></p>
         <% } %>
         <% if (_webOnly && canMutateCrm) { %>
           <form id="crm-websites-bulk-form" method="post" action="/admin/crm/websites/bulk-review" class="card admin-form-card" style="padding:0.75rem;margin:0 0 0.75rem;">
@@ -1179,7 +1179,7 @@
                     <% if (t.canDrag) { %>draggable="true"<% } else { %>draggable="false"<% } %>
                   >
                     <% if (_webOnly && canMutateCrm) { %>
-                      <label style="display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid var(--line,#e6e8ee);">
+                      <label style="display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid var(--line);">
                         <input type="checkbox" name="crm_task_ids" value="<%= t.id %>" class="crm-web-bulk-checkbox" form="crm-websites-bulk-form" onclick="event.stopPropagation();" />
                         <span class="muted">Select</span>
                       </label>

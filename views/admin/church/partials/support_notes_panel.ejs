@@ -20,7 +20,7 @@
   <% } else { %>
     <ul class="admin-list" style="margin-top:1rem;">
       <% notes.forEach(function (note) { %>
-        <li style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-subtle, #e5e7eb);">
+        <li style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-subtle);">
           <p style="white-space:pre-wrap;margin:0 0 0.35rem;"><%= note.note_body %></p>
           <p class="muted" style="font-size:0.9rem;margin:0;">
             <%= formatDate(note.created_at) %>

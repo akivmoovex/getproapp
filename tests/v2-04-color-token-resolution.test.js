@@ -151,15 +151,8 @@ const AC_DOMAIN = new Set([
 ]);
 
 const BB_DOMAIN = new Set([
-  "status-published-bg",
-  "status-published-text",
-  "status-published-border",
-  "status-draft-bg",
-  "status-draft-text",
-  "status-draft-border",
-  "status-inactive-bg",
-  "status-inactive-text",
-  "status-inactive-border",
+  // Batch 8 removed unused --status-published|draft|inactive-* aliases.
+  // Prefer --badge-success|warning|neutral-* for publish-state chrome.
 ]);
 
 const VAR_USE = /var\(--([a-zA-Z0-9-]+)/g;

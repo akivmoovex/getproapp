@@ -16,7 +16,7 @@
             <h1 class="admin-dashboard__title">
               Pay-run snapshot #<%= run.id %>
               <% if (run.closed_at) { %>
-                <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.8rem;">Closed</span>
+                <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:var(--color-text-muted);background:color-mix(in srgb, var(--color-text-muted) 12%, transparent);font-size:0.8rem;">Closed</span>
               <% } %>
               <% if (run.status === 'draft') { %>
                 <span class="muted" style="font-size:0.85rem;font-weight:600;">Draft</span>
@@ -231,12 +231,12 @@
               <% if (_sr && _sr.snapshot_type) { %> · type <code style="font-size:0.85rem;"><%= _sr.snapshot_type %></code><% } %>
             </p>
             <% if (_sv.changedAfterSnapshot) { %>
-              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid var(--color-warning);font-size:0.88rem;background:rgba(245,158,11,0.08);">
+              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid var(--color-warning);font-size:0.88rem;background:color-mix(in srgb, var(--color-warning-text) 8%, transparent);">
                 Pay run was updated after this snapshot (record <code style="font-size:0.8rem;">updated_at</code> is later than snapshot time).
               </p>
             <% } %>
             <% if (_sv.reopenedAfterSnapshot) { %>
-              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid #1d4ed8;font-size:0.88rem;background:rgba(59,130,246,0.1);">
+              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid var(--color-info-text);font-size:0.88rem;background:color-mix(in srgb, var(--color-info-text) 10%, transparent);">
                 <strong>Reopened after snapshot:</strong> status history includes <strong>paid → approved</strong> after the snapshot time.
               </p>
             <% } %>
@@ -379,7 +379,7 @@
           <% if (run.status === 'approved' || run.status === 'paid') { %>
             <% _payments.forEach(function (p) { %>
             <% if (p._canReverseOrCorrect) { %>
-            <dialog id="faa-rev-<%= p.id %>" style="max-width:28rem;border:1px solid #ccc;border-radius:6px;padding:1rem;">
+            <dialog id="faa-rev-<%= p.id %>" style="max-width:28rem;border:1px solid var(--color-border-default);border-radius:6px;padding:1rem;">
               <h3 style="margin-top:0;">Reverse payment #<%= p.id %></h3>
               <p class="muted" style="font-size:0.9rem;">Adds one ledger line for <strong><%= (-Number(p.amount || 0)).toFixed(2) %></strong> (full reversal). Reason is required for audit.</p>
               <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments/<%= p.id %>/reverse">
@@ -398,7 +398,7 @@
                 </div>
               </form>
             </dialog>
-            <dialog id="faa-cor-<%= p.id %>" style="max-width:28rem;border:1px solid #ccc;border-radius:6px;padding:1rem;">
+            <dialog id="faa-cor-<%= p.id %>" style="max-width:28rem;border:1px solid var(--color-border-default);border-radius:6px;padding:1rem;">
               <h3 style="margin-top:0;">Correct payment #<%= p.id %></h3>
               <p class="muted" style="font-size:0.9rem;">Creates a reversal of <strong><%= Number(p.amount || 0).toFixed(2) %></strong> and a new payment for the amount you enter. Both lines share the same ledger date.</p>
               <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments/<%= p.id %>/correct">
@@ -586,7 +586,7 @@
           <h2 class="section-title section-title--flush">Soft-close (workflow tracking)</h2>
           <p class="muted" style="margin-bottom:0.75rem;">Mark this run as closed for internal finance workflow. This is informational only — it does not block reversals, corrections, or other edits.</p>
           <% if (_softCloseWarnings.length) { %>
-          <div role="status" style="margin-bottom:0.75rem;padding:0.65rem 0.75rem;border-radius:0.35rem;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.09);max-width:40rem;">
+          <div role="status" style="margin-bottom:0.75rem;padding:0.65rem 0.75rem;border-radius:0.35rem;border:1px solid color-mix(in srgb, var(--color-warning-text) 50%, transparent);background:color-mix(in srgb, var(--color-warning-text) 9%, transparent);max-width:40rem;">
             <p style="margin:0 0 0.35rem 0;font-weight:600;font-size:0.9rem;color:inherit;">Finance checks (warnings)</p>
             <p class="muted" style="margin:0 0 0.5rem 0;font-size:0.82rem;">Review before closing. You can still mark as closed — nothing here blocks the action.</p>
             <ul style="margin:0;padding-left:1.25rem;font-size:0.88rem;">
@@ -671,7 +671,7 @@
                     <% if (typeof canAddAdjustment !== 'undefined' && canAddAdjustment) { %>
                     <details style="margin-top:0.35rem;">
                       <summary style="cursor:pointer;font-size:0.9rem;">Add adjustment</summary>
-                      <form method="post" action="/admin/field-agent-adjustments" style="margin-top:0.5rem;padding:0.5rem;background:#f9f9f9;border-radius:4px;">
+                      <form method="post" action="/admin/field-agent-adjustments" style="margin-top:0.5rem;padding:0.5rem;background:var(--color-surface-subtle);border-radius:4px;">
                         <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
                         <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %><input type="hidden" name="tenant_id" value="<%= tenantId %>" /><% } %>
                         <input type="hidden" name="original_pay_run_item_id" value="<%= it.id %>" />
