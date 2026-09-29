@@ -219,7 +219,7 @@ describe("ActiveClinic Phase 5A P25 procedure booking wizard", () => {
     assert.match(patient.text, /data-ac-page-section="procedure-patient"/);
     assert.match(patient.text, /name="phone_country"/);
     assert.match(patient.text, /name="phone_national"/);
-    assert.match(patient.text, /name="patientPhone"/);
+    assert.match(patient.text, /data-ac-phone-field="1"/);
     cookies = mergeCookies(cookies, patient);
     csrf = extractCsrf(patient);
 

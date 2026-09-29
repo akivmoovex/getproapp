@@ -653,7 +653,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
     assert.match(alias.text, /Published Welcome/);
     assert.doesNotMatch(alias.text, /SECRET_DRAFT_HEADING_BB/);
     const pathPublic = await request(app)
-      .get("/c/dli-a")
+      .get("/c/dli-a").redirects(5)
       .set("Host", "blessboard.org")
       .expect(200);
     assert.match(pathPublic.text, /Published Welcome/);
@@ -691,7 +691,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
       sectionKey: "hero",
       entityKey: "home-hero",
       payload: {
-        imageUrl: "/church/images/tenant-public/about-story.jpg",
+        imageUrl: "/church/images/tenant-public/home-desktop-hero.jpg",
         altText: "Draft image only",
         focal: "center",
       },
@@ -712,7 +712,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
     const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.match(publicRes.text, /Published Welcome/);
     assert.doesNotMatch(publicRes.text, /Draft Heading Preview Me/);
-    assert.doesNotMatch(publicRes.text, /about-story\.jpg/);
+    assert.doesNotMatch(publicRes.text, /home-desktop-hero\.jpg/);
 
     const previewPublic = await request(app)
       .get("/?website_mode=draft")
@@ -720,7 +720,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`)
       .expect(200);
     assert.match(previewPublic.text, /Draft Heading Preview Me/);
-    assert.match(previewPublic.text, /about-story\.jpg/);
+    assert.match(previewPublic.text, /home-desktop-hero\.jpg/);
     assert.doesNotMatch(previewPublic.text, /data-bb-inline-start/);
 
     const hqPreview = await request(app)

@@ -328,6 +328,6 @@ describe("Phase 5 final completion screen markers", () => {
     assert.match(css, /\.bb-pa-reg-communications__compose-actions\b/);
     assert.match(css, /@media \(max-width: 390px\)/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=57/);
+    assert.match(shell, /platform-admin\.css\?v=[^"'\s>]+/);
   });
 });

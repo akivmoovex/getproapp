@@ -394,7 +394,7 @@ describe("platform-admin registration operations (Prompt 11)", () => {
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(res.status, 200);
-    assert.match(res.text, /No registration applications|No applications match/i);
+    assert.match(res.text, /No registrations match these filters|No registration applications|No applications match/i);
     assert.match(res.text, /data-bb-nav="mobile-drawer"|href="\/admin"/);
     assert.match(res.text, /href="\/admin\/organizations"/);
 

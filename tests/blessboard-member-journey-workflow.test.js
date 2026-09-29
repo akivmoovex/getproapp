@@ -219,6 +219,7 @@ describe("blessboard member journey workflow", () => {
       firstName: "Stale",
       lastName: "Test",
       email: "stale@mjw.test",
+      phone: "+260977099101",
       sourceType: "evangelism",
     });
     assert.equal(contact.ok, true, contact.reason);
@@ -269,6 +270,7 @@ describe("blessboard member journey workflow", () => {
       firstName: "Edit",
       lastName: "Deny",
       email: "editdeny@mjw.test",
+      phone: "+260977099102",
       sourceType: "manual",
     });
     const created = await createHandover(pool, {

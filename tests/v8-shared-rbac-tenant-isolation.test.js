@@ -112,6 +112,39 @@ describe("V8 shared RBAC — tenant scope helpers", () => {
       allowMatchingTrusted: true,
     });
     assert.equal(mismatchFacility.ok, false);
+
+    const orgAdminFacilityTarget = rejectForgedTenantIdentifiers({
+      body: { facility_id: FACILITY_B },
+      trusted: {
+        organizationId: ORG_A,
+        facilityId: null,
+        allowOrgFacilityTargets: true,
+      },
+      allowMatchingTrusted: true,
+    });
+    assert.equal(orgAdminFacilityTarget.ok, true);
+
+    const membershipFacilityTarget = rejectForgedTenantIdentifiers({
+      body: { facility_id: FACILITY_B },
+      trusted: {
+        organizationId: ORG_A,
+        facilityId: FACILITY_A,
+        allowedFacilityIds: [FACILITY_A, FACILITY_B],
+      },
+      allowMatchingTrusted: true,
+    });
+    assert.equal(membershipFacilityTarget.ok, true);
+
+    const foreignFacilityStillDenied = rejectForgedTenantIdentifiers({
+      body: { facility_id: FACILITY_B, organization_id: ORG_B },
+      trusted: {
+        organizationId: ORG_A,
+        facilityId: null,
+        allowOrgFacilityTargets: true,
+      },
+      allowMatchingTrusted: true,
+    });
+    assert.equal(foreignFacilityStillDenied.ok, false);
   });
 
   it("asserts BlessBoard resource stays inside trusted tenant", () => {

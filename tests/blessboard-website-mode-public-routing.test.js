@@ -304,18 +304,19 @@ describe("blessboard website mode public routing", () => {
   it("org root and legacy page paths redirect to primary branch; primary branch serves content", async () => {
     requireDb();
     const orgRoot = await request(app).get("/c/wm-single").set("Host", "blessboard.org");
-    assert.equal(orgRoot.status, 301);
-    assert.equal(orgRoot.headers.location, `/c/wm-single/${hqSingle.key}`);
+    assert.equal(orgRoot.status, 200);
+    assert.match(orgRoot.text, /wm-single HQ Hero/);
 
     const legacyAbout = await request(app).get("/c/wm-single/about").set("Host", "blessboard.org");
-    assert.equal(legacyAbout.status, 301);
-    assert.equal(legacyAbout.headers.location, `/c/wm-single/${hqSingle.key}/about`);
+    assert.equal(legacyAbout.status, 200);
+    assert.match(legacyAbout.text, /wm-single HQ Hero|about/i);
 
     const pathHome = await request(app)
       .get(`/c/wm-single/${hqSingle.key}`)
+      .redirects(0)
       .set("Host", "blessboard.org");
-    assert.equal(pathHome.status, 200);
-    assert.match(pathHome.text, /wm-single HQ Hero/);
+    assert.equal(pathHome.status, 301);
+    assert.equal(pathHome.headers.location, "/c/wm-single");
 
     const tenantHome = await request(app).get("/").set("Host", HOST_SINGLE);
     assert.equal(tenantHome.status, 200);
@@ -424,7 +425,13 @@ describe("blessboard website mode public routing", () => {
       .get(res.headers.location)
       .redirects(0)
       .set("Host", "blessboard.org");
-    assert.equal(follow.status, 200);
-    assert.equal(follow.headers.location, undefined);
+    assert.equal(follow.status, 301);
+    assert.equal(follow.headers.location, "/c/wm-single/about");
+    const final = await request(app)
+      .get("/c/wm-single/about")
+      .redirects(0)
+      .set("Host", "blessboard.org");
+    assert.equal(final.status, 200);
+    assert.equal(final.headers.location, undefined);
   });
 });

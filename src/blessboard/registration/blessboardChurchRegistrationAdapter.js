@@ -173,6 +173,7 @@ async function persistSubmitted(db, input) {
     administrator_password: _pw,
     organization_key: _ok,
     wants_instant_free: _w,
+    allow_multi_org_identity_reuse: _mo,
     req: _req,
     provisionFn: _fn,
     ...persistable
@@ -339,7 +340,10 @@ async function provision(db, input) {
         env: input.env || null,
       },
     },
-    { allowRetry: true }
+    {
+      allowRetry: true,
+      allowMultiOrgIdentityReuse: Boolean(data.allow_multi_org_identity_reuse),
+    }
   );
   if (!provisioned.ok) {
     const status = String(provisioned.status || "");

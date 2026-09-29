@@ -28,6 +28,7 @@ const {
   validateChurchCountry,
   formFromBody,
 } = require("../src/blessboard/services/platformChurchRegistrationValidation");
+const { PUBLIC_PAGE_KEYS } = require("../src/blessboard/services/publicContentConstants");
 const { initializeOrganizationWebsite } = require("../src/platform/registration/initializeOrganizationWebsite");
 const blessboardAdapter = require("../src/blessboard/registration/blessboardChurchRegistrationAdapter");
 const instanceRepo = require("../src/platform/website/instanceRepository");
@@ -243,7 +244,7 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     assert.match(res.text, /gp-reg__stepper/);
   });
 
-  it("Foundation registration creates exactly one website instance of eight draft pages", async () => {
+  it("Foundation registration creates exactly one website instance of published foundation pages", async () => {
     requireDb();
     const { app, body, post } = await registerChurch();
     assert.equal(post.status, 303, post.text && String(post.text).slice(0, 400));
@@ -281,9 +282,9 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
         ORDER BY pp.page_key`,
       [organizationId]
     );
-    assert.equal(pages.rows.length, 8);
-    assert.ok(pages.rows.every((row) => row.status === "draft"));
-    assert.equal(pages.rows.filter((row) => row.status === "published").length, 0);
+    assert.equal(pages.rows.length, PUBLIC_PAGE_KEYS.length);
+    assert.ok(pages.rows.every((row) => row.status === "published"));
+    assert.equal(pages.rows.filter((row) => row.status === "draft").length, 0);
 
     const retry = await initializeOrganizationWebsite(pool, {
       adapter: blessboardAdapter,
@@ -308,7 +309,7 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
         WHERE c.organization_id = $1 AND pp.branch_id IS NULL`,
       [organizationId]
     );
-    assert.equal(pagesAfter.rows[0].n, 8);
+    assert.equal(pagesAfter.rows[0].n, PUBLIC_PAGE_KEYS.length);
 
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     const session = `${DEFAULT_V5_COOKIE}=${sid}`;

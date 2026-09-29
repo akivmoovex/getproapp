@@ -291,7 +291,7 @@ describe("shared website editor wave 1 — HTTP", () => {
     assert.match(acEdit.text, /Editing website/);
     assert.match(acEdit.text, /Draft • \d+ unpublished changes/);
     assert.match(acEdit.text, />Preview</);
-    assert.match(acEdit.text, />Publish</);
+    assert.match(acEdit.text, /Publish Changes|>Publish</);
     assert.match(acEdit.text, /Exit editing/);
     assert.match(acEdit.text, /data-website-page-rail="1"/);
     assert.match(acEdit.text, /data-website-more="1"/);
@@ -340,7 +340,7 @@ describe("shared website editor wave 1 — HTTP", () => {
       env: MINIMAL_BB,
     });
     const bbEdit = await request(bbApp)
-      .get(`/c/${rec.organizationKey}?website_edit=1`)
+      .get(`/c/${rec.organizationKey}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", bbCookie);
     assert.equal(bbEdit.status, 200, bbEdit.text && bbEdit.text.slice(0, 400));
@@ -349,7 +349,7 @@ describe("shared website editor wave 1 — HTTP", () => {
     assert.match(bbEdit.text, /Editing website/);
     assert.match(bbEdit.text, /Draft • \d+ unpublished changes/);
     assert.match(bbEdit.text, />Preview</);
-    assert.match(bbEdit.text, />Publish</);
+    assert.match(bbEdit.text, /Publish Changes|>Publish</);
     assert.match(bbEdit.text, /Exit editing/);
     assert.match(bbEdit.text, /data-website-page-rail="1"/);
     assert.match(bbEdit.text, /data-website-more="1"/);

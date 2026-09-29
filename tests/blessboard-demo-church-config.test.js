@@ -428,15 +428,16 @@ describe("configure demo church (foundation db)", () => {
     assert.equal(vanity.headers.location, `/c/${TO_KEY}`);
 
     const canonical = await request(app).get(`/c/${TO_KEY}`).set("Host", "blessboard.org");
-    assert.ok([200, 503].includes(canonical.status), String(canonical.status));
+    // Org home 301s to primary branch; unpublished/setup may still be 503.
+    assert.ok([200, 301, 503].includes(canonical.status), String(canonical.status));
 
     const lusaka = await request(app)
-      .get(`/c/${TO_KEY}/branches/demo-church-lusaka`)
+      .get(`/c/${TO_KEY}/demo-church-lusaka`)
       .set("Host", "blessboard.org");
     assert.ok([200, 301, 302, 503].includes(lusaka.status), String(lusaka.status));
 
     const ndola = await request(app)
-      .get(`/c/${TO_KEY}/branches/demo-church-ndola`)
+      .get(`/c/${TO_KEY}/demo-church-ndola`)
       .set("Host", "blessboard.org");
     assert.ok([200, 301, 302, 503].includes(ndola.status), String(ndola.status));
 
@@ -453,7 +454,12 @@ describe("configure demo church (foundation db)", () => {
     const staleTestMain = await request(app)
       .get(`/c/${TO_KEY}/branches/test-main`)
       .set("Host", "blessboard.org");
-    assert.equal(staleTestMain.status, 404);
+    // Legacy /branches/ always 301s to flat canonical; unknown branch then 404s when followed.
+    assert.equal(staleTestMain.status, 301);
+    const staleFollow = await request(app)
+      .get(String(staleTestMain.headers.location || ""))
+      .set("Host", "blessboard.org");
+    assert.equal(staleFollow.status, 404);
 
     for (const path of ["/login", "/pricing", "/directory", "/features"]) {
       const res = await request(app).get(path).set("Host", "blessboard.org");

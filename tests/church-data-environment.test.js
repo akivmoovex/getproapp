@@ -85,13 +85,13 @@ async function cleanup(pool, orgIds) {
 }
 
 test("data environment catalogue and helpers", () => {
-  assert.deepEqual([...DATA_ENVIRONMENTS], ["production", "pilot", "demo", "test"]);
+  assert.deepEqual([...DATA_ENVIRONMENTS], ["production", "pilot", "demo", "testing"]);
   assert.equal(normalizeDataEnvironment("DEMO"), "demo");
   assert.equal(normalizeDataEnvironment("nope"), "production");
   assert.equal(isBillableEnvironment("production"), true);
   assert.equal(isBillableEnvironment("pilot"), false);
   assert.equal(isBillableEnvironment("demo"), false);
-  assert.equal(isBillableEnvironment("test"), false);
+  assert.equal(isBillableEnvironment("testing"), false);
   const prevDep = process.env.DEPLOYMENT_ENV;
   try {
     process.env.DEPLOYMENT_ENV = "production";

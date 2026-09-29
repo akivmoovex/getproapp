@@ -97,8 +97,8 @@ describe("V2_01 shared HQ/branch website management", () => {
     const inherited = presentInheritanceState("inherited", {
       parentChurchLabel: "HQ Church",
     });
-    assert.equal(inherited.badgeLabel, LABELS.fromHeadquarters);
-    assert.match(inherited.detail, /From Headquarters/);
+    assert.equal(inherited.badgeLabel, LABELS.inheritedFromChurch);
+    assert.match(inherited.detail, /Inherited from church/);
     const overridden = presentInheritanceState("overridden");
     assert.equal(overridden.resetActionLabel, LABELS.returnToHeadquartersDefault);
     assert.equal(presentActiveClinicInheritance().supported, false);
@@ -108,7 +108,7 @@ describe("V2_01 shared HQ/branch website management", () => {
       { source: SOURCE.CHURCH_DEFAULT, value: "Hello" },
       { parentChurchLabel: "HQ Church", allowHide: true }
     );
-    assert.equal(field.stateLabel, "From Headquarters");
+    assert.equal(field.stateLabel, LABELS.inheritedFromChurch);
     assert.match(field.resetActionLabel, /Headquarters Default/);
   });
 

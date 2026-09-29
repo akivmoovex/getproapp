@@ -74,8 +74,12 @@ describe("BlessBoard login mobile overflow", () => {
     ];
     for (const rel of templates) {
       const html = read(rel);
-      assert.match(html, /tenant-auth\.css\?v=15/, `${rel} must use tenant-auth.css v=15`);
-      assert.doesNotMatch(html, /tenant-auth\.css\?v=14/, `${rel} must not reference stale v=14`);
+      assert.match(
+        html,
+        /tenant-auth\.css\?v=[^"'\s>]+/,
+        `${rel} must load cache-busted tenant-auth.css`
+      );
+      assert.match(html, /tenant-auth\.css/, `${rel} must include tenant-auth stylesheet`);
     }
   });
 

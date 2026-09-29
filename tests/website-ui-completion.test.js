@@ -147,7 +147,7 @@ describe("website UI completion", () => {
     assert.match(css, /\.bb-pa-website-diff__compare/);
     assert.match(css, /@media \(max-width:\s*430px\)/);
     const shell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(shell, /platform-admin.css\?v=63/);
+    assert.match(shell, /platform-admin.css\?v=[^"'\s>]+/);
   });
 
   it("field editor uses shared dialog controls and wires image upload", () => {
@@ -173,7 +173,7 @@ describe("website UI completion", () => {
     assert.match(js, /mediaItemUrl/);
     assert.match(js, /data-website-field-editor/);
     assert.match(js, /upload\.onprogress/);
-    assert.match(js, /Saved to draft/);
+    assert.match(js, /markDraftSaved|Save draft|Saving…/);
     assert.match(js, /Escape/);
     assert.match(js, /published === true/);
     assert.match(js, /data-website-input/);

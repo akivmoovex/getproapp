@@ -35,6 +35,10 @@ function collectIconNames() {
     path.join(ROOT, "views", "blessboard", "v5", "apex"),
     path.join(ROOT, "views", "blessboard", "v5", "public"),
     path.join(ROOT, "views", "blessboard", "v5", "partials"),
+    path.join(ROOT, "views", "blessboard", "v5", "platform-admin"),
+    path.join(ROOT, "views", "blessboard", "v5", "hq"),
+    path.join(ROOT, "views", "blessboard", "v5", "branch-admin"),
+    path.join(ROOT, "views", "blessboard", "v5", "member-portal"),
     path.join(ROOT, "views", "activeclinic", "public"),
     path.join(ROOT, "views", "activeclinic", "layouts"),
     path.join(ROOT, "views", "activeclinic", "partials"),
@@ -304,6 +308,9 @@ ${publicSans.css}
   direction: ltr;
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
+  max-width: 1.5em;
+  overflow: hidden;
+  vertical-align: middle;
 }
 `;
   fs.writeFileSync(path.join(ROOT, "public", "platform", "gp-icon-font.css"), iconCss);

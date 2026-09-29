@@ -1266,6 +1266,35 @@ async function publishInitialFoundationWebsite(client, input) {
     };
   }
 
+  await runSoftSavepoint(
+    client,
+    "initial_foundation_engine_seed",
+    async () => {
+      const {
+        seedUnpublishedEngineContent,
+      } = require("../website/blessboardEngineContentService");
+      await seedUnpublishedEngineContent(client, {
+        organizationId,
+        churchId,
+        slug: keyNorm.key,
+        actorIdentityId: (input && input.actorUserId) || null,
+      });
+    },
+    {
+      onError: (seedErr) => {
+        logBlessBoardEngineBridgeWarning({
+          operation: "seedUnpublishedEngineContent",
+          organizationId,
+          churchId,
+          actorIdentityId: input && input.actorUserId,
+          actorUserId: input && input.actorUserId,
+          engineCode: seedErr && seedErr.code,
+          errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
+        });
+      },
+    }
+  );
+
   const publishedAt = new Date();
   const pageUpdate = await client.query(
     `UPDATE blessboard.public_pages

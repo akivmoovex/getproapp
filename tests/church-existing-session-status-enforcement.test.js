@@ -75,14 +75,30 @@ function makeTenantApp(org, branch, { onRequest } = {}) {
 }
 
 test("platform /admin/* remains isolated from church suspension gate", async () => {
+  const org = { id: 1, status: "suspended", name: "X", slug: "x" };
+  const branch = { id: 2, status: "active", name: "Y", slug: "y", host_slug: "y" };
   const app = express();
+  app.use(
+    session({
+      secret: "platform-admin-isolation-test",
+      resave: false,
+      saveUninitialized: true,
+    })
+  );
   app.use((req, res, next) => {
     req.isChurchHost = true;
     req.churchContext = {
       kind: "branch",
-      organization: { id: 1, status: "suspended", name: "X", slug: "x" },
-      branch: { id: 2, status: "active", name: "Y", slug: "y", host_slug: "y" },
+      organization: org,
+      branch,
     };
+    setChurchHqAdminSession(req, {
+      hq_admin_id: 42,
+      organization_id: org.id,
+      full_name: "HQ",
+      role: "hq_admin",
+      status: "active",
+    });
     next();
   });
   app.use(require("../src/church/churchStatusAccess").churchOperationalAccessGate);

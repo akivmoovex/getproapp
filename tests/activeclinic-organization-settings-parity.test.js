@@ -365,7 +365,7 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
     assert.match(badType.text, /approved organization type|fix the following/i);
 
     const csrf2 = issueCsrfToken(MINIMAL_AC);
-    const saved = await request(app)
+    const forgedOrgId = await request(app)
       .post("/app/settings/organization")
       .set("Cookie", `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf2}`)
       .type("form")
@@ -377,8 +377,23 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
         country_code: "ZM",
         registration_number: "REG-UPDATED",
         timezone: "Africa/Lusaka",
-        status: "archived",
         organization_id: other.orgId,
+      });
+    assert.equal(forgedOrgId.status, 403);
+
+    const csrf3 = issueCsrfToken(MINIMAL_AC);
+    const saved = await request(app)
+      .post("/app/settings/organization")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf3}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf3,
+        public_name: "Updated Clinic",
+        legal_name: "Updated Legal",
+        organization_type: "faith_based_healthcare",
+        country_code: "ZM",
+        registration_number: "REG-UPDATED",
+        timezone: "Africa/Lusaka",
       });
     assert.equal(saved.status, 303);
     assert.match(saved.headers.location, /\/app\/settings\/organization/);

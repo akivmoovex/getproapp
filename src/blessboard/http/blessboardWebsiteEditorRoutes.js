@@ -12,6 +12,7 @@ const {
   json,
   csrfFrom,
   clientTenantOverride,
+  getPendingChangeSummary,
   pendingChangeCountFor,
   createWebsiteMediaUpload,
   statusForDraftSaveFailure,
@@ -30,6 +31,7 @@ const {
   handleGetThemeState,
   handleSaveThemeDraft,
   sendThemeGalleryPage,
+  loadThemeGalleryPresentation,
   noticeFromQuery,
   errorFromQuery,
 } = require("../../platform/website/http/websiteEditorSharedOperations");
@@ -156,6 +158,14 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     // editor chrome (branch_id NULL), not the HQ branch UUID.
     if (hqId && String(resolved.branchId) === hqId) return null;
     return String(resolved.branchId);
+  }
+
+  /** RBAC scope for editor mutations (HQ path still checks branch_admin on HQ). */
+  function authorizeEditorBranchId(resolved) {
+    const contentBranchId = editorBranchId(resolved);
+    if (contentBranchId) return contentBranchId;
+    if (resolved && resolved.branchId) return String(resolved.branchId);
+    return null;
   }
 
   function editorBranchKey(resolved) {
@@ -295,7 +305,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       resourceContext: {
         organizationId: resolved.tenant.organization.id,
         churchId: resolved.tenant.church.id,
-        branchId: editorBranchId(resolved),
+        branchId: authorizeEditorBranchId(resolved),
       },
     });
     if (!authz.allowed) {
@@ -1066,7 +1076,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           ? res.status(404).type("text").send("Website not found")
           : json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const granted = await grantedWebsitePermissions(req, resolved.tenant, editorBranchId(resolved));
+      const granted = await grantedWebsitePermissions(
+        req,
+        resolved.tenant,
+        authorizeEditorBranchId(resolved)
+      );
       const canRestore =
         granted.includes("website.restore") || granted.includes("website.rollback");
       const env = getEnv();
@@ -1130,7 +1144,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!found.ok || !found.instance) {
           return json(res, 404, { ok: false, code: "website_instance_not_found" });
         }
-        const granted = await grantedWebsitePermissions(req, resolved.tenant, editorBranchId(resolved));
+        const granted = await grantedWebsitePermissions(
+        req,
+        resolved.tenant,
+        authorizeEditorBranchId(resolved)
+      );
         const restored = await publicationService.restoreWebsiteVersionToDraft(getPool(), {
           organizationId: resolved.tenant.organization.id,
           instanceId: found.instance.id,

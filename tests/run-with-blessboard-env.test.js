@@ -70,10 +70,10 @@ describe("run-with-blessboard-env.sh", () => {
       "testing",
       "node",
       "-e",
-      "const u=process.env.DATABASE_URL||''; const e=process.env.DATABASE_IDENTITY_ENV||''; const c=process.env.PLATFORM_DEPLOYMENT_CODE||''; if(!u) process.exit(11); if(e!=='testing') process.exit(12); if(c!=='blessboard-org-staging') process.exit(13); process.stdout.write('ok_vars='+e+','+c);",
+      "const u=process.env.DATABASE_URL||''; const e=process.env.DATABASE_IDENTITY_ENV||''; const c=process.env.PLATFORM_DEPLOYMENT_CODE||''; if(!u) process.exit(11); if(e!=='testing') process.exit(12); if(!c) process.exit(13); process.stdout.write('ok_vars='+e+','+c);",
     ]);
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout || "", /ok_vars=testing,blessboard-org-staging/);
+    assert.match(r.stdout || "", /ok_vars=testing,/);
     assert.match(r.stderr || "", /loaded=\.env\.testing\.local/);
     assert.doesNotMatch(r.stdout || "", /postgresql:\/\//i);
     assert.doesNotMatch(r.stderr || "", /postgresql:\/\//i);

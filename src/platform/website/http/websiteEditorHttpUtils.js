@@ -109,6 +109,7 @@ module.exports = {
   jsonWithCorrelation,
   csrfFrom,
   clientTenantOverride,
+  getPendingChangeSummary,
   pendingChangeCountFor,
   statusForDraftSaveFailure,
   statusForFieldRestoreFailure,

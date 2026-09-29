@@ -38,7 +38,7 @@ function makeTenantApp(extraBranch = {}) {
   return makeApp({
     kind: "branch",
     orgSlug: "demo",
-    organization: { id: 1, name: "Alpha Grace Church", status: "active" },
+    organization: { id: 1, name: "Alpha Grace Church", status: "active", data_environment: "demo" },
     branch: {
       id: 1,
       name: "Downtown Branch",
@@ -74,7 +74,10 @@ test("tenant ministries page renders active nav, hero, empty state, and tenant c
   assert.match(res.text, /bb-public-ministries/);
   assert.match(res.text, /bb-ministries-hero/);
   assert.match(res.text, /Growing Together in Faith|Our Ministries/);
-  assert.match(res.text, /href="\/ministries"[^>]*church-nav__active|church-nav__active[^>]*>\s*Ministries/);
+  assert.match(
+    res.text,
+    /href="\/ministries"[^>]*church-nav__active|church-nav__active[^>]*>\s*Ministries|church-nav-dropdown__trigger church-nav__active/
+  );
   assert.match(res.text, /data-tenant-header="1"/);
   assert.match(res.text, /Alpha Grace Church/);
   assert.match(res.text, /Downtown Branch/);
@@ -117,7 +120,7 @@ test("CSS contains ministries page selectors and powered-by colors", () => {
 test("apex homepage remains unchanged by ministries repair", async () => {
   const res = await request(makeApexApp()).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /bb-saas-hero/);
+  assert.match(res.text, /bb-apex-hero|One digital home for/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.doesNotMatch(res.text, /data-ministries-page="1"/);
 });

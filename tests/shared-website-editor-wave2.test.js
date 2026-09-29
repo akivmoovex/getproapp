@@ -244,7 +244,7 @@ describe("shared website editor wave 2 — HTTP", () => {
     });
     const bbApp = createV5FoundationApp({ getPool: () => pool, env: MINIMAL_BB });
     const bbEdit = await request(bbApp)
-      .get(`/c/${provisioned.records.organizationKey}?website_edit=1&website_mode=draft`)
+      .get(`/c/${provisioned.records.organizationKey}?website_edit=1&website_mode=draft`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${session.rawToken}`);
     assert.equal(bbEdit.status, 200);

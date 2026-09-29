@@ -14,6 +14,17 @@ const COLS = `id, deployment_code, organization_id, church_id, branch_id, facili
 const COLS_LEGACY = `id, deployment_code, organization_id, church_id, branch_id,
   actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
 
+/** @param {string|null|undefined} before */
+function parseAuditBeforeCursor(before) {
+  const raw = before != null ? String(before).trim() : "";
+  if (!raw) return null;
+  const pipe = raw.indexOf("|");
+  if (pipe > 0) {
+    return { createdAt: raw.slice(0, pipe), id: raw.slice(pipe + 1) || null };
+  }
+  return { createdAt: raw, id: null };
+}
+
 function mapEvent(row) {
   if (!row) return null;
   return {
@@ -151,9 +162,17 @@ async function listAuditEvents(client, opts) {
     params.push(opts.createdBeforeExclusive);
     where += ` AND created_at < $${params.length}::timestamptz`;
   }
-  if (opts.before) {
-    params.push(opts.before);
-    where += ` AND created_at < $${params.length}::timestamptz`;
+  const beforeCursor = parseAuditBeforeCursor(opts.before);
+  if (beforeCursor) {
+    params.push(beforeCursor.createdAt);
+    const tsIdx = params.length;
+    if (beforeCursor.id) {
+      params.push(beforeCursor.id);
+      // Tuple compare avoids timestamptz string/equality precision losing same-ms rows.
+      where += ` AND (created_at, id) < ($${tsIdx}::timestamptz, $${params.length}::uuid)`;
+    } else {
+      where += ` AND created_at < $${tsIdx}::timestamptz`;
+    }
   }
   const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
   params.push(limit + 1); // fetch one extra for hasMore
@@ -210,9 +229,15 @@ async function listAuditEvents(client, opts) {
       legacyParams.push(opts.createdBeforeExclusive);
       legacyWhere += ` AND created_at < $${legacyParams.length}::timestamptz`;
     }
-    if (opts.before) {
-      legacyParams.push(opts.before);
-      legacyWhere += ` AND created_at < $${legacyParams.length}::timestamptz`;
+    if (beforeCursor) {
+      legacyParams.push(beforeCursor.createdAt);
+      const tsIdx = legacyParams.length;
+      if (beforeCursor.id) {
+        legacyParams.push(beforeCursor.id);
+        legacyWhere += ` AND (created_at, id) < ($${tsIdx}::timestamptz, $${legacyParams.length}::uuid)`;
+      } else {
+        legacyWhere += ` AND created_at < $${tsIdx}::timestamptz`;
+      }
     }
     legacyParams.push(limit + 1);
     const result = await client.query(
@@ -227,8 +252,15 @@ async function listAuditEvents(client, opts) {
   }
   const hasMore = rows.length > limit;
   const events = rows.slice(0, limit).map(mapEvent);
-  const nextBefore =
-    hasMore && events.length ? events[events.length - 1].createdAt : null;
+  let nextBefore = null;
+  if (hasMore && events.length) {
+    const tail = events[events.length - 1];
+    const createdAt =
+      tail.createdAt instanceof Date
+        ? tail.createdAt.toISOString()
+        : String(tail.createdAt || "");
+    nextBefore = createdAt && tail.id ? `${createdAt}|${tail.id}` : createdAt || null;
+  }
   return { events, hasMore, nextBefore };
 }
 

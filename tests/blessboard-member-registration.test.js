@@ -39,6 +39,13 @@ const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "reg-a.blessboard.org";
 const HOST_B = "reg-b.blessboard.org";
 
+const REGISTER_SUBMITTED_LOCATION_RE =
+  /^\/register\/submitted(\?ref=[0-9a-f-]{36})?$/i;
+
+function assertRegisterSubmittedRedirect(location) {
+  assert.match(String(location || ""), REGISTER_SUBMITTED_LOCATION_RE);
+}
+
 function extractCookie(res, name) {
   const raw = res.headers["set-cookie"];
   if (!raw) return null;
@@ -326,9 +333,9 @@ describe("blessboard member registration http", () => {
         email: "sam-confirmed@example.test",
       });
     assert.equal(ok.status, 303);
-    assert.equal(ok.headers.location, "/register/submitted");
+    assertRegisterSubmittedRedirect(ok.headers.location);
 
-    const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
+    const submitted = await request(app).get(ok.headers.location).set("Host", HOST_A);
     assert.equal(submitted.status, 200);
     assert.match(submitted.text, /data-bb-shell="tenant-auth"/);
     assert.match(submitted.text, /data-bb-register-submitted="1"/);
@@ -373,7 +380,7 @@ describe("blessboard member registration http", () => {
       });
 
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/register/submitted");
+    assertRegisterSubmittedRedirect(post.headers.location);
 
     const rows = await pool.query(
       `SELECT church_id, branch_id, email_normalized, status
@@ -1062,7 +1069,7 @@ describe("blessboard member registration http", () => {
   it("does not collect sensitive categories on the public form", async (t) => {
     if (skipIfNeeded(t)) return;
     const form = await request(app).get("/register").set("Host", HOST_A);
-    assert.doesNotMatch(form.text, /national.?id|date of birth|ssn|health|password/i);
+    assert.doesNotMatch(form.text, /name="(?:national_id|date_of_birth|ssn|password)"|id="(?:national_id|date_of_birth|ssn|password)"/i);
     assert.match(form.text, /first_name/);
     assert.match(form.text, /email/);
   });

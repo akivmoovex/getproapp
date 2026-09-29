@@ -384,6 +384,7 @@ async function redeemTenantLoginTransfer(db, input) {
       branchId: consumed.branch_id,
       ip: input.ip || null,
       userAgent: input.userAgent || null,
+      contextJson: { tenantSessionHost: hostname },
     });
     if (!session.ok) {
       await client.query("ROLLBACK");

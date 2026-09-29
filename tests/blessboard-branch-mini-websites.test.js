@@ -355,9 +355,13 @@ describe("blessboard branch mini websites (stage 3)", () => {
 
   it("1. Existing church-wide URL still works", async () => {
     requireDb();
-    const pathRes = await request(app).get("/c/mini-a").set("Host", APEX);
-    assert.equal(pathRes.status, 200);
-    assert.match(pathRes.text, /Church-wide Mini Hero|Mini Church A/);
+    // Org home intentionally 301s to the primary branch canonical URL.
+    const pathRes = await request(app).get("/c/mini-a").redirects(0).set("Host", APEX);
+    assert.equal(pathRes.status, 301);
+    assert.match(String(pathRes.headers.location || ""), /^\/c\/mini-a\/[^/?]+/);
+    const followed = await request(app).get(pathRes.headers.location).set("Host", APEX);
+    assert.equal(followed.status, 200);
+    assert.match(followed.text, /Church-wide Mini Hero|Mini Church A/);
 
     const tenantRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(tenantRes.status, 200);
@@ -368,8 +372,8 @@ describe("blessboard branch mini websites (stage 3)", () => {
     requireDb();
     const eastPath = publicBranchHomePath("mini-a", "campus-east");
     const westPath = publicBranchHomePath("mini-a", "campus-west");
-    assert.equal(eastPath, "/c/mini-a/branches/campus-east");
-    assert.equal(westPath, "/c/mini-a/branches/campus-west");
+    assert.equal(eastPath, "/c/mini-a/campus-east");
+    assert.equal(westPath, "/c/mini-a/campus-west");
     assert.notEqual(eastPath, westPath);
 
     const eastRes = await request(app).get(eastPath).set("Host", APEX);
@@ -396,7 +400,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "home",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -414,17 +418,17 @@ describe("blessboard branch mini websites (stage 3)", () => {
   it("4. Unknown and foreign branch keys return 404", async () => {
     requireDb();
     const unknown = await request(app)
-      .get("/c/mini-a/branches/does-not-exist")
+      .get("/c/mini-a/does-not-exist")
       .set("Host", APEX);
     assert.equal(unknown.status, 404);
 
     const foreign = await request(app)
-      .get(`/c/mini-a/branches/${foreignBranchB.branch_key}`)
+      .get(`/c/mini-a/${foreignBranchB.branch_key}`)
       .set("Host", APEX);
     assert.equal(foreign.status, 404);
 
     const inactive = await request(app)
-      .get(`/c/mini-a/branches/${inactiveBranch.branch_key}`)
+      .get(`/c/mini-a/${inactiveBranch.branch_key}`)
       .set("Host", APEX);
     assert.equal(inactive.status, 404);
 
@@ -452,7 +456,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "home",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -471,7 +475,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "leadership",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -490,7 +494,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "leadership",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-west",
+      pathPrefix: "/c/mini-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -507,7 +511,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "leadership",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -519,7 +523,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "leadership",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-west",
+      pathPrefix: "/c/mini-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -537,7 +541,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "home",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -545,7 +549,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "home",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-west",
+      pathPrefix: "/c/mini-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -569,13 +573,13 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "about",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
     assert.equal(
       pathModel.canonicalUrl,
-      "https://blessboard.org/c/mini-a/branches/campus-east/about"
+      "https://blessboard.org/c/mini-a/campus-east/about"
     );
     assert.equal(
       pathModel.publicPaths.about,
@@ -621,7 +625,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
     );
 
     const pathRes = await request(app)
-      .get("/c/mini-a/branches/campus-east/leadership")
+      .get("/c/mini-a/campus-east/leadership")
       .set("Host", APEX);
     const tenantRes = await request(app)
       .get("/branches/campus-east/leadership")
@@ -637,7 +641,7 @@ describe("blessboard branch mini websites (stage 3)", () => {
       tenant: tenantA,
       pageKey: "leadership",
       hostname: APEX,
-      pathPrefix: "/c/mini-a/branches/campus-east",
+      pathPrefix: "/c/mini-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });

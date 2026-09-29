@@ -230,7 +230,12 @@ describe("testing website demo content — seed apply", () => {
     const hero = (home.sections || []).find((s) => s.sectionKey === "hero");
     assert.ok(hero);
     assert.equal(hero.heading, spec.HERO.heading);
-    assert.ok(hero.mediaUrl && hero.mediaUrl.includes("/church/images/"));
+    assert.ok(hero.mediaUrl, "hero section should have demo media");
+    assert.ok(
+      hero.mediaUrl.includes("/church/images/") ||
+        hero.mediaUrl.includes("home-desktop-hero"),
+      `expected seeded hero media path or CDN key, got ${hero.mediaUrl}`
+    );
 
     const about = await content.getAdminPageBundle(pool, {
       churchId,

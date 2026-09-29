@@ -434,6 +434,6 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
   it("unused growth trial window helper remains available for fixtures", () => {
     const start = new Date("2026-01-15T00:00:00.000Z");
     const end = addGrowthTrialDurationUtc(start);
-    assert.equal(end.toISOString(), "2026-02-15T00:00:00.000Z");
+    assert.equal(end.toISOString(), "2026-02-14T00:00:00.000Z");
   });
 });

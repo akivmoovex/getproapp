@@ -2,6 +2,11 @@
 
 * { box-sizing: border-box; }
 
+html:has(body.bb-pa-body) {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 body.bb-pa-body {
   margin: 0;
   font-family: "Hanken Grotesk", system-ui, sans-serif;
@@ -9,6 +14,7 @@ body.bb-pa-body {
   color: var(--bb-ink, #131d21);
   min-height: 100vh;
   overflow-x: clip;
+  max-width: 100%;
 }
 
 body.bb-pa-drawer-open { overflow: hidden; }
@@ -701,6 +707,8 @@ body.bb-pa-drawer-open { overflow: hidden; }
   border-radius: 0.65rem;
   background: var(--bb-color-primary-soft, #efeaff);
   color: var(--bb-violet, #6c5ce7);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .bb-pa-dash-stat--ok .bb-pa-dash-stat__icon {
   background: #ecfdf5;

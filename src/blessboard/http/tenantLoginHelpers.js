@@ -60,9 +60,10 @@ function safePlatformAdminNextPath(raw) {
  * @returns {boolean}
  */
 function hasPlatformAdminRole(roles) {
+  const { normalizeRoleKey } = require("../services/assignBlessBoardRole");
   return (roles || []).some((r) => {
     const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
-    return key === "platform_administrator";
+    return normalizeRoleKey(key) === "platform_administrator";
   });
 }
 

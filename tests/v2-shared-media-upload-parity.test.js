@@ -22,10 +22,11 @@ describe("v2 shared media upload parity contracts", () => {
     assert.ok(fs.existsSync(path.join(ROOT, "views/platform/website/partials/media-picker-dialog.ejs")));
   });
 
-  it("inline editor action labels match Content Library wording for both products", () => {
+  it("inline editor action labels match Image Library wording for shared field editor", () => {
     const js = read("public/platform/website-inline-edit.js");
     assert.match(js, /Upload from computer/);
-    assert.match(js, /Choose from Content Library/);
+    assert.match(js, /Choose from Image Library/);
+    assert.match(js, /data-website-library="1"/);
     assert.match(js, /Replace image/);
     assert.match(js, /Remove image/);
     // currentSrc must be resolved before building the action label
@@ -47,8 +48,8 @@ describe("v2 shared media upload parity contracts", () => {
     assert.match(branding, /platform\/website\/partials\/media-field/);
     assert.match(branding, /platform\/website\/partials\/media-picker-dialog/);
     assert.match(branding, /loadSharedWebsiteMedia:\s*true/);
-    assert.match(hqStart, /website-media-field\.css\?v=v2-media-parity-1/);
-    assert.match(hqEnd, /website-media-field\.js\?v=v2-media-parity-1/);
+    assert.match(hqStart, /website-media-field\.css\?v=[^"'\s>]+/);
+    assert.match(hqEnd, /website-media-field\.js\?v=[^"'\s>]+/);
     assert.match(read("views/platform/website/partials/media-field.ejs"), /Upload from computer/);
     assert.match(read("views/platform/website/partials/media-field.ejs"), /Choose from Content Library/);
     assert.match(read("views/platform/website/partials/media-field.ejs"), /Replace image/);
@@ -58,8 +59,8 @@ describe("v2 shared media upload parity contracts", () => {
   it("BlessBoard public editor cache bust includes media parity assets", () => {
     const start = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
     const end = read("views/blessboard/v5/partials/tenant-public-shell-end.ejs");
-    assert.match(start, /website-inline-edit\.css\?v=v2-media-parity-1/);
-    assert.match(end, /website-inline-edit\.js\?v=v2-media-parity-1/);
+    assert.match(start, /website-inline-edit\.css\?v=[^"'\s>]+/);
+    assert.match(end, /website-inline-edit\.js\?v=[^"'\s>]+/);
   });
 
   it("BlessBoard structured edit and branding skip duplicate upload handlers when shared field is present", () => {

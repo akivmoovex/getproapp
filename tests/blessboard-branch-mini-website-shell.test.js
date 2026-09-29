@@ -173,7 +173,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("1. Branch name is visible", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east")
+      .get("/c/shell-a/campus-east")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-branch-name="1"/);
@@ -185,7 +185,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("2. Church name is visible", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east/about")
+      .get("/c/shell-a/campus-east/about")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-church-name="1"/);
@@ -195,7 +195,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("3. All navigation links preserve branchKey", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east/leadership")
+      .get("/c/shell-a/campus-east/leadership")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     const keys = [
@@ -217,7 +217,8 @@ describe("blessboard branch mini website shell (stage 4)", () => {
         } else {
           assert.equal(href, publicBranchPagePath("shell-a", "campus-east", key));
         }
-        assert.match(href, /\/branches\/campus-east/);
+        assert.match(href, /\/campus-east(?:\/|$|\?)/);
+        assert.doesNotMatch(href, /\/branches\/campus-east/);
         assert.doesNotMatch(href, /^\/c\/shell-a\/(about|leadership|contact)$/);
       }
     }
@@ -226,7 +227,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("4. Branch switcher links are correct", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east")
+      .get("/c/shell-a/campus-east")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-branch-switcher="1"/);
@@ -241,7 +242,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("5. Main church link is correct", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-west")
+      .get("/c/shell-a/campus-west")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     const churchLinks = hrefsFor(res.text, "data-bb-branch-switcher-church", "1");
@@ -255,14 +256,14 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("6. Mobile navigation works", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east/contact")
+      .get("/c/shell-a/campus-east/contact")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-nav="mobile-drawer"/);
     assert.match(res.text, /id="bb-tp-menu-btn"/);
     assert.match(res.text, /id="bb-tp-drawer"/);
     assert.match(res.text, /data-bb-nav="mobile"/);
-    assert.match(res.text, /tenant-public\.js\?v=10/);
+    assert.match(res.text, /tenant-public\.js\?v=[^"'\s>]+/);
     assert.match(res.text, /aria-controls="bb-tp-drawer"/);
     const contactMobile = hrefsFor(res.text, "data-bb-nav-link", "contact");
     assert.ok(
@@ -273,7 +274,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("7. Long names do not break markup", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east")
+      .get("/c/shell-a/campus-east")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /bb-tp-brand--branch/);
@@ -294,14 +295,14 @@ describe("blessboard branch mini website shell (stage 4)", () => {
   it("8. Inactive branches are excluded", async () => {
     requireDb();
     const res = await request(app)
-      .get("/c/shell-a/branches/campus-east")
+      .get("/c/shell-a/campus-east")
       .set("Host", APEX);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /data-bb-branch-switcher-item="campus-inactive"/);
     assert.doesNotMatch(res.text, /Hidden Inactive Campus/);
     assert.doesNotMatch(
       res.text,
-      new RegExp(`/branches/${inactiveBranch.branch_key}`)
+      new RegExp(`/c/shell-a/${inactiveBranch.branch_key}`)
     );
     assert.match(res.text, /data-bb-branch-switcher-item="campus-east"/);
     assert.match(res.text, /data-bb-branch-switcher-item="campus-west"/);

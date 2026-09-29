@@ -352,6 +352,7 @@ module.exports = {
   handleGetThemeState,
   handleSaveThemeDraft,
   sendThemeGalleryPage,
+  loadThemeGalleryPresentation,
   noticeFromQuery,
   errorFromQuery,
 };

@@ -170,7 +170,7 @@ describe("ActiveClinic ACW public site", () => {
     assert.match(home.text, /href="\/register-clinic"/);
     assert.doesNotMatch(home.text, /href="#"/);
     assert.match(home.text, /acw-platform.css/);
-    assert.match(home.text, /family=Inter/);
+    assert.match(home.text, /gp-fonts\.css|inter-7\.woff2/);
   });
 
   it("ACW marketing pages render and keep CTAs on real routes", async () => {

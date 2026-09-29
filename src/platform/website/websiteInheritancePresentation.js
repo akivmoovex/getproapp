@@ -26,11 +26,11 @@ function presentInheritanceState(state, ctx) {
     return {
       supported: true,
       state: "inherited",
-      badgeLabel: LABELS.fromHeadquarters,
+      badgeLabel: LABELS.inheritedFromChurch,
       detail:
         ctx && ctx.parentChurchLabel
-          ? `${LABELS.fromHeadquarters}: ${ctx.parentChurchLabel}`
-          : LABELS.fromHeadquarters,
+          ? `${LABELS.inheritedFromChurch}: ${ctx.parentChurchLabel}`
+          : LABELS.inheritedFromChurch,
       primaryActionLabel: LABELS.useDifferentVersion,
       resetActionLabel: null,
     };
@@ -39,7 +39,7 @@ function presentInheritanceState(state, ctx) {
     return {
       supported: true,
       state: "overridden",
-      badgeLabel: LABELS.branchCustomizationActive,
+      badgeLabel: LABELS.overriddenForBranch,
       detail: LABELS.overriddenForBranch,
       primaryActionLabel: null,
       resetActionLabel: LABELS.returnToHeadquartersDefault,

@@ -290,14 +290,14 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
 
   it("path public /c/:organizationKey resolves after publish or shows setup", async () => {
     requireDb();
-    const res = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const res = await request(app).get(`/c/${rec.organizationKey}`).redirects(5).set("Host", APEX);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /not yet available in BlessBoard V5/i);
   });
 
   it("unknown organization path returns 404", async () => {
     requireDb();
-    const res = await request(app).get("/c/no-such-org-zzzz").set("Host", APEX);
+    const res = await request(app).get("/c/no-such-org-zzzz").redirects(5).set("Host", APEX);
     assert.equal(res.status, 404);
   });
 

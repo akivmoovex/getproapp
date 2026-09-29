@@ -93,6 +93,9 @@ function branchMayHaveIndependentPublicWebsite(mode, branchRef) {
   if (!mode || mode.ok !== true) {
     return false;
   }
+  if (mode.websiteMode !== WEBSITE_MODE.MULTI_SITE) {
+    return false;
+  }
   if (branchRef == null) return false;
 
   let id = null;

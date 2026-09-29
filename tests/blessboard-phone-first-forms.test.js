@@ -44,7 +44,9 @@ describe("blessboard phone-first forms and search (11C)", () => {
     ];
     for (const rel of files) {
       const html = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-      const phoneIdx = html.search(/name=["']phone["']/i);
+      const phoneIdx = html.search(
+        /name=["'](?:phone|phone_national)["']|partials\/phone-field/i
+      );
       const emailIdx = html.search(/name=["']email(?:Display)?["']/i);
       assert.ok(phoneIdx >= 0, `${rel} missing phone field`);
       assert.ok(emailIdx >= 0, `${rel} missing email field`);

@@ -200,7 +200,10 @@ describe("v7 branch website inline save", () => {
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`))
       .expect(200);
 
-    assert.match(edit.text, /data-website-save-url="\/c\/branch-save-a\/hq\/website\/drafts"/);
+    assert.match(
+      edit.text,
+      /data-website-save-url="[^"]*\/c\/branch-save-a\/hq\/website\/drafts"/
+    );
 
     const csrf = extractCsrf(edit.text) || issueCsrfToken({});
     const marker = `Branch V7 Save ${Date.now()}`;
@@ -245,7 +248,7 @@ describe("v7 branch website inline save", () => {
 
     const drafts = await draftRepo.listDrafts(pool, {
       churchId: church.id,
-      branchId: branchHq.id,
+      branchId: null,
       pageKey: "home",
     });
     const heroDraft = (drafts || []).find(

@@ -109,7 +109,7 @@ describe("registration risk review (Prompt 18)", () => {
         city: "Nairobi",
         contact_name: "Risk PA",
         contact_email: `${uniq("riskboot")}@example.org`,
-        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone: `+2547${String(Date.now()).slice(-8).padStart(8, "0")}`,
         contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
                 role_in_church: "Administrator",
         selected_plan: "foundation",
@@ -236,19 +236,27 @@ describe("registration risk review (Prompt 18)", () => {
 
   it("2. confirmed duplicate phone is blocked (reject, no provision)", async () => {
     requireDb();
-    const phone = `+2547${String(Date.now()).slice(-7)}`;
-    const first = freeBody({ phone, email: `${uniq("dup1")}@example.org`, organization_key: uniq("d1") });
+    const phoneNational = `7${String(Date.now()).slice(-8).padStart(8, "0")}`;
+    const first = freeBody({
+      phone_country: "KE",
+      phone_national: phoneNational,
+      email: `${uniq("dup1")}@example.org`,
+      organization_key: uniq("d1"),
+    });
     const firstVal = validateBody(first);
+    assert.equal(firstVal.ok, true, firstVal.error || firstVal.field);
     const firstResult = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.11" }, firstVal);
     assert.equal(firstResult.ok, true, firstResult.error);
 
     const second = freeBody({
-      phone,
+      phone_country: "KE",
+      phone_national: phoneNational,
       email: `${uniq("dup2")}@example.org`,
       organization_key: uniq("d2"),
       church_name: `Other Church ${uniq("x")}`,
     });
     const secondVal = validateBody(second);
+    assert.equal(secondVal.ok, true, secondVal.error || secondVal.field);
     const secondResult = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.12" }, secondVal);
     assert.equal(secondResult.ok, false);
     assert.equal(secondResult.code, "duplicate_registration_phone");
@@ -356,7 +364,7 @@ describe("registration risk review (Prompt 18)", () => {
       city: "Kisumu",
       contact_name: "Prior",
       contact_email: email,
-      contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+      contact_phone: `+2547${String(Date.now()).slice(-8).padStart(8, "0")}`,
         contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
             role_in_church: "Administrator",
       selected_plan: "foundation",
@@ -495,7 +503,8 @@ describe("registration risk review (Prompt 18)", () => {
       country: "Zambia",
       email,
       organization_key: uniq("http2"),
-      phone: `+26096${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `96${String(Date.now()).slice(-7).padStart(7, "0")}`,
     });
     const page2 = await request(app).get("/register-church?plan=foundation").set("Host", APEX);
     const csrf2 = extractCsrfToken(page2.text);

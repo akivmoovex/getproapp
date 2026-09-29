@@ -645,6 +645,7 @@ async function loadProvisionedRecords(client, application) {
  *   manageTransaction?: boolean,
  *   networkOrganizationShell?: boolean,
  *   administratorViaInvitation?: boolean,
+ *   allowMultiOrgIdentityReuse?: boolean,
  * }} [options]
  */
 async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
@@ -661,6 +662,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   const allowRetry = Boolean(options && options.allowRetry);
   const networkOrganizationShell = Boolean(options && options.networkOrganizationShell);
   const administratorViaInvitation = Boolean(options && options.administratorViaInvitation);
+  const allowMultiOrgIdentityReuse = Boolean(options && options.allowMultiOrgIdentityReuse);
   const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
     .trim()
     .toLowerCase();
@@ -841,6 +843,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         applicationOrganizationId: application.organization_id,
         administratorPassword: administratorViaInvitation ? null : administratorPassword,
         administratorViaInvitation,
+        allowMultiOrgIdentityReuse,
       });
       identityResolutionDiagnostics = {
         ...(resolvedAdmin.diagnostics || {}),
@@ -903,6 +906,22 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             );
           if (tenantReady) {
             if (application.provisioning_status !== "provisioned") {
+              if (application.provisioning_status === "provisioning_failed" && allowRetry) {
+                await recordLifecycleAudit(client, {
+                  deploymentCode,
+                  organizationId: orgId,
+                  applicationId,
+                  entityId: applicationId,
+                  productCode: PRODUCT_KEY,
+                  actorType: actorContext.type || "system",
+                  source: actorContext.source || "orchestrator",
+                  actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+                  entityKey: organizationKey,
+                  actionKey: LIFECYCLE_ACTION.PROVISIONING_RETRY,
+                  retry: true,
+                  provisioningStatus: "provisioning",
+                });
+              }
               await appRepo.updateApplicationProvisioningState(client, applicationId, {
                 applicationStatus: "active",
                 provisioningStatus: "provisioned",
@@ -1305,6 +1324,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
               applicationOrganizationId: application.organization_id,
               administratorPassword,
               administratorViaInvitation: false,
+              allowMultiOrgIdentityReuse,
             });
             if (
               recovered.ok &&
@@ -1446,7 +1466,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
         env: actorContext.env || process.env,
         source: "registration_provision",
-        publish: false,
+        publish: true,
       });
       if (!initialPublish || !initialPublish.ok) {
         throw new OrchestratorError(
@@ -1471,7 +1491,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisionedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
         // Legacy status column CHECK: pending | contacted | closed.
-
+        legacyStatus: "closed",
       });
 
       provisioningStage = "write_success_audits";

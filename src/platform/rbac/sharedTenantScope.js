@@ -75,6 +75,8 @@ function hasClientTenantIds(source) {
  *     churchId?: string|null,
  *     branchId?: string|null,
  *     facilityId?: string|null,
+ *     allowedFacilityIds?: Array<string|null|undefined>|null,
+ *     allowOrgFacilityTargets?: boolean,
  *   }|null,
  *   allowMatchingTrusted?: boolean,
  * }} input
@@ -107,6 +109,11 @@ function rejectForgedTenantIdentifiers(input) {
     };
   }
 
+  const allowedFacilityIds = Array.isArray(trusted.allowedFacilityIds)
+    ? trusted.allowedFacilityIds.map((id) => normalizeId(id)).filter(Boolean)
+    : [];
+  const allowOrgFacilityTargets = trusted.allowOrgFacilityTargets === true;
+
   const mismatches = [];
   for (const item of found) {
     const key = item.key;
@@ -119,6 +126,20 @@ function rejectForgedTenantIdentifiers(input) {
       trustedValue = trusted.branchId;
     } else if (key === "facilityId" || key === "facility_id") {
       trustedValue = trusted.facilityId;
+      if (trustedValue != null && uuidEqual(item.value, trustedValue)) {
+        continue;
+      }
+      if (allowedFacilityIds.some((id) => uuidEqual(item.value, id))) {
+        continue;
+      }
+      // Org-scoped actors (e.g. network/org admin) submit facility_id as a
+      // resource/grant target without a selectedFacility session. Service layer
+      // must still assert the facility belongs to the trusted organization.
+      if (allowOrgFacilityTargets && trusted.organizationId) {
+        continue;
+      }
+      mismatches.push(item);
+      continue;
     } else if (
       key === "healthcareOrganizationId" ||
       key === "healthcare_organization_id"

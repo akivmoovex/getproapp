@@ -36,7 +36,7 @@ const {
   listPlatformAdminPreserveSet,
 } = require("../src/platform/repositories/testingDataResetRepository");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
+const IDENTITY_KEY = "moovex-platform-v7";
 const PASSWORD = "TestPassword99!";
 const SESSION_SECRET = "test-session-secret-at-least-32-chars!!";
 

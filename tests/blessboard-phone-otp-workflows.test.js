@@ -40,6 +40,7 @@ const NEW_PASSWORD = "new-horse-battery-staple";
 
 const otpEnv = {
   DEPLOYMENT_ENV: "testing",
+  PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT,
   BLESSBOARD_OTP_PROVIDER: "test",
   BLESSBOARD_OTP_PEPPER: "test-pepper-11g",
   BLESSBOARD_OTP_EXPOSE_TEST_CODE: "1",

@@ -437,7 +437,10 @@ test("the ActiveClinic picker builds cards as DOM nodes, not markup", () => {
 
 test("BlessBoard serves a real Content Library page, not a raw JSON body", () => {
   const routes = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
-  assert.ok(routes.includes("function wantsHtml("), "content negotiation helper required");
+  assert.ok(
+    routes.includes("websiteEditorHttpUtils") && routes.includes("wantsHtml"),
+    "content negotiation uses shared websiteEditorHttpUtils.wantsHtml"
+  );
   assert.ok(routes.includes("content-admin/media-library.ejs"));
   assert.ok(routes.includes("renderLibrary: renderWebsiteLibrary"));
   assert.ok(
@@ -454,7 +457,7 @@ test("BlessBoard serves a real Content Library page, not a raw JSON body", () =>
 });
 
 test("BlessBoard content negotiation defaults to JSON without an Accept header", () => {
-  const { wantsHtml } = requireContentAdminInternals();
+  const { wantsHtml } = require("../src/platform/website/http/websiteEditorHttpUtils");
   assert.equal(wantsHtml({ headers: {} }), false);
   assert.equal(wantsHtml({ headers: { accept: "*/*" } }), false);
   assert.equal(wantsHtml({ headers: { accept: "application/json" } }), false);
@@ -463,17 +466,6 @@ test("BlessBoard content negotiation defaults to JSON without an Accept header",
     true
   );
 });
-
-/** wantsHtml is module-private; re-derive it from source to pin the behaviour. */
-function requireContentAdminInternals() {
-  const source = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
-  const start = source.indexOf("function wantsHtml(req) {");
-  assert.ok(start > -1, "wantsHtml must exist");
-  const end = source.indexOf("\n}", start) + 2;
-  // eslint-disable-next-line no-new-func
-  const factory = new Function(`${source.slice(start, end)}; return wantsHtml;`);
-  return { wantsHtml: factory() };
-}
 
 test("the shared library links stay the documented product entry points", () => {
   const registry = readRepoFile("src/platform/website-engine/productSchemaRegistry.js");

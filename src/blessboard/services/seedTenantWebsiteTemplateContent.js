@@ -379,6 +379,18 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
       },
     },
     {
+      pageKey: "announcements",
+      spec: {
+        sectionKey: "hero",
+        sectionType: "hero",
+        heading: "Announcements",
+        bodyText:
+          "Stay connected with gatherings, notices, and community life.\n\n" + placeholderNote,
+        sortOrder: 0,
+        layoutMetadata: heroMeta(null, "View announcements", "/announcements"),
+      },
+    },
+    {
       pageKey: "contact",
       spec: {
         sectionKey: "hero",

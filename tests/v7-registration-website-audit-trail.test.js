@@ -398,6 +398,7 @@ describe("V7 registration and website audit trail", () => {
     if (!requireDb()) return;
     stamp += 1;
     const holdKey = `audithold${stamp}${crypto.randomBytes(3).toString("hex")}`;
+    const holdPhone = nextPhone();
     const hold = await bbAdapter.persistSubmitted(pool, {
       normalized: {
         church_name: `Audit Hold Church ${stamp}`,
@@ -406,7 +407,9 @@ describe("V7 registration and website audit trail", () => {
         contact_name: "Church Administrator",
         role_in_church: "Pastor",
         contact_email: `${holdKey}@example.org`,
-        contact_phone: nextPhone(),
+        contact_phone: holdPhone,
+        contact_phone_normalized: holdPhone,
+        branch_name: "HQ Campus",
         selected_plan: "foundation",
         consent_terms: true,
       },

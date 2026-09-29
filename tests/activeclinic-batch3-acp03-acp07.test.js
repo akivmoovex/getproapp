@@ -330,7 +330,7 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
     assert.equal(bookingsRes.status, 200);
     assert.match(bookingsRes.text, /data-ac-batch3="AC-P03"/);
     assert.match(bookingsRes.text, /My Appointments/);
-    assert.match(bookingsRes.text, /ac-patient\.css\?v=v2-03-b3/);
+    assert.match(bookingsRes.text, /ac-patient\.css\?v=[^"'\s>]+/);
     assert.match(
       bookingsRes.text,
       new RegExp(booking.booking.requestNumber || booking.booking.id)

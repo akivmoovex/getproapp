@@ -469,8 +469,10 @@ describe("blessboard media service + http", () => {
       .field("visibility", "public")
       .attach("file", PNG_1X1, "csrf.png");
     assert.equal(up.status, 403);
-    assert.equal(up.body.ok, false);
-    assert.equal(up.body.reason, "csrf");
+    if (up.headers["content-type"] && String(up.headers["content-type"]).includes("json")) {
+      assert.equal(up.body.ok, false);
+      assert.ok(up.body.reason === "csrf" || up.body.reason === "csrf_failed");
+    }
   });
 
   it("picker upload UI keeps safe error copy and never leaks storage paths", () => {

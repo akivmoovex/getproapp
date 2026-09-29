@@ -804,7 +804,7 @@ async function createPaymentArrangement(pool, input) {
       : -1
   );
   const frequency = String(input.installmentFrequency || "monthly").trim();
-  const startDate = input.startDate || new Date().toISOString().slice(0, 10);
+  const startDate = resolveArrangementStartDate(input.startDate);
   const notes =
     input.notes != null ? String(input.notes).trim().slice(0, 2000) : null;
 
@@ -1488,6 +1488,33 @@ function businessCalendarDate(now = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Default payment-arrangement start_date (PG DATE) when the client omits one.
+ * Uses business calendar — never UTC toISOString day roll.
+ * @param {unknown} raw
+ * @param {Date} [now]
+ */
+function resolveArrangementStartDate(raw, now = new Date()) {
+  if (raw != null && String(raw).trim() !== "") {
+    return String(raw).trim();
+  }
+  return businessCalendarDate(now);
+}
+
+/**
+ * Default financial-summary export window (PG DATE filters on payment_date).
+ * @param {{ from?: string, to?: string, dateFrom?: string, dateTo?: string }|null|undefined} filters
+ * @param {Date} [now]
+ */
+function resolveFinancialExportDateRange(filters, now = new Date()) {
+  const to =
+    (filters && (filters.to || filters.dateTo)) || businessCalendarDate(now);
+  const from =
+    (filters && (filters.from || filters.dateFrom)) ||
+    businessCalendarDate(new Date(now.getTime() - 29 * 86400000));
+  return { from, to };
+}
+
 function parseDateRange(input) {
   const today = businessCalendarDate();
   const dateFrom = input.dateFrom || input.from || today;
@@ -1689,5 +1716,7 @@ module.exports = {
   getRevenueReportSummary,
   getRevenueReportDetailed,
   businessCalendarDate,
+  resolveArrangementStartDate,
+  resolveFinancialExportDateRange,
   parseDateRange,
 };

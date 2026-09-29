@@ -66,7 +66,7 @@ describe("V2_01 BB inline editor parity — static", () => {
     });
     assert.equal(urls.editWebsiteUrl, "/branch-admin/website");
     assert.match(String(urls.previewUrl), /website_mode=draft/);
-    assert.doesNotMatch(String(urls.previewUrl), /website_edit=1/);
+    assert.match(String(urls.previewUrl), /website_edit=1/);
     assert.equal(urls.previewLabel, "Preview");
   });
 });

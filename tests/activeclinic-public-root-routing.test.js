@@ -161,7 +161,7 @@ describe("ActiveClinic hostname-aware public root routing", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-ac-page="login"/);
     assert.match(res.text, /data-ac-composition="p01-login"/);
-    assert.match(res.text, /Sign In/);
+    assert.match(res.text, /Log in/i);
     assert.doesNotMatch(res.text, /data-ac-acw-screen="ACW01"/);
   });
 

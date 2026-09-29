@@ -72,8 +72,8 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /name="password"/);
     assert.match(html, /name="_csrf"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
-    assert.match(html, /tenant-auth\.css\?v=16/);
-    assert.match(html, /apex-auth\.css\?v=8/);
+    assert.match(html, /tenant-auth\.css\?v=[^"'\s>]+/);
+    assert.match(html, /apex-auth\.css\?v=[^"'\s>]+/);
   });
 
   it("auth error page classifies expired, consumed, and unauthorized messages", () => {

@@ -37,6 +37,7 @@ const {
 const {
   acknowledgeWebsitePreview,
 } = require("../src/blessboard/services/churchWebsitePublishService");
+const { presentRuntimeImageSrc } = require("../src/platform/media/cdnMediaPresentation");
 const {
   validateStructuredPayload,
   DRAFT_KINDS,
@@ -562,7 +563,14 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
     assert.equal(momoRow.instructions, "Dial *170# and send to the wallet above.");
     assert.equal(momoRow.external_url, "https://example.org/momo-give");
     assert.equal(momoRow.button_label, "Open MoMo guide");
-    assert.equal(momoRow.qr_image_url, "/church/images/tenant-public/home-desktop-hero.jpg");
+    const expectedQrUrl = presentRuntimeImageSrc(
+      "/church/images/tenant-public/home-desktop-hero.jpg",
+      baseEnv(),
+      { allowMarketing: true }
+    );
+    assert.ok(expectedQrUrl, "demo QR image should resolve to CDN delivery URL");
+    assert.equal(momoRow.qr_image_url, expectedQrUrl);
+    assert.match(String(momoRow.qr_image_url), /^https:\/\/.+\/media\//);
     assert.equal(momoRow.status, "published");
     assert.equal(bankRow.account_details, "IBAN DE89370400440532013000 · Account Demo Church");
     assert.equal(bankRow.instructions, "Use reference SUNDAY-GIFT on the transfer.");

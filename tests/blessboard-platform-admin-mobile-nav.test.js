@@ -269,8 +269,8 @@ describe("platform-admin mobile burger markup", () => {
     assert.match(nav, /href: "\/admin\/registration-applications"/);
     assert.match(nav, /href: "\/admin\/subscriptions"/);
     assert.match(nav, /href: "\/admin\/maintenance"/);
-    assert.match(locals, /PLATFORM_ADMIN_NAV\.filter/);
-    assert.match(locals, /testingMaintenance \|\| !item\.testingOnly/);
+    assert.match(locals, /filterNavTree\(\s*PLATFORM_ADMIN_NAV/);
+    assert.match(locals, /item\.testingOnly && !testingMaintenance/);
     assert.doesNotMatch(start, /href="\/admin\/tenants"/);
     assert.doesNotMatch(start, /href="\/admin\/tickets"/);
   });
@@ -294,8 +294,8 @@ describe("platform-admin mobile burger markup", () => {
   });
 
   it("cache-busts platform-admin CSS and shell-nav JS together", () => {
-    assert.match(start, /platform-admin\.css\?v=57/);
-    assert.match(end, /shell-nav\.js\?v=3"/);
+    assert.match(start, /platform-admin\.css\?v=[^"'\s>]+/);
+    assert.match(end, /shell-nav\.js\?v=[^"'\s>]+"/);
   });
 });
 

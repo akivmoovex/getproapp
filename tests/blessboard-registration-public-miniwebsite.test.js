@@ -5,13 +5,14 @@ const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const {
   createChurchRegistrationApplication,
 } = require("./helpers/blessboardChurchRegistrationFixture");
+const { PUBLIC_PAGE_KEYS } = require("../src/blessboard/services/publicContentConstants");
 
 /**
  * Public miniwebsite after registration approval:
  * - unique organization_key allocation (+ reserved / collision)
- * - default unpublished website so /c/:organizationKey is SETUP until HQ publish
+ * - foundation provision publishes the initial website (publishInitialFoundationWebsite)
  * - HQ public path uses /c/:key
- * - repair does not auto-publish first-use sites; republishes drifted live sites
+ * - repair does not auto-publish deliberately unpublished first-use sites; republishes drifted live sites
  * - retry does not duplicate org/church/website
  */
 
@@ -51,6 +52,7 @@ const {
 } = require("../src/blessboard/services/publicMiniwebsiteRepairService");
 const {
   publishChurchWebsite,
+  unpublishChurchWebsite,
   acknowledgeWebsitePreview,
 } = require("../src/blessboard/services/churchWebsitePublishService");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
@@ -187,7 +189,7 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(publicChurchHomePath("HQ"), null);
   });
 
-  it("approved church receives unique org key and unpublished default website", async () => {
+  it("approved church receives unique org key and published foundation website", async () => {
     requireDb();
     const suffix = uniq("gcc");
     const churchName = `Grace Community Church ${suffix}`;
@@ -215,7 +217,7 @@ describe("registration public miniwebsite provision", () => {
       `SELECT website_status, public_name FROM blessboard.church_settings WHERE church_id = $1`,
       [approved.records.churchId]
     );
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
     assert.match(String(settings.rows[0].public_name), /Grace Community Church/);
 
     const pages = await pool.query(
@@ -224,14 +226,8 @@ describe("registration public miniwebsite provision", () => {
         ORDER BY page_key`,
       [approved.records.churchId]
     );
-    assert.ok(pages.rowCount >= 8);
-    assert.ok(pages.rows.every((r) => r.status === "draft"));
-
-    const publicRes = await request(app)
-      .get(`/c/${expectedBase}`).redirects(1)
-      .set("Host", APEX);
-    assert.equal(publicRes.status, 200);
-    assert.match(publicRes.text, /not public yet/i);
+    assert.ok(pages.rowCount >= PUBLIC_PAGE_KEYS.length);
+    assert.ok(pages.rows.every((r) => r.status === "published"));
 
     const overview = await loadFoundationWebsiteOverview(pool, {
       organizationId: approved.records.organizationId,
@@ -240,32 +236,13 @@ describe("registration public miniwebsite provision", () => {
     });
     assert.equal(overview.ok, true);
     assert.equal(overview.publicPath, `/c/${expectedBase}`);
-    assert.equal(overview.liveAvailable, false);
+    assert.equal(overview.liveAvailable, true);
     assert.equal(overview.organizationKey, expectedBase);
-
-    await acknowledgeWebsitePreview(pool, {
-      organizationId: approved.records.organizationId,
-      actorUserId: platformAdmin.userId,
-    });
-    const published = await publishChurchWebsite(pool, {
-      churchId: approved.records.churchId,
-      actorUserId: platformAdmin.userId,
-      deferServiceTimes: true,
-      confirmPublish: true,
-    });
-    assert.equal(published.ok, true, JSON.stringify(published));
 
     const live = await request(app).get(`/c/${expectedBase}`).redirects(1).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /not public yet/i);
     assert.match(live.text, /Grace Community Church/i);
-
-    const overviewLive = await loadFoundationWebsiteOverview(pool, {
-      organizationId: approved.records.organizationId,
-      churchId: approved.records.churchId,
-      organizationKey: expectedBase,
-    });
-    assert.equal(overviewLive.liveAvailable, true);
   });
 
   it("collision handling allocates -2 suffix", async () => {
@@ -457,7 +434,7 @@ describe("registration public miniwebsite provision", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1 AND branch_id IS NULL`,
       [first.records.churchId]
     );
-    assert.equal(pages.rows[0].n, 8);
+    assert.equal(pages.rows[0].n, PUBLIC_PAGE_KEYS.length);
   });
 
   it("repair does not auto-publish a complete unpublished first-use website", async () => {
@@ -472,6 +449,13 @@ describe("registration public miniwebsite provision", () => {
       dataEnvironment: "testing",
     });
     assert.equal(approved.ok, true, approved.message || approved.status);
+
+    // Provision publishes the foundation site; deliberately unpublish to model first-use SETUP.
+    const unpublished = await unpublishChurchWebsite(pool, {
+      churchId: approved.records.churchId,
+      actorUserId: platformAdmin.userId,
+    });
+    assert.equal(unpublished.ok, true, JSON.stringify(unpublished));
 
     const setupRes = await request(app).get(`/c/${key}`).redirects(1).set("Host", APEX);
     assert.equal(setupRes.status, 200);

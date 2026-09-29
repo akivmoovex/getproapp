@@ -54,9 +54,14 @@ const { authenticateBlessBoardUser } = require("../src/blessboard/services/authe
 const {
   grantedIn,
   deniedInPlatformAdmin,
+  TEAM_MIGRATIONS,
+  RECOVERY_MIGRATIONS,
+  SUPPORT_MIGRATIONS,
   IA_MIGRATIONS,
 } = require("./helpers/platformAdminMigrationPermissions");
-const _paGrant = grantedIn(IA_MIGRATIONS, [
+const _paGrant = grantedIn(
+  [...TEAM_MIGRATIONS, ...RECOVERY_MIGRATIONS, ...SUPPORT_MIGRATIONS, ...IA_MIGRATIONS],
+  [
   "platform.users.invite",
   "platform.users.reset_access",
   "platform.users.revoke_sessions",
@@ -64,7 +69,8 @@ const _paGrant = grantedIn(IA_MIGRATIONS, [
   "platform.users.restore",
   "platform.support.enter_hq",
   "platform.support.exit",
-]);
+]
+);
 const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
   ? ["platform.users.invite",
   "platform.users.reset_access",

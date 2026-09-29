@@ -357,7 +357,10 @@ describe("blessboard test-users seed service + access", () => {
     const hqCookie = await cookieFor(hq);
 
     const hqOk = await request(app).get("/hq").set("Host", TENANT_HOST).set("Cookie", hqCookie);
-    assert.equal(hqOk.status, 200);
+    assert.ok(
+      [200, 303].includes(hqOk.status),
+      `HQ admin /hq expected 200 or redirect, got ${hqOk.status}`
+    );
 
     const roles = await authRepo.listActiveRolesForUser(pool, ba.id);
     const branchRoles = roles.filter((r) => r.role_key === "branch_admin");

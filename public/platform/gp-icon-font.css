@@ -22,4 +22,7 @@
   direction: ltr;
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
+  max-width: 1.5em;
+  overflow: hidden;
+  vertical-align: middle;
 }

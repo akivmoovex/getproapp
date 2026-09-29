@@ -703,11 +703,13 @@ describe("phase4 recent website changes", () => {
     assert.equal(overview.planKey, "growth");
     assert.equal(overview.recentChangesPath, "/hq/website/recent-changes");
 
-    const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
-    assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-website-management="1"/);
-    assert.match(res.text, /href="\/hq\/website\/recent-changes"/);
-    assert.match(res.text, /Recent Website Changes/);
+    const recentPage = await authedGet(
+      HOST_A,
+      "/hq/website/recent-changes",
+      users.hqA.rawToken
+    );
+    assert.equal(recentPage.status, 200);
+    assert.match(recentPage.text, /Recent Website Changes/);
   });
 
   it("loadGrowthPreviousWebsitePreview returns friendly preview payload for historical publication", async () => {

@@ -12,6 +12,10 @@ const {
   normalizeHeader,
 } = require("../../platform/jobs");
 const { parseMoneyInput } = require("./formatMoney");
+const {
+  businessCalendarDate,
+  resolveFinancialExportDateRange,
+} = require("./activeClinicBillingOpsService");
 
 const SETUP_REQUIRED = ["code", "name", "amount"];
 
@@ -276,8 +280,9 @@ function registerActiveClinicDataJobAdapters() {
     async buildExport({ db, trusted, filters }) {
       const orgId = trusted.organizationId;
       const facilityId = trusted.facilityId;
-      const from = (filters && filters.from) || new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10);
-      const to = (filters && filters.to) || new Date().toISOString().slice(0, 10);
+      const range = resolveFinancialExportDateRange(filters);
+      const from = range.from;
+      const to = range.to;
       const payments = await db.query(
         `SELECT payment_method,
                 COUNT(*)::int AS payment_count,

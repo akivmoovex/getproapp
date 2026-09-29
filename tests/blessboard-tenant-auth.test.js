@@ -112,7 +112,7 @@ describe("auth transfer helpers", () => {
     assert.equal(safePlatformAdminNextPath("admin"), null);
   });
 
-  it("resolveApexPostLoginPath routes platform_admin to /admin and others to /account", () => {
+  it("resolveApexPostLoginPath routes by catalogue role to admin, hq, branch-admin, or account", () => {
     assert.equal(resolveApexPostLoginPath([{ roleKey: "platform_admin" }], null), "/admin");
     assert.equal(
       resolveApexPostLoginPath([{ roleKey: "platform_admin" }], "/admin/organizations"),
@@ -122,9 +122,22 @@ describe("auth transfer helpers", () => {
       resolveApexPostLoginPath([{ roleKey: "platform_admin" }], "https://evil/admin"),
       "/admin"
     );
-    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/admin"), "/hq");
-    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], null), "/hq");
-    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/hq/content"), "/hq/content");
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "organisation_administrator" }], "/admin"),
+      "/hq"
+    );
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "organisation_administrator" }], null),
+      "/hq"
+    );
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "church_system_administrator" }], "/hq/content"),
+      "/hq/content"
+    );
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "branch_administrator" }], null),
+      "/branch-admin"
+    );
     assert.equal(resolveApexPostLoginPath([{ roleKey: "member" }], null), "/account");
     assert.equal(hasPlatformAdminRole(["platform_admin"]), true);
     assert.equal(hasPlatformAdminRole(["church_hq_admin"]), false);

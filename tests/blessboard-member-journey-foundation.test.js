@@ -503,6 +503,7 @@ describe("blessboard member journey foundation", () => {
         firstName: "Visitor",
         lastName: "One",
         email: "visitor1@mj-a.test",
+        phone: `+26097${String(Date.now()).slice(-7)}`,
         sourceType: "manual",
       });
       assert.equal(contact.ok, true, contact.reason);
@@ -615,6 +616,7 @@ describe("blessboard member journey foundation", () => {
         firstName: "Visitor",
         lastName: "Two",
         email: "visitor2@mj-a.test",
+        phone: `+26096${String(Date.now()).slice(-7)}`,
         sourceType: "manual",
       });
       assert.equal(contact.ok, true, contact.reason);
@@ -655,7 +657,7 @@ describe("blessboard member journey foundation", () => {
         tenantContext: tenantA,
         firstName: "Visitor",
         lastName: "Three",
-        phone: "+260977011222",
+        phone: `+26097${String(Date.now()).slice(-7)}`,
         sourceType: "registration_desk",
       });
       assert.equal(contact.ok, true, contact.reason);

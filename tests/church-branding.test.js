@@ -47,8 +47,8 @@ test("BlessBoard branding on vertical apex homepage", async () => {
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
-  assert.match(res.text, /<title>BlessBoard \| BlessBoard<\/title>/);
-  assert.match(res.text, /brand-name/);
+  assert.match(res.text, /<title>Find and connect with your church \| BlessBoard<\/title>/);
+  assert.match(res.text, /bb-apex-hero|church-platform-brand/);
   assert.doesNotMatch(res.text, /data-tenant-header="1"/);
 });
 

@@ -120,7 +120,7 @@ describe("V7 auth/reg Stitch visual parity", () => {
             [25, /Review your clinic/.test(renderAcReg("review"))],
             [25, /gp-reg-review|acw-register-review/.test(renderAcReg("review"))],
             [25, /Edit/.test(renderAcReg("review"))],
-            [25, /acceptTerms/.test(renderAcReg("review"))],
+            [25, /registration_consent|acceptTerms/.test(renderAcReg("review"))],
           ],
         },
         {

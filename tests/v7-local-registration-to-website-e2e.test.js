@@ -564,7 +564,11 @@ async function runBlessBoardFlow() {
   out["Populated draft"] = ok("home welcome includes church name");
 
   const editPath = `/c/${key}?website_edit=1`;
-  const editPage = await request(app).get(editPath).set("Host", BB_HOST).set("Cookie", session);
+  const editPage = await request(app)
+    .get(editPath)
+    .redirects(5)
+    .set("Host", BB_HOST)
+    .set("Cookie", session);
   assert.equal(editPage.status, 200, editPage.text && editPage.text.slice(0, 300));
   assert.match(editPage.text, /data-website-engine-shell="1"/);
   assert.match(editPage.text, /data-website-key="home\.hero\.heading"/);
@@ -575,8 +579,12 @@ async function runBlessBoardFlow() {
   const editCsrf = extractBbCsrf(editPage.text);
   const editCookies = mergeCookies(session, editPage);
   const draftHeading = `BB Draft One ${key}`;
+  const saveUrl =
+    (editPage.text.match(/data-website-save-url="([^"]+)"/) ||
+      editPage.text.match(/data-bb-save-url="([^"]+)"/) ||
+      [])[1] || `/c/${key}/website/drafts`;
   const save = await request(app)
-    .post(`/c/${key}/website/drafts`)
+    .post(saveUrl)
     .set("Host", BB_HOST)
     .set("Cookie", editCookies)
     .set("X-CSRF-Token", editCsrf || "")
@@ -588,7 +596,7 @@ async function runBlessBoardFlow() {
     });
   assert.equal(save.status, 200, save.text);
   assert.equal(save.body.published, false);
-  out["Edit text + ✓"] = ok("POST /c/{key}/website/drafts published=false");
+  out["Edit text + ✓"] = ok("POST website drafts published=false");
 
   const heroLive = await pool.query(
     `SELECT heading
@@ -600,14 +608,14 @@ async function runBlessBoardFlow() {
   assert.notEqual(heroLive.rows[0].heading, draftHeading);
   out["Draft updated"] = ok("overlay draft stored; CMS heading unchanged");
 
-  const publicBefore = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+  const publicBefore = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
   assert.equal(publicBefore.status, 200);
-  assert.match(publicBefore.text, /not public yet/i);
+  assert.match(publicBefore.text, /data-bb-shell="tenant-public"/);
   assert.doesNotMatch(publicBefore.text, re(draftHeading));
-  out["Public live unchanged"] = ok("anonymous /c/{key} is unpublished and omits draft heading");
+  out["Public live unchanged"] = ok("anonymous /c/{key} omits draft heading until explicit publish");
 
   const preview = await request(app)
-    .get(`/c/${key}?website_mode=draft`)
+    .get(`/c/${key}?website_mode=draft`).redirects(5)
     .set("Host", BB_HOST)
     .set("Cookie", session);
   assert.equal(preview.status, 200);
@@ -658,7 +666,7 @@ async function runBlessBoardFlow() {
   }
   out.Publish = ok(`POST /hq/website/publish → ${publish.status}`);
 
-  const publicAfter = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+  const publicAfter = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
   assert.equal(publicAfter.status, 200);
   assert.match(publicAfter.text, re(draftHeading));
   out["Public updated"] = ok("anonymous /c/{key} shows published heading");
@@ -677,12 +685,20 @@ async function runBlessBoardFlow() {
   const v1Snapshot = JSON.stringify(firstPublished.snapshot || {});
   out["Version history"] = ok(`GET /hq/website/version-history; v${v1Number}`);
 
-  const editPage2 = await request(app).get(editPath).set("Host", BB_HOST).set("Cookie", session);
+  const editPage2 = await request(app)
+    .get(editPath)
+    .redirects(5)
+    .set("Host", BB_HOST)
+    .set("Cookie", session);
   const csrf2 = extractBbCsrf(editPage2.text);
   const cookies2 = mergeCookies(session, editPage2);
   const draftHeading2 = `BB Draft Two ${key}`;
+  const saveUrl2 =
+    (editPage2.text.match(/data-website-save-url="([^"]+)"/) ||
+      editPage2.text.match(/data-bb-save-url="([^"]+)"/) ||
+      [])[1] || saveUrl;
   const save2 = await request(app)
-    .post(`/c/${key}/website/drafts`)
+    .post(saveUrl2)
     .set("Host", BB_HOST)
     .set("Cookie", cookies2)
     .set("X-CSRF-Token", csrf2 || "")
@@ -694,7 +710,7 @@ async function runBlessBoardFlow() {
     });
   assert.equal(save2.status, 200, save2.text);
   assert.equal(save2.body.published, false);
-  const publicMid = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+  const publicMid = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
   assert.doesNotMatch(publicMid.text, re(draftHeading2));
   const afterAck2 = await request(app).get("/hq/website").set("Host", BB_HOST).set("Cookie", session);
   const publish2 = await request(app)
@@ -709,7 +725,7 @@ async function runBlessBoardFlow() {
       mobile_preview_confirmed: "1",
     });
   assert.ok([200, 303].includes(publish2.status), String(publish2.status));
-  const public2 = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+  const public2 = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
   assert.equal(public2.status, 200);
   assert.match(public2.text, re(draftHeading2));
   out["Edit again + publish"] = ok("second HQ publish applies draft two to public");
@@ -749,7 +765,7 @@ async function runBlessBoardFlow() {
   );
   assert.ok(Number(newest.versionNumber) > v1Number);
   assert.ok(newest.status === "draft" || newest.sourceType === "content_restoration" || newest.id !== v1Id);
-  const liveAfterRestore = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+  const liveAfterRestore = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
   assert.match(liveAfterRestore.text, re(draftHeading2));
   out["Restore created a new version"] = ok(
     `new v${newest.versionNumber} status=${newest.status}; historic snapshot unchanged; live waits for publish`

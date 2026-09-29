@@ -425,7 +425,7 @@ describe("blessboard platform-admin directory HTTP", () => {
     });
     assert.equal(detail.ok, true, detail.reason);
     assert.equal(detail.user.displayName, "Staff Alpha");
-    assert.ok(detail.user.legacyAssignments.some((a) => a.roleKey === "branch_admin"));
+    assert.ok(detail.user.rbacAssignments.some((a) => a.roleKey === "branch_administrator"));
     assert.equal(detail.user.supportContextAvailable, false);
     assert.equal(detail.user.enterChurchAdminHref, null);
     const raw = JSON.stringify(detail.user);

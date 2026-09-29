@@ -416,8 +416,8 @@ test("BlessBoard sitemap excludes opted-out branches", () => {
     websiteMode: "multi_site",
     activeBranches: [{ key: "lusaka" }, { key: "ndola" }],
   });
-  assert.ok(all.some((u) => u.includes("/branches/lusaka")));
-  assert.ok(all.some((u) => u.includes("/branches/ndola")));
+  assert.ok(all.some((u) => u.includes("/c/grace/lusaka")));
+  assert.ok(all.some((u) => u.includes("/c/grace/ndola")));
 
   const filtered = buildTenantPublicDiscoveryUrls({
     hostname: "blessboard.example.org",
@@ -427,9 +427,9 @@ test("BlessBoard sitemap excludes opted-out branches", () => {
     activeBranches: [{ key: "lusaka" }, { key: "ndola" }],
     excludeBranchKeys: new Set(["ndola"]),
   });
-  assert.ok(filtered.some((u) => u.includes("/branches/lusaka")));
+  assert.ok(filtered.some((u) => u.includes("/c/grace/lusaka")));
   assert.ok(
-    !filtered.some((u) => u.includes("/branches/ndola")),
+    !filtered.some((u) => u.includes("/c/grace/ndola")),
     "an excluded branch must not appear in the sitemap"
   );
   assert.ok(filtered.length < all.length);

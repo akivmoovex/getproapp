@@ -180,11 +180,11 @@ describe("V2_01 shared website theme infrastructure", () => {
   it("bumps asset cache for theme infra presentation", () => {
     assert.match(
       read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"),
-      /website-add-section\.css\?v=v2-spt7-picker-1/
+      /website-add-section\.css\?v=[^"'\s>]+/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION = "v2-sp-vis-1"/
+      /ASSET_VERSION\s*=\s*"[^"]+"/
     );
   });
 });

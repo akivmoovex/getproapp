@@ -2244,7 +2244,9 @@ async function rejectRegistrationApplication(db, input, options = {}) {
           await client.query("COMMIT");
           return { ok: true, status: STATUS.OK, alreadyRejected: true };
         }
-        if (!["submitted", "review_required", "provisioning"].includes(appStatus)) {
+        if (
+          !["submitted", "review_required", "provisioning", "duplicate_review"].includes(appStatus)
+        ) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
         }
@@ -2519,24 +2521,17 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           String(app.provisioning_status) === "provisioned" &&
           app.organization_id
         ) {
-          const {
-            inspectOrganizationProvisioningCompleteness,
-          } = require("../../platform/registration/provisioningRecovery");
-          const completeness = await inspectOrganizationProvisioningCompleteness(client, {
-            productCode: "blessboard",
-            organizationId: app.organization_id,
-            application: app,
-          });
-          if (completeness.complete) {
-            await client.query("COMMIT");
-            return {
-              ok: true,
-              status: STATUS.ALREADY_PROVISIONED,
-              alreadyProvisioned: true,
-              organizationId: String(app.organization_id),
-              organizationKey: app.organization_key != null ? String(app.organization_key) : null,
-            };
-          }
+          // Provisioned + org id is the closed success state (including invitation
+          // flows where website soft-fill may still be pending). Do not re-enter
+          // eligibility / provision — matches isRetryablePartialProvision.
+          await client.query("COMMIT");
+          return {
+            ok: true,
+            status: STATUS.ALREADY_PROVISIONED,
+            alreadyProvisioned: true,
+            organizationId: String(app.organization_id),
+            organizationKey: app.organization_key != null ? String(app.organization_key) : null,
+          };
         }
         if (!String(app.contact_email || "").trim()) {
           await client.query("ROLLBACK");
@@ -2573,7 +2568,14 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           // active + provisioned is handled by the alreadyProvisioned completeness branch above.
           // active with incomplete provisioning remains retryable via incompleteRetry.
           if (
-            !["submitted", "review_required", "provisioning", "provision_failed", "active"].includes(appStatus) &&
+            ![
+              "submitted",
+              "review_required",
+              "duplicate_review",
+              "provisioning",
+              "provision_failed",
+              "active",
+            ].includes(appStatus) &&
             !incompleteRetry
           ) {
             await client.query("ROLLBACK");

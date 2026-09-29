@@ -153,7 +153,8 @@ function createNetworkGovernanceRoleGate(deps) {
   const { authorize } = require("../services/blessBoardRbacAuthorizationService");
   const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
   // Prefer organisation.settings.manage (HQ signal); website.publish also admits publishers.
-  const requireTenantMember = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
+  // Host-branch scope: branch editors may reach the gate; HQ-only governance then yields restricted state.
+  const requireTenantMember = createRequireBlessBoardPermission("website.view", null, { getPool });
 
   return function gateNetworkGovernanceRole(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);

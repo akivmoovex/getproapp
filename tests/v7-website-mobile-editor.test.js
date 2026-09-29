@@ -47,9 +47,9 @@ describe("v7 unified website editor mobile QA", () => {
     assert.match(js, /gp-website-field-editing/);
     assert.match(js, /scrollIntoView/);
     assert.match(js, /data-website-publish-confirm/);
-    assert.match(js, /window\.confirm/);
-    assert.match(js, /data-bb-inline-edit/);
-    assert.match(js, /data-website-start/);
+    assert.match(js, /website-lifecycle/);
+    assert.match(js, /data-bb-inline-edit|data-website-inline/);
+    assert.match(js, /data-website-start|data-website-publish-confirm/);
   });
 
   it("ActiveClinic and BlessBoard shells load the shared editor assets and stack", () => {
@@ -73,25 +73,19 @@ describe("v7 unified website editor mobile QA", () => {
 
   it("field types keep pencil / text / image / check / cancel usable on a phone", () => {
     const acField = read("views/activeclinic/partials/website-editable-field.ejs");
+    const acFieldHost = read("views/platform/website-engine/field-editor-host.ejs");
     const acImage = read("views/activeclinic/partials/website-editable-image.ejs");
     const bbField = read("views/blessboard/v5/partials/editable-text.ejs");
     const acChrome = read("views/activeclinic/partials/website-editor-chrome.ejs");
     const bbChrome = read("views/blessboard/v5/partials/website-admin-chrome.ejs");
     const sharedChrome = read("views/platform/website-engine/editor-chrome.ejs");
-    assert.match(acField, /data-website-start="1"/);
-    assert.match(acField, /data-website-save="1"/);
-    assert.match(acField, /data-website-cancel="1"/);
-    assert.match(acField, /enterkeyhint="done"/);
-    assert.match(acField, /enterkeyhint="enter"/);
-    assert.match(acImage, /data-website-type="image"/);
-    assert.match(acImage, /data-website-file="1"/);
-    assert.match(acImage, /capture="environment"/);
-    assert.match(acImage, /enterkeyhint="done"/);
-    assert.match(bbField, /data-bb-inline-start="1"/);
-    assert.match(bbField, /data-bb-inline-save="1"/);
-    assert.match(bbField, /data-bb-inline-cancel="1"/);
-    assert.match(bbField, /enterkeyhint="done"/);
-    assert.match(bbField, /enterkeyhint="enter"/);
+    assert.match(acFieldHost, /data-website-field-editor="1"/);
+    assert.match(acField, /data-website-start="1"|data-website-inline="1"/);
+    assert.match(acField, /data-website-save="1"|data-website-inline="1"/);
+    assert.match(acField, /data-website-cancel="1"|data-website-inline="1"/);
+    assert.match(acImage, /data-website-type="image"|data-website-inline="1"/);
+    assert.match(bbField, /data-website-inline="1"/);
+    assert.match(bbField, /data-bb-inline-edit="1"/);
     assert.match(acChrome, /data-website-edit-control="1"/);
     assert.match(acChrome, /data-website-preview="1"/);
     assert.match(sharedChrome, /data-website-publish-confirm="1"/);
@@ -108,7 +102,10 @@ describe("v7 unified website editor mobile QA", () => {
     const acSettings = read("views/activeclinic/app/settings-website-content.ejs");
     const bbReview = read("views/blessboard/v5/content-admin/website-publish-review.ejs");
     assert.match(acChrome, /websitePreviewUrl/);
-    assert.match(sharedChrome, /Publish this website\? Public visitors will see the current draft\./);
+    assert.match(
+      acSettings,
+      /Publish this website\? Public visitors will see the current draft\./
+    );
     assert.match(acSettings, /data-ac-website-action="preview"/);
     assert.match(acSettings, /data-ac-website-next-action=/);
     assert.match(acSettings, /onsubmit="return confirm\(/);

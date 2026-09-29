@@ -139,7 +139,7 @@ describe("blessboard registration phone uniqueness", () => {
     const idx = await pool.query(
       `SELECT 1 FROM pg_indexes
         WHERE schemaname = 'blessboard'
-          AND indexname = 'platform_church_reg_apps_phone_normalized_active_uidx'`
+          AND indexname = 'platform_church_reg_apps_phone_inflight_uidx'`
     );
     assert.equal(idx.rowCount, 1);
     assert.ok(PHONE_UNIQUENESS_APPLICATION_STATUSES.includes("submitted"));
@@ -331,7 +331,7 @@ describe("blessboard registration phone uniqueness", () => {
     });
     await pool.query(
       `UPDATE blessboard.platform_church_registration_applications
-          SET application_status = 'active',
+          SET application_status = 'cancelled',
               provisioning_status = 'not_started',
               updated_at = now()
         WHERE id = $1`,

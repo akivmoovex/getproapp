@@ -392,9 +392,9 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(partial, /Upload from computer|data-bb-media-picker|data-bb-media-upload-shared/);
     assert.match(partial, /platform\/website\/partials\/media-field|aria-haspopup="dialog"/);
     assert.match(baStart, /loadMediaPicker/);
-    assert.match(baStart, /media-picker\.css\?v=8/);
+    assert.match(baStart, /media-picker\.css\?v=[^"'\s>]+/);
     assert.match(hqStart, /loadMediaPicker/);
-    assert.match(hqStart, /media-picker\.css\?v=8/);
+    assert.match(hqStart, /media-picker\.css\?v=[^"'\s>]+/);
     assert.match(read("views/blessboard/v5/announcements/admin-form.ejs"), /loadMediaPicker:\s*true/);
     assert.match(read("views/blessboard/v5/content-admin/page.ejs"), /loadMediaPicker:\s*true/);
     assert.match(js, /data-bb-media-drop-state/);

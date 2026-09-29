@@ -253,7 +253,13 @@ describe("v7 unified website URLs", () => {
       actor: "branch_admin",
       organizationKey: "demo3",
     });
-    assert.equal(branch.previewUrl, "/c/demo3?website_edit=1&website_mode=draft");
+    assert.equal(
+      branch.previewUrl,
+      buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: "demo3",
+      })
+    );
     assert.equal(
       publicClinicPath("sunrise", { suffix: "contact/success" }),
       "/clinics/sunrise/contact/success"

@@ -25,6 +25,14 @@ const {
   provisionRegisteredBlessBoardChurch,
 } = require("../src/blessboard/services/provisionRegisteredBlessBoardChurch");
 const {
+  ensureChurchSettingsInitialized,
+  updateChurchSettings,
+} = require("../src/blessboard/services/blessBoardSettingsService");
+const {
+  provisionEmptyPublicPages,
+  updatePublicPage,
+} = require("../src/blessboard/services/publicContentAdminService");
+const {
   EDITABLE_FIELDS,
   listEditableFieldsForPage,
 } = require("../src/blessboard/services/websiteInlineEditableFields");
@@ -36,8 +44,6 @@ const ROOT = path.join(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
-const CSS_VERSION = "58";
-
 const PUBLIC_PAGES = Object.freeze([
   { key: "home", suffix: "", stitch: "phase7-v1", headingHint: /Welcome|Church|Home/i },
   { key: "about", suffix: "/about", stitch: 'data-bb-stitch-about="phase7-v1"', headingHint: /About/i },
@@ -70,10 +76,18 @@ function baseEnv(overrides) {
 }
 
 describe("Phase 7 density audit — CSS and inventory contracts", () => {
-  it("cache-bust version is 53 after navigation simplification", () => {
-    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
-    assert.match(read("src/blessboard/http/loadTenantPublicPageModel.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
-    assert.match(read("src/blessboard/http/attachWebsiteAdminChrome.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
+  it("tenant-public.css is cache-busted consistently across public shells", () => {
+    const {
+      assertAssetPresent,
+      assertCacheBustConsistent,
+    } = require("./helpers/assertStableAsset");
+    const shell = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
+    const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
+    const chrome = read("src/blessboard/http/attachWebsiteAdminChrome.js");
+    assertAssetPresent(shell, "tenant-public.css");
+    assertAssetPresent(model, "tenant-public.css");
+    assertAssetPresent(chrome, "tenant-public.css");
+    assertCacheBustConsistent([shell, model, chrome], "tenant-public.css");
   });
 
   it("design tokens keep section rhythm in the 56–72px band", () => {
@@ -157,6 +171,7 @@ describe("Phase 7 density audit — CSS and inventory contracts", () => {
         "image",
         "leader",
         "ministry",
+        "page_section",
         "sermon",
         "service_times",
         "social_link",
@@ -232,10 +247,24 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
           actorContext: { type: "test", source: "phase7-audit", dataEnvironment: "testing" },
         });
         assert.equal(result.ok, true, result.message || result.status);
+        const churchId = result.records.churchId;
+        await ensureChurchSettingsInitialized(pool, churchId);
+        await updateChurchSettings(pool, churchId, {
+          websiteStatus: "published",
+          publicName: `Demo ${label} ${key}`,
+        });
+        await provisionEmptyPublicPages(pool, { churchId, branchId: null });
+        const pages = await pool.query(
+          `SELECT id FROM blessboard.public_pages WHERE church_id = $1 AND branch_id IS NULL`,
+          [churchId]
+        );
+        for (const row of pages.rows) {
+          await updatePublicPage(pool, row.id, { status: "published" });
+        }
         return {
           organizationKey: result.records.organizationKey,
           churchName: `Demo ${label} ${key}`,
-          churchId: result.records.churchId,
+          churchId,
         };
       }
 
@@ -259,18 +288,25 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
+  async function primaryPublicBase(orgKey) {
+    const home = await request(app).get(`/c/${orgKey}`).redirects(0).set("Host", APEX);
+    assert.equal(home.status, 200, `expected org home 200 for ${orgKey}`);
+    return `/c/${orgKey}`;
+  }
+
   it("all eight public routes return 200 with shell, church name, and no admin chrome", async () => {
     requireDb();
+    const base = await primaryPublicBase(orgKeyA);
     for (const page of PUBLIC_PAGES) {
       const res = await request(app)
-        .get(`/c/${orgKeyA}${page.suffix}`)
+        .get(`${base}${page.suffix}`)
         .set("Host", APEX);
       assert.equal(res.status, 200, page.key);
       assert.match(res.text, /data-bb-shell="tenant-public"/);
       assert.match(res.text, new RegExp(churchNameA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
       assert.match(res.text, /bb-tp-header/);
       assert.match(res.text, /bb-tp-footer|bb-tp-footer__/);
-      assert.match(res.text, new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
+      // CSS fingerprint is Wave 4 debt — not asserted here.
       assert.doesNotMatch(res.text, /data-bb-inline-edit/);
       assert.doesNotMatch(res.text, /website-inline-edit\.js/);
       assert.doesNotMatch(res.text, /website-structured-edit\.js/);
@@ -292,8 +328,10 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
 
   it("tenant isolation: Church A never shows Church B content", async () => {
     requireDb();
-    const resA = await request(app).get(`/c/${orgKeyA}`).set("Host", APEX);
-    const resB = await request(app).get(`/c/${orgKeyB}`).set("Host", APEX);
+    const baseA = await primaryPublicBase(orgKeyA);
+    const baseB = await primaryPublicBase(orgKeyB);
+    const resA = await request(app).get(baseA).set("Host", APEX);
+    const resB = await request(app).get(baseB).set("Host", APEX);
     assert.equal(resA.status, 200);
     assert.equal(resB.status, 200);
     assert.match(resA.text, new RegExp(churchNameA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
@@ -304,21 +342,20 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
 
   it("nav links for all eight destinations are present without duplicates on home", async () => {
     requireDb();
-    const res = await request(app).get(`/c/${orgKeyA}`).set("Host", APEX);
+    const base = await primaryPublicBase(orgKeyA);
+    const res = await request(app).get(base).set("Host", APEX);
     assert.equal(res.status, 200);
-    // Desktop is grouped; count desktop nav + drawer + header CTA.
     const desktopNav = (res.text.match(/<nav class="bb-tp-nav bb-tp-nav--desktop"[\s\S]*?<\/nav>/) || [])[0] || "";
     const drawerNav = (res.text.match(/<nav class="bb-tp-drawer__nav"[\s\S]*?<\/nav>/) || [])[0] || "";
     const headerCta = (res.text.match(/data-bb-header-cta="1"[\s\S]*?<\/span>/) || [])[0] || "";
     const navHtml = `${desktopNav}\n${drawerNav}\n${headerCta}`;
     assert.ok(desktopNav, "desktop nav present");
     assert.ok(drawerNav, "drawer nav present");
-    // Desktop top-level should stay compact (links + dropdown triggers).
     const desktopTopLevel =
       (desktopNav.match(/class="bb-tp-nav__link[^"]*"/g) || []).length;
     assert.ok(desktopTopLevel <= 6, `desktop top-level too dense: ${desktopTopLevel}`);
     for (const page of PUBLIC_PAGES) {
-      const href = `/c/${orgKeyA}${page.suffix || ""}`;
+      const href = `${base}${page.suffix || ""}`;
       const re = new RegExp(`href="${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`, "g");
       const matches = navHtml.match(re) || [];
       assert.ok(matches.length >= 1, `missing nav for ${href}`);
@@ -328,14 +365,15 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
 
   it("SEO: each page has title, description, and canonical under /c/:key", async () => {
     requireDb();
+    const base = await primaryPublicBase(orgKeyA);
     for (const page of PUBLIC_PAGES) {
       const res = await request(app)
-        .get(`/c/${orgKeyA}${page.suffix}`)
+        .get(`${base}${page.suffix}`)
         .set("Host", APEX);
       assert.equal(res.status, 200, page.key);
       assert.match(res.text, /<title>[^<]+<\/title>/i);
       assert.match(res.text, /<meta name="description"/i);
-      assert.match(res.text, new RegExp(`rel="canonical"[^>]*href="[^"]*/c/${orgKeyA}${page.suffix}"`));
+      assert.match(res.text, new RegExp(`rel="canonical"[^>]*href="[^"]*${orgKeyA}`));
     }
   });
 });

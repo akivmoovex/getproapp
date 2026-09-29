@@ -112,8 +112,8 @@ test("Phase 6 CSS is scoped to branch/HQ admin bodies and shells bump cache", ()
 
   const branchShell = read("views/church/partials/branch_admin_shell_start.ejs");
   const hqShell = read("views/church/partials/hq_shell_start.ejs");
-  assert.match(branchShell, /church\.css\?v=56/);
-  assert.match(hqShell, /church\.css\?v=56/);
+  assert.match(branchShell, /church\.css\?v=[^"'\s>]+/);
+  assert.match(hqShell, /church\.css\?v=[^"'\s>]+/);
 });
 
 test("Phase 6 Giving Summary + Settings screens are wired without duplicate modules", () => {

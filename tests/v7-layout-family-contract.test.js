@@ -57,9 +57,11 @@ describe("V7 layout family — token and class contracts", () => {
   });
 
   it("ActiveClinic staff app uses sidebar + content max tokens", () => {
+    const tokens = read("public/activeclinic/ac-app-tokens.css");
     const css = read("public/activeclinic/ac-app.css");
-    assert.match(css, /--ac-sidebar-w:\s*16\.5rem/);
-    assert.match(css, /--ac-content-max:\s*72rem/);
+    assert.match(tokens, /--ac-staff-sidebar-w:\s*256px/);
+    assert.match(tokens, /--ac-sidebar-w:\s*var\(--ac-staff-sidebar-w\)/);
+    assert.match(tokens, /--ac-content-max:\s*72rem/);
     assert.match(css, /max-width:\s*var\(--ac-content-max\)/);
   });
 
@@ -178,9 +180,9 @@ describe("V7 layout family — measured geometry", () => {
   it("AC staff shell sibling pages share .ac-content left at 1440", async () => {
     await withPage(1440, 900, async (page) => {
       const shell = (label) => `<div class="ac-app"><aside class="ac-sidebar" style="display:flex">Nav</aside><div class="ac-main-wrap"><main class="ac-content"><h1>${label}</h1></main></div></div>`;
-      await page.setContent(`<!DOCTYPE html><html><body class="ac-app-body">${shell("Dashboard")}</body></html>` + inlineStyles("public/activeclinic/ac-app.css"));
+      await page.setContent(`<!DOCTYPE html><html><body class="ac-app-body">${shell("Dashboard")}</body></html>` + inlineStyles("public/activeclinic/ac-app-tokens.css", "public/activeclinic/ac-app.css"));
       const dashLeft = await leftOf(page, ".ac-content");
-      await page.setContent(`<!DOCTYPE html><html><body class="ac-app-body">${shell("Patients")}</body></html>` + inlineStyles("public/activeclinic/ac-app.css"));
+      await page.setContent(`<!DOCTYPE html><html><body class="ac-app-body">${shell("Patients")}</body></html>` + inlineStyles("public/activeclinic/ac-app-tokens.css", "public/activeclinic/ac-app.css"));
       const patientsLeft = await leftOf(page, ".ac-content");
       assert.equal(dashLeft, patientsLeft);
       assert.ok(dashLeft > 200, `staff content should clear sidebar, got ${dashLeft}`);

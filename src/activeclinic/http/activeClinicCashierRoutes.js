@@ -608,7 +608,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
         }
 
         const errorCode = String(req.query.error || "").trim() || null;
-        const today = new Date().toISOString().slice(0, 10);
+        const today = billingOps.businessCalendarDate();
 
         return await renderShell(req, res, {
           activeNav: "cashier",

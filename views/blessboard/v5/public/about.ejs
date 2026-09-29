@@ -163,6 +163,20 @@
     if (visionSection && heading && heading === String(visionSection.heading || '').toLowerCase()) return false;
     return true;
   });
+
+  // Defensive: edit-mode chrome must always expose hrefFor to About partials.
+  if (typeof hrefFor !== 'function') {
+    hrefFor = function (pagePath) {
+      var raw = String(pagePath || '/');
+      var prefix =
+        typeof pathPrefix === 'string' && pathPrefix
+          ? String(pathPrefix).replace(/\/$/, '')
+          : '';
+      if (!prefix) return raw;
+      if (raw === '/') return prefix;
+      return prefix + (raw.charAt(0) === '/' ? raw : '/' + raw);
+    };
+  }
 %>
 
 <section class="bb-tp-about" data-bb-about="1" data-bb-stitch-about="phase7-v1">
@@ -231,7 +245,7 @@
               editEntityKey: 'about-story',
               editSectionKey: 'story',
               editLabel: 'Edit story image',
-              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center', placement: (storySection && storySection.layoutMetadata && storySection.layoutMetadata.imagePlacement) || null }
+              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center', placement: (storySections[0] && storySections[0].layoutMetadata && storySections[0].layoutMetadata.imagePlacement) || null }
             }) %>
           </div>
           <% } %>

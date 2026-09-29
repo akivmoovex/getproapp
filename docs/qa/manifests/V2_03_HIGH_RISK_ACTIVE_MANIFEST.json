@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "HIGH_RISK_FILES": 261,
+  "HIGH_RISK_MANIFEST_SHA": "27e97351b75f6540edd797d7239aeb3254bc56272aeb8742bd3f334160fb4bc6",
+  "LINES_COVERED": 86232,
+  "LINES_TOTAL": 106558,
+  "BRANCHES_COVERED": 14097,
+  "BRANCHES_TOTAL": 21693,
+  "FUNCTIONS_COVERED": 1958,
+  "FUNCTIONS_TOTAL": 2160,
+  "SELECTION": "audit_exact_v10_profiled_PLATFORM_BB_AC_path_patterns",
+  "EXCLUDES": [
+    "server.legacy-only",
+    "public/browser",
+    "deploymentProfiles",
+    "src/migration"
+  ],
+  "EXPECTED_APPROX": {
+    "LINES_TOTAL": 106558,
+    "BRANCHES_TOTAL": 21693,
+    "FUNCTIONS_TOTAL": 2160
+  }
+}

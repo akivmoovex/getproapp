@@ -45,7 +45,7 @@ const ORG_KEY = "imgpersistp1";
 const HOST = `${ORG_KEY}.blessboard.org`;
 const PASS = "correct-horse-battery-staple";
 const CDN_BASE = "https://cdn.test.invalid/media";
-const EDIT = `/c/${ORG_KEY}/hq?website_edit=1&website_mode=draft`;
+const EDIT = `/c/${ORG_KEY}?website_edit=1&website_mode=draft`;
 
 function jpegBuffer(size) {
   const buf = Buffer.alloc(Math.max(size, 12), 0);
@@ -338,7 +338,7 @@ describe("BB-P1 image persistence (BB-BUG-002 / BB-1.1-017)", () => {
     );
     assert.equal(statusRow.rows[0].website_status, "published");
 
-    const publicPage = await request(app).get(`/c/${ORG_KEY}/hq`).set("Host", APEX);
+    const publicPage = await request(app).get(`/c/${ORG_KEY}`).set("Host", APEX);
     assert.equal(publicPage.status, 200, publicPage.text.slice(0, 200));
     assert.doesNotMatch(publicPage.text, /Website coming soon/);
     assert.match(publicPage.text, new RegExp(`${CDN_BASE.replace(/\./g, "\\.")}/testing/blessboard/`));

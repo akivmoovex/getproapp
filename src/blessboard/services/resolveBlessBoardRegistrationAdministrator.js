@@ -7,7 +7,8 @@
  * - Prefer reuse of a compatible existing blessboard.users row (never duplicate).
  * - Never overwrite an existing password hash.
  * - SAME_CHURCH → already_provisioned (idempotent).
- * - OTHER_CHURCH / ORPHAN → reuse when invitation mode or password verifies.
+ * - OTHER_CHURCH → reuse only via invitation or explicit instant-free multi-org; else sign-in (400).
+ * - ORPHAN / phone-only → reuse when password verifies.
  * - Email and phone resolving to different users → identity_conflict.
  */
 
@@ -20,6 +21,7 @@ const {
 const { normalizeEmail } = require("./createBlessBoardUser");
 const {
   REGISTRATION_IDENTITY_ACTION,
+  REGISTRATION_IDENTITY_REASON,
   matchRegistrationContactPrincipals,
   authorizeExistingPrincipalReuse,
 } = require("../../platform/registration/resolveRegistrationContactIdentity");
@@ -125,6 +127,7 @@ function resolveMatchedUser(emailUser, phoneUsers) {
  *   applicationOrganizationId?: string|null,
  *   administratorPassword?: string|null,
  *   administratorViaInvitation?: boolean,
+ *   allowMultiOrgIdentityReuse?: boolean,
  * }} input
  */
 async function resolveBlessBoardRegistrationAdministrator(client, input = {}) {
@@ -134,6 +137,7 @@ async function resolveBlessBoardRegistrationAdministrator(client, input = {}) {
       ? String(input.phoneNormalized).trim()
       : null;
   const administratorViaInvitation = Boolean(input.administratorViaInvitation);
+  const allowMultiOrgIdentityReuse = Boolean(input.allowMultiOrgIdentityReuse);
   const password =
     input.administratorPassword != null ? String(input.administratorPassword) : "";
 
@@ -255,12 +259,59 @@ async function resolveBlessBoardRegistrationAdministrator(client, input = {}) {
     };
   }
 
+  // OTHER_CHURCH: public self-service must sign in (400) unless invitation or explicit multi-org ack.
+  if (identity.kind === IDENTITY_KIND.OTHER_CHURCH) {
+    if (!administratorViaInvitation && !allowMultiOrgIdentityReuse) {
+      return {
+        ok: false,
+        action: ACTION.REJECT_EXISTING_ACCOUNT,
+        reason: "existing_account_other_church",
+        user,
+        userId: String(user.id),
+        emailMatched: matched.emailMatched,
+        phoneMatched: matched.phoneMatched,
+        matchOn: matched.matchOn,
+        identityKind: identity.kind,
+        diagnostics: {
+          identityResolution: "existing_account",
+          emailMatched: matched.emailMatched,
+          phoneMatched: matched.phoneMatched,
+          matchOn: matched.matchOn,
+          identityKind: identity.kind,
+          passwordPresent: Boolean(password),
+          hashPresent: Boolean(user.password_hash),
+        },
+      };
+    }
+  }
+
   if (
-    identity.kind === IDENTITY_KIND.ORPHAN_USER ||
     identity.kind === IDENTITY_KIND.OTHER_CHURCH ||
+    identity.kind === IDENTITY_KIND.ORPHAN_USER ||
     identity.kind === IDENTITY_KIND.FRESH
   ) {
-    // Phone-only match still reuses when the password verifies — never create a duplicate login.
+    // Invitation-bound OTHER_CHURCH reuses without re-entering the password.
+    if (administratorViaInvitation && identity.kind === IDENTITY_KIND.OTHER_CHURCH) {
+      return {
+        ok: true,
+        action: ACTION.REUSE,
+        reason: "multi_org_reuse",
+        user,
+        userId: String(user.id),
+        emailMatched: matched.emailMatched,
+        phoneMatched: matched.phoneMatched,
+        matchOn: matched.matchOn,
+        identityKind: identity.kind,
+        diagnostics: {
+          identityResolution: "reuse",
+          emailMatched: matched.emailMatched,
+          phoneMatched: matched.phoneMatched,
+          matchOn: matched.matchOn,
+          identityKind: identity.kind,
+        },
+      };
+    }
+    // Phone-only / orphan / acknowledged multi-org: reuse when password verifies — never duplicate login.
     const authorized = await authorizeExistingPrincipalReuse({
       passwordHash: user.password_hash,
       password,

@@ -92,8 +92,11 @@ function generateInviteToken() {
 function validatePassword(password, confirmPassword) {
   // When only password is supplied (legacy callers), confirm against itself so
   // length policy still applies without forcing a confirm argument.
-  const confirm =
-    arguments.length >= 2 ? confirmPassword : password;
+  const confirmProvided =
+    arguments.length >= 2 &&
+    confirmPassword != null &&
+    String(confirmPassword).length > 0;
+  const confirm = confirmProvided ? confirmPassword : password;
   const pair = validatePasswordPair(password, confirm);
   if (!pair.ok) {
     return {

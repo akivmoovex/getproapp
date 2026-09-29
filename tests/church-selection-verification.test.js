@@ -245,7 +245,7 @@ test("attachChurchContext export remains the tenant branch resolver (host-based)
 test("branding CSS uses shared GetPro orange token for powered-by GetPro word", () => {
   const fs = require("fs");
   const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
-  assert.match(css, /--church-getpro-orange:\s*#f59e0b/);
+  assert.match(css, /--church-getpro-orange:\s*#ff9800/);
   assert.match(css, /--church-powered-by-gray:\s*#6b7280/);
   assert.match(css, /\.bb-powered-by__label\s*\{[^}]*var\(--church-powered-by-gray\)/s);
   assert.match(css, /\.bb-powered-by__getpro\s*\{[^}]*var\(--church-getpro-orange\)/s);

@@ -193,7 +193,7 @@ async function getPage(app, cookie, path, options) {
   const allowOnboarding = options && options.allowOnboarding === true;
   const chain = [path];
   let res = await getNoFollow(app, cookie, path);
-  for (let i = 0; i < 6 && res.status === 303; i += 1) {
+  for (let i = 0; i < 6 && (res.status === 303 || res.status === 301); i += 1) {
     const loc = String(res.headers.location || "");
     assert.ok(loc, `redirect from ${chain[chain.length - 1]} missing Location`);
     const nextPath = loc.startsWith("http")
@@ -265,7 +265,7 @@ describe("v7 new church operational readiness", () => {
     assert.ok(String(settings.rows[0].primary_email || "").trim(), "missing church contact email");
     assert.equal(settings.rows[0].default_timezone, "Africa/Lusaka");
     assert.equal(String(settings.rows[0].default_country_code || "").toUpperCase(), "ZM");
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
 
     const hq = await pool.query(
       `SELECT id, branch_key, is_primary, status, country_code, timezone
@@ -430,7 +430,7 @@ describe("v7 new church operational readiness", () => {
       organizationKey,
     });
     assert.equal(publicPath, `/c/${organizationKey}`);
-    const publicSite = await request(app).get(publicPath).set("Host", BB_HOST);
+    const publicSite = await request(app).get(publicPath).redirects(5).set("Host", BB_HOST);
     assert.equal(publicSite.status, 200, publicSite.text && publicSite.text.slice(0, 240));
     assert.match(
       publicSite.text,
@@ -443,6 +443,7 @@ describe("v7 new church operational readiness", () => {
     });
     const publicEditor = await request(app)
       .get(editPath)
+      .redirects(5)
       .set("Host", BB_HOST)
       .set("Cookie", cookie);
     assert.equal(publicEditor.status, 200, publicEditor.text && publicEditor.text.slice(0, 400));

@@ -870,6 +870,7 @@ function createContentAdminRouter(deps) {
       requireUploadsEnabled,
       multerSingle,
       async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
         const scope = await resolveScope(req, res);
         if (!scope) return;
         const session = req.v5Session && req.v5Session.session;

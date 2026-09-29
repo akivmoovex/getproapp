@@ -240,7 +240,7 @@ describe("blessboard website mobile editing stage 7", () => {
       .expect(200);
     assert.match(res.text, /data-bb-review-publish="1"/);
     assert.match(res.text, /Draft • \d+ unpublished changes/);
-    assert.match(res.text, />Publish</);
+    assert.match(res.text, /Publish Changes|>Publish</);
   });
 
   it("publish review page carries mobile stitch marker and collapsed warnings", async () => {

@@ -48,7 +48,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     );
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /SHELL_ASSET_VERSION\s*=\s*"v2-03-acn18-01"/
+      /SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
     );
   });
 
@@ -129,10 +129,12 @@ describe("ActiveClinic Phase 9 accessibility", () => {
   });
 
   it("status and muted text meet AA contrast intent", () => {
-    const tokens = read("public/activeclinic/ac-tokens.css");
-    assert.match(tokens, /--acp-muted:\s*#3e494a/);
+    const publicTokens = read("public/activeclinic/ac-tokens.css");
+    assert.match(publicTokens, /--acp-muted:\s*#3e494a/);
+    const staffTokens = read("public/activeclinic/ac-app-tokens.css");
+    assert.match(staffTokens, /--ac-muted:\s*var\(--ac-text-secondary\)/);
+    assert.match(staffTokens, /--ac-text-secondary:\s*#6b7280/);
     const app = read("public/activeclinic/ac-app.css");
-    assert.match(app, /--ac-muted:\s*#434653/);
     assert.match(app, /input:focus-visible/);
     assert.match(app, /Status uses visible text plus colour/);
   });

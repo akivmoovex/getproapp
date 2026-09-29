@@ -235,8 +235,9 @@ function websiteKeys(html) {
 
 function hasFieldControls(html, key) {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Wave 2 dialog host owns save/cancel once per page; field markup only needs pencil.
   const block = new RegExp(
-    `data-website-key="${escaped}"[\\s\\S]{0,4000}data-website-start="1"[\\s\\S]{0,4000}data-website-save="1"[\\s\\S]{0,4000}data-website-cancel="1"`
+    `data-website-key="${escaped}"[\\s\\S]{0,4000}data-website-start="1"`
   );
   return block.test(String(html));
 }
@@ -251,12 +252,16 @@ describe("v7 inline editor coverage — static inventory", () => {
     assert.equal(INLINE_SAVE_PUBLISHES, false);
     const acJs = read("public/platform/website-inline-edit.js");
     const bbJs = read("public/blessboard/v5/website-inline-edit.js");
+    const fieldHost = read("views/platform/website-engine/field-editor-host.ejs");
     assert.match(acJs, /published === true/);
     assert.match(acJs, /Save must not publish/);
-    assert.match(acJs, /data-website-cancel/);
+    assert.match(acJs, /data-website-field-editor-cancel|data-website-cancel/);
+    assert.match(fieldHost, /data-website-cancel="1"/);
+    assert.match(fieldHost, /data-website-save="1"/);
+    assert.match(fieldHost, /Save draft/);
     assert.match(bbJs, /result\.data\.published/);
     assert.match(bbJs, /Unexpected publish response blocked/);
-    assert.match(bbJs, /data-bb-inline-cancel/);
+    assert.match(bbJs, /data-bb-inline-cancel|data-website-cancel/);
     const acRoutes = read("src/activeclinic/http/activeClinicWebsiteRoutes.js");
     assert.match(acRoutes, /published:\s*false/);
     const bbDraft = read("src/blessboard/services/websiteInlineDraftService.js");
@@ -285,8 +290,9 @@ describe("v7 inline editor coverage — static inventory", () => {
     }
     assert.match(corpus, /contentKey:\s*item\.labelKey/);
     assert.match(corpus, /data-website-start="1"/);
-    assert.match(corpus, /data-website-save="1"/);
-    assert.match(corpus, /data-website-cancel="1"/);
+    const fieldHost = read("views/platform/website-engine/field-editor-host.ejs");
+    assert.match(fieldHost, /data-website-save="1"/);
+    assert.match(fieldHost, /data-website-cancel="1"/);
     assert.doesNotMatch(corpus, /contentKey:\s*'page\.pricing\.visible'/);
     assert.doesNotMatch(corpus, /contentKey:\s*'home\.faq'/);
     assert.doesNotMatch(corpus, /contentKey:\s*'home\.testimonials'/);
@@ -306,9 +312,11 @@ describe("v7 inline editor coverage — static inventory", () => {
     const heading = read("views/blessboard/v5/public/partials/section-heading.ejs");
     const cta = read("views/blessboard/v5/public/partials/cta-band.ejs");
     const editable = read("views/blessboard/v5/partials/editable-text.ejs");
-    assert.match(editable, /data-bb-inline-start="1"/);
-    assert.match(editable, /data-bb-inline-save="1"/);
-    assert.match(editable, /data-bb-inline-cancel="1"/);
+    assert.match(editable, /data-website-start="1"/);
+    assert.match(editable, /data-website-inline="1"/);
+    const fieldHost = read("views/platform/website-engine/field-editor-host.ejs");
+    assert.match(fieldHost, /data-website-save="1"/);
+    assert.match(fieldHost, /data-website-cancel="1"/);
     assert.match(hero, /editFieldKey:\s*'heading'/);
     assert.match(hero, /editFieldKey:\s*'bodyText'/);
     assert.match(hero, /editFieldKey:\s*'eyebrow'/);
@@ -389,11 +397,11 @@ describe("v7 inline editor coverage — HTTP draft save / cancel / no publish", 
       assert.match(res.text, /data-website-start="1"/);
       assert.match(res.text, /data-website-save="1"/);
       assert.match(res.text, /data-website-cancel="1"/);
-      assert.match(res.text, /Save to draft/);
+      assert.match(res.text, /Save draft/);
       assert.match(res.text, /Cancel/);
       for (const key of AC_PAGE_EXPECT[name]) {
         assert.ok(websiteKeys(res.text).includes(key), `${name} missing ${key}`);
-        assert.ok(hasFieldControls(res.text, key), `${name} ${key} missing pencil/save/cancel`);
+        assert.ok(hasFieldControls(res.text, key), `${name} ${key} missing pencil`);
       }
     }
 
@@ -501,13 +509,13 @@ describe("v7 inline editor coverage — HTTP draft save / cancel / no publish", 
       apexHosts: new Set([BB_HOST, `www.${BB_HOST}`]),
     });
     const edit = await request(app)
-      .get(`/c/${key}?website_edit=1`)
+      .get(`/c/${key}?website_edit=1`).redirects(5)
       .set("Host", BB_HOST)
       .set("Cookie", cookie);
     assert.equal(edit.status, 200, String(edit.text).slice(0, 400));
-    assert.match(edit.text, /data-bb-inline-start="1"/);
-    assert.match(edit.text, /data-bb-inline-save="1"/);
-    assert.match(edit.text, /data-bb-inline-cancel="1"/);
+    assert.match(edit.text, /data-website-start="1"/);
+    assert.match(edit.text, /data-website-save="1"/);
+    assert.match(edit.text, /data-website-cancel="1"/);
 
     const csrfAttr = (edit.text.match(/data-bb-csrf="([^"]+)"/) || [])[1];
     const setCookie = [].concat(edit.headers["set-cookie"] || []);
@@ -535,9 +543,10 @@ describe("v7 inline editor coverage — HTTP draft save / cancel / no publish", 
     assert.equal(save.body.ok, true);
     assert.equal(save.body.published, false);
 
-    const live = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
+    const live = await request(app).get(`/c/${key}`).redirects(5).set("Host", BB_HOST);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.doesNotMatch(live.text, /data-website-start="1"/);
     assert.doesNotMatch(live.text, /data-bb-inline-start="1"/);
   });
 });

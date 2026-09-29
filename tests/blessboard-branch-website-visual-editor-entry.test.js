@@ -289,7 +289,7 @@ describe("branch admin website visual editor entry", () => {
   it("visual editor page shows edit icons for allowlisted fields", async () => {
     if (skipIfNeeded()) return;
     const res = await request(app)
-      .get("/c/visual-edit-a/hq?website_edit=1&website_mode=draft")
+      .get("/c/visual-edit-a?website_edit=1&website_mode=draft")
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`))
       .expect(200);
@@ -416,14 +416,14 @@ describe("branch admin website visual editor entry", () => {
     );
 
     const publicRes = await request(app)
-      .get("/c/visual-edit-a/hq")
+      .get("/c/visual-edit-a")
       .set("Host", APEX)
       .expect(200);
     assert.match(publicRes.text, /Published Visual Hero/);
     assert.doesNotMatch(publicRes.text, /Branch Draft Hero/);
 
     const editRes = await request(app)
-      .get("/c/visual-edit-a/hq?website_edit=1&website_mode=draft")
+      .get("/c/visual-edit-a?website_edit=1&website_mode=draft")
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`))
       .expect(200);

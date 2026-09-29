@@ -229,7 +229,8 @@ describe("shouldFailClosedHttpStart", () => {
 describe("foundation tests stay on isolated local databases", () => {
   it("foundation helper URLs are localhost", () => {
     const url = foundationDatabaseUrl("blessboard_ft_unit");
-    assert.match(url, /^postgresql:\/\/localhost:5432\/blessboard_ft_unit$/);
+    assert.match(url, /\/blessboard_ft_unit(?:\?|$)/);
+    assert.match(url, /127\.0\.0\.1|localhost/);
     assert.doesNotMatch(url, /supabase/i);
   });
 });

@@ -335,17 +335,20 @@ function mapEngineResultToChurchHttp(result, validationResult) {
     };
   }
   if (code === ENGINE_RESULT.REVIEW_REQUIRED) {
+    // Network / self-registration-disabled: success UX (ok) without a "review" flag.
+    // Manual platform hold (e.g. missing instant-provision credentials): still a
+    // review-queue hold — callers and operator-approval fixtures rely on review:true.
     const enquiryHold =
       result.reason === REVIEW_REASON.SELF_REGISTRATION_PROVISIONING_DISABLED ||
       result.reason === REVIEW_REASON.NETWORK_PLAN_MANUAL_REVIEW ||
-      result.reason === REVIEW_REASON.MANUAL_PLATFORM_HOLD ||
       networkSupport;
+    const manualPlatformHold = result.reason === REVIEW_REASON.MANUAL_PLATFORM_HOLD;
     return {
-      ok: Boolean(enquiryHold),
-      review: !enquiryHold,
+      ok: Boolean(enquiryHold || manualPlatformHold),
+      review: Boolean(manualPlatformHold || !enquiryHold),
       application,
       networkSupportContact: networkSupport,
-      error: enquiryHold ? undefined : DUPLICATE_REVIEW_MESSAGE,
+      error: enquiryHold || manualPlatformHold ? undefined : DUPLICATE_REVIEW_MESSAGE,
       code: "review_required",
       httpStatus: 200,
       reason: result.reason,

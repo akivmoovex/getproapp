@@ -144,10 +144,10 @@ describe("ActiveClinic Platform 03 — navigation and layout", () => {
     assert.match(step3, /Review your clinic/);
     assert.match(step1, /data-ac-city-listbox="1"/);
     assert.match(step1, /id="provinceSelect"/);
-    assert.match(step3, /href="\/register-clinic\?step=clinic"/);
-    assert.match(step3, /href="\/register-clinic\?step=administrator"/);
+    assert.match(step3, /href="\/register-clinic\?step=clinic(?:&amp;|&)gpRegNav=1"/);
+    assert.match(step3, /href="\/register-clinic\?step=administrator(?:&amp;|&)gpRegNav=1"/);
     assert.match(step3, /name="_csrf"/);
-    assert.match(step3, /name="acceptTerms"/);
+    assert.match(step3, /name="registration_consent"/);
   });
 
   it("Chromium visual QA scores login and registration layout ≥95", async () => {

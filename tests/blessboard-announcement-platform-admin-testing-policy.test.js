@@ -30,6 +30,12 @@ const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
+  DEFAULT_COOKIE: SUPPORT_COOKIE,
+} = require("../src/platform/http/supportContextCookie");
+const {
+  startHqSupport,
+} = require("../src/platform/services/platformSupportModeService");
+const {
   createAnnouncement,
   updateAnnouncement,
   evaluateAnnouncementCapability,
@@ -76,7 +82,8 @@ describe("announcement platform-admin testing policy (076)", () => {
   });
 
   it("capability publish follows allowPlatformAdminPublish only for platform_admin", () => {
-    const platformOnly = [{ roleKey: "platform_admin" }];
+    // Catalogue role key (assignBlessBoardRole normalizes platform_admin → platform_administrator).
+    const platformOnly = [{ roleKey: "platform_administrator" }];
     const memberOnly = [{ roleKey: "member" }];
     assert.equal(
       evaluateAnnouncementCapability(
@@ -412,11 +419,20 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
   it("HTTP testing app: platform admin publish + banner; CSRF required; production app still denies", async (t) => {
     if (skipIfNeeded(t)) return;
     const paCookie = `${DEFAULT_V5_COOKIE}=${platformAdmin.rawToken}`;
+    const started = await startHqSupport(pool, {
+      actorUserId: platformAdmin.user.id,
+      organizationKeyOrId: "ann076-a",
+      reason: "Testing-mode platform admin announcement publish verification",
+      env: baseV5TestEnv({ DEPLOYMENT_ENV: "testing" }),
+    });
+    assert.equal(started.ok, true, started.reason || started.status);
+    const supportCookie = `${SUPPORT_COOKIE}=${started.rawToken}`;
+    const jar = cookieHeader(paCookie, supportCookie);
 
     const listTesting = await request(testingApp)
       .get("/hq/announcements")
       .set("Host", HOST_A)
-      .set("Cookie", paCookie);
+      .set("Cookie", jar);
     assert.equal(listTesting.status, 200);
     assert.match(listTesting.text, /Testing mode: Platform Admin publishing enabled/);
     assert.match(listTesting.text, /data-bb-announcement-testing-platform-admin-publish="1"/);
@@ -424,7 +440,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const newPage = await request(testingApp)
       .get("/hq/announcements/new")
       .set("Host", HOST_A)
-      .set("Cookie", paCookie);
+      .set("Cookie", jar);
     assert.equal(newPage.status, 200);
     const csrf = extractCookie(newPage, CSRF_COOKIE);
     assert.ok(csrf);
@@ -432,7 +448,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const noCsrf = await request(testingApp)
       .post("/hq/announcements")
       .set("Host", HOST_A)
-      .set("Cookie", paCookie)
+      .set("Cookie", jar)
       .type("form")
       .send({
         title: "076 No CSRF",
@@ -445,7 +461,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const created = await request(testingApp)
       .post("/hq/announcements")
       .set("Host", HOST_A)
-      .set("Cookie", cookieHeader(paCookie, `${CSRF_COOKIE}=${csrf}`))
+      .set("Cookie", cookieHeader(jar, `${CSRF_COOKIE}=${csrf}`))
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
@@ -461,7 +477,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const publishPage = await request(testingApp)
       .get(`/hq/announcements/${annId}/publish`)
       .set("Host", HOST_A)
-      .set("Cookie", paCookie);
+      .set("Cookie", jar);
     assert.equal(publishPage.status, 200);
     assert.match(publishPage.text, /Testing mode: Platform Admin publishing enabled/);
     const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
@@ -469,7 +485,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const published = await request(testingApp)
       .post(`/hq/announcements/${annId}/publish`)
       .set("Host", HOST_A)
-      .set("Cookie", cookieHeader(paCookie, `${CSRF_COOKIE}=${pubCsrf}`))
+      .set("Cookie", cookieHeader(jar, `${CSRF_COOKIE}=${pubCsrf}`))
       .type("form")
       .send({
         [CSRF_FIELD]: pubCsrf,
@@ -480,7 +496,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
     const detail = await request(testingApp)
       .get(`/hq/announcements/${annId}`)
       .set("Host", HOST_A)
-      .set("Cookie", paCookie);
+      .set("Cookie", jar);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-announcement-status="published"/);
 
@@ -496,17 +512,25 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
       audiences: ["admins"],
     });
     assert.equal(prodDraft.ok, true, prodDraft.reason);
+    const prodSupport = await startHqSupport(pool, {
+      actorUserId: platformAdmin.user.id,
+      organizationKeyOrId: "ann076-a",
+      reason: "Production-policy deny check for platform admin publish",
+      env: baseV5TestEnv({ DEPLOYMENT_ENV: "production" }),
+    });
+    assert.equal(prodSupport.ok, true, prodSupport.reason || prodSupport.status);
+    const prodJar = cookieHeader(paCookie, `${SUPPORT_COOKIE}=${prodSupport.rawToken}`);
     const prodPublishPage = await request(productionApp)
       .get(`/hq/announcements/${prodDraft.item.id}/publish`)
       .set("Host", HOST_A)
-      .set("Cookie", paCookie);
+      .set("Cookie", prodJar);
     assert.equal(prodPublishPage.status, 200);
     assert.doesNotMatch(prodPublishPage.text, /Testing mode: Platform Admin publishing enabled/);
     const prodCsrf = extractCookie(prodPublishPage, CSRF_COOKIE);
     const prodPublish = await request(productionApp)
       .post(`/hq/announcements/${prodDraft.item.id}/publish`)
       .set("Host", HOST_A)
-      .set("Cookie", cookieHeader(paCookie, `${CSRF_COOKIE}=${prodCsrf}`))
+      .set("Cookie", cookieHeader(prodJar, `${CSRF_COOKIE}=${prodCsrf}`))
       .type("form")
       .send({
         [CSRF_FIELD]: prodCsrf,

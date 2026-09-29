@@ -235,10 +235,10 @@ describe("V2.01 Unpublished Changes Panel", () => {
     assert.match(css, /max-width:\s*430px/);
 
     assert.match(bbRoutes, /website\/unpublished-changes/);
-    assert.match(bbRoutes, /getUnpublishedChangesPanel/);
+    assert.match(bbRoutes, /handleGetUnpublishedChangesPanel|getUnpublishedChangesPanel/);
     assert.match(bbRoutes, /revertFieldToPublished/);
     assert.match(acRoutes, /website\/unpublished-changes/);
-    assert.match(acRoutes, /getUnpublishedChangesPanel/);
+    assert.match(acRoutes, /handleGetUnpublishedChangesPanel|getUnpublishedChangesPanel/);
     assert.match(acRoutes, /revertFieldToPublished/);
 
     assert.match(bbChrome, /unpublishedChangesUrl/);

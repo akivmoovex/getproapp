@@ -406,12 +406,7 @@
       if (!Number.isNaN(e.getTime())) endTime = e.toISOString().slice(11, 16);
     }
     return (
-      buildImageForm({
-        imageUrl: p.imageUrl || "",
-        altText: p.title || "Event image",
-        focal: "center",
-        placement: p.placement || p.imagePlacement || null,
-      }) +
+      buildImageForm({ imageUrl: p.imageUrl, altText: p.title || "Event image", focal: "center", placement: p.placement || p.imagePlacement || null }) +
       field("Event title", "title", p.title || "") +
       field("Date", "date", date, { type: "date" }) +
       field("Start time", "startTime", startTime, { type: "time" }) +

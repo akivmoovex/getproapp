@@ -20,10 +20,7 @@
  */
 
 const { PRODUCT } = require("../../platform/registration/constants");
-const {
-  publishChurchWebsite,
-  unpublishChurchWebsite,
-} = require("../services/churchWebsitePublishService");
+const churchWebsitePublishService = require("../services/churchWebsitePublishService");
 const {
   createRestoredDraft,
 } = require("../services/websitePublicationVersionService");
@@ -35,7 +32,7 @@ const PRODUCT_CODE = PRODUCT.BLESSBOARD;
  * @param {object} request — churchId, branchId?, confirmPublish, actorUserId, …
  */
 function publish(db, request) {
-  return publishChurchWebsite(db, request);
+  return churchWebsitePublishService.publishChurchWebsite(db, request);
 }
 
 /**
@@ -43,7 +40,7 @@ function publish(db, request) {
  * @param {object} request
  */
 function unpublish(db, request) {
-  return unpublishChurchWebsite(db, request);
+  return churchWebsitePublishService.unpublishChurchWebsite(db, request);
 }
 
 /**
@@ -71,7 +68,7 @@ module.exports = {
   restore,
   lifecycleHandlers,
   /** Compatibility re-exports for callers that prefer the adapter surface. */
-  publishChurchWebsite,
-  unpublishChurchWebsite,
+  publishChurchWebsite: churchWebsitePublishService.publishChurchWebsite,
+  unpublishChurchWebsite: churchWebsitePublishService.unpublishChurchWebsite,
   createRestoredDraft,
 };

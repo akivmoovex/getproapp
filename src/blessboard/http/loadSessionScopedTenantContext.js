@@ -78,6 +78,13 @@ function createLoadSessionScopedTenantContext(deps) {
       if (!organizationId) {
         return next();
       }
+      const sessionContext =
+        session.contextJson && typeof session.contextJson === "object"
+          ? session.contextJson
+          : {};
+      if (sessionContext.tenantSessionHost) {
+        return next();
+      }
       if (typeof getPool !== "function") {
         return next();
       }

@@ -292,21 +292,55 @@ async function applyUserRole(client, record) {
   }
 
   const userId = role.userId;
+  const legacyKey = String(role.roleKey || "").trim().toLowerCase();
+  const catalogueKey =
+    legacyKey === "platform_admin"
+      ? "platform_administrator"
+      : legacyKey === "church_hq_admin"
+        ? "organisation_administrator"
+        : legacyKey === "branch_admin"
+          ? "branch_administrator"
+          : legacyKey;
+
+  const roleRow = await client.query(
+    `SELECT id FROM blessboard.roles WHERE role_key = $1 LIMIT 1`,
+    [catalogueKey]
+  );
+  if (!roleRow.rows[0]) {
+    return { status: "conflict", code: "catalogue_role_missing", detail: catalogueKey };
+  }
+  const roleId = roleRow.rows[0].id;
+
+  let scopeType = "organisation";
+  let scopeId = role.organizationId;
+  if (catalogueKey === "platform_administrator") {
+    scopeType = "platform";
+    scopeId = null;
+  } else if (catalogueKey === "branch_administrator") {
+    scopeType = "branch";
+    scopeId = role.branchId || null;
+  } else if (role.churchId) {
+    scopeType = "church";
+    scopeId = role.churchId;
+  }
+
   const existingRole = await client.query(
-    `SELECT id FROM blessboard.user_roles
-      WHERE user_id = $1 AND organization_id = $2
-        AND church_id IS NOT DISTINCT FROM $3
-        AND branch_id IS NOT DISTINCT FROM $4
-        AND role_key = $5`,
-    [userId, role.organizationId, role.churchId, role.branchId, role.roleKey]
+    `SELECT id FROM blessboard.user_role_assignments
+      WHERE user_id = $1 AND organization_id = $2 AND role_id = $3
+        AND scope_type = $4
+        AND scope_id IS NOT DISTINCT FROM $5
+        AND status = 'active'
+        AND revoked_at IS NULL`,
+    [userId, role.organizationId, roleId, scopeType, scopeId]
   );
   if (existingRole.rows[0]) return { status: "skipped", reason: "already_present" };
 
   await client.query(
-    `INSERT INTO blessboard.user_roles
-       (user_id, organization_id, church_id, branch_id, role_key, status)
-     VALUES ($1,$2,$3,$4,$5,'active')`,
-    [userId, role.organizationId, role.churchId, role.branchId, role.roleKey]
+    `INSERT INTO blessboard.user_role_assignments
+       (user_id, organization_id, church_id, role_id, scope_type, scope_id, status,
+        assignment_origin, assignment_reason)
+     VALUES ($1,$2,$3,$4,$5,$6,'active','migration','v4_to_v5_applyUserRole')`,
+    [userId, role.organizationId, role.churchId || null, roleId, scopeType, scopeId]
   );
   return { status: "written" };
 }

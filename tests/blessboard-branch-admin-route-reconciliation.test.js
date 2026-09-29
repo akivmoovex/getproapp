@@ -195,12 +195,19 @@ describe("branch-admin route reconciliation (apex runtime)", () => {
       });
       assert.equal(memberUser.ok, true, memberUser.message);
 
+      const branchMeta = await pool.query(
+        `SELECT branch_key FROM blessboard.branches WHERE id = $1`,
+        [provisioned.records.branchId]
+      );
+      assert.equal(branchMeta.rowCount, 1, "provisioned HQ branch missing");
+      const hqBranchKey = branchMeta.rows[0].branch_key;
+
       const branchRole = await assignBlessBoardRole(pool, {
         email: branchEmail,
         organizationKey: orgKey,
         roleKey: "branch_admin",
         churchKey: orgKey,
-        branchKey: "hq",
+        branchKey: hqBranchKey,
       });
       assert.equal(branchRole.ok, true, branchRole.message);
 

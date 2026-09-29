@@ -337,6 +337,16 @@ describe("shared website editor persistence (six QA flows)", () => {
     assert.match(catalogue.text, new RegExp(`Persist Service ${stamp}`));
     assert.match(catalogue.text, /catalogue_action/);
 
+    const doctorCreated = await catalogueService.createCatalogueDoctor(pool, {
+      organizationId: result.organizationId,
+      healthcareOrganizationId,
+      actorIdentityId: result.identityId,
+      grantedPermissions: granted,
+      publicDisplayName: `Dr Persist ${stamp}`,
+      publicWebsiteVisible: false,
+    });
+    assert.equal(doctorCreated.ok, true, JSON.stringify(doctorCreated));
+
     const docsPage = await request(app)
       .get("/app/settings/website/catalogue?tab=doctors")
       .set("Cookie", cookie);
@@ -454,7 +464,7 @@ describe("shared website editor persistence (six QA flows)", () => {
     const sessionCookie = `${DEFAULT_V5_COOKIE}=${session.rawToken}`;
     const host = `${orgKey}.blessboard.org`;
     const edit = await request(app)
-      .get(`/c/${orgKey}/hq?website_edit=1&website_mode=draft`)
+      .get(`/c/${orgKey}?website_edit=1&website_mode=draft`)
       .set("Host", host)
       .set("Cookie", sessionCookie);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
@@ -464,7 +474,7 @@ describe("shared website editor persistence (six QA flows)", () => {
 
     const heroMarker = `QA Hero ${stamp}`;
     const heroSave = await request(app)
-      .post(`/c/${orgKey}/hq/website/drafts`)
+      .post(`/c/${orgKey}/website/drafts`)
       .set("Host", host)
       .set("Cookie", cookie)
       .set("X-CSRF-Token", csrf)
@@ -475,7 +485,7 @@ describe("shared website editor persistence (six QA flows)", () => {
     assert.equal(heroSave.body.content.draftValue, heroMarker);
 
     const contactSave = await request(app)
-      .post(`/c/${orgKey}/hq/website/drafts`)
+      .post(`/c/${orgKey}/website/drafts`)
       .set("Host", host)
       .set("Cookie", cookie)
       .set("X-CSRF-Token", csrf)

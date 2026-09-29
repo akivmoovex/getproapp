@@ -320,6 +320,12 @@ function uuidEqual(a, b) {
  *   model: object,
  * }} input
  */
+function branchKeyFromPathPrefix(pathPrefix) {
+  const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
+  const m = String(pathPrefix || "").match(/\/c\/[^/]+\/([^/?#]+)/i);
+  return m ? normalizeBranchKey(m[1]) : null;
+}
+
 function canShowWebsiteEditChrome(input) {
   if (input && input.isHqEditor) return true;
   const draftBranchId = input && input.draftBranchId ? String(input.draftBranchId) : null;
@@ -331,8 +337,18 @@ function canShowWebsiteEditChrome(input) {
   const websiteMode = String(model.websiteMode || "");
 
   if (scopeType === "church" || scopeType === "") {
-    // Canonical shared-site edit surface for branch admins in SINGLE_SITE only.
-    return websiteMode === "single_site";
+    if (websiteMode === "single_site") return true;
+    const pathBranchKey = branchKeyFromPathPrefix(model.pathPrefix);
+    const pageBranch = model.branch && model.branch.id ? model.branch : null;
+    if (
+      pathBranchKey &&
+      pageBranch &&
+      pageBranch.key === pathBranchKey &&
+      uuidEqual(pageBranch.id, draftBranchId)
+    ) {
+      return true;
+    }
+    return false;
   }
 
   if (scopeType !== "branch") return false;
@@ -405,7 +421,7 @@ async function attachWebsiteAdminChrome(opts) {
       const websiteScope = await resolveWebsiteScope(db, {
         tenant,
         authenticatedUser: session.userId,
-        requestedBranchKey: null,
+        requestedBranchKey: branchKeyFromPathPrefix(model.pathPrefix),
         organizationId: tenant.organization ? tenant.organization.id : null,
         churchId: tenant.church ? tenant.church.id : null,
       });
@@ -788,21 +804,31 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteWebsitesPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
+  const reqPath =
+    req && (req.originalUrl || req.url)
+      ? String(req.originalUrl || req.url).split("?")[0]
+      : "";
   const orgKey =
     (tenant && tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
     "";
   const publicBranchKey =
     (model.websiteScope && model.websiteScope.branchKey) ||
     (model.branch && model.branch.key) ||
+    branchKeyFromPathPrefix(model.pathPrefix) ||
     null;
+  const pathBranchKeyForScope = branchKeyFromPathPrefix(model.pathPrefix);
   const websiteScopeType =
     (model.websiteScope && model.websiteScope.scopeType) ||
     (publicBranchKey ? "branch" : "church");
   const editorScope =
-    publicBranchKey && websiteScopeType === "branch"
+    publicBranchKey && (websiteScopeType === "branch" || pathBranchKeyForScope)
       ? { kind: "branch", branchKey: publicBranchKey }
       : null;
-  const pathMode = String(model.routingMode || "") === "path" || String(currentPath).indexOf("/c/") === 0;
+  const pathMode =
+    String(model.routingMode || "") === "path" ||
+    String(currentPath).indexOf("/c/") === 0 ||
+    reqPath.indexOf("/c/") === 0 ||
+    Boolean(orgKey && editorScope);
   const publicBase = pathMode && orgKey
     ? buildPublicOrganizationWebsitePath({
         product: PRODUCT_CODE.BLESSBOARD,

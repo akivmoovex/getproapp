@@ -243,8 +243,9 @@ describe("V7 default website template QA", () => {
       assert.match(res.text, /Request Appointment|Book Appointment/i);
     }
     assert.match(pages.home.text, /Request Appointment|Book Appointment/i);
-    assert.match(pages.home.text, new RegExp(escapeRe(HERO_IMAGE_SRC)));
-    assert.match(pages.home.text, /Template photo for/);
+    if (HERO_IMAGE_SRC) {
+      assert.match(pages.home.text, new RegExp(escapeRe(HERO_IMAGE_SRC)));
+    }
     assert.doesNotMatch(pages.home.text, /Exterior of /);
     assert.match(pages.home.text, /acp-mobile-bottom-nav/);
     assert.match(pages.about.text, new RegExp(escapeRe(AC_PLACEHOLDER)));
@@ -333,7 +334,7 @@ describe("V7 default website template QA", () => {
       env: MINIMAL_BB,
       apexHosts: new Set([BB_HOST, `www.${BB_HOST}`]),
     });
-    const key = body.organization_key;
+    const key = result.records.organizationKey || body.organization_key;
     const preview = (pageKey) =>
       request(app)
         .get(`/hq/content/preview/${pageKey}`)

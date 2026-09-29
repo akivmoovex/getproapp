@@ -189,7 +189,8 @@ describe("shared website editor wave 4b1 — static surfaces", () => {
   it("image field dialog still exposes choose-existing media hook", () => {
     const js = read("public/platform/website-inline-edit.js");
     assert.match(js, /data-website-media-url/);
-    assert.match(js, /choose existing/i);
+    assert.match(js, /data-website-library/);
+    assert.match(js, /Choose from Image Library/i);
   });
 
   it("delete is not exposed in shared library cards by default", () => {
@@ -476,11 +477,15 @@ describe("shared website editor wave 4b1 — HTTP history and media", () => {
   it("media upload returns preview/public URL and appears in library list", async (t) => {
     if (skipReason) t.skip(skipReason);
     const app = createV5FoundationApp({ getPool: () => pool, env: MINIMAL_BB, log: () => {} });
+    // Org editor entry 301s to primary branch; follow so CSRF meta/cookie are present.
     const edit = await request(app)
       .get(`/c/${bbSlug}?website_edit=1&website_mode=draft`)
+      .redirects(5)
       .set("Host", "blessboard.org")
       .set("Cookie", bbCookie);
+    assert.equal(edit.status, 200, edit.text.slice(0, 200));
     const csrf = extractCsrf(edit.text);
+    assert.ok(csrf, "editor page must issue CSRF for media upload");
     const upload = await request(app)
       .post(`/c/${bbSlug}/website/media`)
       .set("Host", "blessboard.org")
@@ -533,9 +538,12 @@ describe("shared website editor wave 4b1 — HTTP history and media", () => {
     const app = createV5FoundationApp({ getPool: () => pool, env: MINIMAL_BB, log: () => {} });
     const otherEdit = await request(app)
       .get(`/c/${other.records.organizationKey}?website_edit=1`)
+      .redirects(5)
       .set("Host", "blessboard.org")
       .set("Cookie", otherCookie);
+    assert.equal(otherEdit.status, 200, otherEdit.text.slice(0, 200));
     const otherCsrf = extractCsrf(otherEdit.text);
+    assert.ok(otherCsrf, "other-tenant editor must issue CSRF");
     const otherUpload = await request(app)
       .post(`/c/${other.records.organizationKey}/website/media`)
       .set("Host", "blessboard.org")

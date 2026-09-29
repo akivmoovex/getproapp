@@ -14,7 +14,8 @@ const { apexPageLocals } = require("./platformPublicPages");
 function requireVerticalApex(req, res, next) {
   const ctx = req.churchContext;
   if (!ctx || ctx.kind !== "vertical-apex") {
-    return next("router");
+    // Skip this apex-only route stack; continue matching tenant/other handlers.
+    return next("route");
   }
   return next();
 }

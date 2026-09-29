@@ -476,7 +476,7 @@ describe("V8 BlessBoard membership workflow", () => {
     assert.match(register, /data-bb-membership-panel="3"/);
     assert.match(register, /data-bb-membership-panel="4"/);
     assert.match(register, /data-bb-membership-review/);
-    assert.match(register, /membership-wizard\.js\?v=1/);
+    assert.match(register, /membership-wizard\.js\?v=[^"'\s>]+/);
     assert.match(
       fs.readFileSync(
         path.join(__dirname, "..", "public/blessboard/v5/membership-wizard.js"),

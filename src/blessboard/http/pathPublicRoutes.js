@@ -37,6 +37,9 @@ const {
   orgHomeRedirectTarget,
 } = require("./pathPublicBranchRouting");
 const {
+  redirectSingleSiteBranchToChurchWide,
+} = require("./singleSiteBranchPublicRedirect");
+const {
   createPathPublicChurchActionRouter,
 } = require("./pathPublicChurchActionRoutes");
 
@@ -316,6 +319,23 @@ function createPathPublicRouter(deps) {
     return res.redirect(301, dest);
   }
 
+  async function renderPathChurchWidePublic(req, res, resolved, pageKey) {
+    const pathPrefix = publicChurchHomePath(resolved.organizationKey);
+    if (!pathPrefix) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+    return renderPublicModel(req, res, {
+      tenant: resolved.tenant,
+      pageKey: pageKey || "home",
+      pathPrefix,
+      selectedBranch: null,
+      routingMode: "path",
+    });
+  }
+
   async function handleOrgHomeRedirect(req, res) {
     if (
       sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
@@ -326,6 +346,35 @@ function createPathPublicRouter(deps) {
     }
     const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
     if (!resolved) return;
+
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+    }
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
+        return res
+          .status(503)
+          .type("html")
+          .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      }
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    if (websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+      return renderPathChurchWidePublic(req, res, resolved, "home");
+    }
+
     const primaryBranchKey = await resolvePrimaryBranchKey(resolved.tenant.church.id);
     const dest = orgHomeRedirectTarget(req, resolved.organizationKey, primaryBranchKey);
     if (!dest) {
@@ -358,6 +407,35 @@ function createPathPublicRouter(deps) {
     const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
     if (!resolved) return;
     const pageKey = pageKeyFromPath(normalizedPath);
+
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+    }
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
+        return res
+          .status(503)
+          .type("html")
+          .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      }
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    if (websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+      return renderPathChurchWidePublic(req, res, resolved, pageKey);
+    }
+
     const primaryBranchKey = await resolvePrimaryBranchKey(resolved.tenant.church.id);
     const dest = legacyChurchWidePageRedirectTarget(
       req,
@@ -472,11 +550,17 @@ function createPathPublicRouter(deps) {
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
-    if (!websiteMode.requestedBranchMayHaveIndependentPublicWebsite) {
-      return res
-        .status(404)
-        .type("html")
-        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    if (
+      websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
+      !websiteMode.requestedBranchMayHaveIndependentPublicWebsite
+    ) {
+      const redirected = redirectSingleSiteBranchToChurchWide(req, res, {
+        routingMode: "path",
+        organizationKey: resolved.organizationKey,
+        pageKey,
+      });
+      if (redirected) return res;
+      return renderPathChurchWidePublic(req, res, resolved, pageKey);
     }
 
     const pathPrefix = publicBranchHomePath(

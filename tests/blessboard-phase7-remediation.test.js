@@ -259,11 +259,11 @@ describe("blessboard phase7 remediation demo login routing", () => {
     });
     assert.equal(branchOnly.destination, "/branch-admin");
 
-    assert.equal(defaultPath([{ roleKey: "church_hq_admin" }]), "/hq");
-    assert.equal(defaultPath([{ roleKey: "branch_admin" }]), "/branch-admin");
+    assert.equal(defaultPath([{ roleKey: "organisation_administrator" }]), "/hq");
+    assert.equal(defaultPath([{ roleKey: "branch_administrator" }]), "/branch-admin");
     assert.equal(defaultPath([{ roleKey: "member" }]), "/member");
     assert.equal(
-      defaultPath([{ roleKey: "church_hq_admin" }, { roleKey: "member" }]),
+      defaultPath([{ roleKey: "organisation_administrator" }, { roleKey: "member" }]),
       "/account"
     );
   });

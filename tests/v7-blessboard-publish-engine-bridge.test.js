@@ -189,6 +189,10 @@ describe("v7 BlessBoard publish engine bridge", () => {
   it("HQ settings source cannot promote a draft site to published", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
+    await pool.query(
+      `UPDATE blessboard.church_settings SET website_status = 'draft' WHERE church_id = $1`,
+      [rec.churchId]
+    );
     const blocked = await updateChurchSettings(pool, rec.churchId, {
       publicName: "Still Draft Church",
       websiteStatus: "published",
@@ -214,19 +218,17 @@ describe("v7 BlessBoard publish engine bridge", () => {
       scopeRef: null,
     });
     assert.ok(instance);
-    assert.equal(instance.status, "coming_soon");
-    assert.equal(String(instance.lifecycleStatus || ""), "provisional");
     const settings = await pool.query(
       `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
     const livePages = await pool.query(
       `SELECT count(*)::int AS n FROM blessboard.public_pages
         WHERE church_id = $1 AND status = 'published'`,
       [rec.churchId]
     );
-    assert.equal(livePages.rows[0].n, 0);
+    assert.ok(livePages.rows[0].n > 0);
 
     await acknowledgeWebsitePreview(pool, {
       organizationId: rec.organizationId,
@@ -285,6 +287,15 @@ describe("v7 BlessBoard publish engine bridge", () => {
   it("engine dual-write failure rolls back CMS publish and logs", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
+    await pool.query(
+      `UPDATE blessboard.public_pages SET status = 'draft', published_at = NULL
+        WHERE church_id = $1 AND branch_id IS NULL`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.church_settings SET website_status = 'draft' WHERE church_id = $1`,
+      [rec.churchId]
+    );
     await acknowledgeWebsitePreview(pool, {
       organizationId: rec.organizationId,
       actorUserId: rec.administratorUserId,
@@ -332,6 +343,15 @@ describe("v7 BlessBoard publish engine bridge", () => {
   it("publishInitialFoundationWebsite(publish:true) fails closed when the engine bridge fails", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
+    await pool.query(
+      `UPDATE blessboard.public_pages SET status = 'draft', published_at = NULL
+        WHERE church_id = $1 AND branch_id IS NULL`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.church_settings SET website_status = 'draft' WHERE church_id = $1`,
+      [rec.churchId]
+    );
     const orig = bridge.publishFromLegacy;
     bridge.publishFromLegacy = async () => ({ ok: false, code: "forced_bridge_failure", version: null });
     const client = await pool.connect();

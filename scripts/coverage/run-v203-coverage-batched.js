@@ -734,6 +734,23 @@ async function main(argv) {
     for (const batch of batches) {
       if (progress.completedBatchIds.includes(batch.id)) continue;
 
+      try {
+        assertCoverageInputFingerprint();
+      } catch (err) {
+        progress.status = "aborted_source_drift";
+        progress.sourceDrift = true;
+        progress.finishedAt = new Date().toISOString();
+        writeJson(PROGRESS_PATH, progress);
+        writeJson(BATCH_VALIDATION_PATH, {
+          batches: progress.batchValidation || [],
+          aborted: true,
+          reason: "SOURCE_DRIFT",
+          detail: String(err && err.message ? err.message : err),
+        });
+        logLine(`ABORT SOURCE_DRIFT before batch ${batch.id}: ${err.message}`);
+        return 2;
+      }
+
       // --clean only for the first batch of a fresh run (never on resume mid-flight).
       const useClean =
         !opts.resume &&
@@ -755,18 +772,21 @@ async function main(argv) {
 
       addCounts(progress.counts, result.counts);
       const batchFail = Number(result.counts.fail) || 0;
+      const batchCancelled = Number(result.counts.cancelled) || 0;
       const validation = {
         BATCH_ID: batch.id,
         FILES: batch.files.length,
         PASS: result.counts.pass,
         FAIL: batchFail,
         SKIP: result.counts.skip,
+        CANCELLED: batchCancelled,
         EXIT_CODE: result.code,
         V8_ARTIFACTS: Math.max(0, v8After - (useClean ? 0 : v8Before)),
         V8_ARTIFACTS_TOTAL: v8After,
         DURATION: result.durationMs,
         MERGED: "PENDING",
         KILLED: result.killed || null,
+        FINGERPRINT_OK: true,
         FIRST: batch.files[0],
         LAST: batch.files[batch.files.length - 1],
       };
@@ -790,7 +810,7 @@ async function main(argv) {
       if (result.code !== 0 && !result.killed) {
         progress.failedBatches.push({ id: batch.id, code: result.code });
       }
-      if (batchFail > 0 || result.killed) {
+      if (batchFail > 0 || batchCancelled > 0 || result.killed) {
         progress.greenSuitePreserved = false;
       }
 
@@ -801,12 +821,14 @@ async function main(argv) {
       progress.currentBatch = null;
       writeJson(PROGRESS_PATH, progress);
 
-      if (opts.requireGreen && (batchFail > 0 || result.killed)) {
+      if (opts.requireGreen && (batchFail > 0 || batchCancelled > 0 || result.killed)) {
         progress.status = "blocked_green_suite";
         progress.blockedReason =
           batchFail > 0
             ? `BATCH_${batch.id}_FAIL=${batchFail}`
-            : `BATCH_${batch.id}_KILLED=${result.killed}`;
+            : batchCancelled > 0
+              ? `BATCH_${batch.id}_CANCELLED=${batchCancelled}`
+              : `BATCH_${batch.id}_KILLED=${result.killed}`;
         progress.finishedAt = new Date().toISOString();
         writeJson(PROGRESS_PATH, progress);
         logLine(

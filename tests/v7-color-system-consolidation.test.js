@@ -73,8 +73,8 @@ describe("V7 color system consolidation", () => {
   });
 
   it("ActiveClinic staff primary remains indigo", () => {
-    const app = read("public/activeclinic/ac-app.css");
-    assert.match(app, /--ac-primary:\s*#003c90/);
+    const tokens = read("public/activeclinic/ac-app-tokens.css");
+    assert.match(tokens, /--ac-primary:\s*#2563eb/);
   });
 
   it("ActiveClinic patient CSS uses status and neutral tokens (no alert hex drift)", () => {

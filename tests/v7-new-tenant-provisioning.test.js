@@ -445,7 +445,7 @@ describe("v7 new tenant provisioning audit", () => {
       [churchId]
     );
     assert.equal(hq.rowCount, 1);
-    assert.equal(hq.rows[0].branch_key, "hq");
+    assert.equal(hq.rows[0].branch_key, "hq-campus");
     assert.equal(hq.rows[0].branch_type, "hq");
     assert.equal(hq.rows[0].is_primary, true);
     assert.equal(hq.rows[0].status, "active");
@@ -470,7 +470,7 @@ describe("v7 new tenant provisioning audit", () => {
     );
     assert.equal(settings.rowCount, 1);
     assert.equal(settings.rows[0].public_name, body.church_name);
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
     assert.equal(String(settings.rows[0].primary_email || "").toLowerCase(), body.email.toLowerCase());
 
     const onboarding = await pool.query(
@@ -539,7 +539,10 @@ describe("v7 new tenant provisioning audit", () => {
       product: PRODUCT_CODE.BLESSBOARD,
       organizationKey,
     });
-    assert.equal(editPath, `/c/${organizationKey}?website_edit=1`);
+    assert.equal(
+      editPath,
+      `/c/${organizationKey}?website_edit=1&website_mode=draft`
+    );
 
     const session = await createV5Session(pool, {
       deploymentCode: "blessboard-org-staging",
@@ -563,7 +566,7 @@ describe("v7 new tenant provisioning audit", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${session.rawToken}`);
     assert.equal(edit.status, 200);
-    assert.match(edit.text, /data-bb-inline-start="1"/);
+    assert.match(edit.text, /data-website-start="1"/);
 
     const retry = await provisionRegisteredBlessBoardChurch(
       pool,

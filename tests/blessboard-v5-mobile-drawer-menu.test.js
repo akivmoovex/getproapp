@@ -45,7 +45,7 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
 
   it("apex shell drawer has header row and scoped nav; CSS version bumped", () => {
     const start = read("views/blessboard/v5/partials/apex-shell-start.ejs");
-    assert.match(start, /apex\.css\?v=14/);
+    assert.match(start, /apex\.css\?v=[^"'\s>]+/);
     assert.match(start, /bb-apex-drawer__head/);
     assert.match(start, /bb-apex-drawer__nav/);
     assert.match(start, /variant: 'drawer'/);

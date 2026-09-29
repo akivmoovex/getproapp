@@ -74,7 +74,7 @@ describe("V7 BlessBoard mobile editor pointer regression", () => {
     assert.match(shell, /_editingMode/);
     assert.match(shell, /if \(!_editingMode\) \{[\s\S]*<\/div>/);
     assert.match(shell, /if \(_stackChrome && _editingMode\) \{[\s\S]*<\/div>/);
-    assert.match(shell, /website-inline-edit\.css\?v=v7-website-36/);
+    assert.match(shell, /website-inline-edit\.css\?v=[^"'\s>]+/);
   });
 
   it("shared editor CSS bounds burger hit area and stacks hero pencils below header", () => {

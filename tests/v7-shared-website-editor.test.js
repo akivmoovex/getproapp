@@ -339,21 +339,12 @@ describe("v7 shared website editor — HTTP matrix", () => {
       env: MINIMAL_BB,
     });
 
-    const orgEntry = await request(app)
-      .get(`/c/${rec.organizationKey}?website_edit=1&website_mode=draft`)
-      .redirects(0)
-      .set("Host", APEX)
-      .set("Cookie", cookie);
-    assert.equal(orgEntry.status, 301, "org home should redirect to primary branch");
-    assert.match(orgEntry.headers.location, new RegExp(`/c/${rec.organizationKey}/${branchKey}`));
-
-    const branchBase = `/c/${rec.organizationKey}/${branchKey}`;
     const churchWideBase = `/c/${rec.organizationKey}`;
     // Primary/HQ public URLs use church-wide CMS + draft endpoints (not branch mini-site).
     const draftsPath = `${churchWideBase}/website/drafts`;
     const publishPath = `${churchWideBase}/website/publish`;
     const edit = await request(app)
-      .get(`${branchBase}?website_edit=1&website_mode=draft`)
+      .get(`${churchWideBase}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
@@ -400,11 +391,11 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.equal(String(rowDraft.draftValue || ""), heading);
     assert.notEqual(String(rowDraft.publishedValue || ""), heading);
 
-    const publicBefore = await request(app).get(branchBase).set("Host", APEX);
+    const publicBefore = await request(app).get(churchWideBase).set("Host", APEX);
     assert.doesNotMatch(publicBefore.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
     const preview = await request(app)
-      .get(`${branchBase}?website_mode=draft`)
+      .get(`${churchWideBase}?website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(preview.status, 200);
@@ -437,7 +428,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     });
     assert.ok((versions.versions || []).length >= 1, "platform.website_versions missing");
 
-    const live = await request(app).get(branchBase).set("Host", APEX);
+    const live = await request(app).get(churchWideBase).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.match(live.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(live.text, /data-website-chrome/);

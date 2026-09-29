@@ -180,21 +180,23 @@ function mapDbError(err) {
  * @param {'read'|'write'|'publish'} action
  */
 function evaluateAnnouncementCapability(effectiveRoles, scope, productPolicy, action) {
+  const { normalizeRoleKey } = require("./assignBlessBoardRole");
   const roles = effectiveRoles || [];
-  const hasHq = roles.some(
-    (r) =>
-      r.roleKey === "organisation_administrator" ||
-      r.roleKey === "church_system_administrator"
-  );
-  const hasBranch = roles.some(
-    (r) =>
-      r.roleKey === "branch_administrator" ||
-      r.roleKey === "branch_pastor" ||
-      r.roleKey === "communications_officer"
-  );
-  const hasPlatform = roles.some(
-    (r) => r.roleKey === "platform_administrator"
-  );
+  const roleKeyOf = (r) =>
+    normalizeRoleKey(typeof r === "string" ? r : r && (r.roleKey || r.role_key));
+  const hasHq = roles.some((r) => {
+    const key = roleKeyOf(r);
+    return key === "organisation_administrator" || key === "church_system_administrator";
+  });
+  const hasBranch = roles.some((r) => {
+    const key = roleKeyOf(r);
+    return (
+      key === "branch_administrator" ||
+      key === "branch_pastor" ||
+      key === "communications_officer"
+    );
+  });
+  const hasPlatform = roles.some((r) => roleKeyOf(r) === "platform_administrator");
   const policy = { ...DEFAULT_PRODUCT_POLICY, ...(productPolicy || {}) };
 
   if (action === "read") {

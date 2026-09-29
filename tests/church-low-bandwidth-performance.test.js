@@ -96,6 +96,9 @@ test("cross-branch rendered HTML: default table mode omits chart DOM", async () 
     branches: [],
     ministries: [],
     departments: [],
+    groups: [],
+    notice: null,
+    savedFilters: [],
     formatMoney: (n) => String(n),
   };
 

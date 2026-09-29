@@ -63,9 +63,9 @@ describe("V2.01 SP-VIS reminder + publish failure UX", () => {
     const bbEnd = read("views/blessboard/v5/partials/tenant-public-shell-end.ejs");
     const bbStart = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
     const ac = read("src/activeclinic/http/renderActiveClinicPublic.js");
-    assert.match(bbEnd, /website-lifecycle\.js\?v=v2-sp-vis-1/);
-    assert.match(bbEnd, /website-change-manager-ui\.js\?v=v2-sp-vis-1/);
-    assert.match(bbStart, /website-inline-edit\.css\?v=v2-sp-vis-1/);
-    assert.match(ac, /ASSET_VERSION = "v2-sp-vis-1"/);
+    assert.match(bbEnd, /website-lifecycle\.js\?v=[^"'\s>]+/);
+    assert.match(bbEnd, /website-change-manager-ui\.js\?v=[^"'\s>]+/);
+    assert.match(bbStart, /website-inline-edit\.css\?v=[^"'\s>]+/);
+    assert.match(ac, /ASSET_VERSION\s*=\s*"[^"]+"/);
   });
 });

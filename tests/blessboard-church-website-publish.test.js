@@ -191,7 +191,7 @@ describe("blessboard church website preview and publish", () => {
         [rec.churchId]
       );
       assert.equal(pages.rows.length, EXPECTED_PAGE_COUNT);
-      assert.ok(pages.rows.every((p) => p.status === "draft" && p.branch_id == null));
+      assert.ok(pages.rows.every((p) => p.status === "published" && p.branch_id == null));
 
       const again = await provisionEmptyPublicPages(pool, { churchId: rec.churchId });
       assert.equal(again.ok, true);
@@ -202,17 +202,17 @@ describe("blessboard church website preview and publish", () => {
            FROM blessboard.church_settings WHERE church_id = $1`,
         [rec.churchId]
       );
-      assert.equal(settings.rows[0].website_status, "draft");
+      assert.equal(settings.rows[0].website_status, "published");
       assert.ok(settings.rows[0].primary_email || settings.rows[0].primary_phone);
 
       const setupRedirect = await request(app)
         .get(`/c/${rec.organizationKey}`)
         .set("Host", APEX);
-      // Intended path-public contract: org home redirects to primary branch.
-      assert.equal(setupRedirect.status, 301);
-      const setup = await followApexRedirect(app, `/c/${rec.organizationKey}`);
-      assert.equal(setup.status, 200);
-      assert.match(setup.text, /not public yet|coming soon|being prepared/i);
+      // Single-site path-public contract: org home serves church-wide content.
+      assert.equal(setupRedirect.status, 200);
+      const setup = setupRedirect;
+      assert.match(setup.text, /data-bb-shell="tenant-public"/);
+      assert.doesNotMatch(setup.text, /not public yet|Website coming soon/i);
       assert.doesNotMatch(setup.text, new RegExp(rec.churchId, "i"));
 
       const sid = await sessionCookieFor(rec.administratorUserId, rec.organizationId);
@@ -418,8 +418,8 @@ describe("blessboard church website preview and publish", () => {
     assert.equal(published.ok, true);
 
     const homeRedirect = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
-    assert.equal(homeRedirect.status, 301);
-    const home = await followApexRedirect(app, `/c/${rec.organizationKey}`);
+    assert.equal(homeRedirect.status, 200);
+    const home = homeRedirect;
     assert.equal(home.status, 200);
     assert.match(home.text, /data-bb-shell="tenant-public"/);
     assert.doesNotMatch(home.text, /Website coming soon/i);
@@ -435,11 +435,10 @@ describe("blessboard church website preview and publish", () => {
       "/giving",
     ];
     for (const p of paths) {
-      const redirect = await request(app)
+      const res = await request(app)
         .get(`/c/${rec.organizationKey}${p}`)
         .set("Host", APEX);
-      assert.equal(redirect.status, 301, p);
-      const res = await followApexRedirect(app, `/c/${rec.organizationKey}${p}`);
+      assert.equal(res.status, 200, p);
       assert.equal(res.status, 200, p);
       assert.match(res.text, /bb-tp-nav/);
       assert.doesNotMatch(res.text, new RegExp(rec.churchId, "i"));
@@ -452,11 +451,9 @@ describe("blessboard church website preview and publish", () => {
     });
     assert.equal(unpublished.ok, true);
 
-    const afterRedirect = await request(app)
+    const after = await request(app)
       .get(`/c/${rec.organizationKey}/about`)
       .set("Host", APEX);
-    assert.equal(afterRedirect.status, 301);
-    const after = await followApexRedirect(app, `/c/${rec.organizationKey}/about`);
     assert.equal(after.status, 200);
     assert.match(after.text, /Website coming soon|being prepared and is not public/i);
     assert.match(after.text, /data-bb-shell="tenant-public-setup"/);

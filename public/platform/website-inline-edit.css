@@ -2303,7 +2303,8 @@ body.gp-website-lifecycle-open {
   body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header {
     position: relative;
     top: auto;
-    z-index: auto;
+    /* Sit above the fixed editor toolbar so burger / brand hit targets are not intercepted. */
+    z-index: calc(var(--gp-we-z-toolbar) + 1);
     pointer-events: none;
   }
 
@@ -2326,7 +2327,7 @@ body.gp-website-lifecycle-open {
     flex: 0 0 auto;
     align-self: center;
     position: relative;
-    z-index: 1;
+    z-index: calc(var(--gp-we-z-toolbar) + 2);
   }
 
   /* Phase-7 full-bleed hero: keep copy in the hero foot without negative overlay geometry. */

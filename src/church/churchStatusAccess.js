@@ -258,6 +258,11 @@ function churchOperationalAccessGate(req, res, next) {
   const hqPortal = isHqPath(req.path);
   const branchAdminPortal = isBranchAdminPath(req.path);
 
+  // Unauthenticated HQ routes must reach session guards (302 login), not org suspended pages.
+  if (hqPortal && !authed && !isHqPublicAuthPath(req.path)) {
+    return next();
+  }
+
   return resolveOperationalTenantStatus(req, { forceRefresh: authed })
     .then((status) => {
       if (!status.organization || !status.branch) {

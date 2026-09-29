@@ -307,24 +307,27 @@ describe("blessboard reports-audit", () => {
 
   it("paginates audit events and scopes by organization/church", async (t) => {
     if (skipIfNeeded(t)) return;
+    const actionKey = `test.page.item.${Date.now().toString(36)}`;
     for (let i = 0; i < 3; i += 1) {
       const r = await recordAuditEvent(pool, {
         deploymentCode: DEPLOYMENT,
         organizationId: orgA.records.organization.id,
         churchId: churchA.id,
         actorUserId: hqAdmin.user.id,
-        actionKey: "test.page.item",
+        actionKey,
         entityType: "test_entity",
         outcome: "success",
         metadata: { count: i },
       });
       assert.equal(r.ok, true, r.reason);
+      // Distinct created_at avoids same-ms cursor edge cases across drivers.
+      await new Promise((resolve) => setTimeout(resolve, 5));
     }
 
     const page1 = await listOrganizationAuditEvents(pool, {
       organizationId: orgA.records.organization.id,
       churchId: churchA.id,
-      actionKey: "test.page.item",
+      actionKey,
       limit: 2,
     });
     assert.equal(page1.ok, true, page1.reason);
@@ -335,7 +338,7 @@ describe("blessboard reports-audit", () => {
     const page2 = await listOrganizationAuditEvents(pool, {
       organizationId: orgA.records.organization.id,
       churchId: churchA.id,
-      actionKey: "test.page.item",
+      actionKey,
       before: page1.nextBefore,
       limit: 2,
     });

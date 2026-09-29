@@ -66,8 +66,15 @@ function platformAdminWebsitePreviewPath(organizationKey) {
  *   publishWorkflowLabel: string|null,
  * }}
  */
+function normalizeWebsiteActionActor(actor) {
+  const key = String(actor || "").trim();
+  if (key === "platform_admin") return "platform_administrator";
+  if (key === "branch_admin") return "branch_administrator";
+  return key;
+}
+
 function resolveWebsiteActionUrls(input) {
-  const actor = String((input && input.actor) || "").trim();
+  const actor = normalizeWebsiteActionActor((input && input.actor) || "");
   const key = input && input.organizationKey;
   const publicPath = publicChurchHomePath(key);
   const orgPath = platformAdminOrgPath(key);
@@ -121,7 +128,7 @@ function resolveWebsiteActionUrls(input) {
         scope,
       }) || "/branch-admin/website";
     const draftPreview =
-      buildPublicWebsitePreviewPath({
+      buildPublicWebsiteEditPath({
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: key,
         scope,

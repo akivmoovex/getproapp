@@ -122,7 +122,9 @@ test("diagnostics reports DB timeout without exposing DATABASE_URL", async () =>
   };
 
   try {
-    const diagnostics = await gatherChurchProductionDiagnostics();
+    const diagnostics = await gatherChurchProductionDiagnostics({
+      pool: { query: async () => ({ rows: [{ ok: 1 }] }) },
+    });
     const serialized = JSON.stringify(diagnostics);
     assert.doesNotMatch(serialized, /secretpass/i);
     assert.doesNotMatch(serialized, /postgres:\/\//i);

@@ -734,9 +734,10 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
 function formatPrintCardDate(value) {
   if (value == null || value === "") return null;
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    const y = value.getUTCFullYear();
-    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(value.getUTCDate()).padStart(2, "0");
+    // pg DATE arrives as local midnight; calendar date must not shift via UTC.
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   }
   const text = String(value).trim();

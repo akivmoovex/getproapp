@@ -375,12 +375,14 @@ describe("registration approval without password (Prompt 49)", () => {
     const short = await acceptInvitation(pool, {
       token: approved.invitation.rawToken,
       password: "short",
+      passwordConfirm: "short",
     });
     assert.equal(short.ok, false);
 
     const accepted = await acceptInvitation(pool, {
       token: approved.invitation.rawToken,
       password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     assert.equal(accepted.ok, true, accepted.message || accepted.status);
 

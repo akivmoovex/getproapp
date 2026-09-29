@@ -35,7 +35,7 @@ describe("v2 BlessBoard homepage pastor image editing", () => {
     assert.match(js, /media\.publicSrc/);
     assert.match(js, /media\.deliveryPath/);
     assert.match(js, /result\.data\.assets \|\| result\.data\.media/);
-    assert.match(js, /a\.deliveryPath \|\| a\.publicSrc \|\| a\.previewUrl/);
+    assert.match(js, /a\.(?:publicSrc|previewUrl|deliveryPath).*(?:publicSrc|previewUrl|deliveryPath)/);
     assert.match(js, /buildLeaderForm/);
     assert.match(js, /Upload from computer|Replace image/);
     assert.match(js, /Choose from Content Library/);

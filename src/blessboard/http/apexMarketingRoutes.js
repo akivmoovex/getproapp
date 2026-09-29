@@ -743,8 +743,15 @@ function createApexMarketingRouter(deps) {
         const statusNum = Number(status);
         const needsPublicError =
           statusNum >= 400 || (typeof rawError === "string" && rawError.trim().length > 0);
+        const preserveCsrfCopy =
+          extras &&
+          extras.showCsrfRetry === true &&
+          typeof rawError === "string" &&
+          rawError.trim() === CSRF_FORM_ERROR;
         const formError = needsPublicError
-          ? safeRegistrationPublicError(rawError, GENERIC_SAVE_ERROR)
+          ? preserveCsrfCopy
+            ? CSRF_FORM_ERROR
+            : safeRegistrationPublicError(rawError, GENERIC_SAVE_ERROR)
           : null;
         const common = {
           authenticated,

@@ -5,6 +5,7 @@ const { validateCsrf, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../
 const {
   json,
   clientTenantOverride,
+  getPendingChangeSummary,
   pendingChangeCountFor,
   createWebsiteMediaUpload,
   statusForDraftSaveFailure,
@@ -23,6 +24,7 @@ const {
   handleGetThemeState,
   handleSaveThemeDraft,
   sendThemeGalleryPage,
+  loadThemeGalleryPresentation,
   noticeFromQuery,
   errorFromQuery,
 } = require("../../platform/website/http/websiteEditorSharedOperations");

@@ -103,7 +103,7 @@ test("Phase 6 Giving Settings view hooks and no payment secrets UI", () => {
   assert.doesNotMatch(route, /router\.(get|post)\(\s*"\/branch-admin\/giving/);
 
   assert.match(css, /\.church-body--branch-admin \.church-p6-giving-settings/);
-  assert.match(shell, /church\.css\?v=56/);
+  assert.match(shell, /church\.css\?v=[^"'\s>]+/);
   const navSrc = read("src/church/http/classicAdminNav.js");
   assert.match(navSrc, /href: "\/branch\/giving-settings"/);
   assert.match(navSrc, /testId: "nav-giving-settings"/);

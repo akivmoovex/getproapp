@@ -12,6 +12,12 @@
   const mediaPos = typeof objectPosition === "string" ? objectPosition : "center center";
   const mediaLoading = typeof loading === "string" ? loading : "lazy";
   const mediaDecoding = typeof decoding === "string" ? decoding : "async";
+  const mediaFetchPriority =
+    typeof fetchPriority === "string"
+      ? fetchPriority
+      : typeof fetchpriority === "string"
+        ? fetchpriority
+        : "";
   const mediaFallback = typeof fallbackSrc === "string" ? fallbackSrc : "";
   const isDecorative = typeof decorative !== "undefined" && Boolean(decorative);
   const override = typeof styleOverride === "string" ? styleOverride.trim() : "";
@@ -35,6 +41,7 @@
   <% if (typeof height !== "undefined" && height) { %>height="<%= height %>"<% } %>
   loading="<%= mediaLoading %>"
   decoding="<%= mediaDecoding %>"
+  <% if (mediaFetchPriority) { %>fetchpriority="<%= mediaFetchPriority %>"<% } %>
   style="<%= styleAttr %>"
   <% if (mediaFallback) { %>
   onerror="this.onerror=null;this.src='<%= mediaFallback %>';"

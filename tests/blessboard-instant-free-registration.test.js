@@ -18,7 +18,6 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
-const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const {
@@ -127,14 +126,16 @@ describe("automatic Foundation registration", () => {
 
   function freeBody(overrides = {}) {
     const key = uniq("ifree");
-    const phoneTail = nextZmNational(Date.now());
+    // Kenya mobiles: 9 national digits starting with 7 (not ZM 97… glued to +2547).
+    const phoneNational = `7${String(10000000 + (Math.abs(Date.now() + Math.floor(Math.random() * 1e6)) % 89999999)).slice(-8)}`;
     return {
       church_name: `Instant Free Church ${key}`,
       country: "Kenya",
       city: "Nairobi",
       contact_name: "Instant Admin",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: phoneNational,
       email: `${key}@example.org`,
       selected_plan: "foundation",
       organization_key: key,
@@ -317,9 +318,9 @@ describe("automatic Foundation registration", () => {
     assert.equal(counts.rows[0].domains, 0);
     assert.equal(counts.rows[0].subs, 1);
     assert.equal(counts.rows[0].onboarding, 1);
-    // Foundation registration seeds eight default public pages as drafts.
-    assert.equal(counts.rows[0].published, 0);
-    assert.equal(counts.rows[0].drafts, 8);
+    // Foundation registration publishes the default public page catalogue at provision.
+    assert.equal(counts.rows[0].published, 9);
+    assert.equal(counts.rows[0].drafts, 0);
 
     const branch = await pool.query(
       `SELECT b.branch_key, b.display_name, b.display_name_normalized, b.branch_type, b.is_primary
@@ -510,7 +511,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(orgs.rows.length, 1);
   });
 
-  it("duplicate email that already administers another church requires sign-in, not review", async () => {
+  it("duplicate email that already administers another church reuses identity for multi-org (no review)", async () => {
     requireDb();
     const app = makeApp({ [ENV_KEY]: "1" });
     const email = `${uniq("dup")}@example.org`;
@@ -529,6 +530,7 @@ describe("automatic Foundation registration", () => {
       email,
       organization_key: uniq("dupb"),
       church_name: `Other Church ${uniq("o")}`,
+      multi_org_identity_ack: "on",
     });
     const res2 = await request(app)
       .post("/register-church")
@@ -536,8 +538,9 @@ describe("automatic Foundation registration", () => {
       .set("Cookie", `${CSRF_COOKIE}=${page2.cookie}`)
       .type("form")
       .send({ ...second, [CSRF_FIELD]: page2.csrf });
-    assert.equal(res2.status, 400);
-    assert.match(res2.text, /already exists|Sign in/i);
+    // Safe multi-org identity reuse: second church provisions; same user, no review queue.
+    assert.equal(res2.status, 303);
+    assertChurchReadySuccessRedirect(res2.headers.location);
     assert.doesNotMatch(String(res2.headers.location || ""), /review=1/);
 
     const users = await pool.query(

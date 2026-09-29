@@ -239,6 +239,7 @@ function createHqAdminRouter(deps) {
     return {
       effectiveRoles: authz.effectiveRoles || [],
       roles: authz.effectiveRoles || [],
+      permissions: authz.permissions || [],
       userId: session && session.userId,
     };
   }

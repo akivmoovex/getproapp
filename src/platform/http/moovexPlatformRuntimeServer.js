@@ -43,7 +43,22 @@ const QA_PRODUCT_LINKS = QA_PRODUCT_LINKS_V7;
  * @param {{ platformLine?: string } | null | undefined} [platform]
  * @returns {ReadonlyArray<{ label: string, href: string }>}
  */
+function isPronlineOrgQaHub(deployment, platform) {
+  const fromDeployment = String((deployment && deployment.canonicalDomain) || "")
+    .trim()
+    .toLowerCase();
+  if (fromDeployment === "pronline.org") return true;
+  const host = String((platform && platform.hostname) || "")
+    .trim()
+    .toLowerCase();
+  return host === "pronline.org" || host === "www.pronline.org";
+}
+
 function resolveQaProductLinks(deployment, platform) {
+  // pronline.org hub keeps the full V7 product matrix even when deployment platformLine is v8 (V9).
+  if (isPronlineOrgQaHub(deployment, platform)) {
+    return QA_PRODUCT_LINKS_V7;
+  }
   const line = String(
     (deployment && deployment.platformLine) ||
       (platform && platform.platformLine) ||
@@ -75,7 +90,9 @@ function resolveQaProductLinks(deployment, platform) {
  * @param {{ platformLine?: string, apexDomains?: string[], canonicalDomain?: string } | null | undefined} [deployment]
  */
 function renderPlatformQaLauncher(res, platform, deployment) {
+  const pronlineHub = isPronlineOrgQaHub(deployment, platform);
   const isV8 =
+    !pronlineHub &&
     String(
       (platform && platform.platformLine) ||
         (deployment && deployment.platformLine) ||

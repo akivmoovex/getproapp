@@ -493,15 +493,17 @@ describe("branch website settings + edit chrome scope regressions", () => {
 
   it("HQ admin sees chrome on church-wide and branch A; BA only on branch A", async () => {
     requireDb();
+    // Org editor entry 301s to primary branch; follow to assert chrome on the landed page.
     const hqChurch = await request(app)
       .get("/c/chrome-scope-a?website_edit=1")
+      .redirects(5)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.hq.rawToken));
     assert.equal(hqChurch.status, 200);
     assert.match(hqChurch.text, /data-bb-edit-toolbar/);
 
     const hqBranch = await request(app)
-      .get(`/c/chrome-scope-a/branches/${branchA.key}?website_edit=1`)
+      .get(`/c/chrome-scope-a/${branchA.key}?website_edit=1`)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.hq.rawToken));
     assert.equal(hqBranch.status, 200);
@@ -509,7 +511,7 @@ describe("branch website settings + edit chrome scope regressions", () => {
     assert.match(hqBranch.text, /data-bb-features-panel/);
 
     const baOwn = await request(app)
-      .get(`/c/chrome-scope-a/branches/${branchA.key}?website_edit=1`)
+      .get(`/c/chrome-scope-a/${branchA.key}?website_edit=1`)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.baA.rawToken));
     assert.equal(baOwn.status, 200);
@@ -517,6 +519,7 @@ describe("branch website settings + edit chrome scope regressions", () => {
 
     const baChurch = await request(app)
       .get("/c/chrome-scope-a?website_edit=1")
+      .redirects(5)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.baA.rawToken));
     assert.equal(baChurch.status, 200);
@@ -525,14 +528,14 @@ describe("branch website settings + edit chrome scope regressions", () => {
     assert.doesNotMatch(baChurch.text, /data-bb-inline-edit/);
 
     const baHqAlias = await request(app)
-      .get("/c/chrome-scope-a/branches/hq?website_edit=1")
+      .get("/c/chrome-scope-a/hq?website_edit=1")
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.baA.rawToken));
     assert.equal(baHqAlias.status, 200);
     assert.doesNotMatch(baHqAlias.text, /data-bb-edit-toolbar/);
 
     const baOther = await request(app)
-      .get(`/c/chrome-scope-a/branches/${branchB.key}?website_edit=1`)
+      .get(`/c/chrome-scope-a/${branchB.key}?website_edit=1`)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.baA.rawToken));
     assert.equal(baOther.status, 200);
@@ -543,13 +546,13 @@ describe("branch website settings + edit chrome scope regressions", () => {
   it("public visitor never gets chrome; removing website_edit removes chrome", async () => {
     requireDb();
     const visitor = await request(app)
-      .get(`/c/chrome-scope-a/branches/${branchA.key}?website_edit=1`)
+      .get(`/c/chrome-scope-a/${branchA.key}?website_edit=1`)
       .set("Host", APEX);
     assert.equal(visitor.status, 200);
     assert.doesNotMatch(visitor.text, /data-bb-edit-toolbar/);
 
     const hqNoEdit = await request(app)
-      .get(`/c/chrome-scope-a/branches/${branchA.key}`)
+      .get(`/c/chrome-scope-a/${branchA.key}`)
       .set("Host", APEX)
       .set("Cookie", sidCookie(users.hq.rawToken));
     assert.equal(hqNoEdit.status, 200);

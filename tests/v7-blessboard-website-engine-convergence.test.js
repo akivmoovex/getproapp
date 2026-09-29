@@ -153,7 +153,7 @@ describe("v7 BlessBoard website engine convergence", () => {
     if (pool) await pool.end();
   });
 
-  it("registration creates an unpublished shared-engine website", async () => {
+  it("registration creates a published shared-engine website at provision", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch("reg");
     const instance = await instanceFor(rec.organizationId);
@@ -165,13 +165,14 @@ describe("v7 BlessBoard website engine convergence", () => {
       `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
 
     const versions = await pool.query(
       `SELECT count(*)::int AS n FROM platform.website_versions WHERE instance_id = $1`,
       [instance.id]
     );
-    assert.equal(versions.rows[0].n, 0);
+    // Provisional seed version (change_count=0) is allowed for listing metadata.
+    assert.ok(versions.rows[0].n >= 1, `expected at least one engine version after provision`);
 
     const fields = await pool.query(
       `SELECT count(*)::int AS n
@@ -182,10 +183,10 @@ describe("v7 BlessBoard website engine convergence", () => {
     assert.ok(fields.rows[0].n > 0, "engine field keys missing");
 
     const publicRes = await request(app)
-      .get(`/c/${rec.organizationKey}`)
+      .get(`/c/${rec.organizationKey}`).redirects(5)
       .set("Host", APEX);
     assert.equal(publicRes.status, 200);
-    assert.match(publicRes.text, /not public yet/i);
+    assert.match(publicRes.text, /data-bb-shell="tenant-public"/);
   });
 
   it("drafts store in the shared engine and leave the public site unchanged", async () => {
@@ -224,9 +225,9 @@ describe("v7 BlessBoard website engine convergence", () => {
     assert.notEqual(String(cms.rows[0].heading || ""), heading);
 
     const publicRes = await request(app)
-      .get(`/c/${rec.organizationKey}`)
+      .get(`/c/${rec.organizationKey}`).redirects(5)
       .set("Host", APEX);
-    assert.match(publicRes.text, /not public yet/i);
+    assert.match(publicRes.text, /data-bb-shell="tenant-public"/);
     assert.doesNotMatch(publicRes.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
 
@@ -261,7 +262,7 @@ describe("v7 BlessBoard website engine convergence", () => {
     );
     assert.equal(String(row.publishedValue || ""), heading);
 
-    const live = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const live = await request(app).get(`/c/${rec.organizationKey}`).redirects(5).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /not public yet/i);
     assert.match(live.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -348,8 +349,19 @@ describe("v7 BlessBoard website engine convergence", () => {
       organizationId: rec.organizationId,
     });
     const all = listed.versions || [];
-    assert.ok(all.length >= 2, "previous published version not retained");
-    const v1 = all.slice().sort((a, b) => Number(a.versionNumber) - Number(b.versionNumber))[0];
+    // Skip provisional seed (changeCount 0 / empty changedKeys) — restore the first publish.
+    const publishedish = all
+      .slice()
+      .sort((a, b) => Number(a.versionNumber) - Number(b.versionNumber))
+      .filter((v) => {
+        const values = (v.snapshot && v.snapshot.values) || {};
+        return String(values[HERO_KEY] || "") === first || Number(v.changeCount) > 0;
+      });
+    assert.ok(publishedish.length >= 1, "first published version not retained");
+    const v1 =
+      publishedish.find((v) => String(((v.snapshot && v.snapshot.values) || {})[HERO_KEY] || "") === first) ||
+      publishedish[0];
+    assert.equal(String(((v1.snapshot && v1.snapshot.values) || {})[HERO_KEY] || ""), first);
 
     const restored = await publicationService.restoreWebsiteVersionLive(pool, {
       organizationId: rec.organizationId,
@@ -371,7 +383,7 @@ describe("v7 BlessBoard website engine convergence", () => {
       historic.version.snapshot.values[HERO_KEY];
     assert.equal(String(historicHeading || ""), first);
 
-    const live = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const live = await request(app).get(`/c/${rec.organizationKey}`).redirects(5).set("Host", APEX);
     assert.match(live.text, new RegExp(first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(live.text, new RegExp(second.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
@@ -382,7 +394,7 @@ describe("v7 BlessBoard website engine convergence", () => {
     await publishReady(rec);
     for (const suffix of PUBLIC_SUFFIXES) {
       const res = await request(app)
-        .get(`/c/${rec.organizationKey}${suffix}`)
+        .get(`/c/${rec.organizationKey}${suffix}`).redirects(5)
         .set("Host", APEX);
       assert.equal(res.status, 200, `${suffix || "/"} → ${res.status}`);
       assert.doesNotMatch(res.text, /not public yet/i);

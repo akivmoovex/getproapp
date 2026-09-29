@@ -41,16 +41,13 @@
   <% if (seo.twitterImageUrl) { %>
   <meta name="twitter:image" content="<%= seo.twitterImageUrl %>"/>
   <% } %>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <% if (shellVariant === "platform") { %>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <% } else { %>
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <% } %>
+  <%- include('../../platform/partials/head-fonts', {
+    fontFamily: shellVariant === 'platform' ? 'inter' : 'public-sans',
+    iconFont: 'subset',
+    fontAssetVersion: assetVersion
+  }) %>
+  <% if (shellVariant === 'platform') { %>
+  <link rel="preload" as="image" href="<%= typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg') : '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg' %>" fetchpriority="high"/>
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
@@ -68,7 +65,11 @@
   <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= assetVersion %>"/>
   <% } %>
   <% } %>
+  <%# _needsPhoneField: registration / phone surfaces only (not public marketing homepage). %>
+  <% var _needsPhoneField = typeof chrome === 'string' && chrome === 'mf-register'; %>
+  <% if (_needsPhoneField) { %>
   <link rel="stylesheet" href="/platform/phone-field.css?v=<%= assetVersion %>"/>
+  <% } %>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=<%= assetVersion %>"/>
@@ -131,7 +132,9 @@
   <% } %>
   <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
+  <% if (_needsPhoneField) { %>
   <script src="/platform/phone-field.js?v=<%= assetVersion %>" defer></script>
+  <% } %>
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
   <script src="/platform/registration-password-rules.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/registration-consent.js?v=<%= assetVersion %>" defer></script>

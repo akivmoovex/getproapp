@@ -90,7 +90,7 @@ describe("BlessBoard registration identity conflict / idempotency", () => {
     });
   }
 
-  async function provision(app, extra = {}) {
+  async function provision(app, extra = {}, opts = {}) {
     return provisionRegisteredBlessBoardChurch(
       pool,
       {
@@ -100,7 +100,7 @@ describe("BlessBoard registration identity conflict / idempotency", () => {
         actorContext: ACTOR,
         ...extra,
       },
-      { allowRetry: true }
+      { allowRetry: true, ...opts }
     );
   }
 
@@ -151,7 +151,7 @@ describe("BlessBoard registration identity conflict / idempotency", () => {
       church_name: `Second Church ${uniq("b2")}`,
       city: `City-${uniq("b2")}`,
     });
-    const r2 = await provision(second);
+    const r2 = await provision(second, {}, { allowMultiOrgIdentityReuse: true });
     assert.equal(r2.ok, true, JSON.stringify(r2));
     assert.equal(String(r2.records.administratorUserId), String(userId));
     assert.equal(r2.records.administratorLinkedExisting, true);

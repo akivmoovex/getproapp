@@ -66,7 +66,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=7[67]/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=[^"'\s>]+[67]/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {

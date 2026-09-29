@@ -32,6 +32,7 @@ const {
 const {
   deriveOrganizationKeyFromChurchName,
 } = require("../src/blessboard/services/platformChurchRegistrationValidation");
+const { withOrganizationKeySuffix } = require("../src/platform/organization/organizationKey");
 const {
   decideReview,
   REVIEW_REASON,
@@ -193,15 +194,16 @@ describe("BlessBoard V1 registration review matrix", () => {
     assertChurchReadySuccessRedirect(second.headers.location);
     assert.doesNotMatch(String(second.headers.location || ""), /review=1/);
 
+    const suffixedKey = withOrganizationKeySuffix(base.value, 2);
     const keys = await pool.query(
       `SELECT organization_key FROM platform.organizations
         WHERE organization_key = $1 OR organization_key = $2
         ORDER BY organization_key`,
-      [base.value, `${base.value}-2`]
+      [base.value, suffixedKey]
     );
     assert.equal(keys.rows.length, 2);
     assert.ok(keys.rows.some((r) => r.organization_key === base.value));
-    assert.ok(keys.rows.some((r) => r.organization_key === `${base.value}-2`));
+    assert.ok(keys.rows.some((r) => r.organization_key === suffixedKey));
   });
 
   it("same request retry is idempotent (one church, success redirect)", async () => {

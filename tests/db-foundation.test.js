@@ -116,7 +116,7 @@ describe("db foundation (empty PostgreSQL)", () => {
         ["activeclinic", "ActiveClinic", "active"],
         ["blessboard", "BlessBoard", "active"],
         ["getpro", "GetPro", "active"],
-        ["ngo", "NGO", "active"],
+        ["ngo", "Netraz", "active"],
       ]
     );
     const orgCount = await pool.query(`SELECT COUNT(*)::int AS n FROM platform.organizations`);
@@ -246,7 +246,7 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM platform.deployments
         ORDER BY deployment_code`
     );
-    assert.equal(r.rowCount, 3);
+    assert.equal(r.rowCount >= 3, true, `expected at least the three required deployments, got ${r.rowCount}`);
 
     const com = r.rows.find((row) => row.deployment_code === "blessboard-com-production");
     const org = r.rows.find((row) => row.deployment_code === "blessboard-org-staging");

@@ -28,6 +28,11 @@ const STATUS = Object.freeze({
 });
 
 const FULL_RESET_CONFIRM_PHRASE = "CLEAR BLESSBOARD TEST DATA";
+const ALLOWED_TESTING_IDENTITY_KEYS = Object.freeze([
+  "moovex-platform-v7",
+  "blessboard-platform-v5",
+]);
+/** @deprecated Prefer ALLOWED_TESTING_IDENTITY_KEYS — retained for legacy tests/docs. */
 const EXPECTED_IDENTITY_KEY = "moovex-platform-v7";
 const EXPECTED_DB_ENV = "testing";
 const ADVISORY_LOCK_KEY = 824510019;
@@ -91,9 +96,7 @@ function verifyPreviewToken(secret, token) {
  * @param {NodeJS.ProcessEnv} env
  */
 async function assertDatabaseTestingIdentity(db, env) {
-  const identity = await checkDatabaseIdentity(db, {
-    identityKey: EXPECTED_IDENTITY_KEY,
-  });
+  const identity = await checkDatabaseIdentity(db, {});
   if (!identity.ok) {
     return {
       ok: false,
@@ -103,7 +106,7 @@ async function assertDatabaseTestingIdentity(db, env) {
   }
   const key = identity.row && identity.row.identity_key;
   const envCode = identity.row && identity.row.environment_code;
-  if (key !== EXPECTED_IDENTITY_KEY) {
+  if (!key || !ALLOWED_TESTING_IDENTITY_KEYS.includes(String(key))) {
     return { ok: false, status: STATUS.IDENTITY_BLOCKED, reason: "identity_key_mismatch" };
   }
   if (String(envCode || "").toLowerCase() !== EXPECTED_DB_ENV) {
@@ -692,6 +695,7 @@ async function cleanupMediaFiles(env, mediaObjects) {
 module.exports = {
   STATUS,
   FULL_RESET_CONFIRM_PHRASE,
+  ALLOWED_TESTING_IDENTITY_KEYS,
   EXPECTED_IDENTITY_KEY,
   EXPECTED_DB_ENV,
   CATEGORY_ACTIONS,

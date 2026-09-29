@@ -181,7 +181,7 @@ function isCatalogueHqRole(roleKey) {
  */
 function isCatalogueBranchRole(roleKey) {
   const key = String(roleKey || "");
-  return key === "branch_administrator" || key === "branch_pastor";
+  return key === "branch_administrator" || key === "branch_admin" || key === "branch_pastor";
 }
 
 /**

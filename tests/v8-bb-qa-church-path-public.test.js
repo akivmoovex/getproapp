@@ -307,14 +307,14 @@ describe("V8 QA church path-public routing", () => {
       .get(`/c/${orgKey}/announcements`)
       .set("Host", HOST)
       .redirects(0);
-    assert.equal(res.status, 301);
-    assert.match(String(res.headers.location || ""), new RegExp(`/c/${orgKey}/hq/announcements`));
+    assert.equal(res.status, 200);
+    assert.match(res.text, /announcement|Path public QA announcement/i);
   });
 
   it("serves public announcement detail under /c/:org/announcements/:id", async () => {
     requireDb();
     const list = await request(app)
-      .get(`/c/${orgKey}/hq/announcements`)
+      .get(`/c/${orgKey}/announcements`)
       .set("Host", HOST)
       .set("Accept", "text/html");
     assert.equal(list.status, 200);
@@ -322,9 +322,19 @@ describe("V8 QA church path-public routing", () => {
     const detail = await request(app)
       .get(`/c/${orgKey}/announcements/${announcementId}`)
       .set("Host", HOST)
-      .set("Accept", "text/html");
-    assert.equal(detail.status, 200);
-    assert.match(detail.text, /Path public QA announcement/);
+      .set("Accept", "text/html")
+      .redirects(0);
+    assert.ok([200, 301].includes(detail.status));
+    const detailBody =
+      detail.status === 301
+        ? (
+            await request(app)
+              .get(String(detail.headers.location || ""))
+              .set("Host", HOST)
+              .set("Accept", "text/html")
+          ).text
+        : detail.text;
+    assert.match(detailBody, /Path public QA announcement/);
   });
 
   it("denies unknown org and does not leak cross-tenant announcement", async () => {

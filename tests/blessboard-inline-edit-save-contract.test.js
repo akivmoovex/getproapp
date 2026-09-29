@@ -216,7 +216,7 @@ describe("branch admin inline edit save contract", () => {
     if (skipIfNeeded()) return;
 
     const page = await request(app)
-      .get(`/c/${ORG_KEY}?website_edit=1`)
+      .get(`/c/${ORG_KEY}?website_edit=1`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branch.rawToken}`))
       .expect(200);
@@ -261,12 +261,12 @@ describe("branch admin inline edit save contract", () => {
     });
     assert.ok(drafts.some((d) => d.newValue === "Draft From Page CSRF"));
 
-    const publicRes = await request(app).get(`/c/${ORG_KEY}`).set("Host", APEX).expect(200);
+    const publicRes = await request(app).get(`/c/${ORG_KEY}`).redirects(5).set("Host", APEX).expect(200);
     assert.match(publicRes.text, /Published Hero/);
     assert.doesNotMatch(publicRes.text, /Draft From Page CSRF/);
 
     const editReload = await request(app)
-      .get(`/c/${ORG_KEY}?website_edit=1`)
+      .get(`/c/${ORG_KEY}?website_edit=1`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branch.rawToken}`))
       .expect(200);

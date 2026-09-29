@@ -51,8 +51,8 @@ describe("v2 bb ministry leader image upload contracts", () => {
     const start = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const end = read("views/blessboard/v5/partials/branch-admin-shell-end.ejs");
     assert.match(start, /loadSharedWebsiteMedia/);
-    assert.match(start, /website-media-field\.css\?v=v2-media-parity-1/);
-    assert.match(end, /website-media-field\.js\?v=v2-media-parity-1/);
+    assert.match(start, /website-media-field\.css\?v=[^"'\s>]+/);
+    assert.match(end, /website-media-field\.js\?v=[^"'\s>]+/);
   });
 
   it("structured leader editor keeps Upload from computer and Content Library", () => {

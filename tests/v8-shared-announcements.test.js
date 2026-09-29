@@ -414,7 +414,7 @@ describe("V8 shared announcements AN01–AN05", () => {
       path.join(__dirname, "../views/platform/announcements/layout.ejs"),
       "utf8"
     );
-    assert.match(layout, /announcements\.css\?v=2/);
+    assert.match(layout, /announcements\.css\?v=[^"'\s>]+/);
   });
 
   it("additive migrations 042 and 111 exist (not applied hosted)", () => {

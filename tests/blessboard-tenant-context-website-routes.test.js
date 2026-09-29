@@ -62,7 +62,7 @@ function baseEnv(overrides) {
 describe("website action URL helper", () => {
   it("platform admin never receives /hq tenant-session links", () => {
     const urls = resolveWebsiteActionUrls({
-      actor: "platform_admin",
+      actor: "platform_administrator",
       organizationKey: "demo3",
     });
     assert.equal(urls.serviceTimesUrl, null);
@@ -84,7 +84,7 @@ describe("website action URL helper", () => {
 
   it("branch admin receives branch website workflow routes", () => {
     const urls = resolveWebsiteActionUrls({
-      actor: "branch_admin",
+      actor: "branch_administrator",
       organizationKey: "demo3",
     });
     assert.equal(urls.editWebsiteUrl, "/branch-admin/website");
@@ -95,9 +95,9 @@ describe("website action URL helper", () => {
 
 describe("apex post-login destinations", () => {
   it("routes branch_admin to /branch-admin", () => {
-    assert.equal(hasBranchAdminRole([{ roleKey: "branch_admin" }]), true);
+    assert.equal(hasBranchAdminRole([{ roleKey: "branch_administrator" }]), true);
     assert.equal(
-      resolveApexPostLoginPath([{ roleKey: "branch_admin" }], null),
+      resolveApexPostLoginPath([{ roleKey: "branch_administrator" }], null),
       "/branch-admin"
     );
     assert.equal(safeBranchAdminNextPath("/branch-admin/website"), "/branch-admin/website");
@@ -168,12 +168,19 @@ describe("tenant context apex HQ and branch-admin", () => {
       });
       assert.equal(branchUser.ok, true, branchUser.message);
 
+      const branchMeta = await pool.query(
+        `SELECT branch_key FROM blessboard.branches WHERE id = $1`,
+        [provisioned.records.branchId]
+      );
+      assert.equal(branchMeta.rowCount, 1, "provisioned HQ branch missing");
+      const hqBranchKey = branchMeta.rows[0].branch_key;
+
       const branchRole = await assignBlessBoardRole(pool, {
         email: branchEmail,
         organizationKey: orgKey,
         roleKey: "branch_admin",
         churchKey: orgKey,
-        branchKey: "hq",
+        branchKey: hqBranchKey,
       });
       assert.equal(branchRole.ok, true, branchRole.message);
 
@@ -300,7 +307,7 @@ describe("tenant context apex HQ and branch-admin", () => {
 
   it("public /c/:key still renders after HQ session exists", async () => {
     requireDb();
-    const res = await request(app).get(`/c/${fixtures.orgKey}`).set("Host", APEX);
+    const res = await request(app).get(`/c/${fixtures.orgKey}`).redirects(5).set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /Ctx Church/i);
   });

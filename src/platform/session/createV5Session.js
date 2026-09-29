@@ -21,6 +21,7 @@ const {
  *   branchId?: string | null,
  *   ip?: string | null,
  *   userAgent?: string | null,
+ *   contextJson?: object | null,
  * }} fields
  */
 async function createV5Session(client, fields) {
@@ -38,6 +39,7 @@ async function createV5Session(client, fields) {
     branchId: fields.branchId,
     ip: fields.ip,
     userAgent: fields.userAgent,
+    contextJson: fields.contextJson,
   });
 
   if (!created.ok) {

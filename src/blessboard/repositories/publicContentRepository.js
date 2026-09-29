@@ -191,14 +191,14 @@ const GIVING_COLS = `id, church_id, branch_id, method_type, label, description, 
 async function findPageByScope(client, scope) {
   const r = scope.branchId
     ? await client.query(
-        `SELECT ${PAGE_COLS_WITH_REVISION}
+        `SELECT ${PAGE_COLS}
            FROM blessboard.public_pages
           WHERE church_id = $1 AND branch_id = $2 AND page_key = $3
           LIMIT 1`,
         [scope.churchId, scope.branchId, scope.pageKey]
       )
     : await client.query(
-        `SELECT ${PAGE_COLS_WITH_REVISION}
+        `SELECT ${PAGE_COLS}
            FROM blessboard.public_pages
           WHERE church_id = $1 AND branch_id IS NULL AND page_key = $2
           LIMIT 1`,
@@ -238,7 +238,7 @@ async function findPageByScopeForProvision(client, scope) {
  */
 async function findPageById(client, pageId) {
   const r = await client.query(
-    `SELECT ${PAGE_COLS_WITH_REVISION} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
+    `SELECT ${PAGE_COLS} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
     [pageId]
   );
   return mapPage(r.rows[0] || null);
@@ -331,7 +331,7 @@ async function listSectionsForPage(client, pageId, opts = {}) {
     statusClause = ` AND status = $${params.length}`;
   }
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION}
+    `SELECT ${SECTION_COLS}
        FROM blessboard.page_sections
       WHERE page_id = $1${statusClause}
       ORDER BY sort_order ASC, created_at ASC`,
@@ -455,7 +455,7 @@ async function updateSectionForProvision(client, sectionId, patch) {
  */
 async function findSectionByPageAndKey(client, pageId, sectionKey) {
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION}
+    `SELECT ${SECTION_COLS}
        FROM blessboard.page_sections
       WHERE page_id = $1 AND section_key = $2
       LIMIT 1`,
@@ -487,7 +487,7 @@ async function findSectionByPageAndKeyForProvision(client, pageId, sectionKey) {
  */
 async function findSectionById(client, sectionId) {
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
+    `SELECT ${SECTION_COLS} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
     [sectionId]
   );
   return mapSection(r.rows[0] || null);

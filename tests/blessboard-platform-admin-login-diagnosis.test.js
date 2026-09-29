@@ -259,7 +259,7 @@ describe("blessboard platform-admin login diagnosis (prompt 43)", () => {
     logLines = [];
     const badPw = await loginFlow("platform-admin@example.org", "wrong-password-xx", "/admin");
     assert.equal(badPw.post.status, 401);
-    assert.match(badPw.post.text, /Invalid email or password/i);
+    assert.match(badPw.post.text, /Invalid email, phone number, or password/i);
 
     const getLogin = await request(app).get("/login").set("Host", "blessboard.org");
     const csrf = extractCookie(getLogin, CSRF_COOKIE);
@@ -273,7 +273,7 @@ describe("blessboard platform-admin login diagnosis (prompt 43)", () => {
 
     const missing = await loginFlow("nobody@example.org", PASSWORD, "/admin");
     assert.equal(missing.post.status, 401);
-    assert.match(missing.post.text, /Invalid email or password/i);
+    assert.match(missing.post.text, /Invalid email, phone number, or password/i);
 
     const events = parseAuthEvents(logLines).map((e) => e.event);
     assert.ok(events.includes("apex_login_password_rejected"));
@@ -286,7 +286,7 @@ describe("blessboard platform-admin login diagnosis (prompt 43)", () => {
     logLines = [];
     const { post } = await loginFlow("hq-only@example.org", PASSWORD, "/admin");
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/account");
+    assert.equal(post.headers.location, "/hq");
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     const admin = await request(app)
       .get("/admin")

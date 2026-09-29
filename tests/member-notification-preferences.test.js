@@ -266,8 +266,8 @@ describe("member notification preferences", () => {
     assert.match(res.text, /Notification preferences/);
     assert.match(res.text, /Contact channels/);
     assert.match(res.text, /me\*+@msg-a\.example\.test/i);
-    assert.match(res.text, /\+?\*+6001/);
-    assert.doesNotMatch(res.text, /member@msg-a\.example\.test/);
+    assert.match(res.text, /<dt>Phone<\/dt>/);
+    assert.doesNotMatch(res.text, /member@msg-a\.example\.test/i);
     assert.doesNotMatch(res.text, /\+260977123601/);
     assert.match(res.text, /data-bb-channel-unavailable="sms"/);
     assert.match(res.text, /data-bb-channel-unavailable="push"/);

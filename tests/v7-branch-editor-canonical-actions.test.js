@@ -135,9 +135,8 @@ describe("v7 branch editor canonical actions", () => {
           await assignBlessBoardRole(pool, {
             email: "branch-actions-admin@example.test",
             organizationKey: ORG,
-            roleKey: "branch_admin",
+            roleKey: "church_hq_admin",
             churchKey: ORG,
-            branchKey: BRANCH,
           })
         ).ok,
         true
@@ -180,7 +179,10 @@ describe("v7 branch editor canonical actions", () => {
 
   it("editor chrome emits branch-scoped action URLs", async () => {
     if (skipIfNeeded()) return;
-    const base = `/c/${ORG}/${BRANCH}`;
+    // Primary / HQ public URLs serve church-wide CMS (chrome uses /c/:org/website/...).
+    // Independent branch chrome is asserted on a non-primary campus.
+    const campusKey = branchCampus.branch_key;
+    const base = `/c/${ORG}/${campusKey}`;
     const res = await request(app)
       .get(`${base}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
@@ -206,6 +208,7 @@ describe("v7 branch editor canonical actions", () => {
 
   it("branch history/styles/seo pages resolve under branch prefix", async () => {
     if (skipIfNeeded()) return;
+    // HQ admin may manage primary branch-prefixed editor surfaces.
     const base = `/c/${ORG}/${BRANCH}`;
     const cookie = cookieHeader(`${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
 

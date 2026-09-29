@@ -287,10 +287,17 @@ describe("blessboard platform support mode HTTP", () => {
     assert.ok(started.rawToken);
 
     const supportCookie = `${SUPPORT_COOKIE}=${started.rawToken}`;
-    const hq = await request(app)
+    let hq = await request(app)
       .get("/hq")
+      .redirects(0)
       .set("Host", HOST_A)
       .set("Cookie", cookieHeader([cookie, supportCookie]));
+    if (hq.status === 303 && String(hq.headers.location || "").includes("/hq/onboarding")) {
+      hq = await request(app)
+        .get("/hq/onboarding")
+        .set("Host", HOST_A)
+        .set("Cookie", cookieHeader([cookie, supportCookie]));
+    }
     assert.equal(hq.status, 200);
     assert.match(hq.text, /data-bb-support-banner="1"/);
     assert.match(hq.text, /Support mode:/);
@@ -392,7 +399,10 @@ describe("blessboard platform support mode HTTP", () => {
   it("ordinary HQ admin still accesses portal without support cookie", async () => {
     requireDb();
     const { cookie } = await sessionCookie(users.hq, orgA, churchA);
-    const hq = await request(app).get("/hq").set("Host", HOST_A).set("Cookie", cookie);
+    let hq = await request(app).get("/hq").redirects(0).set("Host", HOST_A).set("Cookie", cookie);
+    if (hq.status === 303 && String(hq.headers.location || "").includes("/hq/onboarding")) {
+      hq = await request(app).get("/hq/onboarding").set("Host", HOST_A).set("Cookie", cookie);
+    }
     assert.equal(hq.status, 200);
     assert.doesNotMatch(hq.text, /data-bb-support-banner="1"/);
   });

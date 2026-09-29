@@ -431,6 +431,7 @@ function createAnnouncementAdminRouter(deps) {
       requireUploadsEnabled,
       multerSingle,
       async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
         const scope = await resolveScope(req, res);
         if (!scope) return;
         return respondWithMediaUpload(req, res, {

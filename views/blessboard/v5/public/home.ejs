@@ -150,9 +150,11 @@
   teaserSectionKeys.forEach(function (key) {
     if (orderedTeaserKeys.indexOf(key) < 0) orderedTeaserKeys.push(key);
   });
-  var homeMiddleRenderOrder = homeMiddleOrder.slice();
-  teaserSectionKeys.forEach(function (key) {
-    if (homeMiddleRenderOrder.indexOf(key) < 0) homeMiddleRenderOrder.push(key);
+  var homeMiddleRenderOrder = homeMiddleOrder.filter(function (key) {
+    return teaserSectionKeys.indexOf(key) < 0;
+  });
+  orderedTeaserKeys.forEach(function (key) {
+    homeMiddleRenderOrder.push(key);
   });
   function isFreeformHomeSection(section) {
     if (!section) return false;

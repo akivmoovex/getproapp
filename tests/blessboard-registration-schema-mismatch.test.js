@@ -247,10 +247,8 @@ describe("public registration schema mismatch (Prompt 073)", () => {
     );
     assert.equal(after.rows[0].n, before.rows[0].n);
 
-    const serviceResult = await submitPlatformChurchRegistration(
-      gatedPool,
-      { ip: "203.0.113.75" },
-      validatePlatformChurchRegistration({
+    const serviceValidation = validatePlatformChurchRegistration(
+      {
         church_name: churchName,
         country: "Zambia",
         city: "Ndola",
@@ -260,7 +258,15 @@ describe("public registration schema mismatch (Prompt 073)", () => {
         email,
         selected_plan: "foundation",
         consent_contact: "on",
-      })
+        branch_name: "HQ",
+      },
+      { instantFreeEnabled: false }
+    );
+    assert.equal(serviceValidation.ok, true, serviceValidation.error);
+    const serviceResult = await submitPlatformChurchRegistration(
+      gatedPool,
+      { ip: "203.0.113.75" },
+      serviceValidation
     );
     assert.equal(serviceResult.ok, false);
     assert.equal(serviceResult.code, "schema_mismatch");

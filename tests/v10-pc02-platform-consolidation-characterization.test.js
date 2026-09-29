@@ -771,9 +771,8 @@ describe("PC02 security HTTP — website editor boundaries", () => {
     });
     assert.equal(session.ok, true, session.message || session.code);
     const cookie = `${DEFAULT_V5_COOKIE}=${session.rawToken}`;
-    const branchBase = `/c/${rec.organizationKey}/${branchKey}`;
     const edit = await request(app)
-      .get(`${branchBase}?website_edit=1&website_mode=draft`)
+      .get(`${churchWideBase}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));

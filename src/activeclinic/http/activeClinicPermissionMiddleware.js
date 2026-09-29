@@ -143,6 +143,26 @@ function createRequireActiveClinicPermission(deps) {
           return res.redirect(303, "/account/change-password");
         }
 
+        const facilityAssignments = Array.isArray(auth.facilityAssignments)
+          ? auth.facilityAssignments
+          : [];
+        const allowedFacilityIds = facilityAssignments
+          .map((row) =>
+            row && (row.facilityId || row.facility_id || (row.facility && row.facility.id))
+          )
+          .filter(Boolean);
+        const roleAssignments = Array.isArray(auth.roleAssignments)
+          ? auth.roleAssignments
+          : [];
+        const allowOrgFacilityTargets =
+          auth.isNetworkAdmin === true ||
+          roleAssignments.some((row) => {
+            const key = String((row && row.roleKey) || "").trim();
+            return (
+              key === "activeclinic_organization_admin" ||
+              key === "activeclinic_network_admin"
+            );
+          });
         const forged = rejectForgedTenantIdentifiers({
           body: req.body,
           query: req.query,
@@ -152,6 +172,8 @@ function createRequireActiveClinicPermission(deps) {
               auth.selectedFacility && auth.selectedFacility.id
                 ? auth.selectedFacility.id
                 : null,
+            allowedFacilityIds,
+            allowOrgFacilityTargets,
           },
           allowMatchingTrusted: true,
         });

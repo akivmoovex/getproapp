@@ -216,11 +216,17 @@ test("24 unsupported actions absent", async () => {
 
 test("25-27 active nav, Member Login, Register remain", async () => {
   const events = await request(makeTenantApp()).get("/events");
-  assert.match(events.text, /href="\/events"[^>]*church-nav__active|class="church-nav__active">Events/);
+  assert.match(
+    events.text,
+    /church-nav-dropdown__link--active[^>]*>\s*Events|href="\/events"[^>]*church-nav-dropdown__link--active|church-nav-dropdown__trigger[^>]*church-nav__active/
+  );
   assert.match(events.text, /Member Login/);
   assert.match(events.text, /Register as a Member/);
   const sermons = await request(makeTenantApp()).get("/sermons");
-  assert.match(sermons.text, /href="\/sermons"[^>]*church-nav__active|class="church-nav__active">Sermons/);
+  assert.match(
+    sermons.text,
+    /church-nav-dropdown__link--active[^>]*>\s*Sermons|href="\/sermons"[^>]*church-nav-dropdown__link--active|church-nav-dropdown__trigger[^>]*church-nav__active/
+  );
   assert.match(sermons.text, /Member Login/);
   assert.match(sermons.text, /Register as a Member/);
 });

@@ -111,6 +111,22 @@ function overlayPublishedPage(livePage, liveSections, snapshot, pageKey, opts) {
   return { page, sections, fromSnapshot: true };
 }
 
+function entitySortOrder(item) {
+  if (!item || typeof item !== "object") return 0;
+  if (item.sortOrder != null && !Number.isNaN(Number(item.sortOrder))) {
+    return Number(item.sortOrder);
+  }
+  if (item.sort_order != null && !Number.isNaN(Number(item.sort_order))) {
+    return Number(item.sort_order);
+  }
+  return 0;
+}
+
+function entityIdKey(item) {
+  if (!item || item.id == null) return "";
+  return String(item.id).trim();
+}
+
 function overlayPublishedEntities(kind, liveItems, snapshot) {
   const entities = snapshot && snapshot.entities && typeof snapshot.entities === "object"
     ? snapshot.entities
@@ -121,8 +137,26 @@ function overlayPublishedEntities(kind, liveItems, snapshot) {
     return { items: liveItems, fromSnapshot: false };
   }
   const list = Array.isArray(entities[key]) ? entities[key] : [];
+  const snapPublished = list.filter(
+    (item) => String((item && item.status) || "published") === "published"
+  );
+  const snapIds = new Set(snapPublished.map(entityIdKey).filter(Boolean));
+  const livePublished = (Array.isArray(liveItems) ? liveItems : []).filter(
+    (item) => String((item && item.status) || "published") === "published"
+  );
+  const liveExtras = livePublished.filter((item) => {
+    const id = entityIdKey(item);
+    return id && !snapIds.has(id);
+  });
+  const merged = [...snapPublished, ...liveExtras].sort((a, b) => {
+    const diff = entitySortOrder(a) - entitySortOrder(b);
+    if (diff !== 0) return diff;
+    const aLabel = String((a && (a.label || a.display_name || a.displayName)) || "");
+    const bLabel = String((b && (b.label || b.display_name || b.displayName)) || "");
+    return aLabel.localeCompare(bLabel);
+  });
   return {
-    items: list.filter((item) => String((item && item.status) || "published") === "published"),
+    items: merged,
     fromSnapshot: true,
   };
 }

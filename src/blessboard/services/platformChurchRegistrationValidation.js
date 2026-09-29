@@ -370,6 +370,9 @@ function validatePlatformChurchRegistration(body, opts = {}) {
       administrator_password: administratorPassword,
       // Compatibility name: true for Foundation or Growth auto-provision.
       wants_instant_free: wantsInstantProvision,
+      // Explicit opt-in when an administrator already owns another church (password still required).
+      allow_multi_org_identity_reuse:
+        String(body && body.multi_org_identity_ack).trim().toLowerCase() === "on",
     },
   };
 }

@@ -20,6 +20,7 @@
   var _ministriesClass = _active === 'ministries' ? ' church-nav-dropdown__link--active' : '';
   var _eventsClass = _active === 'events' ? ' church-nav-dropdown__link--active' : '';
   var _sermonsClass = _active === 'sermons' ? ' church-nav-dropdown__link--active' : '';
+  var _givingClass = _active === 'giving' ? ' church-nav-dropdown__link--active' : '';
 %>
 <a href="<%= _homeHref %>" class="<%= _homeClass.trim() %>">Home</a>
 <a href="<%= _th('/about') %>" class="<%= _aboutClass.trim() %>">About</a>
@@ -47,6 +48,9 @@
     </li>
     <li role="none">
       <a role="menuitem" href="<%= _th('/sermons') %>" class="<%= _sermonsClass.trim() %>">Sermons &amp; Resources</a>
+    </li>
+    <li role="none">
+      <a role="menuitem" href="<%= _th('/giving') %>" class="<%= _givingClass.trim() %>">Giving</a>
     </li>
   </ul>
 </div>

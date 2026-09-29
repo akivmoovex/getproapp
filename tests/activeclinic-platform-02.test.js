@@ -205,13 +205,13 @@ describe("ActiveClinic platform 02", () => {
       .send({ ...payload, action: "next-admin", [CSRF_FIELD]: csrf2 });
     assert.equal(review.status, 200);
     const editClinic = await request(application)
-      .get("/register-clinic?step=clinic")
+      .get("/register-clinic?step=clinic&gpRegNav=1")
       .set("Cookie", review.headers["set-cookie"]);
     assert.equal(editClinic.status, 200);
     assert.doesNotMatch(editClinic.text, /session expired/i);
     assert.match(editClinic.text, /Kitwe/);
     const editAdmin = await request(application)
-      .get("/register-clinic?step=administrator")
+      .get("/register-clinic?step=administrator&gpRegNav=1")
       .set("Cookie", review.headers["set-cookie"]);
     assert.equal(editAdmin.status, 200);
     assert.match(editAdmin.text, /edit-flow@example\.invalid/);
@@ -246,7 +246,7 @@ describe("ActiveClinic platform 02", () => {
     assert.equal(badConfirm.status, 403);
     assert.match(badConfirm.text, /session expired/i);
     const editClinic = await request(application)
-      .get("/register-clinic?step=clinic")
+      .get("/register-clinic?step=clinic&gpRegNav=1")
       .set("Cookie", review.headers["set-cookie"]);
     assert.equal(editClinic.status, 200);
     assert.match(editClinic.text, /csrf-guard@example\.invalid|Lusaka|Kitwe/);

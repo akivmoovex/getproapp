@@ -127,7 +127,7 @@ describe("v7 BlessBoard shared website engine", () => {
       `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(settings.rows[0].website_status, "draft");
+    assert.equal(settings.rows[0].website_status, "published");
   });
 
   it("HQ publish writes an engine version and unpublish preserves snapshot", async () => {

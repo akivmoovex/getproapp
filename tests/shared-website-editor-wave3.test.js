@@ -397,7 +397,7 @@ describe("shared website editor wave 3 — HTTP lifecycle", () => {
     const cookie = `${DEFAULT_V5_COOKIE}=${bbSession.rawToken}`;
 
     const preview = await request(bbApp)
-      .get(`/c/${provisioned.records.organizationKey}?website_mode=draft`)
+      .get(`/c/${provisioned.records.organizationKey}?website_mode=draft`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(preview.status, 200);

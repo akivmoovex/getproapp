@@ -242,7 +242,7 @@ describe("blessboard branch display-name uniqueness", () => {
     assert.equal(other.branch.display_name, "Central Branch");
   });
 
-  it("registration-provided first-branch display name is persisted with HQ key hq", async () => {
+  it("registration-provided first-branch display name is persisted with slugified HQ branch key", async () => {
     requireDb();
     const stamp = Date.now().toString(36);
     const app = await appRepo.createApplication(pool, {
@@ -273,7 +273,7 @@ describe("blessboard branch display-name uniqueness", () => {
       [result.records.branchId]
     );
     assert.equal(branch.rowCount, 1);
-    assert.equal(branch.rows[0].branch_key, "hq");
+    assert.equal(branch.rows[0].branch_key, "central-branch");
     assert.equal(branch.rows[0].branch_type, "hq");
     assert.equal(branch.rows[0].is_primary, true);
     assert.equal(branch.rows[0].display_name, "Central Branch");

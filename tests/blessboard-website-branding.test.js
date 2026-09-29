@@ -305,12 +305,12 @@ describe("BlessBoard website branding (BUG 08)", () => {
     assert.equal(hub.status, 200);
     assert.match(hub.text, /data-bb-website-unpublished="1"/);
 
-    const live = await request(app).get(`/c/${church.key}`).set("Host", church.host);
+    const live = await request(app).get(`/c/${church.key}`).redirects(5).set("Host", church.host);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /--bb-violet:#112233|--bb-color-primary:#112233/);
 
     const preview = await request(app)
-      .get(`/c/${church.key}?website_mode=draft`)
+      .get(`/c/${church.key}?website_mode=draft`).redirects(5)
       .set("Host", church.host)
       .set("Cookie", cookie);
     assert.equal(preview.status, 200);
@@ -329,7 +329,7 @@ describe("BlessBoard website branding (BUG 08)", () => {
     });
     assert.equal(published.ok, true, JSON.stringify(published));
 
-    const liveAfter = await request(app).get(`/c/${church.key}`).set("Host", church.host);
+    const liveAfter = await request(app).get(`/c/${church.key}`).redirects(5).set("Host", church.host);
     assert.equal(liveAfter.status, 200);
     assert.match(liveAfter.text, /--bb-violet:#112233|--bb-color-primary:#112233/);
 

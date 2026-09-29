@@ -1260,6 +1260,7 @@
             pendingChangeCount: out.pendingChangeCount,
             meaningful: true,
           });
+          setStatus("Saved to draft", false);
           closeDialog();
         } else {
           var failReason =

@@ -389,9 +389,13 @@ describe("blessboard foundation schema status (027)", () => {
       await ensureMigrationLedger(upgradePool);
       const client = await upgradePool.connect();
       try {
-        const prior = discoverMigrations().filter(
-          (f) => !(f.module === "blessboard" && Number(f.version) >= 27)
-        );
+        // Simulate pre-027 BlessBoard only; defer blessboard 027+ and other modules
+        // until migrate() so blessboard.roles (057) exists before activeclinic FKs.
+        const prior = discoverMigrations().filter((f) => {
+          if (f.module === "blessboard" && Number(f.version) >= 27) return false;
+          if (f.module !== "platform" && f.module !== "blessboard") return false;
+          return true;
+        });
         for (const file of prior) {
           await client.query("BEGIN");
           await client.query(file.sql);

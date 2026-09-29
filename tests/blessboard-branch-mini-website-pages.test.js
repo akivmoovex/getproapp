@@ -363,7 +363,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "home",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-east",
+      pathPrefix: "/c/stage5-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -385,7 +385,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "about",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-west",
+      pathPrefix: "/c/stage5-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -428,7 +428,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "about",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-west",
+      pathPrefix: "/c/stage5-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -457,7 +457,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "about",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-west",
+      pathPrefix: "/c/stage5-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -495,7 +495,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "events",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-east",
+      pathPrefix: "/c/stage5-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -503,7 +503,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "events",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-west",
+      pathPrefix: "/c/stage5-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -535,7 +535,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "sermons",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-east",
+      pathPrefix: "/c/stage5-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -565,7 +565,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "giving",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-east",
+      pathPrefix: "/c/stage5-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -579,7 +579,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "contact",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-east",
+      pathPrefix: "/c/stage5-a/campus-east",
       selectedBranch: selectedBranchFrom(campusEast),
       routingMode: "path",
     });
@@ -587,7 +587,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
       tenant: tenantA,
       pageKey: "contact",
       hostname: APEX,
-      pathPrefix: "/c/stage5-a/branches/campus-west",
+      pathPrefix: "/c/stage5-a/campus-west",
       selectedBranch: selectedBranchFrom(campusWest),
       routingMode: "path",
     });
@@ -657,7 +657,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
     });
 
     const publicRes = await request(app)
-      .get("/c/stage5-a/branches/campus-east/leadership")
+      .get("/c/stage5-a/campus-east/leadership")
       .set("Host", APEX);
     assert.equal(publicRes.status, 200);
     assert.doesNotMatch(publicRes.text, /Secret Draft Leader Heading/);
@@ -673,7 +673,7 @@ describe("blessboard branch mini website pages (stage 5)", () => {
     assert.equal(foreign.res.status, 404);
 
     const publicForeign = await request(app)
-      .get("/c/stage5-b/branches/campus-east")
+      .get("/c/stage5-b/campus-east")
       .set("Host", APEX);
     assert.equal(publicForeign.status, 404);
   });

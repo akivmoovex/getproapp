@@ -83,10 +83,10 @@ describe("v7 image editor coverage — classification matrices", () => {
 });
 
 describe("v7 image editor coverage — editor wiring contract", () => {
-  it("shared inline image dialog exposes Upload/Replace, Content Library, and Remove (no raw URL box)", () => {
+  it("shared inline image dialog exposes Upload/Replace, Image Library, and Remove (no raw URL box)", () => {
     const js = read("public/platform/website-inline-edit.js");
     assert.match(js, /Upload from computer|Replace image/);
-    assert.match(js, /Choose from Content Library/);
+    assert.match(js, /Choose from Image Library/);
     assert.match(js, /data-website-library="1"/);
     assert.match(js, /data-website-remove-image="1"/);
     assert.match(js, /pendingRemove/);

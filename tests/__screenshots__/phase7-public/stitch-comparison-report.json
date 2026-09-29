@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-29T18:24:10.809Z",
-  "organizationKey": "p7vis-89bde7",
+  "generatedAt": "2026-09-29T11:40:16.790Z",
+  "organizationKey": "p7vis-837d32",
   "viewports": {
     "desktop": "1280x900",
     "mobile": "390x844"
@@ -41,11 +41,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/home-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/home-desktop-1280x900.png",
-      "differenceRatio": 0.9153,
+      "differenceRatio": 0.8717,
       "manualClassification": "MEDIA_DIFFERENCE",
       "primaryMismatch": "Hero/media photography differs (Stitch remote vs same-site demo assets)",
       "action": "accept",
-      "note": "diffRatio=0.9153 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.8717 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key",
@@ -55,11 +55,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/home-mobile/viewport-390x844.png",
       "actualFile": "tests/__screenshots__/phase7-public/home-mobile-390x844.png",
-      "differenceRatio": 0.7955,
+      "differenceRatio": 0.8162,
       "manualClassification": "CONTENT_DIFFERENCE",
       "primaryMismatch": "Phase 7 mobile artboard uses Sacred Modernity / WELCOME TO BLESSBOARD copy vs desktop Grace Community fixture",
       "action": "accept",
-      "note": "diffRatio=0.7955 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.8162 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/about",
@@ -69,11 +69,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/about-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/about-desktop-1280x900.png",
-      "differenceRatio": 0.7353,
+      "differenceRatio": 0.8058,
       "manualClassification": "CONTENT_DIFFERENCE",
       "primaryMismatch": "Long Stitch narrative vs CMS section stack; media substitution",
       "action": "accept",
-      "note": "diffRatio=0.7353 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.8058 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/about",
@@ -97,11 +97,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/leadership-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/leadership-desktop-1280x900.png",
-      "differenceRatio": 0.2456,
+      "differenceRatio": 0.4225,
       "manualClassification": "MEDIA_DIFFERENCE",
       "primaryMismatch": "Leader photos MEDIA_BLOCKED; card count aligned to 3",
       "action": "accept",
-      "note": "diffRatio=0.2456 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.4225 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/leadership",
@@ -125,11 +125,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/ministries-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/ministries-desktop-1280x900.png",
-      "differenceRatio": 0.507,
+      "differenceRatio": 0.6758,
       "manualClassification": "MEDIA_DIFFERENCE",
       "primaryMismatch": "Ministry card imagery MEDIA_BLOCKED; layout tokens not treated as code defect",
       "action": "accept",
-      "note": "diffRatio=0.5070 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.6758 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/ministries",
@@ -153,11 +153,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/events-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/events-desktop-1280x900.png",
-      "differenceRatio": 0.3327,
+      "differenceRatio": 0.4971,
       "manualClassification": "CONTENT_DIFFERENCE",
       "primaryMismatch": "Featured summit chrome vs CMS event list; dates differ from Stitch Nov 2024 artboard",
       "action": "accept",
-      "note": "diffRatio=0.3327 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.4971 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/events",
@@ -181,11 +181,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/sermons-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/sermons-desktop-1280x900.png",
-      "differenceRatio": 0.3992,
+      "differenceRatio": 0.6075,
       "manualClassification": "CONTENT_DIFFERENCE",
       "primaryMismatch": "Featured sermon player chrome vs CMS sermon cards; media substitution",
       "action": "accept",
-      "note": "diffRatio=0.3992 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.6075 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/sermons",
@@ -209,11 +209,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/giving-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/giving-desktop-1280x900.png",
-      "differenceRatio": 0.2264,
+      "differenceRatio": 0.2954,
       "manualClassification": "PRODUCT_DECISION",
       "primaryMismatch": "No payment processor; methods are instructional CMS records",
       "action": "accept",
-      "note": "diffRatio=0.2264 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.2954 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/giving",
@@ -237,11 +237,11 @@
       "referenceConfidence": "CONFIRMED",
       "referenceFile": "design-reference/stitch-screens/phase7-exact/contact-desktop/viewport-1280x900.png",
       "actualFile": "tests/__screenshots__/phase7-public/contact-desktop-1280x900.png",
-      "differenceRatio": 0.1216,
+      "differenceRatio": 0.3551,
       "manualClassification": "PRODUCT_DECISION",
       "primaryMismatch": "Stitch contact form chrome vs live contact channels / map policy",
       "action": "accept",
-      "note": "diffRatio=0.1216 (advisory; manualClassification governs)"
+      "note": "diffRatio=0.3551 (advisory; manualClassification governs)"
     },
     {
       "route": "/c/:key/contact",

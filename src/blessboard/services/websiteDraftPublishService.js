@@ -7,11 +7,7 @@
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
 const applySvc = require("./websiteDraftApplyService");
-const {
-  publish: publishProductWebsite,
-  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
-} = require("../../platform/website/publicationOrchestrator");
-const { PRODUCT } = require("../../platform/registration/constants");
+const blessboardPublicationGovernanceAdapter = require("../website/blessboardPublicationGovernanceAdapter");
 const {
   loadWebsiteDraftPublishReview,
   resolvePublishCapability,
@@ -129,6 +125,25 @@ async function discardWebsiteDrafts(db, opts) {
         branchId,
         organizationId,
       });
+      try {
+        const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
+        const contentService = require("../../platform/website/contentService");
+        const resolved = await resolveEngineInstance(client, {
+          organizationId,
+          churchId,
+          branchId,
+        });
+        if (resolved.ok && resolved.instance) {
+          await contentService.discardAllWebsiteDrafts(client, {
+            organizationId,
+            instanceId: resolved.instance.id,
+            actorIdentityId: actorUserId,
+            expectedProductCode: "blessboard",
+          });
+        }
+      } catch {
+        /* engine discard is best-effort; legacy draft tables already cleared */
+      }
       await auditSvc.recordWebsiteAuditEventInTransaction(client, {
         organizationId,
         branchId: branchId || null,
@@ -272,30 +287,26 @@ async function publishWebsiteDrafts(db, opts) {
         branchId,
       });
 
-      // Canonical publish (joins this client TX — no nested BEGIN).
-      const published = await publishProductWebsite(client, {
-        productCode: PRODUCT.BLESSBOARD,
-        grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
-        request: {
-          organizationId,
-          churchId,
-          branchId,
-          actorUserId,
-          confirmPublish: true,
-          // Draft republish defaults to deferring service-times (first-publish gap).
-          // Callers may still force false for full readiness checks.
-          deferServiceTimes: opts.deferServiceTimes !== false,
-          mobilePreviewConfirmed:
-            Boolean(opts.mobilePreviewConfirmed) ||
-            Boolean(opts.confirmPublish === true || opts.confirmPublish === "1"),
-          relaxPreviewRequirement: true,
-          publicationNote: opts.publicationNote || "Published from website draft review",
-          sourceType: opts.sourceType || "hq_edit",
-          forcePublishVersion: true,
-          env: opts.env,
-          requestId: opts.requestId || null,
-          correlationId: opts.correlationId || opts.requestId || null,
-        },
+      // BB governance adapter (same handler registered on publicationOrchestrator at bootstrap).
+      const published = await blessboardPublicationGovernanceAdapter.publish(client, {
+        organizationId,
+        churchId,
+        branchId,
+        actorUserId,
+        confirmPublish: true,
+        // Draft republish defaults to deferring service-times (first-publish gap).
+        // Callers may still force false for full readiness checks.
+        deferServiceTimes: opts.deferServiceTimes !== false,
+        mobilePreviewConfirmed:
+          Boolean(opts.mobilePreviewConfirmed) ||
+          Boolean(opts.confirmPublish === true || opts.confirmPublish === "1"),
+        relaxPreviewRequirement: true,
+        publicationNote: opts.publicationNote || "Published from website draft review",
+        sourceType: opts.sourceType || "hq_edit",
+        forcePublishVersion: true,
+        env: opts.env,
+        requestId: opts.requestId || null,
+        correlationId: opts.correlationId || opts.requestId || null,
       });
 
       if (!published || !published.ok) {
