@@ -15,6 +15,7 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | After Batch 1 | **1223** |
 | After Batch 2 | **1152** |
 | After Batch 3 | **1055** |
+| After Batch 4 | **592** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -84,8 +85,9 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | `platform-admin.css`, `hq-admin.css`, `branch-admin.css`, `member-portal.css`, `media-picker.css`, legacy `church.css` alias bridge |
-| Approx hard-coded locations | ~400–500 (largest literal concentration) |
+| Affected files | `platform-admin.css`, `hq-admin.css`, `branch-admin.css`, `member-portal.css`, `media-picker.css`, `bb-urp.css`, legacy `church.css` alias bridge, `design-tokens.css` bridge |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_4.md` |
+| Measured locations migrated | 463 (1055 → 592) |
 | Risk | HIGH — volume + dual BB token systems (`design-tokens` vs `church.css`) |
 | Visual QA | HQ, branch admin, member portal, platform admin; warm violet brand retained |
 | BB/AC regression | BB admin/member; AC smoke |
