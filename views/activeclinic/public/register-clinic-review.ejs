@@ -59,10 +59,10 @@
           <dt>Country</dt>
           <dd><%= fd.countryCode || '—' %></dd>
         </div>
-        <% if (fd.province || fd.city || fd.address) { %>
+        <% if (fd.city || fd.address) { %>
         <div>
           <dt>Location</dt>
-          <dd><%= [fd.address, fd.city, fd.province].filter(Boolean).join(', ') %></dd>
+          <dd><%= [fd.address, fd.city].filter(Boolean).join(', ') || '—' %></dd>
         </div>
         <% } %>
         <% if (fd.notes) { %>

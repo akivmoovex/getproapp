@@ -13,10 +13,8 @@ const { buildFoundationPoolConfig } = require("../../db/scripts/lib/foundationPo
 const BASE = "https://activeclinic.pronline.org";
 const REGISTER = `${BASE}/register-clinic`;
 const PASSWORD = "Platform-QA-pass-12";
-const ZAMBIA_PROVINCES = [
-  "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka",
-  "Muchinga", "Northern", "North-Western", "Southern", "Western",
-];
+const LOCATION_OPTION = ".gp-location-option";
+const LOCATION_OPTION_ADD = ".gp-location-option--add";
 
 const report = {
   verdict: null,
@@ -47,10 +45,10 @@ function scoreRegistrationVisual(html) {
     [/publish/i, 3],
     [/website/i, 3],
     [/not automatically public|not published|unpublished/i, 4],
-    [/Province \/ region/, 3],
-    [/City \/ location/, 3],
+    [/name="countryCode"/, 3],
+    [/data-gp-location-init/, 3],
     [/acw-platform\.css/, 2],
-    [/data-ac-city-listbox/, 2],
+    [/location-autocomplete\.js/, 2],
   ];
   for (const [re, pts] of checks) {
     if (re.test(html)) score += pts;
@@ -66,21 +64,14 @@ async function fillClinicStep(page, data) {
   await page.locator("#clinicName").fill(data.clinicName);
   await page.locator("#clinicType").selectOption(data.clinicType || "clinic");
   await page.locator("#countryCode").selectOption(data.countryCode || "ZM");
-  if (data.countryCode === "ZM" || !data.countryCode) {
-    await page.locator("#provinceSelect").waitFor({ state: "visible" });
-    await page.locator("#provinceSelect").selectOption(data.province || "Lusaka");
-  } else {
-    await page.locator("#provinceText").waitFor({ state: "visible" });
-    await page.locator("#provinceText").fill(data.province || "Gauteng");
-  }
   await page.locator("#city").fill("");
   await page.locator("#city").type(data.city, { delay: 30 });
   if (data.pickCity || data.addNew) {
-    await page.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
     if (data.addNew) {
-      await page.locator(".acw-location-option--add").first().click();
+      await page.locator(LOCATION_OPTION_ADD).first().click();
     } else {
-      await page.locator(`.acw-location-option[data-name="${data.pickCity}"]`).first().click();
+      await page.locator(`${LOCATION_OPTION}[data-name="${data.pickCity}"]`).first().click();
     }
   }
   await page.locator("#address").fill(data.address || "1 QA Street");
@@ -192,51 +183,53 @@ async function main() {
       fail("Desktop registration missing draft website messaging");
     }
 
-    // Zambia provinces
+    // Country + city (province no longer on V2.04 registration UI)
     await page.locator("#countryCode").selectOption("ZM");
-    const options = await page.locator("#provinceSelect option").allTextContents();
-    for (const prov of ZAMBIA_PROVINCES) {
-      if (!options.includes(prov)) fail(`Missing Zambia province: ${prov}`);
+    if (await page.locator("#provinceSelect").count()) {
+      fail("Province/Region still visible on registration");
     }
-    await page.locator("#provinceSelect").selectOption("Copperbelt");
     await page.locator("#city").fill("Kitwe");
-    await page.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
-    await page.locator('.acw-location-option[data-name="Kitwe"]').first().click();
-    await page.locator("#clinicName").fill(`Province Persist ${stamp}`);
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
+    await page.locator(`${LOCATION_OPTION}[data-name="Kitwe"]`).first().click();
+    await page.locator("#clinicName").fill(`City Persist ${stamp}`);
     await page.locator("#clinicType").selectOption("clinic");
-    await page.locator("#address").fill("1 Province Street");
+    await page.locator("#address").fill("1 City Street");
     await page.locator('form[data-ac-register-step="clinic"] button[type="submit"]').click();
     await page.waitForSelector('[data-ac-acw-screen="ACW09-admin"]', { timeout: 15000 });
     await page.goto(`${REGISTER}?step=clinic`, { waitUntil: "domcontentloaded" });
-    const provAfterBack = await page.locator("#provinceSelect").inputValue();
-    if (provAfterBack !== "Copperbelt") fail(`Province did not persist after back navigation: ${provAfterBack}`);
+    const cityAfterBack = await page.locator("#city").inputValue();
+    if (cityAfterBack !== "Kitwe") fail(`City did not persist after back navigation: ${cityAfterBack}`);
 
-    // Non-Zambia free text
+    // Country change clears incompatible city
     await page.goto(REGISTER, { waitUntil: "domcontentloaded" });
-    await page.locator("#countryCode").selectOption("ZA");
-    await page.locator("#provinceText").waitFor({ state: "visible" });
-    await page.locator("#provinceText").fill("Gauteng");
     await page.locator("#countryCode").selectOption("ZM");
-    await page.locator("#provinceSelect").waitFor({ state: "visible" });
-    const hiddenText = await page.locator("#provinceText").getAttribute("name");
-    if (hiddenText === "province") fail("Stale non-Zambia province field still named province");
+    await page.locator("#city").fill("Lusaka");
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
+    await page.locator(`${LOCATION_OPTION}[data-name="Lusaka"]`).first().click();
+    await page.locator("#countryCode").selectOption("KE");
+    const cityAfterCountry = await page.locator("#city").inputValue();
+    if (cityAfterCountry) fail(`City was not cleared after country change: ${cityAfterCountry}`);
 
     // Autocomplete one-char
     await page.goto(REGISTER, { waitUntil: "domcontentloaded" });
+    await page.locator("#countryCode").selectOption("ZM");
     await page.locator("#city").fill("L");
-    await page.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
-    const lOptions = await page.locator(".acw-location-option").allTextContents();
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
+    const lOptions = await page.locator(LOCATION_OPTION).allTextContents();
     for (const name of ["Lusaka", "Livingstone", "Luanshya"]) {
       if (!lOptions.some((t) => t.includes(name))) fail(`Missing L suggestion: ${name}`);
     }
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Escape");
     await page.locator("#city").fill("K");
-    await page.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
-    const kOptions = await page.locator(".acw-location-option").allTextContents();
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
+    const kOptions = await page.locator(LOCATION_OPTION).allTextContents();
     for (const name of ["Kitwe", "Kabwe", "Kasama", "Kafue"]) {
       if (!kOptions.some((t) => t.includes(name))) fail(`Missing K suggestion: ${name}`);
     }
+
+    report.autocompleteL = lOptions;
+    report.autocompleteK = kOptions;
 
     // Step 3 edit flow
     await page.goto(REGISTER, { waitUntil: "domcontentloaded" });
@@ -350,9 +343,9 @@ async function main() {
     // Mobile registration
     await page.goto(REGISTER, { waitUntil: "domcontentloaded" });
     report.visualMobile = scoreRegistrationVisual(await page.content());
-    await page.locator("#provinceSelect").waitFor({ state: "visible" });
+    await page.locator("#countryCode").selectOption("ZM");
     await page.locator("#city").fill("L");
-    await page.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
+    await page.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
 
     await testAutocompleteApi(page);
     await testCsrfBoundary(page);
@@ -379,8 +372,8 @@ async function main() {
     const page2 = await context.newPage();
     await page2.goto(REGISTER, { waitUntil: "domcontentloaded" });
     await page2.locator("#city").fill(newTown.slice(0, 10));
-    await page2.locator(".acw-location-option").first().waitFor({ state: "visible", timeout: 10000 });
-    const reuseOptions = await page2.locator(".acw-location-option").allTextContents();
+    await page2.locator(LOCATION_OPTION).first().waitFor({ state: "visible", timeout: 10000 });
+    const reuseOptions = await page2.locator(LOCATION_OPTION).allTextContents();
     report.newTown.reuseInAutocomplete = reuseOptions.some((t) => t.includes(newTown));
     if (!report.newTown.reuseInAutocomplete) fail("USER_ADDED_LOCATION_REUSE failed");
     await page2.close();

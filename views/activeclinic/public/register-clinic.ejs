@@ -5,8 +5,6 @@
 <% const countries = (typeof registrationCountries !== 'undefined' && Array.isArray(registrationCountries) && registrationCountries.length)
   ? registrationCountries
   : (typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []); %>
-<% const provinceOptions = typeof zambiaProvinces !== 'undefined' && Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
-<% const isZambia = String(fd.countryCode || 'ZM').toUpperCase() === 'ZM'; %>
 <section
   class="acw-page acw-register acw-register--with-aside gp-reg"
   data-ac-page-section="register-clinic"
@@ -180,39 +178,28 @@
         </select>
         <% if (verr.countryCode) { %><p class="ac-form-field__error" id="countryCode-error"><%= verr.countryCode %></p><% } %>
       </div>
-      <div class="ac-form-field<%= verr.city ? ' ac-form-field--error' : '' %> acw-location-field">
-        <label for="city">City/Location</label>
-        <input
-          id="city"
-          name="city"
-          maxlength="100"
-          placeholder="Start typing a city or town"
-          value="<%= fd.city || '' %>"
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded="false"
-          aria-controls="cityListbox"
-          aria-invalid="<%= verr.city ? 'true' : 'false' %>"
-          <% if (verr.city) { %>aria-describedby="city-error"<% } %>
-        />
-        <input type="hidden" name="locationId" id="locationId" value="<%= fd.locationId || '' %>"/>
-        <div id="cityListbox" class="acw-location-listbox" data-ac-city-listbox="1" role="listbox" hidden></div>
+      <div class="ac-form-field<%= verr.city ? ' ac-form-field--error' : '' %>">
+        <label for="city">City <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+        <%- include('../../platform/partials/gp-location-field', {
+          fieldId: 'city',
+          fieldName: 'city',
+          fieldValue: fd.city || '',
+          countryFieldId: 'countryCode',
+          listboxId: 'cityListbox',
+          locationIdName: 'locationId',
+          locationIdFieldId: 'locationId',
+          locationIdValue: fd.locationId || '',
+          inputClass: '',
+          required: true,
+          ariaInvalid: Boolean(verr.city),
+          ariaDescribedBy: verr.city ? 'city-error' : '',
+          fieldMaxLength: 100,
+          placeholder: 'Start typing a city or town',
+        }) %>
         <% if (verr.city) { %><p class="ac-form-field__error" id="city-error"><%= verr.city %></p><% } %>
       </div>
     </div>
     <div class="acw-register__grid">
-      <div class="ac-form-field<%= verr.province ? ' ac-form-field--error' : '' %>" data-ac-province-field="1">
-        <label for="provinceSelect">Province/Region</label>
-        <select id="provinceSelect" name="<%= isZambia ? 'province' : '' %>"<%= isZambia ? '' : ' hidden' %>>
-          <option value="">Select province</option>
-          <% provinceOptions.forEach(function(province) { %>
-          <option value="<%= province %>"<%= String(fd.province || '') === province ? ' selected' : '' %>><%= province %></option>
-          <% }) %>
-        </select>
-        <input id="provinceText" name="<%= isZambia ? '' : 'province' %>" maxlength="100" value="<%= fd.province || '' %>"<%= isZambia ? ' hidden' : '' %>/>
-        <% if (verr.province) { %><p class="ac-form-field__error" id="province-error"><%= verr.province %></p><% } %>
-      </div>
       <div class="ac-form-field<%= verr.address ? ' ac-form-field--error' : '' %>">
         <label for="address">Address / location</label>
         <div class="acw-register__icon-field acw-register__icon-field--top">
@@ -237,8 +224,8 @@
   </div>
   </div>
   </div>
-  <script src="/platform/location-autocomplete.js?v=1" defer></script>
-  <script src="/activeclinic/register-clinic.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v7' %>" defer></script>
+  <script src="/platform/location-autocomplete.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v204-qa-2' %>" defer></script>
+  <script src="/platform/gp-location-field-init.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v204-qa-2' %>" defer></script>
   <script>
   document.addEventListener("DOMContentLoaded", function () {
     if (window.GpRegistrationPasswordRules && document.getElementById("password")) {

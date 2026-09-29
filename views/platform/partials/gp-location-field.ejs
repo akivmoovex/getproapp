@@ -1,6 +1,9 @@
 <%#
-  Shared city/town autocomplete field shell.
-  Locals: fieldId, fieldName, fieldValue, countryFieldId, listboxId, fieldClass, locationIdName, locationIdValue
+  Shared city/town autocomplete field shell (BlessBoard + ActiveClinic).
+  Locals:
+    fieldId, fieldName, fieldValue, countryFieldId, listboxId, fieldClass,
+    locationIdName, locationIdValue, locationIdFieldId, inputClass,
+    placeholder, required, ariaInvalid, ariaDescribedBy, fieldMaxLength
 %>
 <%
   var inputId = typeof fieldId !== 'undefined' && fieldId ? fieldId : 'city';
@@ -11,24 +14,45 @@
   var wrapperClass = typeof fieldClass !== 'undefined' && fieldClass ? fieldClass : '';
   var locName = typeof locationIdName !== 'undefined' && locationIdName ? locationIdName : '';
   var locValue = typeof locationIdValue !== 'undefined' ? locationIdValue : '';
+  var locIdAttr = typeof locationIdFieldId !== 'undefined' && locationIdFieldId
+    ? locationIdFieldId
+    : (locName ? locName : '');
   var inputClassName = typeof inputClass !== 'undefined' && inputClass ? inputClass : '';
+  var ph = typeof placeholder !== 'undefined' && placeholder ? placeholder : 'Start typing a city or town';
+  var isRequired = typeof required !== 'undefined' && required;
+  var invalid = typeof ariaInvalid !== 'undefined' && ariaInvalid;
+  var describedBy = typeof ariaDescribedBy !== 'undefined' && ariaDescribedBy ? ariaDescribedBy : '';
+  var maxLen = typeof fieldMaxLength !== 'undefined' ? fieldMaxLength : 120;
 %>
-<div class="gp-location-field<%= wrapperClass ? ' ' + wrapperClass : '' %>" data-gp-location-init="1" data-gp-location-country="#<%= countryId %>" data-gp-location-city="#<%= inputId %>" data-gp-location-listbox="#<%= listId %>"<% if (locName) { %> data-gp-location-id="#<%= locName %>"<% } %> data-gp-location-custom="1">
+<div
+  class="gp-location-field<%= wrapperClass ? ' ' + wrapperClass : '' %>"
+  data-gp-location-init="1"
+  data-gp-location-country="#<%= countryId %>"
+  data-gp-location-city="#<%= inputId %>"
+  data-gp-location-listbox="#<%= listId %>"
+  <% if (locIdAttr) { %>data-gp-location-id="#<%= locIdAttr %>"<% } %>
+  data-gp-location-custom="1"
+  data-gp-location-clear-on-country="1"
+>
   <input
     <% if (inputClassName) { %>class="<%= inputClassName %>" <% } %>
     id="<%= inputId %>"
     name="<%= inputName %>"
     type="text"
-    maxlength="<%= typeof fieldMaxLength !== 'undefined' ? fieldMaxLength : 120 %>"
+    maxlength="<%= maxLen %>"
     value="<%= inputValue %>"
+    placeholder="<%= ph %>"
     autocomplete="off"
     role="combobox"
     aria-autocomplete="list"
     aria-expanded="false"
     aria-controls="<%= listId %>"
+    <% if (isRequired) { %>required aria-required="true"<% } %>
+    <% if (invalid) { %>aria-invalid="true"<% } %>
+    <% if (describedBy) { %>aria-describedby="<%= describedBy %>"<% } %>
   />
   <% if (locName) { %>
-  <input type="hidden" id="<%= locName %>" name="<%= locName %>" value="<%= locValue %>" />
+  <input type="hidden" id="<%= locIdAttr || locName %>" name="<%= locName %>" value="<%= locValue %>" />
   <% } %>
   <div id="<%= listId %>" class="gp-location-listbox" role="listbox" hidden></div>
 </div>

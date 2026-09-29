@@ -57,6 +57,13 @@ module.exports = {
   ...require("./registrationSuccessPresentation"),
   ...require("./registrationCountrySelection"),
   ...require("./registrationRenderLocals"),
+  registrationLocation: require("./location"),
+  isProvinceRegionVisibleInRegistration: require("./location")
+    .isProvinceRegionVisibleInRegistration,
+  isProvinceRegionRequiredInRegistration: require("./location")
+    .isProvinceRegionRequiredInRegistration,
+  REGISTRATION_VISIBLE_LOCATION_FIELDS: require("./location")
+    .REGISTRATION_VISIBLE_LOCATION_FIELDS,
   createSignedRegistrationDraftCookie: require("./signedRegistrationDraftCookie")
     .createSignedRegistrationDraftCookie,
   DEFAULT_REGISTRATION_DRAFT_MAX_AGE_MS: require("./signedRegistrationDraftCookie")

@@ -3,6 +3,9 @@
 /**
  * Shared platform town/city autocomplete (BlessBoard + ActiveClinic).
  * Uses GET /api/locations/autocomplete backed by platform.geographic_locations.
+ *
+ * Styling uses only .gp-location-* classes + semantic CSS tokens so products
+ * keep their own brand via --color-* / --card-* variables.
  */
 
 (function (global) {
@@ -33,6 +36,7 @@
    *   listbox?: string|HTMLElement,
    *   allowCustom?: boolean,
    *   debounceMs?: number,
+   *   clearCityOnCountryChange?: boolean,
    * }} config
    */
   function initLocationAutocomplete(config) {
@@ -53,12 +57,14 @@
       typeof config.listbox === "string" ? qs(config.listbox) : config.listbox;
     var allowCustom = config.allowCustom !== false;
     var debounceMs = Number(config.debounceMs) > 0 ? Number(config.debounceMs) : 180;
+    var clearCityOnCountryChange = config.clearCityOnCountryChange !== false;
 
     if (!country || !cityInput || !listbox) return null;
 
     var activeIndex = -1;
     var results = [];
     var open = false;
+    var lastCountry = String(country.value || "").toUpperCase();
 
     function closeList() {
       open = false;
@@ -66,6 +72,7 @@
       listbox.hidden = true;
       listbox.innerHTML = "";
       cityInput.setAttribute("aria-expanded", "false");
+      cityInput.removeAttribute("aria-activedescendant");
     }
 
     function setLocationId(value) {
@@ -73,13 +80,38 @@
       locationId.value = value || "";
     }
 
+    function clearCitySelection() {
+      cityInput.value = "";
+      setLocationId("");
+      closeList();
+    }
+
+    function invalidateCityForCountryChange() {
+      if (!clearCityOnCountryChange) return;
+      clearCitySelection();
+    }
+
+    function optionId(idx) {
+      return (listbox.id || "gp-location-listbox") + "-opt-" + idx;
+    }
+
+    function syncActiveDescendant() {
+      if (activeIndex < 0) {
+        cityInput.removeAttribute("aria-activedescendant");
+        return;
+      }
+      cityInput.setAttribute("aria-activedescendant", optionId(activeIndex));
+    }
+
     function renderResults(items, query) {
       listbox.innerHTML = "";
       results = items.slice();
+      activeIndex = -1;
       if (!results.length && allowCustom && query.length >= 1) {
         var add = document.createElement("button");
         add.type = "button";
-        add.className = "gp-location-option gp-location-option--add acw-location-option acw-location-option--add";
+        add.id = optionId(0);
+        add.className = "gp-location-option gp-location-option--add";
         add.setAttribute("role", "option");
         add.dataset.addName = query;
         add.textContent = 'Add "' + query + '"';
@@ -88,7 +120,8 @@
         results.forEach(function (item, idx) {
           var btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "gp-location-option acw-location-option";
+          btn.id = optionId(idx);
+          btn.className = "gp-location-option";
           btn.setAttribute("role", "option");
           btn.dataset.index = String(idx);
           btn.dataset.id = item.id || "";
@@ -103,6 +136,7 @@
           if (!exact) {
             var addBtn = document.createElement("button");
             addBtn.type = "button";
+            addBtn.id = optionId(results.length);
             addBtn.className = "gp-location-option gp-location-option--add";
             addBtn.setAttribute("role", "option");
             addBtn.dataset.addName = query;
@@ -114,6 +148,7 @@
       listbox.hidden = false;
       open = true;
       cityInput.setAttribute("aria-expanded", "true");
+      syncActiveDescendant();
     }
 
     function selectOption(option) {
@@ -158,15 +193,20 @@
     cityInput.addEventListener("focus", fetchResults);
     cityInput.addEventListener("keydown", function (ev) {
       var options = listbox.querySelectorAll("[role='option']");
-      if (!open || !options.length) return;
+      if (!open || !options.length) {
+        if (ev.key === "Escape") closeList();
+        return;
+      }
       if (ev.key === "ArrowDown") {
         ev.preventDefault();
         activeIndex = Math.min(activeIndex + 1, options.length - 1);
         options[activeIndex].focus();
+        syncActiveDescendant();
       } else if (ev.key === "ArrowUp") {
         ev.preventDefault();
         activeIndex = Math.max(activeIndex - 1, 0);
         options[activeIndex].focus();
+        syncActiveDescendant();
       } else if (ev.key === "Enter" && activeIndex >= 0) {
         ev.preventDefault();
         selectOption(options[activeIndex]);
@@ -184,7 +224,17 @@
       selectOption(option);
     });
 
-    return { closeList: closeList };
+    country.addEventListener("change", function () {
+      var next = String(country.value || "").toUpperCase();
+      if (next === lastCountry) return;
+      lastCountry = next;
+      invalidateCityForCountryChange();
+    });
+
+    return {
+      closeList: closeList,
+      clearCitySelection: clearCitySelection,
+    };
   }
 
   global.GpLocationAutocomplete = {

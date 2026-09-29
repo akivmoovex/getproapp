@@ -28,7 +28,8 @@ const PRODUCT_REGISTRATION_COUNTRY_RULES = Object.freeze({
   [PRODUCT.ACTIVECLINIC]: Object.freeze({
     allowlist: null,
     defaultCountry: null,
-    zambiaProvinceSelect: true,
+    // V2.04 registration UI is Country + City only (province retained in DB).
+    zambiaProvinceSelect: false,
   }),
   [PRODUCT.BLESSBOARD]: Object.freeze({
     allowlist: null,

@@ -46,9 +46,9 @@ describe("shared registration country selection (BUG-005)", () => {
     const bbRules = getProductRegistrationCountryRules(PRODUCT.BLESSBOARD);
     assert.equal(acRules.allowlist, null);
     assert.equal(bbRules.allowlist, null);
-    assert.equal(acRules.zambiaProvinceSelect, true);
+    assert.equal(acRules.zambiaProvinceSelect, false);
     assert.equal(bbRules.zambiaProvinceSelect, false);
-    assert.equal(usesZambiaProvinceSelect(PRODUCT.ACTIVECLINIC, "ZM"), true);
+    assert.equal(usesZambiaProvinceSelect(PRODUCT.ACTIVECLINIC, "ZM"), false);
     assert.equal(usesZambiaProvinceSelect(PRODUCT.ACTIVECLINIC, "KE"), false);
     assert.equal(usesZambiaProvinceSelect(PRODUCT.BLESSBOARD, "ZM"), false);
   });

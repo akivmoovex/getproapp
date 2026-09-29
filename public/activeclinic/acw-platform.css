@@ -1036,43 +1036,8 @@ body.ac-public-body--mf-register .ac-public-main {
   color: var(--acp-primary-strong);
 }
 
-.acw-location-field {
-  position: relative;
-}
-
-.acw-location-listbox {
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  right: 0;
-  top: calc(100% + 0.25rem);
-  background: var(--acp-surface);
-  border: 1px solid var(--acp-border);
-  border-radius: var(--acp-radius);
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
-  max-height: 14rem;
-  overflow: auto;
-}
-
-.acw-location-option {
-  display: block;
-  width: 100%;
-  text-align: left;
-  border: 0;
-  background: transparent;
-  padding: 0.65rem 0.85rem;
-  cursor: pointer;
-}
-
-.acw-location-option:hover,
-.acw-location-option:focus {
-  background: var(--acp-primary-soft);
-}
-
-.acw-location-option--add {
-  font-weight: 600;
-  color: var(--acp-primary-strong);
-}
+/* Location autocomplete styling is owned by /platform/location-autocomplete.css
+ * (.gp-location-*). Product brand colors flow through semantic tokens. */
 
 .acw-register-success-website__row {
   display: flex;

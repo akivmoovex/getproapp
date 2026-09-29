@@ -343,27 +343,25 @@
                 <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please select a country.' %></p>
                 <% } %>
               </div>
-              <div class="bb-apex-field gp-location-field">
+              <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_city">Town or city</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('city') ? ' is-error' : '' %>"
-                  id="register_city"
-                  name="city"
-                  type="text"
-                  required
-                  autocomplete="off"
-                  role="combobox"
-                  aria-autocomplete="list"
-                  aria-expanded="false"
-                  aria-controls="registerCityListbox"
-                  placeholder="Start typing a city or town"
-                  value="<%= formData.city || '' %>"
-                  <%= fieldHasError('city') ? 'aria-invalid="true"' : '' %>
-                />
-                <input type="hidden" name="locationId" id="registerLocationId" value="<%= formData.locationId || '' %>"/>
-                <div id="registerCityListbox" class="gp-location-listbox" data-gp-location-listbox="1" role="listbox" hidden></div>
+                <%- include('../../../platform/partials/gp-location-field', {
+                  fieldId: 'register_city',
+                  fieldName: 'city',
+                  fieldValue: formData.city || '',
+                  countryFieldId: 'register_country',
+                  listboxId: 'registerCityListbox',
+                  locationIdName: 'locationId',
+                  locationIdFieldId: 'registerLocationId',
+                  locationIdValue: formData.locationId || '',
+                  inputClass: 'bb-apex-register-input' + (fieldHasError('city') ? ' is-error' : ''),
+                  required: true,
+                  ariaInvalid: fieldHasError('city'),
+                  ariaDescribedBy: fieldHasError('city') ? 'register_city_error' : '',
+                  placeholder: 'Start typing a city or town',
+                }) %>
                 <% if (fieldHasError('city')) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a city.' %></p>
+                <p class="bb-apex-register-field-error" id="register_city_error" role="alert"><%= formError || 'Please enter a city.' %></p>
                 <% } %>
               </div>
             </div>

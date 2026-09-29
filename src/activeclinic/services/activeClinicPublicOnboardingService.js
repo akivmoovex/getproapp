@@ -165,9 +165,13 @@ function validateClinicRegistrationInput(input, options) {
   } else if (clinicOnly && !countryCode) {
     errors.countryCode = "Select a country.";
   }
+  if (!city) {
+    errors.city = "Enter a city or town.";
+  }
   if (addressRaw && !address) {
     errors.address = "Enter a street address of 1–300 characters, or leave it blank.";
   }
+  // Province/region is optional for V2.04 registration; only reject invalid values when supplied.
   if (!provinceResult.ok) {
     errors.province = provinceResult.error;
   }

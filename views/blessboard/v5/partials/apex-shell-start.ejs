@@ -20,12 +20,15 @@
     href="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-hero-mobile.jpg') : '/church/images/homepage/apex-hero-mobile.jpg' %>"
     fetchpriority="high"
   />
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=v204-qa-1" />
+  <% var bbAssetV = typeof browserAssetVersion !== 'undefined' && browserAssetVersion
+    ? browserAssetVersion
+    : (typeof assetVersion !== 'undefined' && assetVersion ? assetVersion : 'v204-qa-2'); %>
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=<%= bbAssetV %>" />
   <% if (typeof activeNav !== 'undefined' && activeNav === 'register-church') { %>
-  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=bb-reg-2" />
-  <link rel="stylesheet" href="/platform/phone-field.css?v=bb-reg-1" />
-  <link rel="stylesheet" href="/platform/location-autocomplete.css?v=1" />
-  <link rel="stylesheet" href="/platform/registration-ux.css?v=2" />
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= bbAssetV %>" />
+  <link rel="stylesheet" href="/platform/phone-field.css?v=<%= bbAssetV %>" />
+  <link rel="stylesheet" href="/platform/location-autocomplete.css?v=<%= bbAssetV %>" />
+  <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= bbAssetV %>" />
   <% } %>
   <% if (typeof activeNav !== 'undefined' && ['pricing', 'terms', 'privacy'].indexOf(activeNav) !== -1) { %>
   <link rel="stylesheet" href="/platform/registration-ux.css?v=2" />

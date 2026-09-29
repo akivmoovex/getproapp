@@ -173,11 +173,14 @@ describe("ActiveClinic platform 02", () => {
     assert.match(bad.text, /valid city/i);
   });
 
-  it("provinces: Zambia list rendered on registration", async () => {
+  it("V2.04 registration shows Country + City without province UI", async () => {
     requireDb();
     const page = await request(makeApp()).get("/register-clinic");
-    assert.match(page.text, /Select province/);
-    assert.match(page.text, /North-Western/);
+    assert.doesNotMatch(page.text, /Select province|Province\/Region|provinceSelect/);
+    assert.match(page.text, /data-gp-location-init/);
+    assert.match(page.text, /name="countryCode"/);
+    assert.match(page.text, /name="city"/);
+    assert.match(page.text, /location-autocomplete\.js/);
   });
 
   it("registration edit from review uses GET navigation with signed draft cookie", async () => {
