@@ -27,9 +27,12 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
+const {
+  V204_BROWSER_ASSET_VERSION,
+} = require("../../platform/ui/theme/browserAssetVersion");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-03-build-identity-1";
+const ASSET_VERSION = V204_BROWSER_ASSET_VERSION;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

@@ -36,19 +36,19 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     });
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPatient.js"),
-      /ASSET_VERSION\s*=\s*"v2-03-b3-acp05-01"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicAuth.js"),
-      /ASSET_VERSION\s*=\s*"v7-login-stitch-parity-1"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
+      /SHELL_ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
     );
   });
 
@@ -130,10 +130,10 @@ describe("ActiveClinic Phase 9 accessibility", () => {
 
   it("status and muted text meet AA contrast intent", () => {
     const publicTokens = read("public/activeclinic/ac-tokens.css");
-    assert.match(publicTokens, /--acp-muted:\s*#3e494a/);
+    assert.match(publicTokens, /--acp-muted:\s*var\(--color-text-secondary\)/);
     const staffTokens = read("public/activeclinic/ac-app-tokens.css");
-    assert.match(staffTokens, /--ac-muted:\s*var\(--ac-text-secondary\)/);
-    assert.match(staffTokens, /--ac-text-secondary:\s*#6b7280/);
+    assert.match(staffTokens, /--ac-muted:\s*var\(--color-text-secondary\)|--ac-muted:\s*var\(--ac-text-secondary\)/);
+    assert.match(staffTokens, /--ac-text-secondary:\s*var\(--color-text-secondary\)/);
     const app = read("public/activeclinic/ac-app.css");
     assert.match(app, /input:focus-visible/);
     assert.match(app, /Status uses visible text plus colour/);

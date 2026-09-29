@@ -15,8 +15,11 @@ const {
 const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
+const {
+  V204_BROWSER_ASSET_VERSION,
+} = require("../../platform/ui/theme/browserAssetVersion");
 
-const ASSET_VERSION = "v7-login-stitch-parity-1";
+const ASSET_VERSION = V204_BROWSER_ASSET_VERSION;
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",

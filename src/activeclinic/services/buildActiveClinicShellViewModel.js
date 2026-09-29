@@ -28,8 +28,11 @@ const {
 const {
   loadActiveDepartmentTypeSet,
 } = require("./activeClinicModuleAvailability");
+const {
+  V204_BROWSER_ASSET_VERSION,
+} = require("../../platform/ui/theme/browserAssetVersion");
 
-const SHELL_ASSET_VERSION = "v2-03-acn18-01";
+const SHELL_ASSET_VERSION = V204_BROWSER_ASSET_VERSION;
 
 /**
  * @param {{ query: Function }} db

@@ -17,8 +17,12 @@ const {
   formatBookingWhen,
 } = require("./activeClinicBookingStatusCopy");
 
+const {
+  V204_BROWSER_ASSET_VERSION,
+} = require("../../platform/ui/theme/browserAssetVersion");
+
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-03-b3-acp05-01";
+const ASSET_VERSION = V204_BROWSER_ASSET_VERSION;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

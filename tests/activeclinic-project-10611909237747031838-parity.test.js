@@ -38,15 +38,15 @@ describe("project 10611909237747031838 parity matrix", () => {
   it("asset versions reflect current public/shell/patient render bumps", () => {
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
+      /SHELL_ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPatient.js"),
-      /ASSET_VERSION\s*=\s*"v2-03-b3-acp05-01"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
   });
 

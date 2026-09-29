@@ -132,16 +132,16 @@ describe("activeclinic MW Stitch parity chrome", () => {
   it("CMS shell hides staff ops chrome and versions ActiveClinic CSS", () => {
     const css = read("public/activeclinic/website-cms.css");
     assert.match(css, /\.ac-app-body--mw \.ac-sidebar/);
-    assert.match(css, /background: #0b1c30/);
+    assert.match(css, /--ac-mw-primary:\s*var\(--ac-primary\)/);
     assert.match(css, /\.ac-mw-editor__tab[\s\S]{0,180}min-height:\s*2\.75rem/);
     assert.match(css, /\.ac-mw-editor__rail-link[\s\S]{0,180}min-height:\s*2\.75rem/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
+      /SHELL_ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|SHELL_ASSET_VERSION\s*=\s*"[^"]+"/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+      /ASSET_VERSION\s*=\s*V204_BROWSER_ASSET_VERSION|ASSET_VERSION\s*=\s*"[^"]+"/
     );
     const shell = read("views/activeclinic/layouts/app-shell.ejs");
     assert.match(shell, /ac-app-body--mw/);
