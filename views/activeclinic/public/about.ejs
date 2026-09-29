@@ -14,6 +14,10 @@
   var versionDisplay = isV8About
     ? (bi.productVersionLabel || ("Version " + productLabel))
     : bi.version;
+  var _bId = typeof buildIdentity === "object" && buildIdentity ? buildIdentity : null;
+  var deploymentDisplay = _bId && _bId.displayLabel
+    ? (_bId.gitShaShort ? (_bId.displayLabel + " · " + _bId.gitShaShort) : _bId.displayLabel)
+    : bi.environmentLabel;
 %>
 <article class="acw-page ac-about-v11" data-ac-page-section="public-about" data-ac-acw-screen="ACW06" data-product="ActiveClinic">
   <div class="ac-about-v11__inner">
@@ -104,7 +108,7 @@
             <span class="ac-about-v11__meta-label">Environment</span>
             <p class="ac-about-v11__meta-value ac-about-v11__meta-value--env">
               <span class="ac-about-v11__env-dot<%= envIsTesting ? ' ac-about-v11__env-dot--testing' : '' %>" aria-hidden="true"></span>
-              <%= bi.environmentLabel %>
+              <%= deploymentDisplay %>
             </p>
           </div>
         </div>

@@ -507,6 +507,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/about", (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
+    const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
     return res.status(200).type("html").send(renderPublicView("public/about", {
       csrfToken,
       pageTitle: "About ActiveClinic",
@@ -514,6 +515,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       metaDescription:
         "About ActiveClinic — digital tools for modern clinic operations and patient services.",
       buildInfo: getApplicationBuildInfo({ env }),
+      buildIdentity: getBuildIdentity({ env }),
     }));
   });
 

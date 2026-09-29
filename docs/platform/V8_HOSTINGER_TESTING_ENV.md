@@ -56,7 +56,10 @@ MEDIA_STORAGE_ROOT=/home/<account>/moovex-media
 MEDIA_PUBLIC_BASE_URL=https://blessboard.neuniversity.org/media
 MEDIA_PUBLIC_MOUNT_PATH=/media
 GETPRO_GIT_SHA=<deployed commit>
+GETPRO_GIT_BRANCH=V8
 ```
+
+`GETPRO_GIT_BRANCH` is deployment metadata for the shared platform build-identity label (e.g. `V8 testing`). Hostinger release trees may be detached HEAD — prefer this env over relying on `.git`.
 
 **Fail closed if:** `DEPLOYMENT_ENV=production`, `DATABASE_IDENTITY_ENV=production`, missing required keys, or jobs enabled.
 

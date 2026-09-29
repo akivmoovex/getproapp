@@ -74,12 +74,14 @@ function shellLocals(opts) {
 
 function renderAboutPage(opts) {
   const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
+  const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
   const env = (opts && opts.env) || process.env;
   return renderApexView("apex/about.ejs", {
     ...shellLocals(opts),
     pageTitle: "About BlessBoard",
     activeNav: "about",
     buildInfo: getApplicationBuildInfo({ env }),
+    buildIdentity: getBuildIdentity({ env }),
   });
 }
 

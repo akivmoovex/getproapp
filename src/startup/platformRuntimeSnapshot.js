@@ -52,9 +52,18 @@ function buildPlatformRuntimeSnapshot(env, opts) {
     phase: "runtime_endpoint",
   });
   const boot = options.boot || null;
+  const {
+    getBuildIdentity,
+    toPublicBuildIdentityDiagnostics,
+  } = require("../platform/runtime/buildIdentity");
+  const buildIdentity = toPublicBuildIdentityDiagnostics(
+    getBuildIdentity({ appRoot: options.appRoot, env: source })
+  );
   return {
     ok: true,
     gitSha: marker.gitSha || readGitShaShort(options.appRoot),
+    branch: buildIdentity.branch,
+    displayLabel: buildIdentity.displayLabel,
     pid: process.pid,
     startedAt: marker.startedAt,
     nodeEnv: String(source.NODE_ENV || "(unset)"),

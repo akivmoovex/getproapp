@@ -43,6 +43,8 @@ Never run that migrator against production.
 
 | Variable | Role |
 | -------- | ---- |
+| `GETPRO_GIT_BRANCH` | **Deployed Git branch metadata** (e.g. `V10`). Drives the shared platform build-identity label (`V10 testing`) on BlessBoard + ActiveClinic. Prefer this on Hostinger — release trees are often detached HEAD without a reliable `.git` branch. When V11 is deployed, set `GETPRO_GIT_BRANCH=V11` (no application-code change). |
+| `GETPRO_GIT_SHA` | Optional full commit SHA override for `/healthz` and About build displays |
 | `GETPRO_PG_SSL` | Optional SSL for Postgres |
 | `PORT` | Optional listen port |
 | `BASE_DOMAIN` | Compatibility only; must not conflict with profile if set |
@@ -138,7 +140,7 @@ Safe checks after redeploy:
 
 ## Unified testing deploy (V7)
 
-Hostinger testing is the **Moovex platform testing** Node app (`PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`), Git branch **`V7`**, repository **getproapp**. There is **no GitHub Actions deploy** for `V7`. `/healthz` `gitSha` is the running checkout (`.git/HEAD` or `GETPRO_GIT_SHA`).
+Hostinger testing is the **Moovex platform testing** Node app (`PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`), Git branch **`V10`** (set `GETPRO_GIT_BRANCH=V10` in hPanel), repository **getproapp**. There is **no GitHub Actions deploy** for testing. `/healthz` exposes `branch`, `gitSha`, and `environment` from the shared platform `buildIdentity` service (`GETPRO_GIT_BRANCH` / provider metadata / safe `.git` lookup; SHA from `GETPRO_GIT_SHA` or `.git/HEAD`).
 
 GitHub push does **not** update the running process instantly. Hostinger Git deploy typically catches up in a few minutes; if `/healthz` still shows an older SHA, use **hPanel → Node.js → Deploy / Restart** on the testing app only. Do not restart production.
 

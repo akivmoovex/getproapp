@@ -11,6 +11,7 @@ const ejs = require("ejs");
 const {
   resolveDeploymentBrand,
 } = require("../../platform/config/deploymentBrand");
+const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
 const { cdnMarketingAsset, presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
@@ -36,9 +37,11 @@ function loadV5Template(relativePath) {
  */
 function renderV5Ejs(relativePath, data) {
   const tpl = loadV5Template(relativePath);
+  const buildIdentity = getBuildIdentity({ env: process.env });
   const locals = Object.assign(
     {
       deploymentBrand: resolveDeploymentBrand(),
+      buildIdentity,
       cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
       presentImageSrc: (src) => presentRuntimeImageSrc(src, process.env) || "",
       presentImagePlacementStyle: (placement, opts) => {

@@ -26,9 +26,10 @@ const {
   bookingStatusLabel,
 } = require("./activeClinicBookingStatusCopy");
 const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
+const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-sp-vis-1";
+const ASSET_VERSION = "v2-03-build-identity-1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -55,6 +56,7 @@ function renderPartial(relativePath, data) {
   }
   const source = fs.readFileSync(absolute, "utf8");
   const locals = {
+    buildIdentity: getBuildIdentity({ env: process.env }),
     ...(data || {}),
     escapeHtml,
     csrfField: CSRF_FIELD,
@@ -102,6 +104,7 @@ function renderPublicPage(input) {
     clinics: [],
     procedures: [],
     pageId: input.pageId,
+    buildIdentity: getBuildIdentity({ env: process.env }),
     ...phoneLocals,
     ...(input.locals || {}),
     escapeHtml,

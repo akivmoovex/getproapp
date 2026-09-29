@@ -1636,6 +1636,23 @@ body.ac-public--platform .ac-public-brand {
   text-decoration: none;
 }
 
+body.ac-public--platform .ac-public-brand__text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+body.ac-public--platform .ac-public-brand__deploy {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: var(--acp-muted, #64748b);
+  text-transform: none;
+}
+
 body.ac-public--platform .ac-public-brand__icon {
   color: var(--acp-primary-strong);
   font-size: 1.75rem;

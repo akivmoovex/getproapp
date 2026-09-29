@@ -6,7 +6,13 @@
     </button>
     <a class="ac-public-brand" href="/" aria-label="ActiveClinic home">
       <span class="material-symbols-outlined ac-public-brand__icon filled" aria-hidden="true">health_and_safety</span>
-      <span class="ac-public-brand__name">ActiveClinic</span>
+      <span class="ac-public-brand__text">
+        <span class="ac-public-brand__name">ActiveClinic</span>
+        <% var _bi = typeof buildIdentity === "object" && buildIdentity ? buildIdentity : null; %>
+        <% if (_bi && _bi.environment === "testing" && _bi.displayLabel) { %>
+        <span class="ac-public-brand__deploy" data-gp-build-identity="1"><%= _bi.displayLabel %></span>
+        <% } %>
+      </span>
     </a>
     <nav class="ac-public-nav ac-public-nav--desktop" aria-label="Primary">
       <%- include('./public-platform-primary-nav') %>

@@ -120,6 +120,12 @@ function defineProfile(input) {
     foreignTlds: foreign,
     brandSubtitle: input.brandSubtitle || null,
     brandSubtitleVariant: input.brandSubtitleVariant || null,
+    /**
+     * When "buildIdentity", brandSubtitle is derived at runtime from
+     * getBuildIdentity().displayLabel (deployed Git branch + environment).
+     * Do not hard-code V9/V10 labels in the profile catalogue.
+     */
+    brandSubtitleSource: input.brandSubtitleSource || null,
     defaultCountry: input.defaultCountry || "ZM",
     redirectTargetOrigin: input.redirectTargetOrigin || null,
     redirectEnabledByDefault: Boolean(input.redirectEnabledByDefault),
@@ -413,10 +419,11 @@ const PROFILE_MOOVEX_ORG_PRODUCTION = defineProfile({
  * Unified Moovex platform testing on pronline.org — environment only; product from hostname.
  * Shared identity_key moovex-platform-v7 / testing DB (same as V8 neuniversity testing).
  *
- * Branch V9 / product Version 2.02: reuses the V8 *platform line* (About 2.02) without a
- * separate deployment-code invention. Domains, cookies, and mediaWriteNamespace stay on the
- * historical pronline testing app (`moovex-platform-testing`). Do NOT point this profile at
- * neuniversity.org (that remains `moovex-platform-v8-testing`).
+ * Brand subtitle is derived from platform build identity (deployed Git branch + environment),
+ * for example branch V10 with environment testing → displayLabel V10 testing.
+ * Domains, cookies, and mediaWriteNamespace stay on the historical pronline testing app
+ * (`moovex-platform-testing`). Do NOT point this profile at neuniversity.org
+ * (that remains `moovex-platform-v8-testing`).
  */
 const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
   deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
@@ -456,7 +463,8 @@ const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
     "netraz.pronline.org",
     "moovex.pronline.org",
   ]),
-  brandSubtitle: "V9 Testing",
+  brandSubtitle: null,
+  brandSubtitleSource: "buildIdentity",
   brandSubtitleVariant: "demo",
   defaultCountry: "ZM",
   platformLine: "v8",
@@ -499,7 +507,8 @@ const PROFILE_MOOVEX_PLATFORM_V8_TESTING = defineProfile({
     "blessboard.neuniversity.org",
     "activeclinic.neuniversity.org",
   ]),
-  brandSubtitle: "V8 Testing",
+  brandSubtitle: null,
+  brandSubtitleSource: "buildIdentity",
   brandSubtitleVariant: "demo",
   defaultCountry: "ZM",
   platformLine: "v8",

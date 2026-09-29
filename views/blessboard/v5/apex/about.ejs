@@ -16,6 +16,10 @@
   var versionDisplay = isV8About
     ? (bi.productVersionLabel || ("Version " + (bi.productVersion || bi.version)))
     : bi.version;
+  var _bId = typeof buildIdentity === "object" && buildIdentity ? buildIdentity : null;
+  var deploymentDisplay = _bId && _bId.displayLabel
+    ? (_bId.gitShaShort ? (_bId.displayLabel + " · " + _bId.gitShaShort) : _bId.displayLabel)
+    : bi.environmentLabel;
 %>
 <%- include('../partials/apex-shell-start') %>
 
@@ -124,7 +128,7 @@
             <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Environment</span>
             <p class="bb-about-v11__meta-value bb-about-v11__meta-value--env">
               <span class="bb-about-v11__env-dot<%= envIsTesting ? ' bb-about-v11__env-dot--testing' : '' %>" aria-hidden="true"></span>
-              <%= bi.environmentLabel %>
+              <%= deploymentDisplay %>
             </p>
             <p class="bb-about-v11__meta-foot">
               <span class="material-symbols-outlined" aria-hidden="true">cloud_done</span>

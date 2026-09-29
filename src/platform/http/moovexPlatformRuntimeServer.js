@@ -197,9 +197,15 @@ function createMoovexPlatformRuntimeApp(options) {
       readGitShaShort,
     } = require("../../startup/startupProcessMarker");
     const {
+      getBuildIdentity,
+      toPublicBuildIdentityDiagnostics,
+    } = require("../runtime/buildIdentity");
+    const {
       schemaCompatibilityHealthz,
     } = require("../schema/v7RuntimeSchemaCompatibility");
     const schemaHealth = schemaCompatibilityHealthz(schema);
+    const buildIdentity = getBuildIdentity({ env });
+    const publicIdentity = toPublicBuildIdentityDiagnostics(buildIdentity);
     res.status(schemaHealth.status).json({
       ok: schemaHealth.status === 200,
       mode: "moovex-platform-runtime",
@@ -213,7 +219,9 @@ function createMoovexPlatformRuntimeApp(options) {
       mediaWriteNamespace: deployment.mediaWriteNamespace || null,
       jobsEnabled: deployment.jobsEnabled === true,
       apexDomains: deployment.apexDomains || [],
-      gitSha: (boot && boot.gitSha) || readGitShaShort(),
+      gitSha: (boot && boot.gitSha) || buildIdentity.gitShaShort || readGitShaShort(),
+      branch: publicIdentity.branch,
+      displayLabel: publicIdentity.displayLabel,
       schemaCompatible: schemaHealth.schemaCompatible,
       schemaCompatibility: schemaHealth.schemaCompatibility,
     });
