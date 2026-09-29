@@ -61,7 +61,7 @@
       >
         <td><%= site.productLabel || (site.productCode === 'activeclinic' ? 'ActiveClinic' : 'BlessBoard') %></td>
         <td>
-          <strong><%= site.displayName %></strong><br/>
+          <strong><a class="bb-pa-link" href="/admin/organizations/<%= site.organizationKey %>" data-action-open-organization="1"><%= site.displayName %></a></strong><br/>
           <span class="bb-pa-hint"><%= site.organizationKey %></span>
         </td>
         <td>
@@ -83,6 +83,12 @@
         <td>
           <% if (site.actions && site.actions.previewDraft) { %>
           <a class="bb-pa-link" href="<%= site.actions.previewDraft %>" data-action-preview-draft="1">Preview draft</a><br/>
+          <% } %>
+          <% if (site.actions && site.actions.customerHub) { %>
+          <a class="bb-pa-link" href="<%= site.actions.customerHub %>" data-action-customer-hub="1">Customer hub</a><br/>
+          <% } %>
+          <% if (site.actions && site.actions.openEditor) { %>
+          <a class="bb-pa-link" href="<%= site.actions.openEditor %>" data-action-open-editor="1">Public editor</a><br/>
           <% } %>
           <% if (site.actions && site.actions.history) { %>
           <a class="bb-pa-link" href="<%= site.actions.history %>" data-action-history="1">History</a><br/>

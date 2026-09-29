@@ -16,6 +16,8 @@ const {
   buildPublicOrganizationWebsitePath,
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteAdminPath,
+  buildPublicWebsiteSettingsPath,
+  buildPublicWebsiteEditPath,
 } = require("./publicWebsiteUrl");
 const { LIFECYCLE_LABELS, LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const {
@@ -49,6 +51,10 @@ const {
   REVIEW_STATUS,
   REVIEW_STATUS_LABEL,
 } = require("./websiteGovernanceService");
+const auditService = require("./auditService");
+const { listModerationEvents } = require("./moderationEventService");
+const checklistService = require("./checklistService");
+const submissionService = require("./submissionService");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -96,6 +102,10 @@ function buildActionUrls(organizationKey, productCode) {
       organizationKey: key,
       surface: "website",
     }) || `/admin/organizations/${encodeURIComponent(key)}/website`;
+  const organization =
+    buildPublicWebsiteAdminPath({
+      organizationKey: key,
+    }) || `/admin/organizations/${encodeURIComponent(key)}`;
   return {
     viewLive: buildPublicOrganizationWebsitePath({
       product,
@@ -105,13 +115,126 @@ function buildActionUrls(organizationKey, productCode) {
       product,
       organizationKey: key,
     }),
+    /** Customer website hub (not Platform Admin). */
+    customerHub: buildPublicWebsiteSettingsPath({ product }) || null,
+    /** Customer public-site editor deep-link (not an inline PA editor). */
+    openEditor: buildPublicWebsiteEditPath({
+      product,
+      organizationKey: key,
+    }),
+    organization,
     changeSummary: `${open}#website-changes`,
     history: `${open}#website-history`,
+    audit: `${open}#website-audit`,
+    media: `${open}#website-media`,
+    diagnostics: `${open}#website-diagnostics`,
     restore: open,
     unpublish: `${open}/unpublish`,
     suspend: `${open}/suspend`,
     resume: `${open}/restore-site`,
     open,
+  };
+}
+
+/**
+ * Media inventory + usage counts for Platform Admin diagnostics (read-only).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{ organizationId: string, instanceId: string }} input
+ */
+async function listWebsiteMediaAdminRows(db, input) {
+  const rows = await db.query(
+    `SELECT m.id, m.original_filename, m.mime_type, m.size_bytes, m.alt_text,
+            m.status, m.created_at,
+            COALESCE(u.usage_count, 0)::int AS usage_count,
+            u.usage_kinds
+       FROM platform.website_media m
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS usage_count,
+                string_agg(DISTINCT usage_kind, ', ') AS usage_kinds
+           FROM platform.website_media_usages wu
+          WHERE wu.media_id = m.id
+            AND wu.organization_id = m.organization_id
+       ) u ON true
+      WHERE m.organization_id = $1
+        AND m.instance_id = $2
+        AND m.status = 'active'
+      ORDER BY m.created_at DESC
+      LIMIT 100`,
+    [input.organizationId, input.instanceId]
+  );
+  return rows.rows.map((row) => ({
+    id: row.id,
+    originalFilename: row.original_filename,
+    mimeType: row.mime_type,
+    sizeBytes: Number(row.size_bytes) || 0,
+    altText: row.alt_text || "",
+    status: row.status,
+    createdAt: row.created_at,
+    usageCount: Number(row.usage_count) || 0,
+    usageKinds: row.usage_kinds || "",
+    inspectHref: `/admin/website-media/${encodeURIComponent(row.id)}`,
+  }));
+}
+
+/**
+ * Derive governance/diagnostic issues from existing platform state.
+ * Does not invent a separate error store.
+ */
+function buildWebsiteDiagnostics(input) {
+  const issues = [];
+  const inst = input && input.instance;
+  const readiness = input && input.readiness;
+  const lifecycle = inst && inst.lifecycleStatus;
+
+  if (!inst && !input.churchId) {
+    issues.push({
+      code: "website_not_provisioned",
+      severity: "warning",
+      message: "No website instance is provisioned for this organisation.",
+    });
+  }
+  if (lifecycle === LIFECYCLE_STATUS.OFFLINE) {
+    issues.push({
+      code: "website_offline",
+      severity: "warning",
+      message: "Website is hidden (offline). Public visitors cannot see it.",
+    });
+  }
+  if (lifecycle === LIFECYCLE_STATUS.SUSPENDED) {
+    issues.push({
+      code: "website_suspended",
+      severity: "error",
+      message: "Website is blocked. Public access and customer publishing are disabled.",
+    });
+  }
+  if (readiness && readiness.readyToPublish === false && Array.isArray(readiness.userMessages)) {
+    for (const msg of readiness.userMessages) {
+      issues.push({
+        code: "readiness_block",
+        severity: "warning",
+        message: String(msg),
+      });
+    }
+  }
+  if (input && input.latestModerationNote) {
+    issues.push({
+      code: "moderation_note",
+      severity: "info",
+      message: `Latest moderation note: ${input.latestModerationNote}`,
+    });
+  }
+  if (input && input.unpublishedCount > 20) {
+    issues.push({
+      code: "large_unpublished_set",
+      severity: "info",
+      message: `${input.unpublishedCount} unpublished draft changes are waiting.`,
+    });
+  }
+  return {
+    ok: true,
+    issueCount: issues.length,
+    healthy: issues.every((i) => i.severity !== "error"),
+    issues,
   };
 }
 
@@ -458,6 +581,13 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
   let lastApprovedVersion = null;
   let reviewStatus = REVIEW_STATUS.UNREVIEWED;
   let clinicAvailability = null;
+  let lastModifiedAt = null;
+  let media = [];
+  let auditEvents = [];
+  let moderationEvents = [];
+  let checklist = null;
+  let readiness = null;
+  let pendingSubmissions = [];
 
   if (instance) {
     const resolved = await resolveApprovedVersions(db, {
@@ -483,6 +613,7 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     lastPublisherId = liveVersion ? liveVersion.editorIdentityId : null;
     const editor = await loadAcLastEditor(db, instance.id, organization.id);
     lastEditorId = editor.id || lastPublisherId;
+    lastModifiedAt = editor.at || (liveVersion && liveVersion.publishedAt) || null;
     clinicAvailability = await getClinicWebsiteAvailability(db, {
       organizationKey: organization.organization_key,
       env: opts && opts.env,
@@ -511,6 +642,51 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
       changeSummary = summarizeBlessBoardDrafts(fieldDrafts, structuredDrafts);
       const editor = await loadBbLastEditor(db, churchId);
       lastEditorId = editor.id || lastPublisherId;
+      lastModifiedAt = editor.at || (liveVersion && (liveVersion.publishedAt || liveVersion.createdAt)) || null;
+    }
+  }
+
+  if (instance) {
+    media = await listWebsiteMediaAdminRows(db, {
+      organizationId: organization.id,
+      instanceId: instance.id,
+    });
+    const audit = await auditService.listWebsiteAudit(db, {
+      organizationId: organization.id,
+      instanceId: instance.id,
+      limit: 50,
+    });
+    auditEvents = (audit && audit.events) || [];
+    const moderation = await listModerationEvents(db, {
+      organizationId: organization.id,
+      instanceId: instance.id,
+      limit: 20,
+    });
+    moderationEvents = (moderation && moderation.events) || [];
+    try {
+      const cl = await checklistService.getWebsiteChecklist(db, {
+        organizationId: organization.id,
+        instance,
+        operational: {},
+      });
+      if (cl && cl.ok) {
+        checklist = cl.checklist || null;
+        readiness = cl.readiness || null;
+      }
+    } catch (_err) {
+      checklist = null;
+      readiness = null;
+    }
+    try {
+      pendingSubmissions = (
+        await submissionService.listWebsiteSubmissions(db, {
+          organizationId: organization.id,
+          instanceId: instance.id,
+          status: "submitted",
+        })
+      ).submissions;
+    } catch (_err) {
+      pendingSubmissions = [];
     }
   }
 
@@ -518,6 +694,7 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     lastEditorId,
     lastPublisherId,
     ...versions.map((v) => v.editorIdentityId || v.publishedBy || v.createdBy),
+    ...auditEvents.map((e) => e.actorIdentityId),
   ]);
   const decoratedVersions = versions.map((version) => {
     const actorId = version.editorIdentityId || version.publishedBy || version.createdBy;
@@ -533,6 +710,13 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
       fieldCount: keys.length || version.changeCount || 0,
     };
   });
+  const decoratedAudit = auditEvents.map((event) => ({
+    ...event,
+    actorLabel: event.actorIdentityId
+      ? labels.get(String(event.actorIdentityId)) || "Actor"
+      : "System",
+    createdLabel: formatTs(event.createdAt),
+  }));
 
   const actions = buildActionUrls(organization.organization_key, productCode);
   const hasWebsite = Boolean(instance) || Boolean(churchId);
@@ -542,6 +726,23 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     published: websitePublished,
     hasWebsite,
     bbWebsiteStatus: websitePublished ? "published" : churchId ? "draft" : null,
+  });
+  const latestModerationNote = (() => {
+    for (const event of moderationEvents) {
+      const text = String(event.notes || event.reason || "").trim();
+      if (text) return text;
+    }
+    return null;
+  })();
+  const diagnostics = buildWebsiteDiagnostics({
+    instance,
+    churchId,
+    readiness:
+      readiness ||
+      (clinicAvailability && clinicAvailability.readiness) ||
+      null,
+    unpublishedCount,
+    latestModerationNote,
   });
 
   return {
@@ -571,7 +772,16 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     currentDraft: draftLabel({ unpublishedCount, published: websitePublished, hasWebsite }),
     lastEditor: lastEditorId ? labels.get(String(lastEditorId)) || "Editor" : "—",
     lastPublisher: lastPublisher || (lastPublisherId ? labels.get(String(lastPublisherId)) || "—" : "—"),
+    lastModifiedAt,
+    lastModifiedLabel: formatTs(lastModifiedAt),
     actions,
+    media,
+    auditEvents: decoratedAudit,
+    moderationEvents,
+    checklist,
+    readiness,
+    pendingSubmissions,
+    diagnostics,
     clinicAvailability: clinicAvailability && clinicAvailability.ok ? clinicAvailability : null,
     canResume:
       Boolean(

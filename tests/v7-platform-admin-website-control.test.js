@@ -170,6 +170,13 @@ function assertVisibility(html, site) {
   assert.match(html, /Unpublished changes/);
   assert.match(html, /Last editor/);
   assert.match(html, /Last publisher/);
+  assert.match(html, /data-action-open-organization="1"/);
+  assert.match(html, /data-action-customer-hub="1"/);
+  assert.match(html, /data-action-open-editor="1"/);
+  assert.match(html, /data-website-audit="1"/);
+  assert.match(html, /data-website-media="1"/);
+  assert.match(html, /data-website-diagnostics="1"/);
+  assert.match(html, /Last modification/);
 }
 
 describe("v7 platform admin website control", () => {
@@ -239,6 +246,18 @@ describe("v7 platform admin website control", () => {
     assert.ok(churchDetail.actions.unpublish);
     assert.ok(churchDetail.actions.suspend);
     assert.ok(churchDetail.actions.resume);
+    assert.equal(clinicDetail.actions.customerHub, "/app/settings/website");
+    assert.equal(churchDetail.actions.customerHub, "/hq/website");
+    assert.ok(clinicDetail.actions.openEditor);
+    assert.ok(churchDetail.actions.openEditor);
+    assert.ok(clinicDetail.actions.organization);
+    assert.ok(churchDetail.actions.organization);
+    assert.ok(Array.isArray(clinicDetail.media));
+    assert.ok(Array.isArray(clinicDetail.auditEvents));
+    assert.ok(clinicDetail.diagnostics && typeof clinicDetail.diagnostics.issueCount === "number");
+    assert.ok(Array.isArray(churchDetail.media));
+    assert.ok(Array.isArray(churchDetail.auditEvents));
+    assert.ok(churchDetail.diagnostics && typeof churchDetail.diagnostics.issueCount === "number");
 
     const paUser = await createBlessBoardUser(pool, {
       email: `pa-web-${stamp}@example.org`,

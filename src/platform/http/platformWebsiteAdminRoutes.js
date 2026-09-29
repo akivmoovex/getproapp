@@ -348,59 +348,11 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (!detail.ok) return res.status(404).type("html").send("Organization not found.");
       const availability = detail.clinicAvailability;
       const instance = detail.instance;
-      let unpublishedCount = detail.unpublishedCount || 0;
-      let versions = detail.versions || [];
-      let media = [];
-      let audit = { events: [] };
-      let checklist = null;
-      let pending = [];
-      let changeSummary = detail.changeSummary || [];
+      const versions = (detail.versions || []).map((v) => ({
+        ...decorateVersion(v),
+        editorLabel: v.editorLabel || "Editor",
+      }));
       const productCode = detail.productCode;
-      if (instance && productCode === "activeclinic") {
-        media = (await mediaService.listWebsiteMedia(getPool(), {
-          organizationId: instance.organizationId,
-          instanceId: instance.id,
-        })).media;
-        audit = await auditService.listWebsiteAudit(getPool(), {
-          organizationId: instance.organizationId,
-          instanceId: instance.id,
-          limit: 50,
-        });
-        const cl = await checklistService.getWebsiteChecklist(getPool(), {
-          organizationId: instance.organizationId,
-          instance,
-          operational: availability
-            ? await loadClinicWebsiteOperational(getPool(), detail.organization.id)
-            : {},
-        });
-        checklist = cl.ok ? cl.checklist : null;
-        pending = (await submissionService.listWebsiteSubmissions(getPool(), {
-          organizationId: instance.organizationId,
-          instanceId: instance.id,
-          status: "submitted",
-        })).submissions;
-        if (!versions.length) {
-          const listedVersions = (
-            await versionService.listWebsiteVersions(getPool(), {
-              instanceId: instance.id,
-              organizationId: instance.organizationId,
-            })
-          ).versions;
-          const editorLabels = await loadEditorLabels(
-            getPool(),
-            listedVersions.map((v) => v.editorIdentityId)
-          );
-          versions = listedVersions.map((v) => ({
-            ...decorateVersion(v),
-            editorLabel: editorLabels.get(String(v.editorIdentityId || "")) || "Editor",
-          }));
-        } else {
-          versions = versions.map((v) => ({
-            ...decorateVersion(v),
-            editorLabel: v.editorLabel || "Editor",
-          }));
-        }
-      }
       const html = renderPlatformAdminView("platform-admin/organization-website.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
           env,
@@ -410,19 +362,22 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         }),
         organization: detail.organization,
         instance,
-        unpublishedCount,
+        unpublishedCount: detail.unpublishedCount || 0,
         versions,
-        media,
-        auditEvents: audit.events || [],
-        checklist,
-        pendingSubmissions: pending,
-        changeSummary,
+        media: detail.media || [],
+        auditEvents: detail.auditEvents || [],
+        moderationEvents: detail.moderationEvents || [],
+        diagnostics: detail.diagnostics || { issues: [], issueCount: 0, healthy: true },
+        checklist: detail.checklist || null,
+        pendingSubmissions: detail.pendingSubmissions || [],
+        changeSummary: detail.changeSummary || [],
         productCode,
         productLabel: detail.productLabel,
         websiteStatus: detail.websiteStatus,
         currentDraft: detail.currentDraft,
         lastEditor: detail.lastEditor,
         lastPublisher: detail.lastPublisher,
+        lastModifiedLabel: detail.lastModifiedLabel || "",
         publicPath: detail.publicPath,
         publicUrl: detail.publicUrl,
         websitePublished: detail.websitePublished,
@@ -438,11 +393,9 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           ok: true,
           publicPath: detail.publicPath,
           publicUrl: detail.publicUrl,
-          healthcareOrganization: productCode === "activeclinic"
-            ? { websitePublished: detail.websitePublished }
-            : { websitePublished: detail.websitePublished },
+          healthcareOrganization: { websitePublished: detail.websitePublished },
           latestApprovedVersion: detail.liveVersion,
-          readiness: null,
+          readiness: detail.readiness || null,
           lastToggle: null,
         },
         canToggleAvailability: canToggleAvailability(req),
