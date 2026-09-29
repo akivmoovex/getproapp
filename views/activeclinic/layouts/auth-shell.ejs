@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title><%= pageTitle %> · ActiveClinic</title>
   <%- include('../../platform/partials/head-fonts', { fontFamily: 'hanken-inter', iconFont: 'subset', fontAssetVersion: assetVersion }) %>
+  <%- include('../../platform/partials/head-platform-colors') %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-auth.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= assetVersion %>"/>
@@ -12,6 +13,8 @@
 </head>
 <body
   class="ac-auth-body"
+  data-product="activeclinic"
+  data-surface="public"
   data-ac-product="activeclinic"
   data-gp-product="activeclinic"
   data-ac-shell="auth"

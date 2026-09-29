@@ -7,12 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <%- include('../../platform/partials/head-platform-colors') %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-patient.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/platform/phone-field.css?v=<%= assetVersion %>"/>
 </head>
 <body
   class="ac-patient-body"
+  data-product="activeclinic"
+  data-surface="public"
   data-ac-product="activeclinic"
   data-ac-shell="patient"
   data-ac-page="<%= pageId %>"

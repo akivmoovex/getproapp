@@ -46,6 +46,7 @@
     iconFont: 'subset',
     fontAssetVersion: assetVersion
   }) %>
+  <%- include('../../platform/partials/head-platform-colors') %>
   <% if (shellVariant === 'platform') { %>
   <link rel="preload" as="image" href="<%= typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg') : '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg' %>" fetchpriority="high"/>
   <% } %>
@@ -91,6 +92,8 @@
 %>
 <body
   class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %><%= themeClass %>"
+  data-product="activeclinic"
+  data-surface="public"
   data-ac-product="activeclinic"
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>data-gp-product="activeclinic"<% } %>
   data-ac-shell="public"

@@ -1,8 +1,10 @@
 <%#
   Shared V5 design-system head assets (fonts + tokens + primitives).
   Include once before shell-specific CSS. Locals: designSystemVersion (optional).
+  Platform color system loads first so product tokens can refine legacy aliases.
 %>
 <% var _dsV = typeof designSystemVersion !== 'undefined' && designSystemVersion ? designSystemVersion : '7'; %>
+<%- include('../../../platform/partials/head-platform-colors') %>
 <%- include('../../../platform/partials/head-fonts', { fontFamily: 'hanken', iconFont: 'subset', fontAssetVersion: _dsV }) %>
 <link rel="stylesheet" href="/blessboard/v5/design-tokens.css?v=<%= _dsV %>" />
 <link rel="stylesheet" href="/blessboard/v5/design-system.css?v=<%= _dsV %>" />

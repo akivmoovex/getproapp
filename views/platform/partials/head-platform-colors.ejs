@@ -1,0 +1,9 @@
+<%#
+  Platform color system (V2.04).
+  Load once, early in <head>, before product token / shell CSS.
+  Canonical source: src/platform/ui/theme/colors.css
+  Runtime: /platform/theme/colors.css
+  Spec: docs/design/PLATFORM_COLOR_SYSTEM.md
+%>
+<% var _platformColorV = typeof platformColorVersion !== 'undefined' && platformColorVersion ? platformColorVersion : 'v204-1'; %>
+<link rel="stylesheet" href="/platform/theme/colors.css?v=<%= _platformColorV %>" />
