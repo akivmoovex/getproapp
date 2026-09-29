@@ -176,6 +176,16 @@ function createActiveClinicFoundationApp(options) {
       );
     }
   }
+  try {
+    const {
+      hydrateRegistrationCountryAvailability,
+    } = require("../../platform/registration/registrationCountrySelection");
+    Promise.resolve()
+      .then(() => hydrateRegistrationCountryAvailability(getPool()))
+      .catch(() => {});
+  } catch (_err) {
+    /* optional at boot */
+  }
 
   const app = express();
   app.disable("x-powered-by");

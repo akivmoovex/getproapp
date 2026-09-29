@@ -211,10 +211,12 @@ describe("V2.04-QA-02 platform city catalogue", () => {
     assert.equal(manual.locationId, null);
     assert.equal(manual.source, "manual");
 
+    // Registration validation itself is gated by QA-03 country availability;
+    // free-text city resolution remains available for any ISO country code.
     const bb = validateChurchRegistrationChurchStep({
-      church_name: "Paris Test Church",
-      country: "FR",
-      city: "Paris",
+      church_name: "Lusaka Test Church",
+      country: "ZM",
+      city: "Customville",
       branch_name: "HQ",
       selected_plan: "foundation",
     });
@@ -222,10 +224,10 @@ describe("V2.04-QA-02 platform city catalogue", () => {
 
     const ac = validateClinicRegistrationInput(
       {
-        clinicName: "Paris Care",
+        clinicName: "Custom Care",
         clinicType: "clinic",
-        countryCode: "FR",
-        city: "Paris",
+        countryCode: "ZM",
+        city: "Customville",
       },
       { step: "clinic" }
     );

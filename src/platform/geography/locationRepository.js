@@ -14,7 +14,8 @@ async function getGeographicCountry(db, countryCode) {
     .toUpperCase();
   if (!/^[A-Z]{2}$/.test(code)) return null;
   const r = await db.query(
-    `SELECT country_code, country_name, city_catalogue_enabled, catalogue_status, is_active
+    `SELECT country_code, country_name, city_catalogue_enabled, catalogue_status,
+            is_active, registration_enabled
        FROM platform.geographic_countries
       WHERE country_code = $1
       LIMIT 1`,
@@ -28,7 +29,41 @@ async function getGeographicCountry(db, countryCode) {
     cityCatalogueEnabled: Boolean(row.city_catalogue_enabled),
     catalogueStatus: row.catalogue_status,
     isActive: Boolean(row.is_active),
+    registrationEnabled: Boolean(row.registration_enabled),
   };
+}
+
+/**
+ * @param {{ query: Function }} db
+ * @param {string} countryCode
+ */
+async function isRegistrationEnabledCountry(db, countryCode) {
+  const row = await getGeographicCountry(db, countryCode);
+  return Boolean(row && row.isActive && row.registrationEnabled);
+}
+
+/**
+ * @param {{ query: Function }} db
+ */
+async function listRegistrationEnabledCountries(db) {
+  const r = await db.query(
+    `SELECT country_code, country_name, city_catalogue_enabled, catalogue_status,
+            registration_enabled, is_active
+       FROM platform.geographic_countries
+      WHERE is_active = TRUE
+        AND registration_enabled = TRUE
+      ORDER BY
+        CASE country_code WHEN 'ZM' THEN 0 ELSE 1 END,
+        country_name ASC`
+  );
+  return r.rows.map((row) => ({
+    countryCode: row.country_code,
+    countryName: row.country_name,
+    cityCatalogueEnabled: Boolean(row.city_catalogue_enabled),
+    catalogueStatus: row.catalogue_status,
+    registrationEnabled: Boolean(row.registration_enabled),
+    isActive: Boolean(row.is_active),
+  }));
 }
 
 /**
@@ -327,6 +362,8 @@ async function getCityCatalogueStats(db) {
 module.exports = {
   getGeographicCountry,
   isCityCatalogueEnabled,
+  isRegistrationEnabledCountry,
+  listRegistrationEnabledCountries,
   searchLocations,
   findLocationByIdForCountry,
   upsertLocationByName,

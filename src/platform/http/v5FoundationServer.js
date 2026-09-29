@@ -367,6 +367,16 @@ function createV5FoundationApp(options) {
       );
     }
   }
+  try {
+    const {
+      hydrateRegistrationCountryAvailability,
+    } = require("../registration/registrationCountrySelection");
+    Promise.resolve()
+      .then(() => hydrateRegistrationCountryAvailability(getPool()))
+      .catch(() => {});
+  } catch (_err) {
+    /* optional at boot */
+  }
   const tenantRoutingMode = getBlessBoardTenantRoutingMode(env);
   const hostContextMode = getPlatformHostContextMode(env);
   // Shadow/authoritative always need platform + catalogue resolution.

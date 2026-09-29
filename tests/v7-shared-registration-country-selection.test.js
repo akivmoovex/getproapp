@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * BUG-005 — Shared registration country selection (AC + BB).
- * Supported set = phone catalogue; Zambia default; product rules configurable.
+ * BUG-005 / V2.04-QA-03 — Shared registration country selection (AC + BB).
+ * Supported set = platform registration-enabled markets (not full phone catalogue).
  */
 
 const assert = require("node:assert/strict");
@@ -18,6 +18,7 @@ const {
   getProductRegistrationCountryRules,
   buildRegistrationCountryLocals,
   buildRegistrationPageLocals,
+  INITIAL_REGISTRATION_ENABLED_COUNTRY_CODES,
 } = require("../src/platform/registration");
 const {
   validateClinicRegistrationInput,
@@ -26,17 +27,22 @@ const {
   validateChurchCountry,
 } = require("../src/blessboard/services/platformChurchRegistrationValidation");
 
-describe("shared registration country selection (BUG-005)", () => {
-  it("lists the full shared catalogue for AC and BB (not Zambia-only)", () => {
+describe("shared registration country selection (BUG-005 / QA-03)", () => {
+  it("lists the shared platform-enabled registration markets for AC and BB", () => {
     const ac = listRegistrationCountries(PRODUCT.ACTIVECLINIC);
     const bb = listRegistrationCountries(PRODUCT.BLESSBOARD);
-    assert.ok(ac.length > 1, "AC must expose more than one country");
-    assert.ok(bb.length > 1, "BB must expose more than one country");
+    assert.equal(ac.length, 19);
+    assert.equal(bb.length, 19);
     assert.equal(ac.length, bb.length);
     assert.equal(ac[0].iso, "ZM");
     assert.ok(ac.some((c) => c.iso === "KE"));
     assert.ok(ac.some((c) => c.iso === "US"));
     assert.ok(ac.some((c) => c.iso === "GB"));
+    assert.equal(ac.some((c) => c.iso === "FR"), false);
+    assert.deepEqual(
+      ac.map((c) => c.iso).sort(),
+      [...INITIAL_REGISTRATION_ENABLED_COUNTRY_CODES].sort()
+    );
   });
 
   it("defaults to Zambia and keeps product rules configurable", () => {
@@ -53,13 +59,17 @@ describe("shared registration country selection (BUG-005)", () => {
     assert.equal(usesZambiaProvinceSelect(PRODUCT.BLESSBOARD, "ZM"), false);
   });
 
-  it("normalizes supported countries and rejects unknown ISO codes", () => {
+  it("normalizes supported countries and rejects unknown / disabled ISO codes", () => {
     assert.deepEqual(
       normalizeRegistrationCountryCode("ke", { product: PRODUCT.ACTIVECLINIC }),
       { ok: true, value: "KE" }
     );
     assert.equal(
       normalizeRegistrationCountryCode("XX", { product: PRODUCT.ACTIVECLINIC }).ok,
+      false
+    );
+    assert.equal(
+      normalizeRegistrationCountryCode("FR", { product: PRODUCT.ACTIVECLINIC }).ok,
       false
     );
     assert.equal(
@@ -76,16 +86,17 @@ describe("shared registration country selection (BUG-005)", () => {
     );
     assert.equal(isSupportedRegistrationCountry(PRODUCT.BLESSBOARD, "ZM"), true);
     assert.equal(isSupportedRegistrationCountry(PRODUCT.BLESSBOARD, "XX"), false);
+    assert.equal(isSupportedRegistrationCountry(PRODUCT.BLESSBOARD, "FR"), false);
   });
 
-  it("buildRegistrationPageLocals exposes multi-country lists for both products", () => {
+  it("buildRegistrationPageLocals exposes enabled-country lists for both products", () => {
     const ac = buildRegistrationPageLocals({}, PRODUCT.ACTIVECLINIC, { step: "clinic" });
     const bb = buildRegistrationPageLocals({}, PRODUCT.BLESSBOARD, { step: "church" });
     assert.ok(Array.isArray(ac.registrationCountries));
-    assert.ok(ac.registrationCountries.length > 1);
+    assert.equal(ac.registrationCountries.length, 19);
     assert.ok(ac.phoneCountries.some((c) => c.iso === "KE"));
     assert.equal(ac.defaultCountry, "ZM");
-    assert.ok(bb.registrationCountries.length > 1);
+    assert.equal(bb.registrationCountries.length, 19);
     assert.ok(bb.registrationCountries.some((c) => c.iso === "US"));
     const locals = buildRegistrationCountryLocals(PRODUCT.ACTIVECLINIC, {
       selectedCountry: "KE",
@@ -93,7 +104,7 @@ describe("shared registration country selection (BUG-005)", () => {
     assert.equal(locals.selectedRegistrationCountry, "KE");
   });
 
-  it("AC clinic registration accepts KE and rejects XX", () => {
+  it("AC clinic registration accepts KE and rejects XX / FR", () => {
     const ke = validateClinicRegistrationInput(
       {
         clinicName: "Nairobi Clinic",
@@ -125,17 +136,31 @@ describe("shared registration country selection (BUG-005)", () => {
         clinicName: "Bad Clinic",
         clinicType: "clinic",
         countryCode: "XX",
+        city: "Somewhere",
       },
       { step: "clinic" }
     );
     assert.equal(bad.ok, false);
     assert.ok(bad.errors.countryCode);
+
+    const fr = validateClinicRegistrationInput(
+      {
+        clinicName: "Paris Clinic",
+        clinicType: "clinic",
+        countryCode: "FR",
+        city: "Paris",
+      },
+      { step: "clinic" }
+    );
+    assert.equal(fr.ok, false);
+    assert.ok(fr.errors.countryCode);
   });
 
-  it("BB church country validation accepts catalogue countries and rejects unknown", () => {
+  it("BB church country validation accepts enabled markets and rejects disabled", () => {
     assert.deepEqual(validateChurchCountry("ZM"), { ok: true, value: "ZM" });
     assert.deepEqual(validateChurchCountry("Kenya"), { ok: true, value: "KE" });
     assert.equal(validateChurchCountry("XX").ok, false);
+    assert.equal(validateChurchCountry("FR").ok, false);
     assert.equal(validateChurchCountry("").ok, false);
   });
 });

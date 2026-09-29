@@ -186,6 +186,8 @@ module.exports = {
   getCityCatalogueStats: locationRepo.getCityCatalogueStats,
   getGeographicCountry: locationRepo.getGeographicCountry,
   isCityCatalogueEnabled: locationRepo.isCityCatalogueEnabled,
+  isRegistrationEnabledCountry: locationRepo.isRegistrationEnabledCountry,
+  listRegistrationEnabledCountries: locationRepo.listRegistrationEnabledCountries,
   resolveRegistrationLocation,
   persistRegistrationLocation,
   validateProvinceForCountry,

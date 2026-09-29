@@ -23,6 +23,7 @@ const {
   resolveRegistrationDefaultCountry,
   usesZambiaProvinceSelect,
   buildRegistrationCountryLocals,
+  hydrateRegistrationCountryAvailability,
 } = require("../registrationCountrySelection");
 
 /** V2.04 registration shows Country + City only. */
@@ -61,6 +62,7 @@ module.exports = {
   isCityCatalogueEnabled: locationService.isCityCatalogueEnabled,
   seedCityCatalogue: locationService.seedCityCatalogue,
   getCityCatalogueStats: locationService.getCityCatalogueStats,
+  hydrateRegistrationCountryAvailability,
   canonicalLocationName: locationService.canonicalLocationName,
   normalizeLocationName: locationService.normalizeLocationName,
 };
