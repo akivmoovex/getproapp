@@ -7,6 +7,7 @@
 | QA_DEFECT | V2.04-QA-01 |
 | SEVERITY | P1 UX / PLATFORM CONSISTENCY |
 | PRE_FIX_APPLICATION_SHA | `117b03ef4b96bb1e859190dcb10fa7d3035e045f` |
+| NEW_APPLICATION_CANDIDATE_SHA | `ee662705b04b8a281bc6568e7492481221f412c0` |
 | TITLE | Move registration location fields to platform level and add shared city autocomplete to ActiveClinic |
 
 ## Original defect
