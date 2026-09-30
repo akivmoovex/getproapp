@@ -573,8 +573,18 @@ body.gp-website-field-editing .bb-tp-main {
 body.gp-website-viewport-mobile .bb-tp-main,
 body.gp-website-viewport-mobile .ac-tenant-main,
 body.gp-website-viewport-mobile [data-bb-home],
-body.gp-website-viewport-mobile .ac-tenant-home {
+body.gp-website-viewport-mobile .ac-tenant-home,
+body.gp-website-viewport-mobile #ac-public-main {
   max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.gp-website-viewport-tablet .bb-tp-main,
+body.gp-website-viewport-tablet .ac-tenant-main,
+body.gp-website-viewport-tablet [data-bb-home],
+body.gp-website-viewport-tablet .ac-tenant-home,
+body.gp-website-viewport-tablet #ac-public-main {
+  max-width: 768px;
   margin-left: auto;
   margin-right: auto;
 }

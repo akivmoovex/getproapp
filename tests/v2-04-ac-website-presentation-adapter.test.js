@@ -327,10 +327,18 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
   it("does not modify BlessBoard website sources", () => {
     const adapterDir = fs.readdirSync(path.join(ROOT, "src/activeclinic/website"));
     assert.ok(adapterDir.includes("activeClinicWebsitePresentationAdapter.js"));
+    const acAdapter = fs.readFileSync(ADAPTER_FILE, "utf8");
+    assert.doesNotMatch(acAdapter, /blessboardWebsitePresentationAdapter|src\/blessboard\//);
     const bbWebsite = path.join(ROOT, "src/blessboard/website");
     if (fs.existsSync(bbWebsite)) {
       const names = fs.readdirSync(bbWebsite);
-      assert.ok(!names.includes("blessboardWebsitePresentationAdapter.js"));
+      // BB owns its own presentation adapter after V2.04 platform engine migration.
+      assert.ok(names.includes("blessboardWebsitePresentationAdapter.js"));
+      const bbAdapter = fs.readFileSync(
+        path.join(bbWebsite, "blessboardWebsitePresentationAdapter.js"),
+        "utf8"
+      );
+      assert.doesNotMatch(bbAdapter, /activeClinicWebsitePresentationAdapter|src\/activeclinic\//);
     }
   });
 });

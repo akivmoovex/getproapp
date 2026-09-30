@@ -1075,7 +1075,10 @@
 }
 .ac-mw-hub-health__score {
   margin: 0;
-  font-weight: 700;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--color-brand-primary);
 }
 .ac-mw-hub-health__list,

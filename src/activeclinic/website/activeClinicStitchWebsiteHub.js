@@ -90,8 +90,8 @@ const H03_H06_CONTROL_AUDIT = Object.freeze([
   {
     screen: "H03",
     control: "header_style_mode",
-    disposition: "FUTURE_CAPABILITY",
-    reason: "Sticky vs docked modes are Stitch-only; chrome uses show_logo/nav/phone flags (WIRE via Header & Footer)",
+    disposition: "PRESENTATION_ONLY",
+    reason: "Sticky vs docked chrome is CSS presentation; show_logo/nav/phone flags remain WIRE_EXISTING on Header & Footer",
   },
   {
     screen: "H03",
@@ -180,6 +180,9 @@ const HUB_DESKTOP_MARKERS = Object.freeze(HUB_SCREENS.map((s) => s.code));
 const HUB_MOBILE_MARKERS = Object.freeze(HUB_SCREENS.map((s) => `${s.code}-M`));
 
 const H03_H06_WIRED = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "WIRE_EXISTING").length;
+const H03_H06_PRESENTATION_ONLY = H03_H06_CONTROL_AUDIT.filter(
+  (r) => r.disposition === "PRESENTATION_ONLY"
+).length;
 const H03_H06_FUTURE = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "FUTURE_CAPABILITY").length;
 const H03_H06_BLOCKERS = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "BLOCKER").length;
 
@@ -190,6 +193,7 @@ module.exports = {
   NOT_WIRED_STITCH_CONTROLS,
   UNWIRED_STITCH_CONTROLS: NOT_WIRED_STITCH_CONTROLS.length,
   H03_H06_WIRED,
+  H03_H06_PRESENTATION_ONLY,
   H03_H06_FUTURE,
   H03_H06_BLOCKERS,
   HUB_DESKTOP_MARKERS,

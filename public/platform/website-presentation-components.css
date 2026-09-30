@@ -549,9 +549,13 @@
 /* —— V2.04 Batch 7: doctor directory person card —— */
 .gp-website-pc--person-directory {
   display: grid;
-  grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr);
-  gap: calc(var(--gp-website-space, 1rem) * 1);
+  grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr);
+  gap: calc(var(--gp-website-space, 1rem) * 1.1);
   align-items: start;
+  padding: calc(var(--gp-website-space, 1rem) * 0.85);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: calc(var(--gp-website-radius, 0.5rem) * 1.25);
+  background: var(--gp-website-color-surface, transparent);
 }
 .gp-website-pc--person-directory .gp-website-pc__person-media--portrait {
   width: 100%;

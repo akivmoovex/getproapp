@@ -148,7 +148,8 @@ describe("V2.04 AC Stitch Batch 6 website management hub H01–H06", () => {
     assert.match(settings, /data-ac-stitch-not-wired="analytics_embed"/);
 
     assert.equal(UNWIRED_STITCH_CONTROLS, NOT_WIRED_STITCH_CONTROLS.length);
-    assert.equal(UNWIRED_STITCH_CONTROLS, 10);
+    // Batch 7: header_style_mode reclassified PRESENTATION_ONLY → FUTURE_CAPABILITY count 9
+    assert.equal(UNWIRED_STITCH_CONTROLS, 9);
     for (const item of NOT_WIRED_STITCH_CONTROLS) {
       assert.ok(item.screen === "H03" || item.screen === "H06");
       assert.ok(item.control && item.reason);

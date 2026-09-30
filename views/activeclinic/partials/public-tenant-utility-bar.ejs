@@ -44,9 +44,9 @@
 >
   <div class="ac-public-utility__inner">
     <% if (utilityPhone) { %>
-    <p class="ac-public-utility__item ac-public-utility__item--phone">
+    <p class="ac-public-utility__item ac-public-utility__item--phone" data-ac-emergency-contact="1">
       <span class="ac-public-utility__label">Clinic line</span>
-      <a class="ac-public-utility__value" href="tel:<%= String(utilityPhone).replace(/[^\d+]/g, '') %>"><%= utilityPhone %></a>
+      <a class="ac-public-utility__value ac-public-utility__value--emphasis" href="tel:<%= String(utilityPhone).replace(/[^\d+]/g, '') %>"><%= utilityPhone %></a>
     </p>
     <% } %>
     <% if (utilityHours) { %>

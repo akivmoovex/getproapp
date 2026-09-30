@@ -12,6 +12,7 @@ const path = require("path");
 const {
   H03_H06_CONTROL_AUDIT,
   H03_H06_WIRED,
+  H03_H06_PRESENTATION_ONLY,
   H03_H06_FUTURE,
   H03_H06_BLOCKERS,
   UNWIRED_STITCH_CONTROLS,
@@ -33,12 +34,18 @@ describe("V2.04 AC Stitch Batch 7 visual parity", () => {
     const util = read("views/activeclinic/partials/public-tenant-utility-bar.ejs");
     const header = read("views/activeclinic/partials/public-tenant-header.ejs");
     const footer = read("views/activeclinic/partials/public-tenant-footer.ejs");
+    const sticky = read("views/activeclinic/partials/public-tenant-mobile-sticky-cta.ejs");
+    const shell = read("views/activeclinic/layouts/public-shell.ejs");
     assert.match(header, /public-tenant-utility-bar/);
     assert.match(util, /data-ac-public-utility/);
     assert.match(util, /publicPhoneDisplay|headerPhone|publicHours|addressLine1/);
+    assert.match(util, /data-ac-emergency-contact/);
     assert.doesNotMatch(util, /0123 456 789|1800 999 111|Emergency: Dial 000/);
     assert.match(footer, /data-ac-footer-care/);
     assert.match(footer, /Immediate care/);
+    assert.match(shell, /public-tenant-mobile-sticky-cta/);
+    assert.match(sticky, /data-ac-tenant-mobile-sticky/);
+    assert.match(sticky, /data-ac-sticky-book|data-ac-sticky-call/);
   });
 
   it("AC public shell loads Inter for Clinical Clarity", () => {
@@ -86,8 +93,10 @@ describe("V2.04 AC Stitch Batch 7 visual parity", () => {
     const chrome = read("views/platform/website-engine/editor-chrome.ejs");
     const js = read("public/platform/website-inline-edit.js");
     assert.match(chrome, /data-website-viewport="desktop"/);
+    assert.match(chrome, /data-website-viewport="tablet"/);
     assert.match(chrome, /data-website-viewport="mobile"/);
     assert.match(js, /data-website-viewport/);
+    assert.match(js, /gp-website-viewport-tablet/);
     assert.match(js, /SHARED_EDITOR_ENGINE_COUNT must remain 1/);
   });
 
@@ -102,13 +111,17 @@ describe("V2.04 AC Stitch Batch 7 visual parity", () => {
   it("H03/H06 controls: zero blockers; wired + future classified", () => {
     assert.equal(H03_H06_BLOCKERS, 0);
     assert.ok(H03_H06_WIRED >= 4);
+    assert.ok(H03_H06_PRESENTATION_ONLY >= 1);
     assert.equal(H03_H06_FUTURE, UNWIRED_STITCH_CONTROLS);
-    assert.equal(H03_H06_FUTURE, 10);
+    assert.equal(H03_H06_WIRED + H03_H06_PRESENTATION_ONLY + H03_H06_FUTURE, 15);
     for (const row of H03_H06_CONTROL_AUDIT) {
-      assert.ok(["WIRE_EXISTING", "FUTURE_CAPABILITY", "BLOCKER"].includes(row.disposition));
+      assert.ok(
+        ["WIRE_EXISTING", "PRESENTATION_ONLY", "FUTURE_CAPABILITY", "BLOCKER"].includes(row.disposition)
+      );
     }
     const branding = read("views/activeclinic/app/website-cms-branding.ejs");
     const settings = read("views/activeclinic/app/website-cms-settings.ejs");
+    assert.match(branding, /data-ac-stitch-disposition="PRESENTATION_ONLY"/);
     assert.match(branding, /data-ac-stitch-disposition="FUTURE_CAPABILITY"/);
     assert.match(settings, /data-ac-stitch-disposition="FUTURE_CAPABILITY"/);
   });

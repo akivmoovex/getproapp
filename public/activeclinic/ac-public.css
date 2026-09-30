@@ -3290,6 +3290,55 @@ a.ac-public-utility__value:focus-visible {
   color: var(--acp-primary);
   text-decoration: underline;
 }
+.ac-public-utility__value--emphasis {
+  font-weight: 700;
+  color: var(--acp-primary-strong, var(--acp-primary));
+}
+.ac-public-utility__item--phone .ac-public-utility__label {
+  color: var(--ac-status-danger, #b42318);
+}
+
+/* Batch 7 finalization — mobile sticky book/call (above bottom nav) */
+.ac-tenant-mobile-sticky {
+  display: none;
+}
+@media (max-width: 767px) {
+  .ac-tenant-mobile-sticky {
+    display: flex;
+    position: sticky;
+    bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    gap: 0.5rem;
+    padding: 0.65rem var(--acp-gutter);
+    background: color-mix(in srgb, var(--acp-surface) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--acp-border);
+  }
+  .ac-tenant-mobile-sticky__btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .ac-tenant-mobile-sticky__btn--call {
+    border: 1px solid var(--acp-border);
+    color: var(--acp-navy);
+    background: var(--acp-surface);
+  }
+  .ac-tenant-mobile-sticky__btn--book {
+    background: var(--acp-primary);
+    color: #fff;
+  }
+  body[data-website-editing="1"] .ac-tenant-mobile-sticky {
+    display: none;
+  }
+}
 .ac-public-footer__col--care {
   background: color-mix(in srgb, var(--ac-status-danger-bg) 70%, transparent);
   border: 1px solid color-mix(in srgb, var(--ac-status-danger) 25%, transparent);

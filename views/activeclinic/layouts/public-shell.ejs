@@ -130,6 +130,7 @@
   </main>
   <%- footerHtml %>
   <% if (shellVariant === 'tenant' && clinic) { %>
+  <%- include('../partials/public-tenant-mobile-sticky-cta') %>
   <%- include('../partials/ac-mobile-bottom-nav') %>
   <% } else if (shellVariant === 'platform' && !(typeof chrome === 'string' && chrome === 'mf-register')) { %>
   <%- include('../partials/ac-mobile-bottom-nav-platform') %>

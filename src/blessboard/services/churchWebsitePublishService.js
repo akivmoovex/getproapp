@@ -879,6 +879,9 @@ async function publishChurchWebsite(db, input) {
             actorIdentityId: input.actorUserId || null,
             grantedPermissions: ["website.publish"],
             forceTenantPublish: true,
+            // forcePublishVersion must mint a new platform version even when draft==published
+            // (governance tests + HQ "Publish again" after approval).
+            allowEmpty: Boolean(input && input.forcePublishVersion === true),
           });
           if (!enginePublished.ok) {
             throw Object.assign(new Error("website_engine_publish_failed"), {

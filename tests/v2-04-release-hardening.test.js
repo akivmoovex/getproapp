@@ -200,6 +200,6 @@ describe("V2.04 release hardening", () => {
       hub.HUB_SCREENS.map((s) => s.code),
       ["H01", "H02", "H03", "H04", "H05", "H06"]
     );
-    assert.equal(hub.UNWIRED_STITCH_CONTROLS, 10);
+    assert.equal(hub.UNWIRED_STITCH_CONTROLS, 9);
   });
 });

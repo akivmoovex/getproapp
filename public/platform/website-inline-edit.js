@@ -16,6 +16,7 @@
       btn.addEventListener("click", function () {
         var mode = btn.getAttribute("data-website-viewport");
         document.body.classList.toggle("gp-website-viewport-mobile", mode === "mobile");
+        document.body.classList.toggle("gp-website-viewport-tablet", mode === "tablet");
         document.querySelectorAll("[data-website-viewport]").forEach(function (other) {
           var on = other === btn;
           other.classList.toggle("is-current", on);
