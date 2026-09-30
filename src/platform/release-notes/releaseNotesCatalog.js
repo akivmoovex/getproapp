@@ -2527,7 +2527,7 @@ const VERSIONS = Object.freeze([
     releaseDate: "2026-09-30",
     products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
     deploymentStatus:
-      "TESTING candidate on V4 / moovex-platform-v8-testing after deploy. Application candidate 6be8065b…. Production UNTOUCHED. Pronline V10 preserved. Neuniversity deploy PENDING.",
+      "TESTING candidate on V4 / moovex-platform-v8-testing after deploy. Batch 8 local freeze — authoritative V2_04_HOSTED_QA_CANDIDATE is in docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md. Production UNTOUCHED. Pronline V10 preserved. Neuniversity deploy PENDING.",
     qaVerification:
       "Local V2.04 batch suites PASS (Stitch batches 1–7, Batch 8 freeze, color/theme, geography QA-01–03, website platformization, BB engine migration, release hardening). Hosted deploy pending.",
     acceptanceCriteria: [
