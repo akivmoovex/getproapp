@@ -288,7 +288,7 @@
     "build-storybook": "storybook build -o storybook-static",
     "test:blessboard:growth-trial-offer": "node --test --test-concurrency=1 tests/blessboard-growth-trial-offer.test.js",
     "db:qa:canonical-reset": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v10-qa-canonical-reset.js",
-    "test:v204:release-hardening": "node --test --test-concurrency=1 tests/v2-04-release-hardening.test.js tests/v8-about-version-2.test.js tests/v2-04-product-token-cascade.test.js tests/v2-04-ac-stitch-batch-2-public-foundation.test.js tests/v2-04-ac-stitch-batch-3-domain-pages.test.js tests/v2-04-ac-stitch-batch-4-extended-pages.test.js tests/v2-04-ac-stitch-batch-5-inline-editor.test.js tests/v2-04-ac-stitch-batch-6-website-hub.test.js"
+    "test:v204:release-hardening": "node --test --test-concurrency=1 tests/v2-04-release-hardening.test.js tests/v8-about-version-2.test.js tests/v2-04-product-token-cascade.test.js tests/v2-04-ac-stitch-batch-2-public-foundation.test.js tests/v2-04-ac-stitch-batch-3-domain-pages.test.js tests/v2-04-ac-stitch-batch-4-extended-pages.test.js tests/v2-04-ac-stitch-batch-5-inline-editor.test.js tests/v2-04-ac-stitch-batch-6-website-hub.test.js tests/v2-04-ac-stitch-batch-7-visual-parity.test.js"
   },
   "keywords": [],
   "author": "",
