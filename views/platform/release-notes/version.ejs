@@ -41,6 +41,31 @@
     <%- include('partials/filters', { versionLocked: versionId }) %>
 
     <% if (panel === 'details') { %>
+      <%
+        var productNarrative = null;
+        if (entry.productNarratives && typeof productContext !== 'undefined' && productContext && entry.productNarratives[productContext]) {
+          productNarrative = entry.productNarratives[productContext];
+        }
+      %>
+      <% if (productNarrative && productNarrative.intro) { %>
+      <section class="rnc-section" data-product-narrative="<%= productContext %>">
+        <h2>What's new for <%= productContext %></h2>
+        <p class="rnc-lede"><%= productNarrative.intro %></p>
+        <% if (productNarrative.sections && productNarrative.sections.length) { %>
+          <% productNarrative.sections.forEach(function (section) { %>
+            <article class="rnc-card rnc-card--narrative">
+              <header><h3><%= section.title %></h3></header>
+              <% if (section.items && section.items.length) { %>
+                <ul>
+                  <% section.items.forEach(function (item) { %><li><%= item %></li><% }) %>
+                </ul>
+              <% } %>
+            </article>
+          <% }) %>
+        <% } %>
+      </section>
+      <% } %>
+
       <% if (entry.architectureWork && entry.architectureWork.title) { %>
       <section class="rnc-section" data-architecture-work="v9">
         <h2><%= entry.architectureWork.title %></h2>

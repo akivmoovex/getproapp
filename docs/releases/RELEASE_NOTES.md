@@ -403,19 +403,19 @@ TESTING target `moovex-platform-v8-testing`. Production untouched in V2.01 task 
 
 ### Summary
 
-Platform semantic colors, shared Country+City registration, website platformization, and ActiveClinic Stitch public/hub redesign (R01–R12, E01–E02, H01–H06) on branch **V4**. About Version **2.04**. Production untouched; hosted deploy pending.
+Platform semantic colors, shared Country+City registration, website platformization, BlessBoard on the shared website engine, and ActiveClinic Stitch public/hub redesign on branch **V4**. About Version **2.04**. Hosted final QA **CLOSED** (`RELEASE_BLOCKERS=0`). Production untouched; Pronline V10 preserved.
 
 ### Products
 
 ActiveClinic, BlessBoard, Shared GetPro Platform.
 
-### Packet
+### Packets
 
-[`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md) · catalog version `2.04`
+[`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md) · [`BLESSBOARD_RELEASE_NOTES.md`](./BLESSBOARD_RELEASE_NOTES.md) · catalog version `2.04`
 
 ### Deployment status
 
-TESTING candidate after operator deploy. **NEUNIVERSITY_DEPLOYMENT=PENDING**. **PRODUCTION=UNTOUCHED**. Pronline V10 preserved.
+TESTING on `moovex-platform-v8-testing` (neuniversity). Application candidate `c16c791f9a4d…`. Hosted final QA **CLOSED**. **PRODUCTION=UNTOUCHED**. Pronline V10 preserved.
 
 ---
 

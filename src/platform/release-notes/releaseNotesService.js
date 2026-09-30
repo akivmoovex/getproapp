@@ -226,12 +226,38 @@ function sanitizeForAudience(entry, opts) {
             : [],
         }
       : null,
+    productNarratives: sanitizeProductNarratives(entry.productNarratives, scrub),
     features,
     bugs,
     qaChecklist,
     sources: includeInternal ? entry.sources.slice() : [],
     audience: includeInternal ? "internal" : "public",
   };
+}
+
+/**
+ * @param {Record<string, { intro?: string, sections?: Array<{ title: string, items: string[] }>, source?: string }>|null|undefined} narratives
+ * @param {(text: string) => string} scrub
+ */
+function sanitizeProductNarratives(narratives, scrub) {
+  if (!narratives || typeof narratives !== "object") return null;
+  const out = {};
+  for (const [product, narrative] of Object.entries(narratives)) {
+    if (!narrative || typeof narrative !== "object") continue;
+    out[product] = {
+      intro: scrub(narrative.intro || ""),
+      sections: Array.isArray(narrative.sections)
+        ? narrative.sections.map((section) => ({
+            title: scrub(section && section.title ? section.title : ""),
+            items: Array.isArray(section && section.items)
+              ? section.items.map(scrub)
+              : [],
+          }))
+        : [],
+      source: scrub(narrative.source || ""),
+    };
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 function filterOptions() {

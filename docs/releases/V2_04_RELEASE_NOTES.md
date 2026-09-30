@@ -131,6 +131,7 @@ Authoritative packet: `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`.
 ### Authoritative sources
 
 - `docs/releases/RELEASE_NOTES.md` (index)
+- `docs/releases/BLESSBOARD_RELEASE_NOTES.md` (BlessBoard customer-facing)
 - `src/platform/release-notes/releaseNotesCatalog.js`
 - `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`
 - `docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md`
