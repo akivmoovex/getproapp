@@ -197,19 +197,18 @@ describe("branch admin inline edit save contract", () => {
 
   it("client save contract matches POST JSON inline-field endpoint", () => {
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
     assert.match(js, /method:\s*"POST"/);
     assert.match(js, /Content-Type":\s*"application\/json"/);
     assert.match(js, /credentials:\s*"same-origin"/);
     assert.match(js, /X-CSRF-Token/);
-    assert.match(js, /pageKey:/);
-    assert.match(js, /sectionKey:/);
-    assert.match(js, /fieldKey:/);
+    // V2.04: shared WE01 posts contentKey (not BB legacy pageKey/sectionKey/fieldKey).
+    assert.match(js, /contentKey:/);
     assert.match(js, /value:/);
-    assert.match(js, /parseSaveResponse/);
-    assert.match(js, /not_authenticated/);
+    assert.match(js, /Saved to draft/);
+    assert.match(js, /published === true/);
   });
 
   it("CSRF token rendered on public editor saves against branch endpoint", async () => {

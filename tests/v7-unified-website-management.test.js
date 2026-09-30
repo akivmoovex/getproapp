@@ -670,11 +670,9 @@ describe("V7 unified website management", () => {
     assert.match(acJs, /Saved to draft/);
     assert.match(acJs, /published === true/);
     assert.doesNotMatch(acJs, /drafts\/discard/);
-    const bbJs = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
-      "utf8"
-    );
-    assert.match(bbJs, /result\.data\.published/);
+    // V2.04: BB and AC share the same WE01 engine (no product-local editor JS).
+    const bbJs = acJs;
+    assert.match(bbJs, /published === true/);
     assert.doesNotMatch(bbJs, /saveAndPublishField/);
     assert.equal(INLINE_SAVE_PUBLISHES, false);
     assert.equal(isMultilineFieldType("long_text"), true);

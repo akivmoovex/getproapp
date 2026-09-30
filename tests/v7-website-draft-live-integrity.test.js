@@ -110,24 +110,23 @@ function cookieHeader(...parts) {
 describe("v7 website draft/live integrity — contract", () => {
   it("✓ save never publishes in the shared contract or client JS", () => {
     assert.equal(INLINE_SAVE_PUBLISHES, false);
-    const acJs = fs.readFileSync(
+    const sharedJs = fs.readFileSync(
       path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
-    const bbJs = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
-      "utf8"
+    // V2.04: singular WE01 cancel is local dialog dismiss (never publishes).
+    assert.match(sharedJs, /function cancel\(\)/);
+    const cancelFn = sharedJs.slice(
+      sharedJs.indexOf("function cancel()"),
+      sharedJs.indexOf("function cancel()") + 450
     );
-    assert.match(acJs, /function cancel\(\)/);
-    assert.doesNotMatch(acJs.slice(acJs.indexOf("function cancel()"), acJs.indexOf("function cancel()") + 220), /postJson|fetch\(/);
-    assert.match(bbJs, /data-bb-inline-cancel/);
-    assert.match(bbJs, /exitEdit\(cancelRoot, prior\)/);
-    assert.doesNotMatch(bbJs, /saveAndPublishField/);
-    const cancelFn = bbJs.slice(
-      bbJs.indexOf("var cancel = event.target.closest(\"[data-bb-inline-cancel='1']\")"),
-      bbJs.indexOf("function onKeydown")
+    assert.doesNotMatch(cancelFn, /postJson|fetch\(/);
+    assert.match(sharedJs, /published === true/);
+    assert.doesNotMatch(sharedJs, /saveAndPublishField/);
+    assert.equal(
+      fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js")),
+      false
     );
-    assert.doesNotMatch(cancelFn, /fetch\(|saveField\(/);
   });
 });
 

@@ -38,14 +38,13 @@ describe("V2_01 BB inline editor parity — static", () => {
     assert.match(attach, /countAllWebsiteDrafts/);
   });
 
-  it("structured draft save dual-writes engine snapshot best-effort", () => {
+  it("structured draft save no longer dual-writes via syncDraftToEngine", () => {
     const svc = read("src/blessboard/services/websiteStructuredDraftService.js");
-    assert.match(svc, /syncDraftToEngine/);
-    assert.match(svc, /engineSynced/);
-    assert.match(svc, /Engine draft sync must not block structured overlay save/);
-    // saved:true is only returned after overlay upsert; sync failure never rewrites that contract.
+    // V2.04 Phase 5: platform contentService is SoT; no runtime syncDraftToEngine.
+    assert.doesNotMatch(svc, /syncDraftToEngine\s*\(/);
+    assert.match(svc, /no dual-write syncDraftToEngine/);
     assert.match(svc, /saved:\s*true/);
-    assert.match(svc, /engineSynced\s*=\s*Boolean\(synced\s*&&\s*synced\.ok\)/);
+    assert.match(svc, /engineSynced/);
   });
 
   it("structured draft repository upserts by entity key (no duplicate rows)", () => {

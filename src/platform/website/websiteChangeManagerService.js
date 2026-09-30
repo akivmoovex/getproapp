@@ -142,6 +142,72 @@ async function getPendingChangeSummary(db, input) {
 }
 
 /**
+ * Aggregate pending draft-vs-published counts across multiple website instances
+ * for the same organization (HQ multi-site oversight). Generic platform
+ * capability — product adapters supply the authorized instance id list.
+ *
+ * @param {{ query: Function }} db
+ * @param {{
+ *   organizationId: string,
+ *   instanceIds: Array<string|object>,
+ *   grantedPermissions?: string[],
+ * }} input
+ */
+async function aggregatePendingChangeSummaries(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const rawIds = Array.isArray(input && input.instanceIds) ? input.instanceIds : [];
+  const instanceIds = [
+    ...new Set(
+      rawIds
+        .map((id) => {
+          if (id && typeof id === "object" && id.id != null) return String(id.id);
+          return String(id || "").trim();
+        })
+        .filter(Boolean)
+    ),
+  ];
+  if (!organizationId || instanceIds.length === 0) {
+    return {
+      ok: true,
+      code: RESULT.OK,
+      pendingChangeCount: 0,
+      hasPendingChanges: false,
+      byInstance: [],
+      instanceIds: [],
+    };
+  }
+
+  const byInstance = [];
+  let total = 0;
+  for (const instanceId of instanceIds) {
+    const summary = await getPendingChangeSummary(db, {
+      organizationId,
+      instanceId,
+      grantedPermissions: input.grantedPermissions,
+    });
+    const count = summary.ok ? Number(summary.pendingChangeCount) || 0 : 0;
+    total += count;
+    byInstance.push({
+      instanceId,
+      ok: summary.ok === true,
+      code: summary.code || null,
+      pendingChangeCount: count,
+      hasPendingChanges: count > 0,
+      changedKeys: summary.changedKeys || [],
+    });
+  }
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    pendingChangeCount: total,
+    hasPendingChanges: total > 0,
+    byInstance,
+    instanceIds,
+  };
+}
+
+/**
  * Inventory historical drafts (current unpublished keys) and published versions
  * for an authorized website. Does not mutate history.
  */
@@ -661,6 +727,7 @@ module.exports = {
   authorizeChangeManagerRead,
   compareDraftToPublished,
   getPendingChangeSummary,
+  aggregatePendingChangeSummaries,
   auditWebsiteChangeHistory,
   listFieldHistory,
   revertFieldToPublished,

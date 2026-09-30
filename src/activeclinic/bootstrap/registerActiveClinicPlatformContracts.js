@@ -14,6 +14,7 @@ const {
   registerWebsiteFieldRegistrar,
   registerIdentityNormalizers,
   registerOutboundEmailStatusResolver,
+  registerWebsiteAvailabilitySync,
 } = require("../../platform/contracts/productRuntimeRegistry");
 const {
   registerPublicationGovernance,
@@ -93,6 +94,12 @@ function registerActiveClinicPlatformContracts() {
   registerPublicationGovernance(
     PRODUCT.ACTIVECLINIC,
     activeClinicPublicationGovernanceAdapter.lifecycleHandlers()
+  );
+
+  registerWebsiteAvailabilitySync(
+    PRODUCT.ACTIVECLINIC,
+    require("../website/activeClinicWebsiteAvailabilitySync")
+      .syncActiveClinicAvailabilityFlag
   );
 
   registerOutboundEmailStatusResolver(resolveOutboundEmailStatus);

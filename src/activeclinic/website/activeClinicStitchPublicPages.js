@@ -53,9 +53,17 @@ const EDIT_KEYS = Object.freeze({
     title: "services.page_title",
     lead: "services.intro",
   },
+  servicesEmpty: {
+    title: "services.empty_heading",
+    lead: "services.empty_body",
+  },
   doctorsIntro: {
     title: "doctors.page_title",
     lead: "doctors.intro",
+  },
+  doctorsEmpty: {
+    title: "doctors.empty_heading",
+    lead: "doctors.empty_body",
   },
   contactIntro: {
     eyebrow: "contact.eyebrow",
@@ -635,10 +643,13 @@ function buildActiveClinicStitchPublicPage(input) {
       "section_header",
       {
         title: clinic.homePreviewServicesHeading || "Our Services",
-        lead: null,
+        lead: clinic.servicesIntro || null,
         cta: { label: "View all", url: paths.services },
       },
-      withEdit(editEnabled, { title: "home.preview.services_heading" })
+      withEdit(editEnabled, {
+        title: "home.preview.services_heading",
+        lead: "services.intro",
+      })
     );
     html.services = sections.servicesPreview && sections.servicesPreview.ok
       ? renderOk("collection_grid", sections.servicesPreview.value)
@@ -647,10 +658,13 @@ function buildActiveClinicStitchPublicPage(input) {
       "section_header",
       {
         title: clinic.homePreviewDoctorsHeading || "Meet Our Doctors",
-        lead: null,
+        lead: clinic.doctorsIntro || null,
         cta: { label: "View doctors", url: paths.doctors },
       },
-      withEdit(editEnabled, { title: "home.preview.doctors_heading" })
+      withEdit(editEnabled, {
+        title: "home.preview.doctors_heading",
+        lead: "doctors.intro",
+      })
     );
     html.doctors = sections.doctorsPreview && sections.doctorsPreview.ok
       ? renderOk("person_grid", sections.doctorsPreview.value)
@@ -661,6 +675,14 @@ function buildActiveClinicStitchPublicPage(input) {
     html.promo = promo && promo.ok && (clinic.showPromo || editEnabled)
       ? renderOk("cta", promo.value, withEdit(editEnabled, EDIT_KEYS.promo))
       : "";
+    html.visitHeading = renderOk(
+      "section_header",
+      {
+        title: clinic.homePreviewVisitHeading || "Visit us",
+        lead: null,
+      },
+      withEdit(editEnabled, { title: "home.preview.visit_heading" })
+    );
     html.contact = contact && contact.ok
       ? renderOk("contact", contact.value, withEdit(editEnabled, EDIT_KEYS.contactFacts))
       : "";
@@ -670,16 +692,30 @@ function buildActiveClinicStitchPublicPage(input) {
       ? renderOk("hours", hours.value, withEdit(editEnabled, EDIT_KEYS.hoursFacts))
       : "";
     if (faqCollection && faqCollection.ok && faqCollection.value.items.length) {
-      html.faq = renderOk("faq_list", {
-        heading: clinic.faqHeading || faqCollection.value.intro || "Questions",
-        lead: null,
-        items: faqCollection.value.items.map((item, index) => ({
-          question: item.title,
-          answer: item.description,
-          displayOrder: index,
-          visibility: true,
-        })),
-      });
+      html.faq = renderOk(
+        "faq_list",
+        {
+          heading: clinic.faqHeading || faqCollection.value.intro || "Questions",
+          lead: null,
+          items: faqCollection.value.items.map((item, index) => ({
+            question: item.title,
+            answer: item.description,
+            displayOrder: index,
+            visibility: true,
+          })),
+        },
+        withEdit(editEnabled, { heading: "home.faq_heading" })
+      );
+    } else if (editEnabled) {
+      html.faq = renderOk(
+        "faq_list",
+        {
+          heading: clinic.faqHeading || "Questions",
+          lead: null,
+          items: [],
+        },
+        withEdit(editEnabled, { heading: "home.faq_heading" })
+      );
     } else {
       html.faq = "";
     }
@@ -756,12 +792,17 @@ function buildActiveClinicStitchPublicPage(input) {
     html.procedures = procedureCollection && procedureCollection.ok
       ? renderOk("collection_grid", procedureCollection.value)
       : "";
-    html.empty = (!services.length && !procedures.length)
-      ? renderOk("section_header", {
-          title: clinic.servicesEmptyHeading || "Service listings are not available yet",
-          lead: clinic.servicesEmptyBody || "This clinic has not published service listings yet.",
-        })
-      : "";
+    html.empty =
+      !services.length && !procedures.length || editEnabled
+        ? renderOk(
+            "section_header",
+            {
+              title: clinic.servicesEmptyHeading || "Service listings are not available yet",
+              lead: clinic.servicesEmptyBody || "This clinic has not published service listings yet.",
+            },
+            withEdit(editEnabled, EDIT_KEYS.servicesEmpty)
+          )
+        : "";
     html.cta = renderOk("cta", {
       heading: "Ready to book?",
       body: null,
@@ -786,12 +827,17 @@ function buildActiveClinicStitchPublicPage(input) {
     html.doctors = doctorsCollection && doctorsCollection.ok
       ? renderOk("person_grid", doctorsCollection.value)
       : "";
-    html.empty = !doctors.length
-      ? renderOk("section_header", {
-          title: clinic.doctorsEmptyHeading || "Doctor listings are not available yet",
-          lead: clinic.doctorsEmptyBody || "This clinic has not published doctor listings yet.",
-        })
-      : "";
+    html.empty =
+      !doctors.length || editEnabled
+        ? renderOk(
+            "section_header",
+            {
+              title: clinic.doctorsEmptyHeading || "Doctor listings are not available yet",
+              lead: clinic.doctorsEmptyBody || "This clinic has not published doctor listings yet.",
+            },
+            withEdit(editEnabled, EDIT_KEYS.doctorsEmpty)
+          )
+        : "";
     html.cta = renderOk("cta", {
       heading: clinic.publicBookingEnabled ? "Book with a doctor" : "Plan a visit",
       body: null,

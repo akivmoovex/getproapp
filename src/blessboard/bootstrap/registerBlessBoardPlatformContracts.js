@@ -15,6 +15,7 @@ const {
   registerIdentityNormalizers,
   registerPlatformAdminSettingsContrib,
   registerBlessBoardOperationalMediaStorageFactory,
+  registerWebsiteAvailabilitySync,
 } = require("../../platform/contracts/productRuntimeRegistry");
 const {
   registerPublicationGovernance,
@@ -83,6 +84,11 @@ function registerBlessBoardPlatformContracts() {
   registerPublicationGovernance(
     PRODUCT.BLESSBOARD,
     blessboardPublicationGovernanceAdapter.lifecycleHandlers()
+  );
+
+  registerWebsiteAvailabilitySync(
+    PRODUCT.BLESSBOARD,
+    require("../website/blessboardWebsiteAvailabilitySync").syncBlessBoardWebsiteStatus
   );
 
   registerPlatformAdminSettingsContrib({

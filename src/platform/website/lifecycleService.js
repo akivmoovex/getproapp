@@ -6,7 +6,9 @@ const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { isLifecycleStatus, LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const { isPublishPolicy } = require("./publishPolicy");
 const editSessionService = require("./editSessionService");
-const settingsRepo = require("../../blessboard/repositories/blessBoardSettingsRepository");
+const {
+  runWebsiteAvailabilitySync,
+} = require("../contracts/productRuntimeRegistry");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -16,48 +18,25 @@ const RESULT = Object.freeze({
   NOOP: "already_in_state",
 });
 
-function blessBoardWebsiteStatusForLifecycle(lifecycleStatus) {
-  if (lifecycleStatus === LIFECYCLE_STATUS.PUBLIC) return "published";
-  if (lifecycleStatus === LIFECYCLE_STATUS.SUSPENDED) return "suspended";
-  return "draft";
+/**
+ * Product-local availability flags (church website_status, clinic
+ * website_published) sync through registered product hooks — not hard-coded
+ * product imports in platform.
+ */
+async function syncProductWebsiteAvailability(db, instance, lifecycleStatus) {
+  await runWebsiteAvailabilitySync(db, instance, lifecycleStatus);
 }
 
+/** @deprecated Prefer product registry; kept for callers that pass productCode. */
 async function syncActiveClinicAvailabilityFlag(db, instance, lifecycleStatus) {
   if (!instance || instance.productCode !== "activeclinic") return;
-  const wantPublic = lifecycleStatus === LIFECYCLE_STATUS.PUBLIC;
-  await db.query(
-    `UPDATE activeclinic.healthcare_organizations
-        SET website_published = $2, updated_at = now()
-      WHERE organization_id = $1`,
-    [instance.organizationId, wantPublic]
-  );
+  await runWebsiteAvailabilitySync(db, instance, lifecycleStatus);
 }
 
+/** @deprecated Prefer product registry; kept for callers that pass productCode. */
 async function syncBlessBoardWebsiteStatus(db, instance, lifecycleStatus) {
   if (!instance || instance.productCode !== "blessboard") return;
-  const church = await db.query(
-    `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
-    [instance.organizationId]
-  );
-  if (!church.rows[0]) return;
-  const existing = await settingsRepo.findChurchSettings(db, church.rows[0].id);
-  if (!existing) return;
-  const next = blessBoardWebsiteStatusForLifecycle(lifecycleStatus);
-  if (String(existing.websiteStatus || "") === next) return;
-  await settingsRepo.upsertChurchSettings(db, church.rows[0].id, {
-    publicName: existing.publicName,
-    denomination: existing.denomination,
-    primaryEmail: existing.primaryEmail,
-    primaryPhone: existing.primaryPhone,
-    defaultTimezone: existing.defaultTimezone,
-    defaultCountryCode: existing.defaultCountryCode,
-    websiteStatus: next,
-  });
-}
-
-async function syncProductWebsiteAvailability(db, instance, lifecycleStatus) {
-  await syncActiveClinicAvailabilityFlag(db, instance, lifecycleStatus);
-  await syncBlessBoardWebsiteStatus(db, instance, lifecycleStatus);
+  await runWebsiteAvailabilitySync(db, instance, lifecycleStatus);
 }
 
 async function applyLifecycle(db, input) {

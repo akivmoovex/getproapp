@@ -1149,16 +1149,28 @@ async function createRestoredDraft(db, opts) {
         },
       });
 
-      const {
-        restoreDraftFromLegacy,
-      } = require("../../platform/website-engine/blessboardBridge");
-      await restoreDraftFromLegacy(client, {
-        organizationId,
-        churchId,
-        branchId: restoreBranchId,
-        actorIdentityId: actorUserId,
-        snapshot: restoredSnapshot,
-      });
+      // V2.04 Phase 5: restore into platform draft SoT (not restoreDraftFromLegacy dual path).
+      try {
+        const contentService = require("../../platform/website/contentService");
+        const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+        const { SNAPSHOT_KEY } = require("../../platform/website-engine/productSchemaRegistry");
+        const ensured = await ensureBlessBoardWebsiteInstance(client, {
+          organizationId,
+          actorIdentityId: actorUserId,
+        });
+        if (ensured && ensured.ok && ensured.instance) {
+          await contentService.saveWebsiteDraft(client, {
+            organizationId,
+            instanceId: ensured.instance.id,
+            expectedProductCode: "blessboard",
+            contentKey: SNAPSHOT_KEY,
+            value: restoredSnapshot,
+            actorIdentityId: actorUserId,
+          });
+        }
+      } catch {
+        /* Platform draft restore is best-effort alongside CMS restore projection. */
+      }
       try {
         const {
           overwriteEngineFieldsFromPages,

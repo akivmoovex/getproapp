@@ -842,43 +842,56 @@ async function publishChurchWebsite(db, input) {
           branchId
         );
 
-        const versionSvc = require("./websitePublicationVersionService");
-        publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
-          organizationId: inner.organizationId,
-          churchId,
-          branchId,
-          actorUserId: input.actorUserId || null,
-          publishedAt: publishedAt.toISOString(),
-          sourceType: (input && input.sourceType) || "hq_edit",
-          sourceSubmissionId: (input && input.sourceSubmissionId) || null,
-          publicationNote:
-            input && input.publicationNote
-              ? String(input.publicationNote).trim().slice(0, 2000)
-              : null,
-          notifyBranchAdmins: Boolean(input && input.notifyBranchAdmins),
-          notifyHqTeam: Boolean(input && input.notifyHqTeam),
-          publishedSubmissionIds,
-          alreadyPublished: inner.websiteStatus === "published",
-        });
-        const {
-          publishFromLegacy,
-        } = require("../../platform/website-engine/blessboardBridge");
-        const enginePublished = await publishFromLegacy(client, {
-          organizationId: inner.organizationId,
-          churchId,
-          branchId,
-          actorIdentityId: input.actorUserId || null,
-          actorUserId: input.actorUserId || null,
-          slug: inner.organizationKey,
-        });
-        if (!enginePublished.ok) {
-          throw Object.assign(new Error("website_engine_publish_failed"), {
-            code: "WEBSITE_ENGINE_PUBLISH",
-            engineCode: enginePublished.code,
+        if (input && input.skipPlatformLifecycle === true) {
+          // Platform orchestrator already minted the version — projection only.
+          publicationVersion = {
+            id: input.platformVersionId || null,
+            versionNumber: input.platformVersionNumber || null,
+          };
+        } else {
+          // Canonical runtime: platform publicationService (not BB version engine).
+          const publicationService = require("../../platform/website/publicationService");
+          const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+          const {
+            ensureEngineContent,
+          } = require("../../platform/website-engine/blessboardBridge");
+          const ensured = await ensureBlessBoardWebsiteInstance(client, {
             organizationId: inner.organizationId,
-            instanceId: enginePublished.instance && enginePublished.instance.id,
-            cmsPublicationVersionId: publicationVersion && publicationVersion.id,
+            slug: inner.organizationKey,
+            branchId,
+            actorIdentityId: input.actorUserId || null,
           });
+          if (!ensured || !ensured.ok || !ensured.instance) {
+            throw Object.assign(new Error("website_engine_instance_missing"), {
+              code: "WEBSITE_ENGINE_INSTANCE",
+            });
+          }
+          await ensureEngineContent(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+            actorIdentityId: input.actorUserId || null,
+            slug: inner.organizationKey,
+          });
+          const enginePublished = await publicationService.publishWebsiteDraft(client, {
+            organizationId: inner.organizationId,
+            instanceId: ensured.instance.id,
+            actorIdentityId: input.actorUserId || null,
+            grantedPermissions: ["website.publish"],
+            forceTenantPublish: true,
+          });
+          if (!enginePublished.ok) {
+            throw Object.assign(new Error("website_engine_publish_failed"), {
+              code: "WEBSITE_ENGINE_PUBLISH",
+              engineCode: enginePublished.code,
+              organizationId: inner.organizationId,
+              instanceId: ensured.instance.id,
+            });
+          }
+          publicationVersion = enginePublished.version || {
+            id: null,
+            versionNumber: null,
+          };
         }
         // Compatibility projection must not abort the outer publish TX. Soft
         // savepoint is the platform publication boundary (PC10 / PC10C).
@@ -1033,25 +1046,35 @@ async function unpublishChurchWebsite(db, input) {
         },
       });
 
-      const {
-        unpublishFromLegacy,
-      } = require("../../platform/website-engine/blessboardBridge");
-      const unpublishedEngine = await unpublishFromLegacy(client, {
-        organizationId: String(ctx.organization_id),
-        churchId,
-        actorIdentityId: input.actorUserId || null,
-        actorUserId: input.actorUserId || null,
-        grantedPermissions: ["website.publish"],
-        syncProductAvailability: false,
-        reason: "tenant_unpublish",
-      });
-      if (!unpublishedEngine || unpublishedEngine.ok === false) {
-        throw Object.assign(new Error("website_engine_unpublish_failed"), {
-          code: "WEBSITE_ENGINE_UNPUBLISH",
-          engineCode: unpublishedEngine && unpublishedEngine.code,
+      if (!(input && input.skipPlatformLifecycle === true)) {
+        const publicationService = require("../../platform/website/publicationService");
+        const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+        const ensured = await ensureBlessBoardWebsiteInstance(client, {
           organizationId: String(ctx.organization_id),
-          instanceId: unpublishedEngine && unpublishedEngine.instance && unpublishedEngine.instance.id,
+          actorIdentityId: input.actorUserId || null,
         });
+        if (!ensured || !ensured.ok || !ensured.instance) {
+          throw Object.assign(new Error("website_engine_unpublish_failed"), {
+            code: "WEBSITE_ENGINE_UNPUBLISH",
+            engineCode: "website_instance_not_found",
+            organizationId: String(ctx.organization_id),
+          });
+        }
+        const unpublishedEngine = await publicationService.unpublishWebsite(client, {
+          organizationId: String(ctx.organization_id),
+          instanceId: ensured.instance.id,
+          actorIdentityId: input.actorUserId || null,
+          grantedPermissions: ["website.publish"],
+          reason: "tenant_unpublish",
+        });
+        if (!unpublishedEngine || unpublishedEngine.ok === false) {
+          throw Object.assign(new Error("website_engine_unpublish_failed"), {
+            code: "WEBSITE_ENGINE_UNPUBLISH",
+            engineCode: unpublishedEngine && unpublishedEngine.code,
+            organizationId: String(ctx.organization_id),
+            instanceId: ensured.instance.id,
+          });
+        }
       }
 
       return {
@@ -1375,19 +1398,37 @@ async function publishInitialFoundationWebsite(client, input) {
   let publicationVersionNumber = null;
   await client.query("SAVEPOINT initial_foundation_publish_version");
   try {
-    const versionSvc = require("./websitePublicationVersionService");
-    const publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
+    const publicationService = require("../../platform/website/publicationService");
+    const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+    const {
+      ensureEngineContent,
+    } = require("../../platform/website-engine/blessboardBridge");
+    const ensured = await ensureBlessBoardWebsiteInstance(client, {
       organizationId,
-      churchId,
-      actorUserId: (input && input.actorUserId) || null,
-      publishedAt: publishedAt.toISOString(),
-      sourceType: "initial_setup",
-      publicationNote: "Initial Foundation website published at registration approval",
-      publishedSubmissionIds: [],
-      alreadyPublished: false,
+      slug: keyNorm.key,
+      actorIdentityId: (input && input.actorUserId) || null,
     });
-    publicationVersionId = publicationVersion && publicationVersion.id;
-    publicationVersionNumber = publicationVersion && publicationVersion.versionNumber;
+    if (ensured && ensured.ok && ensured.instance) {
+      await ensureEngineContent(client, {
+        organizationId,
+        churchId,
+        actorIdentityId: (input && input.actorUserId) || null,
+        slug: keyNorm.key,
+        websiteStatus: "published",
+        seedPublished: true,
+      });
+      const enginePublished = await publicationService.publishWebsiteDraft(client, {
+        organizationId,
+        instanceId: ensured.instance.id,
+        actorIdentityId: (input && input.actorUserId) || null,
+        grantedPermissions: ["website.publish"],
+        forceTenantPublish: true,
+      });
+      if (enginePublished && enginePublished.ok && enginePublished.version) {
+        publicationVersionId = enginePublished.version.id;
+        publicationVersionNumber = enginePublished.version.versionNumber;
+      }
+    }
     await client.query("RELEASE SAVEPOINT initial_foundation_publish_version");
   } catch (versionErr) {
     try {
@@ -1400,24 +1441,6 @@ async function publishInitialFoundationWebsite(client, input) {
     if (pgCode !== "42P01" && pgCode !== "42703") {
       throw versionErr;
     }
-  }
-
-  const { publishFromLegacy } = require("../../platform/website-engine/blessboardBridge");
-  const enginePublished = await publishFromLegacy(client, {
-    organizationId,
-    churchId,
-    actorIdentityId: (input && input.actorUserId) || null,
-    actorUserId: (input && input.actorUserId) || null,
-    slug: keyNorm.key,
-  });
-  if (!enginePublished || enginePublished.ok === false) {
-    throw Object.assign(new Error("website_engine_publish_failed"), {
-      code: "WEBSITE_ENGINE_PUBLISH",
-      engineCode: enginePublished && enginePublished.code,
-      organizationId,
-      instanceId: enginePublished && enginePublished.instance && enginePublished.instance.id,
-      cmsPublicationVersionId: publicationVersionId,
-    });
   }
 
   return {

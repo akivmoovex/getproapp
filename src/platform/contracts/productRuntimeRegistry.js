@@ -26,6 +26,12 @@ const sectionActionServices = new Map();
 const websiteAddSectionHandlers = new Map();
 /** @type {Map<string, Function>} */
 const websiteFieldRegistrars = new Map();
+/**
+ * Product hooks that sync product-local availability flags after platform
+ * lifecycle status changes (e.g. church website_status, clinic website_published).
+ * @type {Map<string, Function>}
+ */
+const websiteAvailabilitySyncHandlers = new Map();
 /** @type {Map<string, object>} */
 const identityNormalizers = new Map();
 
@@ -132,6 +138,31 @@ function runWebsiteFieldRegistrar(productCode) {
   if (typeof fn === "function") fn();
 }
 
+/**
+ * @param {string} productCode
+ * @param {(db: object, instance: object, lifecycleStatus: string) => Promise<void>|void} handler
+ */
+function registerWebsiteAvailabilitySync(productCode, handler) {
+  const key = normalizeProductCode(productCode);
+  if (!key || typeof handler !== "function") return false;
+  websiteAvailabilitySyncHandlers.set(key, handler);
+  return true;
+}
+
+/**
+ * Invoke the registered product availability sync for a website instance.
+ * No-op when no product handler is registered.
+ */
+async function runWebsiteAvailabilitySync(db, instance, lifecycleStatus) {
+  ensureContractsLoaded();
+  if (!instance || !instance.productCode) return;
+  const handler = websiteAvailabilitySyncHandlers.get(
+    normalizeProductCode(instance.productCode)
+  );
+  if (typeof handler !== "function") return;
+  await handler(db, instance, lifecycleStatus);
+}
+
 function registerIdentityNormalizers(productCode, normalizers) {
   const key = normalizeProductCode(productCode);
   if (!key || !normalizers || typeof normalizers !== "object") return false;
@@ -195,6 +226,7 @@ function clearProductRuntimeContracts() {
   sectionActionServices.clear();
   websiteAddSectionHandlers.clear();
   websiteFieldRegistrars.clear();
+  websiteAvailabilitySyncHandlers.clear();
   identityNormalizers.clear();
   outboundEmailStatusResolver = null;
   platformAdminSettingsContrib = null;
@@ -209,6 +241,9 @@ function describeProductRuntimeContracts() {
     sectionActionServices: [...sectionActionServices.keys()].sort(),
     websiteAddSectionHandlers: [...websiteAddSectionHandlers.keys()].sort(),
     websiteFieldRegistrars: [...websiteFieldRegistrars.keys()].sort(),
+    websiteAvailabilitySyncHandlers: [
+      ...websiteAvailabilitySyncHandlers.keys(),
+    ].sort(),
     identityNormalizers: [...identityNormalizers.keys()].sort(),
     outboundEmailStatusResolver: Boolean(outboundEmailStatusResolver),
     platformAdminSettingsContrib: Boolean(platformAdminSettingsContrib),
@@ -231,6 +266,8 @@ module.exports = {
   getWebsiteAddSectionHandler,
   registerWebsiteFieldRegistrar,
   runWebsiteFieldRegistrar,
+  registerWebsiteAvailabilitySync,
+  runWebsiteAvailabilitySync,
   registerIdentityNormalizers,
   getIdentityNormalizers,
   registerOutboundEmailStatusResolver,

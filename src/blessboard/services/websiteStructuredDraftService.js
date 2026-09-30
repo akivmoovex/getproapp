@@ -220,19 +220,8 @@ async function saveStructuredDraft(db, input) {
   }
 
   let engineSynced = false;
-  try {
-    const { syncDraftToEngine } = require("../../platform/website-engine/blessboardBridge");
-    const synced = await syncDraftToEngine(db, {
-      organizationId: input.organizationId,
-      churchId: input.churchId,
-      branchId: input.branchId || null,
-      actorIdentityId: input.editorUserId || null,
-    });
-    engineSynced = Boolean(synced && synced.ok);
-  } catch {
-    // Engine draft sync must not block structured overlay save.
-    engineSynced = false;
-  }
+  // V2.04 Phase 5: no dual-write syncDraftToEngine. Platform contentService is
+  // the draft/publish SoT; structured overlay is product UX until Phase 10.
 
   return {
     saved: true,
@@ -244,7 +233,6 @@ async function saveStructuredDraft(db, input) {
     payload: draft.payload,
     updatedAt: draft.updatedAt,
     softFillSiblings,
-    // Overlay draft is authoritative for BB preview; engine sync is best-effort for CM.
     engineSynced,
   };
 }

@@ -251,7 +251,6 @@ describe("v7 inline editor coverage — static inventory", () => {
   it("shared contract forbids field-level publish", () => {
     assert.equal(INLINE_SAVE_PUBLISHES, false);
     const acJs = read("public/platform/website-inline-edit.js");
-    const bbJs = read("public/blessboard/v5/website-inline-edit.js");
     const fieldHost = read("views/platform/website-engine/field-editor-host.ejs");
     assert.match(acJs, /published === true/);
     assert.match(acJs, /Save must not publish/);
@@ -259,9 +258,8 @@ describe("v7 inline editor coverage — static inventory", () => {
     assert.match(fieldHost, /data-website-cancel="1"/);
     assert.match(fieldHost, /data-website-save="1"/);
     assert.match(fieldHost, /Save draft/);
-    assert.match(bbJs, /result\.data\.published/);
-    assert.match(bbJs, /Unexpected publish response blocked/);
-    assert.match(bbJs, /data-bb-inline-cancel|data-website-cancel/);
+    // V2.04 Phase 10: BB uses the same platform editor — no product-local JS.
+    assert.equal(fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js")), false);
     const acRoutes = read("src/activeclinic/http/activeClinicWebsiteRoutes.js");
     assert.match(acRoutes, /published:\s*false/);
     const bbDraft = read("src/blessboard/services/websiteInlineDraftService.js");
@@ -279,12 +277,17 @@ describe("v7 inline editor coverage — static inventory", () => {
     );
     const navSource = read("src/activeclinic/website/activeClinicClinicWebsiteNav.js");
     const collection = read("views/activeclinic/partials/website-collection-editor.ejs");
+    // Stitch public pages wire WE01 keys via EDIT_KEYS / withEdit (not EJS contentKey literals).
+    const stitchSource = read("src/activeclinic/website/activeClinicStitchPublicPages.js");
     for (const key of AC_INLINE_KEYS) {
       const literal = new RegExp(`contentKey:\\s*'${key.replace(/\./g, "\\.")}'`);
       const inNav = navSource.includes(`"${key}"`) || navSource.includes(`'${key}'`);
       const inCollection = collection.includes(`collectionKey: '${key}'`) || collection.includes(`"${key}"`);
+      const inStitch =
+        stitchSource.includes(`"${key}"`) ||
+        stitchSource.includes(`'${key}'`);
       assert.ok(
-        literal.test(corpus) || inNav || inCollection,
+        literal.test(corpus) || inNav || inCollection || inStitch,
         `missing pencil wiring for ${key}`
       );
     }

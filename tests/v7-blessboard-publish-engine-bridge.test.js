@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * V1 hardening: BlessBoard public publish must dual-write the shared engine
- * version/audit, and engine-bridge failures must be visible (not silent).
+ * V2.04: BlessBoard public publish uses platform publicationService
+ * (canonical engine). Engine publish failures must fail closed for HQ publish.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -35,7 +35,7 @@ const {
   EVENT,
   logBlessBoardEngineBridgeFailure,
 } = require("../src/platform/website-engine/blessboardEngineBridgeLog");
-const bridge = require("../src/platform/website-engine/blessboardBridge");
+const publicationService = require("../src/platform/website/publicationService");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
@@ -141,14 +141,18 @@ describe("v7 BlessBoard publish engine bridge", () => {
     }
   });
 
-  it("every public BlessBoard publish entry point dual-writes via publishFromLegacy", () => {
+  it("every public BlessBoard publish entry point uses platform publicationService", () => {
     const root = path.join(__dirname, "..");
     const publishService = fs.readFileSync(
       path.join(root, "src/blessboard/services/churchWebsitePublishService.js"),
       "utf8"
     );
-    assert.match(publishService, /publishFromLegacy/);
+    assert.match(publishService, /publicationService\.publishWebsiteDraft/);
     assert.match(publishService, /async function publishChurchWebsite/);
+    assert.doesNotMatch(
+      publishService.slice(publishService.indexOf("async function publishChurchWebsite")),
+      /publishFromLegacy\s*\(/
+    );
 
     const governance = fs.readFileSync(
       path.join(root, "src/blessboard/website/blessboardPublicationGovernanceAdapter.js"),
@@ -167,23 +171,13 @@ describe("v7 BlessBoard publish engine bridge", () => {
       "utf8"
     );
     assert.match(editorRoutes, /publishProductWebsite|website\/publish/);
-    assert.match(editorRoutes, /dual-write|blessboardBridge|overlay/i);
-
-    const bridge = fs.readFileSync(
-      path.join(root, "src/platform/website-engine/blessboardBridge.js"),
-      "utf8"
-    );
-    assert.match(bridge, /async function publishFromLegacy/);
 
     const initial = fs.readFileSync(
       path.join(root, "src/blessboard/services/churchWebsitePublishService.js"),
       "utf8"
     );
     assert.match(initial, /publishInitialFoundationWebsite/);
-    assert.doesNotMatch(
-      initial.slice(initial.indexOf("async function publishInitialFoundationWebsite")),
-      /Shared-engine backfill must not fail registration/
-    );
+    assert.match(initial, /publicationService\.publishWebsiteDraft/);
   });
 
   it("HQ settings source cannot promote a draft site to published", async () => {
@@ -284,7 +278,7 @@ describe("v7 BlessBoard publish engine bridge", () => {
     }
   });
 
-  it("engine dual-write failure rolls back CMS publish and logs", async () => {
+  it("engine publish failure rolls back CMS publish", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
     await pool.query(
@@ -300,13 +294,12 @@ describe("v7 BlessBoard publish engine bridge", () => {
       organizationId: rec.organizationId,
       actorUserId: rec.administratorUserId,
     });
-    const orig = bridge.publishFromLegacy;
-    const lines = [];
-    const origErr = console.error;
-    console.error = (msg) => {
-      lines.push(String(msg));
-    };
-    bridge.publishFromLegacy = async () => ({ ok: false, code: "forced_bridge_failure", version: null });
+    const orig = publicationService.publishWebsiteDraft;
+    publicationService.publishWebsiteDraft = async () => ({
+      ok: false,
+      code: "forced_engine_failure",
+      version: null,
+    });
     try {
       const published = await publishChurchWebsite(pool, {
         churchId: rec.churchId,
@@ -330,17 +323,12 @@ describe("v7 BlessBoard publish engine bridge", () => {
         [rec.churchId]
       );
       assert.equal(settings.rows[0].website_status, "draft");
-      assert.ok(
-        lines.some((line) => line.includes("forced_bridge_failure") || line.includes("WEBSITE_ENGINE_PUBLISH")),
-        "expected structured engine-bridge failure log"
-      );
     } finally {
-      bridge.publishFromLegacy = orig;
-      console.error = origErr;
+      publicationService.publishWebsiteDraft = orig;
     }
   });
 
-  it("publishInitialFoundationWebsite(publish:true) fails closed when the engine bridge fails", async () => {
+  it("publishInitialFoundationWebsite(publish:true) uses platform publicationService", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
     await pool.query(
@@ -352,27 +340,29 @@ describe("v7 BlessBoard publish engine bridge", () => {
       `UPDATE blessboard.church_settings SET website_status = 'draft' WHERE church_id = $1`,
       [rec.churchId]
     );
-    const orig = bridge.publishFromLegacy;
-    bridge.publishFromLegacy = async () => ({ ok: false, code: "forced_bridge_failure", version: null });
+    const orig = publicationService.publishWebsiteDraft;
+    let called = false;
+    publicationService.publishWebsiteDraft = async (...args) => {
+      called = true;
+      return orig.apply(publicationService, args);
+    };
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      await assert.rejects(
-        () =>
-          publishInitialFoundationWebsite(client, {
-            churchId: rec.churchId,
-            organizationId: rec.organizationId,
-            organizationKey: rec.organizationKey,
-            publicName: "Repair Church",
-            actorUserId: rec.administratorUserId,
-            publish: true,
-            source: "test",
-          }),
-        (err) => err && err.code === "WEBSITE_ENGINE_PUBLISH"
-      );
+      const result = await publishInitialFoundationWebsite(client, {
+        churchId: rec.churchId,
+        organizationId: rec.organizationId,
+        organizationKey: rec.organizationKey,
+        publicName: "Repair Church",
+        actorUserId: rec.administratorUserId,
+        publish: true,
+        source: "test",
+      });
+      assert.equal(result.ok, true);
+      assert.equal(called, true);
       await client.query("ROLLBACK");
     } finally {
-      bridge.publishFromLegacy = orig;
+      publicationService.publishWebsiteDraft = orig;
       client.release();
     }
   });

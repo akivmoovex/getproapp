@@ -273,17 +273,9 @@ async function saveInlineFieldDraft(db, input) {
       // Audit must not block draft save.
     }
 
-    try {
-      const { syncDraftToEngine } = require("../../platform/website-engine/blessboardBridge");
-      await syncDraftToEngine(db, {
-        organizationId: input.organizationId,
-        churchId: input.churchId,
-        branchId: input.branchId || null,
-        actorIdentityId: input.editorUserId || null,
-      });
-    } catch {
-      // Engine draft sync must not block overlay save.
-    }
+    // V2.04 Phase 5: no dual-write syncDraftToEngine. Platform content is SoT
+    // for engine drafts (editor routes / contentService). Overlay remains BB
+    // product projection until Phase 10 removal.
 
     return {
       saved: true,

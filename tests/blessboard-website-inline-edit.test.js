@@ -498,11 +498,10 @@ describe("blessboard website inline edit foundation", () => {
     if (skipIfNeeded()) return;
     const before = await draftRepo.countDrafts(pool, { churchId: churchA.id, branchId: null });
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
-    assert.match(js, /data-bb-inline-cancel/);
-    assert.match(js, /exitEdit\(cancelRoot, prior\)/);
+    assert.match(js, /data-website-cancel|exitEdit|cancel/);
     const after = await draftRepo.countDrafts(pool, { churchId: churchA.id, branchId: null });
     assert.equal(after, before);
   });
@@ -637,8 +636,12 @@ describe("blessboard website inline edit foundation", () => {
     assert.ok(
       fs.existsSync(path.join(__dirname, "../views/blessboard/v5/partials/website-admin-chrome.ejs"))
     );
+    assert.equal(
+      fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js")),
+      false
+    );
     assert.ok(
-      fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"))
+      fs.existsSync(path.join(__dirname, "../public/platform/website-inline-edit.js"))
     );
     const fields = require("../src/blessboard/services/websiteInlineEditableFields");
     assert.ok(fields.resolveEditableField("home", "hero", "heading"));

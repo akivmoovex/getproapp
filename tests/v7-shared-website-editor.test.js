@@ -9,7 +9,7 @@
  *   POST /hq/content/api/inline-field
  *   POST /hq/content/api/inline-field/publish
  *   POST /hq/content/api/structured-draft
- *   public/blessboard/v5/website-inline-edit.js (file kept, not loaded)
+ *   public/blessboard/v5/website-inline-edit.js (removed Phase 10 — platform WE01 only)
  *   HQ CMS /hq/content as a secondary surface
  */
 
@@ -169,10 +169,10 @@ describe("v7 shared website editor — static mechanism", () => {
     assert.match(collection, /data-website-collection-save-item="1"/);
   });
 
-  it("legacy BlessBoard editor surfaces remain available but are not the public editor loader", () => {
+  it("legacy BlessBoard editor asset is removed; public loader is platform WE01 only", () => {
     assert.equal(
       fs.existsSync(path.join(ROOT, "public/blessboard/v5/website-inline-edit.js")),
-      true
+      false
     );
     const routes = read("src/blessboard/http/contentAdminRoutes.js");
     assert.match(routes, /\/api\/inline-field/);

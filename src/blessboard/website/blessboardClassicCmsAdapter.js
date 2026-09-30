@@ -22,8 +22,7 @@
  * - website editor HTTP kit (PC07)
  *
  * PL05: platform folder/ordered-list/batch helpers are authoritative.
- * Editor overlay dual-write + syncDraftToEngine remain until PL06 (public still
- * needs classic projection for live parity).
+ * V2.04 Phase 5: dual-write syncDraftToEngine removed from runtime draft saves.
  */
 
 const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");

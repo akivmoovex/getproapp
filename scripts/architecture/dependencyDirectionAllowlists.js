@@ -22,7 +22,6 @@ const PLATFORM_PRODUCT_REQUIRE_ALLOWLIST = Object.freeze([
   "website-engine/index.js",
   "website/governanceVersionPreview.js",
   "website/platformAdminWebsitesService.js",
-  "website/lifecycleService.js",
   "website/websiteSettingsHttp.js",
   "services/createScopedTeamMemberService.js",
   "services/platformAdminAccountRecoveryService.js",

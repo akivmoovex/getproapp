@@ -4,12 +4,33 @@
 %>
 <%
   var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
   var items = Array.isArray(m.items) ? m.items.filter(function (i) { return !i || i.visibility !== false; }) : [];
   var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
 %>
 <section class="gp-website-pc gp-website-pc--faq-list<%= extraClass %>" data-gp-website-component="faq_list">
-  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
-  <% if (m.lead) { %><p class="gp-website-pc__lead"><%= m.lead %></p><% } %>
+  <% if (m.heading || (canEdit && editMap.heading)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.heading,
+    contentKey: editMap.heading || '',
+    value: m.heading || '',
+    tag: 'h2',
+    className: 'gp-website-pc__title',
+    fieldType: 'short_text',
+    label: 'Edit FAQ heading'
+  }) %>
+  <% } %>
+  <% if (m.lead || (canEdit && editMap.lead)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.lead,
+    contentKey: editMap.lead || '',
+    value: m.lead || '',
+    tag: 'p',
+    className: 'gp-website-pc__lead',
+    fieldType: 'long_text'
+  }) %>
+  <% } %>
   <div class="gp-website-pc__faq-items">
     <% items.forEach(function (item) { %>
     <details class="gp-website-pc__faq-item">

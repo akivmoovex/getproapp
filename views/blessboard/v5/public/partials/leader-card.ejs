@@ -1,5 +1,6 @@
 <%#
-  Shared leader card.
+  Shared leader card — Phase 4: public (non-edit) uses platform person_card.
+  Edit mode keeps BB structured-edit hooks (church-specific).
   Locals: leader, featured (optional boolean), bioMax (optional)
 %>
 <%
@@ -34,12 +35,38 @@
     .replace(/\s*\(template example\)\s*$/i, '')
     .trim();
 %>
+<% if (!_canEdit) { %>
+<%- include('../../../../platform/website/components/person-card', {
+  person: {
+    image: _img,
+    name: _nameClean || (leader && leader.displayName) || '',
+    title: _roleClean || (leader && leader.roleTitle) || null,
+    subtitle: null,
+    description: _bio || null,
+    cta: leader && leader.contactHref
+      ? { label: 'Contact', url: leader.contactHref }
+      : (leader && leader.socialUrl
+        ? { label: 'Profile', url: leader.socialUrl }
+        : null),
+    badges: [],
+    mediaVariant: 'portrait',
+    displayOrder: leader && leader.sortOrder != null ? leader.sortOrder : 0,
+    visibility: leader && leader.visible !== false,
+    featured: Boolean(_featured || (leader && leader.seniorLeader)),
+    sourceProduct: 'blessboard',
+    sourceDomain: 'pastor_leader',
+    sourceId: _leaderKey || null
+  },
+  editEnabled: false,
+  className: 'bb-tp-platform-bridge bb-tp-leader-card-platform' + (_featured ? ' is-featured' : '') + (leader && leader.templateExample ? ' bb-tp-leader-card--template' : '')
+}) %>
+<% } else { %>
 <article
-  class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %><%= leader && leader.templateExample ? ' bb-tp-leader-card--template' : '' %><%= _canEdit ? ' bb-tp-leader-card--editable' : '' %>"
+  class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %><%= leader && leader.templateExample ? ' bb-tp-leader-card--template' : '' %> bb-tp-leader-card--editable"
   <% if (leader && leader.templateExample) { %> data-bb-template-example="leader"<% } %>
-  <% if (_canEdit) { %> data-bb-leader-card="1" data-bb-leader-id="<%= _leaderKey %>"<% } %>
+  data-bb-leader-card="1" data-bb-leader-id="<%= _leaderKey %>"
 >
-  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %><%= _canEdit ? ' bb-tp-edit-media-wrap' : '' %>">
+  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %> bb-tp-edit-media-wrap">
     <% if (_img) { %>
     <img
       class="<%= _ps.className || '' %>"
@@ -57,7 +84,6 @@
       <%= initials(leader.displayName) %>
     </div>
     <% } %>
-    <% if (_canEdit) { %>
     <%- include('../../partials/entity-image-edit-trigger', {
       editKind: 'leader',
       editEntityKey: _leaderKey,
@@ -76,7 +102,6 @@
         socialUrl: leader.socialUrl || ''
       }
     }) %>
-    <% } %>
   </div>
   <div class="bb-tp-leader-card__body">
     <% if (_featured && leader.roleTitle) { %>
@@ -85,9 +110,7 @@
     <h3 class="bb-tp-leader-card__name<%= _featured ? ' bb-tp-featured-leader__name' : '' %>">
       <%= leader.displayName %>
     </h3>
-    <% if (!_featured && leader.roleTitle) { %>
-    <p class="bb-tp-leader-card__role" data-bb-leader-role="1"><%= leader.roleTitle %></p>
-    <% } else if (_featured && leader.roleTitle) { %>
+    <% if (leader.roleTitle) { %>
     <p class="bb-tp-leader-card__role" data-bb-leader-role="1"><%= leader.roleTitle %></p>
     <% } %>
     <% if (_bio) { %>
@@ -96,7 +119,6 @@
     <% if (leader.contactHref) { %>
     <a class="bb-tp-leader-card__contact" href="<%= leader.contactHref %>">Contact</a>
     <% } %>
-    <% if (_canEdit) { %>
     <div class="bb-tp-leader-card__edit-actions">
       <%- include('../../partials/structured-edit-trigger', {
         editKind: 'leader',
@@ -119,6 +141,6 @@
         }
       }) %>
     </div>
-    <% } %>
   </div>
 </article>
+<% } %>

@@ -60,8 +60,9 @@
   </section>
   <% } %>
 
-  <% if ((homeSectionVisible('hours') || homeSectionVisible('contact') || editingHome) && (html.contact || html.location || html.hours)) { %>
+  <% if ((homeSectionVisible('hours') || homeSectionVisible('contact') || editingHome) && (html.visitHeading || html.contact || html.location || html.hours)) { %>
   <section class="ac-stitch-section ac-stitch-section--visit" data-ac-home-section="contact" aria-label="Contact and location">
+    <%- html.visitHeading || '' %>
     <%- html.location || '' %>
     <%- html.hours || '' %>
     <%- html.contact || '' %>
