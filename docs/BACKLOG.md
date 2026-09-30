@@ -125,3 +125,25 @@ Related evidence (not duplicated here):
 
 - [`docs/v2.03/PLATFORM_SHARED_FOUNDATION.md`](./v2.03/PLATFORM_SHARED_FOUNDATION.md)
 - [`docs/v2.03/PLATFORM_REUSE_AUDIT.md`](./v2.03/PLATFORM_REUSE_AUDIT.md)
+
+## V2.05 post-QA polish (NOT V2.04 QA blockers)
+
+Frozen V2.04 application candidate: `c16c791f9a4d102aa213debb3f4f0975c258c487`.  
+Hosted final QA closed with `RELEASE_BLOCKERS=0`. See `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`.
+
+### V205-E01-E02 — Editor visual chrome polish
+
+- ActiveClinic E01/E02 inline-editor chrome (floating section toolbars / image-adjust modal presentation)
+- Classification from V2.04 hosted QA: **CLOSE** / **POST_QA_POLISH**
+- Do not reopen as a V2.04 release blocker
+
+### V205-H03-H06-FUTURE — Nine FUTURE_CAPABILITY controls
+
+- H03/H06 informational / presentation-only controls (`FUTURE_CAPABILITY_COUNT=9`)
+- Keep non-active: no fake Save, fake persistence, or hard-coded success
+- Implement only under an explicit V2.05 product decision
+
+### V205-STITCH-MEDIUM — Remaining medium Stitch visual gaps
+
+- Residual medium gaps after hosted Stitch parity **85.5** (public **86.5**, editor **79.8**, hub **84.4**)
+- Prefer hosted-render evidence; do not chase EXACT scores as V2.04 debt

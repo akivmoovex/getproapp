@@ -3,8 +3,9 @@
 **Runtime catalog:** `src/platform/release-notes/releaseNotesCatalog.js` (version `2.04`)  
 **About / version metadata:** `src/platform/build/applicationBuildInfo.js` (`VERSION_BASE_V8` / `PRODUCT_VERSION_V8` = `2.04`)  
 **Branch:** `V4`  
-**Hosted QA application candidate:** `c16c791f9a4d102aa213debb3f4f0975c258c487` (superseded only by a later **application** commit; docs-only tips do not replace it)  
-**Rule:** Claims below are limited to work completed and locally verified on V4. Production is **not** promoted by this packet. Hosted deploy remains **PENDING** (`neuniversity`).
+**Frozen application candidate:** `c16c791f9a4d102aa213debb3f4f0975c258c487` (superseded only by a later **application** commit; docs-only tips do not replace it)  
+**Hosted repository SHA (docs tip):** `569712ad3ce3ff82ef5d5a8c9bfbd066544d5d2d` — docs-only descendant; **not** the application candidate  
+**Rule:** Production is **not** promoted by this packet. Pronline V10 is preserved. Neuniversity testing hosted final QA is **CLOSED** (`RELEASE_BLOCKERS=0`).
 
 ---
 
@@ -87,13 +88,32 @@ Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
 
 ---
 
-## G. Known limitations (non-blocking for local freeze)
+## G. Known limitations (non-blocking — V2.05 backlog)
 
-- **Hosted rendered pixel comparison vs Stitch** is still pending (`LOCAL_EXACT_SCORING_LIMITATION=HOSTED_RENDER_REQUIRED`). Lack of hosted pixel evidence is **not** an application blocker for this freeze.
-- **E01/E02** editor chrome remains below public/hub parity (remaining HIGH visual gaps: floating section toolbars / image-adjust modal presentation).
-- **H03/H06 FUTURE_CAPABILITY** controls (**9**) are intentionally **not** implemented. Runtime UI uses informational / presentation-only treatment — **not** fake Save actions, fake persistence, or hard-coded success.
+Not V2.04 QA blockers (`RELEASE_BLOCKERS=0`):
+
+- **E01/E02** editor visual chrome polish (`POST_QA_POLISH`; statuses **CLOSE**).
+- **H03/H06 FUTURE_CAPABILITY** controls (**9**) intentionally informational only — **0** false-active / **0** H03–H06 blockers.
+- Remaining documented **medium** Stitch visual gaps after hosted parity **85.5**.
 - Stitch pricing screen absent (DESIGN_CAN_ADAPT). Offline/suspended shell remains platform lifecycle presentation.
-- Hosted About/theme verification after first V2.04 testing deploy is still **PENDING**.
+
+See `docs/BACKLOG.md` → **V2.05 post-QA polish**.
+
+---
+
+## H. Hosted final QA (neuniversity testing)
+
+| Field | Value |
+|-------|--------|
+| Application tree parity | **PASS** (`APP_PATH_DIFF_COUNT=0`) |
+| Hosted Stitch / public / editor / hub | **85.5** / **86.5** / **79.8** / **84.4** |
+| Lifecycle + media (BB/AC) | **PASS** |
+| Authorization / tenant isolation / concurrency | **PASS** |
+| Geography blocker | Closed via testing DB migrations **044** + **045** (no app-code fix) |
+| Geography / BB registration / AC registration | **PASS** |
+| Release blockers | **0** |
+
+Authoritative packet: `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`.
 
 ---
 
@@ -103,10 +123,10 @@ Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
 |-------|--------|
 | Branch | `V4` |
 | About version | **2.04** (shared V8 scheme) |
-| Local Stitch parity | **84.3%** |
+| Hosted Stitch parity | **85.5** |
 | Production | **UNTOUCHED** |
-| Neuniversity deployment | **PENDING** |
-| Pronline V10 | **PRESERVED** |
+| Neuniversity hosted final QA | **CLOSED** |
+| Pronline V10 | **PRESERVED** (`PRONLINE_BRANCH=V10`) |
 
 ### Authoritative sources
 
