@@ -188,6 +188,7 @@ describe("V2.04 release hardening", () => {
       "tests/v2-04-ac-stitch-batch-5-inline-editor.test.js",
       "tests/v2-04-ac-stitch-batch-6-website-hub.test.js",
       "tests/v2-04-ac-stitch-batch-7-visual-parity.test.js",
+      "tests/v2-04-batch-8-release-freeze.test.js",
       "tests/v2-04-release-hardening.test.js",
     ];
     for (const rel of required) {

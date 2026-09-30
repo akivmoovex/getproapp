@@ -2523,41 +2523,45 @@ const VERSIONS = Object.freeze([
   Object.freeze({
     version: "2.04",
     summary:
-      "V2.04 on branch V4: platform semantic color system, shared Country+City registration geography, website platformization (presentation/components/media/editor), and ActiveClinic Stitch public+hub redesign (R01–R12, E01–E02, H01–H06). Production untouched.",
+      "V2.04 on branch V4: platform semantic color system, shared Country+City registration geography, website platformization (presentation/components/media/editor), BB migration onto the canonical platform website engine, ActiveClinic Stitch public+hub redesign (R01–R12, E01–E02, H01–H06), and Batch 7 visual parity. Local freeze for hosted QA. Production untouched.",
     releaseDate: "2026-09-30",
     products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
     deploymentStatus:
-      "TESTING candidate on V4 / moovex-platform-v8-testing after deploy. Production UNTOUCHED. Pronline V10 preserved.",
+      "TESTING candidate on V4 / moovex-platform-v8-testing after deploy. Application candidate 6be8065b…. Production UNTOUCHED. Pronline V10 preserved. Neuniversity deploy PENDING.",
     qaVerification:
-      "Local V2.04 batch suites PASS (Stitch batches 1–6, color/theme, geography QA-01–03, website platformization). Hosted deploy pending. Release hardening pack local.",
+      "Local V2.04 batch suites PASS (Stitch batches 1–7, Batch 8 freeze, color/theme, geography QA-01–03, website platformization, BB engine migration, release hardening). Hosted deploy pending.",
     acceptanceCriteria: [
       "About Version 2.04 on BB + AC (shared applicationBuildInfo V8 scheme)",
       "AC public brand primary resolves #006068; BB retains #6c5ce7; no cross-product token leak",
-      "SHARED_EDITOR_ENGINE_COUNT=1 and SHARED_UPLOAD_ENGINE_COUNT=1",
+      "SHARED_EDITOR_ENGINE_COUNT=1 and SHARED_UPLOAD_ENGINE_COUNT=1; singular draft/publish/version/restore",
       "AC Stitch H01–H06 hub + R01–R12 public + E01–E02 editor wired to platform engines",
-      "No production / neuniversity deploy claimed by this packet",
+      "LOCAL_STITCH_PARITY=84.3 with HOSTED_RENDER_REQUIRED for EXACT; FUTURE_CAPABILITY controls not falsely active",
+      "No production / neuniversity deploy claimed by this packet until operator deploy",
     ],
     pendingDevelopment: [
-      "Batch 7 visual parity polish vs Stitch screenshots",
-      "Batch 8 final freeze / hosted candidate promote",
-      "Hosted About + theme verification after deploy",
+      "Hosted neuniversity deploy of V2.04 candidate",
+      "Hosted rendered pixel comparison vs Stitch (EXACT scoring)",
+      "Optional later E01/E02 floating toolbar / image-adjust chrome polish",
     ],
     knownIssues: [
-      "H03 Stitch favicon / header-style / booking-gateway / accreditation badges NOT_WIRED",
-      "H06 Stitch custom domain / SSL / maintenance / website timezone / language / analytics NOT_WIRED",
+      "E01/E02 editor chrome remains below public/hub visual parity (HIGH residual)",
+      "H03/H06 FUTURE_CAPABILITY (9): favicon, booking gateway, accreditation badges, custom domain, SSL, maintenance, timezone, language, analytics — informational only, not implemented",
+      "H03 header_style_mode is PRESENTATION_ONLY (CSS), not a config field",
       "Stitch pricing screen absent (DESIGN_CAN_ADAPT); offline shell remains platform lifecycle",
+      "LOCAL_EXACT_SCORING_LIMITATION=HOSTED_RENDER_REQUIRED",
     ],
     documentationGaps: [
-      "Hosted SHA alignment for V2.04 candidate after first testing deploy",
+      "Hosted SHA alignment after first V2.04 testing deploy",
     ],
     architectureWork: {
       title: "Platform remains canonical",
       body:
-        "Desktop/mobile share one implementation. Stitch is visual source of truth. Doctor cards use shared PersonPresentation; services use shared collection presentation. Booking stays on the existing booking engine. Website lifecycle uses existing draft/preview/publish/version/restore-as-new services — no AC-only duplicates.",
+        "Desktop/mobile share one implementation. Stitch is visual source of truth. Doctor cards use shared PersonPresentation; services use shared collection presentation. Booking stays on the existing booking engine. Website lifecycle uses existing draft/preview/publish/version/restore-as-new services — BB and AC both on PLATFORM runtime paths; legacy BB dual-write/publishFromLegacy runtime references = 0.",
       items: [
         "SHARED_EDITOR_ENGINE_COUNT=1 (website-inline-edit.js)",
         "SHARED_UPLOAD_ENGINE_COUNT=1 (mediaService.registerWebsiteMedia)",
-        "DUPLICATE_DRAFT/PUBLISH/VERSION engines = 0",
+        "MEDIA/DRAFT/PUBLISH/VERSION/RESTORE engines = 1 each",
+        "DUPLICATE product website engines = 0",
       ],
     },
     features: [
@@ -2619,11 +2623,11 @@ const VERSIONS = Object.freeze([
       }),
       Object.freeze({
         id: "F-2.04-WEB-PLATFORM-01",
-        name: "Website platformization",
+        name: "Website platformization + BB engine migration",
         description:
-          "Shared website presentation model, component library, ActiveClinic presentation adapter, shared media engine, shared image editor, Platform Admin website governance console, one shared editor engine, and one shared upload engine.",
+          "Shared website presentation model, component library, AC and BB presentation adapters, shared media engine, shared image editor, Platform Admin website governance console, one shared editor engine, one shared upload engine, and BB lifecycle on PLATFORM draft/publish/version/restore paths.",
         workflow: "Edit/publish clinic or church website via platform engines",
-        expectedBehavior: "No duplicate draft/publish/version/upload engines",
+        expectedBehavior: "No duplicate draft/publish/version/upload engines; LEGACY_BB_LIFECYCLE_RUNTIME_REFERENCES=0",
         products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
         featureType: "website",
         implementationStatus: STATUS.IMPLEMENTED,
@@ -2631,6 +2635,7 @@ const VERSIONS = Object.freeze([
         testCaseIds: ["TC-2.04-WEB-01"],
         sources: [
           "docs/qa/V2_04_WEBSITE_PLATFORMIZATION_OVERNIGHT_HANDOFF.md",
+          "docs/qa/V2_04_BB_PLATFORM_ENGINE_MIGRATION.md",
           "docs/releases/V2_04_RELEASE_NOTES.md",
         ],
         publicSafe: true,
@@ -2639,10 +2644,10 @@ const VERSIONS = Object.freeze([
         id: "F-2.04-AC-STITCH-01",
         name: "ActiveClinic Stitch website redesign (R/E/H)",
         description:
-          "Implemented Stitch scope on V4: R01–R12 public experiences, E01–E02 inline editing, H01–H06 clinic website-management hub. Responsive desktop/mobile via shared templates (390px companions). Batches 1–6 PASS.",
+          "Implemented Stitch scope on V4: R01–R12 public experiences, E01–E02 inline editing, H01–H06 clinic website-management hub. Batch 7 visual parity (LOCAL_STITCH_PARITY=84.3). Responsive desktop/mobile via shared templates (390px companions). Batches 1–7 PASS; Batch 8 local freeze.",
         workflow: "Browse public clinic site → optional inline edit → manage via /app/settings/website",
         expectedBehavior:
-          "Public pages use shared components; hub uses existing CMS/media/version/settings; Platform Admin remains separate",
+          "Public pages use shared components; hub uses existing CMS/media/version/settings; Platform Admin remains separate; FUTURE_CAPABILITY controls are informational only",
         products: [PRODUCTS.AC],
         featureType: "website_redesign",
         implementationStatus: STATUS.IMPLEMENTED,
@@ -2651,11 +2656,14 @@ const VERSIONS = Object.freeze([
         sources: [
           "docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md",
           "docs/releases/V2_04_RELEASE_NOTES.md",
+          "docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md",
           "tests/v2-04-ac-stitch-batch-2-public-foundation.test.js",
           "tests/v2-04-ac-stitch-batch-3-domain-pages.test.js",
           "tests/v2-04-ac-stitch-batch-4-extended-pages.test.js",
           "tests/v2-04-ac-stitch-batch-5-inline-editor.test.js",
           "tests/v2-04-ac-stitch-batch-6-website-hub.test.js",
+          "tests/v2-04-ac-stitch-batch-7-visual-parity.test.js",
+          "tests/v2-04-batch-8-release-freeze.test.js",
         ],
         publicSafe: true,
       }),
@@ -2704,18 +2712,18 @@ const VERSIONS = Object.freeze([
         steps: ["Assert SHARED_*_ENGINE_COUNT=1", "Run media/editor hardening"],
         expectedResult: "No duplicate lifecycle engines",
         status: STATUS.LOCAL_QA_PASS,
-        evidence: "tests/v2-04-release-hardening.test.js",
+        evidence: "tests/v2-04-release-hardening.test.js; tests/v2-04-batch-8-release-freeze.test.js",
       }),
       Object.freeze({
         id: "TC-2.04-AC-STITCH-01",
         featureOrBugId: "F-2.04-AC-STITCH-01",
         product: PRODUCTS.AC,
-        objective: "Stitch batches 2–6 automated coverage",
-        prerequisites: "Batches 1–6 implemented",
-        steps: ["Run v2-04-ac-stitch-batch-{2..6}"],
-        expectedResult: "PASS for R/E/H scope claimed",
+        objective: "Stitch batches 2–7 + Batch 8 freeze automated coverage",
+        prerequisites: "Batches 1–8 implemented/frozen",
+        steps: ["Run v2-04-ac-stitch-batch-{2..7}", "Run v2-04-batch-8-release-freeze"],
+        expectedResult: "PASS for R/E/H scope claimed; FUTURE_CAPABILITY truthfulness",
         status: STATUS.LOCAL_QA_PASS,
-        evidence: "tests/v2-04-ac-stitch-batch-*.test.js",
+        evidence: "tests/v2-04-ac-stitch-batch-*.test.js; tests/v2-04-batch-8-release-freeze.test.js",
       }),
       Object.freeze({
         id: "TC-2.04-RNC-01",
@@ -2731,11 +2739,13 @@ const VERSIONS = Object.freeze([
     ],
     sources: [
       "docs/releases/V2_04_RELEASE_NOTES.md",
+      "docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md",
       "docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md",
       "docs/qa/V2_04_QA_TEST_INVENTORY.md",
       "docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md",
       "docs/qa/V2_04_QA_01_SHARED_REGISTRATION_LOCATION.md",
       "docs/qa/V2_04_WEBSITE_PLATFORMIZATION_OVERNIGHT_HANDOFF.md",
+      "docs/qa/V2_04_BB_PLATFORM_ENGINE_MIGRATION.md",
     ],
   }),
 ]);
