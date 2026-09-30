@@ -3,17 +3,18 @@
 **Runtime catalog:** `src/platform/release-notes/releaseNotesCatalog.js` (version `2.04`)  
 **About / version metadata:** `src/platform/build/applicationBuildInfo.js` (`VERSION_BASE_V8` / `PRODUCT_VERSION_V8` = `2.04`)  
 **Branch:** `V4`  
-**Rule:** Claims below are limited to work completed and locally verified on V4. Production is **not** promoted by this packet. Hosted deploy remains **PENDING**.
+**Hosted QA application candidate:** `c16c791f9a4d102aa213debb3f4f0975c258c487` (superseded only by a later **application** commit; docs-only tips do not replace it)  
+**Rule:** Claims below are limited to work completed and locally verified on V4. Production is **not** promoted by this packet. Hosted deploy remains **PENDING** (`neuniversity`).
 
 ---
 
-## A. Platform color system
+## A. Platform color / theme system
 
 - Shared semantic color architecture in `src/platform/ui/theme/colors.css`.
 - BlessBoard and ActiveClinic retain independent product identities under `[data-product]` selectors.
 - **ActiveClinic** primary brand: **`#006068`** (`--palette-teal-700` → `--color-brand-primary`).
 - **BlessBoard** primary brand: **`#6c5ce7`** (`--palette-violet-500` → `--color-brand-primary`).
-- Shared component / theme migration completed earlier in V2.04; product aliases inherit active product theme (no `:root` freeze of violet into AC).
+- Shared component / theme migration completed earlier in V2.04; product aliases inherit the active product theme.
 - Unjustified GUI raw-color cleanup guarded; V2.04 Stitch surfaces introduce **0** new unjustified GUI hex/rgb colors (tenant branding placeholders remain justified).
 
 ---
@@ -31,36 +32,41 @@
 ## C. Website platformization
 
 - Shared website presentation model and component library.
-- ActiveClinic presentation adapter.
-- Shared media engine + shared image editor.
-- Platform Admin website governance console (separate from clinic customer hub).
-- **One** shared editor engine (`website-inline-edit.js`) — `SHARED_EDITOR_ENGINE_COUNT=1`.
-- **One** shared upload engine (`mediaService.registerWebsiteMedia`) — `SHARED_UPLOAD_ENGINE_COUNT=1`.
+- ActiveClinic presentation adapter + BlessBoard presentation adapter.
+- Shared media / upload / image infrastructure (`SHARED_UPLOAD_ENGINE_COUNT=1`).
+- Shared editor (`website-inline-edit.js`, `SHARED_EDITOR_ENGINE_COUNT=1`).
+- Canonical platform website lifecycle: draft, preview, publish, unpublish, version, restore-as-new.
+- BlessBoard migrated onto the canonical platform website engine (no dual-write / `publishFromLegacy` / `syncDraftToEngine` runtime paths).
+- Clean testing-DB bootstrap verification recorded (ephemeral foundation; shared neuniversity not wiped for that evidence).
+- Platform Admin website governance console remains separate from the clinic customer hub.
 
 ---
 
 ## D. ActiveClinic website redesign (Stitch)
 
-Stitch project `8888814012921999511`. Batches **1–6 PASS** on V4.
+Stitch project `8888814012921999511`. Batches **1–7 PASS** on V4. Batch **8** freezes local release for hosted QA.
 
 | Family | Scope | Status |
 |--------|--------|--------|
-| **R01–R12** | Public clinic website experiences (home, about, services, doctors, profiles, contact, booking entry chrome, facilities, gallery, patient guidance, modular CMS page) | **IMPLEMENTED** (Batches 2–4) |
-| **E01–E02** | Desktop + mobile (≤390px) inline editing on shared WE01 | **IMPLEMENTED** (Batch 5) |
-| **H01–H06** | Clinic Website Management Hub (overview, pages, brand, media, history, settings) | **IMPLEMENTED** (Batch 6) |
+| **R01–R12** | Public clinic website experiences | **IMPLEMENTED** (Batches 2–4) + Batch 7 visual parity |
+| **E01–E02** | Desktop + mobile (≤390px) inline editing on shared WE01 | **IMPLEMENTED** (Batch 5) + Batch 7 chrome polish |
+| **H01–H06** | Clinic Website Management Hub | **IMPLEMENTED** (Batch 6) + Batch 7 hub health polish |
 
-Responsive desktop/mobile: public and hub screens share one implementation with responsive CSS (including 390px hub companions). No duplicate desktop/mobile business logic.
+Responsive desktop/mobile: public, editor, and hub screens share one implementation with responsive CSS (390px companions). No duplicate desktop/mobile business logic.
+
+**Local Stitch parity (Batch 7 methodology, no EXACT without hosted render):** **84.3%** overall · Public **85.0** · Editor **79.8** · Hub **84.4**. Physical references **38/38**. Logical experiences **20/20**.
 
 ---
 
 ## E. Important architecture
 
 - Desktop/mobile variants share implementation.
-- Stitch is the visual source of truth; platform architecture remains canonical.
+- Stitch controls **presentation**; platform architecture remains canonical for persistence, authorization, lifecycle, editor, media, domain models, tenant isolation, and concurrency.
 - Doctor presentation uses shared **PersonPresentation**.
 - Services use shared **collection** presentation.
 - Booking continues through the **existing booking engine** (Stitch booking entry is chrome/handoff only).
-- Website lifecycle continues through existing platform draft / preview / publish / version / **restore-as-new** services.
+- Singular engines: editor, upload, media library, draft, publish, version, restore — **count = 1** each.
+- Product coupling: BB↛AC and AC↛BB implementation imports remain **0**.
 
 ---
 
@@ -70,22 +76,22 @@ Automated coverage includes:
 
 - BB + AC About Version **2.04**
 - Theme isolation / product token cascade
-- Geography QA-01 / QA-02 / QA-03
+- Geography QA-01 / QA-02 / QA-03 (including forged disabled-country rejection)
 - Website presentation, components, media, Platform Admin console
-- AC Stitch batches 2–6 (public, editor, hub)
-- Mini-website repeat-edit / concurrency
+- AC Stitch batches 2–7 (public, editor, hub, visual parity) + Batch 8 freeze gates
+- Mini-website repeat-edit / concurrency (BB + AC saves 1/2/3; true stale second-session rejection)
+- Website lifecycle, authorization, tenant isolation
 - Release-hardening duplication guards
 
 Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
 
 ---
 
-## G. Known gaps (non-blocking)
+## G. Known limitations (non-blocking for local freeze)
 
-- **Batch 7** visual parity polish vs Stitch screenshots (not claimed complete here).
-- **Batch 8** final freeze / hosted candidate promote (pending).
-- Stitch **H03** controls NOT_WIRED: favicon, header style modes, external booking gateway, accreditation badges.
-- Stitch **H06** controls NOT_WIRED: custom domain, SSL management, maintenance mode, website timezone/language, analytics embeds.
+- **Hosted rendered pixel comparison vs Stitch** is still pending (`LOCAL_EXACT_SCORING_LIMITATION=HOSTED_RENDER_REQUIRED`). Lack of hosted pixel evidence is **not** an application blocker for this freeze.
+- **E01/E02** editor chrome remains below public/hub parity (remaining HIGH visual gaps: floating section toolbars / image-adjust modal presentation).
+- **H03/H06 FUTURE_CAPABILITY** controls (**9**) are intentionally **not** implemented. Runtime UI uses informational / presentation-only treatment — **not** fake Save actions, fake persistence, or hard-coded success.
 - Stitch pricing screen absent (DESIGN_CAN_ADAPT). Offline/suspended shell remains platform lifecycle presentation.
 - Hosted About/theme verification after first V2.04 testing deploy is still **PENDING**.
 
@@ -97,6 +103,7 @@ Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
 |-------|--------|
 | Branch | `V4` |
 | About version | **2.04** (shared V8 scheme) |
+| Local Stitch parity | **84.3%** |
 | Production | **UNTOUCHED** |
 | Neuniversity deployment | **PENDING** |
 | Pronline V10 | **PRESERVED** |
@@ -105,8 +112,10 @@ Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
 
 - `docs/releases/RELEASE_NOTES.md` (index)
 - `src/platform/release-notes/releaseNotesCatalog.js`
+- `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`
 - `docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md`
 - `docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md`
 - `docs/qa/V2_04_QA_01_SHARED_REGISTRATION_LOCATION.md`
 - `docs/qa/V2_04_WEBSITE_PLATFORMIZATION_OVERNIGHT_HANDOFF.md`
+- `docs/qa/V2_04_BB_PLATFORM_ENGINE_MIGRATION.md`
 - `docs/qa/V2_04_QA_TEST_INVENTORY.md`
