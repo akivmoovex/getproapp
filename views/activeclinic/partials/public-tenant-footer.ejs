@@ -67,6 +67,18 @@
         <% }) %>
       </nav>
     </div>
+    <% if (clinic && clinic.publicPhoneDisplay) { %>
+    <div class="ac-public-footer__col ac-public-footer__col--care" data-ac-footer-care="1">
+      <h2 class="ac-public-footer__heading">Immediate care</h2>
+      <p class="ac-public-footer__care-note">For clinic questions and appointments, call the clinic line. For life-threatening emergencies, use your local emergency number.</p>
+      <p class="ac-public-footer__care-phone">
+        <a href="tel:<%= String(clinic.publicPhoneDisplay).replace(/[^\d+]/g, '') %>"><%= clinic.publicPhoneDisplay %></a>
+      </p>
+      <% if (pages.book) { %>
+      <p><a class="ac-public-footer__care-cta" href="<%= pages.book %>" data-ac-nav-item="book"><%= clinic.publicBookingEnabled ? 'Book Appointment' : 'Request Appointment' %></a></p>
+      <% } %>
+    </div>
+    <% } %>
   </div>
   <div class="ac-public-footer__legal">
     © <%= new Date().getFullYear() %> <%= displayName %>. All rights reserved.

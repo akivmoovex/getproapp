@@ -83,7 +83,8 @@
   --acp-radius-xl: 0.5rem;
   --acp-radius-card: 0.5rem;
   --acp-shadow-sm: var(--ac-shadow-sm);
-  --acp-font: "Public Sans", Segoe UI, system-ui, sans-serif;
+  /* V2.04 Batch 7 — Clinical Clarity public typography (Inter). BlessBoard unchanged. */
+  --acp-font: Inter, "Public Sans", Segoe UI, system-ui, sans-serif;
   --acp-touch: 3rem;
   /* Layout family: AC clinic mini-site + patient portal public band
      Desktop: 75rem (1200px) centered — 120px margin @ 1440 viewport

@@ -188,6 +188,49 @@
     <% } %>
   </div>
 
+  <% if (Array.isArray(hub.healthItems) && hub.healthItems.length) { %>
+  <section class="ac-mw-hub-health" data-ac-website-health="1" data-ac-stitch-hub-health="H01">
+    <div class="ac-mw-hub-health__head">
+      <h3>Website health &amp; completeness</h3>
+      <% if (hub.completenessPercent != null) { %>
+      <p class="ac-mw-hub-health__score" data-ac-website-completeness="1"><%= hub.completenessPercent %>% ready</p>
+      <% } %>
+    </div>
+    <ul class="ac-mw-hub-health__list">
+      <% hub.healthItems.forEach(function (item) { %>
+      <li class="ac-mw-hub-health__item<%= item.ok ? ' is-ok' : ' is-attention' %>" data-ac-website-health-item="<%= item.id %>">
+        <span class="ac-mw-hub-health__label"><%= item.label %></span>
+        <span class="ac-mw-hub-health__value"><%= item.value %></span>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="ac-mw-hub-activity" data-ac-website-activity="1">
+    <div class="ac-mw-hub-activity__head">
+      <h3>Recent website activity</h3>
+      <% if (actions.history) { %>
+      <a href="<%= actions.history %>" data-ac-website-action="history-link">Version history</a>
+      <% } %>
+    </div>
+    <ul class="ac-mw-hub-activity__list">
+      <li>
+        <strong>Last published</strong>
+        <span><%= website.lastPublishedLabel || 'Not published yet' %></span>
+      </li>
+      <li>
+        <strong>Last updated</strong>
+        <span><%= lastUpdated || '—' %><% if (website.lastEditor) { %> · <%= website.lastEditor %><% } %></span>
+      </li>
+      <li>
+        <strong>Unpublished changes</strong>
+        <span><%= website.unpublishedChanges ? ('Yes (' + (website.unpublishedCount || 0) + ')') : 'None' %></span>
+      </li>
+    </ul>
+    <p class="ac-mw-muted" data-ac-stitch-future="audit_csv">Audit CSV export is a future capability. Use version history for restore-as-new.</p>
+  </section>
+
   <h3 class="ac-mw-hub-access__title">Manage your website</h3>
   <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01">
     <a class="ac-mw-hub-tile" href="/app/settings/website/pages" data-ac-website-action="pages" data-ac-stitch-hub-link="H02">

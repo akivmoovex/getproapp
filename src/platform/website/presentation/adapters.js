@@ -107,6 +107,8 @@ function adaptDoctorToPersonPresentation(doctor, opts) {
     secondaryCta,
     badges,
     mediaVariant: PERSON_MEDIA_VARIANTS.PORTRAIT,
+    // Pass through only when domain supplies a real availability/status line — never invent.
+    metaLine: row.metaLine || row.nextAvailableLabel || row.availabilityLabel || null,
     displayOrder: row.sort_order != null ? row.sort_order : row.displayOrder,
     visibility: row.public_profile_enabled !== false && row.visible !== false,
     featured: row.featured === true,

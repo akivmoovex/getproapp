@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.04 Batch 6 — ActiveClinic Stitch website management hub (H01–H06).
+ * V2.04 Batch 6–7 — ActiveClinic Stitch website management hub (H01–H06).
  *
  * Clinic-customer hub under /app/settings/website*.
  * Not Platform Admin governance.
@@ -69,72 +69,129 @@ const HUB_SCREENS = Object.freeze([
 ]);
 
 /**
- * Stitch demo controls with no matching clinic website backend capability.
- * Map to existing semantics where possible; otherwise mark NOT_WIRED (do not invent a second model).
+ * Batch 7 control audit for Stitch H03/H06 demo controls.
+ * disposition: WIRE_EXISTING | FUTURE_CAPABILITY | BLOCKER
  *
- * @type {ReadonlyArray<{ screen: string, control: string, reason: string }>}
+ * @type {ReadonlyArray<{ screen: string, control: string, disposition: string, reason: string }>}
  */
-const NOT_WIRED_STITCH_CONTROLS = Object.freeze([
+const H03_H06_CONTROL_AUDIT = Object.freeze([
+  {
+    screen: "H03",
+    control: "logo_brand_colors",
+    disposition: "WIRE_EXISTING",
+    reason: "Logo + brand.primary_color / accent via branding page + shared media",
+  },
   {
     screen: "H03",
     control: "favicon_app_icon",
-    reason: "No favicon field in universal website vocabulary; logo/hero use shared media",
+    disposition: "FUTURE_CAPABILITY",
+    reason: "No favicon field in universal website vocabulary; logo media covers brand mark",
   },
   {
     screen: "H03",
     control: "header_style_mode",
-    reason: "Sticky vs docked header modes are Stitch-only; chrome uses show_logo/nav/phone flags",
+    disposition: "FUTURE_CAPABILITY",
+    reason: "Sticky vs docked modes are Stitch-only; chrome uses show_logo/nav/phone flags (WIRE via Header & Footer)",
+  },
+  {
+    screen: "H03",
+    control: "header_visibility_flags",
+    disposition: "WIRE_EXISTING",
+    reason: "/app/settings/website/chrome — show logo, nav, phone",
   },
   {
     screen: "H03",
     control: "booking_gateway_engine",
+    disposition: "FUTURE_CAPABILITY",
     reason: "External triage engines (HotDoc/HealthEngine) are not website branding configuration",
   },
   {
     screen: "H03",
     control: "accreditation_badges",
+    disposition: "FUTURE_CAPABILITY",
     reason: "No accreditation badge catalogue in the website content model",
   },
   {
     screen: "H06",
+    control: "site_identity_contact_hours",
+    disposition: "WIRE_EXISTING",
+    reason: "site.name, contact.phone/email, location.hours on settings form",
+  },
+  {
+    screen: "H06",
+    control: "public_url_readonly",
+    disposition: "WIRE_EXISTING",
+    reason: "Public URL displayed read-only from platform assignment",
+  },
+  {
+    screen: "H06",
+    control: "publish_status",
+    disposition: "WIRE_EXISTING",
+    reason: "Website status + publish/unpublish lifecycle (not a separate maintenance flag)",
+  },
+  {
+    screen: "H06",
     control: "custom_domain",
-    reason: "Domain assignment is Platform Admin / infrastructure; public URL is read-only here",
+    disposition: "FUTURE_CAPABILITY",
+    reason: "Domain assignment is Platform Admin / infrastructure",
   },
   {
     screen: "H06",
     control: "ssl_certificate",
+    disposition: "FUTURE_CAPABILITY",
     reason: "TLS is platform infrastructure, not customer website configuration",
   },
   {
     screen: "H06",
     control: "maintenance_mode",
-    reason: "No maintenance-mode flag; publish/unpublish lifecycle covers public availability",
+    disposition: "FUTURE_CAPABILITY",
+    reason: "No maintenance-mode flag; publish/unpublish covers public availability",
   },
   {
     screen: "H06",
     control: "website_timezone",
+    disposition: "FUTURE_CAPABILITY",
     reason: "Timezone lives on organization/facility records, not website content",
   },
   {
     screen: "H06",
     control: "website_language",
+    disposition: "FUTURE_CAPABILITY",
     reason: "No multi-language website configuration model",
   },
   {
     screen: "H06",
     control: "analytics_embed",
+    disposition: "FUTURE_CAPABILITY",
     reason: "No analytics/pixel configuration in website settings",
   },
 ]);
 
+/** @deprecated Prefer H03_H06_CONTROL_AUDIT FUTURE_CAPABILITY entries — kept for Batch 6 test compatibility. */
+const NOT_WIRED_STITCH_CONTROLS = Object.freeze(
+  H03_H06_CONTROL_AUDIT.filter((row) => row.disposition === "FUTURE_CAPABILITY").map((row) => ({
+    screen: row.screen,
+    control: row.control,
+    reason: row.reason,
+  }))
+);
+
 const HUB_DESKTOP_MARKERS = Object.freeze(HUB_SCREENS.map((s) => s.code));
 const HUB_MOBILE_MARKERS = Object.freeze(HUB_SCREENS.map((s) => `${s.code}-M`));
+
+const H03_H06_WIRED = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "WIRE_EXISTING").length;
+const H03_H06_FUTURE = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "FUTURE_CAPABILITY").length;
+const H03_H06_BLOCKERS = H03_H06_CONTROL_AUDIT.filter((r) => r.disposition === "BLOCKER").length;
 
 module.exports = {
   STITCH_PROJECT_ID,
   HUB_SCREENS,
+  H03_H06_CONTROL_AUDIT,
   NOT_WIRED_STITCH_CONTROLS,
   UNWIRED_STITCH_CONTROLS: NOT_WIRED_STITCH_CONTROLS.length,
+  H03_H06_WIRED,
+  H03_H06_FUTURE,
+  H03_H06_BLOCKERS,
   HUB_DESKTOP_MARKERS,
   HUB_MOBILE_MARKERS,
   PLATFORM_ADMIN_SEPARATION: true,

@@ -545,3 +545,72 @@
   }
 }
 
+
+/* —— V2.04 Batch 7: doctor directory person card —— */
+.gp-website-pc--person-directory {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr);
+  gap: calc(var(--gp-website-space, 1rem) * 1);
+  align-items: start;
+}
+.gp-website-pc--person-directory .gp-website-pc__person-media--portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+.gp-website-pc--person-directory .gp-website-pc__img--portrait,
+.gp-website-pc--person-directory .gp-website-pc__img-placeholder--portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gp-website-pc__person-specialty {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gp-website-color-primary, currentColor) 12%, transparent);
+  color: var(--gp-website-color-primary, currentColor);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+.gp-website-pc__person-meta {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--gp-website-color-muted, inherit);
+}
+.gp-website-pc__badges {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.gp-website-pc__badge {
+  display: inline-flex;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  font-size: 0.75rem;
+}
+.gp-website-pc--person-directory .gp-website-pc__actions--person {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.gp-website-pc__grid--people {
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+@media (max-width: 390px) {
+  .gp-website-pc--person-directory {
+    grid-template-columns: 1fr;
+  }
+  .gp-website-pc--person-directory .gp-website-pc__person-media--portrait {
+    max-width: 12rem;
+  }
+}

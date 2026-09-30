@@ -25,6 +25,7 @@ const PERSON_PRESENTATION_FIELDS = Object.freeze([
   "secondaryCta",
   "badges",
   "mediaVariant",
+  "metaLine",
   "displayOrder",
   "visibility",
   "featured",
@@ -53,6 +54,7 @@ const PERSON_PRESENTATION_FIELDS = Object.freeze([
  * @property {PersonCta|null} [secondaryCta]
  * @property {PersonBadge[]} [badges]
  * @property {string} [mediaVariant]
+ * @property {string|null} [metaLine] optional status/availability line — never invent clinical data
  * @property {number} [displayOrder]
  * @property {boolean} [visibility]
  * @property {boolean} [featured]
@@ -145,6 +147,10 @@ function validatePersonPresentation(raw) {
 
   const visibility = raw.visibility === false ? false : true;
   const featured = raw.featured === true;
+  const metaLine =
+    raw.metaLine == null || raw.metaLine === ""
+      ? null
+      : String(raw.metaLine).trim().slice(0, 160) || null;
 
   /** @type {PersonPresentation} */
   const value = {
@@ -157,6 +163,7 @@ function validatePersonPresentation(raw) {
     secondaryCta: secondaryCta.value,
     badges: badges.value,
     mediaVariant,
+    metaLine,
     displayOrder,
     visibility,
     featured,

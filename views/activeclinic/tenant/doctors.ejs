@@ -1,6 +1,7 @@
 <%#
-  AC-MW-R04 Meet Our Doctors — Stitch Batch 3.
+  AC-MW-R04 Meet Our Doctors — Stitch Batch 3 + Batch 7 directory parity.
   AC Doctor domain → PersonPresentation → shared person_grid. No parallel doctor CMS.
+  Search/filter/sort are presentation-only over published profiles (no invented clinical data).
 %>
 <%
   const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
@@ -8,6 +9,12 @@
   const list = Array.isArray(profiles) ? profiles : [];
   const editingDoctors = typeof websiteEdit !== 'undefined' && websiteEdit;
   const doctorsReturnTo = '/clinics/' + clinic.clinicKey + '/doctors?website_edit=1&website_mode=draft';
+  const specialtySet = {};
+  list.forEach(function (d) {
+    const s = d && (d.specialty || d.title) ? String(d.specialty || d.title).trim() : '';
+    if (s) specialtySet[s] = (specialtySet[s] || 0) + 1;
+  });
+  const specialties = Object.keys(specialtySet).sort(function (a, b) { return a.localeCompare(b); });
 %>
 <section class="ac-stitch-page ac-stitch-page--r04 ac-public-section" data-ac-page-section="tenant-doctors" data-ac-stitch-screen="R04">
   <div class="ac-stitch-section ac-stitch-section--header">
@@ -21,9 +28,40 @@
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } else if (html.doctors) { %>
+  <div class="ac-stitch-directory-toolbar" data-ac-doctors-toolbar="1" data-ac-stitch-r04-toolbar="1">
+    <label class="ac-stitch-directory-search">
+      <span class="ac-sr-only">Search doctors</span>
+      <input
+        type="search"
+        class="ac-stitch-directory-search__input"
+        data-ac-doctors-search="1"
+        placeholder="Search doctor by name…"
+        autocomplete="off"
+      />
+    </label>
+    <div class="ac-stitch-directory-filters" role="group" aria-label="Filter by specialty">
+      <button type="button" class="ac-stitch-directory-pill is-active" data-ac-doctors-filter="" data-ac-doctors-filter-all="1">
+        All (<%= list.length %>)
+      </button>
+      <% specialties.forEach(function (spec) { %>
+      <button type="button" class="ac-stitch-directory-pill" data-ac-doctors-filter="<%= spec.replace(/"/g, '&quot;') %>">
+        <%= spec %> (<%= specialtySet[spec] %>)
+      </button>
+      <% }) %>
+    </div>
+    <label class="ac-stitch-directory-sort">
+      <span class="ac-sr-only">Sort doctors</span>
+      <select data-ac-doctors-sort="1">
+        <option value="name">Sort: Name (A–Z)</option>
+        <option value="specialty">Sort: Specialty</option>
+      </select>
+    </label>
+  </div>
+
   <div class="ac-stitch-section ac-stitch-section--doctors-grid" data-ac-doctors-grid="1">
     <%- html.doctors %>
   </div>
+  <p class="ac-stitch-directory-empty" data-ac-doctors-filter-empty="1" hidden>No doctors match this filter.</p>
   <% if (editingDoctors) { %>
   <ul class="ac-doctor-editor-links" hidden>
     <% list.forEach(function(d) { %>
@@ -53,3 +91,64 @@
 
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_doctors', librarySkipTypes: [] }) %>
 </section>
+<script>
+(function () {
+  var root = document.querySelector('[data-ac-stitch-screen="R04"]');
+  if (!root) return;
+  var grid = root.querySelector('[data-ac-doctors-grid="1"]');
+  var empty = root.querySelector('[data-ac-doctors-filter-empty="1"]');
+  var search = root.querySelector('[data-ac-doctors-search="1"]');
+  var sort = root.querySelector('[data-ac-doctors-sort="1"]');
+  var pills = root.querySelectorAll('[data-ac-doctors-filter]');
+  if (!grid) return;
+  var cards = Array.prototype.slice.call(grid.querySelectorAll('[data-gp-website-component="person_card"]'));
+  var activeFilter = '';
+
+  function apply() {
+    var q = (search && search.value ? search.value : '').trim().toLowerCase();
+    var visible = 0;
+    cards.forEach(function (card) {
+      var name = (card.getAttribute('data-gp-person-name') || '').toLowerCase();
+      var specialty = (card.getAttribute('data-gp-person-specialty') || '').toLowerCase();
+      var matchFilter = !activeFilter || specialty === activeFilter.toLowerCase();
+      var matchSearch = !q || name.indexOf(q) !== -1 || specialty.indexOf(q) !== -1;
+      var show = matchFilter && matchSearch;
+      card.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (empty) empty.hidden = visible !== 0;
+  }
+
+  function sortCards() {
+    var mode = sort ? sort.value : 'name';
+    var listEl = grid.querySelector('.gp-website-pc__grid') || grid;
+    var ordered = cards.slice().sort(function (a, b) {
+      var an = (a.getAttribute('data-gp-person-name') || '');
+      var bn = (b.getAttribute('data-gp-person-name') || '');
+      var as = (a.getAttribute('data-gp-person-specialty') || '');
+      var bs = (b.getAttribute('data-gp-person-specialty') || '');
+      if (mode === 'specialty') {
+        var cmp = as.localeCompare(bs);
+        return cmp !== 0 ? cmp : an.localeCompare(bn);
+      }
+      return an.localeCompare(bn);
+    });
+    ordered.forEach(function (card) {
+      var li = card.closest('li') || card;
+      listEl.appendChild(li);
+    });
+    cards = ordered;
+    apply();
+  }
+
+  pills.forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      activeFilter = pill.getAttribute('data-ac-doctors-filter') || '';
+      pills.forEach(function (p) { p.classList.toggle('is-active', p === pill); });
+      apply();
+    });
+  });
+  if (search) search.addEventListener('input', apply);
+  if (sort) sort.addEventListener('change', sortCards);
+})();
+</script>

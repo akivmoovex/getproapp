@@ -3247,3 +3247,86 @@ body.ac-public-body .ac-website-chrome__pills li.is-current {
 }
 
 
+
+/* —— V2.04 Batch 7: Stitch utility chrome + footer care —— */
+.ac-public-utility {
+  background: color-mix(in srgb, var(--acp-surface) 88%, var(--acp-primary) 12%);
+  border-bottom: 1px solid var(--acp-border);
+  font-size: 0.8125rem;
+  color: var(--acp-navy);
+}
+.ac-public-utility__inner {
+  max-width: var(--acp-max);
+  margin: 0 auto;
+  padding: 0.4rem var(--acp-gutter);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+  min-width: 0;
+}
+.ac-public-utility__item {
+  margin: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: baseline;
+  min-width: 0;
+}
+.ac-public-utility__label {
+  font-weight: 600;
+  color: var(--acp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.6875rem;
+}
+.ac-public-utility__value {
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.ac-public-utility__value:hover,
+a.ac-public-utility__value:focus-visible {
+  color: var(--acp-primary);
+  text-decoration: underline;
+}
+.ac-public-footer__col--care {
+  background: color-mix(in srgb, var(--ac-status-danger-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ac-status-danger) 25%, transparent);
+  border-radius: var(--acp-radius);
+  padding: 1rem;
+}
+.ac-public-footer__care-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--acp-muted);
+}
+.ac-public-footer__care-phone {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.ac-public-footer__care-phone a {
+  color: var(--acp-primary);
+  text-decoration: none;
+}
+.ac-public-footer__care-cta {
+  display: inline-flex;
+  min-height: var(--acp-touch);
+  align-items: center;
+  font-weight: 600;
+  color: var(--acp-primary);
+}
+
+@media (max-width: 390px) {
+  .ac-public-utility__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .ac-public-footer__col--care {
+    width: 100%;
+  }
+}

@@ -17,7 +17,9 @@
         var mode = btn.getAttribute("data-website-viewport");
         document.body.classList.toggle("gp-website-viewport-mobile", mode === "mobile");
         document.querySelectorAll("[data-website-viewport]").forEach(function (other) {
-          other.classList.toggle("is-current", other === btn);
+          var on = other === btn;
+          other.classList.toggle("is-current", on);
+          other.setAttribute("aria-pressed", on ? "true" : "false");
         });
       });
     });

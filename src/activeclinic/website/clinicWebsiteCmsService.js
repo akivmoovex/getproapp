@@ -639,6 +639,11 @@ async function loadWebsiteHubStats(db, input) {
     missingContent: 0,
     pageCount: 0,
     builderHref: "/app/settings/website/pages",
+    doctorsListed: null,
+    servicesConfigured: null,
+    mediaCount: null,
+    healthItems: [],
+    completenessPercent: null,
   };
   try {
     const seeded = await ensureCmsSeeded(db, input);
@@ -647,15 +652,104 @@ async function loadWebsiteHubStats(db, input) {
     const blocks = seeded.blocks || [];
     const custom = pages.filter((page) => page && page.kind === PAGE_KIND.CUSTOM);
     const builderPage = custom[0] || null;
+    const hiddenPages = pages.filter((page) => page && page.status === PAGE_STATUS.HIDDEN).length;
+    const draftPages = pages.filter((page) => page && page.status === PAGE_STATUS.DRAFT).length;
+    const missingContent = custom.filter(
+      (page) => !blocks.some((block) => block && block.page_id === page.id)
+    ).length;
+    const pageCount = pages.length;
+    const doctorsListed =
+      input && Number.isFinite(Number(input.doctorsListed)) ? Number(input.doctorsListed) : null;
+    const servicesConfigured =
+      input && Number.isFinite(Number(input.servicesConfigured))
+        ? Number(input.servicesConfigured)
+        : null;
+    const mediaCount =
+      input && Number.isFinite(Number(input.mediaCount)) ? Number(input.mediaCount) : null;
+    const liveAvailable = input && input.liveAvailable === true;
+    const unpublishedChanges = input && input.unpublishedChanges === true;
+
+    const healthItems = [
+      {
+        id: "pages",
+        label: "Pages",
+        value: pageCount ? `${pageCount} configured` : "No pages yet",
+        ok: pageCount > 0,
+      },
+      {
+        id: "hidden",
+        label: "Hidden pages",
+        value: String(hiddenPages),
+        ok: hiddenPages === 0,
+      },
+      {
+        id: "missing",
+        label: "Missing page content",
+        value: String(missingContent),
+        ok: missingContent === 0,
+      },
+      {
+        id: "draft",
+        label: "Draft pages",
+        value: String(draftPages),
+        ok: draftPages === 0 || liveAvailable,
+      },
+      {
+        id: "publish",
+        label: "Public status",
+        value: liveAvailable
+          ? unpublishedChanges
+            ? "Live with unpublished draft"
+            : "Published & live"
+          : "Not published",
+        ok: liveAvailable === true,
+      },
+    ];
+    if (doctorsListed != null) {
+      healthItems.push({
+        id: "doctors",
+        label: "Doctors listed",
+        value: `${doctorsListed} public profile${doctorsListed === 1 ? "" : "s"}`,
+        ok: doctorsListed > 0,
+      });
+    }
+    if (servicesConfigured != null) {
+      healthItems.push({
+        id: "services",
+        label: "Services configured",
+        value: `${servicesConfigured} public service${servicesConfigured === 1 ? "" : "s"}`,
+        ok: servicesConfigured > 0,
+      });
+    }
+    if (mediaCount != null) {
+      healthItems.push({
+        id: "media",
+        label: "Media library",
+        value: `${mediaCount} asset${mediaCount === 1 ? "" : "s"}`,
+        ok: mediaCount >= 0,
+      });
+    }
+
+    const scored = healthItems.filter((item) => item.id !== "media");
+    const okCount = scored.filter((item) => item.ok).length;
+    const completenessPercent = scored.length
+      ? Math.round((100 * okCount) / scored.length)
+      : null;
+
     return {
       ok: true,
-      hiddenPages: pages.filter((page) => page && page.status === PAGE_STATUS.HIDDEN).length,
-      draftPages: pages.filter((page) => page && page.status === PAGE_STATUS.DRAFT).length,
-      missingContent: custom.filter((page) => !blocks.some((block) => block && block.page_id === page.id)).length,
-      pageCount: pages.length,
+      hiddenPages,
+      draftPages,
+      missingContent,
+      pageCount,
       builderHref: builderPage
         ? `/app/settings/website/pages/${builderPage.id}/builder`
         : "/app/settings/website/pages",
+      doctorsListed,
+      servicesConfigured,
+      mediaCount,
+      healthItems,
+      completenessPercent,
     };
   } catch {
     return empty;

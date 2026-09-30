@@ -2709,3 +2709,55 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
     aspect-ratio: var(--gp-img-mobile-aspect);
   }
 }
+
+/* —— V2.04 Batch 7: Stitch E01/E02 editor chrome presentation —— */
+.gp-website-editor__viewport {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 0.75rem;
+  padding: 0.2rem;
+  border: 1px solid var(--gp-website-color-border, rgba(0, 0, 0, 0.12));
+  border-radius: 999px;
+  background: var(--gp-website-color-surface, #fff);
+}
+.gp-website-editor__viewport-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.65rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+.gp-website-editor__viewport-btn.is-current {
+  background: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast, #fff);
+}
+.gp-website-editor__viewport-label {
+  display: none;
+}
+@media (min-width: 900px) {
+  .gp-website-editor__viewport-label {
+    display: inline;
+  }
+}
+@media (max-width: 390px) {
+  .gp-website-editor__viewport {
+    display: none;
+  }
+  .gp-website-field-editor__panel {
+    border-radius: 1rem 1rem 0 0;
+  }
+}
+[data-product="activeclinic"] .gp-website-editor__btn--primary,
+.gp-website-editor[data-product="activeclinic"] .gp-website-editor__btn--primary {
+  background: var(--color-brand-primary, currentColor);
+  border-color: var(--color-brand-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast, #fff);
+}

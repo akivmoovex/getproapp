@@ -8,17 +8,21 @@
   var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
   var featured = p.featured === true;
   var mediaVariant = p.mediaVariant === 'portrait' ? 'portrait' : 'avatar';
+  var isDirectory = p.sourceDomain === 'doctor';
   var imgSrc = '';
   if (typeof p.image === 'string') imgSrc = p.image;
   else if (p.image && p.image.src) imgSrc = String(p.image.src);
   var badges = Array.isArray(p.badges) ? p.badges : [];
 %>
 <article
-  class="gp-website-pc gp-website-pc--person-card gp-website-pc--person-<%= mediaVariant %><%= featured ? ' is-featured' : '' %><%= extraClass %>"
+  class="gp-website-pc gp-website-pc--person-card gp-website-pc--person-<%= mediaVariant %><%= isDirectory ? ' gp-website-pc--person-directory' : '' %><%= featured ? ' is-featured' : '' %><%= extraClass %>"
   data-gp-website-component="person_card"
   data-gp-media-variant="<%= mediaVariant %>"
+  <% if (isDirectory) { %>data-gp-person-layout="directory"<% } %>
   <% if (p.sourceDomain) { %>data-gp-source-domain="<%= p.sourceDomain %>"<% } %>
   <% if (p.sourceId) { %>data-gp-source-id="<%= p.sourceId %>"<% } %>
+  <% if (p.subtitle) { %>data-gp-person-specialty="<%= String(p.subtitle).replace(/"/g, '&quot;') %>"<% } %>
+  <% if (p.name) { %>data-gp-person-name="<%= String(p.name).replace(/"/g, '&quot;') %>"<% } %>
 >
   <div class="gp-website-pc__person-media gp-website-pc__person-media--<%= mediaVariant %><%= imgSrc ? '' : ' is-empty' %>">
     <% if (imgSrc) { %>
@@ -28,9 +32,16 @@
     <% } %>
   </div>
   <div class="gp-website-pc__person-body">
-    <h3 class="gp-website-pc__person-name"><%= p.name %></h3>
-    <% if (p.title) { %><p class="gp-website-pc__person-title"><%= p.title %></p><% } %>
-    <% if (p.subtitle) { %><p class="gp-website-pc__person-subtitle"><%= p.subtitle %></p><% } %>
+    <div class="gp-website-pc__person-heading">
+      <h3 class="gp-website-pc__person-name"><%= p.name %></h3>
+      <% if (p.title) { %><p class="gp-website-pc__person-title"><%= p.title %></p><% } %>
+    </div>
+    <% if (p.subtitle) { %>
+    <p class="gp-website-pc__person-subtitle gp-website-pc__person-specialty"><%= p.subtitle %></p>
+    <% } %>
+    <% if (p.metaLine) { %>
+    <p class="gp-website-pc__person-meta" data-gp-person-meta="1"><%= p.metaLine %></p>
+    <% } %>
     <% if (badges.length) { %>
     <ul class="gp-website-pc__badges" aria-label="Credentials">
       <% badges.forEach(function (badge) { %>

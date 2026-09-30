@@ -219,6 +219,33 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           );
         }
         const website = loaded.website;
+        let doctorsListed = null;
+        let servicesConfigured = null;
+        let mediaCount = null;
+        try {
+          const catalogue = require("../website/clinicWebsiteCatalogueService");
+          const cat = await catalogue.loadCatalogue(getPool(), {
+            organizationId: req.activeClinicAuth.organization.id,
+            healthcareOrganizationId:
+              (req.activeClinicAuth.healthcareOrganization &&
+                req.activeClinicAuth.healthcareOrganization.id) ||
+              null,
+            grantedPermissions: req.activeClinicAuth.permissions || [],
+          });
+          if (cat && cat.ok) {
+            const doctors = Array.isArray(cat.doctors) ? cat.doctors : [];
+            const services = Array.isArray(cat.services) ? cat.services : [];
+            doctorsListed = doctors.filter((row) => row && row.canShow !== false).length;
+            servicesConfigured = services.filter(
+              (row) => row && row.publicWebsiteVisible !== false
+            ).length;
+          }
+        } catch (_err) {
+          /* Catalogue counts are optional hub enrichment. */
+        }
+        if (website && Number.isFinite(Number(website.mediaCount))) {
+          mediaCount = Number(website.mediaCount);
+        }
         const hub = await cmsService.loadWebsiteHubStats(getPool(), {
           organizationId: req.activeClinicAuth.organization.id,
           clinicKey:
@@ -226,6 +253,11 @@ function registerActiveClinicSettingsRoutes(app, deps) {
               (req.activeClinicAuth.organization.organizationKey || req.activeClinicAuth.organization.key)) ||
             "",
           grantedPermissions: req.activeClinicAuth.permissions || [],
+          liveAvailable: Boolean(website && website.liveAvailable),
+          unpublishedChanges: Boolean(website && website.unpublishedChanges),
+          doctorsListed,
+          servicesConfigured,
+          mediaCount,
         });
         const actions = (website && website.actions) || (website && website.ux && website.ux.actions) || {};
         return await renderShell(req, res, {
