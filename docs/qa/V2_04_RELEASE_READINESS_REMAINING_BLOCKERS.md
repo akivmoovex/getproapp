@@ -35,52 +35,39 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ENG-01 | BB | FR-16 / AC-21 / DR-39 scoped review | CODE | `resolveManagedResourceIds` exists; **unwired** at join-request mount; fail-closed for scoped leaders | FINAL_GAP **P0**: production mount does not deliver MUST scoped review | Freeze DR-39 keys; wire injector; mount-level test | RB-PROD-01 | NO |
-| RB-ENG-02 | BB | FR-12 / AC-13 dual-role destinations | CODE | Shells exist; **no linked dual-role entry points** | FINAL_GAP **P0**: MUST dual Member Portal + Church Management incomplete | Implement cross-links / documented dual entry; dual-role auto + manual | RB-PROD-02 | NO |
-| RB-ENG-03 | BB | Editor inline coverage (comparison **A1**) | CODE | BB public pencils **PARTIAL**; some surfaces structured-only / bridge lag | Blocks claiming BB visual-editor parity with AC | Port AC pencil coverage to remaining BB editable surfaces | Shared WE01 dialogs | YES |
-| RB-ENG-04 | PLATFORM/BB | Universal image payload (comparison **A2**) | CODE | Object-shape image save can return `invalid_url` on BB | Image replace/upload contract unreliable on BB path | Single accepted payload contract (string URL + object); shared tests | None | YES |
-| RB-ENG-05 | BB | Add Member CREATE-UI vs schema | CODE | UI requires gender/baptism; schema columns missing | Create-member UI contradicts persistence | Persist fields **or** optionalize/remove until schema exists | Product confirm field set | NO |
+| ~~RB-ENG-01~~ | BB | FR-16 / AC-21 / DR-39 scoped review | CODE | **CLOSED Wave2** — `resolveManagedJoinResourceIds` wired; ministry_leader/department_head bindings; Wave2 focused PASS | — | — | — | — |
+| ~~RB-ENG-02~~ | BB | FR-12 / AC-13 dual-role destinations | CODE | **CLOSED Wave2** — bidirectional `/member` ↔ `/hq` nav for dual-role; Wave2 focused PASS | — | — | — | — |
+| ~~RB-ENG-03~~ | BB | Editor inline coverage (comparison **A1**) | CODE | **CLOSED Wave1** — page heroes / welcome / about photos mount shared `editable-image`; entity/collection photos remain structured by design | — | — | — | — |
+| ~~RB-ENG-04~~ | PLATFORM/BB | Universal image payload (comparison **A2**) | CODE | **CLOSED Wave1** — aliases + object dual-write; focused tests **18/18** | — | — | — | — |
+| ~~RB-ENG-05~~ | BB | Add Member CREATE-UI vs schema | CODE | **CLOSED Wave3** — gender/baptism optional presentation-only; not required; not persisted | — | — | — | — |
 
 ### B. PRODUCT
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-PROD-01 | BB | DR-39 leader↔resource keys | PRODUCT_DECISION | OPEN (PD-V204-BB-P1-01) | Cannot safely wire scoped review without frozen binding keys | Freeze key list in decision register | None (Product) | YES |
-| RB-PROD-02 | BB | FR-12 dual-role destinations | PRODUCT_DECISION | OPEN (PD-V204-BB-P1-02) | Engineering destinations undefined | Confirm linked Member Portal + Church Mgmt entry points | None (Product) | YES |
-| RB-PROD-03 | BB | DR-51 relevant sessions | PRODUCT_DECISION | OPEN (PD-V204-BB-P1-03) | Block/reset session classes undefined for dual-role | Enumerate session classes to revoke | None (Product) | YES |
-| RB-PROD-04 | BB | DR-52 rate-limit thresholds | PRODUCT_DECISION | OPEN (PD-V204-BB-P1-04) | Lockout UX/thresholds not frozen | Freeze N/window values | None (Product) | YES |
-| RB-PROD-05 | BB | DR-55 PA cross-tenant actions | PRODUCT_DECISION | OPEN (PD-V204-BB-P1-05) | Platform Admin intervention catalogue incomplete | Enumerate allowed PA actions + audit requirements | None (Product) | YES |
-| RB-PROD-06 | AC | Stitch control matrix | PRODUCT_DECISION | OPEN (PD-V204-AC-P1-01) | Risk of false MUST vs PRESENTATION blockers on presentation claim | Product-signed MUST/PRESENTATION/FUTURE matrix | PD-V204-AC-01 (non-patient) | YES |
-| RB-PROD-07 | AC | Public PHI / field policy | PRODUCT_DECISION | OPEN (PD-V204-AC-P1-02) | Public doctor/services field hygiene undefined | Define public-safe field policy | None (Product) | YES |
-| RB-PROD-08 | AC | R08 booking chrome vs domain | PRODUCT_DECISION | OPEN (PD-V204-AC-P1-03) | Second booking-engine risk if mis-scoped | Affirm chrome/handoff only in product note | None (Product) | YES |
+| ~~RB-PROD-01…08~~ | BB/AC | Wave2 P1 decisions | PRODUCT_DECISION | **CLOSED Wave2** — all eight `TEMPORARY_APPROVED_FOR_V2_04` · `REVIEW_LATER=YES` | — | — | — | — |
 
 ### C. AUTOMATED TEST
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-TEST-01 | BB | AC-23 member privacy | TEST | Impl FULL; automation **WEAK** (FINAL_GAP **P0** CRITICAL_TEST_GAP) | Production QA cannot rely on source-match privacy | Behavioral cross-member profile denial test | None | YES |
-| RB-TEST-02 | BB | AC-11 recovery phone OTP complete | TEST | Start path covered; **complete** OTP success/fail missing (FINAL_GAP **P0**) | Recovery phone verification unproven end-to-end | Automate complete OTP success + fail | None | YES |
-| RB-TEST-03 | BB | AC-24 no member document upload | TEST | Restriction FULL; **UNTESTED** | Upload prohibition unproven | Assert no upload control / reject upload route | None | YES |
-| RB-TEST-04 | BB | Church ID case-insensitive auth | TEST | Impl `lower(trim)`; **UNTESTED** | Login/activate case variants unproven | Automate `ch-10001` vs `CH-10001` | None | YES |
-| RB-TEST-05 | BB | FR-20 admin search | TEST | Plumbing-only / WEAK | In-scope search + tenant deny unproven | Behavioral search + cross-tenant miss | None | YES |
-| RB-TEST-06 | BB | AC-25 immutable `member_id` history | TEST | FK present; no behavioral post-ID-change proof | History integrity after Church ID change unproven | Change Church ID → attendance/requests still resolve | None | YES |
-| RB-TEST-07 | PLATFORM | Shared editor regression matrix (comparison **A4** / unpublish depth) | TEST | AC inventory dense; BB/shared matrix incomplete; AC unpublish HTTP lighter | Editor claim lacks shared regression lock | Shared suite: viewport, draft, preview, publish, unpublish, media payload, restore | Prefer RB-ENG-03/04 first | YES |
+| ~~RB-TEST-01…07~~ | BB/PLATFORM | Automated proofs | TEST | **CLOSED Wave3** — `tests/v2-04-wave3-eng-test-closures.test.js` (+ M01/M02 ENG-05 asserts) | — | — | — | — |
 
 ### D. MANUAL QA
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | Sanity **excluded** Members; no FEATURE_QA_PASS (FINAL_GAP **P0**) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
-| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | Sanity = edit/save/preview/public only | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
-| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | AC-WEB-EDITOR-01 code CLOSED; hosted hub re-check pending | Hub management-only + editor path need hosted confirmation post-fix | Manual hub (no fake canvas) + Edit Website + draft/publish smoke | RB-ID-01 | NO |
-| RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | Auto COVERED; hosted spot-check incomplete | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
-| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | Policy missing | Cannot sign public clinic pages privacy hygiene | Spot-check doctor/services pages vs policy | RB-PROD-07 | NO |
+| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
+| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
+| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Hub management-only + editor path need hosted confirmation post-fix | Manual hub (no fake canvas) + Edit Website + draft/publish smoke | RB-ID-01 | NO |
+| RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence); policy CLOSED Wave2 | Public pages need manual hygiene sign-off vs allowlist | Spot-check doctor/services pages vs allowlist | RB-PROD-07 **CLOSED** | YES (after identity capture preferred) |
 
 ### E. RELEASE IDENTITY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | Sanity host previously **unbound**; tip `7c957101` not identity-sheeted for FEATURE QA (FINAL_GAP **P0**) | FEATURE QA results cannot be bound to branch/SHA/deploy/DB/migrations | Record on TESTING: branch, app SHA, deploy SHA, DB identity, migration ceiling, About=2.04 | None | YES |
+| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **OPEN** — sheet captured 2026-10-02 READ-ONLY; BB+AC `branch=UNKNOWN` / About `UNKNOWN testing` (hub healthz `V4` not used as BB/AC identity). HOSTED_SHA=`54cdb1f76f5a` = tip; app candidate `7c957101…`; docs-only between. ENV=testing · deploy=`moovex-platform-v8-testing` · DB=`moovex-platform-v7` / testing · About Version=2.04 · schemaCompatible · no V9/V10. SHA_MATCH PASS; BRANCH FAIL | FEATURE QA cannot claim full identity bind while product hosts report UNKNOWN branch | Rebuild/redeploy so BB+AC emit non-UNKNOWN branch (expected V4); re-verify About+healthz | None | NO (blocked on branch label) |
 
 ---
 
@@ -88,19 +75,22 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | Group | Blocker IDs | n |
 |-------|-------------|--:|
-| **A. ENGINEERING** | RB-ENG-01…05 | **5** |
-| **B. PRODUCT** | RB-PROD-01…08 | **8** |
-| **C. AUTOMATED TEST** | RB-TEST-01…07 | **7** |
+| **A. ENGINEERING** | — (Wave3 closed) | **0** |
+| **B. PRODUCT** | — (Wave2 closed) | **0** |
+| **C. AUTOMATED TEST** | — (Wave3 closed) | **0** |
 | **D. MANUAL QA** | RB-QA-01…05 | **5** |
 | **E. RELEASE IDENTITY** | RB-ID-01 | **1** |
-| **Total unique** | | **26** |
+| **Closed Wave1** | RB-ENG-03, RB-ENG-04 | **2** |
+| **Closed Wave2** | RB-PROD-01…08, RB-ENG-01, RB-ENG-02 | **10** |
+| **Closed Wave3** | RB-ENG-05, RB-TEST-01…07 | **8** |
+| **Total remaining unique** | | **6** |
 
 ### Editor P1 → blocker map
 
 | Comparison P1 | Release blocker? | Mapped ID |
 |---------------|------------------|-----------|
-| A1 BB inline coverage | YES | RB-ENG-03 |
-| A2 Image payload contract | YES | RB-ENG-04 |
+| A1 BB inline coverage | **CLOSED Wave1** | ~~RB-ENG-03~~ |
+| A2 Image payload contract | **CLOSED Wave1** | ~~RB-ENG-04~~ |
 | A3 Hub management-only | AC code CLOSED; hosted verify remains | RB-QA-03 (verify only) |
 | A4 Shared editor regression matrix | YES | RB-TEST-07 |
 | B1 AC submit-for-review maturity | Not HARD — only if publish-review claim required | Out of this hard set unless Product elevates |
@@ -112,39 +102,86 @@ Roadmap **Phase 5** product adapters / branding and all **P2** items are **not**
 
 | Set | IDs | Why fast |
 |-----|-----|----------|
-| Identity | RB-ID-01 | Documentation / identity sheet only |
-| Product freezes | RB-PROD-01…08 | Product write-up (no code) |
-| Automated proofs | RB-TEST-01…07 | Tests against existing implementation (ENG-03/04 preferred first for TEST-07) |
-| Editor eng | RB-ENG-03, RB-ENG-04 | Coverage/contract work without Product freeze |
+| Manual PHI | RB-QA-05 | Policy frozen; hosted spot-check |
 
-**FASTEST_CLOSABLE_NOW = 18**  
-**Not fast:** RB-ENG-01/02/05 (Product deps), RB-QA-01…05 (need identity and/or Product/ENG).
+**FASTEST_CLOSABLE_NOW = 1**  
+**Not fast:** RB-ID-01 (BRANCH=UNKNOWN on BB+AC); RB-QA-01…04 (need identity / FEATURE pack).
 
 ---
 
 ## Minimum path to `READY_FOR_PRODUCTION_QA=YES`
 
-1. **RB-ID-01** — bind TESTING identity to tip.  
-2. Close **RB-PROD-01/02** then **RB-ENG-01/02** (Members MUST completeness).  
-3. Land **RB-TEST-01…06** (privacy / recovery / upload / case / search / history).  
-4. Land **RB-ENG-03/04** + **RB-TEST-07** (editor claim).  
-5. Execute **RB-QA-01** (Members FEATURE QA) + **RB-QA-02…04** (website / geo / concurrency).  
-6. Close **RB-PROD-06…08** + **RB-QA-05** (AC presentation hygiene).  
-7. Close **RB-ENG-05** or Product-optionalize fields.  
-8. Close remaining Product P1 freezes (**RB-PROD-03…05**) before claiming dual-role session / rate-limit / PA completeness.
+1. **RB-ID-01** — fix BB+AC branch label (not UNKNOWN), then re-verify; sheet already captured for SHA/env/DB/About=2.04.  
+2. ~~RB-PROD-01…08 + RB-ENG-01/02~~ **CLOSED Wave2**.  
+3. ~~RB-ENG-05 + RB-TEST-01…07~~ **CLOSED Wave3**.  
+4. Execute **RB-QA-01** (Members FEATURE QA) + **RB-QA-02…04** (website / geo / concurrency).  
+5. Execute **RB-QA-05** (public PHI spot-check vs allowlist).
 
 Until that set is closed (or Product **explicitly waives** a subset in writing), readiness stays **NO**.
+
+### Wave1 closure note (2026-10-02)
+
+- **RB-ENG-03 CLOSED:** BB page heroes, welcome, about story/community/life_together/visitor/gallery_1–3 mount shared `editable-image`; entity cards remain structured.  
+- **RB-ENG-04 CLOSED:** `imageSrcFromCandidate` aliases; BB editor drafts dual-write IMAGE objects; focused suite `tests/v2-04-wave1-bb-inline-image-contract.test.js` + payload/coverage contracts **18/18 PASS**.
+
+### Manual QA ingestion note (2026-10-02)
+
+- Session ingestion: **no tester evidence supplied** for RB-QA-01…05.
+- Classification: all five **NOT_RUN** (see `V2_04_MANUAL_QA_RESULTS_RECORD.md`).
+- MANUAL_QA_REMAINING=5 · NEW_RELEASE_BLOCKERS=0 · READY_FOR_PRODUCTION_QA still **NO**.
+
+### Wave6 build-identity verification note (2026-10-02, READ-ONLY)
+
+| Field | BB | AC |
+|-------|----|----|
+| VERSION | 2.04 | 2.04 |
+| BRANCH | UNKNOWN | UNKNOWN |
+| FULL_GIT_SHA | `54cdb1f76f5af70593fdaf54366ce0c64ae9885c` | same |
+| HOSTED_SHA | `54cdb1f76f5a` | `54cdb1f76f5a` |
+| EXPECTED_CANDIDATE_SHA | app `7c957101…` · tip docs `54cdb1f76f5a…` | same |
+| SHA_MATCH | PASS | PASS |
+| ENVIRONMENT | testing | testing |
+| DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing |
+| DB_IDENTITY | moovex-platform-v7 | moovex-platform-v7 |
+| DB_ENVIRONMENT | testing (`testing-v8` media NS) | testing |
+| BUILD_LABEL | UNKNOWN testing | UNKNOWN testing |
+| MIGRATION_CEILING | schemaCompatible; refs ≤ BB099 / AC034 / P031 | same |
+
+Hub healthz reports `branch=V4` — **not** used to override BB/AC explicit UNKNOWN.  
+`7c957101..54cdb1f76f5a` = docs-only. Local Wave2/3 app changes uncommitted / not hosted. Production untouched.  
+BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_IDENTITY=PASS · DB_IDENTITY=PASS · BUILD_IDENTITY_REMAINING=1.
+
+### Wave3 closure note (2026-10-02)
+
+- **RB-ENG-05 CLOSED:** Add Member gender/baptism optionalized (presentation-only; not schema-backed; not required).  
+- **RB-TEST-01…07 CLOSED:** focused suite `tests/v2-04-wave3-eng-test-closures.test.js` (+ M01/M02 ENG-05 asserts).  
+- No IMPLEMENTATION_DEFECT stoppers found in this wave.
+
+### Wave2 closure note (2026-10-02)
+
+- **RB-PROD-01…08 CLOSED:** all eight PD-V204-*-P1-* `TEMPORARY_APPROVED_FOR_V2_04` · `REVIEW_LATER=YES`.  
+- **RB-ENG-01 CLOSED:** scoped join review injector wired to ministry/department leader bindings.  
+- **RB-ENG-02 CLOSED:** bidirectional Member Portal / Church Management dual-role nav.  
+- Also applied: session revoke Option A (BB-P1-03), rate-limit freeze 8/15 (BB-P1-04), PA deny-by-default (BB-P1-05), public allowlist (AC-P1-02), AC matrix + R08 chrome (AC-P1-01/03).  
+- Focused suite: `tests/v2-04-wave2-product-decisions.test.js` **26/26 PASS**.
 
 ---
 
 ```
-REMAINING_RELEASE_BLOCKERS=26
-ENGINEERING=5
-PRODUCT=8
-AUTOMATED_TEST=7
+REMAINING_RELEASE_BLOCKERS=6
+ENGINEERING=0
+PRODUCT=0
+AUTOMATED_TEST=0
 MANUAL_QA=5
 BUILD_IDENTITY=1
-FASTEST_CLOSABLE_NOW=18
+FASTEST_CLOSABLE_NOW=1
 READY_FOR_PRODUCTION_QA=NO
-FINAL=V2_04_REMAINING_BLOCKERS_IDENTIFIED
+BB_SHA_MATCH=PASS
+AC_SHA_MATCH=PASS
+BRANCH_IDENTITY=FAIL
+ENVIRONMENT_IDENTITY=PASS
+DB_IDENTITY=PASS
+PRODUCTION_UNTOUCHED=YES
+BUILD_IDENTITY_REMAINING=1
+FINAL=V2_04_BUILD_IDENTITY_VERIFIED
 ```

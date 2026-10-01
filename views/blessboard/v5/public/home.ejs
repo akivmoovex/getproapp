@@ -368,19 +368,21 @@
       </div>
   <% if (welcomeMedia || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-home-welcome__media">
-        <% if (welcomeMedia) { %>
-        <img class="bb-tp-media<%= welcomePs.className ? ' ' + welcomePs.className : '' %>" src="<%= welcomeMedia %>" alt="<%= welcomeMediaAlt %>" width="800" height="600" loading="lazy" decoding="async"<% if (welcomePs.style) { %> style="<%= welcomePs.style %>"<% } %> />
-        <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-        <div class="bb-tp-edit-media-wrap">
-          <%- include('../partials/structured-edit-trigger', {
-            editKind: 'image',
-            editEntityKey: 'home-welcome',
-            editSectionKey: 'welcome',
-            editLabel: 'Edit welcome image',
-            editPayload: { imageUrl: welcomeMedia || '', altText: welcomeMediaAlt, focal: (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.focal) || 'center', placement: welcomePlacement }
-          }) %>
-        </div>
+        <%- include('../partials/editable-image', {
+          editPageKey: 'home',
+          editSectionKey: 'welcome',
+          editFieldKey: 'image',
+          contentKey: 'home.welcome.image',
+          imageSrc: welcomeMedia,
+          imageAlt: welcomeMediaAlt,
+          imageClass: 'bb-tp-media' + (welcomePs.className ? ' ' + welcomePs.className : ''),
+          imageWidth: 800,
+          imageHeight: 600,
+          imagePlacement: welcomePlacement
+        }) %>
+        <% } else if (welcomeMedia) { %>
+        <img class="bb-tp-media<%= welcomePs.className ? ' ' + welcomePs.className : '' %>" src="<%= welcomeMedia %>" alt="<%= welcomeMediaAlt %>" width="800" height="600" loading="lazy" decoding="async"<% if (welcomePs.style) { %> style="<%= welcomePs.style %>"<% } %> />
         <% } %>
       </div>
       <% } %>

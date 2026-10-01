@@ -753,6 +753,9 @@ module.exports = {
   NEUTRAL_LOGIN,
   NEUTRAL_RECOVERY,
   LOST_CHURCH_ID,
+  /** PD-V204-BB-P1-04 temporary freeze: 8 attempts / 15 minutes per bucket */
+  RATE_MAX,
+  RATE_WINDOW_MS,
   validateMemberPortalPassword,
   getPasswordRuleLabels,
   verifyFirstTimeMembership,
@@ -764,4 +767,5 @@ module.exports = {
   signDraft,
   verifyDraft,
   _rateBuckets: rateBuckets,
+  _consumeRate: consumeRate,
 };

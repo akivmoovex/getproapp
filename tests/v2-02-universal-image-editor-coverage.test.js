@@ -86,7 +86,10 @@ function evidenceHasInlineMount(slot) {
     joined.includes("editable-image") ||
     joined.includes("website-editable-image");
   const hints = slot.contentKeyHints || [];
-  const hasKey = hints.some((h) => joined.includes(h));
+  const hasLiteralKey = hints.some((h) => joined.includes(h));
+  // Page-hero / section mounts often build contentKey as page + section + '.image'.
+  const hasDynamicImageKey = /contentKey:\s*[^\n]*\.image/.test(joined);
+  const hasKey = hints.length ? hasLiteralKey || hasDynamicImageKey : hasDynamicImageKey;
   return { hasPartial, hasKey, ok: hasPartial && hasKey };
 }
 
@@ -265,9 +268,11 @@ describe("V2.02 Universal Image Editor coverage contract", () => {
       assert.equal(categoryAFramingReachable(slot).ok, true, slot.id);
     }
 
-    // After the structured-surface fix, platform_inline AND structured Category-A must pass.
+    // After Wave1 RB-ENG-03, page/section photos are platform_inline; remaining
+    // structured Category-A are entity/collection cards (and freeform content blocks).
     const structuredFails = structuredA.filter((s) => !categoryAFramingReachable(s).ok);
     assert.equal(structuredFails.length, 0, structuredFails.map((s) => s.id).join(", "));
-    assert.ok(structuredA.length >= 8, `structured A inventory: ${structuredA.length}`);
+    assert.ok(structuredA.length >= 4, `structured A inventory: ${structuredA.length}`);
+    assert.ok(inlineA.length >= 8, `platform_inline A inventory: ${inlineA.length}`);
   });
 });

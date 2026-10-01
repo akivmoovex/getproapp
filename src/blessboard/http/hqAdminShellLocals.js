@@ -18,6 +18,10 @@ const { HQ_ADMIN_NAV, HQ_ADMIN_MOBILE_TABS } = require("./hqAdminNav");
 const { buildHqMobileNav } = require("./adminMobileNavGroups");
 const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
 const { applyHqWebsiteModeNav } = require("./websiteModeAdminNav");
+const {
+  sessionHasActiveMemberAccess,
+  appendDualRoleNavItem,
+} = require("./dualRoleShellNav");
 
 /**
  * @param {import('express').Request} req
@@ -215,6 +219,14 @@ async function buildHqAdminShellLocals(req, res, opts) {
     if (item.key === "welfare" && !permissionNavFlags.canViewWelfare) return false;
     return true;
   });
+
+  if (sessionHasActiveMemberAccess(req)) {
+    navItems = appendDualRoleNavItem(navItems, {
+      key: "member_portal",
+      label: "Member portal",
+      href: "/member",
+    });
+  }
 
   const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>

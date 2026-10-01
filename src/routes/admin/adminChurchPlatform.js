@@ -87,12 +87,6 @@ const {
   ENTITY_TYPES: SUPPORT_NOTE_ENTITY_TYPES,
   MIN_QUERY_LENGTH: SUPPORT_NOTE_MIN_QUERY_LENGTH,
 } = require("../../church/platformSupportNotesSearchValidation");
-const {
-  validateResetMemberPasswordBody,
-  validateSuspendMemberBody,
-  validateReactivateMemberBody,
-  validateVerifyMemberBody,
-} = require("../../church/platformMemberSupportActionsValidation");
 const { memberStatusLabel } = require("../../church/memberDirectoryValidation");
 const { memberRequestStatusLabel } = require("../../church/requestProcessingValidation");
 const { joinRequestStatusLabel } = require("../../church/ministryJoinRequestValidation");
@@ -171,6 +165,42 @@ function buildSecurityReturnQuery(filters, notice) {
 
 function platformAdminId(req) {
   return req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null;
+}
+
+/**
+ * PD-V204-BB-P1-05 OPTION A — Platform Admin must not mutate church membership
+ * across tenants in V2.04 (deny-by-default empty allowlist).
+ */
+async function denyPlatformAdminMembershipIntervention(req, res, actionKey) {
+  const adminId = platformAdminId(req);
+  try {
+    const pool = getPgPool();
+    await auditLogsRepo.insertAuditLog(pool, {
+      organization_id: null,
+      actor_type: "platform_admin",
+      actor_id: adminId,
+      action: "platform_admin.membership_intervention_denied",
+      entity_type: "church_member",
+      entity_id: String((req.params && req.params.memberId) || "") || null,
+      metadata_json: {
+        actionKey: String(actionKey || ""),
+        path: req.originalUrl || req.path,
+        policy: "PD-V204-BB-P1-05",
+        result: "denied",
+        reason: "deny-by-default empty allowlist",
+      },
+      actor_label: "Platform Admin",
+      target_label: String((req.params && req.params.memberId) || "") || null,
+      ip_address: req.ip || null,
+      user_agent: req.get && req.get("user-agent"),
+    });
+  } catch (_e) {
+    /* audit best-effort */
+  }
+  res.status(403).type("text").send(
+    "Platform Admin cross-tenant membership interventions are not allowed in V2.04. Use in-tenant church administration."
+  );
+  return true;
 }
 
 function organizationStatusNotice(req) {
@@ -1549,30 +1579,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
 
   router.post("/church/members/:memberId/reset-password", requireSuperAdmin, async (req, res, next) => {
     try {
-      const memberId = Number(req.params.memberId);
-      if (!Number.isFinite(memberId) || memberId <= 0) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-      const pool = getPgPool();
-      const member = await platformMemberSupportRepo.findMemberForPlatformAction(pool, memberId);
-      if (!member) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-
-      const validation = validateResetMemberPasswordBody(req.body);
-      if (!validation.ok) {
-        return renderMemberSupportDetail(req, res, { statusCode: 400, resetError: validation.error });
-      }
-
-      const passwordHash = await bcrypt.hash(validation.new_password, 12);
-      await platformMemberSupportRepo.resetMemberPasswordForPlatform(
-        pool,
-        memberId,
-        passwordHash,
-        platformAdminId(req)
-      );
-
-      return res.redirect(`/admin/church/members/${memberId}?notice=password_reset`);
+      return denyPlatformAdminMembershipIntervention(req, res, "reset-password");
     } catch (err) {
       next(err);
     }
@@ -1580,36 +1587,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
 
   router.post("/church/members/:memberId/suspend", requireSuperAdmin, async (req, res, next) => {
     try {
-      const memberId = Number(req.params.memberId);
-      if (!Number.isFinite(memberId) || memberId <= 0) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-      const pool = getPgPool();
-      const member = await platformMemberSupportRepo.findMemberForPlatformAction(pool, memberId);
-      if (!member) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-
-      const validation = validateSuspendMemberBody(req.body);
-      if (!validation.ok) {
-        return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: validation.error });
-      }
-
-      try {
-        await platformMemberSupportRepo.suspendMemberForPlatform(
-          pool,
-          memberId,
-          validation.reason,
-          platformAdminId(req)
-        );
-      } catch (err) {
-        if (err.code === "INVALID_STATUS") {
-          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
-        }
-        throw err;
-      }
-
-      return res.redirect(`/admin/church/members/${memberId}?notice=suspended`);
+      return denyPlatformAdminMembershipIntervention(req, res, "suspend");
     } catch (err) {
       next(err);
     }
@@ -1617,39 +1595,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
 
   router.post("/church/members/:memberId/reactivate", requireSuperAdmin, async (req, res, next) => {
     try {
-      const memberId = Number(req.params.memberId);
-      if (!Number.isFinite(memberId) || memberId <= 0) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-      const pool = getPgPool();
-      const member = await platformMemberSupportRepo.findMemberForPlatformAction(pool, memberId);
-      if (!member) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-
-      const validation = validateReactivateMemberBody(req.body);
-      if (!validation.ok) {
-        return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: validation.error });
-      }
-
-      try {
-        await platformMemberSupportRepo.reactivateMemberForPlatform(
-          pool,
-          memberId,
-          validation.reason,
-          platformAdminId(req)
-        );
-      } catch (err) {
-        if (err.code === "INVALID_STATUS") {
-          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
-        }
-        if (err.code === "FOUNDATION_MEMBER_LIMIT") {
-          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
-        }
-        throw err;
-      }
-
-      return res.redirect(`/admin/church/members/${memberId}?notice=reactivated`);
+      return denyPlatformAdminMembershipIntervention(req, res, "reactivate");
     } catch (err) {
       next(err);
     }
@@ -1657,45 +1603,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
 
   router.post("/church/members/:memberId/verify", requireSuperAdmin, async (req, res, next) => {
     try {
-      const memberId = Number(req.params.memberId);
-      if (!Number.isFinite(memberId) || memberId <= 0) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-      const pool = getPgPool();
-      const member = await platformMemberSupportRepo.findMemberForPlatformAction(pool, memberId);
-      if (!member) {
-        return res.status(404).type("text").send("Member not found.");
-      }
-
-      const validation = validateVerifyMemberBody(req.body, member.status);
-      if (!validation.ok) {
-        if (member.status === "verified") {
-          return res.redirect(`/admin/church/members/${memberId}?notice=already_verified`);
-        }
-        return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: validation.error });
-      }
-
-      try {
-        await platformMemberSupportRepo.verifyMemberForPlatform(
-          pool,
-          memberId,
-          validation.reason,
-          platformAdminId(req)
-        );
-      } catch (err) {
-        if (err.code === "ALREADY_VERIFIED") {
-          return res.redirect(`/admin/church/members/${memberId}?notice=already_verified`);
-        }
-        if (err.code === "INVALID_STATUS") {
-          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
-        }
-        if (err.code === "FOUNDATION_MEMBER_LIMIT") {
-          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
-        }
-        throw err;
-      }
-
-      return res.redirect(`/admin/church/members/${memberId}?notice=verified`);
+      return denyPlatformAdminMembershipIntervention(req, res, "verify");
     } catch (err) {
       next(err);
     }

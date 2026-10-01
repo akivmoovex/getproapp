@@ -276,7 +276,11 @@ async function startMemberPhoneVerification(db, input, env) {
  * Complete OTP and promote pending phone to verified contact.
  */
 async function completeMemberPhoneVerification(db, input, env, deps) {
-  const access = await requireActiveMemberForTenant(db, {
+  const requireAccess =
+    (deps && typeof deps.requireActiveMemberForTenant === "function"
+      ? deps.requireActiveMemberForTenant
+      : null) || requireActiveMemberForTenant;
+  const access = await requireAccess(db, {
     userId: input.userId,
     churchId: input.churchId,
     branchId: input.branchId,
@@ -289,7 +293,11 @@ async function completeMemberPhoneVerification(db, input, env, deps) {
   }
 
   const purpose = access.member.phoneNormalized ? "phone_change" : "phone_verification";
-  const completed = await completeAccountPhoneVerification(
+  const completeOtp =
+    (deps && typeof deps.completeAccountPhoneVerification === "function"
+      ? deps.completeAccountPhoneVerification
+      : null) || completeAccountPhoneVerification;
+  const completed = await completeOtp(
     db,
     {
       userId: input.userId,
@@ -311,7 +319,11 @@ async function completeMemberPhoneVerification(db, input, env, deps) {
   }
 
   // Ensure member row matches verified user phone (pending → verified).
-  const confirmed = await updateMemberProfile(
+  const updateProfile =
+    (deps && typeof deps.updateMemberProfile === "function"
+      ? deps.updateMemberProfile
+      : null) || updateMemberProfile;
+  const confirmed = await updateProfile(
     db,
     {
       memberId: access.member.id,

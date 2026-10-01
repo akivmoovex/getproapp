@@ -28,6 +28,25 @@ const CONTENT_TYPES = Object.freeze({
 
 const CONTENT_TYPE_SET = new Set(Object.values(CONTENT_TYPES));
 
+/**
+ * Extract a URL/src string from a shared IMAGE object payload.
+ * Accepts WE01 `{ src }` and BlessBoard structured aliases (`url`, `image`, `imageUrl`, `mediaUrl`, `v`).
+ * @param {object|null|undefined} candidate
+ * @returns {string}
+ */
+function imageSrcFromCandidate(candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return "";
+  const raw =
+    candidate.src ||
+    candidate.url ||
+    candidate.image ||
+    candidate.imageUrl ||
+    candidate.mediaUrl ||
+    candidate.v ||
+    "";
+  return String(raw || "").trim();
+}
+
 const KEY_RE = /^[a-z][a-z0-9_.]{0,95}$/;
 const UNSAFE_SCHEME_RE = /^(javascript|data|vbscript):/i;
 const SCRIPT_RE = /<\s*script\b/i;
@@ -102,7 +121,8 @@ function validateContentValue(def, candidate) {
     case CONTENT_TYPES.IMAGE:
     case CONTENT_TYPES.VIDEO_URL: {
       if (typeof candidate === "object" && candidate) {
-        const src = candidate.src || candidate.url || candidate.v || "";
+        // Universal image payload: accept WE01 `{src}` plus BB structured aliases.
+        const src = imageSrcFromCandidate(candidate);
         const alt = candidate.alt != null ? String(candidate.alt).trim().slice(0, 240) : "";
         const mediaId = candidate.mediaId || candidate.media_id || null;
         const urlCheck = src
@@ -204,4 +224,5 @@ module.exports = {
   unwrapValue,
   validateContentValue,
   rejectUnsafeText,
+  imageSrcFromCandidate,
 };

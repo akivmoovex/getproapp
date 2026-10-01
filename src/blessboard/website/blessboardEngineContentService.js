@@ -25,6 +25,7 @@ const {
   ensureProductFieldsRegistered,
   PRODUCT_CODE,
 } = require("../../platform/website/editableFieldSchema");
+const { imageSrcFromCandidate } = require("../../platform/website/contentTypes");
 const { EDITABLE_FIELDS } = require("../services/websiteInlineEditableFields");
 const contentRepo = require("../repositories/publicContentRepository");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
@@ -116,7 +117,7 @@ function overlayMapFromValues(values, pageKey) {
     const value = unwrapFieldValue(raw);
     if (value == null) continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      const src = value.src || value.url || "";
+      const src = imageSrcFromCandidate(value);
       if (src) map.set(overlayKey(locator.sectionKey, locator.fieldKey), String(src));
       if (value.alt) map.set(overlayKey(locator.sectionKey, `${locator.fieldKey}Alt`), String(value.alt));
       continue;
@@ -233,7 +234,7 @@ async function loadFieldOverlayMap(db, input) {
     );
     if (value == null) continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      const src = value.src || value.url || "";
+      const src = imageSrcFromCandidate(value);
       if (src) map.set(overlayKey(locator.sectionKey, locator.fieldKey), String(src));
       if (value.alt) map.set(overlayKey(locator.sectionKey, `${locator.fieldKey}Alt`), String(value.alt));
       continue;

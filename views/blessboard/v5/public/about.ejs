@@ -235,19 +235,21 @@
         </div>
         <% if (storyMedia.length || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
         <div class="bb-tp-about-story__media">
-          <% if (storyMedia.length) { %>
-          <img class="bb-tp-media" src="<%= storyMedia[0] %>" alt="Life at <%= publicName %>" width="960" height="720" loading="lazy" decoding="async" />
-          <% } %>
           <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-          <div class="bb-tp-edit-media-wrap">
-            <%- include('../partials/structured-edit-trigger', {
-              editKind: 'image',
-              editEntityKey: 'about-story',
-              editSectionKey: 'story',
-              editLabel: 'Edit story image',
-              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center', placement: (storySections[0] && storySections[0].layoutMetadata && storySections[0].layoutMetadata.imagePlacement) || null }
-            }) %>
-          </div>
+          <%- include('../partials/editable-image', {
+            editPageKey: 'about',
+            editSectionKey: 'story',
+            editFieldKey: 'image',
+            contentKey: 'about.story.image',
+            imageSrc: storyMedia[0] || '',
+            imageAlt: 'Life at ' + publicName,
+            imageClass: 'bb-tp-media',
+            imageWidth: 960,
+            imageHeight: 720,
+            imagePlacement: (storySections[0] && storySections[0].layoutMetadata && storySections[0].layoutMetadata.imagePlacement) || null
+          }) %>
+          <% } else if (storyMedia.length) { %>
+          <img class="bb-tp-media" src="<%= storyMedia[0] %>" alt="Life at <%= publicName %>" width="960" height="720" loading="lazy" decoding="async" />
           <% } %>
         </div>
         <% } %>
@@ -438,19 +440,21 @@
       }) %>
       <% if ((communitySection && communitySection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-about-community__media">
-        <% if (communitySection && communitySection.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= communitySection.mediaUrl %>" alt="<%= (communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
-        <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-        <div class="bb-tp-edit-media-wrap">
-          <%- include('../partials/structured-edit-trigger', {
-            editKind: 'image',
-            editEntityKey: 'about-community',
-            editSectionKey: 'community',
-            editLabel: 'Edit neighbourhood image',
-            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '', focal: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.focal) || 'center', placement: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.imagePlacement) || null }
-          }) %>
-        </div>
+        <%- include('../partials/editable-image', {
+          editPageKey: 'about',
+          editSectionKey: 'community',
+          editFieldKey: 'image',
+          contentKey: 'about.community.image',
+          imageSrc: (communitySection && communitySection.mediaUrl) || '',
+          imageAlt: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '',
+          imageClass: 'bb-tp-media',
+          imageWidth: 960,
+          imageHeight: 540,
+          imagePlacement: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.imagePlacement) || null
+        }) %>
+        <% } else if (communitySection && communitySection.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= communitySection.mediaUrl %>" alt="<%= (communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
         <% } %>
       </div>
       <% } %>
@@ -482,20 +486,19 @@
       <% var galleryPlacement = (gallerySec && gallerySec.layoutMetadata && gallerySec.layoutMetadata.imagePlacement) || null; %>
       <% var galleryPs = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(galleryPlacement) : { className: '', style: '' }; %>
       <li>
-        <% if (url) { %>
-        <img class="<%= galleryPs.className || '' %>" src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async"<% if (galleryPs.style) { %> style="<%= galleryPs.style %>"<% } %> />
-        <% } %>
-        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-        <div class="bb-tp-edit-media-wrap">
-          <%- include('../partials/structured-edit-trigger', {
-            editKind: 'image',
-            editEntityKey: 'about-' + galleryKey,
-            editSectionKey: galleryKey,
-            editLabel: 'Edit gallery image ' + (idx + 1),
-            editPayload: { imageUrl: url || '', altText: 'Community moment ' + (idx + 1) + ' at ' + publicName, focal: 'center', placement: galleryPlacement }
-          }) %>
-        </div>
-        <% if (idx < 3) { %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && idx < 3) { %>
+        <%- include('../partials/editable-image', {
+          editPageKey: 'about',
+          editSectionKey: galleryKey,
+          editFieldKey: 'image',
+          contentKey: 'about.' + galleryKey + '.image',
+          imageSrc: url || '',
+          imageAlt: 'Community moment ' + (idx + 1) + ' at ' + publicName,
+          imageClass: galleryPs.className || '',
+          imageWidth: 640,
+          imageHeight: 480,
+          imagePlacement: galleryPlacement
+        }) %>
         <%- include('../partials/editable-text', {
           editPageKey: 'about',
           editSectionKey: galleryKey,
@@ -507,7 +510,8 @@
           editMaxLength: 120,
           editMultiline: false
         }) %>
-        <% } %>
+        <% } else if (url) { %>
+        <img class="<%= galleryPs.className || '' %>" src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async"<% if (galleryPs.style) { %> style="<%= galleryPs.style %>"<% } %> />
         <% } %>
       </li>
       <% }) %>
@@ -520,7 +524,20 @@
   <section class="bb-tp-container bb-tp-about-life-together bb-tp-content-block<%= (lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-life-together="1" data-section="<%= _lifeSectionKey %>" aria-labelledby="bb-tp-about-life-together-heading">
     <% if ((lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
     <div class="bb-tp-content-block__media">
-      <% if (lifeTogetherSection && lifeTogetherSection.mediaUrl) { %>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <%- include('../partials/editable-image', {
+        editPageKey: 'about',
+        editSectionKey: _lifeSectionKey,
+        editFieldKey: 'image',
+        contentKey: 'about.' + _lifeSectionKey + '.image',
+        imageSrc: (lifeTogetherSection && lifeTogetherSection.mediaUrl) || '',
+        imageAlt: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.altText) || 'Life together',
+        imageClass: 'bb-tp-media',
+        imageWidth: 960,
+        imageHeight: 540,
+        imagePlacement: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.imagePlacement) || null
+      }) %>
+      <% } else if (lifeTogetherSection && lifeTogetherSection.mediaUrl) { %>
       <img
         class="bb-tp-media"
         src="<%= lifeTogetherSection.mediaUrl %>"
@@ -531,22 +548,6 @@
         decoding="async"
         data-bb-about-life-together-image="1"
       />
-      <% } %>
-      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-      <div class="bb-tp-edit-media-wrap">
-        <%- include('../partials/structured-edit-trigger', {
-          editKind: 'image',
-          editEntityKey: 'about-life-together',
-          editSectionKey: _lifeSectionKey,
-          editLabel: 'Edit Life Together image',
-          editPayload: {
-            imageUrl: (lifeTogetherSection && lifeTogetherSection.mediaUrl) || '',
-            altText: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.altText) || 'Life together',
-            focal: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.focal) || 'center',
-            placement: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.imagePlacement) || null
-          }
-        }) %>
-      </div>
       <% } %>
     </div>
     <% } %>
@@ -582,7 +583,20 @@
   <section class="bb-tp-container bb-tp-about-visit bb-tp-content-block<%= (visitorSection && visitorSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-visit="1" data-section="visitor_cta" aria-labelledby="bb-tp-about-visit-heading">
     <% if ((visitorSection && visitorSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
     <div class="bb-tp-content-block__media">
-      <% if (visitorSection && visitorSection.mediaUrl) { %>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <%- include('../partials/editable-image', {
+        editPageKey: 'about',
+        editSectionKey: 'visitor_cta',
+        editFieldKey: 'image',
+        contentKey: 'about.visitor_cta.image',
+        imageSrc: (visitorSection && visitorSection.mediaUrl) || '',
+        imageAlt: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.altText) || 'Visit on Sunday',
+        imageClass: 'bb-tp-media',
+        imageWidth: 960,
+        imageHeight: 540,
+        imagePlacement: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.imagePlacement) || null
+      }) %>
+      <% } else if (visitorSection && visitorSection.mediaUrl) { %>
       <img
         class="bb-tp-media"
         src="<%= visitorSection.mediaUrl %>"
@@ -593,22 +607,6 @@
         decoding="async"
         data-bb-about-visit-image="1"
       />
-      <% } %>
-      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-      <div class="bb-tp-edit-media-wrap">
-        <%- include('../partials/structured-edit-trigger', {
-          editKind: 'image',
-          editEntityKey: 'about-visit-sunday',
-          editSectionKey: 'visitor_cta',
-          editLabel: 'Edit Visit on Sunday image',
-          editPayload: {
-            imageUrl: (visitorSection && visitorSection.mediaUrl) || '',
-            altText: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.altText) || 'Visit on Sunday',
-            focal: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.focal) || 'center',
-            placement: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.imagePlacement) || null
-          }
-        }) %>
-      </div>
       <% } %>
     </div>
     <% } %>

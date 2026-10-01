@@ -91,14 +91,15 @@
           <input id="preferred_name" name="preferred_name" type="text" maxlength="80" value="<%= values.preferredName || '' %>" placeholder="e.g. Abby" />
         </div>
         <div class="bb-ba-field<%= errMap.gender ? ' is-invalid' : '' %>">
-          <label for="gender">Gender *</label>
-          <select id="gender" name="gender" required>
+          <label for="gender">Gender <span class="bb-ba-field__optional">(optional)</span></label>
+          <select id="gender" name="gender">
             <option value="">Select</option>
             <% genderOptions.forEach(function (g) { %>
             <option value="<%= g %>" <%= values.gender === g ? 'selected' : '' %>><%= genderLabel(g) %></option>
             <% }) %>
           </select>
           <% if (errMap.gender) { %><p class="bb-ba-field__error" role="alert"><%= errMap.gender %></p><% } %>
+          <p class="bb-ba-field__hint">Not stored on the membership record in V2.04.</p>
         </div>
         <div class="bb-ba-field<%= errMap.date_of_birth ? ' is-invalid' : '' %>">
           <label for="date_of_birth">Date of Birth *</label>
@@ -174,7 +175,7 @@
           </select>
         </div>
         <div class="bb-ba-field bb-v204-m02__span">
-          <span class="bb-ba-field__label">Baptism Status</span>
+          <span class="bb-ba-field__label">Baptism Status <span class="bb-ba-field__optional">(optional)</span></span>
           <div class="bb-v204-m02__checks">
             <label class="bb-v204-m02__check">
               <input type="checkbox" name="baptism_water" value="1" <%= values.baptismWater ? 'checked' : '' %> />
@@ -185,6 +186,7 @@
               Holy Spirit Baptized
             </label>
           </div>
+          <p class="bb-ba-field__hint">Not stored on the membership record in V2.04.</p>
         </div>
         <div class="bb-ba-field bb-v204-m02__span">
           <%- include('../partials/v204/status-chip', { label: 'Portal: Not Invited', tone: 'neutral' }) %>

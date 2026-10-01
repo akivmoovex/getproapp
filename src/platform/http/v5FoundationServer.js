@@ -915,6 +915,12 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      resolveManagedResourceIds: async (scope) => {
+        const {
+          resolveManagedJoinResourceIds,
+        } = require("../../blessboard/services/joinRequest/resolveManagedJoinResourceIds");
+        return resolveManagedJoinResourceIds(getPool(), scope);
+      },
     })
   );
   app.use(

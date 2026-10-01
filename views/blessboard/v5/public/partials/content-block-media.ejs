@@ -1,5 +1,6 @@
 <%#
-  Content-block media with structured image edit (Replace / Add).
+  Content-block media — prefer shared WE01 image pencil when the section key is
+  registered for inline IMAGE; otherwise keep structured image edit (freeform).
   Locals: section (required), editPageKey (optional)
 %>
 <%
@@ -18,9 +19,37 @@
     typeof presentImagePlacementStyle === 'function'
       ? presentImagePlacementStyle(_placement)
       : { className: '', style: '' };
+  var _inlineImageSections = {
+    hero: 1,
+    welcome: 1,
+    story: 1,
+    community: 1,
+    life_together: 1,
+    gallery: 1,
+    gallery_1: 1,
+    gallery_2: 1,
+    gallery_3: 1,
+    visitor_cta: 1
+  };
+  var _useInlinePencil = Boolean(_editing && _page && _inlineImageSections[_sectionKey]);
+  var _contentKey = _page + '.' + _sectionKey + '.image';
 %>
 <% if (_media || _editing) { %>
 <div class="bb-tp-content-block__media">
+  <% if (_useInlinePencil) { %>
+  <%- include('../../partials/editable-image', {
+    editPageKey: _page,
+    editSectionKey: _sectionKey,
+    editFieldKey: 'image',
+    contentKey: _contentKey,
+    imageSrc: _media,
+    imageAlt: _alt,
+    imageClass: 'bb-tp-media' + (_ps.className ? ' ' + _ps.className : ''),
+    imageWidth: 960,
+    imageHeight: 540,
+    imagePlacement: _placement
+  }) %>
+  <% } else { %>
   <% if (_media) { %>
   <img class="bb-tp-media<%= _ps.className ? ' ' + _ps.className : '' %>" src="<%= _media %>" alt="<%= _alt %>" width="960" height="540" loading="lazy" decoding="async"<% if (_ps.style) { %> style="<%= _ps.style %>"<% } %> />
   <% } else if (_editing) { %>
@@ -36,6 +65,7 @@
       editPayload: { imageUrl: _media, altText: _alt, focal: (_sec && _sec.layoutMetadata && _sec.layoutMetadata.focal) || 'center', placement: _placement }
     }) %>
   </div>
+  <% } %>
   <% } %>
 </div>
 <% } %>

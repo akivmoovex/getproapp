@@ -69,6 +69,13 @@ function heroChromeFields(pageKey) {
   ]);
 }
 
+/** Shared WE01 image pencil for page heroes (AC pattern). */
+function heroImageField(pageKey) {
+  return fieldsFor(pageKey, "hero", [
+    ["image", FIELD_TYPES.image, 500, { guidance: "Page hero image" }],
+  ]);
+}
+
 /** @type {EditableFieldDef[]} */
 const EDITABLE_FIELDS = [
   ...fieldsFor("home", "hero", [
@@ -82,6 +89,7 @@ const EDITABLE_FIELDS = [
     ["bodyText", FIELD_TYPES.paragraph, 2000],
     ["buttonText", FIELD_TYPES.buttonText, 48],
     ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Welcome media image" }],
   ]),
   ...fieldsFor("home", "ministries_intro", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -124,10 +132,12 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("about"),
   ...heroChromeFields("about"),
   ...fieldsFor("about", "story", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 4000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About story image" }],
   ]),
   ...fieldsFor("about", "mission", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -163,20 +173,32 @@ const EDITABLE_FIELDS = [
   ...fieldsFor("about", "community", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About community image" }],
   ]),
   ...fieldsFor("about", "life_together", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Life Together featured image" }],
   ]),
   // Legacy Life Together section key (pre life_together rename).
   ...fieldsFor("about", "gallery", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About gallery featured image" }],
   ]),
   ...fieldsFor("about", "gallery_heading", [["heading", FIELD_TYPES.heading, 120]]),
-  ...fieldsFor("about", "gallery_1", [["heading", FIELD_TYPES.label, 120]]),
-  ...fieldsFor("about", "gallery_2", [["heading", FIELD_TYPES.label, 120]]),
-  ...fieldsFor("about", "gallery_3", [["heading", FIELD_TYPES.label, 120]]),
+  ...fieldsFor("about", "gallery_1", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 1" }],
+  ]),
+  ...fieldsFor("about", "gallery_2", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 2" }],
+  ]),
+  ...fieldsFor("about", "gallery_3", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 3" }],
+  ]),
   ...fieldsFor("about", "visitor_cta", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 800],
@@ -184,33 +206,39 @@ const EDITABLE_FIELDS = [
     ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
     ["secondaryButtonText", FIELD_TYPES.buttonText, 48],
     ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Visit on Sunday featured image" }],
   ]),
 
   ...fieldsFor("leadership", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("leadership"),
   ...heroChromeFields("leadership"),
   ...fieldsFor("ministries", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("ministries"),
   ...heroChromeFields("ministries"),
   ...fieldsFor("events", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("events"),
   ...heroChromeFields("events"),
   ...fieldsFor("sermons", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("sermons"),
   ...heroChromeFields("sermons"),
 
   ...fieldsFor("contact", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("contact"),
   ...heroChromeFields("contact"),
   ...fieldsFor("contact", "details", [
     ["email", FIELD_TYPES.contactText, 254, { guidance: "Contact email" }],
@@ -242,6 +270,7 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("giving"),
   ...heroChromeFields("giving"),
   ...fieldsFor("giving", "why", [
     ["heading", FIELD_TYPES.heading, 120],

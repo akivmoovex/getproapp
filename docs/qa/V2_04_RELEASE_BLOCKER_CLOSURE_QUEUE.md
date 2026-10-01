@@ -1,0 +1,225 @@
+# V2.04 Release Blocker Closure Queue
+
+**Mode:** LIVE queue (Wave1+Wave2 applied).  
+**Date:** 2026-10-02  
+**Input:** `docs/qa/V2_04_RELEASE_READINESS_REMAINING_BLOCKERS.md` (6 remaining after Wave3 eng+test)  
+**Also:** `V2_04_FINAL_GAP_AND_TEST_PLAN.md`, `V2_04_LAST_2_HOURS_CURSOR_SUMMARY.md`, `V2_04_PRODUCT_DECISION_REGISTER.md`
+
+### Rules applied
+
+- No re-audit of closed bugs; no P2 enhancements; no deferred features.
+- AC patient PARITY_ONLY / TEST_ONLY remain **non-gating** (PD-V204-AC-01).
+- Manual QA never precedes its dependent code/test work.
+- Identity sheet must be **captured before Wave 5 executes**; formal **RB-ID-01** close is Wave 6 (evidence attached to READY). **2026-10-02:** sheet captured READ-ONLY; RB-ID-01 remains **OPEN** (BB+AC `branch=UNKNOWN`).
+- Collapse: shared root-cause chains listed in §Dependency chains (blockers kept as distinct IDs for burn-down).
+
+### Of the 18 `FASTEST_CLOSABLE_NOW` — truly independent?
+
+| Truly independent (no other remaining blocker) | Soft / not independent |
+|------------------------------------------------|------------------------|
+| RB-PROD-01…08 | — |
+| RB-TEST-01…06 | — |
+| RB-ID-01 | — |
+| RB-TEST-07 | Soft prefer after ENG-03/04 — **those CLOSED Wave1** → TEST-07 now independent |
+| **Independent remaining fast = 16** | ~~RB-ENG-03/04 CLOSED~~ |
+
+Wave assignment still puts Product→Wave 2, Tests→Wave 4, Identity→Wave 6 even when independent.
+
+### Wave1 status (2026-10-02)
+
+| BLOCKER_ID | RESULT | Evidence |
+|------------|--------|----------|
+| RB-ENG-03 | **CLOSED** | BB page heroes / welcome / about photos → shared `editable-image`; entity cards remain structured |
+| RB-ENG-04 | **CLOSED** | `imageSrcFromCandidate` aliases; drafts dual-write IMAGE objects; `tests/v2-04-wave1-bb-inline-image-contract.test.js` + payload/coverage **18/18 PASS** |
+| WAVE1_BLOCKED | **0** | Neither item needed a product decision |
+
+
+---
+
+## §Dependency chains (6)
+
+| # | Chain | Blockers | Collapse note |
+|---|-------|----------|---------------|
+| 1 | Scoped review | RB-PROD-01 → RB-ENG-01 → (mount proof) → RB-QA-01 | One MUST Members scope root cause |
+| 2 | Dual-role destinations | RB-PROD-02 → RB-ENG-02 → RB-QA-01 | One MUST dual-experience root cause |
+| 3 | CREATE-UI schema | Product field-set confirm → RB-ENG-05 | No PD-V204 ID; quick Wave-2 gate |
+| 4 | Editor claim | ~~RB-ENG-03 + RB-ENG-04~~ **CLOSED Wave1** → RB-TEST-07 → RB-QA-02 (/03) | Comparison A1/A2 done; A4 test + lifecycle QA remain |
+| 5 | Public PHI | RB-PROD-07 → RB-QA-05 | Policy then spot-check |
+| 6 | Identity → FEATURE QA | Identity capture → RB-QA-01…04; formal RB-ID-01 Wave 6 | Bind before manual; attest at end |
+
+Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim completeness / presentation hygiene but do not gate Wave-1 editor eng.
+
+---
+
+## Full queue (all 26)
+
+| BLOCKER_ID | PRODUCT | AREA | TYPE | PRIORITY | DEPENDENCIES | CAN_CLOSE_NOW | BLOCKED_BY | EXACT_ACTION | EXPECTED_EVIDENCE | ESTIMATED_EFFORT | RISK | WAVE |
+|------------|---------|------|------|----------|--------------|---------------|------------|--------------|-------------------|------------------|------|------|
+| RB-ENG-03 | BB | Editor inline coverage (A1) | ENGINEERING | P1 | Shared WE01 dialogs | — | — | ~~Port AC public pencil pattern~~ | **CLOSED Wave1** — pencils on page heroes / welcome / about photos | — | — | **1 CLOSED** |
+| RB-ENG-04 | PLATFORM | Universal image payload (A2) | ENGINEERING | P1 | — | — | — | ~~Accept string URL + object shape~~ | **CLOSED Wave1** — aliases + object dual-write; 18/18 focused | — | — | **1 CLOSED** |
+| ~~RB-PROD-01~~ | BB | DR-39 binding keys | PRODUCT | P0 | — | — | — | ~~Freeze keys~~ | **CLOSED Wave2** — OPTION A · TEMPORARY_APPROVED | — | — | **2 CLOSED** |
+| ~~RB-PROD-02~~ | BB | FR-12 dual-role destinations | PRODUCT | P0 | — | — | — | ~~Confirm destinations~~ | **CLOSED Wave2** — `/member`↔`/hq` | — | — | **2 CLOSED** |
+| ~~RB-PROD-03~~ | BB | DR-51 relevant sessions | PRODUCT | P1 | — | — | — | ~~Enumerate sessions~~ | **CLOSED Wave2** — OPTION A revoke all church-scoped | — | — | **2 CLOSED** |
+| ~~RB-PROD-04~~ | BB | DR-52 rate-limit thresholds | PRODUCT | P1 | — | — | — | ~~Freeze N/window~~ | **CLOSED Wave2** — 8/15 min temporary | — | — | **2 CLOSED** |
+| ~~RB-PROD-05~~ | BB | DR-55 PA cross-tenant | PRODUCT | P1 | — | — | — | ~~Enumerate PA actions~~ | **CLOSED Wave2** — deny-by-default empty allowlist | — | — | **2 CLOSED** |
+| ~~RB-PROD-06~~ | AC | Stitch control matrix | PRODUCT | P1 | PD-V204-AC-01 | — | — | ~~Sign matrix~~ | **CLOSED Wave2** — PRESENTATION/FOUNDATION/FUTURE | — | — | **2 CLOSED** |
+| ~~RB-PROD-07~~ | AC | Public PHI / field policy | PRODUCT | P1 | — | — | — | ~~Define field policy~~ | **CLOSED Wave2** — allowlist OPTION A | — | — | **2 CLOSED** |
+| ~~RB-PROD-08~~ | AC | R08 booking chrome | PRODUCT | P1 | — | — | — | ~~Affirm chrome-only~~ | **CLOSED Wave2** — R08 handoff only | — | — | **2 CLOSED** |
+| ~~RB-ENG-01~~ | BB | Wire `resolveManagedResourceIds` | ENGINEERING | P0 | RB-PROD-01 | — | — | ~~Wire injector~~ | **CLOSED Wave2** — resolver wired + focused PASS | — | — | **3→2 CLOSED early** |
+| ~~RB-ENG-02~~ | BB | Dual-role entry points | ENGINEERING | P0 | RB-PROD-02 | — | — | ~~Cross-links~~ | **CLOSED Wave2** — bidirectional nav + focused PASS | — | — | **3→2 CLOSED early** |
+| ~~RB-ENG-05~~ | BB | CREATE-UI gender/baptism | ENGINEERING | P1 | — | — | — | ~~Optionalize non-persisted fields~~ | **CLOSED Wave3** — gender/baptism optional presentation-only | — | — | **3 CLOSED** |
+| ~~RB-TEST-01~~ | BB | AC-23 privacy | AUTOMATED_TEST | P0 | — | — | — | ~~Behavioral privacy~~ | **CLOSED Wave3** — session-bound profile + admin field omit | — | — | **4 CLOSED** |
+| ~~RB-TEST-02~~ | BB | AC-11 OTP complete | AUTOMATED_TEST | P0 | — | — | — | ~~OTP complete paths~~ | **CLOSED Wave3** — fail leaves pending; success confirms | — | — | **4 CLOSED** |
+| ~~RB-TEST-03~~ | BB | AC-24 no upload | AUTOMATED_TEST | P1 | — | — | — | ~~No upload UI~~ | **CLOSED Wave3** — no file/multipart on member portal | — | — | **4 CLOSED** |
+| ~~RB-TEST-04~~ | BB | Church ID case-norm | AUTOMATED_TEST | P1 | — | — | — | ~~Case-norm auth~~ | **CLOSED Wave3** — lower(trim) path + variant lookup | — | — | **4 CLOSED** |
+| ~~RB-TEST-05~~ | BB | FR-20 admin search | AUTOMATED_TEST | P1 | — | — | — | ~~Scoped search~~ | **CLOSED Wave3** — church_id scope + admin q wiring | — | — | **4 CLOSED** |
+| ~~RB-TEST-06~~ | BB | AC-25 member_id history | AUTOMATED_TEST | P1 | — | — | — | ~~member_id history~~ | **CLOSED Wave3** — attendance keyed by member_id; number swap preserves id | — | — | **4 CLOSED** |
+| ~~RB-TEST-07~~ | PLATFORM | Shared editor matrix (A4) | AUTOMATED_TEST | P1 | ENG-03/04 CLOSED | — | — | ~~Shared matrix~~ | **CLOSED Wave3** — AC+BB adapter + wave suite matrix lock | — | — | **4 CLOSED** |
+| RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID capture; prefer ENG-01/02 | NO | RB-ID-01 (capture); RB-ENG-01/02 preferred | Execute T-M02–T-M15-class on TESTING | FEATURE_QA note: Members pack PASS/FAIL by scenario | LARGE | HIGH | 5 |
+| RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID capture; prefer TEST-07 | NO | RB-ID-01 (capture); prefer RB-TEST-07 | Publish/unpublish/version/restore/true-stale on AC+BB tip | Hosted lifecycle QA note bound to SHA | MEDIUM | MEDIUM | 5 |
+| RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Hub management-only (no fake canvas); Edit Website; draft/publish smoke | Hosted hub/editor note PASS | SMALL | LOW | 5 |
+| RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 5 |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | YES | prefer RB-ID capture | Spot-check doctor/services pages vs allowlist | PHI spot-check note vs PD-V204-AC-P1-02 PASS | SMALL | MEDIUM | 5 |
+| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | — | NO | BRANCH=UNKNOWN on BB+AC About/healthz | Identity sheet recorded 2026-10-02 (READ-ONLY); branch still UNKNOWN on product hosts | Sheet captured; BRANCH_IDENTITY=FAIL → not CLOSED | SMALL | HIGH | 6 OPEN |
+
+---
+
+## Wave plans
+
+### WAVE 1 — CLOSE NOW — **COMPLETE**
+
+| BLOCKER_ID | STATUS | Evidence |
+|------------|--------|----------|
+| RB-ENG-03 | **CLOSED** | Shared pencils on BB page heroes / welcome / about photos |
+| RB-ENG-04 | **CLOSED** | Universal image aliases + object overlay dual-write; 18/18 focused |
+
+**Next:** Wave 2 Product decisions (parallel OK with Wave 4 early tests 01–06).
+
+### WAVE 2 — PRODUCT DECISIONS — **COMPLETE**
+
+| BLOCKER_ID | STATUS | Evidence |
+|------------|--------|----------|
+| RB-PROD-01…08 | **CLOSED** | All eight PD TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| RB-ENG-01 | **CLOSED early** | resolveManagedJoinResourceIds wired; Wave2 focused |
+| RB-ENG-02 | **CLOSED early** | Bidirectional dual-role nav; Wave2 focused |
+| *(gate)* | **CLOSED via ENG-05 optionalize** | No new Product decision; presentation-only fields |
+
+**WAVE2_PRODUCT_REMAINING=0** · focused tests **26/26**.
+
+### WAVE 3 — ENGINEERING AFTER PRODUCT — **COMPLETE**
+
+| BLOCKER_ID | STATUS | Evidence |
+|------------|--------|----------|
+| ~~RB-ENG-01~~ | **CLOSED Wave2** | — |
+| ~~RB-ENG-02~~ | **CLOSED Wave2** | — |
+| RB-ENG-05 | **CLOSED** | Gender/baptism optional presentation-only; T-A12-class PASS |
+
+### WAVE 4 — AUTOMATED PROOF — **COMPLETE**
+
+| BLOCKER_ID | STATUS | Evidence |
+|------------|--------|----------|
+| RB-TEST-01…07 | **CLOSED** | `tests/v2-04-wave3-eng-test-closures.test.js` focused PASS |
+
+**Next:** Wave 5 Manual QA (after identity capture) + Wave 6 identity formal close.
+
+### WAVE 5 — MANUAL QA — INGESTION (2026-10-02)
+
+| BLOCKER_ID | RESULT | Evidence |
+|------------|--------|----------|
+| RB-QA-01 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-02 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-03 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-04 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-05 | **NOT_RUN** | No tester evidence in session |
+
+Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
+**MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0**.
+
+**Prerequisite:** TESTING identity sheet **captured** 2026-10-02 (SHA/env/DB/About=2.04); **BRANCH still UNKNOWN** on BB+AC — formal RB-ID-01 close remains Wave 6 after branch fix.
+
+**Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website + geo/concurrency + PHI signed.
+
+### WAVE 6 — RELEASE IDENTITY — VERIFICATION (2026-10-02, READ-ONLY)
+
+| BLOCKER_ID | RESULT | Evidence |
+|------------|--------|----------|
+| RB-ID-01 | **OPEN** (sheet captured; close blocked) | BRANCH_IDENTITY=FAIL — BB+AC explicit `branch=UNKNOWN` / About `UNKNOWN testing`; do not infer from hub `V4` or SHA |
+
+#### Identity sheet (TESTING hosts)
+
+| Field | BlessBoard (`blessboard.neuniversity.org`) | ActiveClinic (`activeclinic.neuniversity.org`) | Hub (`neuniversity.org`) |
+|-------|--------------------------------------------|------------------------------------------------|--------------------------|
+| VERSION | **2.04** (About) | **2.04** (About) | — |
+| BRANCH | **UNKNOWN** (healthz + About) | **UNKNOWN** (healthz + About) | **V4** (healthz only; not BB/AC product identity) |
+| FULL_GIT_SHA | `54cdb1f76f5af70593fdaf54366ce0c64ae9885c` | same | same short on healthz |
+| HOSTED_SHA | `54cdb1f76f5a` | `54cdb1f76f5a` | `54cdb1f76f5a` |
+| EXPECTED_CANDIDATE_SHA | `7c957101ad5536d1a7323b051d8d8d7d8ff149f5` (app) · tip `54cdb1f76f5a…` (docs-only after app) | same | same |
+| SHA_MATCH | **PASS** (hosted ≥ app candidate; = `origin/V4` tip) | **PASS** | — |
+| ENVIRONMENT | **testing** | **testing** | **testing** |
+| DEPLOYMENT_NAME | `moovex-platform-v8-testing` | `moovex-platform-v8-testing` | `moovex-platform-v8-testing` |
+| DB_IDENTITY | `expectedIdentityKey=moovex-platform-v7` | same | same |
+| DB_ENVIRONMENT | `expectedDatabaseEnvironment=testing` · `mediaWriteNamespace=testing-v8` · `sessionCookieName=moovex_platform_v8_testing_sid` | same | same |
+| BUILD_LABEL | `UNKNOWN testing` / `displayLabel=UNKNOWN testing` | same | `V4 testing` |
+| MIGRATION_CEILING | schemaCompatible=true · 14/14 checks ok · highest remediation refs: blessboard/**099**, activeclinic/**034**, platform/**031** | same | same |
+
+**Docs vs application candidate:** `7c957101..54cdb1f76f5a` is **documentation-only** (8 `docs/**` files). Hosted tip is docs-ahead of last application commit; still valid “`7c957101` or later”.  
+**Local uncommitted Wave2/3 application work is NOT on hosted** (resolver, dual-role nav, allowlist, optionalize, etc. remain working-tree only).
+
+**Stale labels:** No V9/V10 / older product Version on BB/AC About (Version **2.04** only).  
+**Production:** No deploy/restart/DB change performed; production apex probes not served as this testing runtime (`PRODUCTION_UNTOUCHED=YES`).
+
+**Close gate remaining:** Fix/rebuild so BB+AC emit explicit non-`UNKNOWN` branch (expected **V4**), then re-probe About+healthz.
+
+---
+
+## Burn-down summary
+
+| WAVE | BLOCKERS | PRODUCT | ENGINEERING | TEST | MANUAL | BUILD | EXPECTED_RESULT |
+|------|----------|---------|-------------|------|--------|-------|-----------------|
+| 1 CLOSE NOW | ~~RB-ENG-03, RB-ENG-04~~ **CLOSED** | 0 | 0 remaining | 0 | 0 | 0 | Editor A1/A2 eng closed; matrix unblocked |
+| 2 PRODUCT | ~~RB-PROD-01…08~~ **CLOSED** (+ CREATE-UI gate remains) | 0 | 0 | 0 | 0 | 0 | P1 decisions frozen; ENG-01/02 closed early with Wave2 |
+| 3 ENGINEERING | ~~RB-ENG-01/02/05 CLOSED~~ | 0 | 0 | 0 | 0 | 0 | CREATE-UI optionalized |
+| 4 AUTOMATED PROOF | ~~RB-TEST-01…07 CLOSED~~ | 0 | 0 | 0 | 0 | 0 | Critical + member + shared editor proofs green |
+| 5 MANUAL QA | RB-QA-01…05 | 0 | 0 | 0 | 5 | 0 | FEATURE QA on identity-captured TESTING |
+| 6 BUILD IDENTITY | RB-ID-01 | 0 | 0 | 0 | 0 | 1 | Sheet captured; BRANCH=UNKNOWN → still OPEN |
+
+**Remaining after Wave6 verify:** 6 blockers (ENG 0 · PRODUCT 0 · TEST 0 · MANUAL 5 · BUILD 1).
+
+**Shortest executable sequence (compressed):**  
+~~Wave1 eng-editor~~ **DONE** ∥ Wave2 Product ∥ Wave4 early tests (01–06) → Wave3 eng-after-product → Wave4 TEST-07 + ENG mount proofs → capture identity → Wave5 manual → Wave6 formal identity close.
+
+**Out of queue (non-gating):** patient PARITY_ONLY / TEST_ONLY; deferred features; P2 polish; REVIEW_LATER on temporary P0 decisions.
+
+---
+
+```
+TOTAL_BLOCKERS=26
+WAVE1_CLOSE_NOW=2
+WAVE1_CLOSED=2
+WAVE1_BLOCKED=0
+WAVE2_PRODUCT=8
+WAVE2_CLOSED=10
+WAVE2_PRODUCT_REMAINING=0
+WAVE3_ENGINEERING=1
+WAVE3_CLOSED=1
+WAVE3_BLOCKED=0
+WAVE4_TEST=7
+WAVE4_CLOSED=7
+WAVE4_BLOCKED=0
+WAVE5_MANUAL=5
+WAVE6_BUILD_IDENTITY=1
+DEPENDENCY_CHAINS=6
+INDEPENDENT_FAST_CLOSURES=2
+REMAINING_BLOCKERS=6
+ENGINEERING_REMAINING=0
+AUTOMATED_TEST_REMAINING=0
+MANUAL_QA_REMAINING=5
+BUILD_IDENTITY_REMAINING=1
+BB_SHA_MATCH=PASS
+AC_SHA_MATCH=PASS
+BRANCH_IDENTITY=FAIL
+ENVIRONMENT_IDENTITY=PASS
+DB_IDENTITY=PASS
+PRODUCTION_UNTOUCHED=YES
+FINAL=V2_04_BUILD_IDENTITY_VERIFIED
+```

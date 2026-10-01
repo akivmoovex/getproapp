@@ -19,16 +19,23 @@ V2.04 **website / geography / shared-editor smoke** has a valid sanity **PASS** 
 - **REG-STATE-01=CLOSED** — `PLATFORM_FORM_TESTS=13/13` · `BB_REGISTRATION_TESTS=3/3` · `AC_REGISTRATION_TESTS=2/2` · `SESSIONLESS_FLOW=PASS` · `CROSS_DRAFT_ISOLATION=PASS` · `FINAL=PLATFORM_MULTI_STEP_FORM_STATE_IMPLEMENTED`
 - **BB-PROVISION-01=CLOSED** — `CANONICAL_IDENTITY_PROPAGATION=PASS` · `PHONE_REUSE_DIFFERENT_EMAIL=PASS` · `MULTI_CHURCH_ADMIN=PASS` · `ROLLBACK=PASS` · `RETRY=PASS` · `CROSS_TENANT=PASS` · `FOCUSED_TESTS=11/11` · `FINAL=BB_PROVISION_IDENTITY_FIX_COMPLETE`
 
-**Product decisions closed (temporary V2.04):** PD-V204-BB-01..04, PD-V204-BB-05, PD-V204-AC-01 — see `docs/product/V2_04_PRODUCT_DECISION_REGISTER.md`. Normative status matrix: `docs/product/V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md`. AC scope: `docs/product/V2_04_AC_PRODUCT_CONTRACT_SCOPE.md`.
+**Product decisions closed (temporary V2.04):** PD-V204-BB-01..05, PD-V204-AC-01, and Wave2 **PD-V204-BB-P1-01…05 + PD-V204-AC-P1-01…03** — see `docs/product/V2_04_PRODUCT_DECISION_REGISTER.md`. Normative status matrix: `docs/product/V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md`. AC scope: `docs/product/V2_04_AC_PRODUCT_CONTRACT_SCOPE.md`.
+
+**Wave2 applied (2026-10-02):** scoped-review injector wired; dual-role nav linked; session revoke Option A; rate-limit 8/15 freeze; PA membership deny-by-default; public doctor/services allowlist; AC presentation matrix + R08 chrome-only. Focused suite **26/26**.
 
 Still open before production claim:
 
-1. **Two HIGH implementation gaps** (dual-role destinations; join `resolveManagedResourceIds` unwired — includes DR-39 key freeze).  
-2. **BlessBoard Members** (FR-01..20 / AC-01..25) — in release scope, **never sanity-tested**, no FEATURE_QA_PASS.  
-3. **Critical automated test gaps** on privacy / recovery-phone completion (impl FULL, tests weak/missing).  
-4. **Build identity unbound** on the sanity host (branch / SHA / deploy / DB / migration ceiling).
+1. ~~Two HIGH implementation gaps (dual-role / scoped review)~~ **CLOSED Wave2**.  
+2. ~~CREATE-UI gender/baptism vs schema (RB-ENG-05)~~ **CLOSED Wave3** (optionalize).  
+3. ~~Critical automated test gaps (RB-TEST-01…07)~~ **CLOSED Wave3**.  
+4. **BlessBoard Members** FEATURE QA pack — still required (manual).  
+5. **Build identity** — sheet captured on TESTING; **BRANCH=UNKNOWN on BB+AC** (hub `V4` not used as product identity) → RB-ID-01 remains open.
 
-**`READY_FOR_PRODUCTION_QA=NO`** — remaining **P0=6** non-product blockers still block production QA readiness.
+**`READY_FOR_PRODUCTION_QA=NO`** — remaining release blockers **6** (MANUAL 5 · BUILD 1); eng/test/product = 0.
+
+**Manual QA ingestion (2026-10-02):** RB-QA-01…05 all **NOT_RUN** — no tester evidence supplied in session (`V2_04_MANUAL_QA_RESULTS_RECORD.md`). NEW_RELEASE_BLOCKERS=0.
+
+**Build identity verification (2026-10-02, READ-ONLY):** BB+AC About Version **2.04**; HOSTED_SHA=`54cdb1f76f5a` (= `origin/V4` tip); app candidate `7c957101…` with docs-only commits to tip; ENV=`testing`; deploy=`moovex-platform-v8-testing`; DB=`moovex-platform-v7` / testing; schemaCompatible; no V9/V10. SHA_MATCH PASS both. BRANCH_IDENTITY=FAIL. Production untouched. Uncommitted Wave2/3 app code not hosted.
 
 ---
 
@@ -60,11 +67,11 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 | PRIORITY | PRODUCT | REQ_ID | FEATURE | SPEC_STATUS | IMPLEMENTATION_STATUS | AUTOMATED_TEST_STATUS | SANITY_TEST_STATUS | MANUAL_QA_REQUIRED | GAP | ACTION |
 |----------|---------|--------|---------|-------------|----------------------|----------------------|--------------------|--------------------|-----|--------|
-| P0 | BB | FR-16 / AC-21 / DR-39 | Leader ↔ managed resource binding + review scope | AMBIGUOUS (keys) | **PARTIAL** — scope helper exists; **injector unwired** at mount | COVERED with **injected** deps only | NOT_SANITY_TESTED | AFTER_FIX | Leaders without broad perm fail-closed in production mount | Freeze DR-39 keys; **wire `resolveManagedResourceIds`**; mount-level test |
-| P0 | BB | FR-12 / AC-13 / DR-27 | Dual-role Member Portal + Church Management destinations | AMBIGUOUS (HIGH) | **PARTIAL** (shells exist; no cross-links) | **UNTESTED** | NOT_SANITY_TESTED | AFTER_FIX | MUST dual experience incomplete | Implement linked dual-role entry points; automated + manual dual-role journey |
+| P0 | BB | FR-16 / AC-21 / DR-39 | Leader ↔ managed resource binding + review scope | **TEMPORARY_APPROVED** (PD-V204-BB-P1-01 A) | **FULL Wave2** — injector wired to ministry_leader/department_head | Wave2 focused COVERED | NOT_SANITY_TESTED | YES (FEATURE QA) | ~~unwired~~ CLOSED Wave2 | Manual Members scoped-review scenarios remain |
+| P0 | BB | FR-12 / AC-13 / DR-27 | Dual-role Member Portal + Church Management destinations | **TEMPORARY_APPROVED** (PD-V204-BB-P1-02) | **FULL Wave2** — bidirectional `/member`↔`/hq` | Wave2 focused COVERED | NOT_SANITY_TESTED | YES (FEATURE QA) | ~~no cross-links~~ CLOSED Wave2 | Manual dual-role journey remains |
 | P0 | BB | FR-01..FR-20 / AC-01..AC-25 | BlessBoard Members feature pack | COMPLETE enough for core auth | Mostly FULL; PARTIAL on FR-12/13/16 | COVERED + product-decision suites | **NOT_SANITY_TESTED** | **YES** | In release scope; no FEATURE_QA_PASS | Run Members FEATURE QA (scenario pack §4) |
-| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | N/A | N/A | Sanity host unbound | **YES** | No branch / full SHA / deploy SHA / DB / migration ceiling | Record identity on TESTING before FEATURE QA |
-| P0 | BB | AC-23 | Member privacy — no other-member/admin data | COMPLETE | FULL | **WEAK** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | Automation does not prove cross-member denial | Add behavioral cross-member denial test + manual privacy check |
+| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | N/A | N/A | Sheet 2026-10-02; BRANCH UNKNOWN on BB+AC | **YES** | Branch label UNKNOWN (SHA/env/DB/About=2.04 captured) | Rebuild so BB+AC emit V4 (not UNKNOWN); re-verify |
+| P0 | BB | AC-23 | Member privacy — no other-member/admin data | COMPLETE | FULL | **COVERED Wave3** | NOT_SANITY_TESTED | YES | ~~CRITICAL_TEST_GAP~~ closed | Manual privacy spot-check remains |
 | P0 | BB | AC-11 | New recovery phone verified before use | COMPLETE | FULL | **PARTIAL** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | OTP **complete** path not behaviorally tested | Add complete OTP success/fail automated tests + manual phone-change |
 
 **P0 count = 6** (six former P0 product decisions closed as TEMPORARY_APPROVED_FOR_V2_04; REG-STATE-01 / BB-PROVISION-01 already CLOSED)
@@ -99,12 +106,12 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 |----------|---------|--------|---------|-------------|----------------------|----------------------|--------------------|--------------------|-----|--------|
 | P1 | BB | FR-06 / AC-07 | Email recovery channel | **DEFERRED** (PD-V204-BB-03=A) | N/A for V2.04 MUST | N/A | OUT_OF_SCOPE | NO | Phone-only approved | Post-V2.04 FOUNDATION; do not implement in V2.04 |
 | P1 | BB | FR-13 / AC-16 / DR-33 | Manual attendance least-privilege (non-cell) | AMBIGUOUS if cells deferred | PARTIAL (perm-gated only) | COVERED for perm deny | NOT_SANITY_TESTED | YES | Cell narrow scope incomplete; OK if cells DEFER | If cells out: document “permission-gated only” for V2.04; manual attendance QA11–12 |
-| P1 | BB | CREATE-UI | Gender / baptism on Add Member UI | AMBIGUOUS (Stitch vs contract) | **PARTIAL** — UI required; schema lacks columns | Form validation only | NOT_SANITY_TESTED | AFTER_SPEC | Create UI vs migration mismatch | Persist fields **or** optionalize/remove until schema exists |
-| P1 | BB | AC-24 | Ordinary member cannot upload documents | COMPLETE | FULL (absence) | **UNTESTED** (CRITICAL list) | NOT_SANITY_TESTED | YES | No automated absence/reject assert | Assert no upload control / reject upload route |
-| P1 | BB | AC-25 | History keyed by immutable `member_id` | COMPLETE | FULL (FK) | PARTIAL | NOT_SANITY_TESTED | YES | No behavioral post-Church-ID-change proof | Automate: change Church ID → attendance/requests still resolve |
+| P1 | BB | CREATE-UI | Gender / baptism on Add Member UI | **CLOSED Wave3** optionalize | **FULL** — optional presentation-only; not persisted | Wave3 COVERED | NOT_SANITY_TESTED | YES FEATURE | ~~mismatch~~ closed by optionalize | Manual Add Member smoke |
+| P1 | BB | AC-24 | Ordinary member cannot upload documents | COMPLETE | FULL (absence) | **COVERED Wave3** | NOT_SANITY_TESTED | YES | ~~UNTESTED~~ closed | Manual upload attempt spot-check |
+| P1 | BB | AC-25 | History keyed by immutable `member_id` | COMPLETE | FULL (FK) | **COVERED Wave3** | NOT_SANITY_TESTED | YES | ~~PARTIAL~~ closed | Manual history spot-check |
 | P1 | BB | AC-12 | Multiple admins coexistence | AMBIGUOUS (AC rewrite needed) | FULL (RBAC) | PARTIAL | NOT_SANITY_TESTED | YES | Only single-actor deny proven | Two-admin fixture test + manual QA18 |
 | P1 | BB | BB-CHURCH-ID-CASE-NORM | Case-insensitive Church ID login/activate | COMPLETE intent | FULL (`lower(trim)`) | **UNTESTED** | NOT_SANITY_TESTED | YES | Impl unproven by test | Automate case-variant login/activate |
-| P1 | BB | FR-20 / BB-ADMIN-SEARCH | Admin search Church ID/name/phone in scope | COMPLETE | FULL | **WEAK** | NOT_SANITY_TESTED | YES | Plumbing-only tests | Behavioral search + scope-deny tests + manual directory search |
+| P1 | BB | FR-20 / BB-ADMIN-SEARCH | Admin search Church ID/name/phone in scope | COMPLETE | FULL | **COVERED Wave3** | NOT_SANITY_TESTED | YES | ~~WEAK~~ closed | Manual directory search |
 | P1 | BB | AC-08 / FR-07 | Lost Church ID — no public recovery | COMPLETE | FULL | COVERED (unit guidance) | NOT_SANITY_TESTED | YES | No HTTP negative for invented recovery endpoint | Manual + optional route-negative automation |
 | P1 | BB | QA pack | Member end-to-end FEATURE QA (QA01–QA21 excl. AC-shared) | N/A | N/A | Partial auto elsewhere | NOT_SANITY_TESTED | **YES** | Sanity skipped entire Members surface | Execute BB manual handoff scenarios on identity-bound TESTING |
 | P1 | BB | BB-WEBSITE-ENGINE | BB website engine cutover beyond smoke | COMPLETE (platformization) | FULL (per gates) | COVERED | **PARTIAL** sanity | YES | Sanity = edit/save/preview/public only | Manual publish/unpublish/version/restore + true-stale on BB |
@@ -112,12 +119,14 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 | P1 | AC | AC-PATIENT-DOMAIN | Staff Add Patient foundation | SPEC_GAP (no AC pack) | FOUNDATION | COVERED (domain) | NOT_SANITY_TESTED | AFTER_SPEC | Excluded from sanity; release gating unclear | After P0 AC scope decision: either foundation smoke QA **or** explicit non-gate waiver |
 | P1 | AC | Stitch matrix | MUST vs PRESENTATION vs FUTURE controls | **AMBIGUOUS** (HIGH); non-patient-gated per AC-01 | Presentation shipped | COVERED wiring | SANITY_PASS public/editor only | NO (presentation claim) | Risk of false blockers | Product-signed control matrix (non-blocking for patient) |
 | P1 | AC | Public PHI policy | Public website field / PHI rules | **AMBIGUOUS** (HIGH); presentation-scoped | UNKNOWN at contract level | N/A | SANITY_PASS pages load | YES (presentation hygiene) | Privacy undefined for doctor/services pages | Define public-safe field policy; spot-check public pages |
-| P1 | AC | R08 booking | Booking entry chrome-only vs domain change | **AMBIGUOUS** (HIGH) | Inherited booking engine | N/A | N/A | AFTER_SPEC | Second booking engine risk | Affirm chrome/handoff only in product note; smoke booking entry |
+| P1 | AC | R08 booking | Booking entry chrome-only vs domain change | **TEMPORARY_APPROVED** chrome-only | Inherited booking engine | Wave2 COVERED | N/A | YES smoke | Second engine risk closed by PD | Smoke booking entry on FEATURE QA |
 | P1 | SHARED | PLAT-WEB-LIFECYCLE | Publish / version / restore / concurrency | COMPLETE (freeze) | FULL (gates) | COVERED suites exist | **PARTIAL** (save/preview only) | YES | Sanity did not prove full lifecycle | Manual lifecycle on AC+BB with identity-bound build |
+| P1 | SHARED | PLAT-IMAGE-PAYLOAD | Universal IMAGE object/string contract (comparison A2) | COMPLETE | **FULL** (Wave1 RB-ENG-04) | COVERED (`v2-01` + `v2-04-wave1` 18/18) | NOT_SANITY_TESTED | NO | Closed Wave1 | Keep regression on tip |
+| P1 | BB | BB-INLINE-IMAGE | Public inline image pencils (comparison A1) | COMPLETE | **FULL** for page/section photos (Wave1 RB-ENG-03); entity cards structured by design | COVERED (wave1 + coverage matrix) | NOT_SANITY_TESTED | NO | Closed Wave1 | Hosted pencil smoke folds into RB-QA-02/03 |
 | P1 | SHARED | PLAT-COUNTRY-AVAIL | Disabled country forged POST reject | COMPLETE | FULL | COVERED auto | **PARTIAL** sanity | YES | Sanity = select only | Confirm on hosted env (QA-03 class) |
 | P1 | SHARED | PLAT-MW-CONCURRENCY | True stale rejection | COMPLETE | FULL | COVERED | NOT_SANITY_TESTED | YES | Not in sanity | Manual repeat-edit conflict on both products |
 | P1 | BB | DR-51 / sessions | “Relevant” sessions on block/reset (dual-role) | **AMBIGUOUS** (HIGH) | FULL revoke paths (member) | COVERED member paths | NOT_SANITY_TESTED | AFTER_SPEC | Dual-role session classes undefined | Product list session classes; manual block/reset check |
-| P1 | BB | DR-52 | Rate-limit thresholds | **AMBIGUOUS** (HIGH) | FULL buckets | COVERED activation | NOT_SANITY_TESTED | AFTER_SPEC | Thresholds unspecified | Freeze N/window; spot-check lockout UX |
+| P1 | BB | DR-52 | Rate-limit thresholds | **TEMPORARY_APPROVED** 8/15 | FULL buckets | Wave2 COVERED | NOT_SANITY_TESTED | YES spot-check | Thresholds frozen Wave2 | Spot-check lockout UX on FEATURE QA |
 | P1 | BB | DR-55 | Platform Admin cross-tenant membership actions | **AMBIGUOUS** (HIGH) | FULL separation claimed | N/A | NOT_SANITY_TESTED | AFTER_SPEC | Intervention catalogue incomplete | Enumerate allowed PA actions + audit; negative tenant test |
 
 **P1 count = 22**
@@ -255,7 +264,7 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 ## 7. Closure order (recommended)
 
-1. Record **build identity** on TESTING (T-M01).  
+1. **Build identity** — sheet captured; remaining: fix BB+AC UNKNOWN branch → re-verify (T-M01).  
 2. ~~Resolve blocking product decisions~~ — **DONE** (temporary approvals).  
 3. Land **P0 HIGH fixes** (injector wiring; dual-role destinations).  
 4. Add **T-A01..T-A12** (**skip T-A08** — phone-only approved).  
@@ -283,6 +292,33 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 Sanity areas already PASS: **10** (preserved; not re-opened).
 
+### Wave1 engineering closures (2026-10-02)
+
+| ID | Status | Proof |
+|----|--------|-------|
+| RB-ENG-03 (A1 BB inline image pencils) | **CLOSED** | Page heroes / welcome / about photos on shared `editable-image` |
+| RB-ENG-04 (A2 universal image payload) | **CLOSED** | Aliases + object dual-write; focused **18/18 PASS** |
+
+### Wave6 build-identity verification (2026-10-02, READ-ONLY)
+
+| Field | Value |
+|-------|--------|
+| VERSION | 2.04 |
+| BB BRANCH / AC BRANCH | UNKNOWN / UNKNOWN (hub V4 not applied to product hosts) |
+| FULL_GIT_SHA | `54cdb1f76f5af70593fdaf54366ce0c64ae9885c` |
+| HOSTED_SHA | `54cdb1f76f5a` (BB=AC) |
+| EXPECTED_CANDIDATE_SHA | app `7c957101ad5536d1a7323b051d8d8d7d8ff149f5`; tip docs `54cdb1f76f5a…` |
+| SHA_MATCH | BB PASS · AC PASS |
+| ENVIRONMENT | testing |
+| DEPLOYMENT_NAME | moovex-platform-v8-testing |
+| DB_IDENTITY / DB_ENVIRONMENT | moovex-platform-v7 / testing |
+| BUILD_LABEL | UNKNOWN testing |
+| MIGRATION_CEILING | schemaCompatible; capability refs ≤ BB099 / AC034 / platform031 |
+| Docs vs app | `7c957101..54cdb1f76f5a` docs-only; Wave2/3 app work uncommitted / not hosted |
+| Production | untouched |
+
+Release readiness remaining blockers after Wave6 verify: **6** (see `V2_04_RELEASE_READINESS_REMAINING_BLOCKERS.md`).
+
 ---
 
 REG_STATE_01=CLOSED
@@ -294,5 +330,14 @@ P2=24
 NEW_AUTOMATED_TESTS_REQUIRED=12
 MANUAL_SCENARIOS_REQUIRED=22
 SPEC_DECISIONS_REQUIRED=1
+WAVE1_ENG_03=CLOSED
+WAVE1_ENG_04=CLOSED
 READY_FOR_PRODUCTION_QA=NO
-FINAL=V2_04_PRODUCT_DECISIONS_APPLIED
+BB_SHA_MATCH=PASS
+AC_SHA_MATCH=PASS
+BRANCH_IDENTITY=FAIL
+ENVIRONMENT_IDENTITY=PASS
+DB_IDENTITY=PASS
+PRODUCTION_UNTOUCHED=YES
+BUILD_IDENTITY_REMAINING=1
+FINAL=V2_04_BUILD_IDENTITY_VERIFIED

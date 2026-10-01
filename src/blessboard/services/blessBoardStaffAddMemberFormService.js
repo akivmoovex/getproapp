@@ -174,8 +174,9 @@ function parseAddMemberFormBody(body) {
   if (!values.fullName || values.fullName.length < 2) {
     fieldErrors.push({ field: "full_name", message: "Full legal name is required." });
   }
-  if (!values.gender || !GENDER_OPTIONS.includes(values.gender)) {
-    fieldErrors.push({ field: "gender", message: "Select a gender." });
+  // PD/RB-ENG-05: gender is presentation-only until schema exists — optional, not blocking create.
+  if (values.gender && !GENDER_OPTIONS.includes(values.gender)) {
+    fieldErrors.push({ field: "gender", message: "Select a valid gender or leave blank." });
   }
   const dob = normalizePersonDateOfBirth(values.dateOfBirth);
   if (!dob.ok) {
@@ -287,9 +288,10 @@ function parseAddMemberFormBody(body) {
     },
     membershipStatus: values.membershipStatus,
     branchId: values.branchId,
-    // Collected for Stitch parity; not persisted until schema exists.
+    // Stitch-collected presentation fields — not persisted (no schema columns in V2.04).
+    // RB-ENG-05: kept optional so CREATE-UI cannot require absent columns.
     presentationOnly: {
-      gender: values.gender,
+      gender: values.gender || null,
       baptismWater: values.baptismWater,
       baptismSpirit: values.baptismSpirit,
     },

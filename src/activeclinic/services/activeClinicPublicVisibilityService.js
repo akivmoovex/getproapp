@@ -369,16 +369,18 @@ async function listPublicStaffProfiles(db, input) {
   `;
 
   const result = await db.query(sql, [organizationId, healthcareOrganizationId]);
-  const profiles = result.rows.map((row) => ({
-    id: row.id,
-    staffKey: row.public_profile_key,
-    displayName: row.public_display_name,
-    title: row.public_title || null,
-    specialty:
-      row.job_title && row.job_title !== row.public_title ? row.job_title : null,
-    bio: row.public_bio || null,
-    editHref: row.id ? `/app/settings/website/catalogue/doctors/${row.id}/edit` : null,
-  }));
+  const { projectPublicDoctor } = require("../website/publicCatalogueFieldPolicy");
+  const profiles = result.rows.map((row) =>
+    projectPublicDoctor({
+      id: row.id,
+      staffKey: row.public_profile_key,
+      displayName: row.public_display_name,
+      title: row.public_title || null,
+      specialty:
+        row.job_title && row.job_title !== row.public_title ? row.job_title : null,
+      bio: row.public_bio || null,
+    })
+  );
 
   return { ok: true, code: RESULT.OK, profiles };
 }
@@ -412,7 +414,8 @@ async function getPublicStaffProfile(db, input) {
   }
 
   const row = result.rows[0];
-  const profile = {
+  const { projectPublicDoctor } = require("../website/publicCatalogueFieldPolicy");
+  const profile = projectPublicDoctor({
     id: row.id,
     staffKey: row.public_profile_key,
     displayName: row.public_display_name,
@@ -420,25 +423,24 @@ async function getPublicStaffProfile(db, input) {
     specialty:
       row.job_title && row.job_title !== row.public_title ? row.job_title : null,
     bio: row.public_bio || null,
-    editHref: row.id ? `/app/settings/website/catalogue/doctors/${row.id}/edit` : null,
-  };
+  });
 
   return { ok: true, code: RESULT.OK, profile };
 }
 
 function mapPublicServiceRow(row) {
-  return {
+  const { projectPublicService } = require("../website/publicCatalogueFieldPolicy");
+  return projectPublicService({
     id: row.id,
     serviceKey: row.service_key,
-    displayName: row.display_name,
+    name: row.display_name,
+    publicSummary: row.public_summary || null,
     summary: row.public_summary || null,
-    durationMinutes: row.default_duration_minutes || null,
-    bookable: row.public_bookable === true,
-    websiteVisible: row.public_website_visible === true,
-    editHref: row.id
-      ? `/app/settings/website/catalogue/services/${row.id}/edit`
-      : null,
-  };
+    durationLabel:
+      row.default_duration_minutes != null
+        ? `${row.default_duration_minutes} min`
+        : null,
+  });
 }
 
 /**

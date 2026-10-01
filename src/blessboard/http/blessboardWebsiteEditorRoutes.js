@@ -47,6 +47,7 @@ const {
   hasEditableField,
   ensureProductFieldsRegistered,
   resolveEditableField,
+  readSubmittedEditableValue,
 } = require("../../platform/website/editableFieldSchema");
 const {
   PRODUCT_CODE,
@@ -468,9 +469,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       const resolved = await requireEditor(req, res, "website.edit");
       if (!resolved) return undefined;
-      const value = req.body && Object.prototype.hasOwnProperty.call(req.body, "value")
-        ? req.body.value
-        : "";
+      const value = readSubmittedEditableValue(req.body);
       const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
       ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
       const resolvedField = contentKey
@@ -520,8 +519,12 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           });
         }
         // Engine is primary write; classic overlay dual-write remains until public
-        // projection is fully engine-sourced (PL06). Required for live public parity today.
-        if (typeof value === "string") {
+        // projection is fully engine-sourced (PL06). Dual-write string URLs and
+        // IMAGE objects so object payloads do not skip the public projection bridge.
+        const dualWriteOverlay =
+          typeof value === "string" ||
+          (value && typeof value === "object" && !Array.isArray(value));
+        if (dualWriteOverlay) {
           const locator =
             (resolvedField.ok &&
               resolvedField.field &&
@@ -597,7 +600,10 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
         return json(res, 400, { ok: false, code: engineSaved.code || "save_failed" });
       }
-      if (typeof value === "string") {
+      const dualWriteOverlay =
+        typeof value === "string" ||
+        (value && typeof value === "object" && !Array.isArray(value));
+      if (dualWriteOverlay) {
         try {
           await saveInlineFieldDraft(getPool(), {
             organizationId: resolved.tenant.organization.id,

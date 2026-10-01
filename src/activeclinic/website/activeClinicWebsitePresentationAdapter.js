@@ -333,9 +333,11 @@ function adaptActiveClinicNavigation(input) {
 /**
  * Doctor domain/public profile row → PersonPresentation (via platform helper).
  * Accepts AC visibility-service shape (displayName, title, bio, photoUrl, specialty).
+ * PD-V204-AC-P1-02: public output is allowlist-projected before adapt.
  */
 function adaptActiveClinicDoctorToPerson(doctor, opts) {
-  const row = asObject(doctor);
+  const { projectPublicDoctor } = require("./publicCatalogueFieldPolicy");
+  const row = projectPublicDoctor(asObject(doctor)) || {};
   const clinicKey = opts && opts.clinicKey ? opts.clinicKey : null;
   const profileHref =
     row.profileHref ||

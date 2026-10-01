@@ -191,34 +191,20 @@
     </div>
     <% if (_media || _canInline) { %>
     <div class="bb-tp-page-hero__visual">
-      <% if (_media) { %>
-      <img
-        class="bb-tp-page-hero__img<%= _ps.className ? ' ' + _ps.className : '' %>"
-        src="<%= _media %>"
-        alt="<%= _mediaAlt %>"
-        width="960"
-        height="720"
-        loading="eager"
-        decoding="async"
-        <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
-      />
-      <% } else { %>
-      <div class="bb-tp-page-hero__fallback"></div>
-      <% } %>
       <% if (_canInline) { %>
+      <%- include('../../partials/editable-image', {
+        editPageKey: _pageKey,
+        editSectionKey: _sectionKey,
+        editFieldKey: 'image',
+        contentKey: _pageKey + '.' + _sectionKey + '.image',
+        imageSrc: _media,
+        imageAlt: _mediaAlt,
+        imageClass: 'bb-tp-page-hero__img' + (_ps.className ? ' ' + _ps.className : ''),
+        imageWidth: 960,
+        imageHeight: 720,
+        imagePlacement: _placement
+      }) %>
       <div class="bb-tp-edit-media-wrap">
-        <%- include('../../partials/structured-edit-trigger', {
-          editKind: 'image',
-          editEntityKey: _pageKey + '-' + _sectionKey + '-image',
-          editSectionKey: _sectionKey,
-          editLabel: 'Use photograph (clears YouTube for this section)',
-          editPayload: {
-            imageUrl: _media || '',
-            altText: _mediaAlt,
-            focal: (_meta && _meta.focal) || 'center',
-            placement: _placement
-          }
-        }) %>
         <%- include('../../partials/structured-edit-trigger', {
           editKind: 'video',
           editEntityKey: _pageKey + '-' + _sectionKey + '-video',
@@ -231,6 +217,19 @@
           }
         }) %>
       </div>
+      <% } else if (_media) { %>
+      <img
+        class="bb-tp-page-hero__img<%= _ps.className ? ' ' + _ps.className : '' %>"
+        src="<%= _media %>"
+        alt="<%= _mediaAlt %>"
+        width="960"
+        height="720"
+        loading="eager"
+        decoding="async"
+        <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
+      />
+      <% } else { %>
+      <div class="bb-tp-page-hero__fallback"></div>
       <% } %>
     </div>
     <% } else { %>

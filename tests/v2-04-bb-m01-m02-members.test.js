@@ -110,7 +110,39 @@ describe("V2.04 BB-M01 / BB-M02 members screens", () => {
     assert.equal(parsed.ok, false);
     assert.equal(parsed.code, FORM_CODE.VALIDATION);
     assert.ok(parsed.fieldErrors.some((e) => e.field === "full_name"));
-    assert.ok(parsed.fieldErrors.some((e) => e.field === "gender"));
+    // RB-ENG-05: gender is optional presentation-only — missing gender must not block.
+    assert.equal(
+      parsed.fieldErrors.some((e) => e.field === "gender"),
+      false
+    );
+  });
+
+  it("RB-ENG-05 allows create validation without gender/baptism (presentation-only)", () => {
+    const parsed = parseAddMemberFormBody({
+      full_name: "Abigail Grace Mensah",
+      preferred_name: "Abby",
+      // gender omitted — optional until schema exists
+      date_of_birth: "1990-05-01",
+      phone_country: "ZM",
+      phone_national: "977123456",
+      email: "",
+      address_line_1: "12 Main St",
+      branch_id: "00000000-0000-4000-8000-000000000001",
+      membership_status: "active",
+      marital_status: "married",
+      next_of_kin_name: "Michael Mensah",
+      next_of_kin_relationship: "spouse",
+      next_of_kin_phone: "+260971234567",
+    });
+    assert.equal(parsed.ok, true, JSON.stringify(parsed.fieldErrors));
+    assert.equal(parsed.presentationOnly.gender, null);
+    assert.equal(parsed.presentationOnly.baptismWater, false);
+    const src = read("src/blessboard/services/blessBoardStaffAddMemberFormService.js");
+    assert.match(src, /presentationOnly/);
+    assert.match(src, /Not persisted|presentation-only|until schema/i);
+    const view = read("views/blessboard/v5/branch-admin/member-add.ejs");
+    assert.doesNotMatch(view, /name="gender"[^>]*required/);
+    assert.match(view, /Gender[\s\S]*optional/i);
   });
 
   it("directory list helpers expose Church ID + portal filter plumbing", () => {

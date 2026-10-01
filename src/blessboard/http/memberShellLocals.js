@@ -11,6 +11,10 @@ const {
 } = require("../../platform/http/v5Csrf");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { PORTAL_NAV, PORTAL_MODULES, PORTAL_MOBILE_TABS } = require("./memberPortalNav");
+const {
+  sessionHasChurchManagementAccess,
+  appendDualRoleNavItem,
+} = require("./dualRoleShellNav");
 
 /**
  * @param {import('express').Request} req
@@ -38,9 +42,16 @@ function buildMemberShellLocals(req, res, opts) {
       : session && session.user
         ? session.user.displayName
         : "";
-  const navItems = PORTAL_NAV.filter((item) => item.nav && item.enabled);
+  let memberNavItems = PORTAL_NAV.filter((item) => item.nav && item.enabled);
+  if (sessionHasChurchManagementAccess(req)) {
+    memberNavItems = appendDualRoleNavItem(memberNavItems, {
+      key: "church_management",
+      label: "Church management",
+      href: "/hq",
+    });
+  }
   const mobileTabs = PORTAL_MOBILE_TABS.map((key) =>
-    navItems.find((item) => item.key === key)
+    memberNavItems.find((item) => item.key === key)
   ).filter(Boolean);
 
   const defaultTitles = {
@@ -65,8 +76,9 @@ function buildMemberShellLocals(req, res, opts) {
     branchDisplayName: tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
     displayName: preferred || "",
     portalModules: PORTAL_MODULES,
-    navItems,
+    navItems: memberNavItems,
     mobileTabs,
+    dualRoleChurchManagementHref: sessionHasChurchManagementAccess(req) ? "/hq" : null,
     ...(opts.extra || {}),
   };
 }

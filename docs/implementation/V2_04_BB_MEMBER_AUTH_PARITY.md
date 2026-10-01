@@ -29,10 +29,10 @@ UI ships on existing BlessBoard auth chrome (`tenant-auth.css` / `apex-auth.css`
 | **M19** Recovery Failure | `?lost=1` + OTP failure | Lost Church ID = contact church only; no automated ID recovery |
 
 ### Security
-- Rate limits on activate / login / recovery (8 / 15 min per bucket)
+- Rate limits on activate / login / recovery (**PD-V204-BB-P1-04** temporary freeze: **8 / 15 min** per bucket; neutral lockout message)
 - Portal `blocked` cannot login; `requireActiveMemberForTenant` adds `PORTAL_BLOCKED`
-- Password reset revokes sessions for the BlessBoard user
-- Staff `setPortalAccessStatus(blocked)` already revokes sessions
+- Password reset revokes sessions for the BlessBoard user (**PD-V204-BB-P1-03** OPTION A — all church-scoped sessions for that userId)
+- Staff `setPortalAccessStatus(blocked)` already revokes sessions (same Option A)
 - Audit keys: `members.portal_activation_*`, `members.portal_login*`, `members.portal_recovery_*`, `members.portal_password_reset`
 - Platform session cookie via `issueAuthenticatedSessionCookie`
 

@@ -1,6 +1,6 @@
 # V2.04 Product Decision Register
 
-**Status:** ACTIVE — **six P0 product decisions TEMPORARY_APPROVED_FOR_V2_04** (REVIEW_LATER=YES)  
+**Status:** ACTIVE — **six P0 + eight Wave-2 P1 product decisions TEMPORARY_APPROVED_FOR_V2_04** (REVIEW_LATER=YES)  
 **Scope:** Unresolved product decisions blocking or materially affecting V2.04 closeout  
 **Sources (read-only extraction):** `docs/qa/V2_04_P0_BURNDOWN.md`, `docs/qa/V2_04_FINAL_GAP_AND_TEST_PLAN.md`, completed V2.04 audits, BlessBoard V2.04 Canonical Feature Specification FINAL, Decision Register inventory excerpts, ActiveClinic Stitch/decision docs  
 **Policy:** Do not reopen approved canonical decisions. Non-critical items may receive `TEMPORARY_APPROVED_FOR_V2_04`. Critical items require Product review before implementation of the chosen option.
@@ -17,18 +17,18 @@
 | PD-V204-BB-04 | BB | Who may transition membership/portal statuses, and when? | CRITICAL | OPTION A approved · matrix normative | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
 | PD-V204-BB-05 | BB | Are cells in V2.04 scope (`MUST IF CELLS`)? | NON_CRITICAL | DEFER cells for V2.04 | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
 | PD-V204-AC-01 | AC | Canonical AC Feature Spec vs non-gated presentation/foundation? | CRITICAL | OPTION B approved | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
-| PD-V204-BB-P1-01 | BB | DR-39 leader↔resource binding keys | — (P1) | Freeze keys parallel to injector wiring | OPEN |
-| PD-V204-BB-P1-02 | BB | Dual-role destinations (FR-12) confirm | — (P1) | Linked Member Portal + Church Mgmt entry points | OPEN |
-| PD-V204-BB-P1-03 | BB | DR-51 “relevant” sessions on block/reset | — (P1) | Enumerate session classes | OPEN |
-| PD-V204-BB-P1-04 | BB | DR-52 rate-limit thresholds | — (P1) | Freeze N/window | OPEN |
-| PD-V204-BB-P1-05 | BB | DR-55 Platform Admin cross-tenant actions | — (P1) | Enumerate allowed PA actions + audit | OPEN |
-| PD-V204-AC-P1-01 | AC | Stitch control matrix MUST vs PRESENTATION | — (P1) | Product-signed matrix | OPEN |
-| PD-V204-AC-P1-02 | AC | Public PHI / field policy | — (P1) | Define public-safe fields | OPEN |
-| PD-V204-AC-P1-03 | AC | R08 booking chrome vs domain | — (P1) | Affirm chrome/handoff only | OPEN |
+| PD-V204-BB-P1-01 | BB | DR-39 leader↔resource binding keys | CRITICAL | OPTION A — ministry/dept assignment IDs + `events.manage` broad | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-P1-02 | BB | Dual-role destinations (FR-12) confirm | NON_CRITICAL | Bidirectional Member Portal ↔ Church Mgmt (existing shells) | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-P1-03 | BB | DR-51 “relevant” sessions on block/reset | CRITICAL | OPTION A — revoke all church-scoped sessions for userId | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-P1-04 | BB | DR-52 rate-limit thresholds | NON_CRITICAL | Freeze **8 / 15 min** per bucket (temporary) | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-P1-05 | BB | DR-55 Platform Admin cross-tenant actions | CRITICAL | OPTION A — deny-by-default; empty V2.04 allowlist | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-AC-P1-01 | AC | Stitch control matrix MUST vs PRESENTATION | NON_CRITICAL | website/editor=PRESENTATION; patient=FOUNDATION; else FUTURE | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-AC-P1-02 | AC | Public PHI / field policy | CRITICAL | OPTION A — allowlist-driven public-safe fields only | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-AC-P1-03 | AC | R08 booking chrome vs domain | NON_CRITICAL | R08 chrome/handoff only; reuse existing booking engine | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
 | PD-V204-BB-P2-01..15 | BB/AC | See §P1/P2 append | — (P2) | See each row | OPEN |
 
 **Engineering may proceed without Product review only on:** `PD-V204-BB-05` (temporary defer).  
-**Approved for V2.04 (temporary):** `PD-V204-BB-01`…`04`, `PD-V204-AC-01`, `PD-V204-BB-05`. All `REVIEW_LATER=YES`.
+**Approved for V2.04 (temporary):** `PD-V204-BB-01`…`05`, `PD-V204-AC-01`, and all eight Wave-2 P1 IDs above. All `REVIEW_LATER=YES`. Do not reopen earlier approved decisions.
 
 ---
 
@@ -417,7 +417,7 @@ STATUS: TEMPORARY_APPROVED_FOR_V2_04
 
 ## P1 / P2 unresolved decisions appended (severity not promoted)
 
-Extracted from completed V2.04 audits / gap plan. Compact register entries; status OPEN pending Product. Not elevated to P0.
+Extracted from completed V2.04 audits / gap plan. Compact register entries. Wave-2 P1 rows TEMPORARY_APPROVED_FOR_V2_04 (2026-10-02). Not elevated to P0.
 
 ### P1
 
@@ -429,17 +429,14 @@ PRODUCT: BB
 RELATED_REQ: FR-16 / AC-21 / DR-39 (product half of burndown P0-05)
 PRIORITY: P1
 TITLE: Leader ↔ managed resource binding model and permission keys
-CRITICALITY: CRITICAL (authorization) — severity not promoted to P0 product queue
-WHAT_IS_ALREADY_DEFINED: Scope helper exists; Decision #5 / DR-39 binding intent in completeness audit
-EXACT_UNRESOLVED_QUESTION: Which binding keys and permission names define managed resources for scoped join review?
-WHY_DECISION_IS_REQUIRED: Scoped leaders fail-closed without freeze; injector wiring needs agreed keys
-OPTIONS: N/A in this pass (engineering can wire helper; formal key freeze still needed)
-RECOMMENDED_DECISION: Freeze key list parallel to wiring resolveManagedResourceIds
-TEMPORARY_DECISION: N/A
-RATIONALE: From Spec Completeness BLOCKING #5 / gap plan; kept P1 in this register’s append (not one of the 6 pure product P0s)
-IMPLEMENTATION_IMPACT: Key constants + mount wiring
-TEST_IMPACT: T-A06 / T-M10
-STATUS: OPEN
+CRITICALITY: CRITICAL (authorization) — severity not promoted to P0 product freeze
+APPROVED_OPTION: A
+APPROVED_BEHAVIOR: Managed resources = ministry/department scope_ids from active ministry_leader / department_head assignments; broad review = events.manage (JOIN_PERMISSION.REVIEW_BROAD); unmanaged deny; cells deferred (PD-V204-BB-05)
+NORMATIVE_KEYS: ministry_leader@ministry, department_head@department; REVIEW_BROAD=events.manage
+IMPLEMENTATION_IMPACT: resolveManagedJoinResourceIds wired at join-request mount
+TEST_IMPACT: T-A06 / Wave2 focused suite
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-BB-P1-02
@@ -451,15 +448,12 @@ RELATED_REQ: FR-12 / AC-13 / DR-27
 PRIORITY: P1
 TITLE: Dual-role Member Portal + Church Management destinations
 CRITICALITY: NON_CRITICAL relative to authz core; HIGH completeness gap
-WHAT_IS_ALREADY_DEFINED: Shells exist; dual experience MUST incomplete
-EXACT_UNRESOLVED_QUESTION: Confirm linked userId + explicit dual-role destinations as acceptable V2.04 behavior
-WHY_DECISION_IS_REQUIRED: Product confirm while engineering implements cross-links
-RECOMMENDED_DECISION: Linked entry points both directions; Product confirm copy/destinations
-STATUS: OPEN
-IMPLEMENTATION_IMPACT: Cross-links + journey tests
-TEST_IMPACT: Dual-role automated + manual
-RATIONALE: Gap plan P1/HIGH; burndown says not a formal SPEC_DECISION freeze to start work
-TEMPORARY_DECISION: N/A
+APPROVED_BEHAVIOR: Same identity; existing Member Portal shell + Church Management shell; bidirectional nav only when corresponding permission present; no new shell/auth model
+DESTINATIONS: /member ↔ /hq
+IMPLEMENTATION_IMPACT: dualRoleShellNav + member/hq shell locals
+TEST_IMPACT: Dual-role Wave2 focused
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-BB-P1-03
@@ -471,15 +465,12 @@ RELATED_REQ: DR-51
 PRIORITY: P1
 TITLE: “Relevant” sessions invalidated on block/password reset (dual-role)
 CRITICALITY: CRITICAL (session security) — not promoted
-WHAT_IS_ALREADY_DEFINED: Member revoke paths exist; dual-role session classes undefined
-EXACT_UNRESOLVED_QUESTION: Which session classes are “relevant” when actor has member + admin roles?
-RECOMMENDED_DECISION: Product list session classes; revoke all church-scoped sessions for that userId on block/reset unless Product narrows
-STATUS: OPEN
-IMPLEMENTATION_IMPACT: Session classify + revoke rules
-TEST_IMPACT: Manual block/reset dual-role check
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH
-WHY_DECISION_IS_REQUIRED: Incomplete revoke → lingering access
+APPROVED_OPTION: A
+APPROVED_BEHAVIOR: Member block/password reset revokes all church-scoped deployment sessions for that BlessBoard userId (member + church-management); Platform Admin sessions remain separate (platform_identity); deny lingering access by default
+IMPLEMENTATION_IMPACT: revokeSessionsByBlessBoardUser on block + password reset
+TEST_IMPACT: Wave2 focused revoke proofs
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-BB-P1-04
@@ -491,15 +482,11 @@ RELATED_REQ: DR-52
 PRIORITY: P1
 TITLE: Rate-limit thresholds
 CRITICALITY: NON_CRITICAL (ops/security hardening) — not promoted
-WHAT_IS_ALREADY_DEFINED: Buckets implemented; N/window unspecified in contract
-EXACT_UNRESOLVED_QUESTION: Exact thresholds/windows for activation/login/recovery
-RECOMMENDED_DECISION: Freeze N/window in appendix from current production defaults
-STATUS: OPEN
-IMPLEMENTATION_IMPACT: Config freeze
-TEST_IMPACT: Spot-check lockout UX
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH
-WHY_DECISION_IS_REQUIRED: Cannot certify rate-limit ACs without numbers
+APPROVED_BEHAVIOR: V2.04 temporary freeze — 8 attempts / 15 minutes per existing bucket; neutral message “Too many attempts. Try again later.”
+IMPLEMENTATION_IMPACT: DOC freeze of RATE_MAX=8 / RATE_WINDOW_MS=15min (no code change required)
+TEST_IMPACT: Wave2 rate-limit asserts
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-BB-P1-05
@@ -511,15 +498,12 @@ RELATED_REQ: DR-55
 PRIORITY: P1
 TITLE: Platform Admin cross-tenant membership interventions
 CRITICALITY: CRITICAL (cross-tenant / audit) — not promoted
-WHAT_IS_ALREADY_DEFINED: PA does not auto-become church member; interventions must be explicit and audited
-EXACT_UNRESOLVED_QUESTION: Catalogue of allowed PA membership actions across tenants
-RECOMMENDED_DECISION: Enumerate allowlist + mandatory audit; deny by default
-STATUS: OPEN
-IMPLEMENTATION_IMPACT: PA action matrix + negatives
-TEST_IMPACT: Negative tenant tests
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH
-WHY_DECISION_IS_REQUIRED: Cross-tenant isolation and auditability
+APPROVED_OPTION: A
+APPROVED_BEHAVIOR: Deny by default; V2.04 intervention allowlist empty; PA does not auto-gain church membership powers; future actions require explicit allowlist + audit; support uses in-tenant admin/out-of-band for V2.04
+IMPLEMENTATION_IMPACT: Legacy /admin/church/members/* mutate routes deny + audit
+TEST_IMPACT: Wave2 PA deny proofs
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-AC-P1-01
@@ -527,19 +511,19 @@ WHY_DECISION_IS_REQUIRED: Cross-tenant isolation and auditability
 ```
 DECISION_ID: PD-V204-AC-P1-01
 PRODUCT: AC
-RELATED_REQ: Stitch matrix
+RELATED_REQ: Stitch matrix (under PD-V204-AC-01)
 PRIORITY: P1
 TITLE: MUST vs PRESENTATION vs FUTURE controls
 CRITICALITY: Depends on PD-V204-AC-01 — not promoted
-WHAT_IS_ALREADY_DEFINED: Presentation shipped; wiring COVERED
-EXACT_UNRESOLVED_QUESTION: Which Stitch controls are MUST for V2.04 vs presentation-only?
-RECOMMENDED_DECISION: Product-signed control matrix; if AC-01=B, matrix is non-gating documentation
-STATUS: OPEN
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH
-WHY_DECISION_IS_REQUIRED: Avoid false blockers / overclaims
-IMPLEMENTATION_IMPACT: Matrix only unless MUST expands
-TEST_IMPACT: AFTER_SPEC
+APPROVED_MATRIX:
+  - website/editor/presentation track = PRESENTATION
+  - patient functionality = non-release-gated FOUNDATION
+  - unimplemented items = FUTURE
+  - invent no new MUST requirements
+IMPLEMENTATION_IMPACT: Documentation / claim matrix only
+TEST_IMPACT: Doc assert in Wave2 suite
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-AC-P1-02
@@ -551,15 +535,12 @@ RELATED_REQ: Public PHI policy
 PRIORITY: P1
 TITLE: Public website field / PHI rules
 CRITICALITY: CRITICAL (privacy) — not promoted
-WHAT_IS_ALREADY_DEFINED: Pages load SANITY_PASS; field policy undefined at contract level
-EXACT_UNRESOLVED_QUESTION: Which doctor/services fields may appear on public pages?
-RECOMMENDED_DECISION: Define public-safe field allowlist; spot-check public pages
-STATUS: OPEN
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH; gated by AC-01 if presentation-only waiver
-WHY_DECISION_IS_REQUIRED: Privacy
-IMPLEMENTATION_IMPACT: Field filtering / copy rules
-TEST_IMPACT: Public page spot-check
+APPROVED_OPTION: A
+APPROVED_BEHAVIOR: Allowlist-driven public-safe fields only (display name, title/role, specialty/department, approved public photo/bio, org-approved public contact/location). Forbid private staff contact, internal IDs, auth identifiers, employment/admin fields, clinical notes, patient data, PHI, and any non-allowlisted field.
+IMPLEMENTATION_IMPACT: publicCatalogueFieldPolicy + visibility/adapter projection
+TEST_IMPACT: Wave2 allowlist proofs
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 #### PD-V204-AC-P1-03
@@ -571,15 +552,11 @@ RELATED_REQ: R08 booking
 PRIORITY: P1
 TITLE: Booking entry chrome-only vs domain change
 CRITICALITY: NON_CRITICAL — not promoted
-WHAT_IS_ALREADY_DEFINED: Inherited booking engine
-EXACT_UNRESOLVED_QUESTION: Is R08 chrome/handoff only, or a second booking domain?
-RECOMMENDED_DECISION: Affirm chrome/handoff only in product note
-STATUS: OPEN
-TEMPORARY_DECISION: N/A
-RATIONALE: Gap plan P1 HIGH
-WHY_DECISION_IS_REQUIRED: Avoid second booking engine risk
-IMPLEMENTATION_IMPACT: None if chrome-only
-TEST_IMPACT: Smoke booking entry
+APPROVED_BEHAVIOR: R08 is presentation/chrome/handoff only; reuse existing ActiveClinic booking domain; do not create second booking engine/domain
+IMPLEMENTATION_IMPACT: None (affirm existing handoff)
+TEST_IMPACT: Wave2 R08 handoff source proof
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
 ```
 
 ### P2
@@ -617,7 +594,8 @@ Compact required fields for each P2 row above:
 ```
 P0_PRODUCT_ITEMS_INPUT=6
 P0_PRODUCT_DECISIONS_REMAINING=0
-TEMPORARY_APPROVED_FOR_V2_04=6
+WAVE2_P1_PRODUCT_DECISIONS_REMAINING=0
+TEMPORARY_APPROVED_FOR_V2_04=14
 REVIEW_LATER=YES
 CRITICAL_APPROVED=5
 NON_CRITICAL_APPROVED=1
