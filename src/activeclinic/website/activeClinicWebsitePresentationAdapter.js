@@ -103,6 +103,45 @@ function imageOrNull(value) {
   return null;
 }
 
+function imageHasSrc(image) {
+  return Boolean(image && typeof image === "object" && image.src);
+}
+
+/**
+ * Presentation-only soft-fill for empty image slots.
+ * Does not invent mediaId / does not mark user edits / must not be persisted as draft seed.
+ */
+function softFillTemplateImage(image, fallbackSrc, alt) {
+  if (imageHasSrc(image)) return image;
+  if (!fallbackSrc) return image;
+  return {
+    src: fallbackSrc,
+    alt: (image && image.alt) || alt || null,
+    mediaId: null,
+    templateSoftFill: true,
+  };
+}
+
+function templateHeroSrc(clinic) {
+  try {
+    const media = require("../services/activeClinicPublicMediaService");
+    const resolved = media.resolveClinicHero(clinic);
+    return resolved && resolved.src ? resolved.src : media.CLINIC_DEFAULT;
+  } catch {
+    return "/activeclinic/assets/clinic-hero-default.jpg";
+  }
+}
+
+function templateAboutSrc(clinic) {
+  try {
+    const media = require("../services/activeClinicPublicMediaService");
+    const resolved = media.resolveClinicAboutImage(clinic);
+    return resolved && resolved.src ? resolved.src : null;
+  } catch {
+    return "/activeclinic/assets/clinic/directory-waiting.jpg";
+  }
+}
+
 /**
  * Branding presentation from AC content + clinic overlays.
  * @param {object} input
@@ -144,7 +183,11 @@ function adaptActiveClinicHero(input) {
     eyebrow: pick(content, "home.hero.eyebrow", clinic.heroEyebrow || clinic.websiteTagline),
     title: pick(content, "home.hero.title", clinic.heroTitle || `Welcome to ${name}`),
     subtitle: pick(content, "home.hero.subtitle", clinic.heroSubtitle || clinic.websiteAbout),
-    image: imageOrNull(pick(content, "home.hero.image", clinic.websiteHeroUrl)),
+    image: softFillTemplateImage(
+      imageOrNull(pick(content, "home.hero.image", clinic.websiteHeroUrl)),
+      templateHeroSrc(clinic),
+      `Template photo for ${name}`
+    ),
     primaryCta: {
       label:
         pick(content, "home.hero.button_label", null) ||
@@ -164,7 +207,11 @@ function adaptActiveClinicAbout(input) {
   const model = {
     heading: pick(content, "about.story.heading", clinic.aboutHeading || "About our clinic"),
     body: pick(content, "about.story.body", clinic.aboutBody || clinic.websiteAbout),
-    image: imageOrNull(pick(content, "about.story.image", clinic.aboutStoryImageSrc)),
+    image: softFillTemplateImage(
+      imageOrNull(pick(content, "about.story.image", clinic.aboutStoryImageSrc)),
+      templateAboutSrc(clinic),
+      `Template photo for ${clinic.publicName || "clinic"}`
+    ),
     imagePosition: "start",
     cta: null,
   };

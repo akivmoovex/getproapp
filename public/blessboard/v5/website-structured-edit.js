@@ -205,22 +205,22 @@
       '" data-bb-se-focal="1" />' +
       field("Alternative text", "altText", p.altText || "") +
       (framingEnabled
-        ? '<div class="bb-tp-se-actions-row">' +
-          '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-adjust="1"' +
+        ? '<div class="bb-tp-se-actions-row gp-we-media-field__actions">' +
+          '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-adjust="1"' +
           (hasImage ? "" : " hidden") +
           ">Adjust Picture</button>" +
           "</div>"
         : "") +
-      '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
+      '<div class="bb-tp-se-actions-row gp-we-media-field__actions" data-bb-media-actions="1">' +
+      '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
       esc(replaceLabel) +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="' +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="' +
       esc(fieldName) +
-      '" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="' +
+      '" /></label>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="' +
       esc(fieldName) +
       '">Choose from Content Library</button>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1" data-bb-se-remove-target="' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-remove-media="1" data-bb-se-remove-target="' +
       esc(fieldName) +
       '">Remove image</button>' +
       "</div>" +
@@ -248,12 +248,12 @@
       '<div class="bb-tp-se-preview"><img data-bb-se-preview="1" src="' +
       esc(p.thumbnailUrl || "") +
       '" alt="" width="320" height="180" /></div>' +
-      '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
+      '<div class="bb-tp-se-actions-row gp-we-media-field__actions">' +
+      '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
       esc(thumbLabel) +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Choose from Content Library</button>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-bb-se-remove-media="1">Remove video</button>' +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" /></label>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Choose from Content Library</button>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-remove-media="1">Remove video</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
       "</div>"

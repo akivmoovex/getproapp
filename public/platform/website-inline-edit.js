@@ -923,8 +923,46 @@
         showNewPreview(state.pendingObjectUrl);
         if (uploadLabel) uploadLabel.textContent = "Replace image";
         if (removeBtn) removeBtn.hidden = false;
-        setStatus("Preview only — save draft to keep this image", false);
-        syncDirtyController();
+        setStatus("Uploading…", false);
+        if (progress) {
+          progress.hidden = false;
+          progress.value = 0;
+        }
+        setBusy(true);
+        markUploadStart();
+        // Eager shared upload: durable library asset before Save draft (MEDIA-05 / MEDIA-03).
+        uploadImage(file, altInput ? altInput.value : "", function (pct) {
+          if (progress) progress.value = pct;
+        })
+          .then(function (uploaded) {
+            setBusy(false);
+            if (progress) progress.hidden = true;
+            var media = uploaded && uploaded.media;
+            if (!media || !media.id) {
+              setStatus("Upload failed — save draft will retry. Preview kept.", true);
+              syncDirtyController();
+              return;
+            }
+            state.pendingFile = null;
+            state.pendingMediaId = media.id;
+            state.pendingRemove = false;
+            var durableSrc =
+              media.publicSrc || media.previewUrl || mediaItemUrl(media.id) || "";
+            if (state.pendingObjectUrl) {
+              URL.revokeObjectURL(state.pendingObjectUrl);
+              state.pendingObjectUrl = null;
+            }
+            showNewPreview(durableSrc);
+            setStatus("Uploaded to Image Library — save draft to place this image", false);
+            syncDirtyController();
+          })
+          .catch(function () {
+            setBusy(false);
+            if (progress) progress.hidden = true;
+            // Keep pendingFile so Save draft can retry the shared upload once.
+            setStatus("Upload failed — save draft will retry. Preview kept.", true);
+            syncDirtyController();
+          });
       });
     }
 

@@ -4877,6 +4877,28 @@ html {
   max-width: var(--bb-max);
   margin: 0 auto;
   padding: 0 var(--bb-gutter);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/*
+ * Platform public When We Gather (V2.04):
+ * Share .bb-tp-container max-width band with homepage neighbors
+ * (.bb-tp-home-welcome / .bb-tp-home-teaser). Those sections reset
+ * horizontal padding via `padding: 2rem 0`, so content sits on the
+ * max-width edge — mirror that here (do not add an extra gutter).
+ * Tablet/mobile: drop max-width so the band content stays flush (pre-fix).
+ */
+.bb-tp-service-times--platform-public > .bb-tp-service-times__inner {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 899px) {
+  .bb-tp-service-times--platform-public > .bb-tp-service-times__inner {
+    max-width: none;
+  }
 }
 
 .bb-tp-service-times__title {

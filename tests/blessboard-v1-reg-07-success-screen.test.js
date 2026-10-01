@@ -13,7 +13,11 @@ const {
   resetFoundationDatabase,
   createFoundationPool,
 } = require("./helpers/foundationDb");
-const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
+const {
+  assertChurchReadySuccessRedirect,
+  loadPublicRegistrationReference,
+  buildChurchReadySuccessPath,
+} = require("./helpers/blessboardRegistrationSuccess");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
@@ -193,7 +197,7 @@ describe("BB-REG-07 BlessBoard registration success screen", () => {
     return { app, body, post, getRes };
   }
 
-  it("successful Foundation registration redirects to success with ref and ready=1", async () => {
+  it("successful Foundation registration redirects to /hq; success receipt remains available by ref", async () => {
     requireDb();
     const { app, body, post } = await registerChurch();
     assert.equal(post.status, 303, post.text && String(post.text).slice(0, 400));
@@ -201,8 +205,10 @@ describe("BB-REG-07 BlessBoard registration success screen", () => {
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     assert.ok(sid, "session cookie established");
 
+    const ref = await loadPublicRegistrationReference(pool, body.email);
+    assert.ok(ref, "public registration reference stored");
     const success = await request(app)
-      .get(post.headers.location)
+      .get(buildChurchReadySuccessPath(ref))
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
     assert.equal(success.status, 200);

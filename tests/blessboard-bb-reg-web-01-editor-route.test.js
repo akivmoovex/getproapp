@@ -1,10 +1,9 @@
 "use strict";
 
 /**
- * BB-REG-WEB-01 — Post-registration website editor routing.
- * Success page stays; primary Edit your website CTA →
- * /c/:organizationKey/:branchKey?website_edit=1&website_mode=draft
- * Dashboard /hq remains secondary.
+ * BB-REG-WEB-01 — Post-registration website editor routing (success receipt).
+ * V2.04: POST /register-church → authenticated /hq (no success detour).
+ * Success page remains reachable by stored ref; primary Edit CTA when visited.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -18,7 +17,11 @@ const {
 } = require("./helpers/foundationDb");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
-const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
+const {
+  assertChurchReadyHqRedirect,
+  loadPublicRegistrationReference,
+  buildChurchReadySuccessPath,
+} = require("./helpers/blessboardRegistrationSuccess");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
@@ -152,15 +155,16 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     if (pool) await pool.end().catch(() => {});
   });
 
-  it("A–F + J: success CTA is canonical edit URL; seeded content; refresh; dashboard secondary", async () => {
+  it("A–F + J: POST → /hq authenticated; success receipt Edit CTA remains canonical", async () => {
     requireDb();
     const { app, body, post } = await registerChurch();
     assert.equal(post.status, 303, post.text && String(post.text).slice(0, 400));
-    assertChurchReadySuccessRedirect(post.headers.location);
+    assertChurchReadyHqRedirect(post.headers.location);
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     assert.ok(sid, "session cookie");
 
-    const ref = String(post.headers.location).match(/ref=([^&]+)/)[1];
+    const ref = await loadPublicRegistrationReference(pool, body.email);
+    assert.ok(ref, "public registration reference stored");
     const sessionOrg = await pool.query(
       `SELECT organization_id, public_registration_reference
          FROM blessboard.platform_church_registration_applications
@@ -171,7 +175,7 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     const organizationId = sessionOrg.rows[0].organization_id;
 
     const resolved = await resolveBlessBoardRegistrationSuccessWebsite(pool, {
-      reference: decodeURIComponent(ref),
+      reference: ref,
       ready: true,
       sessionOrganizationId: organizationId,
     });
@@ -189,8 +193,19 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     });
     assert.equal(resolved.editPath, expectedEdit);
 
+    const hq = await request(app)
+      .get("/hq")
+      .set("Host", APEX)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`)
+      .redirects(5);
+    assert.ok(
+      hq.status === 200 ||
+        (hq.status === 303 && /^\/hq(\/|$)/.test(String(hq.headers.location || ""))),
+      `post-reg /hq got ${hq.status}`
+    );
+
     const success = await request(app)
-      .get(post.headers.location)
+      .get(buildChurchReadySuccessPath(ref))
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
     assert.equal(success.status, 200);
@@ -200,7 +215,7 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     assert.equal(href, expectedEdit);
     assert.doesNotMatch(href, /^\/hq(?:\?|$)/);
 
-    // Dashboard remains available as secondary
+    // Dashboard remains available as secondary on success receipt
     assert.match(success.text, /data-bb-continue-dashboard="1"/);
     assert.match(success.text, /href="\/hq"/);
     assert.match(success.text, /data-bb-dashboard-secondary="1"/);
@@ -224,17 +239,6 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
       .redirects(5);
     assert.equal(refresh.status, 200);
     assert.match(refresh.text, /data-website-chrome|data-gp-website-editor|data-website-start|website_edit/);
-
-    const hq = await request(app)
-      .get("/hq")
-      .set("Host", APEX)
-      .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`)
-      .redirects(5);
-    assert.ok(
-      hq.status === 200 ||
-        (hq.status === 303 && /^\/hq(\/|$)/.test(String(hq.headers.location || ""))),
-      `dashboard CTA /hq got ${hq.status}`
-    );
   });
 
   it("G: correct organization/branch in edit CTA for distinct churches", async () => {
@@ -243,14 +247,18 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     const b = await registerChurch({ church_name: `Beta ${uniq("g")}` });
     assert.equal(a.post.status, 303);
     assert.equal(b.post.status, 303);
+    assertChurchReadyHqRedirect(a.post.headers.location);
+    assertChurchReadyHqRedirect(b.post.headers.location);
     const sidA = extractCookie(a.post, DEFAULT_V5_COOKIE);
     const sidB = extractCookie(b.post, DEFAULT_V5_COOKIE);
+    const refA = await loadPublicRegistrationReference(pool, a.body.email);
+    const refB = await loadPublicRegistrationReference(pool, b.body.email);
     const successA = await request(a.app)
-      .get(a.post.headers.location)
+      .get(buildChurchReadySuccessPath(refA))
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sidA}`);
     const successB = await request(b.app)
-      .get(b.post.headers.location)
+      .get(buildChurchReadySuccessPath(refB))
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sidB}`);
     const hrefA = extractPrimaryEditHref(successA.text);
@@ -265,7 +273,8 @@ describe("BB-REG-WEB-01 post-registration website editor route", () => {
     requireDb();
     const a = await registerChurch({ church_name: `Owner ${uniq("h")}` });
     const b = await registerChurch({ church_name: `Other ${uniq("h")}` });
-    const refB = String(b.post.headers.location || "").match(/ref=([^&]+)/)[1];
+    const refB = await loadPublicRegistrationReference(pool, b.body.email);
+    assert.ok(refB);
     const sidA = extractCookie(a.post, DEFAULT_V5_COOKIE);
     const leaked = await request(a.app)
       .get(`/register-church/success?ref=${encodeURIComponent(refB)}&ready=1`)

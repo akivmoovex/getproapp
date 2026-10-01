@@ -105,16 +105,43 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     heroImage && typeof heroImage === "object"
       ? presentImageValue(heroImage)
       : presentImageValue({ src: heroImage || clinic.websiteHeroUrl || null });
-  const heroSrc = presentedHero.src;
+  let heroSrc = presentedHero.src;
   const heroAltFromContent = presentedHero.alt || "";
-  const usesDefaultHero = false;
+  let usesDefaultHero = false;
+  if (!heroSrc) {
+    try {
+      const media = require("../services/activeClinicPublicMediaService");
+      const soft = media.resolveClinicHero({
+        ...clinic,
+        websiteHeroUrl: null,
+      });
+      if (soft && soft.src) {
+        heroSrc = soft.src;
+        usesDefaultHero = true;
+      }
+    } catch {
+      /* presentation soft-fill optional */
+    }
+  }
   const aboutImage = content("about.story.image");
   const presentedAbout = presentImageValue(
     aboutImage && typeof aboutImage === "object" ? aboutImage : { src: aboutImage }
   );
-  const aboutImageSrc = presentedAbout.src;
+  let aboutImageSrc = presentedAbout.src;
   const aboutImageAlt = presentedAbout.alt || "";
   const aboutImageMediaId = presentedAbout.mediaId || "";
+  if (!aboutImageSrc) {
+    try {
+      const media = require("../services/activeClinicPublicMediaService");
+      const soft = media.resolveClinicAboutImage({
+        ...clinic,
+        aboutStoryImageSrc: null,
+      });
+      if (soft && soft.src) aboutImageSrc = soft.src;
+    } catch {
+      /* presentation soft-fill optional */
+    }
+  }
   const logoImage = content("home.logo");
   const presentedLogo = presentImageValue(
     logoImage && typeof logoImage === "object"

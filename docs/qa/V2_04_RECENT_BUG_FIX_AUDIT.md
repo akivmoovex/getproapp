@@ -13,7 +13,8 @@
 |--------|--------|-------------------|--------------:|
 | REG-STATE-01 | **FIXED** | PLATFORM | 18 |
 | BB-PROVISION-01 | **FIXED** | BlessBoard | 11 |
-| BB-REG-WEB-01 | **FIXED** | BlessBoard (+ shared presentation) | 4 |
+| BB-REG-WEB-01 | **FIXED** (success receipt Edit CTA; POST now → `/hq` per BB-POST-REG-DASHBOARD-01) | BlessBoard (+ shared presentation) | 4 |
+| BB-POST-REG-DASHBOARD-01 | **FIXED** | BlessBoard (redirect only; shared session) | 5 |
 | AC-REG-WEB-01 | **FIXED** | ActiveClinic (+ shared URL helper) | 4 |
 | PLATFORM-PASSWORD-UX-01 | **FIXED** | AC admin-step init of shared component | 7 |
 | AC-WEB-EDITOR-01 | **FIXED** | ActiveClinic management hub (no fake canvas) | 9 |
@@ -114,7 +115,7 @@ Optional hosted smoke only (`T-M22`); not an open code defect.
 ## BUG_ID: BB-REG-WEB-01
 
 ### STATUS
-**FIXED**
+**FIXED** (Edit CTA on success receipt); **superseded landing** by `BB-POST-REG-DASHBOARD-01`
 
 ### ROOT_CAUSE_CONFIRMED
 **YES.** Post-reg landed on `/register-church/success`; primary CTA was `/hq`. Canonical editor URL via `buildPublicWebsiteEditPath` already existed when website resolution succeeded. Audit: `V2_04_REGISTRATION_WEBSITE_EDITOR_BUG_AUDIT.md`.
@@ -125,16 +126,17 @@ Optional hosted smoke only (`T-M22`); not an open code defect.
 - `views/blessboard/v5/apex/register-church-success-panel.ejs` — primary edit CTA; dashboard secondary
 
 ### BEHAVIOR_NOW
-Success page retained. Primary **Edit your website** → `/c/:organizationKey/:branchKey?website_edit=1&website_mode=draft`. `/hq` secondary.
+**POST** `/register-church` → authenticated **`/hq`** (`BB-POST-REG-DASHBOARD-01`). Success receipt GET by stored `ref` still offers primary **Edit your website** → `/c/:organizationKey/:branchKey?website_edit=1&website_mode=draft`; `/hq` secondary on that page.
 
 ### EXPECTED_BEHAVIOR
-User can open newly provisioned church site in real edit/draft mode without going through `/hq` first for that action.
+User can open newly provisioned church site in real edit/draft mode from the success receipt without using `/hq` as the editor entry.
 
 ### TEST_FILES
-- `tests/blessboard-bb-reg-web-01-editor-route.test.js` (4) — CTA canonical, edit mode, seeded content, refresh, org/branch distinct, cross-tenant withhold, failure off editor, dashboard secondary
+- `tests/blessboard-bb-reg-web-01-editor-route.test.js` (4) — POST→`/hq`; success receipt Edit CTA canonical; org/branch distinct; cross-tenant withhold; failure off editor
+- `tests/v2-04-bb-post-registration-dashboard.test.js` — dashboard landing
 
 ### TEST_COUNT
-**4**
+**4** (+ 5 dashboard focused)
 
 ### NEGATIVE_TESTS
 **YES** — failed/incomplete provisioning stays off editor
@@ -143,13 +145,51 @@ User can open newly provisioned church site in real edit/draft mode without goin
 **YES** — foreign ref with other session withholds edit CTA
 
 ### REGRESSION_TEST
-**YES** — dashboard `/hq` still present as secondary
+**YES** — dashboard `/hq` post-reg primary; Edit CTA on receipt secondary path
 
 ### DOCS_UPDATED
-**YES** — `V2_04_REGISTRATION_WEBSITE_EDITOR_BUG_AUDIT.md` (BB fix status)
+**YES** — `V2_04_BB_POST_REGISTRATION_DASHBOARD_FIX.md`
+
+---
+
+## BUG_ID: BB-POST-REG-DASHBOARD-01
+
+### STATUS
+**FIXED**
+
+### ROOT_CAUSE_CONFIRMED
+**YES.** Auto-login via `establishBlessBoardSession` + `issueAuthenticatedSessionCookie` already ran after provision, but HTTP redirect used `buildRegistrationSuccessRedirect` → `/register-church/success?…` (website editor/success detour).
+
+### FIX_PATHS
+- `src/blessboard/http/apexMarketingRoutes.js` — post-commit redirect `303` → `/hq` (redirect-only; shared session unchanged)
+
+### BEHAVIOR_NOW
+Successful church registration → provision + roles + session cookie → **`/hq`** already authenticated. No second login. Success page retained for receipt/ref deep links only.
+
+### EXPECTED_BEHAVIOR
+Administrator lands on HQ dashboard for the newly provisioned church without visiting success/editor first.
+
+### TEST_FILES
+- `tests/v2-04-bb-post-registration-dashboard.test.js` (5) — A new user, B phone reuse, C role fail no session, D `/hq` gate, E tenant context
+- Helper: `tests/helpers/blessboardRegistrationSuccess.js` → `assertChurchReadyHqRedirect`
+
+### TEST_COUNT
+**5**
+
+### NEGATIVE_TESTS
+**YES** — role/provision failure; unauthenticated `/hq`
+
+### CROSS_TENANT_TEST
+**YES** — reused identity loads new church context on `/hq`
+
+### REGRESSION_TEST
+**YES** — existing registration suites assert `/hq` Location via shared helper
+
+### DOCS_UPDATED
+**YES** — `V2_04_BB_POST_REGISTRATION_DASHBOARD_FIX.md`, this audit, coverage audit
 
 ### REMAINING_GAP
-None for preferred V2.04 (success page kept; no mandatory auto-redirect).
+None for redirect/auto-login.
 
 ---
 

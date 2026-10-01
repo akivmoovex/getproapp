@@ -31,13 +31,14 @@ describe("ActiveClinic Pass 6 public media", () => {
     assert.match(DOCTOR_FALLBACK, /doctor-fallback\.svg$/);
   });
 
-  it("uses julflona hero for julflona clinic only", () => {
+  it("soft-fills non-demo clinics with the approved clinic template hero", () => {
     const juflona = resolveClinicHero({ clinicKey: "julflona-clinic" });
     const other = resolveClinicHero({ clinicKey: "some-other-clinic" });
     assert.match(String(juflona.src || ""), /julflona-hero\.jpg/);
-    // Non-demo clinics do not inherit a hardcoded local tenant default.
-    assert.equal(other.src, null);
+    // Soft-fill presentation only — approved system asset, not Juflona imagery.
+    assert.match(String(other.src || ""), /clinic-hero-default\.jpg/);
     assert.equal(other.isFallback, true);
+    assert.equal(other.status, "TEMPLATE_DEFAULT");
   });
 
   it("does not force julflona hero onto every directory card", () => {

@@ -165,12 +165,14 @@ function resolveClinicHero(clinic, env) {
       isFallback: false,
     };
   }
-  // No hardcoded local tenant default — empty until the clinic uploads.
+  // Presentation soft-fill only: approved system template asset. Never written
+  // into draft/published website content (see TEMPLATE_ASSET_PREFIX save guard).
   return {
-    src: null,
+    src: presentPath(CLINIC_DEFAULT_PATH, env),
     objectPosition: "center center",
-    status: "DEFAULT",
+    status: "TEMPLATE_DEFAULT",
     isFallback: true,
+    stitchLabel: "ActiveClinic clinic template hero (system asset)",
   };
 }
 
@@ -255,9 +257,29 @@ function enrichDoctorMedia(profile, env) {
   };
 }
 
+function resolveClinicAboutImage(clinic, env) {
+  if (clinic && clinic.aboutStoryImageSrc) {
+    return {
+      src: presentRuntimeImageSrc(String(clinic.aboutStoryImageSrc), env),
+      objectPosition: "center 40%",
+      status: "TENANT_CONFIGURED",
+      isFallback: false,
+    };
+  }
+  // Soft-fill empty about slots with an approved clinic atmosphere asset.
+  return {
+    src: presentPath(DIRECTORY_CARD_POOL[0].path, env),
+    objectPosition: DIRECTORY_CARD_POOL[0].objectPosition,
+    status: "TEMPLATE_DEFAULT",
+    isFallback: true,
+    stitchLabel: "ActiveClinic clinic template about photo (system asset)",
+  };
+}
+
 function enrichClinicMedia(clinic, env) {
   if (!clinic || typeof clinic !== "object") return clinic;
   const hero = resolveClinicHero(clinic, env);
+  const about = resolveClinicAboutImage(clinic, env);
   return attachClinicPublicWebsitePaths({
     ...clinic,
     websiteHeroUrl: clinic.websiteHeroUrl
@@ -265,6 +287,11 @@ function enrichClinicMedia(clinic, env) {
       : hero.src,
     heroObjectPosition: hero.objectPosition,
     heroStatus: hero.status,
+    aboutStoryImageSrc: clinic.aboutStoryImageSrc
+      ? presentRuntimeImageSrc(String(clinic.aboutStoryImageSrc), env)
+      : about.src,
+    aboutObjectPosition: about.objectPosition,
+    aboutImageStatus: about.status,
   });
 }
 
@@ -347,6 +374,7 @@ module.exports = {
   SERVICE_ICON_DEFAULT: SERVICE_ICON_DEFAULT_PATH,
   resolveDoctorPhoto,
   resolveClinicHero,
+  resolveClinicAboutImage,
   resolveDirectoryCardImage,
   resolveServiceIcon,
   getPlatformHero,

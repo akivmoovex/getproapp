@@ -1780,17 +1780,35 @@ textarea.gp-website-field-editor__input {
 }
 
 .gp-website-field-editor__file--primary {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  justify-content: center;
+  min-height: var(--gp-website-touch, 44px);
   margin-bottom: 0;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 1px solid var(--gp-we-primary);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gp-we-primary);
   color: var(--color-text-inverse);
+  font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+.gp-website-field-editor__file--primary:hover {
+  filter: brightness(0.96);
+}
+
+.gp-website-field-editor__file--primary:focus-visible {
+  outline: 2px solid var(--gp-we-primary);
+  outline-offset: 2px;
+}
+
+.gp-website-field-editor__file--primary:disabled,
+.gp-website-field-editor__file--primary[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .gp-website-field-editor__file--primary input {
@@ -1824,15 +1842,31 @@ textarea.gp-website-field-editor__input {
 .gp-website-field-editor__link-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  margin-bottom: 0.75rem;
-  padding: 0 12px;
+  justify-content: center;
+  min-height: var(--gp-website-touch, 44px);
+  margin-bottom: 0;
+  padding: 0 16px;
   border: 1px solid var(--gp-we-outline-variant);
   border-radius: 8px;
   background: transparent;
   color: var(--gp-we-primary);
   font: inherit;
+  font-weight: 500;
   cursor: pointer;
+}
+
+.gp-website-field-editor__link-btn:hover {
+  background: color-mix(in srgb, var(--gp-we-primary) 8%, transparent);
+}
+
+.gp-website-field-editor__link-btn:focus-visible {
+  outline: 2px solid var(--gp-we-primary);
+  outline-offset: 2px;
+}
+
+.gp-website-field-editor__link-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .gp-website-field-editor__progress {
@@ -2770,4 +2804,197 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
   background: var(--color-brand-primary, currentColor);
   border-color: var(--color-brand-primary, currentColor);
   color: var(--gp-website-color-primary-contrast, #fff);
+}
+
+/* --------------------------------------------------------------------------
+   ActiveClinic V2.04 — image editor modal button geometry (Clinical Clarity)
+   Style-only: same actions/workflow. Scoped to AC so BB chrome is untouched.
+   Primary: Upload from computer, Save draft
+   Secondary outlined: Choose from Image Library, Adjust Picture, Remove, Cancel
+   Segmented pills: Desktop / Mobile only
+   -------------------------------------------------------------------------- */
+[data-product="activeclinic"] .gp-website-field-editor {
+  --gp-we-btn-h: 48px;
+  --gp-we-btn-px: 16px;
+  --gp-we-btn-radius: 8px;
+  --gp-we-btn-gap: 8px;
+  --gp-we-btn-border: 1px;
+  --gp-we-btn-font-size: 0.875rem;
+  --gp-we-btn-weight-primary: 600;
+  --gp-we-btn-weight-secondary: 500;
+  font-family: Inter, "Public Sans", system-ui, sans-serif;
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__title {
+  font-family: Inter, "Public Sans", system-ui, sans-serif;
+  font-weight: 600;
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gp-we-btn-gap);
+  margin-bottom: 1rem;
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__file--primary,
+[data-product="activeclinic"] .gp-website-field-editor__link-btn,
+[data-product="activeclinic"] .gp-website-field-editor__btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--gp-we-btn-h);
+  height: var(--gp-we-btn-h);
+  padding: 0 var(--gp-we-btn-px);
+  border-width: var(--gp-we-btn-border);
+  border-style: solid;
+  border-radius: var(--gp-we-btn-radius);
+  font-family: inherit;
+  font-size: var(--gp-we-btn-font-size);
+  line-height: 1.2;
+  letter-spacing: 0;
+  vertical-align: middle;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Primary — Upload from computer, Save draft */
+[data-product="activeclinic"] .gp-website-field-editor__file--primary,
+[data-product="activeclinic"] .gp-website-field-editor__btn--primary {
+  border-color: var(--gp-we-primary);
+  background: var(--gp-we-primary);
+  color: var(--gp-we-on-primary);
+  font-weight: var(--gp-we-btn-weight-primary);
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__file--primary:hover,
+[data-product="activeclinic"] .gp-website-field-editor__btn--primary:hover {
+  filter: none;
+  background: var(--gp-we-primary-container, var(--color-brand-primary-hover));
+  border-color: var(--gp-we-primary-container, var(--color-brand-primary-hover));
+}
+
+/* Secondary / outlined — Library, Adjust, Remove, Cancel */
+[data-product="activeclinic"] .gp-website-field-editor__link-btn,
+[data-product="activeclinic"] .gp-website-field-editor__btn--ghost {
+  margin-bottom: 0;
+  border-color: var(--gp-we-outline-variant);
+  background: var(--color-surface, #fff);
+  color: var(--gp-we-primary);
+  font-weight: var(--gp-we-btn-weight-secondary);
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__link-btn:hover,
+[data-product="activeclinic"] .gp-website-field-editor__btn--ghost:hover {
+  background: color-mix(in srgb, var(--gp-we-primary) 8%, var(--color-surface, #fff));
+  border-color: var(--gp-we-primary);
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__file--primary:focus-visible,
+[data-product="activeclinic"] .gp-website-field-editor__link-btn:focus-visible,
+[data-product="activeclinic"] .gp-website-field-editor__btn:focus-visible {
+  outline: 2px solid var(--gp-we-primary);
+  outline-offset: 2px;
+}
+
+[data-product="activeclinic"] .gp-website-field-editor__foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--gp-we-btn-gap);
+  padding: 12px 16px 16px;
+}
+
+/* Segmented / pill viewport — Desktop / Mobile only */
+[data-product="activeclinic"] .gp-website-framing__modes {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  border: 1px solid var(--gp-we-outline-variant);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gp-we-outline-variant) 18%, var(--color-surface, #fff));
+  width: fit-content;
+  max-width: 100%;
+}
+
+[data-product="activeclinic"] .gp-website-framing__mode {
+  min-height: 40px;
+  height: 40px;
+  min-width: 5.5rem;
+  padding: 0 14px;
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gp-we-on-surface-variant);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+[data-product="activeclinic"] .gp-website-framing__mode.is-current {
+  background: var(--color-surface, #fff);
+  color: var(--gp-we-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 25, 35, 0.06);
+}
+
+[data-product="activeclinic"] .gp-website-framing__mode:focus-visible {
+  outline: 2px solid var(--gp-we-primary);
+  outline-offset: 2px;
+}
+
+/* Fill / Fit stay squared action chips (not the viewport segmented control) */
+[data-product="activeclinic"] .gp-website-framing__fit-btn {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--gp-we-outline-variant);
+  border-radius: var(--gp-we-btn-radius);
+  background: var(--color-surface, #fff);
+  color: var(--gp-we-on-surface-variant);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+[data-product="activeclinic"] .gp-website-framing__fit-btn.is-current {
+  border-color: var(--gp-we-primary);
+  background: color-mix(in srgb, var(--gp-we-primary) 10%, var(--color-surface, #fff));
+  color: var(--gp-we-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  [data-product="activeclinic"] .gp-website-field-editor__media-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--gp-we-btn-gap);
+  }
+
+  [data-product="activeclinic"] .gp-website-field-editor__file--primary,
+  [data-product="activeclinic"] .gp-website-field-editor__link-btn,
+  [data-product="activeclinic"] .gp-website-field-editor__btn {
+    width: 100%;
+  }
+
+  [data-product="activeclinic"] .gp-website-field-editor__foot {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: var(--gp-we-btn-gap);
+  }
+
+  [data-product="activeclinic"] .gp-website-framing__modes {
+    width: 100%;
+  }
+
+  [data-product="activeclinic"] .gp-website-framing__mode {
+    flex: 1 1 0;
+  }
 }

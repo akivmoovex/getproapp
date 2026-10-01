@@ -24,8 +24,17 @@ However (pre-fix):
 
 So the user “does not reliably arrive in the actual editor” because post-registration used a **success intermediate + dashboard continue**, not the canonical editor route. The editor URL itself was correct when shown; the **primary destination after registration was stale**.
 
+### FIX STATUS (2026-10-02 update — BB-POST-REG-DASHBOARD-01)
+**CLOSED for post-registration landing on HQ.**
+
+- Successful POST `/register-church` → shared session established → **303 `/hq`** (no success/editor detour).
+- Success page **retained** for receipt deep-links (`/register-church/success?ref=…&ready=1`).
+- Primary CTA on success receipt remains **Edit your website** → canonical `buildPublicWebsiteEditPath`.
+- Focused suite: `tests/v2-04-bb-post-registration-dashboard.test.js` (A–E).
+- Prior BB-REG-WEB-01 Edit CTA coverage: `tests/blessboard-bb-reg-web-01-editor-route.test.js`.
+
 ### FIX STATUS (2026-10-01)
-**CLOSED for post-registration Edit CTA routing (preferred V2.04 behavior).**
+**CLOSED for post-registration Edit CTA routing (preferred V2.04 behavior at the time).**
 
 - Success page **retained** (`/register-church/success?ref=…&ready=1`); no auto-redirect into the editor.
 - Primary CTA is **Edit your website** → canonical `buildPublicWebsiteEditPath` (`/c/:organizationKey/:branchKey?website_edit=1&website_mode=draft`).

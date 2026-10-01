@@ -14,6 +14,7 @@
 | REG-STATE-01 | FIXED | **STRONG** | YES | YES |
 | BB-PROVISION-01 | FIXED | **STRONG** | YES | YES |
 | BB-REG-WEB-01 | FIXED | **STRONG** | YES | YES |
+| BB-POST-REG-DASHBOARD-01 | FIXED | **STRONG** | YES | YES |
 | AC-REG-WEB-01 | FIXED | **STRONG** | YES | YES |
 | PLATFORM-PASSWORD-UX-01 | FIXED | **STRONG** | YES | YES |
 | AC-INITIAL-DIRTY-STATE-01 | FIXED | **STRONG** | YES | YES |
@@ -104,7 +105,7 @@ YES — `H` no roles on foreign org; `D` Church A roles untouched.
 ## BUG_ID: BB-REG-WEB-01
 
 ### IMPLEMENTATION_FIX
-Primary success CTA → canonical `/c/:org/:branch?website_edit=1&website_mode=draft`; `/hq` secondary.
+Success receipt primary CTA → canonical `/c/:org/:branch?website_edit=1&website_mode=draft`. **POST** registration landing is now `/hq` (`BB-POST-REG-DASHBOARD-01`).
 
 ### TEST_FILE
 `tests/blessboard-bb-reg-web-01-editor-route.test.js`
@@ -112,13 +113,14 @@ Primary success CTA → canonical `/c/:org/:branch?website_edit=1&website_mode=d
 ### TEST_NAME/SCENARIO
 | Minimum requirement | Covered by |
 |---------------------|------------|
-| Edit Website CTA uses canonical BB edit URL | `A–F + J` asserts `href === expectedEdit`, not `/hq` |
+| POST lands on `/hq` with session | `A–F + J` `assertChurchReadyHqRedirect` + session cookie |
+| Edit Website CTA uses canonical BB edit URL | success receipt `href === expectedEdit`, not `/hq` |
 | Correct org/branch | resolver + `G: correct organization/branch…` distinct CTAs |
 | Edit mode + draft mode | asserts `website_edit=1` and `website_mode=draft` on path |
 | Seeded content visible | `A–F` matches church name on editor GET |
 
 ### POSITIVE_PATH
-YES — register → success CTA → editor 200 + content.
+YES — register → `/hq` → success receipt Edit CTA → editor 200 + content.
 
 ### NEGATIVE_PATH
 YES — `I` failed provision off editor; `H` cross-tenant withholds CTA.
@@ -131,6 +133,48 @@ YES — `H` foreign ref + other session.
 
 ### WOULD_CATCH_REGRESSION
 **YES**
+
+### STATUS
+**STRONG**
+
+---
+
+## BUG_ID: BB-POST-REG-DASHBOARD-01
+
+### IMPLEMENTATION_FIX
+After provision + shared session cookie, HTTP redirect is `/hq` (not `/register-church/success`).
+
+### TEST_FILE
+`tests/v2-04-bb-post-registration-dashboard.test.js`
+
+### TEST_NAME/SCENARIO
+| Minimum requirement | Covered by |
+|---------------------|------------|
+| New user → authenticated `/hq` | `A` |
+| Reused phone identity → authenticated `/hq` | `B` |
+| Role assignment failure → no partial session | `C` |
+| Unauthenticated `/hq` protected | `D` |
+| New church context after redirect | `E` |
+
+### POSITIVE_PATH
+YES — A/B/E session + `/hq` + church name in shell.
+
+### NEGATIVE_PATH
+YES — C no cookie / no org; D login gate.
+
+### AUTHZ/TENANT_PATH
+YES — B/E new church context; D gate.
+
+### WOULD_FAIL_BEFORE_FIX
+**YES** — Location was `/register-church/success?...`; `assertChurchReadyHqRedirect` / `A` would fail.
+
+### WOULD_CATCH_REGRESSION
+**YES**
+
+### STATUS
+**STRONG**
+
+---
 
 ### STATUS
 **STRONG**

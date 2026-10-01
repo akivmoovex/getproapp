@@ -86,6 +86,44 @@
             }
             return;
           }
+          // Avoid full-page reload (MEDIA-03): insert the new library card in place.
+          var media = result.json.media || {};
+          var mediaId = media.id || "";
+          var preview =
+            media.publicSrc || media.previewUrl || (mediaId ? upload.action.replace(/\/?$/, "/") + mediaId : "");
+          var grid = document.querySelector("[data-gp-library-grid='1']");
+          var empty = document.querySelector("[data-gp-library-empty='1']");
+          var countEl = document.querySelector("[data-gp-library-count='1']");
+          if (grid && mediaId) {
+            if (empty) empty.hidden = true;
+            var li = document.createElement("li");
+            li.className = "gp-lib__card";
+            li.setAttribute("data-gp-library-item", "1");
+            li.setAttribute("data-gp-library-id", mediaId);
+            li.setAttribute("data-gp-library-kind", media.mediaKind || "image");
+            li.innerHTML =
+              '<a class="gp-lib__card-link" href="/app/settings/website/media/' +
+              encodeURIComponent(mediaId) +
+              '">' +
+              (preview
+                ? '<img class="gp-lib__thumb" src="' +
+                  String(preview).replace(/"/g, "&quot;") +
+                  '" alt="" />'
+                : "") +
+              '<span class="gp-lib__title">' +
+              String(media.originalFilename || media.title || "Uploaded image").replace(/</g, "&lt;") +
+              "</span></a>";
+            grid.insertBefore(li, grid.firstChild);
+            if (countEl) {
+              var n = grid.querySelectorAll("[data-gp-library-item='1']").length;
+              countEl.textContent = n === 1 ? "1 item" : n + " items";
+            }
+            var dialog = upload.closest("dialog");
+            if (dialog && typeof dialog.close === "function") dialog.close();
+            upload.reset();
+            if (status) status.textContent = "Uploaded — available in the Image Library.";
+            return;
+          }
           window.location.reload();
         })
         .catch(function () {

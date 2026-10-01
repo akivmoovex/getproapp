@@ -86,7 +86,6 @@ const {
 } = require("../services/registrationEmailVerificationService");
 const {
   generatePublicRegistrationReference,
-  buildRegistrationSuccessRedirect,
 } = require("../../platform/registration/registrationSuccessPresentation");
 const {
   safeRegistrationPublicError,
@@ -284,14 +283,23 @@ function logCsrfDiag(req, env, outcome) {
 }
 
 function logSessionEstablishFailure(req, errStatus, extra) {
+  const detail = extra && typeof extra === "object" ? extra : {};
   logRegistrationTrace(
     req,
     {
       event: "church_registration_session",
       operation: "establish_session",
       outcome: "fail",
-      failureCategory: errStatus || "session_failed",
-      ...(extra && typeof extra === "object" ? extra : {}),
+      failureCategory: errStatus || detail.failureCode || "session_failed",
+      failureCode: detail.failureCode || null,
+      failureMessage:
+        detail.failureMessage != null
+          ? String(detail.failureMessage).replace(/[A-Za-z0-9_-]{40,}/g, "[redacted]").slice(0, 160)
+          : null,
+      pgCode: detail.pgCode || null,
+      constraint: detail.constraint || null,
+      applicationId: detail.applicationId || null,
+      organizationKey: detail.organizationKey || null,
     },
     { force: true, level: "error" }
   );
@@ -1103,16 +1111,15 @@ function createApexMarketingRouter(deps) {
       }
 
       // Provisioning committed — establish session (never roll back the tenant).
-      // Issue a new opaque V5 session token (replaces any prior cookie value).
+      // Same canonical path as normal /login: requireOrganizationId scopes catalogue
+      // roles; church/branch come from preferCatalogueSessionRole (not forced IDs).
       const orgKey = records.organizationKey || validation.data.organization_key || "";
       let sessionOk = false;
       try {
         const sessionResult = await establishSession(getPool(), {
           userId: records.administratorUserId,
           deploymentCode,
-          organizationId: records.organizationId,
-          churchId: records.churchId,
-          branchId: records.branchId,
+          requireOrganizationId: records.organizationId || null,
           ip: clientIp(req),
           userAgent: (req.get && req.get("user-agent")) || null,
         });
@@ -1132,11 +1139,20 @@ function createApexMarketingRouter(deps) {
             organizationKey: orgKey || null,
             publicPlanCode,
             canonicalPlanKey: records.planKey || mapPublicPlanToDbPlanKey(publicPlanCode) || null,
+            preferredRoleKey: sessionResult.preferredRoleKey || null,
+            tenantOrganizationId:
+              (sessionResult.tenantContext && sessionResult.tenantContext.organizationId) ||
+              (sessionResult.session && sessionResult.session.organization_id) ||
+              null,
           });
         } else {
           logSessionEstablishFailure(req, sessionResult && sessionResult.status, {
             applicationId: records.applicationId || null,
             organizationKey: orgKey || null,
+            failureCode: (sessionResult && (sessionResult.failureCode || sessionResult.status)) || null,
+            failureMessage: (sessionResult && sessionResult.message) || null,
+            pgCode: (sessionResult && sessionResult.pgCode) || null,
+            constraint: (sessionResult && sessionResult.constraint) || null,
           });
         }
       } catch (sessionErr) {
@@ -1146,6 +1162,11 @@ function createApexMarketingRouter(deps) {
           {
             applicationId: records.applicationId || null,
             organizationKey: orgKey || null,
+            failureCode: "exception",
+            failureMessage: sessionErr && sessionErr.message ? String(sessionErr.message).slice(0, 160) : null,
+            pgCode: sessionErr && sessionErr.code ? String(sessionErr.code).slice(0, 32) : null,
+            constraint:
+              sessionErr && sessionErr.constraint ? String(sessionErr.constraint).slice(0, 120) : null,
           }
         );
       }
@@ -1172,16 +1193,14 @@ function createApexMarketingRouter(deps) {
         }
       }
 
-      const successPath = buildRegistrationSuccessRedirect({
-        productCode: "blessboard",
-        reference: publicReference,
-        ready: true,
-      });
+      // Auto-login already issued above; land on HQ dashboard (skip success/editor detour).
+      const redirectPath = HQ_PATH;
       logRegistrationTrace(req, {
         event: "church_registration_redirect",
         operation: "register_church_redirect",
         outcome: "ok",
-        redirectPath: successPath,
+        redirectPath,
+        publicRegistrationReference: publicReference || null,
         ...(sessionOk ? {} : { failureCategory: "session_failed_post_commit" }),
         applicationId: records.applicationId || null,
         organizationKey: orgKey || null,
@@ -1189,7 +1208,7 @@ function createApexMarketingRouter(deps) {
         canonicalPlanKey: records.planKey || null,
         durationMs: Date.now() - startedAt,
       });
-      return res.redirect(303, successPath);
+      return res.redirect(303, redirectPath);
     } catch (err) {
       return next(err);
     }

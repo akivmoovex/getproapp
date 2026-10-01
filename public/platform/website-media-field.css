@@ -63,19 +63,34 @@
 }
 
 .gp-we-media-field__btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0 0.9rem;
+  padding: 0 16px;
   border: 1px solid var(--editor-outline);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.gp-we-media-field__btn:hover {
+  filter: brightness(0.98);
+}
+
+.gp-we-media-field__btn:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+.gp-we-media-field__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .gp-we-media-field__btn--primary {

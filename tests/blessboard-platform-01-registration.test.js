@@ -27,6 +27,11 @@ const {
 } = require("../src/blessboard/services/provisionRegisteredBlessBoardChurch");
 const { authenticateBlessBoardUser } = require("../src/blessboard/services/authenticateBlessBoardUser");
 const appRepo = require("../src/blessboard/repositories/platformChurchRegistrationRepository");
+const {
+  assertChurchReadyHqRedirect,
+  loadPublicRegistrationReference,
+  buildChurchReadySuccessPath,
+} = require("./helpers/blessboardRegistrationSuccess");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
@@ -161,21 +166,21 @@ describe("blessboard platform 01 — registration + success", () => {
     requireDb();
     const { app, body, post } = await registerChurch({ church_name: "Grace Community Church" });
     assert.equal(post.status, 303, post.text && String(post.text).slice(0, 400));
+    assertChurchReadyHqRedirect(post.headers.location);
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
+    const ref = await loadPublicRegistrationReference(pool, body.email);
+    assert.ok(ref, "public registration reference stored");
     const success = await request(app)
-      .get(post.headers.location)
+      .get(buildChurchReadySuccessPath(ref))
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
     assert.equal(success.status, 200);
     assert.match(success.text, /Your church website/);
     assert.match(success.text, /Draft — not published yet/);
-    assert.match(success.text, /Build your website/);
+    assert.match(success.text, /Build your website|Edit your website/);
     assert.match(success.text, /data-bb-copy-website-url="1"/);
     assert.match(success.text, /\/c\/grace-community-church/);
 
-    const refMatch = String(post.headers.location || "").match(/ref=([^&]+)/);
-    assert.ok(refMatch, "success redirect must include ref");
-    const ref = decodeURIComponent(refMatch[1]);
     const stored = await pool.query(
       `SELECT public_registration_reference, organization_id
          FROM blessboard.platform_church_registration_applications
@@ -195,7 +200,8 @@ describe("blessboard platform 01 — registration + success", () => {
     requireDb();
     const a = await registerChurch({ church_name: "Alpha Chapel" });
     const b = await registerChurch({ church_name: "Beta Chapel" });
-    const refB = String(b.post.headers.location || "").match(/ref=([^&]+)/)[1];
+    const refB = await loadPublicRegistrationReference(pool, b.body.email);
+    assert.ok(refB, "second church public ref");
     const sidA = extractCookie(a.post, DEFAULT_V5_COOKIE);
     const leaked = await request(a.app)
       .get(`/register-church/success?ref=${encodeURIComponent(refB)}&ready=1`)

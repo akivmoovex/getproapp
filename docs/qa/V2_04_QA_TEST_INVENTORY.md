@@ -19,6 +19,9 @@
 | `tests/v2-04-platform-website-presentation.test.js` | Presentation model | Shared | + | Automated | PASS |
 | `tests/v2-04-ac-website-presentation-adapter.test.js` | AC presentation adapter | AC | + | Automated | PASS |
 | `tests/v2-04-shared-website-media-hardening.test.js` | Shared media / upload | Shared | + | Automated | PASS |
+| `tests/v2-04-media-editor-bug-pack.test.js` | AC+BB image editor + media MEDIA-01…05 | Shared / AC / BB | + / − | Automated | PASS (10/10) |
+| `tests/v2-04-bb-post-registration-dashboard.test.js` | BB post-reg auto-login → `/hq` | BB | + / − | Automated | PASS |
+| `tests/v2-04-bb-registration-auto-login.test.js` | BB reg auto-login root cause (shared tenant context) | BB | + / − | Automated | PASS (8/8) |
 | `tests/v2-04-platform-admin-website-console.test.js` | Platform Admin website console | Shared | + / − | Automated | PASS |
 | `tests/v2-04-mini-website-repeat-edit.test.js` | Editor concurrency / repeat save | Shared / AC | + / − | Automated | PASS |
 | `tests/v2-04-ac-stitch-batch-2-public-foundation.test.js` | R01–R03 public foundation | AC | + | Automated | PASS |

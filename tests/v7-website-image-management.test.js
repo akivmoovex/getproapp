@@ -147,7 +147,7 @@ describe("v7 website image management — source contract", () => {
     assert.match(js, /image\/jpeg/);
     assert.match(js, /5 \* 1024 \* 1024|data-website-max-bytes/);
     assert.match(js, /createObjectURL/);
-    assert.match(js, /Preview only/);
+    assert.match(js, /Uploaded to Image Library|Preview only|save draft to place/);
     assert.match(js, /closeDialog/);
     assert.match(js, /published === true/);
     assert.doesNotMatch(js, /website_mode=live.*POST|published:\s*true/);
@@ -160,7 +160,7 @@ describe("v7 website image management — source contract", () => {
     const js = read("public/blessboard/v5/website-structured-edit.js");
     assert.match(js, /function validateImageFile/);
     assert.match(js, /Previous image kept/);
-    assert.match(js, /capture="environment"/);
+    assert.match(js, /data-bb-upload-from-computer|Upload from computer/);
     assert.match(js, /result\.data\.published/);
     const host = read("views/blessboard/v5/partials/structured-editor-host.ejs");
     assert.match(host, /data-bb-max-image-bytes="5242880"/);
