@@ -24,7 +24,7 @@ UI ships on existing BlessBoard auth chrome (`tenant-auth.css` / `apex-auth.css`
 | **M14** First-Time Verification | `GET/POST /member/activate` | Exact Church ID + full name + phone; email optional; no fuzzy match; no membership create on failure |
 | **M15** Create Password | `POST /member/activate/password` | ≥8, 1 uppercase, 1 special; signed draft token |
 | **M16** Portal Activated | success view after activate / reset | Continue to `/member/login` |
-| **M17** Forgot Password | `GET/POST /member/forgot-password` | Church ID → verified contact OTP; enumeration-safe copy |
+| **M17** Forgot Password | `GET/POST /member/forgot-password` | Church ID → **verified phone OTP only** (PD-V204-BB-03); enumeration-safe; no email fallback in V2.04 |
 | **M18** Recovery Verification | `POST /member/forgot-password/verify` | OTP + new password; sessions revoked on success |
 | **M19** Recovery Failure | `?lost=1` + OTP failure | Lost Church ID = contact church only; no automated ID recovery |
 

@@ -69,7 +69,7 @@ Create the authoritative inventory of **NEW / CHANGED / FOUNDATION / DEFERRED** 
 | PRODUCT | FEATURE_ID | FEATURE | SOURCE | CLASS | IMPLEMENTATION_HINT/PATH | TEST_HINT/PATH | STATUS |
 |---------|------------|---------|--------|-------|--------------------------|----------------|--------|
 | BB | FR-01 | Membership creation — authorized only; no self-create | Canonical Member Feature Spec | MUST | `blessBoardMemberDomainService.js`, staff add-member flow/UI, M01–M05 | `tests/v2-04-bb-member-creation-flow.test.js`, `tests/v2-04-bb-member-domain.test.js`, `tests/v2-04-bb-m01-m02-members.test.js` | NEW |
-| BB | FR-02 | Church ID — org-unique, church-controlled, member cannot edit | Canonical Spec | MUST | `119_member_number_church_id.sql`, `manageChurchId`, M08 | member-domain / admin-profile / creation-flow suites | NEW |
+| BB | FR-02 | Church ID — unique per church (`church_id`), church-controlled, member cannot edit | Canonical Spec + PD-V204-BB-01 | MUST | `119_member_number_church_id.sql`, `manageChurchId`, M08 | member-domain / admin-profile / creation-flow / product-decisions suites | TEMPORARY_APPROVED_FOR_V2_04 |
 | BB | FR-03 | First activation — Full Name + Phone + Church ID; email optional | Canonical Spec | MUST | `blessBoardMemberPortalAuthService.js`, member-auth views M13–M19 | `tests/v2-04-bb-member-auth.test.js` | NEW |
 | BB | FR-04 | Password policy (≥8, uppercase, special) | Canonical Spec | MUST | member portal auth password validators | `tests/v2-04-bb-member-auth.test.js` | NEW |
 | BB | FR-05 | Returning login — Church ID + password | Canonical Spec | MUST | member-auth login routes/templates | `tests/v2-04-bb-member-auth.test.js` | NEW |

@@ -27,6 +27,9 @@ const {
   PORTAL_ACCESS_STATUS,
 } = require("./memberDomainConstants");
 const {
+  membershipAllowsOrdinaryPortalAccess,
+} = require("./membershipPortalLifecycle");
+const {
   startVerification,
   checkVerification,
   STATUS: OTP_STATUS,
@@ -497,6 +500,26 @@ async function authenticateMemberByChurchId(db, input, deps) {
     };
   }
 
+  if (!membershipAllowsOrdinaryPortalAccess(member.status)) {
+    await auditAuth(db, {
+      actionKey: "members.portal_login_failed",
+      outcome: SHARED_AUDIT_OUTCOME.FAILURE,
+      organizationId,
+      churchId,
+      memberId: member.id,
+      actorUserId: user.id,
+      metadata: {
+        reason: "membership_not_active",
+        membership_status: member.status || null,
+      },
+    });
+    return {
+      ok: false,
+      code: RESULT.INVALID_CREDENTIALS,
+      message: NEUTRAL_LOGIN,
+    };
+  }
+
   if (String(member.portalAccessStatus || "") === PORTAL_ACCESS_STATUS.NOT_ACTIVATED) {
     return {
       ok: false,
@@ -541,7 +564,9 @@ async function authenticateMemberByChurchId(db, input, deps) {
 }
 
 /**
- * M17 — recovery start by Church ID (verified contact on file).
+ * M17 — recovery start by Church ID (V2.04: verified phone OTP only).
+ * PD-V204-BB-03: no email recovery fallback; never send OTP to unverified email.
+ * Missing usable phone → enumeration-safe no-send; church admin offline path.
  */
 async function beginMemberPasswordRecovery(db, input, env) {
   const churchId = String((input && input.churchId) || "").trim();

@@ -1,6 +1,7 @@
 # V2.04 Critical Decision Review (Product Prep)
 
 **Purpose:** Prepare the five CRITICAL P0 product decisions for Product approval.  
+**Status:** All five CRITICAL decisions + PD-V204-BB-05 are **TEMPORARY_APPROVED_FOR_V2_04** (`REVIEW_LATER=YES`). See register.  
 **Sources:** `docs/product/V2_04_PRODUCT_DECISION_REGISTER.md` and the specs/audits each decision already cites (BB Canonical Feature Spec FINAL; `V2_04_P0_BURNDOWN.md`; `V2_04_FINAL_GAP_AND_TEST_PLAN.md`; `V2_04_SPEC_COMPLETENESS_GAP_AUDIT.md`; `V2_04_SPEC_IMPLEMENTATION_GAP_AUDIT.md`; AC Stitch product decisions where AC-01 references them).  
 **Out of scope:** Application code changes; broad rediscovery; inventing additional critical decisions.  
 **Preserved non-critical:** `PD-V204-BB-05` (cells DEFER) remains `TEMPORARY_APPROVED_FOR_V2_04` — not revisited here.

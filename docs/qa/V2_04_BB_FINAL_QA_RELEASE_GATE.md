@@ -103,7 +103,7 @@ Evidence: creation-flow, member-domain, admin-profile, m01-m02, registration, st
 | Requirement | Result |
 |-------------|--------|
 | Staff create → normalize → duplicate warn → Church ID → create → portal `not_activated` → profile/history | **PASS** |
-| Church ID unique within church (org); not globally unique | **PASS** (`members_church_member_number_live_uidx`) |
+| **Church ID unique within church (`church_id`); not globally unique; not org-wide** | **PASS** (`members_church_member_number_live_uidx`) · PD-V204-BB-01 TEMPORARY_APPROVED_FOR_V2_04 |
 | Email optional | **PASS** |
 | Duplicate Church ID hard-blocked | **PASS** |
 | Possible person duplicates warned; no auto-merge | **PASS** |

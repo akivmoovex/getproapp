@@ -19,15 +19,16 @@ V2.04 **website / geography / shared-editor smoke** has a valid sanity **PASS** 
 - **REG-STATE-01=CLOSED** — `PLATFORM_FORM_TESTS=13/13` · `BB_REGISTRATION_TESTS=3/3` · `AC_REGISTRATION_TESTS=2/2` · `SESSIONLESS_FLOW=PASS` · `CROSS_DRAFT_ISOLATION=PASS` · `FINAL=PLATFORM_MULTI_STEP_FORM_STATE_IMPLEMENTED`
 - **BB-PROVISION-01=CLOSED** — `CANONICAL_IDENTITY_PROPAGATION=PASS` · `PHONE_REUSE_DIFFERENT_EMAIL=PASS` · `MULTI_CHURCH_ADMIN=PASS` · `ROLLBACK=PASS` · `RETRY=PASS` · `CROSS_TENANT=PASS` · `FOCUSED_TESTS=11/11` · `FINAL=BB_PROVISION_IDENTITY_FIX_COMPLETE`
 
-Still open before production claim (unchanged from remaining plan rows):
+**Product decisions closed (temporary V2.04):** PD-V204-BB-01..04, PD-V204-BB-05, PD-V204-AC-01 — see `docs/product/V2_04_PRODUCT_DECISION_REGISTER.md`. Normative status matrix: `docs/product/V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md`. AC scope: `docs/product/V2_04_AC_PRODUCT_CONTRACT_SCOPE.md`.
 
-1. **Seven blocking product decisions** (BB + AC contract completeness).  
-2. **Two HIGH implementation gaps** (dual-role destinations; join `resolveManagedResourceIds` unwired).  
-3. **BlessBoard Members** (FR-01..20 / AC-01..25) — in release scope, **never sanity-tested**, no FEATURE_QA_PASS.  
-4. **Critical automated test gaps** on privacy / recovery-phone completion (impl FULL, tests weak/missing).  
-5. **Build identity unbound** on the sanity host (branch / SHA / deploy / DB / migration ceiling).
+Still open before production claim:
 
-**`READY_FOR_PRODUCTION_QA=NO`** — remaining P0 rows (12) and other recorded gaps still block production QA readiness. Closing REG-STATE-01 / BB-PROVISION-01 alone does **not** flip this flag.
+1. **Two HIGH implementation gaps** (dual-role destinations; join `resolveManagedResourceIds` unwired — includes DR-39 key freeze).  
+2. **BlessBoard Members** (FR-01..20 / AC-01..25) — in release scope, **never sanity-tested**, no FEATURE_QA_PASS.  
+3. **Critical automated test gaps** on privacy / recovery-phone completion (impl FULL, tests weak/missing).  
+4. **Build identity unbound** on the sanity host (branch / SHA / deploy / DB / migration ceiling).
+
+**`READY_FOR_PRODUCTION_QA=NO`** — remaining **P0=6** non-product blockers still block production QA readiness.
 
 ---
 
@@ -59,20 +60,25 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 | PRIORITY | PRODUCT | REQ_ID | FEATURE | SPEC_STATUS | IMPLEMENTATION_STATUS | AUTOMATED_TEST_STATUS | SANITY_TEST_STATUS | MANUAL_QA_REQUIRED | GAP | ACTION |
 |----------|---------|--------|---------|-------------|----------------------|----------------------|--------------------|--------------------|-----|--------|
-| P0 | BB | FR-02 / BR-01 / DR-1 | Church ID uniqueness scope | **BLOCKING_DECISION** | FULL (church_id + number index) | COVERED (domain) | NOT_SANITY_TESTED | AFTER_SPEC | Spec says org vs church inconsistently; code is per-`church_id` | Product: freeze uniqueness = per church **or** per org; align FR-02/BR-01 |
-| P0 | BB | Login / DR-28 | Multi-membership login / activation tenant context | **BLOCKING_DECISION** | FULL (multi rows possible); UX DEFERRED | N/A | NOT_SANITY_TESTED | AFTER_SPEC | MUST login lacks selection rules when multi-membership FOUNDATION exists | Product: Church Directory selection = session tenant; document interaction with Church ID |
-| P0 | BB | FR-06 / AC-07 / DR-10 | Password recovery email fallback “where available” | **BLOCKING_DECISION** | **PARTIAL** (phone OTP only) | PARTIAL | NOT_SANITY_TESTED | AFTER_SPEC | Criteria undefined; email channel absent | Product: (A) phone-only V2.04 **or** (B) verified-email OTP if no phone; then impl+test if B |
-| P0 | BB | Statuses / checklist | Membership + portal status transition matrices | **BLOCKING_DECISION** | FULL enums; transitions underspecified | PARTIAL (block paths only) | NOT_SANITY_TESTED | AFTER_SPEC | No who/when matrix for INACTIVE/FORMER/BLOCKED↔ACTIVE | Product: publish transition + actor permission matrix |
-| P0 | BB | FR-16 / AC-21 / DR-39 | Leader ↔ managed resource binding + review scope | **BLOCKING_DECISION** | **PARTIAL** — scope helper exists; **injector unwired** at mount | COVERED with **injected** deps only | NOT_SANITY_TESTED | AFTER_FIX | Leaders without broad perm fail-closed in production mount | Product freeze binding + keys; **wire `resolveManagedResourceIds`**; add mount-level test |
-| P0 | BB | DR-46 | Cells in V2.04? (`MUST IF CELLS`) | **BLOCKING_DECISION** | Cell scope **ABSENT** / UNVERIFIABLE | N/A | OUT_OF_SCOPE until decided | AFTER_SPEC | Conditional MUST not testable | Product: **DEFER cells** for V2.04 **or** ship cell mini-spec; if DEFER, reclassify #46 |
-| P0 | AC | AC V2.04 contract | Canonical AC Feature Spec (or explicit non-product scope) | **SPEC_GAP** / **BLOCKING_DECISION** | Website + patient foundation implemented | Feature-level COVERED/PARTIAL | Website **SANITY_PASS**; patient **NOT_SANITY_TESTED** | AFTER_SPEC | No FR/AC/BR; inventing ACs forbidden | Product: author AC Canonical Spec **or** declare Stitch/website **presentation-only** + patient foundation **non-release-gated** |
-| P0 | BB | FR-12 / AC-13 / DR-27 | Dual-role Member Portal + Church Management destinations | AMBIGUOUS (HIGH completeness) | **PARTIAL** (shells exist; no cross-links) | **UNTESTED** | NOT_SANITY_TESTED | AFTER_FIX | MUST dual experience incomplete | Implement linked dual-role entry points; automated + manual dual-role journey |
-| P0 | BB | FR-01..FR-20 / AC-01..AC-25 | BlessBoard Members feature pack | COMPLETE enough for core auth; weak on scope/dual-role | Mostly FULL; PARTIAL on FR-06/12/13/16 | COVERED 24 / PARTIAL 6 / UNTESTED 3 (AC set) | **NOT_SANITY_TESTED** (explicitly excluded) | **YES** | In release scope; sanity falsely called “not part of release”; no FEATURE_QA_PASS | Run Members FEATURE QA (scenario pack §4); do not treat website sanity as Members PASS |
-| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | N/A | N/A | Sanity host unbound | **YES** | No branch / full SHA / deploy SHA / DB / migration ceiling on sanity report | Record identity on TESTING before FEATURE QA; refuse production claim without it |
-| P0 | BB | AC-23 | Member privacy — no other-member/admin data | COMPLETE | FULL | **WEAK** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | Automation does not prove cross-member denial | Add behavioral cross-member access denial test + manual privacy check |
-| P0 | BB | AC-11 | New recovery phone verified before use | COMPLETE | FULL | **PARTIAL** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | OTP **complete** path not behaviorally tested | Add complete OTP success/fail automated tests + manual phone-change (QA07) |
+| P0 | BB | FR-16 / AC-21 / DR-39 | Leader ↔ managed resource binding + review scope | AMBIGUOUS (keys) | **PARTIAL** — scope helper exists; **injector unwired** at mount | COVERED with **injected** deps only | NOT_SANITY_TESTED | AFTER_FIX | Leaders without broad perm fail-closed in production mount | Freeze DR-39 keys; **wire `resolveManagedResourceIds`**; mount-level test |
+| P0 | BB | FR-12 / AC-13 / DR-27 | Dual-role Member Portal + Church Management destinations | AMBIGUOUS (HIGH) | **PARTIAL** (shells exist; no cross-links) | **UNTESTED** | NOT_SANITY_TESTED | AFTER_FIX | MUST dual experience incomplete | Implement linked dual-role entry points; automated + manual dual-role journey |
+| P0 | BB | FR-01..FR-20 / AC-01..AC-25 | BlessBoard Members feature pack | COMPLETE enough for core auth | Mostly FULL; PARTIAL on FR-12/13/16 | COVERED + product-decision suites | **NOT_SANITY_TESTED** | **YES** | In release scope; no FEATURE_QA_PASS | Run Members FEATURE QA (scenario pack §4) |
+| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | N/A | N/A | Sanity host unbound | **YES** | No branch / full SHA / deploy SHA / DB / migration ceiling | Record identity on TESTING before FEATURE QA |
+| P0 | BB | AC-23 | Member privacy — no other-member/admin data | COMPLETE | FULL | **WEAK** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | Automation does not prove cross-member denial | Add behavioral cross-member denial test + manual privacy check |
+| P0 | BB | AC-11 | New recovery phone verified before use | COMPLETE | FULL | **PARTIAL** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | OTP **complete** path not behaviorally tested | Add complete OTP success/fail automated tests + manual phone-change |
 
-**P0 count = 12** (REG-STATE-01 and BB-PROVISION-01 removed from blockers)
+**P0 count = 6** (six former P0 product decisions closed as TEMPORARY_APPROVED_FOR_V2_04; REG-STATE-01 / BB-PROVISION-01 already CLOSED)
+
+### 2.0 Closed P0 product decisions (not release blockers)
+
+| ID | APPROVED | CLASS | NOTES |
+|----|----------|-------|-------|
+| PD-V204-BB-01 | OPTION A | DOC_ONLY + TEST_ONLY | Unique per church; sibling ID strings allowed |
+| PD-V204-BB-02 | OPTION A | DOC_ONLY + TEST_ONLY | Select Church binds tenant |
+| PD-V204-BB-03 | OPTION A | DOC_ONLY + TEST_ONLY | Phone OTP only; FR-06 V2.04 MUST = phone |
+| PD-V204-BB-04 | OPTION A | CODE_CHANGE_REQUIRED | Matrix + lifecycle portal clear + login gate |
+| PD-V204-BB-05 | DEFER cells | DOC_ONLY | Already temporary approved |
+| PD-V204-AC-01 | OPTION B | DOC_ONLY | Presentation gated; patient non-gated |
 
 ### 2.1 BB-PROVISION-01 detail (CLOSED)
 
@@ -91,7 +97,7 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 | PRIORITY | PRODUCT | REQ_ID | FEATURE | SPEC_STATUS | IMPLEMENTATION_STATUS | AUTOMATED_TEST_STATUS | SANITY_TEST_STATUS | MANUAL_QA_REQUIRED | GAP | ACTION |
 |----------|---------|--------|---------|-------------|----------------------|----------------------|--------------------|--------------------|-----|--------|
-| P1 | BB | FR-06 / AC-07 | Email recovery channel (if Product chooses B) | After P0 decision | PARTIAL → target FULL | PARTIAL | NOT_SANITY_TESTED | AFTER_FIX | No email OTP path today | Implement verified-email fallback; keep enumeration-safe; automate |
+| P1 | BB | FR-06 / AC-07 | Email recovery channel | **DEFERRED** (PD-V204-BB-03=A) | N/A for V2.04 MUST | N/A | OUT_OF_SCOPE | NO | Phone-only approved | Post-V2.04 FOUNDATION; do not implement in V2.04 |
 | P1 | BB | FR-13 / AC-16 / DR-33 | Manual attendance least-privilege (non-cell) | AMBIGUOUS if cells deferred | PARTIAL (perm-gated only) | COVERED for perm deny | NOT_SANITY_TESTED | YES | Cell narrow scope incomplete; OK if cells DEFER | If cells out: document “permission-gated only” for V2.04; manual attendance QA11–12 |
 | P1 | BB | CREATE-UI | Gender / baptism on Add Member UI | AMBIGUOUS (Stitch vs contract) | **PARTIAL** — UI required; schema lacks columns | Form validation only | NOT_SANITY_TESTED | AFTER_SPEC | Create UI vs migration mismatch | Persist fields **or** optionalize/remove until schema exists |
 | P1 | BB | AC-24 | Ordinary member cannot upload documents | COMPLETE | FULL (absence) | **UNTESTED** (CRITICAL list) | NOT_SANITY_TESTED | YES | No automated absence/reject assert | Assert no upload control / reject upload route |
@@ -104,8 +110,8 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 | P1 | BB | BB-WEBSITE-ENGINE | BB website engine cutover beyond smoke | COMPLETE (platformization) | FULL (per gates) | COVERED | **PARTIAL** sanity | YES | Sanity = edit/save/preview/public only | Manual publish/unpublish/version/restore + true-stale on BB |
 | P1 | AC | AC-MW-HUB | Clinic Website Management Hub H01–H06 | SPEC_GAP | Implemented; FUTURE controls informational | PARTIAL | NOT_SANITY_TESTED | YES | Hub not in sanity Studio path | Manual hub QA; confirm FUTURE not false-active |
 | P1 | AC | AC-PATIENT-DOMAIN | Staff Add Patient foundation | SPEC_GAP (no AC pack) | FOUNDATION | COVERED (domain) | NOT_SANITY_TESTED | AFTER_SPEC | Excluded from sanity; release gating unclear | After P0 AC scope decision: either foundation smoke QA **or** explicit non-gate waiver |
-| P1 | AC | Stitch matrix | MUST vs PRESENTATION vs FUTURE controls | **AMBIGUOUS** (HIGH) | Presentation shipped | COVERED wiring | SANITY_PASS public/editor only | AFTER_SPEC | Risk of false blockers | Product-signed control matrix |
-| P1 | AC | Public PHI policy | Public website field / PHI rules | **AMBIGUOUS** (HIGH) | UNKNOWN at contract level | N/A | SANITY_PASS pages load | AFTER_SPEC | Privacy undefined for doctor/services pages | Define public-safe field policy; spot-check public pages |
+| P1 | AC | Stitch matrix | MUST vs PRESENTATION vs FUTURE controls | **AMBIGUOUS** (HIGH); non-patient-gated per AC-01 | Presentation shipped | COVERED wiring | SANITY_PASS public/editor only | NO (presentation claim) | Risk of false blockers | Product-signed control matrix (non-blocking for patient) |
+| P1 | AC | Public PHI policy | Public website field / PHI rules | **AMBIGUOUS** (HIGH); presentation-scoped | UNKNOWN at contract level | N/A | SANITY_PASS pages load | YES (presentation hygiene) | Privacy undefined for doctor/services pages | Define public-safe field policy; spot-check public pages |
 | P1 | AC | R08 booking | Booking entry chrome-only vs domain change | **AMBIGUOUS** (HIGH) | Inherited booking engine | N/A | N/A | AFTER_SPEC | Second booking engine risk | Affirm chrome/handoff only in product note; smoke booking entry |
 | P1 | SHARED | PLAT-WEB-LIFECYCLE | Publish / version / restore / concurrency | COMPLETE (freeze) | FULL (gates) | COVERED suites exist | **PARTIAL** (save/preview only) | YES | Sanity did not prove full lifecycle | Manual lifecycle on AC+BB with identity-bound build |
 | P1 | SHARED | PLAT-COUNTRY-AVAIL | Disabled country forged POST reject | COMPLETE | FULL | COVERED auto | **PARTIAL** sanity | YES | Sanity = select only | Confirm on hosted env (QA-03 class) |
@@ -243,17 +249,17 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 | 6 | DR-46 | Cells **in** or **out** of V2.04 |
 | 7 | AC contract | Canonical AC V2.04 Spec **or** presentation-only + patient foundation gating waiver |
 
-**`SPEC_DECISIONS_REQUIRED=7`**
+**`SPEC_DECISIONS_REQUIRED=1`** (DR-39 keys; six prior decisions temporary-approved)
 
 ---
 
 ## 7. Closure order (recommended)
 
 1. Record **build identity** on TESTING (T-M01).  
-2. Resolve **7** blocking product decisions.  
-3. Land **P0 HIGH fixes** (injector wiring; dual-role destinations; email path only if decision B).  
-4. Add **T-A01..T-A12** (skip T-A08 if phone-only).  
-5. Execute **T-M02..T-M21** (+ T-M20/T-M21 if gated; optional T-M22 hosted smoke).  
+2. ~~Resolve blocking product decisions~~ — **DONE** (temporary approvals).  
+3. Land **P0 HIGH fixes** (injector wiring; dual-role destinations).  
+4. Add **T-A01..T-A12** (**skip T-A08** — phone-only approved).  
+5. Execute **T-M02..T-M21** (Members FEATURE QA).  
 6. Re-evaluate P1 residuals; defer P2 explicitly to backlog.  
 7. Only then: `READY_FOR_PRODUCTION_QA` → **YES** candidate.
 
@@ -265,14 +271,15 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 
 | Bucket | Count |
 |--------|------:|
-| P0 RELEASE BLOCKER rows | **12** |
-| P1 BEFORE PRODUCTION rows | **22** |
+| P0 RELEASE BLOCKER rows | **6** |
+| P1 BEFORE PRODUCTION rows | **21** |
 | P2 POST-RELEASE rows | **24** |
-| DEFERRED / NOT A DEFECT rows | **11** |
+| DEFERRED / NOT A DEFECT rows | **12** (+ email recovery deferred) |
 | CLOSED defects (not blockers) | **2** (REG-STATE-01, BB-PROVISION-01) |
-| New automated tests in min pack | **12** |
+| CLOSED P0 product decisions | **6** (PD-V204-BB-01..05, PD-V204-AC-01) |
+| New automated tests in min pack | **12** (skip T-A08) |
 | Manual scenarios in min pack | **22** |
-| Spec decisions required | **7** |
+| Spec decisions required | **1** (DR-39 binding keys; parallel to P0 injector) |
 
 Sanity areas already PASS: **10** (preserved; not re-opened).
 
@@ -280,11 +287,12 @@ Sanity areas already PASS: **10** (preserved; not re-opened).
 
 REG_STATE_01=CLOSED
 BB_PROVISION_01=CLOSED
-P0=12
-P1=22
+P0_PRODUCT_DECISION_REMAINING=0
+P0=6
+P1=21
 P2=24
 NEW_AUTOMATED_TESTS_REQUIRED=12
 MANUAL_SCENARIOS_REQUIRED=22
-SPEC_DECISIONS_REQUIRED=7
+SPEC_DECISIONS_REQUIRED=1
 READY_FOR_PRODUCTION_QA=NO
-FINAL=V2_04_RELEASE_GAP_PLAN_REFRESHED
+FINAL=V2_04_PRODUCT_DECISIONS_APPLIED

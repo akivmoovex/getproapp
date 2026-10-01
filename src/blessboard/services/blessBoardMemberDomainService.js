@@ -21,6 +21,12 @@ const {
   MARITAL_STATUS,
 } = require("./memberDomainConstants");
 const {
+  isMembershipTransitionAllowed,
+  isPortalAdminTransitionAllowed,
+  membershipAllowsOrdinaryPortalAccess,
+  portalStatusAfterMembershipChange,
+} = require("./membershipPortalLifecycle");
+const {
   runStaffManagedPersonWorkflow,
   STAFF_PERSON_WORKFLOW_CODE,
 } = require("../../platform/person/workflow");
@@ -52,6 +58,7 @@ const RESULT = Object.freeze({
   VALIDATION_FAILED: "validation_failed",
   TENANT_MISMATCH: "tenant_mismatch",
   REASON_REQUIRED: "reason_required",
+  INVALID_TRANSITION: "invalid_transition",
 });
 
 function requireReason(raw, { min = 3, max = 1000 } = {}) {
@@ -588,6 +595,7 @@ async function manageChurchId(db, input, deps) {
 
 /**
  * Block / unblock portal access — does not change membership status.
+ * Admin may only transition ACTIVE ↔ BLOCKED (PD-V204-BB-04).
  * Blocking requires a reason and invalidates relevant member sessions.
  */
 async function setPortalAccessStatus(db, input, deps) {
@@ -617,6 +625,34 @@ async function setPortalAccessStatus(db, input, deps) {
   const member = await memberRepo.findMemberById(db, memberId);
   if (!member || member.churchId !== gate.churchId) {
     return { ok: false, code: RESULT.NOT_FOUND };
+  }
+
+  if (
+    !isPortalAdminTransitionAllowed(member.portalAccessStatus, status)
+  ) {
+    return {
+      ok: false,
+      code: RESULT.INVALID_TRANSITION,
+      detail: {
+        from: member.portalAccessStatus,
+        to: status,
+        axis: "portal",
+      },
+    };
+  }
+
+  if (
+    status === PORTAL_ACCESS_STATUS.ACTIVE &&
+    !membershipAllowsOrdinaryPortalAccess(member.status)
+  ) {
+    return {
+      ok: false,
+      code: RESULT.INVALID_TRANSITION,
+      detail: {
+        reason: "membership_not_active",
+        membershipStatus: member.status,
+      },
+    };
   }
 
   const updated = await memberRepo.updatePortalAccessStatus(db, {
@@ -661,6 +697,7 @@ async function setPortalAccessStatus(db, input, deps) {
       membership_status_unchanged: member.status,
       reason,
       sessions_revoked: sessionsRevoked,
+      lifecycle_audit: true,
     },
   });
 
@@ -693,10 +730,66 @@ async function setMembershipStatus(db, input, deps) {
     return { ok: false, code: RESULT.NOT_FOUND };
   }
 
-  const updated = await memberRepo.updateMembershipLifecycleStatus(db, {
+  if (!isMembershipTransitionAllowed(member.status, status)) {
+    return {
+      ok: false,
+      code: RESULT.INVALID_TRANSITION,
+      detail: {
+        from: member.status,
+        to: status,
+        axis: "membership",
+      },
+    };
+  }
+
+  let updated = await memberRepo.updateMembershipLifecycleStatus(db, {
     memberId,
     status,
   });
+
+  const nextPortal = portalStatusAfterMembershipChange(
+    status,
+    member.portalAccessStatus
+  );
+  let portalAdjusted = false;
+  let sessionsRevoked = 0;
+  if (nextPortal !== normalizePortal(member.portalAccessStatus)) {
+    updated = await memberRepo.updatePortalAccessStatus(db, {
+      memberId,
+      portalAccessStatus: nextPortal,
+    });
+    // Preserve membership status on the returned member object.
+    if (updated) {
+      updated = { ...updated, status };
+    }
+    portalAdjusted = true;
+
+    if (
+      member.userId &&
+      normalizePortal(member.portalAccessStatus) === PORTAL_ACCESS_STATUS.ACTIVE
+    ) {
+      const revoke =
+        (deps && typeof deps.revokeSessionsByBlessBoardUser === "function"
+          ? deps.revokeSessionsByBlessBoardUser
+          : null) ||
+        require("../../platform/session/revokeV5Session").revokeSessionsByBlessBoardUser;
+      const deployment =
+        (deps && deps.deploymentCode) ||
+        (() => {
+          const resolved = require("../../platform/config/platformDeploymentCode").getPlatformDeploymentCode(
+            (deps && deps.env) || process.env
+          );
+          return resolved && resolved.ok ? resolved.code : null;
+        })();
+      if (deployment) {
+        const revoked = await revoke(db, {
+          userId: member.userId,
+          deploymentCode: deployment,
+        });
+        sessionsRevoked = (revoked && revoked.revokedCount) || 0;
+      }
+    }
+  }
 
   await auditMemberChange(db, {
     actionKey: "members.edit",
@@ -708,12 +801,28 @@ async function setMembershipStatus(db, input, deps) {
     metadata: {
       previous_membership_status: member.status,
       membership_status: status,
-      portal_access_status_unchanged: member.portalAccessStatus,
+      previous_portal_access_status: member.portalAccessStatus,
+      portal_access_status: nextPortal,
+      portal_adjusted_for_lifecycle: portalAdjusted,
+      sessions_revoked: sessionsRevoked,
       reason: input.reason || null,
+      lifecycle_audit: true,
     },
   });
 
-  return { ok: true, code: RESULT.OK, member: updated };
+  return {
+    ok: true,
+    code: RESULT.OK,
+    member: updated,
+    portalAdjusted,
+    sessionsRevoked,
+  };
+}
+
+function normalizePortal(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 /**

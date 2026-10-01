@@ -1,6 +1,6 @@
 # V2.04 Product Decision Register
 
-**Status:** ACTIVE  
+**Status:** ACTIVE — **six P0 product decisions TEMPORARY_APPROVED_FOR_V2_04** (REVIEW_LATER=YES)  
 **Scope:** Unresolved product decisions blocking or materially affecting V2.04 closeout  
 **Sources (read-only extraction):** `docs/qa/V2_04_P0_BURNDOWN.md`, `docs/qa/V2_04_FINAL_GAP_AND_TEST_PLAN.md`, completed V2.04 audits, BlessBoard V2.04 Canonical Feature Specification FINAL, Decision Register inventory excerpts, ActiveClinic Stitch/decision docs  
 **Policy:** Do not reopen approved canonical decisions. Non-critical items may receive `TEMPORARY_APPROVED_FOR_V2_04`. Critical items require Product review before implementation of the chosen option.
@@ -11,12 +11,12 @@
 
 | ID | PRODUCT | QUESTION | CRITICALITY | RECOMMENDATION | STATUS |
 |----|---------|----------|-------------|----------------|--------|
-| PD-V204-BB-01 | BB | Church ID unique per church or per organization? | CRITICAL | Per `church_id` (align shipped index) | REVIEW_REQUIRED |
-| PD-V204-BB-02 | BB | How is tenant context bound for multi-membership login/activation? | CRITICAL | Church Directory selection = session tenant | REVIEW_REQUIRED |
-| PD-V204-BB-03 | BB | What does recovery email fallback “where available” mean? | CRITICAL | Phone-only OTP for V2.04 | REVIEW_REQUIRED |
-| PD-V204-BB-04 | BB | Who may transition membership/portal statuses, and when? | CRITICAL | Freeze minimal actor/transition matrix (Option A) | REVIEW_REQUIRED |
-| PD-V204-BB-05 | BB | Are cells in V2.04 scope (`MUST IF CELLS`)? | NON_CRITICAL | DEFER cells for V2.04 | TEMPORARY_APPROVED_FOR_V2_04 |
-| PD-V204-AC-01 | AC | Canonical AC Feature Spec vs non-gated presentation/foundation? | CRITICAL | Presentation-only website + patient foundation non-release-gated | REVIEW_REQUIRED |
+| PD-V204-BB-01 | BB | Church ID unique per church or per organization? | CRITICAL | OPTION A approved | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-02 | BB | How is tenant context bound for multi-membership login/activation? | CRITICAL | OPTION A approved | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-03 | BB | What does recovery email fallback “where available” mean? | CRITICAL | OPTION A approved | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-04 | BB | Who may transition membership/portal statuses, and when? | CRITICAL | OPTION A approved · matrix normative | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-BB-05 | BB | Are cells in V2.04 scope (`MUST IF CELLS`)? | NON_CRITICAL | DEFER cells for V2.04 | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
+| PD-V204-AC-01 | AC | Canonical AC Feature Spec vs non-gated presentation/foundation? | CRITICAL | OPTION B approved | TEMPORARY_APPROVED_FOR_V2_04 · REVIEW_LATER=YES |
 | PD-V204-BB-P1-01 | BB | DR-39 leader↔resource binding keys | — (P1) | Freeze keys parallel to injector wiring | OPEN |
 | PD-V204-BB-P1-02 | BB | Dual-role destinations (FR-12) confirm | — (P1) | Linked Member Portal + Church Mgmt entry points | OPEN |
 | PD-V204-BB-P1-03 | BB | DR-51 “relevant” sessions on block/reset | — (P1) | Enumerate session classes | OPEN |
@@ -28,7 +28,7 @@
 | PD-V204-BB-P2-01..15 | BB/AC | See §P1/P2 append | — (P2) | See each row | OPEN |
 
 **Engineering may proceed without Product review only on:** `PD-V204-BB-05` (temporary defer).  
-**Requires Product review before implementing the recommended option:** `PD-V204-BB-01` … `04`, `PD-V204-AC-01`.
+**Approved for V2.04 (temporary):** `PD-V204-BB-01`…`04`, `PD-V204-AC-01`, `PD-V204-BB-05`. All `REVIEW_LATER=YES`.
 
 ---
 
@@ -71,6 +71,11 @@ These remain in force from the BlessBoard V2.04 Canonical Feature Specification 
 | FR activation | Full Name + Phone + Church ID match; no self-create membership | APPROVED |
 | Lost Church ID | No public automated recovery; church admin offline process | APPROVED |
 | Membership statuses (values) | ACTIVE, INACTIVE, TRANSFERRED, FORMER, DECEASED (FOUNDATION values) | APPROVED (values only) |
+| Membership/portal transitions | Normative matrix `docs/product/V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md` | TEMPORARY_APPROVED_FOR_V2_04 |
+| Church ID uniqueness | Unique per `church_id` (not org-wide) | TEMPORARY_APPROVED_FOR_V2_04 |
+| Multi-membership tenant bind | Select Church binds session; no in-app switcher | TEMPORARY_APPROVED_FOR_V2_04 |
+| Password recovery | Verified phone OTP only; no email fallback | TEMPORARY_APPROVED_FOR_V2_04 |
+| AC V2.04 contract | Presentation/editor gated; patient FOUNDATION/non-gated | TEMPORARY_APPROVED_FOR_V2_04 |
 | Portal access statuses (values) | NOT_ACTIVATED, ACTIVE, BLOCKED | APPROVED (values only) |
 | Request statuses (values) | PENDING, APPROVED, REJECTED, CANCELLED | APPROVED (values only) |
 | Membership ≠ portal access | Separate concepts; block preserves history | APPROVED |
@@ -137,7 +142,11 @@ RATIONALE: CRITICAL — must not silently ship org-scoped uniqueness without
   Product approval; recommendation is A for review.
 IMPLEMENTATION_IMPACT: Doc/spec alignment if A; migration if B.
 TEST_IMPACT: T-M03 / uniqueness ACs freeze to chosen scope.
-STATUS: REVIEW_REQUIRED
+APPROVED_OPTION: OPTION A — unique per church_id
+TEMPORARY_DECISION: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
+APPROVAL_RATIONALE: Product approved temporary V2.04 freeze; sibling churches may share Church ID strings; Select Church required before resolve.
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
 ### PD-V204-BB-02
@@ -192,7 +201,11 @@ TEMPORARY_DECISION: N/A
 RATIONALE: CRITICAL identity/tenant — Product must affirm A (or choose B/C).
 IMPLEMENTATION_IMPACT: Spec appendix + session assertions if A; larger if B/C.
 TEST_IMPACT: Multi-membership login/activation cases AFTER_SPEC.
-STATUS: REVIEW_REQUIRED
+APPROVED_OPTION: OPTION A — Directory Select Church binds session tenant
+TEMPORARY_DECISION: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
+APPROVAL_RATIONALE: Product approved; no in-app multi-membership switcher in V2.04.
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
 ### PD-V204-BB-03
@@ -242,7 +255,11 @@ TEMPORARY_DECISION: N/A
 RATIONALE: CRITICAL security — do not implement B/C until approved.
 IMPLEMENTATION_IMPACT: Docs if A; email OTP stack if B.
 TEST_IMPACT: T-M05 freezes to phone-only (A) or email path (B).
-STATUS: REVIEW_REQUIRED
+APPROVED_OPTION: OPTION A — phone OTP only; no email recovery in V2.04
+TEMPORARY_DECISION: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
+APPROVAL_RATIONALE: Product approved; offline church admin for missing recovery contact; never unverified email OTP.
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
 ### PD-V204-BB-04
@@ -299,7 +316,11 @@ TEMPORARY_DECISION: N/A
 RATIONALE: CRITICAL — Product must approve matrix contents before enforcement claims.
 IMPLEMENTATION_IMPACT: Permission checks + status service alignment after approval.
 TEST_IMPACT: Transition positive/negative cases AFTER_SPEC.
-STATUS: REVIEW_REQUIRED
+APPROVED_OPTION: OPTION A — minimal transition matrix (see V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md)
+TEMPORARY_DECISION: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
+APPROVAL_RATIONALE: Product approved; enforce transitions + clear ordinary portal on non-active membership; audit required.
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
 ### PD-V204-BB-05
@@ -329,6 +350,7 @@ RATIONALE: Most conservative practical default: do not claim or test unused
 IMPLEMENTATION_IMPACT: None required beyond scope docs / release notes hygiene.
   Engineering may proceed.
 TEST_IMPACT: Cell attendance/scope tests OUT_OF_SCOPE for V2.04.
+REVIEW_LATER: YES
 STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
@@ -384,7 +406,11 @@ TEMPORARY_DECISION: N/A
 RATIONALE: CRITICAL privacy/release-gating — Product must approve waiver or spec.
 IMPLEMENTATION_IMPACT: Release notes / gate docs if B; full AC spec program if A.
 TEST_IMPACT: AC patient FEATURE packs non-gated if B; required if A/C.
-STATUS: REVIEW_REQUIRED
+APPROVED_OPTION: OPTION B — AC presentation/editor release-gated; patient FOUNDATION/non-release-gated
+TEMPORARY_DECISION: TEMPORARY_APPROVED_FOR_V2_04
+REVIEW_LATER: YES
+APPROVAL_RATIONALE: Product approved; full AC canonical contract is later work; do not claim patient FEATURE certification in V2.04.
+STATUS: TEMPORARY_APPROVED_FOR_V2_04
 ```
 
 ---
@@ -590,13 +616,10 @@ Compact required fields for each P2 row above:
 
 ```
 P0_PRODUCT_ITEMS_INPUT=6
-TRUE_P0_PRODUCT_DECISIONS=6
-STALE_P0=0
-MISCLASSIFIED_P0=0
-CRITICAL_DECISIONS=5
-NON_CRITICAL_TEMPORARY_DECISIONS=1
-P1_P2_DECISIONS_ADDED=23
-ENGINEERING_CAN_PROCEED_WITHOUT_REVIEW=1
-REQUIRES_MY_REVIEW=5
-FINAL=V2_04_PRODUCT_DECISION_REGISTER_UPDATED
+P0_PRODUCT_DECISIONS_REMAINING=0
+TEMPORARY_APPROVED_FOR_V2_04=6
+REVIEW_LATER=YES
+CRITICAL_APPROVED=5
+NON_CRITICAL_APPROVED=1
+FINAL=V2_04_PRODUCT_DECISIONS_APPLIED
 ```

@@ -39,6 +39,17 @@
 
 Portal block/unblock does **not** change membership status.
 
+**V2.04 transition matrix (TEMPORARY_APPROVED_FOR_V2_04):**  
+See `docs/product/V2_04_BB_MEMBERSHIP_PORTAL_STATUS_MATRIX.md` (PD-V204-BB-04).  
+Enforced in `membershipPortalLifecycle.js` + `setMembershipStatus` / `setPortalAccessStatus`.  
+Non-active membership clears ordinary ACTIVE portal access. Privileged transitions are audited.
+
+**Church ID uniqueness (PD-V204-BB-01):** unique per `church_id` (sibling churches may share the same Church ID string).
+
+**Tenant bind (PD-V204-BB-02):** Select Church binds session; Church ID resolved only inside selected church.
+
+**Recovery (PD-V204-BB-03):** verified phone OTP only for V2.04; no email recovery fallback.
+
 ---
 
 ## 3. Permissions (platform RBAC catalogue)

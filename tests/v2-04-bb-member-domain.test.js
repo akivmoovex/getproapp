@@ -432,22 +432,27 @@ describe("V2.04 BB authorization + Church ID immutability + portal block", () =>
     }
   });
 
-  it("sets membership status independently of portal", async () => {
+  it("sets membership status and clears ordinary active portal on non-active lifecycle", async () => {
     const memberRepo = require("../src/blessboard/repositories/memberIdentityRepository");
     const originalFind = memberRepo.findMemberById;
     const originalStatus = memberRepo.updateMembershipLifecycleStatus;
-    memberRepo.findMemberById = async () => ({
+    const originalPortal = memberRepo.updatePortalAccessStatus;
+    let member = {
       id: MEMBER_ID,
       churchId: CHURCH,
       status: "active",
       portalAccessStatus: "active",
-    });
-    memberRepo.updateMembershipLifecycleStatus = async (_db, input) => ({
-      id: MEMBER_ID,
-      status: input.status,
-      portalAccessStatus: "active",
-      churchId: CHURCH,
-    });
+      userId: null,
+    };
+    memberRepo.findMemberById = async () => ({ ...member });
+    memberRepo.updateMembershipLifecycleStatus = async (_db, input) => {
+      member = { ...member, status: input.status };
+      return { ...member };
+    };
+    memberRepo.updatePortalAccessStatus = async (_db, input) => {
+      member = { ...member, portalAccessStatus: input.portalAccessStatus };
+      return { ...member };
+    };
     try {
       const result = await setMembershipStatus(
         {},
@@ -462,10 +467,12 @@ describe("V2.04 BB authorization + Church ID immutability + portal block", () =>
       );
       assert.equal(result.ok, true);
       assert.equal(result.member.status, "former");
-      assert.equal(result.member.portalAccessStatus, "active");
+      assert.equal(result.member.portalAccessStatus, "not_activated");
+      assert.equal(result.portalAdjusted, true);
     } finally {
       memberRepo.findMemberById = originalFind;
       memberRepo.updateMembershipLifecycleStatus = originalStatus;
+      memberRepo.updatePortalAccessStatus = originalPortal;
     }
   });
 
