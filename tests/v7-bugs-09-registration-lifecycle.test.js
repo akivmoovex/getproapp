@@ -55,19 +55,36 @@ describe("V7 registration lifecycle bug 09", () => {
     );
   });
 
-  it("clears draft on fresh GET and preserves draft on continuity GET", () => {
+  it("hydrates valid draft on GET without gpRegNav; clears only on fresh=1", () => {
     let cleared = false;
     const env = { SESSION_SECRET: "x".repeat(32) };
     const res = {
       append() {},
     };
-    const readDraft = () => ({ formData: { clinicName: "Draft Clinic", password: "secret" } });
+    const readDraft = () => ({
+      status: "active",
+      formData: { clinicName: "Draft Clinic", password: "secret" },
+    });
     const clearDraft = () => {
       cleared = true;
     };
 
-    const fresh = resolveRegistrationDraftForGet({
+    const hydrate = resolveRegistrationDraftForGet({
       req: { query: {} },
+      res,
+      isProduction: false,
+      clearDraft,
+      readDraft,
+      env,
+    });
+    assert.equal(hydrate.restoreDraft, true);
+    assert.equal(hydrate.formData.clinicName, "Draft Clinic");
+    assert.equal(hydrate.formData.password, undefined);
+    assert.equal(cleared, false);
+
+    cleared = false;
+    const fresh = resolveRegistrationDraftForGet({
+      req: { query: { fresh: "1" } },
       res,
       isProduction: false,
       clearDraft,
@@ -76,6 +93,7 @@ describe("V7 registration lifecycle bug 09", () => {
     });
     assert.equal(fresh.restoreDraft, false);
     assert.equal(fresh.formData, null);
+    assert.equal(fresh.cleared, true);
     assert.equal(cleared, true);
 
     cleared = false;

@@ -508,7 +508,7 @@ function validateChurchRegistrationAdministratorStep(body, opts = {}) {
 
   /** @type {string | null} */
   let administratorPassword = null;
-  if (wantsInstantProvision) {
+  if (wantsInstantProvision && !opts.skipPassword) {
     const passwordResult = validateAdministratorPassword(
       body && body.password,
       body && (body.password_confirm || body.password_confirmation)

@@ -45,7 +45,8 @@ function clearRegistrationTransaction(res, input) {
  */
 function resolveRegistrationTransactionForGet(input) {
   const draftResolution = resolveRegistrationDraftForGet(input);
-  if (!draftResolution.restoreDraft) {
+  // Clear password vault only when draft was intentionally cleared (fresh/completed).
+  if (draftResolution.cleared) {
     clearRegistrationPasswordVault(input.res, {
       isProduction: input.isProduction,
       productCode: input.productCode,

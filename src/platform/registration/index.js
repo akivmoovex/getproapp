@@ -68,4 +68,6 @@ module.exports = {
     .createSignedRegistrationDraftCookie,
   DEFAULT_REGISTRATION_DRAFT_MAX_AGE_MS: require("./signedRegistrationDraftCookie")
     .DEFAULT_MAX_AGE_MS,
+  mergeDraftFields: require("./multiStepDraftMerge").mergeDraftFields,
+  createMultiStepFormState: require("../forms/multiStepFormState").createMultiStepFormState,
 };

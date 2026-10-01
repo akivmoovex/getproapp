@@ -198,12 +198,15 @@ describe("ActiveClinic platform 02", () => {
     const s2 = await request(application)
       .post("/register-clinic")
       .set("Cookie", s1.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-clinic", [CSRF_FIELD]: csrf1 });
+    assert.equal(s2.status, 200);
     const csrf2 = extractFormCsrf(s2.text);
     const review = await request(application)
       .post("/register-clinic")
       .set("Cookie", s2.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-admin", [CSRF_FIELD]: csrf2 });
     assert.equal(review.status, 200);
@@ -233,12 +236,14 @@ describe("ActiveClinic platform 02", () => {
     const s2 = await request(application)
       .post("/register-clinic")
       .set("Cookie", s1.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-clinic", [CSRF_FIELD]: csrf1 });
     const csrf2 = extractFormCsrf(s2.text);
     const review = await request(application)
       .post("/register-clinic")
       .set("Cookie", s2.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-admin", [CSRF_FIELD]: csrf2 });
     const badConfirm = await request(application)
@@ -329,12 +334,14 @@ describe("ActiveClinic platform 02", () => {
     const s2 = await request(application)
       .post("/register-clinic")
       .set("Cookie", s1.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-clinic", [CSRF_FIELD]: csrf1 });
     const csrf2 = extractFormCsrf(s2.text);
     const review = await request(application)
       .post("/register-clinic")
       .set("Cookie", s2.headers["set-cookie"])
+      .redirects(1)
       .type("form")
       .send({ ...payload, action: "next-admin", [CSRF_FIELD]: csrf2 });
     const csrf3 = extractFormCsrf(review.text);

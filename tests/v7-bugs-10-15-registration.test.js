@@ -84,11 +84,11 @@ describe("V7 registration bugs 10–15", () => {
     assert.equal(sanitized.passwordConfirm, undefined);
   });
 
-  it("BUG 12: fresh GET clears password vault; gpRegNav preserves transaction", () => {
+  it("BUG 12: fresh=1 clears password vault; hydrate GET preserves transaction", () => {
     let clearedDraft = false;
     let clearedVault = false;
     const res = mockRes();
-    const readDraft = () => ({ formData: { clinicName: "Draft Clinic" } });
+    const readDraft = () => ({ status: "active", formData: { clinicName: "Draft Clinic" } });
     const clearDraft = () => {
       clearedDraft = true;
     };
@@ -106,10 +106,28 @@ describe("V7 registration bugs 10–15", () => {
       String(line).startsWith("ac_reg_pwd=;")
     );
 
+    assert.equal(clearedDraft, false);
+    assert.equal(clearedVault, false);
+
+    clearedDraft = false;
+    const resFresh = mockRes();
+    resolveRegistrationTransactionForGet({
+      req: { query: { fresh: "1" } },
+      res: resFresh,
+      isProduction: false,
+      clearDraft,
+      readDraft,
+      env: ENV,
+      productCode: PRODUCT.ACTIVECLINIC,
+    });
+    clearedVault = (resFresh.headers["set-cookie"] || []).some((line) =>
+      String(line).startsWith("ac_reg_pwd=;")
+    );
     assert.equal(clearedDraft, true);
     assert.equal(clearedVault, true);
 
     clearedVault = false;
+    clearedDraft = false;
     const res2 = mockRes();
     resolveRegistrationTransactionForGet({
       req: { query: { gpRegNav: "1" } },

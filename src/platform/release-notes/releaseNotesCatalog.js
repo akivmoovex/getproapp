@@ -2665,6 +2665,10 @@ const VERSIONS = Object.freeze([
               "Added support for manual city entry where a country does not yet have a city catalogue.",
               "Improved handling when a user changes country after selecting a city.",
               "Province/region information remains available internally for future use but is no longer required during registration.",
+              "Church registration now keeps information you already entered as you move between steps, go back, refresh the page, or correct a validation error — so you do not have to retype earlier details.",
+              "Fixed church provisioning for existing users reused by phone when the submitted registration email differs from the stored account email.",
+              "Administrator assignment now uses the canonical resolved identity rather than re-looking up the user by submitted email.",
+              "Improved provisioning error classification and preserved transaction rollback safety.",
             ]),
           }),
           Object.freeze({
@@ -2687,6 +2691,27 @@ const VERSIONS = Object.freeze([
           }),
         ]),
         source: "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro:
+          "Version 2.04 improves ActiveClinic public and management website experiences and shares registration improvements with the GetPro platform.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Clinic registration",
+            items: Object.freeze([
+              "Fixed multi-step registration state persistence so previous-step data survives forward/back navigation, refresh, and validation failures.",
+              "Shared Country and City registration fields with country-aware city suggestions where catalogues exist.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Website experience",
+            items: Object.freeze([
+              "Updated public clinic website presentation (Stitch-aligned experiences).",
+              "Clinic website management hub for draft, media, and publishing workflows on the shared platform engine.",
+            ]),
+          }),
+        ]),
+        source: "docs/releases/V2_04_RELEASE_NOTES.md",
       }),
     }),
     features: [
@@ -2796,8 +2821,85 @@ const VERSIONS = Object.freeze([
         ],
         publicSafe: true,
       }),
+      Object.freeze({
+        id: "F-2.04-REG-STATE-01",
+        name: "Multi-step registration wizard state persistence",
+        description:
+          "Fixed multi-step registration state persistence so previous-step data survives forward/back navigation, refresh, and validation failures. Shared platform form-draft infrastructure supports sessionless registration. Applied to BlessBoard and ActiveClinic registration flows.",
+        workflow: "BB /register-church or AC /register-clinic → complete step 1 → advance → refresh/back → confirm prior fields remain",
+        expectedBehavior:
+          "Prior-step fields hydrate without requiring gpRegNav; passwords stay out of long-lived draft cookies; cross-draft isolation preserved",
+        products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
+        featureType: "registration",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.04-REG-STATE-01"],
+        sources: [
+          "docs/architecture/PLATFORM_MULTI_STEP_FORM_STATE_DESIGN.md",
+          "docs/qa/V2_04_PLATFORM_MULTI_STEP_FORM_STATE_IMPL.md",
+          "docs/qa/V2_04_REGISTRATION_STATE_AUDIT.md",
+          "docs/releases/V2_04_RELEASE_NOTES.md",
+          "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+          "tests/v2-04-platform-multi-step-form-state.test.js",
+          "tests/v2-04-bb-multi-step-registration-draft.test.js",
+          "tests/v2-04-ac-multi-step-registration-draft.test.js",
+        ],
+        publicSafe: true,
+      }),
+      Object.freeze({
+        id: "F-2.04-BB-PROVISION-01",
+        name: "Church provisioning canonical identity on phone reuse",
+        description:
+          "Fixed church provisioning for existing users reused by phone when the submitted registration email differs from the stored account email. Administrator assignment uses the canonical resolved identity rather than re-looking up by submitted email. Improved provisioning error classification and preserved transaction rollback safety.",
+        workflow: "Register new church with existing phone + different email → provision succeeds → admin roles on new org",
+        expectedBehavior:
+          "Roles attach to reused userId; no duplicate identity; user_not_found not mislabeled database_conflict; AC unchanged",
+        products: [PRODUCTS.BB],
+        featureType: "registration",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.04-BB-PROVISION-01"],
+        sources: [
+          "docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md",
+          "docs/releases/V2_04_RELEASE_NOTES.md",
+          "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+          "tests/v2-04-bb-church-provisioning-phone-reuse.test.js",
+        ],
+        publicSafe: true,
+      }),
     ],
-    bugs: [],
+    bugs: [
+      Object.freeze({
+        id: "BUG-2.04-BB-PROVISION-01",
+        severity: "P0",
+        product: PRODUCTS.BB,
+        problem:
+          "BB-PROVISION-01 (historical): Church provisioning failed when registration reused an existing user by phone but submitted a different email.",
+        rootCause:
+          "After phone-matched identity reuse, assignBlessBoardRole re-resolved the administrator by unmatched registration email (user_not_found), historically mislabeled database_conflict.",
+        fix:
+          "Canonical administratorUserId for role assign; no email fallback when userId set; mapRoleAssignmentFailureStatus; idempotent assign + rollback/retry preserved",
+        verificationStatus: "CLOSED — LOCAL QA PASS (11/11); FINAL=BB_PROVISION_IDENTITY_FIX_COMPLETE",
+        regressionTests: [
+          "T-P01 new identity → new church",
+          "T-P02 existing identity by phone → new church",
+          "T-P03 same phone + different email",
+          "T-P04 admin Church A → admin Church B",
+          "T-P05 idempotent role assignment",
+          "T-P06 rollback safety",
+          "T-P07 retry safety",
+          "T-P08 cross-tenant isolation",
+          "T-P09 same-email path unchanged",
+        ],
+        outstanding: "Optional hosted smoke T-M22 only",
+        sources: [
+          "docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md",
+          "docs/qa/V2_04_FINAL_GAP_AND_TEST_PLAN.md",
+          "tests/v2-04-bb-church-provisioning-phone-reuse.test.js",
+        ],
+        publicSafe: true,
+      }),
+    ],
     qaChecklist: [
       Object.freeze({
         id: "TC-2.04-ABOUT-01",
@@ -2865,11 +2967,42 @@ const VERSIONS = Object.freeze([
         status: STATUS.LOCAL_QA_PASS,
         evidence: "docs/releases/BLESSBOARD_RELEASE_NOTES.md; docs/releases/V2_04_RELEASE_NOTES.md",
       }),
+      Object.freeze({
+        id: "TC-2.04-REG-STATE-01",
+        featureOrBugId: "F-2.04-REG-STATE-01",
+        product: PRODUCTS.SHARED,
+        objective: "Multi-step registration draft persistence (platform + BB + AC)",
+        prerequisites: "Focused form-state suites",
+        steps: [
+          "Run tests/v2-04-platform-multi-step-form-state.test.js",
+          "Run tests/v2-04-bb-multi-step-registration-draft.test.js",
+          "Run tests/v2-04-ac-multi-step-registration-draft.test.js",
+        ],
+        expectedResult:
+          "PLATFORM_FORM_TESTS=13/13; BB_REGISTRATION_TESTS=3/3; AC_REGISTRATION_TESTS=2/2; SESSIONLESS_FLOW=PASS; CROSS_DRAFT_ISOLATION=PASS",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V2_04_PLATFORM_MULTI_STEP_FORM_STATE_IMPL.md",
+      }),
+      Object.freeze({
+        id: "TC-2.04-BB-PROVISION-01",
+        featureOrBugId: "F-2.04-BB-PROVISION-01",
+        product: PRODUCTS.BB,
+        objective: "Phone-reuse church provisioning uses canonical userId",
+        prerequisites: "Focused BB provisioning suite",
+        steps: ["Run tests/v2-04-bb-church-provisioning-phone-reuse.test.js"],
+        expectedResult:
+          "FOCUSED_TESTS=11/11; PHONE_REUSE_DIFFERENT_EMAIL=PASS; FINAL=BB_PROVISION_IDENTITY_FIX_COMPLETE",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md",
+      }),
     ],
     sources: [
       "docs/releases/V2_04_RELEASE_NOTES.md",
       "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
       "docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md",
+      "docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md",
+      "docs/qa/V2_04_PLATFORM_MULTI_STEP_FORM_STATE_IMPL.md",
+      "docs/qa/V2_04_FINAL_GAP_AND_TEST_PLAN.md",
       "docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md",
       "docs/qa/V2_04_QA_TEST_INVENTORY.md",
       "docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md",

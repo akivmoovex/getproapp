@@ -71,6 +71,7 @@ const ALLOWED_KEYS = Object.freeze(
     "identityResolution",
     "emailMatched",
     "phoneMatched",
+    "roleStatus",
     "underlyingErrorClass",
     "administratorViaInvitation",
     "invitationCreated",

@@ -37,6 +37,10 @@ Version 2.04 strengthens BlessBoard's website management experience and moves mo
 - Added support for manual city entry where a country does not yet have a city catalogue.
 - Improved handling when a user changes country after selecting a city.
 - Province/region information remains available internally for future use but is no longer required during registration.
+- Church registration now keeps information you already entered as you move between steps, go back, refresh the page, or correct a validation error — so you do not have to retype earlier details.
+- Fixed church provisioning for existing users reused by phone when the submitted registration email differs from the stored account email.
+- Administrator assignment now uses the canonical resolved identity rather than re-looking up the user by submitted email.
+- Improved provisioning error classification and preserved transaction rollback safety.
 
 ### Platform Improvements
 

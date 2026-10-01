@@ -77,6 +77,7 @@ const STATUS = Object.freeze({
   DATABASE_CONFLICT: "database_conflict",
   DATABASE_UNAVAILABLE: "database_unavailable",
   DEPLOYMENT_NOT_FOUND: "deployment_not_found",
+  ADMINISTRATOR_NOT_FOUND: "administrator_not_found",
   PROVISIONING_FAILED: "provisioning_failed",
   INTERNAL_ERROR: "internal_error",
 });
@@ -153,6 +154,12 @@ const ERROR_META = Object.freeze({
     retryable: true,
     severity: "warn",
     publicMessage: "A conflicting record prevented provisioning.",
+  },
+  [STATUS.ADMINISTRATOR_NOT_FOUND]: {
+    retryable: false,
+    severity: "error",
+    publicMessage:
+      "We could not finish creating your church workspace right now. Please try again shortly.",
   },
   [STATUS.DEPLOYMENT_NOT_FOUND]: {
     retryable: true,
@@ -449,6 +456,7 @@ function extractProvisionErrorDiagnostics(err) {
       identityResolution: null,
       emailMatched: null,
       phoneMatched: null,
+      roleStatus: null,
     };
   }
   const fromSelf = extractPgDiagnostics(err);
@@ -481,6 +489,7 @@ function extractProvisionErrorDiagnostics(err) {
       typeof merged.emailMatched === "boolean" ? merged.emailMatched : null,
     phoneMatched:
       typeof merged.phoneMatched === "boolean" ? merged.phoneMatched : null,
+    roleStatus: merged.roleStatus != null ? String(merged.roleStatus).slice(0, 80) : null,
   };
 }
 
@@ -503,6 +512,104 @@ function classifyExistingAdministratorIdentity(user) {
     status,
     reason: "identity_conflict",
   };
+}
+
+/**
+ * Prefer stable principal id for role assignment (phone-reuse may carry a different contact email).
+ * @param {{
+ *   application: object,
+ *   existingUser?: object|null,
+ *   administratorUserId?: string|null,
+ *   organizationKey: string,
+ *   roleKey: string,
+ *   churchKey: string,
+ *   branchKey?: string|null,
+ * }} opts
+ */
+function buildAdministratorRoleAssignInput(opts) {
+  const application = opts.application || {};
+  const existingUser = opts.existingUser || null;
+  const userId =
+    (opts.administratorUserId && String(opts.administratorUserId).trim()) ||
+    (existingUser && existingUser.id ? String(existingUser.id) : null) ||
+    null;
+  // Canonical principal id is the identity key. Email is contact/input only —
+  // never fall back to unmatched registration contact_email when userId is known.
+  const canonicalEmail =
+    (existingUser &&
+      (existingUser.email_normalized || existingUser.email_display || existingUser.email)) ||
+    null;
+  const email = userId
+    ? canonicalEmail
+    : canonicalEmail || application.contact_email || null;
+  const input = {
+    organizationKey: opts.organizationKey,
+    roleKey: opts.roleKey,
+    churchKey: opts.churchKey,
+  };
+  if (opts.branchKey) input.branchKey = opts.branchKey;
+  if (userId) input.userId = userId;
+  if (email) input.email = email;
+  return input;
+}
+
+/**
+ * Map role-assign failure to orchestrator status. user_not_found must not become
+ * database_conflict unless structured PG conflict metadata is present.
+ * @param {object} roleResult
+ * @returns {string}
+ */
+function mapRoleAssignmentFailureStatus(roleResult) {
+  const roleStatus = roleResult && roleResult.status ? String(roleResult.status) : "";
+  const diag =
+    roleResult && roleResult.diagnostics && typeof roleResult.diagnostics === "object"
+      ? roleResult.diagnostics
+      : {};
+  const pgCode = diag.postgresCode != null ? String(diag.postgresCode) : "";
+  if (pgCode === "23505" || (pgCode && /^23/.test(pgCode))) {
+    return STATUS.DATABASE_CONFLICT;
+  }
+  if (roleStatus === "user_not_found") {
+    return STATUS.ADMINISTRATOR_NOT_FOUND;
+  }
+  if (
+    roleStatus === "organization_not_found" ||
+    roleStatus === "church_not_found" ||
+    roleStatus === "branch_not_found" ||
+    roleStatus === "invalid_scope" ||
+    roleStatus === "invalid_input" ||
+    String(roleStatus).startsWith("invalid_input")
+  ) {
+    return STATUS.INTERNAL_ERROR;
+  }
+  if (roleStatus === "role_conflict") {
+    return STATUS.PROVISIONING_FAILED;
+  }
+  // Default: provisioning failure — not a DB unique conflict.
+  return STATUS.PROVISIONING_FAILED;
+}
+
+/**
+ * @param {object} roleResult
+ * @param {object} identityResolutionDiagnostics
+ */
+function throwRoleAssignmentFailure(roleResult, identityResolutionDiagnostics) {
+  const roleDiag =
+    roleResult && roleResult.diagnostics && typeof roleResult.diagnostics === "object"
+      ? roleResult.diagnostics
+      : {};
+  throw new OrchestratorError(
+    mapRoleAssignmentFailureStatus(roleResult),
+    (roleResult && (roleResult.message || roleResult.status)) || "role_assignment_failed",
+    {
+      diagnostics: {
+        ...identityResolutionDiagnostics,
+        roleStatus: (roleResult && roleResult.status) || null,
+        ...roleDiag,
+      },
+      cause: roleResult && roleResult.cause ? roleResult.cause : undefined,
+    }
+  );
 }
 
 /**
@@ -1154,45 +1261,35 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           provisioningStage = "assign_administrator_roles";
           const hqRole = await roleAssign.assignBlessBoardRole(
             client,
-            {
-              email: application.contact_email,
+            buildAdministratorRoleAssignInput({
+              application,
+              existingUser: adminUser,
+              administratorUserId,
               organizationKey,
               roleKey: "church_hq_admin",
               churchKey: organizationKey,
-            },
+            }),
             { manageTransaction: false }
           );
           if (!hqRole.ok) {
-            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
-              diagnostics: {
-                ...identityResolutionDiagnostics,
-                roleStatus: hqRole.status,
-              },
-            });
+            throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
           }
 
           const branchRole = await roleAssign.assignBlessBoardRole(
             client,
-            {
-              email: application.contact_email,
+            buildAdministratorRoleAssignInput({
+              application,
+              existingUser: adminUser,
+              administratorUserId,
               organizationKey,
               roleKey: "branch_admin",
               churchKey: organizationKey,
               branchKey: registrationBranchKey,
-            },
+            }),
             { manageTransaction: false }
           );
           if (!branchRole.ok) {
-            throw new OrchestratorError(
-              STATUS.DATABASE_CONFLICT,
-              branchRole.message || branchRole.status,
-              {
-                diagnostics: {
-                  ...identityResolutionDiagnostics,
-                  roleStatus: branchRole.status,
-                },
-              }
-            );
+            throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
           }
         }
 
@@ -1251,45 +1348,35 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisioningStage = "assign_administrator_roles";
         const hqRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email || existingUser.email_normalized,
+          buildAdministratorRoleAssignInput({
+            application,
+            existingUser,
+            administratorUserId,
             organizationKey,
             roleKey: "church_hq_admin",
             churchKey: organizationKey,
-          },
+          }),
           { manageTransaction: false }
         );
         if (!hqRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
-            diagnostics: {
-              ...identityResolutionDiagnostics,
-              roleStatus: hqRole.status,
-            },
-          });
+          throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
         }
 
         const branchRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email || existingUser.email_normalized,
+          buildAdministratorRoleAssignInput({
+            application,
+            existingUser,
+            administratorUserId,
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
             branchKey: registrationBranchKey,
-          },
+          }),
           { manageTransaction: false }
         );
         if (!branchRole.ok) {
-          throw new OrchestratorError(
-            STATUS.DATABASE_CONFLICT,
-            branchRole.message || branchRole.status,
-            {
-              diagnostics: {
-                ...identityResolutionDiagnostics,
-                roleStatus: branchRole.status,
-              },
-            }
-          );
+          throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
         }
       } else {
         provisioningStage = "create_administrator_user";
@@ -1386,45 +1473,33 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisioningStage = "assign_administrator_roles";
         const hqRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email,
+          buildAdministratorRoleAssignInput({
+            application,
+            administratorUserId,
             organizationKey,
             roleKey: "church_hq_admin",
             churchKey: organizationKey,
-          },
+          }),
           { manageTransaction: false }
         );
         if (!hqRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
-            diagnostics: {
-              ...identityResolutionDiagnostics,
-              roleStatus: hqRole.status,
-            },
-          });
+          throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
         }
 
         const branchRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email,
+          buildAdministratorRoleAssignInput({
+            application,
+            administratorUserId,
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
             branchKey: registrationBranchKey,
-          },
+          }),
           { manageTransaction: false }
         );
         if (!branchRole.ok) {
-          throw new OrchestratorError(
-            STATUS.DATABASE_CONFLICT,
-            branchRole.message || branchRole.status,
-            {
-              diagnostics: {
-                ...identityResolutionDiagnostics,
-                roleStatus: branchRole.status,
-              },
-            }
-          );
+          throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
         }
       }
 
@@ -1825,6 +1900,8 @@ module.exports = {
   validatePlanCatalogueForProvision,
   buildSubscriptionAssignment,
   classifyExistingAdministratorIdentity,
+  buildAdministratorRoleAssignInput,
+  mapRoleAssignmentFailureStatus,
   extractProvisionErrorDiagnostics,
   allocateUniqueOrganizationKey,
   assertOrganizationKeyAvailable,

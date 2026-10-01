@@ -110,7 +110,14 @@ const {
   readRegistrationDraft,
   writeRegistrationDraft,
   clearRegistrationDraft,
+  STEP_FIELD_ALLOWLIST: AC_DRAFT_STEP_ALLOWLIST,
+  PROTECTED_KEYS: AC_DRAFT_PROTECTED_KEYS,
 } = require("../services/clinicRegistrationDraft");
+const { mergeDraftFields } = require("../../platform/registration/multiStepDraftMerge");
+const {
+  withRegistrationNavParam,
+  isRegistrationFreshStartRequest,
+} = require("../../platform/registration/registrationDraftLifecycle");
 const {
   resolveRegistrationTransactionForGet,
   clearRegistrationTransaction,
@@ -848,6 +855,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/register-clinic", async (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const wizardStep = resolveRegisterWizardStep(req.query.step);
+    if (isRegistrationFreshStartRequest(req)) {
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.ACTIVECLINIC,
+        clearDraft: clearRegistrationDraft,
+      });
+      return res.redirect(302, "/register-clinic");
+    }
     const draftResolution = resolveRegistrationTransactionForGet({
       req,
       res,
@@ -874,7 +889,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       if (!draft || !draft.formData) {
         return res.redirect(302, "/register-clinic?step=clinic");
       }
-      const validated = validateClinicRegistrationInput(formData);
+      const validated = validateClinicRegistrationInput(formData, { skipPassword: true });
       if (!validated.ok) {
         return res.status(200).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
           csrfToken,
@@ -1149,22 +1164,29 @@ function registerActiveClinicPublicRoutes(app, deps) {
           wizardStep: "clinic",
         })));
       }
-      const adminFormData = {
-        ...formData,
-        clinicName: validated.normalized.clinicName,
-        clinicType: validated.normalized.clinicType,
-        countryCode: validated.normalized.countryCode,
-        province: validated.normalized.province || "",
-        city: validated.normalized.city || "",
-        address: validated.normalized.address || "",
-        notes: validated.normalized.notes || "",
-      };
-      writeRegistrationDraft(res, env, adminFormData, { isProduction });
-      return res.status(200).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
-        csrfToken,
-        formData: adminFormData,
-        wizardStep: "administrator",
-      })));
+      const adminFormData = mergeDraftFields({
+        prior: draft && draft.formData,
+        incoming: formData,
+        options: {
+          fieldAllowlist: AC_DRAFT_STEP_ALLOWLIST.clinic,
+          protectedKeys: AC_DRAFT_PROTECTED_KEYS,
+          serverOverrides: {
+            clinicName: validated.normalized.clinicName,
+            clinicType: validated.normalized.clinicType,
+            countryCode: validated.normalized.countryCode,
+            province: validated.normalized.province || "",
+            city: validated.normalized.city || "",
+            address: validated.normalized.address || "",
+            notes: validated.normalized.notes || "",
+          },
+        },
+      });
+      writeRegistrationDraft(res, env, adminFormData, {
+        isProduction,
+        currentStep: "administrator",
+        priorDraft: draft,
+      });
+      return res.redirect(303, withRegistrationNavParam("/register-clinic?step=administrator"));
     }
 
     const validated = validateClinicRegistrationInput(formData);
@@ -1184,16 +1206,27 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
 
     const reviewFormData = registerReviewFormData(formData, validated);
-    writeRegistrationDraft(res, env, formData, { isProduction });
+    const nextDraft = mergeDraftFields({
+      prior: draft && draft.formData,
+      incoming: formData,
+      options: {
+        fieldAllowlist: [
+          ...AC_DRAFT_STEP_ALLOWLIST.clinic,
+          ...AC_DRAFT_STEP_ALLOWLIST.administrator,
+        ],
+        protectedKeys: AC_DRAFT_PROTECTED_KEYS,
+      },
+    });
+    writeRegistrationDraft(res, env, nextDraft, {
+      isProduction,
+      currentStep: "review",
+      priorDraft: draft,
+    });
     persistRegistrationPasswordFromBody(res, env, mergedBody, {
       isProduction,
       productCode: PRODUCT.ACTIVECLINIC,
     });
-    return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", withRegisterLocals(req, {
-      csrfToken,
-      formData: reviewFormData,
-      wizardStep: "review",
-    })));
+    return res.redirect(303, withRegistrationNavParam("/register-clinic?step=review"));
   });
 
   app.get("/register-clinic/success", async (req, res) => {

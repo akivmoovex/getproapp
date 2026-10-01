@@ -58,7 +58,14 @@ const {
   readRegistrationDraft,
   writeRegistrationDraft,
   clearRegistrationDraft,
+  STEP_FIELD_ALLOWLIST: BB_DRAFT_STEP_ALLOWLIST,
+  PROTECTED_KEYS: BB_DRAFT_PROTECTED_KEYS,
 } = require("../services/churchRegistrationDraft");
+const { mergeDraftFields } = require("../../platform/registration/multiStepDraftMerge");
+const {
+  withRegistrationNavParam,
+  isRegistrationFreshStartRequest,
+} = require("../../platform/registration/registrationDraftLifecycle");
 const {
   submitChurchRegistration,
   GENERIC_SAVE_ERROR,
@@ -624,6 +631,16 @@ function createApexMarketingRouter(deps) {
     }
 
     const wizardStep = resolveChurchRegisterWizardStep(req.query.step);
+    if (isRegistrationFreshStartRequest(req)) {
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.BLESSBOARD,
+        clearDraft: clearRegistrationDraft,
+      });
+      const planQs = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan)}` : "";
+      return res.redirect(302, `${REGISTER_PATH}${planQs}`);
+    }
+
     const draftResolution = resolveRegistrationTransactionForGet({
       req,
       res,
@@ -660,6 +677,8 @@ function createApexMarketingRouter(deps) {
         selectedPlanHint: selectedPlan,
         instantFreeEnabled: instantEnabled(),
         env,
+        // Passwords live in the vault cookie, not the draft — skip for GET hydrate/review.
+        skipPassword: true,
       });
       if (!churchCheck.ok || !adminCheck.ok) {
         const step = !churchCheck.ok ? "church" : "administrator";
@@ -828,18 +847,52 @@ function createApexMarketingRouter(deps) {
             wizardStep: "church",
             formError: stepValidation.error,
             fieldError: stepValidation.field || null,
-            form: formFromBody(body, { selectedPlanHint }),
+            form: formFromBody(
+              mergeDraftFields({
+                prior: draft && draft.formData,
+                incoming: body,
+                options: {
+                  fieldAllowlist: BB_DRAFT_STEP_ALLOWLIST.church,
+                  protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+                },
+              }),
+              { selectedPlanHint }
+            ),
           });
         }
-        const nextForm = {
-          ...formFromBody(body, { selectedPlanHint }),
-          organization_key:
-            (stepValidation.data && stepValidation.data.organization_key) ||
-            formFromBody(body, { selectedPlanHint }).organization_key ||
-            "",
-        };
-        writeRegistrationDraft(res, env, nextForm, { isProduction });
-        return renderForm(200, { wizardStep: "administrator", form: nextForm });
+        const nextForm = mergeDraftFields({
+          prior: draft && draft.formData,
+          incoming: formFromBody(body, { selectedPlanHint }),
+          options: {
+            fieldAllowlist: BB_DRAFT_STEP_ALLOWLIST.church,
+            protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+            serverOverrides: {
+              organization_key:
+                (stepValidation.data && stepValidation.data.organization_key) ||
+                (draft && draft.formData && draft.formData.organization_key) ||
+                "",
+              selected_plan:
+                normalizeSelectedPlan(body.selected_plan) ||
+                selectedPlanHint ||
+                (draft && draft.formData && draft.formData.selected_plan) ||
+                "",
+            },
+          },
+        });
+        writeRegistrationDraft(res, env, nextForm, {
+          isProduction,
+          currentStep: "administrator",
+          priorDraft: draft,
+        });
+        const planQ = nextForm.selected_plan
+          ? `&plan=${encodeURIComponent(nextForm.selected_plan)}`
+          : selectedPlanHint
+            ? `&plan=${encodeURIComponent(selectedPlanHint)}`
+            : "";
+        return res.redirect(
+          303,
+          withRegistrationNavParam(`${REGISTER_PATH}?step=administrator${planQ}`)
+        );
       }
 
       if (action === "next-admin") {
@@ -864,16 +917,41 @@ function createApexMarketingRouter(deps) {
             form: mergedForm,
           });
         }
-        writeRegistrationDraft(res, env, mergedForm, { isProduction });
+        const nextForm = mergeDraftFields({
+          prior: draft && draft.formData,
+          incoming: mergedForm,
+          options: {
+            fieldAllowlist: [
+              ...BB_DRAFT_STEP_ALLOWLIST.church,
+              ...BB_DRAFT_STEP_ALLOWLIST.administrator,
+            ],
+            protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+            serverOverrides: {
+              organization_key:
+                (draft && draft.formData && draft.formData.organization_key) ||
+                mergedForm.organization_key ||
+                "",
+            },
+          },
+        });
+        writeRegistrationDraft(res, env, nextForm, {
+          isProduction,
+          currentStep: "review",
+          priorDraft: draft,
+        });
         persistRegistrationPasswordFromBody(res, env, body, {
           isProduction,
           productCode: PRODUCT.BLESSBOARD,
         });
-        return renderForm(200, {
-          wizardStep: "review",
-          form: mergedForm,
-          organizationKeyPreview: mergedForm.organization_key || "",
-        });
+        const planQ = nextForm.selected_plan
+          ? `&plan=${encodeURIComponent(nextForm.selected_plan)}`
+          : selectedPlanHint
+            ? `&plan=${encodeURIComponent(selectedPlanHint)}`
+            : "";
+        return res.redirect(
+          303,
+          withRegistrationNavParam(`${REGISTER_PATH}?step=review${planQ}`)
+        );
       }
 
       const validation = validatePlatformChurchRegistration(mergedBody, {

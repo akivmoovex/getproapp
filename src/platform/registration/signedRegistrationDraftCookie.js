@@ -4,13 +4,14 @@
  * HMAC-signed registration wizard draft cookies (httpOnly).
  * Products supply only cookie name (+ optional max age); signing/read/write is shared.
  *
- * Navigation-only steps use GET + draft read — no CSRF bypass.
+ * Payload: { schemaVersion, status, draftNonce, currentStep, formData, updatedAt }
  */
 
 const crypto = require("crypto");
 const { sanitizeRegistrationDraftFormData } = require("./registrationDraftLifecycle");
 
 const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
+const SOFT_PAYLOAD_BYTES = 3500;
 
 function signingSecret(env) {
   const secret = String((env && env.SESSION_SECRET) || "").trim();
@@ -36,6 +37,10 @@ function parseCookieHeader(header, name) {
   return null;
 }
 
+function newDraftNonce() {
+  return crypto.randomBytes(16).toString("base64url");
+}
+
 /**
  * @param {{
  *   cookieName: string,
@@ -53,7 +58,14 @@ function createSignedRegistrationDraftCookie(config) {
       : DEFAULT_MAX_AGE_MS;
 
   /**
-   * @returns {{ formData: object, updatedAt?: number }|null}
+   * @returns {{
+   *   formData: object,
+   *   updatedAt?: number,
+   *   status?: string,
+   *   draftNonce?: string,
+   *   currentStep?: string|null,
+   *   schemaVersion?: number,
+   * }|null}
    */
   function readRegistrationDraft(req, env) {
     const raw =
@@ -66,7 +78,12 @@ function createSignedRegistrationDraftCookie(config) {
 
     const payloadB64 = raw.slice(0, dot);
     const sig = raw.slice(dot + 1);
-    const expected = signPayload(payloadB64, signingSecret(env));
+    let expected;
+    try {
+      expected = signPayload(payloadB64, signingSecret(env));
+    } catch (_err) {
+      return null;
+    }
     if (sig.length !== expected.length) return null;
     if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
 
@@ -78,22 +95,54 @@ function createSignedRegistrationDraftCookie(config) {
     }
 
     if (!parsed || typeof parsed !== "object" || !parsed.formData) return null;
+    if (parsed.status === "completed") return null;
     if (parsed.updatedAt && Date.now() - parsed.updatedAt > maxAgeMs) return null;
     return parsed;
   }
 
-  function writeRegistrationDraft(res, env, formData, { isProduction }) {
+  /**
+   * @param {import('express').Response} res
+   * @param {NodeJS.ProcessEnv} env
+   * @param {object} formData
+   * @param {{
+   *   isProduction: boolean,
+   *   currentStep?: string|null,
+   *   status?: string,
+   *   priorDraft?: object|null,
+   * }} opts
+   */
+  function writeRegistrationDraft(res, env, formData, opts) {
+    const options = opts && typeof opts === "object" ? opts : {};
+    const isProduction = Boolean(options.isProduction);
+    const prior = options.priorDraft && typeof options.priorDraft === "object" ? options.priorDraft : null;
     const payload = {
+      schemaVersion: 1,
+      status: options.status === "completed" ? "completed" : "active",
+      draftNonce:
+        prior && prior.draftNonce
+          ? String(prior.draftNonce)
+          : newDraftNonce(),
+      currentStep:
+        options.currentStep != null && String(options.currentStep).trim()
+          ? String(options.currentStep).trim().slice(0, 64)
+          : prior && prior.currentStep
+            ? String(prior.currentStep).slice(0, 64)
+            : null,
       formData: sanitizeRegistrationDraftFormData(formData),
       updatedAt: Date.now(),
     };
     const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    if (payloadB64.length > SOFT_PAYLOAD_BYTES) {
+      throw new Error("registration_draft_payload_too_large");
+    }
     const sig = signPayload(payloadB64, signingSecret(env));
     const value = `${payloadB64}.${sig}`;
     const secure = isProduction ? "; Secure" : "";
+    const maxAgeSec =
+      payload.status === "completed" ? 0 : Math.floor(maxAgeMs / 1000);
     res.append(
       "Set-Cookie",
-      `${cookieName}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.floor(maxAgeMs / 1000)}${secure}`
+      `${cookieName}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`
     );
     return payload;
   }
@@ -106,12 +155,30 @@ function createSignedRegistrationDraftCookie(config) {
     );
   }
 
+  /**
+   * Mark completed then clear (success path).
+   */
+  function completeRegistrationDraft(res, env, { isProduction, priorDraft }) {
+    try {
+      writeRegistrationDraft(res, env, (priorDraft && priorDraft.formData) || {}, {
+        isProduction,
+        status: "completed",
+        priorDraft,
+        currentStep: priorDraft && priorDraft.currentStep,
+      });
+    } catch (_err) {
+      /* still clear */
+    }
+    clearRegistrationDraft(res, { isProduction });
+  }
+
   return {
     COOKIE_NAME: cookieName,
     MAX_AGE_MS: maxAgeMs,
     readRegistrationDraft,
     writeRegistrationDraft,
     clearRegistrationDraft,
+    completeRegistrationDraft,
   };
 }
 

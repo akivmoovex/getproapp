@@ -403,7 +403,7 @@ TESTING target `moovex-platform-v8-testing`. Production untouched in V2.01 task 
 
 ### Summary
 
-Platform semantic colors, shared Country+City registration, website platformization, BlessBoard on the shared website engine, and ActiveClinic Stitch public/hub redesign on branch **V4**. About Version **2.04**. Hosted final QA **CLOSED** (`RELEASE_BLOCKERS=0`). Production untouched; Pronline V10 preserved.
+Platform semantic colors, shared Country+City registration, multi-step registration wizard state persistence (BB + AC), BlessBoard phone-reuse church provisioning identity fix, website platformization, BlessBoard on the shared website engine, and ActiveClinic Stitch public/hub redesign on branch **V4**. About Version **2.04**. Hosted final QA **CLOSED** (`RELEASE_BLOCKERS=0`). Production untouched; Pronline V10 preserved. **REG-STATE-01** and **BB-PROVISION-01** are **CLOSED** (not open known issues).
 
 ### Products
 
@@ -411,7 +411,7 @@ ActiveClinic, BlessBoard, Shared GetPro Platform.
 
 ### Packets
 
-[`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md) · [`BLESSBOARD_RELEASE_NOTES.md`](./BLESSBOARD_RELEASE_NOTES.md) · catalog version `2.04`
+[`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md) · [`BLESSBOARD_RELEASE_NOTES.md`](./BLESSBOARD_RELEASE_NOTES.md) · [`../qa/V2_04_BB_PROVISION_01_KNOWN_ISSUE.md`](../qa/V2_04_BB_PROVISION_01_KNOWN_ISSUE.md) · catalog version `2.04`
 
 ### Deployment status
 

@@ -97,6 +97,8 @@ function scopeForCatalogueRole(catalogueRoleKey, churchId, branchId, organizatio
 function validateInput(input) {
   const raw = input && typeof input === "object" ? input : {};
   const email = normalizeEmail(raw.email);
+  const userId =
+    raw.userId != null && String(raw.userId).trim() ? String(raw.userId).trim() : null;
   const organizationKey = String(raw.organizationKey || "")
     .trim()
     .toLowerCase();
@@ -106,7 +108,8 @@ function validateInput(input) {
   const churchKey = raw.churchKey != null ? String(raw.churchKey).trim().toLowerCase() : "";
   const branchKey = raw.branchKey != null ? String(raw.branchKey).trim().toLowerCase() : "";
 
-  if (!email) return { ok: false, reason: "email" };
+  // Prefer stable principal id (phone-reuse registration may use a different contact email).
+  if (!userId && !email) return { ok: false, reason: "email_or_userId" };
   if (!organizationKey) return { ok: false, reason: "organizationKey" };
   if (!ACCEPTED_INPUT_ROLE_KEYS.has(inputRoleKey)) return { ok: false, reason: "roleKey" };
 
@@ -129,13 +132,31 @@ function validateInput(input) {
   return {
     ok: true,
     value: {
-      email,
+      email: email || null,
+      userId,
       organizationKey,
       roleKey: catalogueRoleKey,
       inputRoleKey,
       churchKey: churchKey || null,
       branchKey: branchKey || null,
     },
+  };
+}
+
+/**
+ * @param {unknown} err
+ */
+function pgDiagnosticsFromError(err) {
+  if (!err || typeof err !== "object") {
+    return { postgresCode: null, constraint: null, table: null, schema: null };
+  }
+  const code = err.code != null ? String(err.code) : null;
+  return {
+    postgresCode: code && /^[0-9A-Z]{5}$/.test(code) ? code : null,
+    constraint: err.constraint != null ? String(err.constraint).slice(0, 120) : null,
+    table: err.table != null ? String(err.table).slice(0, 120) : null,
+    schema: err.schema != null ? String(err.schema).slice(0, 64) : null,
+    underlyingErrorClass: err.name != null ? String(err.name).slice(0, 80) : null,
   };
 }
 
@@ -171,9 +192,25 @@ async function assignBlessBoardRole(db, input, options) {
       return result;
     };
 
-    const user = await repo.findUserByEmail(client, req.email);
+    let user = null;
+    if (req.userId) {
+      // Canonical identity path: do not fall back to email re-resolution.
+      user = await repo.findUserById(client, req.userId);
+    } else if (req.email) {
+      user = await repo.findUserByEmail(client, req.email);
+    }
     if (!user) {
-      return abort({ ok: false, status: STATUS.USER_NOT_FOUND, message: "user_not_found", role: null });
+      return abort({
+        ok: false,
+        status: STATUS.USER_NOT_FOUND,
+        message: "user_not_found",
+        role: null,
+        diagnostics: {
+          roleStatus: STATUS.USER_NOT_FOUND,
+          resolvedByUserId: Boolean(req.userId),
+          resolvedByEmail: Boolean(!req.userId && req.email),
+        },
+      });
     }
 
     const organization = await repo.findOrganizationByKey(client, req.organizationKey);
@@ -337,18 +374,69 @@ async function assignBlessBoardRole(db, input, options) {
         })
       );
       if (!inserted.ok) {
-        return abort({ ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null });
+        // Concurrent insert of the same active scope — treat as idempotent success.
+        const afterConflict = await rbacRepo.listActiveAssignmentsForUser(
+          client,
+          user.id,
+          organization.id
+        );
+        const raced = (afterConflict || []).find(
+          (a) =>
+            String(a.roleKey) === req.roleKey &&
+            String(a.scopeType) === scope.scopeType &&
+            String(a.scopeId || "") === String(scope.scopeId || "")
+        );
+        if (raced) {
+          await session.commitIfManaged();
+          return {
+            ok: true,
+            status: STATUS.ALREADY_ASSIGNED,
+            message: "already_assigned",
+            role: {
+              id: raced.id,
+              roleKey: raced.roleKey,
+              organizationId: raced.organizationId,
+              churchId: raced.churchId,
+              branchId: scope.branchId,
+              status: raced.status,
+            },
+            diagnostics: {
+              roleStatus: STATUS.ALREADY_ASSIGNED,
+              ...pgDiagnosticsFromError(inserted.error),
+            },
+          };
+        }
+        return abort({
+          ok: false,
+          status: STATUS.TRANSACTION_ERROR,
+          message: "transaction_error",
+          role: null,
+          diagnostics: {
+            roleStatus: STATUS.TRANSACTION_ERROR,
+            ...pgDiagnosticsFromError(inserted.error),
+          },
+        });
       }
       role = inserted.value;
     } catch (err) {
-      if (/integrity|scope|belong|unique/i.test(String(err.message || ""))) {
-        return abort({ ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null });
+      const pg = pgDiagnosticsFromError(err);
+      if (/integrity|scope|belong|unique/i.test(String(err.message || "")) || pg.postgresCode === "23505") {
+        return abort({
+          ok: false,
+          status: STATUS.INVALID_SCOPE,
+          message: "invalid_scope",
+          role: null,
+          diagnostics: { roleStatus: STATUS.INVALID_SCOPE, ...pg },
+          cause: err,
+        });
       }
       return abort({
         ok: false,
         status: STATUS.TRANSACTION_ERROR,
         message: "transaction_error",
         role: null,
+        diagnostics: { roleStatus: STATUS.TRANSACTION_ERROR, ...pg },
+        cause: err,
       });
     }
 
@@ -366,9 +454,19 @@ async function assignBlessBoardRole(db, input, options) {
         status: role.status,
       },
     };
-  } catch {
+  } catch (err) {
     if (session) await session.safeRollbackOnError();
-    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "transaction_error", role: null };
+    return {
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: "transaction_error",
+      role: null,
+      diagnostics: {
+        roleStatus: STATUS.TRANSACTION_ERROR,
+        ...pgDiagnosticsFromError(err),
+      },
+      cause: err,
+    };
   } finally {
     if (session) session.releaseIfOwned();
   }

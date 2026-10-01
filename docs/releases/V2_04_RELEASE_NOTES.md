@@ -28,6 +28,30 @@
 - Platform-level registration country availability (disabled countries reject forged POSTs).
 - Province/region remains in the data model but is **not** required or displayed in the current registration UX.
 
+### B.1 Registration wizard state (customer)
+
+- Fixed multi-step registration state persistence so previous-step data survives forward/back navigation, refresh, and validation failures.
+- Applied to BlessBoard church registration and ActiveClinic clinic registration.
+- Registration can continue even when a browser login session is not present (sessionless draft support).
+
+### B.2 Registration wizard state (internal / engineering)
+
+- **REG-STATE-01=CLOSED**: mid-wizard GET no longer clears a valid signed draft when `gpRegNav` is absent; hydrate-if-valid + explicit `?fresh=1`.
+- Shared platform form-draft infrastructure (`multiStepDraftMerge`, draft lifecycle, product adapters).
+- Verified: `PLATFORM_FORM_TESTS=13/13` · `BB_REGISTRATION_TESTS=3/3` · `AC_REGISTRATION_TESTS=2/2` · `SESSIONLESS_FLOW=PASS` · `CROSS_DRAFT_ISOLATION=PASS` · `FINAL=PLATFORM_MULTI_STEP_FORM_STATE_IMPLEMENTED`.
+
+### B.3 BlessBoard church provisioning (customer)
+
+- Fixed church provisioning for existing users reused by phone when the submitted registration email differs from the stored account email.
+- Administrator assignment now uses the canonical resolved identity rather than re-looking up the user by submitted email.
+- Improved provisioning error classification and preserved transaction rollback safety.
+
+### B.4 BlessBoard church provisioning (internal / engineering)
+
+- **BB-PROVISION-01=CLOSED**: canonical `administratorUserId` propagation; no email fallback when userId is set; `user_not_found` is not mislabeled `database_conflict`.
+- Verified: `CANONICAL_IDENTITY_PROPAGATION=PASS` · `PHONE_REUSE_DIFFERENT_EMAIL=PASS` · `MULTI_CHURCH_ADMIN=PASS` · `ROLLBACK=PASS` · `RETRY=PASS` · `CROSS_TENANT=PASS` · `FOCUSED_TESTS=11/11` · `FINAL=BB_PROVISION_IDENTITY_FIX_COMPLETE`.
+- Source: `docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md`.
+
 ---
 
 ## C. Website platformization
@@ -82,6 +106,8 @@ Automated coverage includes:
 - AC Stitch batches 2–7 (public, editor, hub, visual parity) + Batch 8 freeze gates
 - Mini-website repeat-edit / concurrency (BB + AC saves 1/2/3; true stale second-session rejection)
 - Website lifecycle, authorization, tenant isolation
+- Multi-step registration draft persistence (platform / BB / AC focused suites)
+- BlessBoard phone-reuse church provisioning identity fix (focused 11/11)
 - Release-hardening duplication guards
 
 Inventory: `docs/qa/V2_04_QA_TEST_INVENTORY.md`.
@@ -98,6 +124,8 @@ Not V2.04 QA blockers (`RELEASE_BLOCKERS=0`):
 - Stitch pricing screen absent (DESIGN_CAN_ADAPT). Offline/suspended shell remains platform lifecycle presentation.
 
 See `docs/BACKLOG.md` → **V2.05 post-QA polish**.
+
+**Removed from open/known issues:** REG-STATE-01 and BB-PROVISION-01 (both **CLOSED** — see §B.1–B.4).
 
 ---
 
@@ -134,6 +162,8 @@ Authoritative packet: `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`.
 - `docs/releases/BLESSBOARD_RELEASE_NOTES.md` (BlessBoard customer-facing)
 - `src/platform/release-notes/releaseNotesCatalog.js`
 - `docs/qa/V2_04_QA_RELEASE_FREEZE_HANDOFF.md`
+- `docs/qa/V2_04_BB_CHURCH_PROVISIONING_FAILURE_AUDIT.md` (BB-PROVISION-01 closed)
+- `docs/qa/V2_04_PLATFORM_MULTI_STEP_FORM_STATE_IMPL.md`
 - `docs/design/ACTIVECLINIC_V2_04_STITCH_IMPLEMENTATION_MAP.md`
 - `docs/qa/V2_04_COLOR_SYSTEM_FINAL_FREEZE.md`
 - `docs/qa/V2_04_QA_01_SHARED_REGISTRATION_LOCATION.md`

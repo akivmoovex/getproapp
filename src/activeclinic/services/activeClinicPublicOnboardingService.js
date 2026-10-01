@@ -202,15 +202,18 @@ function validateClinicRegistrationInput(input, options) {
         : (phone.error || "Enter a valid phone number for the selected country.");
     }
 
-    const passwordPair = validateRegistrationPasswordPair(input.password, input.passwordConfirm);
-    if (!passwordPair.ok) {
-      if (passwordPair.field === "password") {
-        errors.password = passwordPair.error;
-      } else if (passwordPair.field === "password_confirm") {
-        errors.passwordConfirm = passwordPair.error;
+    // Passwords live in the vault cookie for draft hydrate/review GET — skip when requested.
+    if (!options || !options.skipPassword) {
+      const passwordPair = validateRegistrationPasswordPair(input.password, input.passwordConfirm);
+      if (!passwordPair.ok) {
+        if (passwordPair.field === "password") {
+          errors.password = passwordPair.error;
+        } else if (passwordPair.field === "password_confirm") {
+          errors.passwordConfirm = passwordPair.error;
+        }
+      } else {
+        passwordPolicy = { ok: true, value: passwordPair.value };
       }
-    } else {
-      passwordPolicy = { ok: true, value: passwordPair.value };
     }
   }
 
