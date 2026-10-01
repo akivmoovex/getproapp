@@ -38,6 +38,9 @@ const {
   findReleaseLinkedToBooking,
 } = require("./activeClinicVisitSummaryPatientRoutes");
 const {
+  registerPatientPortalMissingFunctionalityRoutes,
+} = require("./activeClinicPatientPortalMissingRoutes");
+const {
   requestPatientPasswordReset,
   resetPatientPassword,
 } = require("../services/activeClinicPatientPortalPasswordService");
@@ -986,6 +989,18 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     patientViewPayload,
   });
 
+  registerPatientPortalMissingFunctionalityRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    loadPatientAuth,
+    requirePatientAuth,
+    resolveClinicContext,
+    issuePageCsrf,
+    renderPatientView,
+    patientViewPayload,
+  });
+
   app.get(
     "/clinics/:clinicKey/patient/bookings/:reference",
     loadPatientAuth,
@@ -1462,32 +1477,6 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
               patientAuth: auth,
               success: "Password changed successfully.",
             })
-          );
-      } catch (err) {
-        return next(err);
-      }
-    }
-  );
-
-  app.get(
-    "/clinics/:clinicKey/patient/notifications",
-    loadPatientAuth,
-    requirePatientAuth,
-    async (req, res, next) => {
-      try {
-        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res
-          .status(200)
-          .type("html")
-          .send(
-            renderPatientView(
-              "patient/notifications",
-              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
-                patientAuth: req.activeClinicPatientAuth,
-                activeNav: "notifications",
-              })
-            )
           );
       } catch (err) {
         return next(err);

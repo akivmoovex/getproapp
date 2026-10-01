@@ -371,6 +371,48 @@
   margin: 0;
   padding-left: 1.2rem;
 }
+.ac-mw--management-hub {
+  /* Hub is staff management inside normal app chrome — not an editor stage. */
+  max-width: 72rem;
+}
+.ac-mw-hub-identity {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ac-mw-border);
+  border-radius: 0.75rem;
+  background: var(--ac-mw-surface);
+}
+.ac-mw-hub-identity__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ac-mw-muted);
+}
+.ac-mw-hub-identity__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+}
+.ac-mw-hub-identity__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ac-mw-hub-manage-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+}
 .ac-mw-hub-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

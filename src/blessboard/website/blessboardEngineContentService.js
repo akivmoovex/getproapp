@@ -442,12 +442,19 @@ async function applyPublishedEngineFieldsToPage(db, input) {
   };
 }
 
+/**
+ * Seed engine content for a new / provisional BlessBoard website.
+ * Content rows are written as an aligned draft+published baseline so Change Manager
+ * shows 0 unpublished changes. Instance remains coming_soon / provisional —
+ * this does not make the site publicly live.
+ */
 async function seedUnpublishedEngineContent(db, input) {
   try {
     const {
       resolveInstance,
       CMS_SNAPSHOT,
     } = require("../../platform/website-engine/blessboardBridge");
+    const alignBaseline = input && input.alignPublishedBaseline === false ? false : true;
     const resolved = await resolveInstance(db, {
       organizationId: input.organizationId,
       branchId: input.branchId || null,
@@ -471,7 +478,7 @@ async function seedUnpublishedEngineContent(db, input) {
               navigation: [],
               entities: {},
             },
-            publish: false,
+            publish: alignBaseline,
           },
         ],
         input.actorIdentityId || null
@@ -479,7 +486,7 @@ async function seedUnpublishedEngineContent(db, input) {
     }
     await seedFieldContentFromPages(db, {
       ...input,
-      publish: false,
+      publish: alignBaseline,
     });
     if (resolved.ok && resolved.instance) {
       try {

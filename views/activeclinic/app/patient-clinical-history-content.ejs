@@ -1,0 +1,92 @@
+<%
+  var history = (pageData && pageData.history) || {};
+  var patient = history.patient || {};
+  var encounters = history.encounters || [];
+  var actions = history.actions || {};
+  var stitch = history.stitch || {};
+  function fmtWhen(v) {
+    if (v == null || v === '') return '—';
+    return String(v).replace('T', ' ').slice(0, 16);
+  }
+%>
+<section
+  class="ac-batch1a ac-patient-clinical-history"
+  data-ac-page-section="patient-clinical-history"
+  data-ac-stitch="ACN-P02"
+  data-ac-stitch-desktop="<%= stitch.desktop ? '1' : '' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile ? '1' : '' %>"
+  data-ac-patient-number="<%= patient.patientNumber || '' %>"
+>
+  <header class="ac-patient-banner" data-ac-patient-banner="1">
+    <h2 class="ac-patient-banner__name"><%= patient.displayName || '—' %></h2>
+    <p class="ac-muted">
+      <span data-ac-history-patient-number="1"><%= patient.patientNumber || '—' %></span>
+      · <span class="ac-status" data-status="<%= patient.status || '' %>"><%= patient.statusLabel || patient.status || '—' %></span>
+    </p>
+    <% if (actions.profileHref) { %>
+    <p class="ac-form-actions">
+      <a class="ac-btn ac-btn--secondary" href="<%= actions.profileHref %>" data-ac-history-back="1">Back to profile</a>
+    </p>
+    <% } %>
+  </header>
+
+  <div class="ac-panel" data-ac-clinical-history-panel="1">
+    <h2 class="ac-dashboard__card-title">Clinical history</h2>
+    <p class="ac-muted">Encounter list for this patient. Clinical note bodies are not shown on this screen.</p>
+
+    <% if (history.empty || !encounters.length) { %>
+    <%- include('../partials/ac-inline-state', {
+      inlineState: {
+        stateKey: 'empty',
+        marker: 'patient-clinical-history-empty',
+        title: 'No encounters on record',
+        description: history.facilityScoped
+          ? 'No clinical encounters are recorded for this patient at the current facility.'
+          : 'No clinical encounters are recorded for this patient yet.',
+        primaryAction: actions.profileHref
+          ? { href: actions.profileHref, label: 'Back to profile' }
+          : null,
+      }
+    }) %>
+    <% } else { %>
+    <div class="ac-table-wrap ac-clinical-history__desktop" data-ac-table="patient-clinical-history">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th scope="col">Encounter</th>
+            <th scope="col">Opened</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% encounters.forEach(function (enc) { %>
+          <tr data-ac-history-encounter="<%= enc.id %>">
+            <td data-ac-history-encounter-number="1"><%= enc.encounterNumber || enc.id %></td>
+            <td><%= fmtWhen(enc.openedAt) %></td>
+            <td><span class="ac-status" data-status="<%= enc.status || '' %>"><%= enc.status || '—' %></span></td>
+            <td>
+              <% if (enc.href) { %>
+              <a class="ac-btn ac-btn--ghost" href="<%= enc.href %>" data-ac-history-open="1">Open encounter</a>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="ac-card-list ac-clinical-history__mobile" data-ac-history-mobile="1" hidden>
+      <% encounters.forEach(function (enc) { %>
+      <li class="ac-card" data-ac-history-encounter="<%= enc.id %>">
+        <h3 class="ac-card__title"><%= enc.encounterNumber || enc.id %></h3>
+        <p class="ac-muted"><%= fmtWhen(enc.openedAt) %> · <%= enc.status || '—' %></p>
+        <% if (enc.href) { %>
+        <a class="ac-btn ac-btn--ghost" href="<%= enc.href %>" data-ac-history-open="1">Open encounter</a>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+</section>

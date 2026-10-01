@@ -180,9 +180,109 @@ async function listPatientReceipts(db, input) {
   };
 }
 
+/**
+ * Get one patient-owned invoice with lines and related receipts.
+ * Same ownership as list; omits internal finance notes.
+ */
+async function getPatientInvoice(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const patientId = String((input && input.patientId) || "").trim();
+  const invoiceId = String((input && input.invoiceId) || "").trim();
+  if (
+    !UUID_RE.test(organizationId) ||
+    !UUID_RE.test(patientId) ||
+    !UUID_RE.test(invoiceId)
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, invoice: null };
+  }
+
+  const result = await db.query(
+    `SELECT i.id, i.invoice_number, i.invoice_date, i.due_date, i.status,
+            i.total_amount_minor, i.currency_code,
+            f.display_name AS facility_display_name,
+            COALESCE(alloc.paid_minor, 0)::bigint AS paid_minor,
+            0::bigint AS credit_minor
+       FROM activeclinic.invoices i
+       JOIN activeclinic.facilities f ON f.id = i.facility_id
+       LEFT JOIN (
+         SELECT invoice_id, SUM(allocated_amount_minor)::bigint AS paid_minor
+           FROM activeclinic.payment_allocations
+          GROUP BY invoice_id
+       ) alloc ON alloc.invoice_id = i.id
+      WHERE i.id = $1
+        AND i.tenant_id = $2
+        AND i.patient_id = $3
+        AND i.status = ANY($4::text[])
+      LIMIT 1`,
+    [invoiceId, organizationId, patientId, [...PATIENT_VISIBLE_INVOICE_STATUSES]]
+  );
+
+  if (!result.rows[0]) {
+    return { ok: false, code: RESULT.NOT_FOUND, invoice: null };
+  }
+
+  const mapped = mapInvoiceRow(result.rows[0]);
+  // Patient portal: never expose internal finance notes.
+  mapped.notes = null;
+
+  const linesRes = await db.query(
+    `SELECT id, line_number, description, quantity,
+            unit_amount_minor, line_total_minor, currency_code
+       FROM activeclinic.invoice_lines
+      WHERE invoice_id = $1
+      ORDER BY line_number ASC`,
+    [invoiceId]
+  );
+
+  const lines = linesRes.rows.map((row) => {
+    const currencyCode = row.currency_code || mapped.currencyCode;
+    const unitMinor = parseInt(row.unit_amount_minor, 10) || 0;
+    const lineTotalMinor = parseInt(row.line_total_minor, 10) || 0;
+    return {
+      id: row.id,
+      lineNumber: row.line_number,
+      description: row.description,
+      quantity: row.quantity,
+      unitMinor,
+      lineTotalMinor,
+      currencyCode,
+      unitFormatted: formatMoney(unitMinor, currencyCode),
+      lineTotalFormatted: formatMoney(lineTotalMinor, currencyCode),
+    };
+  });
+
+  const receiptsRes = await db.query(
+    `SELECT r.id, r.receipt_number, r.receipt_date, r.amount_minor, r.currency_code,
+            r.issued_to_patient_name,
+            pay.payment_number, pay.payment_method,
+            f.display_name AS facility_display_name
+       FROM activeclinic.receipts r
+       JOIN activeclinic.payments pay ON pay.id = r.payment_id
+       JOIN activeclinic.payment_allocations pa ON pa.payment_id = pay.id
+       JOIN activeclinic.facilities f ON f.id = r.facility_id
+      WHERE r.tenant_id = $1
+        AND pay.tenant_id = $1
+        AND pay.patient_id = $2
+        AND pa.invoice_id = $3
+      ORDER BY r.receipt_date DESC, r.created_at DESC`,
+    [organizationId, patientId, invoiceId]
+  );
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    invoice: {
+      ...mapped,
+      lines,
+      receipts: receiptsRes.rows.map(mapReceiptRow),
+    },
+  };
+}
+
 module.exports = {
   RESULT,
   PATIENT_VISIBLE_INVOICE_STATUSES,
   listPatientInvoices,
   listPatientReceipts,
+  getPatientInvoice,
 };

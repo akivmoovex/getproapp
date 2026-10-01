@@ -67,7 +67,7 @@
     <% if (rs.websiteEditPath) { %>
     <p class="bb-rs-website__cta">
       <a class="bb-rs-btn bb-rs-btn--continue" href="<%= rs.websiteEditPath %>" data-bb-build-website="1">
-        <%= rs.websiteBuildLabel || 'Build your website' %>
+        <%= rs.websiteBuildLabel || 'Edit your website' %>
       </a>
     </p>
     <% } %>
@@ -138,11 +138,23 @@
   <% } %>
 
   <div class="bb-rs-actions">
-    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <% if (rs.showWebsiteEditPrimary && rs.websiteEditPath) { %>
     <a
       class="bb-rs-btn bb-rs-btn--continue"
+      href="<%= rs.websiteEditPath %>"
+      data-bb-build-website="1"
+      data-bb-primary-edit-website="1"
+    >
+      <span class="bb-rs-only-desktop"><%= rs.websiteBuildLabel || 'Edit your website' %></span>
+      <span class="bb-rs-only-mobile"><%= rs.websiteBuildLabel || 'Edit your website' %></span>
+    </a>
+    <% } %>
+    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <a
+      class="bb-rs-btn<%= rs.showWebsiteEditPrimary ? ' bb-rs-btn--signin' : ' bb-rs-btn--continue' %>"
       href="<%= rs.dashboardHref %>"
       <% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>
+      data-bb-dashboard-secondary="<%= rs.showWebsiteEditPrimary ? '1' : '0' %>"
     >
       <span class="bb-rs-only-desktop"><%= rs.continueLabel || 'Continue to dashboard' %></span>
       <span class="bb-rs-only-mobile"><%= rs.mobileContinueLabel || rs.continueLabel || 'Continue to Dashboard' %></span>

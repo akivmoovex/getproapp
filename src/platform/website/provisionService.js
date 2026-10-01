@@ -15,6 +15,29 @@ const RESULT = Object.freeze({
   SLUG_COLLISION: "slug_collision",
 });
 
+/**
+ * Starter/default website content is the initial baseline, not pending user edits.
+ * Aligning published_value to draft_value does NOT flip instance status/availability
+ * to publicly live — that remains controlled by instance.status / product flags.
+ *
+ * Opt out only with explicit `publishStarter: false` or `alignPublishedBaseline: false`.
+ *
+ * @param {{
+ *   publishStarter?: boolean,
+ *   alignPublishedBaseline?: boolean,
+ *   status?: string|null,
+ * }|null|undefined} input
+ * @returns {boolean}
+ */
+function shouldAlignPublishedBaseline(input) {
+  if (input && input.publishStarter === false) return false;
+  if (input && input.alignPublishedBaseline === false) return false;
+  if (input && input.publishStarter === true) return true;
+  if (input && input.alignPublishedBaseline === true) return true;
+  if (String((input && input.status) || "") === "published") return true;
+  return true;
+}
+
 function starterEntries(template, overrides, publishStarter) {
   const extras = overrides && typeof overrides === "object" ? overrides : {};
   return listTemplateKeys(template).map((key) => ({
@@ -52,8 +75,7 @@ async function provisionWebsiteInstance(db, input) {
     if (!created.ok) return created;
 
     if (created.created && input.seedDefaults !== false) {
-      const publishStarter =
-        input.publishStarter === true || String(input.status || "") === "published";
+      const publishStarter = shouldAlignPublishedBaseline(input);
       await contentService.seedWebsiteContent(
         client,
         created.instance,
@@ -99,4 +121,5 @@ module.exports = {
   RESULT,
   provisionWebsiteInstance,
   starterEntries,
+  shouldAlignPublishedBaseline,
 };

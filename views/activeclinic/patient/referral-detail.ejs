@@ -1,0 +1,34 @@
+<%
+  var ref = referral || {};
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--referral-detail"
+  data-ac-page-section="patient-referral-detail"
+  data-ac-batch3="AC-P11"
+  data-ac-stitch="<%= stitch.desktop || 'ac-p11' %>"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/referrals">← Back to referrals</a>
+  </p>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Referral</p>
+    <h1 data-ac-referral-title="1"><%= escapeHtml(ref.title || '') %></h1>
+    <p class="ac-muted"><%= escapeHtml(ref.statusLabel || ref.status || '') %> · <%= escapeHtml(ref.facilityDisplayName || '') %></p>
+  </header>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Details</h2>
+    <dl class="ac-patient-detail acp-portal-leaf__detail">
+      <div><dt>Urgency</dt><dd><%= escapeHtml(ref.urgency || '—') %></dd></div>
+      <div><dt>Due</dt><dd><%= escapeHtml(ref.dueAt ? String(ref.dueAt).replace('T',' ').slice(0,16) : '—') %></dd></div>
+      <div><dt>Created</dt><dd><%= escapeHtml(ref.createdAt ? String(ref.createdAt).replace('T',' ').slice(0,16) : '—') %></dd></div>
+    </dl>
+    <% if (ref.reason) { %>
+    <h3 class="acp-portal-leaf__subhead">Reason</h3>
+    <p data-ac-referral-reason="1"><%= escapeHtml(ref.reason) %></p>
+    <% } %>
+  </section>
+
+  <p class="ac-muted" data-ac-referral-readonly="1">Read-only — staff-only notes and workflow controls are not shown.</p>
+</section>

@@ -30,6 +30,7 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
     return {
       showWebsite: false,
       organizationKey: null,
+      branchKey: null,
       publicPath: null,
       publicUrl: null,
       editPath: null,
@@ -45,6 +46,7 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
     return {
       showWebsite: false,
       organizationKey: null,
+      branchKey: null,
       publicPath: null,
       publicUrl: null,
       editPath: null,
@@ -57,6 +59,7 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
     return {
       showWebsite: false,
       organizationKey: null,
+      branchKey: null,
       publicPath: null,
       publicUrl: null,
       editPath: null,
@@ -72,6 +75,7 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
     return {
       showWebsite: false,
       organizationKey: null,
+      branchKey: null,
       publicPath: null,
       publicUrl: null,
       editPath: null,
@@ -94,6 +98,7 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
   return {
     showWebsite: true,
     organizationKey,
+    branchKey,
     publicPath,
     publicUrl,
     editPath,

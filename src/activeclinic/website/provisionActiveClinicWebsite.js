@@ -1,7 +1,11 @@
 "use strict";
 
 const { withProvisioningTransaction } = require("../../platform/db/provisioningTransaction");
-const { provisionWebsiteInstance, starterEntries } = require("../../platform/website/provisionService");
+const {
+  provisionWebsiteInstance,
+  starterEntries,
+  shouldAlignPublishedBaseline,
+} = require("../../platform/website/provisionService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const contentService = require("../../platform/website/contentService");
 const { getWebsiteTemplate } = require("../../platform/website/templateRegistry");
@@ -73,7 +77,11 @@ async function provisionActiveClinicWebsite(db, input) {
               }),
               ...(input.contentOverrides || {}),
             },
-            String(existing.status || "") === "published"
+            shouldAlignPublishedBaseline({
+              status: existing.status,
+              publishStarter: input.publishStarter,
+              alignPublishedBaseline: input.alignPublishedBaseline,
+            })
           ),
           input.actorIdentityId || null
         );

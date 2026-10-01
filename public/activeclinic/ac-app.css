@@ -4581,3 +4581,55 @@ body.ac-app-body .ac-clinical-docs-detail__finalize {
     flex: 1 1 auto;
   }
 }
+
+/* ACN-P02 clinical history + ACN-P04 patient activity (staff) */
+body.ac-app-body .ac-patient-clinical-history .ac-clinical-history__mobile,
+body.ac-app-body .ac-patient-activity .ac-patient-activity__mobile {
+  display: none;
+}
+body.ac-app-body .ac-patient-profile__leaf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2, 0.5rem);
+  align-items: center;
+}
+body.ac-app-body .ac-patient-clinical-history .ac-card,
+body.ac-app-body .ac-patient-activity .ac-card {
+  list-style: none;
+}
+body.ac-app-body .ac-patient-clinical-history .ac-card-list,
+body.ac-app-body .ac-patient-activity .ac-card-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2, 0.5rem);
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-patient-clinical-history .ac-clinical-history__desktop,
+  body.ac-app-body .ac-patient-activity .ac-patient-activity__desktop {
+    display: none;
+  }
+  body.ac-app-body .ac-patient-clinical-history .ac-clinical-history__mobile,
+  body.ac-app-body .ac-patient-activity .ac-patient-activity__mobile {
+    display: flex;
+  }
+  body.ac-app-body .ac-patient-clinical-history .ac-clinical-history__mobile[hidden],
+  body.ac-app-body .ac-patient-activity .ac-patient-activity__mobile[hidden] {
+    display: flex;
+  }
+  body.ac-app-body .ac-patient-profile__leaf-links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.ac-app-body .ac-patient-profile__leaf-links .ac-btn,
+  body.ac-app-body .ac-patient-clinical-history .ac-form-actions .ac-btn,
+  body.ac-app-body .ac-patient-activity .ac-form-actions .ac-btn,
+  body.ac-app-body .ac-patient-clinical-history .ac-card .ac-btn,
+  body.ac-app-body .ac-patient-activity .ac-card .ac-btn {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+}

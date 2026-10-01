@@ -990,6 +990,90 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
       }
     }
   );
+
+  // Patient release — lab (authorization-protected)
+  app.post(
+    "/app/diagnostics/laboratory/results/:resultId/release",
+    requireAuth,
+    requirePermission([PERM.LAB_VERIFY, PERM.VERIFY]),
+    requireDepartment("diagnostics"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const resultId = String(req.params.resultId || "");
+        if (!UUID_RE.test(resultId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invalid result ID", { status: 404 })
+          );
+        }
+        const auth = req.activeClinicAuth;
+        const released = await releaseLaboratoryResult(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          laboratoryResultId: resultId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actorFromAuth(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!released.ok) {
+          const status =
+            released.code === DIAGNOSTICS_RESULT.ACCESS_DENIED ? 403 : 400;
+          return res.status(status).type("html").send(
+            renderSimpleState("Release failed", mapDiagnosticsError(released.code), {
+              status,
+            })
+          );
+        }
+        return res.redirect(303, "/app/diagnostics/laboratory?released=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // Patient release — radiology (authorization-protected)
+  app.post(
+    "/app/diagnostics/radiology/reports/:reportId/release",
+    requireAuth,
+    requirePermission([PERM.RADIOLOGY_VERIFY, PERM.VERIFY]),
+    requireDepartment("diagnostics"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const reportId = String(req.params.reportId || "");
+        if (!UUID_RE.test(reportId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invalid report ID", { status: 404 })
+          );
+        }
+        const auth = req.activeClinicAuth;
+        const released = await releaseRadiologyReport(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          radiologyReportId: reportId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actorFromAuth(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!released.ok) {
+          const status =
+            released.code === DIAGNOSTICS_RESULT.ACCESS_DENIED ? 403 : 400;
+          return res.status(status).type("html").send(
+            renderSimpleState("Release failed", mapDiagnosticsError(released.code), {
+              status,
+            })
+          );
+        }
+        return res.redirect(303, "/app/diagnostics/radiology?released=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
 }
 
 module.exports = {

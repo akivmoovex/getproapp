@@ -259,13 +259,25 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           servicesConfigured,
           mediaCount,
         });
-        const actions = (website && website.actions) || (website && website.ux && website.ux.actions) || {};
+        const clinicKey =
+          (req.activeClinicAuth.organization &&
+            (req.activeClinicAuth.organization.organizationKey ||
+              req.activeClinicAuth.organization.key)) ||
+          "";
+        const clinicLabel =
+          (req.activeClinicAuth.healthcareOrganization &&
+            req.activeClinicAuth.healthcareOrganization.publicName) ||
+          (req.activeClinicAuth.organization &&
+            (req.activeClinicAuth.organization.publicName ||
+              req.activeClinicAuth.organization.name)) ||
+          clinicKey ||
+          "Clinic website";
         return await renderShell(req, res, {
           activeNav: "website",
           content: "app/settings-website-content.ejs",
           pageHeader: {
             title: "Website Management Hub",
-            description: "Manage your clinic website in one place.",
+            description: "Manage your clinic website in one place. Visual editing opens in the Website Editor.",
             actions: [],
           },
           breadcrumbs: [
@@ -276,11 +288,9 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           pageData: {
             website,
             hub,
-            cmsNav: {
-              active: "overview",
-              editHref: actions.editWebsite || "",
-              historyHref: actions.history || "",
-            },
+            clinicKey,
+            clinicLabel,
+            // Management hub only — do not mount Studio/MW editor chrome (cmsNav).
           },
           flash:
             req.query.website === "published"

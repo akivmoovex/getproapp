@@ -1,0 +1,91 @@
+<%
+  var inv = invoice || {};
+  var lines = Array.isArray(inv.lines) ? inv.lines : [];
+  var receiptRows = Array.isArray(inv.receipts) ? inv.receipts : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--invoice-detail"
+  data-ac-page-section="patient-invoice-detail"
+  data-ac-batch3="AC-P13"
+  data-ac-stitch="<%= stitch.desktop || '9f422c33e30c450e9502126ba4012585' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '3735516f4ecb4624ac715c6f77e7810b' %>"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/invoices">← Back to invoices</a>
+  </p>
+
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Billing</p>
+    <h1 data-ac-invoice-number="1"><%= escapeHtml(inv.invoiceNumber || '') %></h1>
+    <p class="acp-auth-card__lede">
+      Read-only statement for your patient record. Online payment and Medicare live claims are not available here.
+    </p>
+  </header>
+
+  <div class="acp-portal-leaf__detail-hero" data-ac-invoice-summary="1">
+    <div>
+      <p class="ac-muted">Total</p>
+      <p class="acp-portal-leaf__identity-name"><%= escapeHtml(inv.totalFormatted || '') %></p>
+      <p class="ac-muted">Balance <%= escapeHtml(inv.balanceFormatted || '') %> · <%= escapeHtml(inv.statusLabel || '') %></p>
+    </div>
+  </div>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Invoice details</h2>
+    <dl class="ac-patient-detail acp-portal-leaf__detail">
+      <div><dt>Date</dt><dd><%= escapeHtml(inv.invoiceDate ? String(inv.invoiceDate).slice(0,10) : '—') %></dd></div>
+      <div><dt>Due</dt><dd><%= escapeHtml(inv.dueDate ? String(inv.dueDate).slice(0,10) : '—') %></dd></div>
+      <div><dt>Facility</dt><dd><%= escapeHtml(inv.facilityDisplayName || '—') %></dd></div>
+    </dl>
+  </section>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Line items</h2>
+    <% if (!lines.length) { %>
+    <p class="ac-muted" data-ac-empty="invoice-lines">No line items on this invoice.</p>
+    <% } else { %>
+    <div class="ac-patient-table-wrap" data-ac-invoice-lines="1">
+      <table class="ac-patient-table">
+        <thead>
+          <tr>
+            <th scope="col">Description</th>
+            <th scope="col">Qty</th>
+            <th scope="col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% lines.forEach(function (line) { %>
+          <tr>
+            <td><%= escapeHtml(line.description) %></td>
+            <td><%= Number(line.quantity || 0) %></td>
+            <td><%= escapeHtml(line.lineTotalFormatted) %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Related receipts</h2>
+    <% if (!receiptRows.length) { %>
+    <p class="ac-muted" data-ac-empty="invoice-receipts">No receipts linked to this invoice yet.</p>
+    <% } else { %>
+    <ul class="ac-simple-list" data-ac-invoice-receipts="1">
+      <% receiptRows.forEach(function (r) { %>
+      <li>
+        <strong><%= escapeHtml(r.receiptNumber) %></strong>
+        <span> · <%= escapeHtml(r.amountFormatted) %></span>
+        <span class="ac-muted"> · <%= escapeHtml(r.paymentMethod || '') %></span>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <aside class="acp-portal-leaf__note" data-ac-omitted="finance-internal">
+    <p class="ac-muted">Internal finance notes, cashier controls, and Medicare API claims are not shown.</p>
+  </aside>
+</section>

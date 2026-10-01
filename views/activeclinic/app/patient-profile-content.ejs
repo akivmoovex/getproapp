@@ -13,11 +13,17 @@
       · age <%= patient.approximateAge || '—' %>
       · <span class="ac-status" data-status="<%= patient.status %>"><%= patient.statusLabel || patient.status %></span>
     </p>
-    <% if (actions.canPrintCard && actions.printCardHref) { %>
-    <p class="ac-form-actions ac-print-hide">
+    <p class="ac-form-actions ac-print-hide ac-patient-profile__leaf-links">
+      <% if (actions.canPrintCard && actions.printCardHref) { %>
       <a class="ac-btn ac-btn--secondary" href="<%= actions.printCardHref %>" data-ac-print-card-link="1">Print patient card</a>
+      <% } %>
+      <% if (actions.canViewClinicalHistory && actions.clinicalHistoryHref) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.clinicalHistoryHref %>" data-ac-clinical-history-link="1">Clinical history</a>
+      <% } %>
+      <% if (actions.canViewActivity && actions.activityHref) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.activityHref %>" data-ac-patient-activity-link="1">Activity</a>
+      <% } %>
     </p>
-    <% } %>
   </header>
 
   <div class="ac-panel">

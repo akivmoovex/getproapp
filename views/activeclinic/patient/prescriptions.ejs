@@ -1,0 +1,67 @@
+<%
+  var rows = Array.isArray(prescriptions) ? prescriptions : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--prescriptions"
+  data-ac-page-section="patient-prescriptions"
+  data-ac-batch3="AC-P10"
+  data-ac-stitch="<%= stitch.desktop || 'ac-p10' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ac-p10-m' %>"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Care records</p>
+    <h1>My prescriptions</h1>
+    <p class="acp-auth-card__lede">Read-only prescriptions from this clinic. You cannot prescribe or edit medications here.</p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <% if (!rows.length) { %>
+  <div class="ac-patient-empty-state" data-ac-empty="prescriptions">
+    <p class="acp-portal-leaf__empty-title">No prescriptions yet</p>
+    <p class="ac-patient-empty">When the clinic issues a prescription for you, it will appear here.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-prescriptions-desktop="1">
+    <table class="ac-patient-table">
+      <thead>
+        <tr>
+          <th scope="col">Prescription</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Status</th>
+          <th scope="col">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (rx) { %>
+        <tr data-ac-prescription-id="<%= rx.id %>">
+          <td>
+            <a href="/clinics/<%= clinicKey %>/patient/prescriptions/<%= encodeURIComponent(rx.id) %>" data-ac-prescription-link="1">
+              <%= escapeHtml(rx.prescriptionNumber) %>
+            </a>
+          </td>
+          <td><%= escapeHtml(rx.facilityDisplayName || '') %></td>
+          <td><%= escapeHtml(rx.statusLabel || rx.status) %></td>
+          <td><%= escapeHtml(rx.createdAt ? String(rx.createdAt).replace('T',' ').slice(0,16) : '') %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-patients-mobile" data-ac-prescriptions-mobile="1">
+    <% rows.forEach(function (rx) { %>
+    <li class="ac-card acp-portal-leaf__card" data-ac-prescription-id="<%= rx.id %>">
+      <p class="ac-card__title">
+        <a href="/clinics/<%= clinicKey %>/patient/prescriptions/<%= encodeURIComponent(rx.id) %>" data-ac-prescription-link="1">
+          <%= escapeHtml(rx.prescriptionNumber) %>
+        </a>
+      </p>
+      <p class="ac-muted"><%= escapeHtml(rx.facilityDisplayName || '') %> · <%= escapeHtml(rx.statusLabel || rx.status) %></p>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>

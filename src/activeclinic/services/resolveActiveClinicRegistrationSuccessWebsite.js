@@ -11,6 +11,7 @@ const {
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
   buildPublicWebsiteSettingsPath,
 } = require("../../platform/website/publicWebsiteUrl");
 
@@ -80,6 +81,12 @@ async function resolveActiveClinicRegistrationSuccessWebsite(db, input) {
     product: PRODUCT_CODE.ACTIVECLINIC,
     organizationKey,
   });
+  // Canonical edit destination is the public mini-website in edit+draft mode —
+  // never the Website Management Hub (/app/settings/website), which has no canvas.
+  const editPath = buildPublicWebsiteEditPath({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey,
+  });
   const hubPath =
     buildPublicWebsiteSettingsPath({
       product: PRODUCT_CODE.ACTIVECLINIC,
@@ -92,7 +99,8 @@ async function resolveActiveClinicRegistrationSuccessWebsite(db, input) {
     organizationKey,
     publicPath,
     publicUrl,
-    editPath: hubPath,
+    editPath,
+    hubPath,
     statusLabel: "Draft — not published yet",
     websitePublished: Boolean(row.website_published),
   };

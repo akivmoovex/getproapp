@@ -7,7 +7,11 @@
  */
 
 const instanceRepo = require("../website/instanceRepository");
-const { provisionWebsiteInstance, starterEntries } = require("../website/provisionService");
+const {
+  provisionWebsiteInstance,
+  starterEntries,
+  shouldAlignPublishedBaseline,
+} = require("../website/provisionService");
 const contentService = require("../website/contentService");
 const { getWebsiteTemplate } = require("../website/templateRegistry");
 const { ACTION, recordLifecycleAudit } = require("./lifecycleAudit");
@@ -47,9 +51,15 @@ async function seedMissingWebsiteContent(db, adapter, input, instance) {
   if (!template) {
     return { ok: false, skipped: false, reason: "template_not_found", seeded: 0 };
   }
+  // Seeded starter content is the baseline. Align published_value without requiring
+  // instance.status === "published" (availability / go-live stays separate).
   const publishStarter =
-    defaults.seedDefaults !== false &&
-    (String(instance.status || "") === "published" || String(defaults.status || "") === "published");
+    defaults.seedDefaults === false
+      ? false
+      : shouldAlignPublishedBaseline({
+          ...defaults,
+          status: instance.status || defaults.status,
+        });
   const seeded = await contentService.seedWebsiteContent(
     db,
     instance,

@@ -31,6 +31,8 @@ const {
   loadActiveClinicPatientFormScreen,
   loadActiveClinicPatientProfileScreen,
   loadActiveClinicPatientPrintCardScreen,
+  loadActiveClinicPatientClinicalHistoryScreen,
+  loadActiveClinicPatientActivityScreen,
 } = require("../services/loadActiveClinicPatientScreens");
 const {
   registerActiveClinicPatient,
@@ -705,6 +707,20 @@ function registerActiveClinicPatientRoutes(app, deps) {
             primary: !loaded.profile.actions.canEdit,
           });
         }
+        if (loaded.profile.actions.canViewClinicalHistory) {
+          headerActions.push({
+            href: loaded.profile.actions.clinicalHistoryHref,
+            label: "Clinical history",
+            ghost: true,
+          });
+        }
+        if (loaded.profile.actions.canViewActivity) {
+          headerActions.push({
+            href: loaded.profile.actions.activityHref,
+            label: "Activity",
+            ghost: true,
+          });
+        }
         return await renderShell(req, res, {
           activeNav: "patients",
           content: "app/patient-profile-content.ejs",
@@ -719,6 +735,108 @@ function registerActiveClinicPatientRoutes(app, deps) {
           ],
           flash,
           pageData: { profile: loaded.profile },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/patients/:patientNumber/clinical-history",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicPatientClinicalHistoryScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          patientNumber: req.params.patientNumber,
+        });
+        if (!loaded.ok) {
+          const status = loaded.code === PATIENT_RESULT.ACCESS_DENIED ? 403 : 404;
+          return res.status(status).type("html").send(
+            renderSimpleState(
+              status === 403 ? "Access Restricted" : "Not found",
+              status === 403
+                ? "You do not have permission to view clinical history for this patient."
+                : "That patient is not available.",
+              { status }
+            )
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-clinical-history-content.ejs",
+          pageHeader: {
+            title: "Clinical history",
+            description: loaded.history.patient.displayName,
+            actions: [
+              {
+                href: loaded.history.actions.profileHref,
+                label: "Back to profile",
+              },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            {
+              label: loaded.history.patient.patientNumber,
+              href: loaded.history.actions.profileHref,
+            },
+            { label: "Clinical history" },
+          ],
+          pageData: { history: loaded.history },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/patients/:patientNumber/activity",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicPatientActivityScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          patientNumber: req.params.patientNumber,
+        });
+        if (!loaded.ok) {
+          const status = loaded.code === PATIENT_RESULT.ACCESS_DENIED ? 403 : 404;
+          return res.status(status).type("html").send(
+            renderSimpleState(
+              status === 403 ? "Access Restricted" : "Not found",
+              status === 403
+                ? "You do not have permission to view patient activity."
+                : "That patient is not available.",
+              { status }
+            )
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-activity-content.ejs",
+          pageHeader: {
+            title: "Patient activity",
+            description: loaded.activity.patient.displayName,
+            actions: [
+              {
+                href: loaded.activity.actions.profileHref,
+                label: "Back to profile",
+              },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            {
+              label: loaded.activity.patient.patientNumber,
+              href: loaded.activity.actions.profileHref,
+            },
+            { label: "Activity" },
+          ],
+          pageData: { activity: loaded.activity },
         });
       } catch (err) {
         return next(err);

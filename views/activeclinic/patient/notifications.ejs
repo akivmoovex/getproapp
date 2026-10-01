@@ -1,22 +1,111 @@
-<section class="ac-patient-page acp-portal-panel" data-ac-page-section="patient-notifications">
-  <header class="ac-patient-page__header">
-    <p class="ac-public-eyebrow">Patient portal</p>
-    <h1>Notifications</h1>
+<%
+  var prefs = preferences || { email: {}, sms: {}, in_app: {} };
+  var stitch = stitch || {};
+  var email = prefs.email || {};
+  var sms = prefs.sms || {};
+  var inApp = prefs.in_app || {};
+  var prefsMode = typeof prefsMode !== 'undefined' && prefsMode ? prefsMode : 'existing_store';
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--notifications"
+  data-ac-page-section="patient-notifications"
+  data-ac-batch3="AC-P09"
+  data-ac-sec="AC-SEC-01"
+  data-ac-prefs-mode="<%= prefsMode %>"
+  data-ac-stitch="<%= stitch.desktop || '1938bff7a7d54fa5a7d856457864d84d' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '1938bff7a7d54fa5a7d856457864d84d' %>"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Patient portal</p>
+    <h1>Notifications &amp; preferences</h1>
+    <p class="acp-auth-card__lede">
+      Communication preferences for booking and administrative reminders at this clinic.
+      These settings are stored on your patient record. They are not clinical or treatment consent.
+    </p>
   </header>
 
-  <div class="ac-patient-honesty">
-    <p>
-      Email and SMS notifications are not yet available for this patient portal.
-      Please check your portal regularly for booking updates.
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <% if (typeof success !== 'undefined' && success) { %>
+  <div class="ac-patient-alert ac-patient-alert--success" role="status" data-ac-prefs-saved="1"><%= success %></div>
+  <% } %>
+
+  <section class="acp-portal-leaf__panel" data-ac-clinical-consent-info="1" aria-labelledby="ac-sec01-clinical">
+    <h2 id="ac-sec01-clinical">Clinical / treatment consent</h2>
+    <p class="ac-muted" data-ac-clinical-consent-boundary="1">
+      <%= typeof clinicalConsentNote !== 'undefined' && clinicalConsentNote
+        ? clinicalConsentNote
+        : 'Clinical and treatment consent is recorded by clinic staff on your medical record. You cannot grant, withdraw, or change clinical consent in this portal. Contact the clinic for consent changes.' %>
     </p>
-    <p>The clinic will contact you directly by phone if urgent communication is needed.</p>
-  </div>
+    <p class="ac-muted" data-ac-clinical-consent-readonly="1">Status: managed by clinic (not editable here).</p>
+  </section>
 
-  <div class="ac-patient-empty-state acp-empty-state">
-    <p>No notifications to display.</p>
-  </div>
+  <section class="acp-portal-leaf__panel" data-ac-communication-prefs-info="1" aria-labelledby="ac-sec01-comms">
+    <h2 id="ac-sec01-comms">Communication preferences</h2>
+    <p class="ac-muted">
+      Channel preferences below are stored using the platform communication-preference store for this clinic.
+      Delivery still depends on clinic configuration; this does not enable marketing automation.
+    </p>
+  </section>
 
-  <p class="ac-patient-links">
+  <% if (!preferences) { %>
+  <div class="ac-patient-empty-state" data-ac-empty="notification-prefs">
+    <p>Communication preferences are unavailable until your patient record is linked.</p>
+  </div>
+  <% } else { %>
+  <form
+    method="post"
+    action="/clinics/<%= clinicKey %>/patient/notifications"
+    class="acp-portal-leaf__form"
+    data-ac-notification-prefs="1"
+    data-ac-prefs-authoritative="1"
+  >
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+
+    <section class="acp-portal-leaf__panel" aria-labelledby="acp09-email">
+      <h2 id="acp09-email">Email</h2>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="email_booking_updates" value="1"<%= email.booking_updates ? ' checked' : '' %>/>
+        Booking updates
+      </label>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="email_administrative_reminders" value="1"<%= email.administrative_reminders ? ' checked' : '' %>/>
+        Administrative reminders
+      </label>
+    </section>
+
+    <section class="acp-portal-leaf__panel" aria-labelledby="acp09-sms">
+      <h2 id="acp09-sms">SMS</h2>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="sms_booking_updates" value="1"<%= sms.booking_updates ? ' checked' : '' %>/>
+        Booking updates
+      </label>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="sms_administrative_reminders" value="1"<%= sms.administrative_reminders ? ' checked' : '' %>/>
+        Administrative reminders
+      </label>
+    </section>
+
+    <section class="acp-portal-leaf__panel" aria-labelledby="acp09-inapp">
+      <h2 id="acp09-inapp">In-app</h2>
+      <input type="hidden" name="in_app_booking_updates" value="0"/>
+      <input type="hidden" name="in_app_administrative_reminders" value="0"/>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="in_app_booking_updates" value="1"<%= inApp.booking_updates !== false ? ' checked' : '' %>/>
+        Booking updates
+      </label>
+      <label class="ac-patient-check">
+        <input type="checkbox" name="in_app_administrative_reminders" value="1"<%= inApp.administrative_reminders !== false ? ' checked' : '' %>/>
+        Administrative reminders
+      </label>
+    </section>
+
+    <button type="submit" class="ac-patient-btn ac-btn" data-ac-prefs-save="1">Save communication preferences</button>
+  </form>
+  <% } %>
+
+  <p class="ac-patient-links acp-portal-leaf__back">
     <a href="/clinics/<%= clinicKey %>/patient">Back to dashboard</a>
   </p>
 </section>

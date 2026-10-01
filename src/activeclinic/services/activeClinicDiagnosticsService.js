@@ -4,6 +4,11 @@
  * ActiveClinic P06 diagnostics service: laboratory/radiology fulfillment operations.
  */
 
+const {
+  authorizeStaffPermission,
+  RESULT: AUTHZ_RESULT,
+} = require("./activeClinicAuthorizationService");
+
 const RESULT = {
   OK: "OK",
   ACCESS_DENIED: "ACCESS_DENIED",
@@ -668,7 +673,8 @@ async function verifyRadiologyReport(pool, params) {
 }
 
 /**
- * Release laboratory result
+ * Release laboratory result to patient-visible status.
+ * Authorization-protected: requires lab.verify (or legacy diagnostics.verify).
  */
 async function releaseLaboratoryResult(pool, params) {
   const {
@@ -676,8 +682,34 @@ async function releaseLaboratoryResult(pool, params) {
     healthcareOrganizationId,
     laboratoryResultId,
     actor,
+    facilityId,
     deploymentCode,
   } = params;
+
+  if (!actor || (!actor.staffId && !actor.staffMemberId && !actor.platformIdentityId)) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
+
+  const authzLab = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: actor.staffId || actor.staffMemberId,
+    platformIdentityId: actor.platformIdentityId,
+    permissionKey: PERM.LAB_VERIFY,
+    facilityId: facilityId || null,
+  });
+  let authz = authzLab;
+  if (!authzLab.ok) {
+    authz = await authorizeStaffPermission(pool, {
+      organizationId,
+      staffMemberId: actor.staffId || actor.staffMemberId,
+      platformIdentityId: actor.platformIdentityId,
+      permissionKey: PERM.VERIFY,
+      facilityId: facilityId || null,
+    });
+  }
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
 
   const client = await pool.connect();
   try {
@@ -699,6 +731,10 @@ async function releaseLaboratoryResult(pool, params) {
     }
 
     const result = resultRes.rows[0];
+    if (result.status === "released") {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.ALREADY_RELEASED };
+    }
     if (result.status !== "verified") {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.INVALID_STATUS };
@@ -722,7 +758,7 @@ async function releaseLaboratoryResult(pool, params) {
 
     await client.query("COMMIT");
 
-    return { ok: true };
+    return { ok: true, code: RESULT.OK };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -732,7 +768,8 @@ async function releaseLaboratoryResult(pool, params) {
 }
 
 /**
- * Release radiology report
+ * Release radiology report to patient-visible status.
+ * Authorization-protected: requires radiology.verify (or legacy diagnostics.verify).
  */
 async function releaseRadiologyReport(pool, params) {
   const {
@@ -740,8 +777,34 @@ async function releaseRadiologyReport(pool, params) {
     healthcareOrganizationId,
     radiologyReportId,
     actor,
+    facilityId,
     deploymentCode,
   } = params;
+
+  if (!actor || (!actor.staffId && !actor.staffMemberId && !actor.platformIdentityId)) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
+
+  const authzRad = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: actor.staffId || actor.staffMemberId,
+    platformIdentityId: actor.platformIdentityId,
+    permissionKey: PERM.RADIOLOGY_VERIFY,
+    facilityId: facilityId || null,
+  });
+  let authz = authzRad;
+  if (!authzRad.ok) {
+    authz = await authorizeStaffPermission(pool, {
+      organizationId,
+      staffMemberId: actor.staffId || actor.staffMemberId,
+      platformIdentityId: actor.platformIdentityId,
+      permissionKey: PERM.VERIFY,
+      facilityId: facilityId || null,
+    });
+  }
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
 
   const client = await pool.connect();
   try {
@@ -763,6 +826,10 @@ async function releaseRadiologyReport(pool, params) {
     }
 
     const report = reportRes.rows[0];
+    if (report.status === "released") {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.ALREADY_RELEASED };
+    }
     if (report.status !== "verified") {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.INVALID_STATUS };
@@ -786,7 +853,7 @@ async function releaseRadiologyReport(pool, params) {
 
     await client.query("COMMIT");
 
-    return { ok: true };
+    return { ok: true, code: RESULT.OK };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

@@ -708,8 +708,14 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
         canManageEmergency: hasPerm(perms, PERM.UPDATE) && canSensitive,
         canManageConsent: hasPerm(perms, PERM.UPDATE),
         canPrintCard: hasPerm(perms, PERM.VIEW),
+        canViewClinicalHistory: hasPerm(perms, "activeclinic.encounter.view"),
+        canViewActivity: hasPerm(perms, PERM.AUDIT_VIEW),
         editHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/edit`,
         printCardHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/print-card`,
+        clinicalHistoryHref: `/app/patients/${encodeURIComponent(
+          patient.patientNumber
+        )}/clinical-history`,
+        activityHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/activity`,
       },
       stitch: {
         desktop: STITCH.profileDesktop,
@@ -826,6 +832,172 @@ function patientFormFromPatient(patient, clinicDefaultCountry) {
   };
 }
 
+const ENCOUNTER_VIEW_PERM = "activeclinic.encounter.view";
+
+/**
+ * ACN-P02 — aggregate clinical history (encounter list only; no note bodies).
+ * Reuses clinicalDocumentRepository.listPatientEncounters.
+ */
+async function loadActiveClinicPatientClinicalHistoryScreen(db, input) {
+  const auth = input.auth;
+  const perms = auth.permissions || [];
+  if (!hasPerm(perms, PERM.VIEW)) {
+    return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
+  }
+  if (!hasPerm(perms, ENCOUNTER_VIEW_PERM)) {
+    return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
+  }
+
+  const got = await resolvePatientForActor(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    patientNumber: input.patientNumber,
+    facilityId: auth.selectedFacility && auth.selectedFacility.id,
+    actor: actorFromAuth(auth),
+  });
+  if (!got.ok) return { ok: false, code: got.code };
+
+  const patient = got.patient;
+  const clinicalDocRepo = require("../repositories/clinicalDocumentRepository");
+  const facilityId =
+    (auth.selectedFacility && auth.selectedFacility.id) || null;
+  const rows = await clinicalDocRepo.listPatientEncounters(db, {
+    organizationId: auth.organization.id,
+    patientId: patient.id,
+    facilityId,
+  });
+
+  const encounters = (rows || []).map((row) => ({
+    id: row.id,
+    encounterNumber: row.encounter_number,
+    facilityId: row.facility_id,
+    status: row.status,
+    openedAt: row.opened_at,
+    href: `/app/clinical/encounter/${encodeURIComponent(row.id)}`,
+  }));
+
+  return {
+    ok: true,
+    history: {
+      patient: {
+        id: patient.id,
+        patientNumber: patient.patientNumber,
+        displayName: formatPatientDisplayName(patient),
+        status: patient.status,
+        statusLabel: STATUS_LABELS[patient.status] || patient.status,
+      },
+      encounters,
+      empty: encounters.length === 0,
+      facilityScoped: Boolean(facilityId),
+      stitch: {
+        screen: "ACN-P02",
+        desktop: true,
+        mobile: true,
+      },
+      actions: {
+        profileHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}`,
+      },
+    },
+  };
+}
+
+/**
+ * ACN-P04 — patient activity / standard audit timeline (AC-PD-01).
+ * Reuses platform auditEventRepository.listAuditEvents.
+ */
+async function loadActiveClinicPatientActivityScreen(db, input) {
+  const auth = input.auth;
+  const perms = auth.permissions || [];
+  if (!hasPerm(perms, PERM.VIEW)) {
+    return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
+  }
+  if (!hasPerm(perms, PERM.AUDIT_VIEW)) {
+    return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
+  }
+
+  const got = await resolvePatientForActor(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    patientNumber: input.patientNumber,
+    facilityId: auth.selectedFacility && auth.selectedFacility.id,
+    actor: actorFromAuth(auth),
+  });
+  if (!got.ok) return { ok: false, code: got.code };
+
+  const patient = got.patient;
+  const {
+    listAuditEvents,
+  } = require("../../platform/repositories/auditEventRepository");
+
+  const page = await listAuditEvents(db, {
+    organizationId: auth.organization.id,
+    entityType: "patient",
+    entityId: patient.id,
+    limit: 50,
+  });
+
+  const categoryPage = await listAuditEvents(db, {
+    organizationId: auth.organization.id,
+    actionCategory: "activeclinic.patient",
+    limit: 50,
+  });
+
+  const byId = new Map();
+  for (const ev of (page && page.events) || []) {
+    byId.set(ev.id, ev);
+  }
+  for (const ev of (categoryPage && categoryPage.events) || []) {
+    const meta = ev.metadataJson || ev.metadata || {};
+    const metaPatientId =
+      meta.patient_id || meta.patientId || (meta.patient && meta.patient.id);
+    if (
+      String(metaPatientId || "") === String(patient.id) ||
+      String(ev.entityId || "") === String(patient.id)
+    ) {
+      byId.set(ev.id, ev);
+    }
+  }
+
+  const events = [...byId.values()]
+    .sort((a, b) => {
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      return tb - ta;
+    })
+    .slice(0, 50)
+    .map((ev) => ({
+      id: ev.id,
+      actionKey: ev.actionKey,
+      outcome: ev.outcome,
+      entityType: ev.entityType,
+      createdAt: ev.createdAt,
+      actorUserId: ev.actorUserId || null,
+    }));
+
+  return {
+    ok: true,
+    activity: {
+      patient: {
+        id: patient.id,
+        patientNumber: patient.patientNumber,
+        displayName: formatPatientDisplayName(patient),
+        status: patient.status,
+        statusLabel: STATUS_LABELS[patient.status] || patient.status,
+      },
+      events,
+      empty: events.length === 0,
+      stitch: {
+        screen: "ACN-P04",
+        desktop: true,
+        mobile: true,
+      },
+      actions: {
+        profileHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}`,
+      },
+    },
+  };
+}
+
 module.exports = {
   STATUS_LABELS,
   SEX_LABELS,
@@ -838,5 +1010,7 @@ module.exports = {
   loadActiveClinicPatientFormScreen,
   loadActiveClinicPatientProfileScreen,
   loadActiveClinicPatientPrintCardScreen,
+  loadActiveClinicPatientClinicalHistoryScreen,
+  loadActiveClinicPatientActivityScreen,
   maskIdentifier,
 };

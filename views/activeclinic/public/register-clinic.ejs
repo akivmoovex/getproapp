@@ -124,6 +124,20 @@
   <p class="acw-register__secure"><span class="material-symbols-outlined" aria-hidden="true">encrypted</span> Secure connection</p>
     </div>
   </div>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.GpRegistrationPasswordRules && document.getElementById("password")) {
+      window.GpRegistrationPasswordRules.init({
+        passwordInput: "#password",
+        confirmInput: "#passwordConfirm",
+        rulesRoot: ".gp-registration-password-rules",
+        confirmStatus: "#password-confirm-status",
+        minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
+        maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
+      });
+    }
+  });
+  </script>
   <% } else { %>
   <div class="acw-register__layout">
     <aside class="acw-register__aside gp-reg__aside" aria-labelledby="ac-register-aside-title">
@@ -226,19 +240,5 @@
   </div>
   <script src="/platform/location-autocomplete.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v204-qa-3' %>" defer></script>
   <script src="/platform/gp-location-field-init.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v204-qa-3' %>" defer></script>
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    if (window.GpRegistrationPasswordRules && document.getElementById("password")) {
-      window.GpRegistrationPasswordRules.init({
-        passwordInput: "#password",
-        confirmInput: "#passwordConfirm",
-        rulesRoot: ".gp-registration-password-rules",
-        confirmStatus: "#password-confirm-status",
-        minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
-        maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
-      });
-    }
-  });
-  </script>
   <% } %>
 </section>

@@ -11,11 +11,18 @@
   var builderHref = hub.builderHref || '/app/settings/website/pages';
   var hiddenPages = Number(hub.hiddenPages) || 0;
   var missingContent = Number(hub.missingContent) || 0;
+  var clinicLabel = (pageData && pageData.clinicLabel)
+    || (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName)
+    || (shell && shell.product && shell.product.displayName)
+    || 'Clinic website';
+  var publishStateLabel = website.liveAvailable ? 'Published' : 'Draft / Not published';
+  var clinicKey = (pageData && pageData.clinicKey) || '';
 %>
 <section
-  class="ac-settings-website ac-mw"
+  class="ac-settings-website ac-mw ac-mw--management-hub"
   data-ac-page-section="settings-website"
   data-ac-website-management="1"
+  data-ac-website-hub-role="management"
   data-ac-website-state="<%= statusKey %>"
   data-ac-website-exists="<%= website.exists ? '1' : '0' %>"
   data-ac-website-draft-state="1"
@@ -25,8 +32,32 @@
   data-ac-stitch-screen="H01"
   data-ac-stitch-screen-mobile="H01-M"
   data-ac-stitch-hub="1"
+  <% if (clinicKey) { %>data-ac-website-clinic-key="<%= clinicKey %>"<% } %>
 >
-  <%- include('../partials/website-cms-nav') %>
+  <header class="ac-mw-hub-identity" data-ac-website-hub-identity="1">
+    <div>
+      <p class="ac-mw-hub-identity__kicker">Website Management Hub</p>
+      <h2 class="ac-mw-hub-identity__title" data-ac-website-clinic-name="1"><%= clinicLabel %></h2>
+      <p class="ac-mw-muted">Manage status, content areas, and publishing. Visual editing opens in the Website Editor — this page is not the editor canvas.</p>
+    </div>
+    <ul class="ac-mw-hub-identity__status" aria-label="Website status">
+      <li class="ac-mw-hub-chip<%= website.liveAvailable ? ' ac-mw-hub-chip--live' : '' %>" data-ac-website-publish-state="1"><%= publishStateLabel %></li>
+      <li class="ac-mw-hub-chip<%= website.unpublishedChanges ? ' ac-mw-hub-chip--draft' : '' %>" data-ac-website-draft-chip="1"><%= website.unpublishedChanges ? ('Unpublished changes (' + (website.unpublishedCount || 0) + ')') : 'No unpublished changes' %></li>
+    </ul>
+  </header>
+
+  <nav class="ac-mw-hub-manage-nav" aria-label="Website management areas" data-ac-website-hub-nav="1">
+    <a class="ac-mw-nav__link is-current" href="/app/settings/website" data-ac-website-hub-nav-item="overview">Overview</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/sections" data-ac-website-hub-nav-item="sections" data-ac-website-action="sections-nav">Sections</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/media" data-ac-website-hub-nav-item="media" data-ac-website-action="media-nav">Media</a>
+    <% if (actions.history) { %>
+    <a class="ac-mw-nav__link" href="<%= actions.history %>" data-ac-website-hub-nav-item="history" data-ac-website-action="history-nav">History</a>
+    <% } %>
+    <% if (website.canEdit && actions.editWebsite) { %>
+    <a class="ac-mw-nav__link ac-mw-nav__link--edit" href="<%= actions.editWebsite %>" data-ac-website-hub-nav-item="edit" data-ac-website-action="edit-nav">Edit Website</a>
+    <% } %>
+  </nav>
+
   <% if (!website.liveAvailable) { %>
   <section class="ac-mw-firstuse" data-ac-mf-family="MF06" data-ac-mf-screen="MF06-03" data-ac-website-firstuse="1">
     <article class="ac-mw-firstuse__welcome" data-ac-website-welcome="1">
@@ -71,13 +102,6 @@
     </ol>
   </section>
   <% } %>
-  <div class="ac-mw-head">
-    <div>
-      <h2>Website Management Hub</h2>
-      <p class="ac-mw-muted">A simple control center for your clinic website. Check status, then open the part you need.</p>
-    </div>
-  </div>
-
   <div class="ac-mw-hub-metrics" data-ac-website-status="1">
     <article class="ac-mw-hub-metric">
       <p class="ac-mw-hub-metric__label">Website status</p>
@@ -142,14 +166,14 @@
   <div class="ac-mw-hub-quick" data-ac-website-actions="1">
     <p class="ac-mw-hub-quick__label">Quick actions</p>
     <div class="ac-mw-actions ac-mw-hub-quick__row">
-      <% if (actions.viewLive) { %>
-      <a class="ac-mw-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
+      <% if (website.canEdit && actions.editWebsite) { %>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit Website</a>
       <% } %>
       <% if (actions.preview) { %>
       <a class="ac-mw-btn" href="<%= actions.preview %>" data-ac-website-action="preview">Preview</a>
       <% } %>
-      <% if (website.canEdit && actions.editWebsite) { %>
-      <a class="ac-mw-btn" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit Website</a>
+      <% if (actions.viewLive) { %>
+      <a class="ac-mw-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
       <% } %>
       <% if (website.canPublish && actions.publishPath) { %>
       <form
@@ -161,8 +185,10 @@
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="makePublic" value="1"/>
         <input type="hidden" name="returnTo" value="/app/settings/website"/>
-        <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-website-action="publish">Publish</button>
+        <button type="submit" class="ac-mw-btn" data-ac-website-action="publish">Publish</button>
       </form>
+      <% } else if (!website.canPublish && actions.publishPath) { %>
+      <span class="ac-mw-muted" data-ac-website-action="publish-denied">Publish requires permission</span>
       <% } %>
       <% if (website.canPublish && actions.unpublishPath && website.liveAvailable) { %>
       <form

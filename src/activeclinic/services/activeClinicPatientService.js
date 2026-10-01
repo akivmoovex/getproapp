@@ -152,6 +152,7 @@ const PERM = Object.freeze({
   MANAGE_IDENTIFIERS: "activeclinic.patient.manage_identifiers",
   VIEW_SENSITIVE: "activeclinic.patient.view_sensitive_contact",
   DUPLICATE_OVERRIDE: "activeclinic.patient.duplicate_override",
+  AUDIT_VIEW: "activeclinic.patient.audit_view",
 });
 
 const CREATION_MODES = Object.freeze({

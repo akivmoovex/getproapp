@@ -68,7 +68,11 @@
         <tbody>
           <% invoiceRows.forEach(function (inv) { %>
           <tr data-ac-invoice-status="<%= inv.displayStatus %>">
-            <td><%= escapeHtml(inv.invoiceNumber) %></td>
+            <td>
+              <a href="/clinics/<%= clinicKey %>/patient/invoices/<%= encodeURIComponent(inv.id) %>" data-ac-invoice-link="1">
+                <%= escapeHtml(inv.invoiceNumber) %>
+              </a>
+            </td>
             <td><%= escapeHtml(inv.invoiceDate ? String(inv.invoiceDate).slice(0, 10) : '') %></td>
             <td><%= escapeHtml(inv.facilityDisplayName || '') %></td>
             <td><%= escapeHtml(inv.totalFormatted) %></td>
@@ -86,7 +90,11 @@
     <ul class="ac-card-list ac-patients-mobile" data-ac-invoices-mobile="1">
       <% invoiceRows.forEach(function (inv) { %>
       <li class="ac-card acp-portal-leaf__card">
-        <p class="ac-card__title"><%= escapeHtml(inv.invoiceNumber) %></p>
+        <p class="ac-card__title">
+          <a href="/clinics/<%= clinicKey %>/patient/invoices/<%= encodeURIComponent(inv.id) %>" data-ac-invoice-link="1">
+            <%= escapeHtml(inv.invoiceNumber) %>
+          </a>
+        </p>
         <p class="ac-muted"><%= escapeHtml(inv.facilityDisplayName || '') %></p>
         <p class="acp-portal-leaf__when"><%= escapeHtml(inv.totalFormatted) %> · Balance <%= escapeHtml(inv.balanceFormatted) %></p>
         <p>

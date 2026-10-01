@@ -56,6 +56,7 @@ const ACTIVECLINIC_COPY = Object.freeze({
   accountsText: "Your primary clinic and administrator accounts are configured and ready to use.",
   websiteTitle: "Website foundation",
   websiteText: "Your clinic website foundation is built and currently in an unpublished state.",
+  websiteBuildLabel: "Edit your website",
   nextTitle: "What happens next",
   nextSteps: [
     "Sign in with the email or phone and password you just set.",
@@ -133,6 +134,7 @@ const BLESSBOARD_COPY = Object.freeze({
   websiteText:
     "Your church website has been created as a draft. It will remain unpublished until you choose to publish it.",
   websiteBadge: "Unpublished",
+  websiteBuildLabel: "Edit your website",
   nextTitle: "What happens next",
   nextSteps: [
     "Open your dashboard — Log in to view your administrative tools.",
@@ -252,8 +254,12 @@ function buildRegistrationSuccessViewModel(input) {
     websiteUrl: website.publicUrl || website.publicPath || null,
     websitePath: website.publicPath || null,
     websiteEditPath: website.editPath || null,
+    websiteBranchKey: website.branchKey || null,
+    websiteOrganizationKey: website.organizationKey || null,
     websiteStatusLabel: website.statusLabel || null,
-    websiteBuildLabel: "Build your website",
+    websiteBuildLabel: copy.websiteBuildLabel || "Build your website",
+    // When the canonical edit path is available, it is the primary post-reg action.
+    showWebsiteEditPrimary: Boolean(ready && website.editPath),
   };
 }
 

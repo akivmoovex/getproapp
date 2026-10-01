@@ -41,6 +41,7 @@ const {
 } = require("../src/activeclinic/services/submitClinicRegistrationService");
 const {
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
   PRODUCT_CODE,
 } = require("../src/platform/website/publicWebsiteUrl");
 const instanceRepo = require("../src/platform/website/instanceRepository");
@@ -312,8 +313,22 @@ describe("ActiveClinic platform 02", () => {
     assert.match(success.text, new RegExp(expectedPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(success.text, /data-ac-copy-website-url="1"/);
     assert.match(success.text, /Draft — not published yet/);
-    assert.match(success.text, /Build your website/);
-    assert.match(success.text, /\/app\/settings\/website/);
+    assert.match(success.text, /Edit your website/);
+    const expectedEdit = buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey: result.slug,
+    });
+    const expectedEditHtml = expectedEdit.replace(/&/g, "&amp;");
+    assert.match(
+      success.text,
+      new RegExp(
+        `href="${expectedEditHtml.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*data-ac-build-website="1"`
+      )
+    );
+    assert.doesNotMatch(
+      success.text,
+      /href="\/app\/settings\/website"[^>]*data-ac-build-website="1"/
+    );
   });
 
   it("self-registered clinic admin sees populated website hub with single instance", async () => {
