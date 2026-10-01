@@ -204,7 +204,9 @@ function createMoovexPlatformRuntimeApp(options) {
       schemaCompatibilityHealthz,
     } = require("../schema/v7RuntimeSchemaCompatibility");
     const schemaHealth = schemaCompatibilityHealthz(schema);
-    const buildIdentity = getBuildIdentity({ env });
+    // Resolve identity from live process.env so GETPRO_GIT_BRANCH is authoritative
+    // when present. Hostinger panel env still requires worker restart to appear here.
+    const buildIdentity = getBuildIdentity({ env: process.env });
     const publicIdentity = toPublicBuildIdentityDiagnostics(buildIdentity);
     res.status(schemaHealth.status).json({
       ok: schemaHealth.status === 200,
@@ -221,6 +223,7 @@ function createMoovexPlatformRuntimeApp(options) {
       apexDomains: deployment.apexDomains || [],
       gitSha: (boot && boot.gitSha) || buildIdentity.gitShaShort || readGitShaShort(),
       branch: publicIdentity.branch,
+      branchSource: buildIdentity.branchSource,
       displayLabel: publicIdentity.displayLabel,
       schemaCompatible: schemaHealth.schemaCompatible,
       schemaCompatibility: schemaHealth.schemaCompatibility,

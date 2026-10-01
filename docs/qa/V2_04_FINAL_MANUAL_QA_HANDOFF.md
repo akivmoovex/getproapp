@@ -3,16 +3,19 @@
 **Audience:** Testers  
 **Version:** 2.04  
 **Date:** 2026-10-02  
+**Canonical path:** `docs/qa/V2_04_FINAL_MANUAL_QA_HANDOFF.md`  
 **Scope:** RB-QA-01…05 only  
+**Sources:** `docs/qa/V2_04_FINAL_MANUAL_QA_5_SCENARIOS.md`, `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`  
 **Env:** TESTING (`*.neuniversity.org`) · tip SHA `54cdb1f76f5a` (or later identity-bound tip) · About Version **2.04**  
 **Record results in:** `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`  
-**Do not:** invent evidence · mark PASS without proof · treat unbound/prod hosts as release evidence
+**Do not:** invent evidence · mark PASS without proof · treat unbound/prod hosts as release evidence  
+**Invalid path note:** `ocs/qa/...` is not valid — always use `docs/qa/...`
 
 ### Shared before you start
 
 1. Confirm About shows **Version 2.04** and Build matches the tip SHA you will cite.  
 2. Use TESTING only (not production).  
-3. Fill the result block under each scenario when done.
+3. Fill the blank result fields under each scenario when done.
 
 | Base | URL |
 |------|-----|
@@ -30,7 +33,7 @@
 | **PRODUCT** | BB |
 | **PURPOSE** | End-to-end Members MUST pack (create/auth/recovery/block/dual-role/attendance/scoped review/privacy/search/isolation) |
 | **PRECONDITIONS** | Identity-bound TESTING tip; one church with staff admin + ordinary member + dual-role (member + HQ/branch admin); second church for isolation |
-| **TEST_ACCOUNT / ROLE** | (1) Church staff admin (2) Ordinary member (3) Dual-role member+admin (4) Optional second-church admin |
+| **TEST_ACCOUNT_ROLE** | (1) Church staff admin (2) Ordinary member (3) Dual-role member+admin (4) Optional second-church admin |
 | **START_URL** | `https://blessboard.neuniversity.org` → HQ / member portal as role requires |
 
 **STEPS**
@@ -60,7 +63,7 @@ Any MUST step fails; dual-role destinations missing; scoped leader acts outside 
 Dated FEATURE_QA note + tip SHA; screenshots/clips for fails; Church IDs used (redact phones).
 
 ```
-RESULT=PASS|FAIL|BLOCKED
+RESULT=
 TESTER=
 DATE=
 EVIDENCE=
@@ -75,11 +78,11 @@ NOTES=
 | Field | Value |
 |-------|--------|
 | **QA_ID** | RB-QA-02 |
-| **PRODUCT** | PLATFORM (AC + BB) |
+| **PRODUCT** | PLATFORM |
 | **PURPOSE** | Prove draft → preview → publish → unpublish → version → restore on both products |
 | **PRECONDITIONS** | Identity-bound tip (`54cdb1f76f5a` or later); one AC clinic + one BB church with website.edit / publish |
-| **TEST_ACCOUNT / ROLE** | AC clinic admin with website publish; BB HQ/branch admin with website publish |
-| **START_URL** | AC: `https://activeclinic.neuniversity.org` (clinic website management / Edit Website) · BB: `https://blessboard.neuniversity.org` (HQ/branch website editor) |
+| **TEST_ACCOUNT_ROLE** | AC clinic admin with website publish; BB HQ/branch admin with website publish |
+| **START_URL** | AC: `https://activeclinic.neuniversity.org` (Edit Website) · BB: `https://blessboard.neuniversity.org` (HQ/branch website editor) |
 
 **STEPS**
 
@@ -102,7 +105,7 @@ Publish misses public; unpublish leaves stale public; restore fails/corrupts on 
 Lifecycle QA note + tip SHA (AC and BB); before/after public URLs; restored version IDs.
 
 ```
-RESULT=PASS|FAIL|BLOCKED
+RESULT=
 TESTER=
 DATE=
 EVIDENCE=
@@ -120,7 +123,7 @@ NOTES=
 | **PRODUCT** | AC |
 | **PURPOSE** | Hub is management-only; Edit Website opens real editor; draft/publish smoke works |
 | **PRECONDITIONS** | Identity-bound tip; clinic admin with website management access |
-| **TEST_ACCOUNT / ROLE** | ActiveClinic clinic / org admin with website management |
+| **TEST_ACCOUNT_ROLE** | ActiveClinic clinic / org admin with website management |
 | **START_URL** | `https://activeclinic.neuniversity.org` → Clinic Website Management Hub |
 
 **STEPS**
@@ -144,7 +147,7 @@ Fake canvas is primary edit surface; Edit Website dead-ends; draft/publish smoke
 Hub screenshot; editor URL after Edit Website; draft/publish note + tip SHA.
 
 ```
-RESULT=PASS|FAIL|BLOCKED
+RESULT=
 TESTER=
 DATE=
 EVIDENCE=
@@ -159,10 +162,10 @@ NOTES=
 | Field | Value |
 |-------|--------|
 | **QA_ID** | RB-QA-04 |
-| **PRODUCT** | PLATFORM (AC + BB) |
+| **PRODUCT** | PLATFORM |
 | **PURPOSE** | Disabled-country registration reject + true stale repeat-edit on AC and BB |
 | **PRECONDITIONS** | Identity-bound tip; registration with country catalogue; AC + BB editors with concurrent-edit support |
-| **TEST_ACCOUNT / ROLE** | Unauthenticated registrant (geo); two browser sessions as website editors (AC then BB) |
+| **TEST_ACCOUNT_ROLE** | Unauthenticated registrant (geo); two browser sessions as website editors (AC then BB) |
 | **START_URL** | Registration on hub/product flows · editors: AC + BB website edit URLs above |
 
 **STEPS**
@@ -185,7 +188,7 @@ Disabled country accepted; stale save overwrites; only one product handles stale
 Geo + concurrency note + tip SHA; disabled-country response/status; stale conflict screenshots (AC + BB).
 
 ```
-RESULT=PASS|FAIL|BLOCKED
+RESULT=
 TESTER=
 DATE=
 EVIDENCE=
@@ -203,7 +206,7 @@ NOTES=
 | **PRODUCT** | AC |
 | **PURPOSE** | Public doctor/services pages match PD-V204-AC-P1-02 allowlist only |
 | **PRECONDITIONS** | Tip preferred identity-bound; clinic with ≥1 public doctor + ≥1 public service published; allowlist policy frozen |
-| **TEST_ACCOUNT / ROLE** | Unauthenticated public visitor (no staff login required) |
+| **TEST_ACCOUNT_ROLE** | Unauthenticated public visitor (no staff login required) |
 | **START_URL** | Public doctors + services URLs on `https://activeclinic.neuniversity.org` (clinic public site) |
 
 **STEPS**
@@ -227,7 +230,7 @@ Any private contact, clinical/patient data, or non-allowlisted internal field in
 PHI spot-check note vs PD-V204-AC-P1-02; public URLs + redacted screenshots/HTML snippets.
 
 ```
-RESULT=PASS|FAIL|BLOCKED
+RESULT=
 TESTER=
 DATE=
 EVIDENCE=

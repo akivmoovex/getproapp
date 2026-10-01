@@ -4,8 +4,12 @@
  * Shared platform build identity — deployed Git branch, SHA, and environment.
  *
  * Single source for BlessBoard and ActiveClinic UI labels and safe diagnostics.
- * Branch is never hard-coded as V9/V10 in application constants; it comes from
+ * Branch is never hard-coded as V9/V10/V4 in application constants; it comes from
  * deployment metadata (preferred) or a safe Git lookup.
+ *
+ * Authoritative branch: live `process.env.GETPRO_GIT_BRANCH` when present.
+ * Hostinger hPanel env changes require a worker restart/redeploy before the
+ * running Node process can observe the new value (no in-process hot reload).
  */
 
 const fs = require("fs");
@@ -48,12 +52,30 @@ function normalizeBranch(raw) {
 }
 
 /**
+ * Authoritative branch from live process.env.GETPRO_GIT_BRANCH when set.
+ * Hostinger injects panel env at worker start — a running process cannot see a
+ * newly added panel variable until restart/redeploy. When the key is present on
+ * the live process, it always wins over a stale opts.env snapshot.
+ * @returns {{ branch: string, source: string } | null}
+ */
+function resolveAuthoritativeGitBranchFromProcessEnv() {
+  const branch = normalizeBranch(process.env.GETPRO_GIT_BRANCH);
+  if (branch) return { branch, source: "GETPRO_GIT_BRANCH" };
+  return null;
+}
+
+/**
  * @param {NodeJS.ProcessEnv} env
  * @returns {{ branch: string, source: string } | null}
  */
 function resolveBranchFromEnv(env) {
+  const authoritative = resolveAuthoritativeGitBranchFromProcessEnv();
+  if (authoritative) return authoritative;
+
   const source = env || process.env;
   for (const key of BRANCH_ENV_KEYS) {
+    // GETPRO_GIT_BRANCH already checked on live process.env above.
+    if (key === "GETPRO_GIT_BRANCH" && source === process.env) continue;
     const branch = normalizeBranch(source[key]);
     if (branch) return { branch, source: key };
   }
@@ -217,6 +239,7 @@ module.exports = {
   BRANCH_ENV_KEYS,
   SHA_ENV_KEYS,
   normalizeBranch,
+  resolveAuthoritativeGitBranchFromProcessEnv,
   resolveBranchFromEnv,
   resolveBranchFromGit,
   resolveGitShaFull,

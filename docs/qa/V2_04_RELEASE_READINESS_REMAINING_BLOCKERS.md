@@ -67,7 +67,7 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **OPEN** — sheet captured 2026-10-02 READ-ONLY; BB+AC `branch=UNKNOWN` / About `UNKNOWN testing` (hub healthz `V4` not used as BB/AC identity). HOSTED_SHA=`54cdb1f76f5a` = tip; app candidate `7c957101…`; docs-only between. ENV=testing · deploy=`moovex-platform-v8-testing` · DB=`moovex-platform-v7` / testing · About Version=2.04 · schemaCompatible · no V9/V10. SHA_MATCH PASS; BRANCH FAIL | FEATURE QA cannot claim full identity bind while product hosts report UNKNOWN branch | Rebuild/redeploy so BB+AC emit non-UNKNOWN branch (expected V4); re-verify About+healthz | None | NO (blocked on branch label) |
+| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **OPEN** — post-restart hosted verify 2026-10-02: hub `/healthz` `branch=V4` `displayLabel=V4 testing`; **BB+AC still `UNKNOWN testing`** (About+healthz). HOSTED_SHA=`75531602725a` (= tip; ≥ app `7c957101`). ENV=testing · deploy=`moovex-platform-v8-testing` · About Version=2.04 · no V9/V10. `branchSource` not exposed on hosted tip. SHA_MATCH PASS; BRANCH FAIL on product hosts | FEATURE QA cannot bind while BB+AC remain UNKNOWN | Confirm `GETPRO_GIT_BRANCH=V4` is set on **BlessBoard and ActiveClinic Hostinger apps** (not hub-only) → restart those workers → re-verify | Hub env alone insufficient | NO |
 
 ---
 
@@ -132,23 +132,24 @@ Until that set is closed (or Product **explicitly waives** a subset in writing),
 
 ### Wave6 build-identity verification note (2026-10-02, READ-ONLY)
 
-| Field | BB | AC |
-|-------|----|----|
-| VERSION | 2.04 | 2.04 |
-| BRANCH | UNKNOWN | UNKNOWN |
-| FULL_GIT_SHA | `54cdb1f76f5af70593fdaf54366ce0c64ae9885c` | same |
-| HOSTED_SHA | `54cdb1f76f5a` | `54cdb1f76f5a` |
-| EXPECTED_CANDIDATE_SHA | app `7c957101…` · tip docs `54cdb1f76f5a…` | same |
-| SHA_MATCH | PASS | PASS |
-| ENVIRONMENT | testing | testing |
-| DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing |
-| DB_IDENTITY | moovex-platform-v7 | moovex-platform-v7 |
-| DB_ENVIRONMENT | testing (`testing-v8` media NS) | testing |
-| BUILD_LABEL | UNKNOWN testing | UNKNOWN testing |
-| MIGRATION_CEILING | schemaCompatible; refs ≤ BB099 / AC034 / P031 | same |
+| Field | BB | AC | Hub |
+|-------|----|----|-----|
+| VERSION | 2.04 | 2.04 | — |
+| BRANCH | UNKNOWN | UNKNOWN | V4 |
+| BRANCH_SOURCE | (not on hosted tip / N/A — UNKNOWN) | same | implied GETPRO_GIT_BRANCH |
+| ENVIRONMENT | testing | testing | testing |
+| GIT_SHA | `75531602725a` | `75531602725a` | `75531602725a` |
+| DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
+| displayLabel | UNKNOWN testing | UNKNOWN testing | V4 testing |
 
-Hub healthz reports `branch=V4` — **not** used to override BB/AC explicit UNKNOWN.  
-`7c957101..54cdb1f76f5a` = docs-only. Local Wave2/3 app changes uncommitted / not hosted. Production untouched.  
+**Post-restart re-verify (same day):** Operator reported Hostinger restart with `GETPRO_GIT_BRANCH=V4`. Live probe: **hub PASS**; **BB+AC still FAIL** (`UNKNOWN testing` on About + healthz). Same SHA on all three hosts → Topology B / per-app env: BB+AC workers still lack live `GETPRO_GIT_BRANCH` (or not restarted). No V9/V10. Production untouched.  
+SHA_MATCH BB/AC=PASS (tip `75531602725a` ≥ app candidate `7c957101`). BUILD_IDENTITY_REMAINING=1.
+
+### Prior Wave6 note (earlier same day)
+
+Hub healthz may report `branch=V4` while BB/AC show UNKNOWN when Topology B workers lack live `GETPRO_GIT_BRANCH` — do not infer product identity from hub alone.  
+**Code fix (2026-10-02):** `docs/qa/V2_04_BUILD_IDENTITY_UNKNOWN_FIX.md` — shared resolver hardened; focused **6/6 PASS**; **Hostinger restart required** for env change to take effect (must apply to **BB + AC apps**, not hub only).  
+`7c957101..54cdb1f76f5a` was docs-only; tip now `75531602725a` includes Wave2/3 app. Production untouched.  
 BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_IDENTITY=PASS · DB_IDENTITY=PASS · BUILD_IDENTITY_REMAINING=1.
 
 ### Wave3 closure note (2026-10-02)
@@ -178,10 +179,11 @@ FASTEST_CLOSABLE_NOW=1
 READY_FOR_PRODUCTION_QA=NO
 BB_SHA_MATCH=PASS
 AC_SHA_MATCH=PASS
-BRANCH_IDENTITY=FAIL
-ENVIRONMENT_IDENTITY=PASS
-DB_IDENTITY=PASS
+BB_BRANCH_IDENTITY=FAIL
+AC_BRANCH_IDENTITY=FAIL
+UNKNOWN_LABEL_FOUND=YES
+STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
 BUILD_IDENTITY_REMAINING=1
-FINAL=V2_04_BUILD_IDENTITY_VERIFIED
+FINAL=V2_04_HOSTED_BUILD_IDENTITY_VERIFIED
 ```

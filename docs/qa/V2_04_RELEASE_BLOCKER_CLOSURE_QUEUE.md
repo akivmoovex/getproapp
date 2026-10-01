@@ -80,7 +80,7 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Hub management-only (no fake canvas); Edit Website; draft/publish smoke | Hosted hub/editor note PASS | SMALL | LOW | 5 |
 | RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 5 |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | YES | prefer RB-ID capture | Spot-check doctor/services pages vs allowlist | PHI spot-check note vs PD-V204-AC-P1-02 PASS | SMALL | MEDIUM | 5 |
-| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | — | NO | BRANCH=UNKNOWN on BB+AC About/healthz | Identity sheet recorded 2026-10-02 (READ-ONLY); branch still UNKNOWN on product hosts | Sheet captured; BRANCH_IDENTITY=FAIL → not CLOSED | SMALL | HIGH | 6 OPEN |
+| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | GETPRO_GIT_BRANCH=V4 on **BB+AC** Hostinger apps + restart | NO | BB+AC live still UNKNOWN after claimed restart (hub V4 only) | Confirm env on product apps (not hub-only) → restart BB+AC workers → re-probe About+healthz | BB+AC `branch=V4` / `V4 testing`; BRANCH_SOURCE=GETPRO_GIT_BRANCH | SMALL | HIGH | 6 OPEN |
 
 ---
 
@@ -139,36 +139,30 @@ Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
 
 **Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website + geo/concurrency + PHI signed.
 
-### WAVE 6 — RELEASE IDENTITY — VERIFICATION (2026-10-02, READ-ONLY)
+### WAVE 6 — RELEASE IDENTITY — HOSTED VERIFY (2026-10-02, READ-ONLY, post-restart claim)
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-ID-01 | **OPEN** (sheet captured; close blocked) | BRANCH_IDENTITY=FAIL — BB+AC explicit `branch=UNKNOWN` / About `UNKNOWN testing`; do not infer from hub `V4` or SHA |
+| RB-ID-01 | **OPEN** | Live BB+AC still `UNKNOWN testing`; hub `V4 testing`. HOSTED_SHA=`75531602725a` (BB=AC=hub). ENV=testing · deploy=`moovex-platform-v8-testing` · About Version=2.04. No V9/V10. Production untouched. |
 
-#### Identity sheet (TESTING hosts)
+#### Live identity sheet
 
-| Field | BlessBoard (`blessboard.neuniversity.org`) | ActiveClinic (`activeclinic.neuniversity.org`) | Hub (`neuniversity.org`) |
-|-------|--------------------------------------------|------------------------------------------------|--------------------------|
-| VERSION | **2.04** (About) | **2.04** (About) | — |
-| BRANCH | **UNKNOWN** (healthz + About) | **UNKNOWN** (healthz + About) | **V4** (healthz only; not BB/AC product identity) |
-| FULL_GIT_SHA | `54cdb1f76f5af70593fdaf54366ce0c64ae9885c` | same | same short on healthz |
-| HOSTED_SHA | `54cdb1f76f5a` | `54cdb1f76f5a` | `54cdb1f76f5a` |
-| EXPECTED_CANDIDATE_SHA | `7c957101ad5536d1a7323b051d8d8d7d8ff149f5` (app) · tip `54cdb1f76f5a…` (docs-only after app) | same | same |
-| SHA_MATCH | **PASS** (hosted ≥ app candidate; = `origin/V4` tip) | **PASS** | — |
-| ENVIRONMENT | **testing** | **testing** | **testing** |
-| DEPLOYMENT_NAME | `moovex-platform-v8-testing` | `moovex-platform-v8-testing` | `moovex-platform-v8-testing` |
-| DB_IDENTITY | `expectedIdentityKey=moovex-platform-v7` | same | same |
-| DB_ENVIRONMENT | `expectedDatabaseEnvironment=testing` · `mediaWriteNamespace=testing-v8` · `sessionCookieName=moovex_platform_v8_testing_sid` | same | same |
-| BUILD_LABEL | `UNKNOWN testing` / `displayLabel=UNKNOWN testing` | same | `V4 testing` |
-| MIGRATION_CEILING | schemaCompatible=true · 14/14 checks ok · highest remediation refs: blessboard/**099**, activeclinic/**034**, platform/**031** | same | same |
+| Field | BlessBoard | ActiveClinic | Hub |
+|-------|------------|--------------|-----|
+| VERSION | 2.04 | 2.04 | — |
+| BRANCH | UNKNOWN | UNKNOWN | V4 |
+| BRANCH_SOURCE | not GETPRO_GIT_BRANCH (UNKNOWN) | same | V4 (hub has env) |
+| ENVIRONMENT | testing | testing | testing |
+| GIT_SHA | `75531602725a` | `75531602725a` | `75531602725a` |
+| DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
+| LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
 
-**Docs vs application candidate:** `7c957101..54cdb1f76f5a` is **documentation-only** (8 `docs/**` files). Hosted tip is docs-ahead of last application commit; still valid “`7c957101` or later”.  
-**Local uncommitted Wave2/3 application work is NOT on hosted** (resolver, dual-role nav, allowlist, optionalize, etc. remain working-tree only).
+**Required vs observed:** BB/AC need `V4` / `V4 testing` / `BRANCH_SOURCE=GETPRO_GIT_BRANCH` → **FAIL**. Same deploy SHA on hub+BB+AC implies product Hostinger apps still missing live `GETPRO_GIT_BRANCH` (hub-only env or BB/AC workers not restarted).  
+SHA_MATCH vs V2.04 tip/candidate (`7c957101` or later → `75531602725a`): **PASS**.
 
-**Stale labels:** No V9/V10 / older product Version on BB/AC About (Version **2.04** only).  
-**Production:** No deploy/restart/DB change performed; production apex probes not served as this testing runtime (`PRODUCTION_UNTOUCHED=YES`).
+### WAVE 6 — prior note (code harden / first sheet)
 
-**Close gate remaining:** Fix/rebuild so BB+AC emit explicit non-`UNKNOWN` branch (expected **V4**), then re-probe About+healthz.
+RB-ID-01 remained **OPEN** after code harden: Hostinger injects env at worker start; detached HEAD → UNKNOWN without live `GETPRO_GIT_BRANCH` on **each** product app. See `V2_04_BUILD_IDENTITY_UNKNOWN_FIX.md`.
 
 ---
 
@@ -217,9 +211,10 @@ MANUAL_QA_REMAINING=5
 BUILD_IDENTITY_REMAINING=1
 BB_SHA_MATCH=PASS
 AC_SHA_MATCH=PASS
-BRANCH_IDENTITY=FAIL
-ENVIRONMENT_IDENTITY=PASS
-DB_IDENTITY=PASS
+BB_BRANCH_IDENTITY=FAIL
+AC_BRANCH_IDENTITY=FAIL
+UNKNOWN_LABEL_FOUND=YES
+STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
-FINAL=V2_04_BUILD_IDENTITY_VERIFIED
+FINAL=V2_04_HOSTED_BUILD_IDENTITY_VERIFIED
 ```

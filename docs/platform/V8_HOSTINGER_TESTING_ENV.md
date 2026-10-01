@@ -56,10 +56,12 @@ MEDIA_STORAGE_ROOT=/home/<account>/moovex-media
 MEDIA_PUBLIC_BASE_URL=https://blessboard.neuniversity.org/media
 MEDIA_PUBLIC_MOUNT_PATH=/media
 GETPRO_GIT_SHA=<deployed commit>
-GETPRO_GIT_BRANCH=V8
+GETPRO_GIT_BRANCH=V4
 ```
 
-`GETPRO_GIT_BRANCH` is deployment metadata for the shared platform build-identity label (e.g. `V8 testing`). Hostinger release trees may be detached HEAD — prefer this env over relying on `.git`.
+`GETPRO_GIT_BRANCH` is deployment metadata for the shared platform build-identity label (e.g. `V4 testing` on BlessBoard + ActiveClinic About and `/healthz`). Hostinger release trees may be detached HEAD — prefer this env over relying on `.git`.
+
+**Important:** Changing `GETPRO_GIT_BRANCH` in hPanel does **not** update a running Node worker. Restart or redeploy the testing worker(s) after setting it. Set the variable on **every** testing app that serves hub / BB / AC (Topology B). Without it in the live process, labels correctly show `UNKNOWN testing` (not a hard-coded branch).
 
 **Fail closed if:** `DEPLOYMENT_ENV=production`, `DATABASE_IDENTITY_ENV=production`, missing required keys, or jobs enabled.
 

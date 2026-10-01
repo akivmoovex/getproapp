@@ -29,7 +29,7 @@ Still open before production claim:
 2. ~~CREATE-UI gender/baptism vs schema (RB-ENG-05)~~ **CLOSED Wave3** (optionalize).  
 3. ~~Critical automated test gaps (RB-TEST-01…07)~~ **CLOSED Wave3**.  
 4. **BlessBoard Members** FEATURE QA pack — still required (manual).  
-5. **Build identity** — sheet captured on TESTING; **BRANCH=UNKNOWN on BB+AC** (hub `V4` not used as product identity) → RB-ID-01 remains open.
+5. **Build identity** — code fix landed (`V2_04_BUILD_IDENTITY_UNKNOWN_FIX.md`); hosted BB+AC still need live `GETPRO_GIT_BRANCH=V4` after **Hostinger restart** (UNKNOWN until then).
 
 **`READY_FOR_PRODUCTION_QA=NO`** — remaining release blockers **6** (MANUAL 5 · BUILD 1); eng/test/product = 0.
 
@@ -70,7 +70,7 @@ Deduplication rule: one row = one actionable gap. Related FR/AC/DR IDs are liste
 | P0 | BB | FR-16 / AC-21 / DR-39 | Leader ↔ managed resource binding + review scope | **TEMPORARY_APPROVED** (PD-V204-BB-P1-01 A) | **FULL Wave2** — injector wired to ministry_leader/department_head | Wave2 focused COVERED | NOT_SANITY_TESTED | YES (FEATURE QA) | ~~unwired~~ CLOSED Wave2 | Manual Members scoped-review scenarios remain |
 | P0 | BB | FR-12 / AC-13 / DR-27 | Dual-role Member Portal + Church Management destinations | **TEMPORARY_APPROVED** (PD-V204-BB-P1-02) | **FULL Wave2** — bidirectional `/member`↔`/hq` | Wave2 focused COVERED | NOT_SANITY_TESTED | YES (FEATURE QA) | ~~no cross-links~~ CLOSED Wave2 | Manual dual-role journey remains |
 | P0 | BB | FR-01..FR-20 / AC-01..AC-25 | BlessBoard Members feature pack | COMPLETE enough for core auth | Mostly FULL; PARTIAL on FR-12/13/16 | COVERED + product-decision suites | **NOT_SANITY_TESTED** | **YES** | In release scope; no FEATURE_QA_PASS | Run Members FEATURE QA (scenario pack §4) |
-| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | N/A | N/A | Sheet 2026-10-02; BRANCH UNKNOWN on BB+AC | **YES** | Branch label UNKNOWN (SHA/env/DB/About=2.04 captured) | Rebuild so BB+AC emit V4 (not UNKNOWN); re-verify |
+| P0 | SHARED | Release identity | Bind tested deploy to candidate | N/A | Code hardened (shared buildIdentity; GETPRO_GIT_BRANCH authoritative) | 6/6 focused | Hosted may still be UNKNOWN until restart | **YES** | Live workers need `GETPRO_GIT_BRANCH=V4` + Hostinger restart | Restart testing apps; re-verify About+healthz = V4 testing |
 | P0 | BB | AC-23 | Member privacy — no other-member/admin data | COMPLETE | FULL | **COVERED Wave3** | NOT_SANITY_TESTED | YES | ~~CRITICAL_TEST_GAP~~ closed | Manual privacy spot-check remains |
 | P0 | BB | AC-11 | New recovery phone verified before use | COMPLETE | FULL | **PARTIAL** (CRITICAL_TEST_GAP) | NOT_SANITY_TESTED | YES | OTP **complete** path not behaviorally tested | Add complete OTP success/fail automated tests + manual phone-change |
 
