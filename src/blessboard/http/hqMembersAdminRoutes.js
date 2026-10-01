@@ -270,6 +270,9 @@ function createHqMembersAdminRouter(deps) {
     const status = String((req.query && req.query.status) || "")
       .trim()
       .toLowerCase();
+    const portal = String((req.query && req.query.portal) || "")
+      .trim()
+      .toLowerCase();
     const branchKey = String((req.query && req.query.branch) || "")
       .trim()
       .toLowerCase();
@@ -286,6 +289,7 @@ function createHqMembersAdminRouter(deps) {
       churchId: scope.churchId,
       branchId: branchFilter.branchId,
       status: status || null,
+      portalAccessStatus: portal || null,
       q: q || null,
       limit: PAGE_LIMIT,
       offset,
@@ -304,7 +308,7 @@ function createHqMembersAdminRouter(deps) {
     const html = renderHqView(
       "hq/members.ejs",
       await shellLocals(req, res, "members", {
-        pageTitle: "Member directory",
+        pageTitle: "Members",
         items: listed.items,
         total: listed.total,
         page,
@@ -312,8 +316,10 @@ function createHqMembersAdminRouter(deps) {
         limit: PAGE_LIMIT,
         q,
         statusFilter: status,
+        portalFilter: portal,
         branchFilter: branchFilter.branchKey,
         branches: branches.ok ? branches.branches : [],
+        loadGpOpsAssets: true,
       })
     );
     return res.status(200).type("html").send(html);

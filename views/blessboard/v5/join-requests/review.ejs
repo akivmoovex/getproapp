@@ -1,0 +1,131 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var reqRow = typeof request !== 'undefined' && request ? request : null;
+  var canAct = typeof canReview !== 'undefined' ? !!canReview : false;
+  var denied = typeof scopeDenied !== 'undefined' ? !!scopeDenied : false;
+  var err = typeof error !== 'undefined' && error ? String(error) : '';
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var decisionRows = Array.isArray(decisions) ? decisions : [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+  function statusTone(st) {
+    var key = String(st || '').toLowerCase();
+    if (key === 'pending') return 'warning';
+    if (key === 'approved') return 'success';
+    if (key === 'rejected') return 'danger';
+    return 'neutral';
+  }
+%>
+
+<section
+  class="bb-v204-r02"
+  data-bb-stitch-v204="BB-R02"
+  data-bb-screen="BB-R02"
+  data-bb-stitch-id="79b654c9af18411a839a07c616e39e86"
+  data-bb-stitch-id-mobile="f8c014f3282549f1939920a39e2c382b"
+  aria-label="Request Review"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Review Request: ' + (reqRow && reqRow.typeLabel ? reqRow.typeLabel : 'Join') + (reqRow && reqRow.targetName ? (' — ' + reqRow.targetName) : ''),
+    subtitle: reqRow ? ('Tracking ID: ' + reqRow.trackingId) : '',
+    breadcrumbsHtml: '<a href="/branch-admin/join-requests">Requests Inbox</a> <span aria-hidden="true">›</span> <span>Review Request</span>',
+    badgeHtml: reqRow ? '<span class="gp-ops-status gp-ops-status--' + statusTone(reqRow.status) + '">' + (reqRow.status === 'pending' ? 'Pending Review' : reqRow.statusLabel) + '</span>' : ''
+  }) %>
+
+  <% if (err) { %>
+  <div class="bb-v204-r02__error" role="alert"><%= err %></div>
+  <% } %>
+
+  <% if (denied) { %>
+  <div class="bb-v204-r02__error" role="alert">
+    You are not authorized to review this ministry/department. Resource-scoped permission required.
+  </div>
+  <% } %>
+
+  <div class="bb-v204-r02__guard" data-bb-r02-coi="1">
+    <strong>Conflict-of-Interest Protection Active</strong>
+    <p>Authorized reviewers cannot adjudicate their own submitted requests. Self-review safeguard enforced.</p>
+  </div>
+
+  <% if (reqRow) { %>
+  <div class="bb-v204-r02__grid">
+    <article class="bb-v204-r02__card" data-bb-r02-member="1">
+      <h2>Member</h2>
+      <p class="bb-v204-r02__name"><%= reqRow.memberName || 'Member' %></p>
+      <dl class="bb-v204-r02__dl">
+        <div><dt>Church ID</dt><dd><%= reqRow.memberNumber || '—' %></dd></div>
+        <div><dt>Branch</dt><dd><%= branchLabel %></dd></div>
+        <div><dt>Submitted</dt><dd><%= formatWhen(reqRow.createdAt) %></dd></div>
+        <div><dt>Tracking ID</dt><dd><%= reqRow.trackingId %></dd></div>
+      </dl>
+    </article>
+
+    <article class="bb-v204-r02__card" data-bb-r02-placement="1">
+      <h2>Ministry Placement Request Details</h2>
+      <dl class="bb-v204-r02__dl">
+        <div><dt>Request Type</dt><dd><%= reqRow.typeLabel %></dd></div>
+        <div><dt>Target</dt><dd><%= reqRow.targetName || '—' %></dd></div>
+        <div><dt>Status</dt><dd><%= reqRow.statusLabel %></dd></div>
+      </dl>
+      <% if (reqRow.message) { %>
+      <blockquote class="bb-v204-r02__quote">
+        <p class="bb-v204-r02__quote-label">Applicant's Personal Statement</p>
+        <p><%= reqRow.message %></p>
+      </blockquote>
+      <% } %>
+      <% if (reqRow.targetType === 'ministry' && reqRow.targetId) { %>
+      <p class="bb-v204-r02__link">
+        <a href="/branch-admin/join-requests/ministries/<%= reqRow.targetId %>">View Ministry Members &amp; Pending Requests</a>
+      </p>
+      <% } %>
+    </article>
+  </div>
+
+  <aside class="bb-v204-r02__adjudication" data-bb-r02-engine="1">
+    <h2>Adjudication Engine</h2>
+    <p>Authoritative action will record to irreversible diocesan audit ledger.</p>
+    <div class="bb-v204-r02__actions">
+      <% if (canAct) { %>
+      <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?decision=approve">Approve Request</a>
+      <a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?decision=reject">Reject Request</a>
+      <form method="post" action="/branch-admin/join-requests/<%= reqRow.id %>/decide" class="bb-v204-r02__cancel-form">
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+        <input type="hidden" name="decision" value="cancel" />
+        <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">Cancel Request</button>
+      </form>
+      <% } else if (reqRow.status === 'pending' && !denied) { %>
+      <p class="bb-v204-r02__muted">Self-Review Safeguard — approval controls are unavailable for this actor.</p>
+      <% } else if (reqRow.status !== 'pending') { %>
+      <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?saved=<%= encodeURIComponent(reqRow.status) %>">View Decision</a>
+      <% } %>
+    </div>
+    <p class="bb-v204-r02__muted">Reject Request requires formal written pastoral reason. Approve opens BB-R03 approval relationship preview.</p>
+  </aside>
+
+  <section class="bb-v204-r02__history" data-bb-r02-audit="1">
+    <h2>Decision History</h2>
+    <%- include('../partials/v204/audit-timeline', {
+      entries: decisionRows.map(function (d) {
+        return {
+          title: (d.toStatus || d.to_status || 'event'),
+          summary: d.reason || '',
+          at: d.createdAt || d.created_at || null
+        };
+      }),
+      emptyTitle: 'No decisions recorded yet',
+      emptyBody: 'Created and adjudicated events appear here.'
+    }) %>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

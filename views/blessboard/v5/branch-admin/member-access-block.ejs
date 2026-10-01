@@ -1,0 +1,44 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var err = typeof errorMessage !== 'undefined' ? errorMessage : null;
+%>
+
+<section class="bb-v204-m10" data-bb-stitch-v204="BB-M10" data-bb-screen="BB-M10" aria-label="Block Member Access">
+  <%- include('../partials/v204/page-header', {
+    title: 'Block Member Access',
+    subtitle: 'Disables digital portal access. Does not delete or change membership status. Active sessions are invalidated.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '/access">Access</a> <span aria-hidden="true">›</span> <span>Block</span>'
+  }) %>
+
+  <%- include('../partials/v204/duplicate-warning-banner', {
+    title: 'Portal block confirmation',
+    body: 'Membership remains on the roll. Provide a reason. This action is audited.'
+  }) %>
+
+  <% if (err) { %><p class="bb-ba-banner bb-ba-banner--danger" role="alert"><%= err %></p><% } %>
+
+  <form method="post" action="/branch-admin/members/<%= m.id %>/access/block" class="bb-v204-m02__form" data-bb-m10-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+    <input type="hidden" name="portal_access_status" value="blocked" />
+    <section class="bb-v204-m02__section">
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Member</dt><dd><%= [m.firstName, m.lastName].filter(Boolean).join(' ') || '—' %></dd></div>
+        <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span></dd></div>
+        <div><dt>Membership status</dt><dd><%= m.status || '—' %> (unchanged)</dd></div>
+      </dl>
+      <div class="bb-ba-field">
+        <label for="reason">Block reason</label>
+        <textarea id="reason" name="reason" rows="3" required maxlength="1000"><%= typeof values !== 'undefined' && values.reason ? values.reason : '' %></textarea>
+      </div>
+    </section>
+    <footer class="bb-v204-m02__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>/access">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--danger" data-bb-m10-confirm="1">Confirm Block Access</button>
+    </footer>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

@@ -51,6 +51,16 @@ const SHARED_AUDIT_ACTION = Object.freeze({
   POLICY_ACCEPTED: "policy.accepted",
   COMMUNICATION_PREFERENCE_UPDATED: "communication_preference.updated",
   NOTIFICATION_DISPATCHED: "notification.dispatched",
+
+  // V2.04 person foundation (demographic person — not member/patient semantics)
+  PERSON_CREATED: "person.created",
+  PERSON_UPDATED: "person.updated",
+  PERSON_PRODUCT_LINKED: "person.product_linked",
+  PERSON_VERIFICATION_UPDATED: "person.verification_updated",
+  PERSON_ADDRESS_ADDED: "person.address_added",
+  PERSON_RELATED_CONTACT_ADDED: "person.related_contact_added",
+  STAFF_PERSON_WORKFLOW_COMPLETED: "person.staff_workflow.completed",
+  STAFF_PERSON_WORKFLOW_DENIED: "person.staff_workflow.denied",
 });
 
 const SHARED_AUDIT_ENTITY = Object.freeze({
@@ -69,6 +79,10 @@ const SHARED_AUDIT_ENTITY = Object.freeze({
   POLICY_ACCEPTANCE: "policy_acceptance",
   COMMUNICATION_PREFERENCE: "communication_preference",
   NOTIFICATION: "notification",
+  PERSON: "person",
+  PERSON_PRODUCT_LINK: "person_product_link",
+  PERSON_ADDRESS: "person_address",
+  PERSON_RELATED_CONTACT: "person_related_contact",
 });
 
 const SHARED_AUDIT_OUTCOME = Object.freeze({

@@ -76,6 +76,9 @@ const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRo
 const { createMediaUploadService } = require("../../blessboard/media/mediaUploadService");
 const { createTenantRegistrationRouter } = require("../../blessboard/http/tenantRegistrationRoutes");
 const { createMemberPortalRouter } = require("../../blessboard/http/memberPortalRoutes");
+const {
+  createMemberPortalAuthRouter,
+} = require("../../blessboard/http/memberPortalAuthRoutes");
 const { createAnnouncementAdminRouter } = require("../../blessboard/http/announcementAdminRoutes");
 const { createAnnouncementMemberRouter } = require("../../blessboard/http/announcementMemberRoutes");
 const { createBroadcastAdminRouter } = require("../../blessboard/http/broadcastAdminRoutes");
@@ -83,6 +86,18 @@ const { createMemberNotificationRouter } = require("../../blessboard/http/member
 const { createParticipationMemberRouter } = require("../../blessboard/http/participationMemberRoutes");
 const { createParticipationAdminRouter } = require("../../blessboard/http/participationAdminRoutes");
 const { createAttendanceAdminRouter } = require("../../blessboard/http/attendanceAdminRoutes");
+const {
+  createAttendanceSessionAdminRouter,
+} = require("../../blessboard/http/attendanceSessionAdminRoutes");
+const {
+  createJoinRequestAdminRouter,
+} = require("../../blessboard/http/joinRequestAdminRoutes");
+const {
+  createAttendanceCheckInAdminRouter,
+} = require("../../blessboard/http/attendanceCheckInAdminRoutes");
+const {
+  createAttendanceCorrectionAdminRouter,
+} = require("../../blessboard/http/attendanceCorrectionAdminRoutes");
 const { createGivingAdminRouter } = require("../../blessboard/http/givingAdminRoutes");
 const { createFormsRequestsAdminRouter } = require("../../blessboard/http/formsRequestsAdminRoutes");
 const { createFormsRequestsMemberRouter } = require("../../blessboard/http/formsRequestsMemberRoutes");
@@ -776,6 +791,13 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createMemberPortalAuthRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
     createMemberPortalRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
@@ -877,6 +899,38 @@ function createV5FoundationApp(options) {
       env,
       sendUnavailable,
       variant: "branch",
+    })
+  );
+  app.use(
+    createAttendanceSessionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createJoinRequestAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createAttendanceCheckInAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createAttendanceCorrectionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
     })
   );
   app.use(

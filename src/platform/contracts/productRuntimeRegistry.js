@@ -35,6 +35,13 @@ const websiteAvailabilitySyncHandlers = new Map();
 /** @type {Map<string, object>} */
 const identityNormalizers = new Map();
 
+/**
+ * V2.04 person product adapters — declare relationship keys / optional hooks.
+ * Platform person services must not hard-require product packages.
+ * @type {Map<string, object>}
+ */
+const personProductAdapters = new Map();
+
 /** @type {null | (() => object)} */
 let outboundEmailStatusResolver = null;
 
@@ -175,6 +182,32 @@ function getIdentityNormalizers(productCode) {
   return identityNormalizers.get(normalizeProductCode(productCode)) || null;
 }
 
+/**
+ * @param {string} productCode
+ * @param {{
+ *   relationshipKeys: string[],
+ *   defaultRelationshipKey?: string,
+ *   projectPersonDraft?: Function,
+ *   duplicatePolicy?: object,
+ *   presentMatch?: Function,
+ *   staffManagedWorkflow?: object,
+ * }} adapter
+ */
+function registerPersonProductAdapter(productCode, adapter) {
+  const key = normalizeProductCode(productCode);
+  if (!key || !adapter || typeof adapter !== "object") return false;
+  if (!Array.isArray(adapter.relationshipKeys) || !adapter.relationshipKeys.length) {
+    return false;
+  }
+  personProductAdapters.set(key, adapter);
+  return true;
+}
+
+function getPersonProductAdapter(productCode) {
+  ensureContractsLoaded();
+  return personProductAdapters.get(normalizeProductCode(productCode)) || null;
+}
+
 function registerOutboundEmailStatusResolver(fn) {
   if (typeof fn !== "function") return false;
   outboundEmailStatusResolver = fn;
@@ -228,6 +261,7 @@ function clearProductRuntimeContracts() {
   websiteFieldRegistrars.clear();
   websiteAvailabilitySyncHandlers.clear();
   identityNormalizers.clear();
+  personProductAdapters.clear();
   outboundEmailStatusResolver = null;
   platformAdminSettingsContrib = null;
   blessBoardOperationalMediaStorageFactory = null;
@@ -245,6 +279,7 @@ function describeProductRuntimeContracts() {
       ...websiteAvailabilitySyncHandlers.keys(),
     ].sort(),
     identityNormalizers: [...identityNormalizers.keys()].sort(),
+    personProductAdapters: [...personProductAdapters.keys()].sort(),
     outboundEmailStatusResolver: Boolean(outboundEmailStatusResolver),
     platformAdminSettingsContrib: Boolean(platformAdminSettingsContrib),
     blessBoardOperationalMediaStorageFactory: Boolean(
@@ -270,6 +305,8 @@ module.exports = {
   runWebsiteAvailabilitySync,
   registerIdentityNormalizers,
   getIdentityNormalizers,
+  registerPersonProductAdapter,
+  getPersonProductAdapter,
   registerOutboundEmailStatusResolver,
   resolveOutboundEmailStatusSafe,
   registerPlatformAdminSettingsContrib,

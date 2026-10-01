@@ -1,0 +1,153 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : 'Branch';
+  var churchLabel = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : 'Church';
+  var canCheck = typeof sessionOpen !== 'undefined' ? !!sessionOpen : false;
+  var statsObj = typeof stats !== 'undefined' && stats ? stats : { total: 0, present: 0, late: 0 };
+  var presentCount = Number(statsObj.total != null ? statsObj.total : 0) || 0;
+  var cap = typeof capacity !== 'undefined' && capacity != null && Number(capacity) > 0 ? Number(capacity) : null;
+  var dateLabel = typeof gatheringDateLabel !== 'undefined' && gatheringDateLabel ? gatheringDateLabel : null;
+  var timeLabel = typeof gatheringTimeLabel !== 'undefined' && gatheringTimeLabel ? gatheringTimeLabel : null;
+  var ref = typeof tokenRef !== 'undefined' && tokenRef ? tokenRef : null;
+  var dataUrl = typeof qrDataUrl !== 'undefined' && qrDataUrl ? qrDataUrl : null;
+  var expIso = expiresAt instanceof Date ? expiresAt.toISOString() : (expiresAt ? String(expiresAt) : '');
+%>
+
+<section
+  class="bb-v204-a05"
+  data-bb-stitch-v204="BB-A05"
+  data-bb-screen="BB-A05"
+  aria-label="Attendance QR Display"
+>
+  <header class="bb-v204-a05__banner">
+    <div class="bb-v204-a05__brand">
+      <div class="bb-v204-a05__crest" aria-hidden="true"><span class="material-symbols-outlined">church</span></div>
+      <div>
+        <p class="bb-v204-a05__product">BlessBoard <span>V2.04</span></p>
+        <p class="bb-v204-a05__church">
+          <strong><%= churchLabel %></strong>
+          <span aria-hidden="true">·</span>
+          <span class="bb-v204-a05__branch"><%= branchLabel %></span>
+        </p>
+      </div>
+    </div>
+    <div class="bb-v204-a05__live">
+      <% if (canCheck) { %>
+      <span class="bb-v204-a05__pulse" aria-hidden="true"></span>
+      <span>SESSION LIVE · CHECK-INS OPEN</span>
+      <% } else { %>
+      <span>SESSION NOT OPEN</span>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (!canCheck) { %>
+  <div class="bb-v204-a05__blocked" role="alert">Session is not open — QR check-in is unavailable.</div>
+  <% } else if (dataUrl || qrToken) { %>
+  <div class="bb-v204-a05__kiosk" data-bb-a05-kiosk="1">
+    <div class="bb-v204-a05__context">
+      <p class="bb-v204-a05__eyebrow">Gathering</p>
+      <h1 class="bb-v204-a05__title"><%= s.title || s.serviceEventRef || 'Service session' %></h1>
+      <dl class="bb-v204-a05__meta">
+        <% if (dateLabel) { %>
+        <div>
+          <dt>Gathering date</dt>
+          <dd><%= dateLabel %></dd>
+        </div>
+        <% } %>
+        <% if (timeLabel) { %>
+        <div>
+          <dt>Service time</dt>
+          <dd><%= timeLabel %></dd>
+        </div>
+        <% } %>
+        <div>
+          <dt>Branch</dt>
+          <dd><%= branchLabel %></dd>
+        </div>
+      </dl>
+
+      <div class="bb-v204-a05__headcount" data-bb-a05-headcount="1">
+        <p class="bb-v204-a05__headcount-label">Live attendance</p>
+        <p class="bb-v204-a05__headcount-value">
+          <strong id="bb-a05-count"><%= presentCount %></strong>
+          <% if (cap != null) { %>
+          <span class="bb-v204-a05__capacity"> / <%= cap %></span>
+          <% } else { %>
+          <span class="bb-v204-a05__capacity-unit">present</span>
+          <% } %>
+        </p>
+        <% if (statsObj.late) { %>
+        <p class="bb-v204-a05__late"><%= statsObj.late %> late</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="bb-v204-a05__qr-panel">
+      <p class="bb-v204-a05__scan-prompt">Scan to check in</p>
+      <% if (dataUrl) { %>
+      <div class="bb-v204-a05__qr-frame">
+        <img
+          class="bb-v204-a05__qr"
+          src="<%= dataUrl %>"
+          alt="Session check-in QR code"
+          width="512"
+          height="512"
+          data-bb-session-qr-image="1"
+        />
+      </div>
+      <% } %>
+      <p class="bb-v204-a05__hint">Opaque session token — no Church ID, phone, or member PII.</p>
+      <% if (ref) { %>
+      <p class="bb-v204-a05__token-ref" data-bb-session-qr-ref="1">
+        Session token · <code><%= ref %></code>
+      </p>
+      <% } %>
+      <% if (expIso) { %>
+      <p class="bb-v204-a05__expires" data-bb-a05-expires="<%= expIso %>">
+        Expires <time datetime="<%= expIso %>"><%= expIso %></time>
+        · <span id="bb-a05-countdown"></span>
+      </p>
+      <% } %>
+      <p class="bb-v204-a05__refresh"><a href="/branch-admin/attendance/sessions/<%= s.id %>/qr">Refresh token</a></p>
+      <% /* Keep raw token available for greeter assist / accessibility, not as kiosk hero. */ %>
+      <details class="bb-v204-a05__token-details">
+        <summary>Greeter assist · paste token</summary>
+        <code class="bb-v204-a05__token" data-bb-session-qr="1"><%= qrToken %></code>
+      </details>
+    </div>
+  </div>
+  <% if (expIso) { %>
+  <script>
+    (function () {
+      var exp = Date.parse(<%= JSON.stringify(expIso) %>);
+      var el = document.getElementById("bb-a05-countdown");
+      if (!el || !exp) return;
+      function tick() {
+        var left = Math.max(0, Math.floor((exp - Date.now()) / 1000));
+        var m = Math.floor(left / 60);
+        var s = left % 60;
+        el.textContent = left <= 0 ? "Refresh now" : ("Refreshes in " + m + "m " + String(s).padStart(2, "0") + "s");
+        if (left <= 0) {
+          window.location.reload();
+        }
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+  </script>
+  <% } %>
+  <% } else { %>
+  <%- include('../partials/v204/empty-state', { title: 'QR unavailable', body: 'Could not issue a session token. Refresh and try again.' }) %>
+  <% } %>
+
+  <nav class="bb-v204-a04__modes bb-v204-a05__modes">
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-in">Manual</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr/check-in">Redeem QR</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/peak">Peak</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/roster">Roster</a>
+  </nav>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

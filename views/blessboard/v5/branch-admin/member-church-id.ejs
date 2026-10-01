@@ -1,0 +1,46 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var err = typeof errorMessage !== 'undefined' ? errorMessage : null;
+%>
+
+<section class="bb-v204-m08" data-bb-stitch-v204="BB-M08" data-bb-screen="BB-M08" aria-label="Manage Church ID">
+  <%- include('../partials/v204/page-header', {
+    title: 'Manage Church ID',
+    subtitle: 'Privileged action. Church ID is org-scoped unique and audited. Members cannot change this value.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '">Profile</a> <span aria-hidden="true">›</span> <span>Church ID</span>'
+  }) %>
+
+  <%- include('../partials/v204/duplicate-warning-banner', {
+    title: 'Privileged Church ID change',
+    body: 'Changing Church ID requires a reason and is recorded in Member History. Duplicate IDs within this church are blocked.'
+  }) %>
+
+  <% if (err) { %><p class="bb-ba-banner bb-ba-banner--danger" role="alert"><%= err %></p><% } %>
+
+  <form method="post" action="/branch-admin/members/<%= m.id %>/church-id" class="bb-v204-m02__form" data-bb-m08-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+    <section class="bb-v204-m02__section">
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Current Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span></dd></div>
+        <div><dt>Member</dt><dd><%= [m.firstName, m.lastName].filter(Boolean).join(' ') || '—' %></dd></div>
+      </dl>
+      <div class="bb-ba-field">
+        <label for="member_number">New Church ID</label>
+        <input id="member_number" name="member_number" type="text" required maxlength="64" value="<%= typeof values !== 'undefined' && values.memberNumber ? values.memberNumber : '' %>" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="reason">Change reason</label>
+        <textarea id="reason" name="reason" rows="3" required maxlength="1000"><%= typeof values !== 'undefined' && values.reason ? values.reason : '' %></textarea>
+      </div>
+    </section>
+    <footer class="bb-v204-m02__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m08-confirm="1">Save Church ID</button>
+    </footer>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

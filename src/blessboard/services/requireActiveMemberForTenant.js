@@ -6,6 +6,7 @@
  */
 
 const repo = require("../repositories/memberIdentityRepository");
+const { PORTAL_ACCESS_STATUS } = require("./memberDomainConstants");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -15,6 +16,7 @@ const STATUS = Object.freeze({
   NO_MEMBERSHIP: "no_membership",
   INACTIVE_MEMBER: "inactive_member",
   WRONG_BRANCH: "wrong_branch",
+  PORTAL_BLOCKED: "portal_blocked",
   LOOKUP_ERROR: "lookup_error",
 });
 
@@ -105,6 +107,18 @@ async function requireActiveMemberForTenant(db, input) {
           status: STATUS.NO_MEMBERSHIP,
           reason: "no_member",
           member: null,
+          membership: null,
+        };
+      }
+
+      if (
+        String(member.portalAccessStatus || "") === PORTAL_ACCESS_STATUS.BLOCKED
+      ) {
+        return {
+          ok: false,
+          status: STATUS.PORTAL_BLOCKED,
+          reason: "portal_blocked",
+          member,
           membership: null,
         };
       }

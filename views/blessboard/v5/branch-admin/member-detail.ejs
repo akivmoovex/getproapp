@@ -1,40 +1,17 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <%
-  var m = member || {};
-  var displayHeading = [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Member';
+  var model = typeof profile !== 'undefined' && profile ? profile : {};
+  var m = model.member || member || {};
+  var caps = model.capabilities || capabilities || {};
+  var displayHeading = model.displayName || [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Member';
   var initialsSource = [m.firstName, m.lastName].filter(Boolean);
-  var initials = initialsSource
-    .map(function (part) { return String(part).charAt(0); })
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-  if (!initials) initials = '?';
-
-  function statusLabel(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'active') return 'Active';
-    if (key === 'pending') return 'Pending';
-    if (key === 'inactive') return 'Inactive';
-    if (key === 'suspended') return 'Suspended';
-    if (key === 'archived') return 'Archived';
-    return s || '—';
-  }
-  function statusChip(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'active') return 'bb-ba-chip--ok';
-    if (key === 'pending') return 'bb-ba-chip--pending';
-    if (key === 'inactive' || key === 'archived') return 'bb-ba-chip--muted';
-    if (key === 'suspended') return 'bb-ba-chip--danger';
-    return 'bb-ba-chip--muted';
-  }
-  function membershipLabel(s) {
-    var key = String(s || '').toLowerCase();
-    if (!key) return '—';
-    if (key === 'active') return 'Active membership';
-    if (key === 'pending') return 'Pending membership';
-    if (key === 'inactive') return 'Inactive membership';
-    return s;
-  }
+  var initials = initialsSource.map(function (part) { return String(part).charAt(0); }).join('').slice(0, 2).toUpperCase() || '?';
+  var churchId = model.churchId || m.memberNumber || '—';
+  var membershipTone = String(m.status || '').toLowerCase() === 'active' ? 'success' : 'neutral';
+  var portalTone = String(m.portalAccessStatus || '').toLowerCase() === 'blocked' ? 'danger'
+    : (String(m.portalAccessStatus || '').toLowerCase() === 'active' ? 'success' : 'neutral');
+  var notice = typeof flashNotice !== 'undefined' ? flashNotice : null;
+  var errorMsg = typeof flashError !== 'undefined' ? flashError : null;
   function formatWhen(value) {
     if (!value) return '—';
     var d = value instanceof Date ? value : new Date(value);
@@ -44,269 +21,132 @@
 %>
 
 <section
-  class="bb-ba-member-detail"
+  class="bb-v204-m06"
+  data-bb-member-admin-profile="1"
   data-bb-member-detail="1"
+  data-bb-stitch-v204="BB-M06"
   data-bb-stitch-member-detail="27-branch-member-profile"
-  data-bb-membership="member-profile"
+  data-bb-screen="BB-M06"
   data-screen="BB14"
   data-bb-screen-desktop="BB14-D"
   data-bb-screen-mobile="BB14-M"
-  data-bb-member-status="<%= m.status || '' %>"
+  data-bb-stitch-id="7ddcd294a1514304a449e5f8a4acbc4c"
+  data-bb-member-sections="1"
+  aria-label="Member Admin Profile"
 >
-  <header class="bb-ba-page-head bb-ba-page-head--split">
-    <div>
-      <p class="bb-ba-breadcrumb">
-        <a href="/branch-admin/members">Members</a>
-        <span aria-hidden="true">›</span>
-        <span><%= displayHeading %></span>
-      </p>
-      <h1 class="bb-ba-page-head__title">Member profile</h1>
-      <p class="bb-ba-lede">
-        Branch membership for
-        <strong><%= branchDisplayName || churchDisplayName %></strong>.
-        Profile fields shown here are read-only for branch admins.
-      </p>
-    </div>
-    <p class="bb-ba-back bb-ba-back--inline">
-      <a href="/branch-admin/members">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-        Back to directory
-      </a>
-    </p>
-  </header>
+  <%- include('../partials/v204/page-header', {
+    title: displayHeading,
+    subtitle: 'Membership status and portal access are managed separately.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <span>Admin profile</span>',
+    actionsHtml: (function () {
+      var parts = [];
+      if (caps.canEditMember) {
+        parts.push('<a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/members/' + m.id + '/edit" data-bb-m06-edit="1" data-screen="BB15"><span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit Member</a>');
+      }
+      if (caps.canManageAccess) {
+        parts.push('<a class="bb-ba-btn bb-ba-btn--secondary" href="/branch-admin/members/' + m.id + '/access" data-bb-m06-access="1"><span class="material-symbols-outlined" aria-hidden="true">vpn_key</span> Manage Access</a>');
+      }
+      return parts.join(' ');
+    })()
+  }) %>
 
-  <nav class="bb-ba-member-detail__tabs" aria-label="Profile sections" data-bb-member-sections="1">
-    <a
-      class="bb-ba-member-detail__tab is-active"
-      href="#bb-ba-member-overview"
-      aria-current="page"
-      data-bb-member-section="overview"
-    >Overview</a>
-    <span
-      class="bb-ba-member-detail__tab is-unavailable"
-      title="Not available in this release"
-      data-bb-member-section-unavailable="attendance"
-    >Attendance</span>
-    <span
-      class="bb-ba-member-detail__tab is-unavailable"
-      title="Not available in this release"
-      data-bb-member-section-unavailable="requests"
-    >Requests</span>
-    <span
-      class="bb-ba-member-detail__tab is-unavailable"
-      title="Not available in this release"
-      data-bb-member-section-unavailable="notes"
-    >Notes</span>
+  <% if (notice) { %>
+  <p class="bb-ba-banner bb-ba-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (errorMsg) { %>
+  <p class="bb-ba-banner bb-ba-banner--danger" role="alert"><%= errorMsg %></p>
+  <% } %>
+
+  <div class="bb-v204-m06__hero" data-bb-member-summary="1">
+    <span class="bb-ba-avatar bb-ba-avatar--xl" aria-hidden="true"><%= initials %></span>
+    <div class="bb-v204-m06__hero-copy">
+      <div class="bb-v204-m06__chips">
+        <%- include('../partials/v204/status-chip', { label: model.membershipLabel || 'Membership', tone: membershipTone }) %>
+        <%- include('../partials/v204/status-chip', { label: 'Portal: ' + (model.portalLabel || 'Not Activated'), tone: portalTone }) %>
+        <span class="bb-v204-m01__church-id" data-bb-m06-church-id="1"><%= churchId %></span>
+      </div>
+      <h2 class="bb-v204-m06__name"><%= displayHeading %></h2>
+      <% if (m.preferredName) { %><p class="bb-ba-muted">Preferred: <%= m.preferredName %></p><% } %>
+      <p class="bb-ba-muted">
+        <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+        Member since <%= formatWhen(m.joinedAt || m.createdAt) %>
+      </p>
+      <p class="bb-ba-hint">Profile fields are Read-only here. Use Edit Member for approved changes.</p>
+    </div>
+  </div>
+
+  <nav class="bb-v204-m06__tabs" aria-label="Profile sections">
+    <a class="bb-v204-m06__tab is-active" href="#bb-m06-overview" aria-current="page">Overview</a>
+    <a class="bb-v204-m06__tab" href="#bb-m06-profile">Profile</a>
+    <a class="bb-v204-m06__tab" href="#bb-m06-membership">Membership</a>
+    <a class="bb-v204-m06__tab" href="#bb-m06-access">Access</a>
+    <% if (caps.canViewHistory) { %>
+    <a class="bb-v204-m06__tab" href="/branch-admin/members/<%= m.id %>/history" data-bb-m06-history="1">History</a>
+    <% } else { %>
+    <span class="bb-v204-m06__tab is-unavailable" data-bb-member-unavailable="1" title="Not authorized">History</span>
+    <% } %>
   </nav>
 
-  <div class="bb-ba-member-detail__layout" id="bb-ba-member-overview">
-    <div class="bb-ba-member-detail__main">
-      <article class="bb-ba-panel bb-ba-member-summary" data-bb-member-summary="1">
-        <div class="bb-ba-member-summary__identity">
-          <span class="bb-ba-avatar bb-ba-avatar--xl" aria-hidden="true"><%= initials %></span>
-          <div class="bb-ba-member-summary__copy">
-            <div class="bb-ba-member-summary__badges" aria-label="Status">
-              <span class="bb-ba-chip <%= statusChip(m.status) %>" data-bb-member-status-badge="1">
-                <%= statusLabel(m.status) %>
-              </span>
-              <% if (m.membershipStatus) { %>
-              <span class="bb-ba-chip bb-ba-chip--muted" data-bb-member-membership-badge="1">
-                <%= membershipLabel(m.membershipStatus) %>
-              </span>
-              <% } %>
-              <% if (m.isPrimary) { %>
-              <span class="bb-ba-chip bb-ba-chip--muted">Primary</span>
-              <% } %>
-              <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
-            </div>
-            <h2 class="bb-ba-member-summary__name"><%= displayHeading %></h2>
-            <% if (m.preferredName) { %>
-            <p class="bb-ba-member-summary__preferred">Preferred: <%= m.preferredName %></p>
-            <% } %>
-            <p class="bb-ba-member-summary__meta">
-              <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
-              Joined <%= formatWhen(m.joinedAt || m.createdAt) %>
-            </p>
-            <% if (branchDisplayName || churchDisplayName) { %>
-            <p class="bb-ba-member-summary__branch">
-              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-              <%= branchDisplayName || churchDisplayName %>
-            </p>
-            <% } %>
-          </div>
-        </div>
-      </article>
-
-      <section
-        class="bb-ba-panel bb-ba-member-section"
-        aria-labelledby="bb-ba-member-contact-heading"
-        data-bb-member-contact="1"
-      >
-        <div class="bb-ba-member-section__head">
-          <h2 id="bb-ba-member-contact-heading" class="bb-ba-section-title">Contact information</h2>
-          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
-        </div>
-        <p class="bb-ba-hint">Display values only — normalized identifiers are never shown.</p>
-        <dl class="bb-ba-member-dl">
-          <div class="bb-ba-member-dl__row">
-            <dt>
-              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-              Email
-            </dt>
-            <dd><%= m.emailDisplay || '—' %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>
-              <span class="material-symbols-outlined" aria-hidden="true">call</span>
-              Phone
-            </dt>
-            <dd><%= m.phoneDisplay || '—' %></dd>
-          </div>
+  <div class="bb-v204-m06__layout" id="bb-m06-overview">
+    <div class="bb-v204-m06__main">
+      <section class="bb-v204-m02__section" id="bb-m06-profile" data-bb-member-contact="1" aria-labelledby="bb-m06-contact-h">
+        <h2 id="bb-m06-contact-h">Contact &amp; Residential</h2>
+        <dl class="bb-v204-m03__dl">
+          <div><dt>Primary Phone</dt><dd><%= m.phoneDisplay || '—' %></dd></div>
+          <div><dt>Email Address</dt><dd><%= m.emailDisplay || '—' %></dd></div>
+          <div><dt>Residential Address</dt><dd><%= m.addressLine1 || '—' %><% if (m.addressCity) { %><br /><%= m.addressCity %><% } %></dd></div>
         </dl>
       </section>
 
-      <section
-        class="bb-ba-panel bb-ba-member-section"
-        aria-labelledby="bb-ba-member-membership-heading"
-        data-bb-member-membership="1"
-      >
-        <div class="bb-ba-member-section__head">
-          <h2 id="bb-ba-member-membership-heading" class="bb-ba-section-title">Branch membership</h2>
-          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
-        </div>
-        <dl class="bb-ba-member-dl">
-          <div class="bb-ba-member-dl__row">
-            <dt>Branch</dt>
-            <dd><%= branchDisplayName || churchDisplayName || '—' %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>Membership status</dt>
-            <dd><%= membershipLabel(m.membershipStatus) %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>Account status</dt>
-            <dd><%= statusLabel(m.status) %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>Primary membership</dt>
-            <dd><%= m.isPrimary ? 'Yes' : 'No' %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>Joined this branch</dt>
-            <dd><%= formatWhen(m.joinedAt) %></dd>
-          </div>
-          <div class="bb-ba-member-dl__row">
-            <dt>Record updated</dt>
-            <dd><%= formatWhen(m.updatedAt) %></dd>
-          </div>
+      <section class="bb-v204-m02__section" aria-labelledby="bb-m06-personal-h">
+        <h2 id="bb-m06-personal-h">Personal &amp; Household</h2>
+        <dl class="bb-v204-m03__dl">
+          <div><dt>Date of birth</dt><dd><%= m.dateOfBirth || '—' %></dd></div>
+          <div><dt>Occupation</dt><dd><%= m.occupation || '—' %></dd></div>
+          <div><dt>Marital status</dt><dd><%= m.maritalStatus || '—' %></dd></div>
+          <div><dt>Children</dt><dd><%= m.numberOfChildren != null ? m.numberOfChildren : '—' %></dd></div>
+          <div><dt>Next of kin</dt><dd><%= m.nextOfKinName || '—' %><% if (m.nextOfKinRelationship) { %> (<%= m.nextOfKinRelationship %>)<% } %></dd></div>
+          <div><dt>Emergency phone</dt><dd><%= m.nextOfKinPhoneDisplay || '—' %></dd></div>
         </dl>
       </section>
     </div>
 
-    <aside class="bb-ba-member-detail__aside">
-      <section
-        class="bb-ba-panel bb-ba-member-section"
-        aria-labelledby="bb-ba-member-account-heading"
-        data-bb-member-account="1"
-      >
-        <div class="bb-ba-member-section__head">
-          <h2 id="bb-ba-member-account-heading" class="bb-ba-section-title">Account</h2>
-          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
-        </div>
-        <dl class="bb-ba-member-dl">
-          <div class="bb-ba-member-dl__row">
-            <dt>Legal name</dt>
-            <dd><%= m.firstName %> <%= m.lastName %></dd>
-          </div>
-          <% if (m.preferredName) { %>
-          <div class="bb-ba-member-dl__row">
-            <dt>Preferred name</dt>
-            <dd><%= m.preferredName %></dd>
-          </div>
-          <% } %>
-          <div class="bb-ba-member-dl__row">
-            <dt>Login linked</dt>
-            <dd data-bb-member-login-linked="<%= m.hasLoginLinked ? '1' : '0' %>">
-              <%= m.hasLoginLinked ? 'Yes' : 'No' %>
-            </dd>
-          </div>
+    <aside class="bb-v204-m06__aside">
+      <section class="bb-v204-m02__section" id="bb-m06-membership" data-bb-member-membership="1" aria-labelledby="bb-m06-membership-h">
+        <h2 id="bb-m06-membership-h">Membership</h2>
+        <dl class="bb-v204-m03__dl">
+          <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= churchId %></span></dd></div>
+          <div><dt>Membership status</dt><dd><%- include('../partials/v204/status-chip', { label: model.membershipLabel, tone: membershipTone }) %></dd></div>
+          <div><dt>Assigned branch</dt><dd><%= branchDisplayName || churchDisplayName || '—' %></dd></div>
         </dl>
-        <p class="bb-ba-hint">
-          Linking a login is a separate step. Approving a registration never creates an account automatically.
-          Contact details members can change themselves appear in the member portal when a login is linked.
-        </p>
+        <p class="bb-ba-hint">Church ID cannot be edited from the profile form. Privileged staff use Change Church ID.</p>
       </section>
 
-      <section
-        class="bb-ba-panel bb-ba-member-unavailable"
-        aria-labelledby="bb-ba-member-unavailable-heading"
-        data-bb-member-unavailable="1"
-      >
-        <h2 id="bb-ba-member-unavailable-heading" class="bb-ba-section-title bb-ba-section-title--sm">
-          Not available here
-        </h2>
-        <p class="bb-ba-hint">
-          These Stitch actions and histories are not supported on this branch-admin profile yet.
-        </p>
-        <ul class="bb-ba-member-unavailable__list">
-          <li>Administrative notes and activity history</li>
-          <li>Attendance, giving, and request timelines</li>
-          <li>Ministry assignments and family links</li>
-          <li>Identity documents and verification checklists</li>
+      <section class="bb-v204-m02__section" id="bb-m06-access" data-bb-member-account="1" aria-labelledby="bb-m06-access-h">
+        <h2 id="bb-m06-access-h">Access</h2>
+        <dl class="bb-v204-m03__dl">
+          <div><dt>Portal status</dt><dd><%- include('../partials/v204/status-chip', { label: model.portalLabel, tone: portalTone }) %></dd></div>
+          <div><dt>Login linked</dt><dd><%= m.hasLoginLinked || m.userId ? 'Yes' : 'No' %></dd></div>
+        </dl>
+        <p class="bb-ba-hint">Blocking portal access disables digital access and does not delete membership.</p>
+      </section>
+
+      <section class="bb-v204-m02__section" aria-labelledby="bb-m06-controls-h">
+        <h2 id="bb-m06-controls-h">Staff Controls</h2>
+        <ul class="bb-v204-m06__actions">
+          <% if (caps.canChangeChurchId) { %>
+          <li><a href="/branch-admin/members/<%= m.id %>/church-id" data-bb-m06-church-id-action="1"><span class="material-symbols-outlined" aria-hidden="true">badge</span> Change Church ID (Privileged)</a></li>
+          <% } %>
+          <% if (caps.canTransferBranch) { %>
+          <li><a href="/branch-admin/members/<%= m.id %>/transfer" data-bb-m06-transfer="1"><span class="material-symbols-outlined" aria-hidden="true">sync_alt</span> Transfer Branch</a></li>
+          <% } %>
+          <% if (caps.canManageAccess && String(m.portalAccessStatus || '') !== 'blocked') { %>
+          <li><a href="/branch-admin/members/<%= m.id %>/access/block" data-bb-m06-block="1"><span class="material-symbols-outlined" aria-hidden="true">block</span> Block Member Access</a></li>
+          <% } %>
+          <% if (caps.canDeactivateMembership) { %>
+          <li><a href="/branch-admin/members/<%= m.id %>/edit#membership-status" data-bb-m06-deactivate="1"><span class="material-symbols-outlined" aria-hidden="true">person_off</span> Deactivate Membership</a></li>
+          <% } %>
         </ul>
-      </section>
-
-      <section class="bb-ba-panel bb-ba-panel--mobile-form" data-bb-member-edit="1" data-screen="BB15" data-bb-screen-desktop="BB15-D" data-bb-screen-mobile="BB15-M" data-bb-stitch-id-mobile="9207936b1268431fba2640c297438a11">
-        <h2 class="bb-ba-section-title">Edit profile</h2>
-        <p class="bb-ba-hint" data-bb-edit-locked="1">Legal identity stays on the member record. Prefer contact and preferred-name edits here — this never creates a login.</p>
-        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/edit" data-bb-member-edit-form="1">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <fieldset class="bb-ba-fieldset">
-            <legend>Editable contact</legend>
-            <div class="bb-ba-field">
-              <label for="first_name">First name</label>
-              <input id="first_name" name="first_name" type="text" maxlength="100" value="<%= m.firstName || '' %>" autocomplete="given-name" />
-            </div>
-            <div class="bb-ba-field">
-              <label for="last_name">Last name</label>
-              <input id="last_name" name="last_name" type="text" maxlength="100" value="<%= m.lastName || '' %>" autocomplete="family-name" />
-            </div>
-            <div class="bb-ba-field">
-              <label for="preferred_name">Preferred name</label>
-              <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= m.preferredName || '' %>" />
-            </div>
-            <div class="bb-ba-field">
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" maxlength="254" value="<%= m.emailDisplay || '' %>" autocomplete="email" />
-            </div>
-          </fieldset>
-          <div class="bb-ba-actions bb-ba-actions--sticky">
-            <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Save profile</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="bb-ba-panel bb-ba-panel--mobile-form" data-bb-member-transfer="1" data-screen="BB16" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M" data-bb-stitch-id-mobile="9a061086176e49d3b55eabc3d95f2e1e">
-        <h2 class="bb-ba-section-title">Request branch transfer</h2>
-        <p class="bb-ba-hint">Transfers stay inside this church. Destination branch must belong to the same church.</p>
-        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/transfer" data-bb-member-transfer-form="1">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <div class="bb-ba-field">
-            <label for="to_branch_id">Destination branch ID</label>
-            <input id="to_branch_id" name="to_branch_id" type="text" required maxlength="64" inputmode="text" />
-          </div>
-          <div class="bb-ba-field">
-            <label for="reason">Reason</label>
-            <textarea id="reason" name="reason" rows="3" maxlength="1000"></textarea>
-          </div>
-          <label class="bb-ba-check">
-            <input type="checkbox" name="confirm_transfer" value="1" required />
-            I confirm this transfer request stays within the same church.
-          </label>
-          <div class="bb-ba-actions bb-ba-actions--sticky">
-            <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Request transfer</button>
-          </div>
-        </form>
       </section>
     </aside>
   </div>

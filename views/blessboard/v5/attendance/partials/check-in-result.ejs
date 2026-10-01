@@ -1,0 +1,64 @@
+<%#
+  BB-A09 Attendance Warning/Exception — shared result surface for check-in flows.
+  Locals: result { ok, kind, title, message, lateArrival?, wrongBranch?, checkIn? }
+  Optional: compact — denser mobile (A06/A07) presentation.
+%>
+<% if (typeof result !== 'undefined' && result) { %>
+<%
+  var kind = result.kind || 'info';
+  var isCompact = typeof compact !== 'undefined' && compact;
+  var icon = 'info';
+  if (kind === 'success') icon = 'check_circle';
+  else if (kind === 'duplicate') icon = 'history';
+  else if (kind === 'late' || kind === 'warning') icon = 'schedule';
+  else if (kind === 'closed') icon = 'lock';
+  else if (kind === 'expired' || kind === 'invalid' || kind === 'error') icon = 'error';
+%>
+<section
+  class="bb-v204-a09 bb-v204-a09--<%= kind %><%= isCompact ? ' bb-v204-a09--compact' : '' %>"
+  data-bb-stitch-v204="BB-A09"
+  data-bb-screen="BB-A09"
+  data-bb-checkin-result="<%= kind %>"
+  data-bb-a06-state="<%= kind === 'duplicate' ? 'already' : kind %>"
+  role="<%= result.ok ? 'status' : 'alert' %>"
+>
+  <div class="bb-v204-a09__icon" aria-hidden="true">
+    <span class="material-symbols-outlined"><%= icon %></span>
+  </div>
+  <header class="bb-v204-a09__head">
+    <h2><%= result.title || 'Attendance notice' %></h2>
+    <p><%= result.message || '' %></p>
+  </header>
+  <ul class="bb-v204-a09__flags">
+    <% if (kind === 'success') { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'ON TIME', tone: 'success' }) %></li>
+    <% } %>
+    <% if (kind === 'duplicate') { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'ALREADY CHECKED IN', tone: 'info' }) %></li>
+    <% } %>
+    <% if (kind === 'late' || result.lateArrival) { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'LATE ARRIVAL', tone: 'warning' }) %></li>
+    <% } %>
+    <% if (result.wrongBranch) { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'WRONG BRANCH — RECORDED', tone: 'warning' }) %></li>
+    <% } %>
+    <% if (kind === 'closed') { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'SESSION CLOSED', tone: 'danger' }) %></li>
+    <% } %>
+    <% if (kind === 'expired' || kind === 'invalid') { %>
+    <li><%- include('../../partials/v204/status-chip', { label: 'INVALID / EXPIRED QR', tone: 'danger' }) %></li>
+    <% } %>
+    <% if (!result.ok && kind === 'error') { %>
+    <li><%- include('../../partials/v204/status-chip', { label: String(result.code || 'ERROR').toUpperCase(), tone: 'danger' }) %></li>
+    <% } %>
+  </ul>
+  <% if (result.checkIn && result.checkIn.status && !isCompact) { %>
+  <dl class="bb-v204-a09__meta">
+    <div><dt>Status</dt><dd><%= result.checkIn.status %></dd></div>
+    <% if (result.checkIn.method) { %>
+    <div><dt>Method</dt><dd><%= result.checkIn.method %></dd></div>
+    <% } %>
+  </dl>
+  <% } %>
+</section>
+<% } %>

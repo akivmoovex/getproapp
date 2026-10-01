@@ -1,0 +1,27 @@
+<%#
+  Shared warning / info / success / danger banner (product-neutral).
+  Locals: tone (warning|info|success|danger|neutral), title?, body?, bodyHtml?, metaHtml?, className?, role?
+%>
+<%
+  var _tone = typeof tone !== 'undefined' && tone ? String(tone) : 'warning';
+  var _title = typeof title !== 'undefined' && title ? String(title) : '';
+  var _body = typeof body !== 'undefined' && body ? String(body) : '';
+  var _role = typeof role !== 'undefined' && role ? String(role) : (_tone === 'danger' || _tone === 'warning' ? 'alert' : 'status');
+  var _cls = 'gp-ops-banner gp-ops-banner--' + _tone + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div class="<%= _cls %>" data-gp-ops="banner" data-gp-ops-tone="<%= _tone %>" role="<%= _role %>">
+  <span class="gp-ops-banner__icon" aria-hidden="true"></span>
+  <div class="gp-ops-banner__content">
+    <% if (_title) { %>
+    <p class="gp-ops-banner__title"><%= _title %></p>
+    <% } %>
+    <% if (typeof bodyHtml !== 'undefined' && bodyHtml) { %>
+    <div class="gp-ops-banner__body"><%- bodyHtml %></div>
+    <% } else if (_body) { %>
+    <p class="gp-ops-banner__body"><%= _body %></p>
+    <% } %>
+  </div>
+  <% if (typeof metaHtml !== 'undefined' && metaHtml) { %>
+  <div class="gp-ops-banner__meta"><%- metaHtml %></div>
+  <% } %>
+</div>

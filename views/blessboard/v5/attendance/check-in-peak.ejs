@@ -1,0 +1,114 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var v = typeof values !== 'undefined' && values ? values : {};
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var canCheck = typeof sessionOpen !== 'undefined' ? !!sessionOpen : false;
+  var brief = typeof memberBrief !== 'undefined' && memberBrief ? memberBrief : null;
+  var statsObj = typeof stats !== 'undefined' && stats ? stats : { total: 0, present: 0, late: 0 };
+  var recentRows = typeof recent !== 'undefined' && recent && recent.length ? recent : [];
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : 'Branch';
+  function briefName(m) {
+    if (!m) return '';
+    return [m.firstName, m.lastName].filter(Boolean).join(' ');
+  }
+  function rowTime(r) {
+    if (!r || !r.checkedInAt) return '';
+    try {
+      var d = r.checkedInAt instanceof Date ? r.checkedInAt : new Date(r.checkedInAt);
+      if (Number.isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch (_e) {
+      return '';
+    }
+  }
+%>
+
+<section
+  class="bb-v204-a07"
+  data-bb-stitch-v204="BB-A07"
+  data-bb-screen="BB-A07"
+  data-bb-peak="1"
+  aria-label="Peak Check-In"
+>
+  <header class="bb-v204-a07__top">
+    <div>
+      <p class="bb-v204-a07__eyebrow">Greeter rapid mode</p>
+      <h1 class="bb-v204-a07__heading">Peak Check-In</h1>
+      <p class="bb-v204-a07__sub"><%= s.title || 'Session' %> · <%= branchLabel %></p>
+    </div>
+    <div class="bb-v204-a07__count" data-bb-peak-count="1">
+      <span class="bb-v204-a07__count-label">Session</span>
+      <strong><%= Number(statsObj.total || 0) %></strong>
+    </div>
+  </header>
+
+  <%- include('partials/check-in-result', { result: typeof result !== 'undefined' ? result : null, compact: true }) %>
+
+  <% if (brief) { %>
+  <p class="bb-v204-a07__brief" data-bb-peak-last="1">
+    Last: <strong><%= briefName(brief) %></strong>
+    <% if (brief.memberNumber) { %><span class="bb-v204-a04__church-id"><%= brief.memberNumber %></span><% } %>
+    — ready for next member
+  </p>
+  <% } %>
+
+  <% if (!canCheck) { %>
+  <div class="bb-v204-a07__blocked" role="alert">Session is not open.</div>
+  <% } %>
+
+  <form
+    method="post"
+    action="/branch-admin/attendance/sessions/<%= s.id %>/peak"
+    class="bb-v204-a07__form"
+    data-bb-a07-form="1"
+  >
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+    <label class="bb-v204-a07__label" for="bb-a07-ref">Search · Church ID / name / member UUID</label>
+    <input
+      id="bb-a07-ref"
+      class="bb-ba-input bb-v204-a07__input"
+      type="text"
+      name="member_ref"
+      value=""
+      placeholder="Ready for next member…"
+      autocomplete="off"
+      <%= typeof autofocusNext !== 'undefined' && autofocusNext ? 'autofocus' : 'autofocus' %>
+      <%= !canCheck ? 'disabled' : '' %>
+      required
+    />
+    <button type="submit" class="bb-ba-btn bb-ba-btn--primary bb-v204-a07__tap" <%= !canCheck ? 'disabled' : '' %>>
+      Record Check-In (1-Tap)
+    </button>
+  </form>
+
+  <section class="bb-v204-a07__recent" aria-label="Recent rapid check-ins">
+    <header class="bb-v204-a07__recent-head">
+      <h2>Recent rapid logs</h2>
+      <span>Ready for next</span>
+    </header>
+    <% if (!recentRows.length) { %>
+    <p class="bb-v204-a07__recent-empty">No check-ins yet this session.</p>
+    <% } else { %>
+    <ul class="bb-v204-a07__recent-list">
+      <% recentRows.forEach(function (row) { %>
+      <li>
+        <span class="bb-v204-a07__dot<%= row.lateArrival ? ' is-late' : '' %>" aria-hidden="true"></span>
+        <span class="bb-v204-a07__name"><%= row.memberName || 'Member' %></span>
+        <% if (row.memberNumber) { %><span class="bb-v204-a04__church-id"><%= row.memberNumber %></span><% } %>
+        <time class="bb-v204-a07__time"><%= rowTime(row) %></time>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <nav class="bb-v204-a04__modes">
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-in">Manual</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr">QR Display</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/roster">Roster</a>
+  </nav>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

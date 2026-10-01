@@ -1,0 +1,51 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var p = typeof profile !== 'undefined' && profile ? profile : {};
+  var pending = p.phonePendingDisplay || p.phonePendingNormalized || '—';
+%>
+
+<section
+  class="bb-mp-profile bb-v204-m23"
+  data-bb-member-phone-verify="1"
+  data-bb-stitch-v204="BB-M23"
+>
+  <header class="bb-mp-page-head">
+    <h1 class="bb-mp-page-head__title">Verify New Phone Number</h1>
+    <p class="bb-mp-lede">
+      Enter the 6-digit SMS code sent to your new number. The number becomes your verified contact only after this step.
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bb-mp-alert bb-mp-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <article class="bb-mp-panel bb-mp-otp-panel">
+    <p class="bb-mp-phone-target" data-bb-phone-pending="1">
+      Code destination: <strong><%= pending %></strong>
+    </p>
+    <form method="post" action="/member/profile/phone-verify" class="bb-mp-form" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="verification_id" value="<%= challengeId || '' %>" />
+      <div class="bb-mp-field">
+        <label for="code">Security one-time passcode</label>
+        <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required <%= challengeId ? '' : 'disabled' %> />
+        <% if (typeof testCode !== 'undefined' && testCode) { %>
+        <p class="bb-mp-hint" data-bb-test-otp="1">Test code: <%= testCode %></p>
+        <% } %>
+      </div>
+      <div class="bb-mp-form__actions">
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary" <%= challengeId ? '' : 'disabled' %>>Confirm &amp; update mobile</button>
+        <button type="submit" name="action" value="resend" class="bb-mp-btn bb-mp-btn--ghost">Resend SMS</button>
+        <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/profile">Cancel</a>
+      </div>
+    </form>
+    <% if (!challengeId) { %>
+    <p class="bb-mp-lede">
+      <a class="bb-mp-btn bb-mp-btn--primary" href="/member/profile/phone-verify?send=1">Send verification code</a>
+    </p>
+    <% } %>
+  </article>
+</section>
+
+<%- include('../partials/member-shell-end') %>

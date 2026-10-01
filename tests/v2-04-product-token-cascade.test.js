@@ -40,6 +40,7 @@ const AC_APP = fs.readFileSync(
 );
 
 const BB_VIOLET = "#6c5ce7";
+const BB_OPS_BLUE = "#2563eb";
 const AC_TEAL = "#006068";
 const AC_STAFF_BLUE = "#2563eb";
 
@@ -103,7 +104,7 @@ describe("V2.04 product token cascade (computed)", () => {
     });
   });
 
-  it("BlessBoard resolves violet brand and bb-color-primary alias", async () => {
+  it("BlessBoard apex/default resolves violet brand and bb-color-primary alias", async () => {
     const html = `<!doctype html><html><head>
 <style>${COLORS}</style><style>${BB_TOKENS}</style>
 <style>.bb { background: var(--bb-color-primary); }</style></head>
@@ -122,6 +123,34 @@ describe("V2.04 product token cascade (computed)", () => {
       assert.equal(v.brand, BB_VIOLET);
       assert.equal(v.bb, BB_VIOLET);
       assert.equal(v.btnBg, rgb(BB_VIOLET));
+    });
+  });
+
+  it("BlessBoard V2.04 ops shell resolves Sanctuary Modern blue (not violet, not AC teal)", async () => {
+    const html = `<!doctype html><html><head>
+<style>${COLORS}</style><style>${BB_TOKENS}</style>
+<style>.bb { background: var(--bb-color-primary); }</style></head>
+<body data-product="blessboard" data-bb-shell="branch-admin"><button class="bb" id="b">CTA</button></body></html>`;
+
+    await withPage(html, async (page) => {
+      const v = await page.evaluate(() => {
+        const body = getComputedStyle(document.body);
+        const btn = getComputedStyle(document.getElementById("b"));
+        return {
+          brand: body.getPropertyValue("--color-brand-primary").trim(),
+          bb: body.getPropertyValue("--bb-color-primary").trim(),
+          btnBg: btn.backgroundColor,
+          bg: body.getPropertyValue("--color-background").trim(),
+          button: body.getPropertyValue("--button-primary-bg").trim(),
+        };
+      });
+      assert.equal(v.brand, BB_OPS_BLUE);
+      assert.equal(v.bb, BB_OPS_BLUE);
+      assert.equal(v.button, BB_OPS_BLUE);
+      assert.equal(v.btnBg, rgb(BB_OPS_BLUE));
+      assert.notEqual(v.brand, BB_VIOLET);
+      assert.notEqual(v.brand, AC_TEAL);
+      assert.match(v.bg, /#f8fafc/i);
     });
   });
 

@@ -1,0 +1,193 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var p = typeof profile !== 'undefined' && profile ? profile : {};
+  var addr = p.address || {};
+  var kin = p.nextOfKin || {};
+  var fe = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  var summaryItems = typeof errorSummaryItems !== 'undefined' && errorSummaryItems && errorSummaryItems.length
+    ? errorSummaryItems
+    : (error ? [error] : []);
+  var maritalOptions = typeof maritalOptions !== 'undefined' && maritalOptions ? maritalOptions : [];
+  function maritalLabel(m) {
+    if (!m) return m;
+    return String(m).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function dobValue(v) {
+    if (!v) return '';
+    try {
+      var d = v instanceof Date ? v : new Date(v);
+      if (Number.isNaN(d.getTime())) return String(v).slice(0, 10);
+      return d.toISOString().slice(0, 10);
+    } catch (_e) { return ''; }
+  }
+%>
+
+<section
+  class="bb-mp-profile bb-v204-m22"
+  data-bb-member-profile-edit="1"
+  data-bb-stitch-v204="BB-M22"
+>
+  <header class="bb-mp-page-head bb-mp-page-head--split">
+    <div>
+      <h1 class="bb-mp-page-head__title">Edit My Profile</h1>
+      <p class="bb-mp-lede">
+        Update approved personal details. Church ID and official membership branch cannot be changed here.
+      </p>
+    </div>
+    <div class="bb-mp-page-head__actions">
+      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/profile">Cancel</a>
+    </div>
+  </header>
+
+  <% if (summaryItems.length) { %>
+  <div class="bb-mp-alert bb-mp-alert--error" role="alert">
+    <p class="bb-mp-alert__title">We could not save your profile</p>
+    <ul>
+      <% summaryItems.forEach(function (item) { %>
+      <li><%= item %></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <form method="post" action="/member/profile/edit" class="bb-mp-form bb-mp-form--panel" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">Read-only</h2>
+      <dl class="bb-mp-kv">
+        <div class="bb-mp-kv__item bb-mp-kv__item--readonly">
+          <dt>Church ID</dt>
+          <dd><%= p.memberNumber || '—' %></dd>
+        </div>
+        <div class="bb-mp-kv__item bb-mp-kv__item--readonly">
+          <dt>Official branch</dt>
+          <dd><%= branchDisplayName || '—' %></dd>
+        </div>
+      </dl>
+    </article>
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">Name &amp; contact</h2>
+      <div class="bb-mp-form__grid">
+        <div class="bb-mp-field">
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" type="text" maxlength="100" value="<%= p.firstName || '' %>" autocomplete="given-name" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" type="text" maxlength="100" value="<%= p.lastName || '' %>" autocomplete="family-name" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="preferred_name">Preferred name</label>
+          <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= p.preferredName || '' %>" autocomplete="nickname" />
+        </div>
+        <div class="bb-mp-field<%= fe.emailDisplay ? ' is-invalid' : '' %>">
+          <label for="email_display">Email</label>
+          <input id="email_display" name="email_display" type="email" maxlength="254" value="<%= p.emailDisplay || p.emailNormalized || '' %>" autocomplete="email" />
+          <% if (fe.emailDisplay) { %><p class="bb-mp-field__error"><%= fe.emailDisplay %></p><% } %>
+        </div>
+        <%- include('../partials/phone-field', {
+          id: 'phone',
+          label: 'Phone',
+          required: false,
+          defaultCountry: (typeof selectedCountry !== 'undefined' && selectedCountry) || 'ZM',
+          selectedCountry: (typeof selectedCountry !== 'undefined' && selectedCountry) || 'ZM',
+          nationalValue: (typeof nationalValue !== 'undefined' && nationalValue) || '',
+          e164Value: p.phonePendingNormalized || p.phoneNormalized || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          showLegacyHidden: false,
+          hint: 'Changing phone requires verification before it becomes your verified contact.',
+          error: fe.phone || null,
+          placeholder: '97 123 4567'
+        }) %>
+      </div>
+    </article>
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">Personal &amp; family</h2>
+      <div class="bb-mp-form__grid">
+        <div class="bb-mp-field">
+          <label for="date_of_birth">Date of birth</label>
+          <input id="date_of_birth" name="date_of_birth" type="date" value="<%= dobValue(p.dateOfBirth) %>" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="occupation">Occupation</label>
+          <input id="occupation" name="occupation" type="text" maxlength="120" value="<%= p.occupation || '' %>" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="marital_status">Marital status</label>
+          <select id="marital_status" name="marital_status">
+            <option value="">—</option>
+            <% maritalOptions.forEach(function (opt) { %>
+            <option value="<%= opt %>"<%= p.maritalStatus === opt ? ' selected' : '' %>><%= maritalLabel(opt) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-mp-field">
+          <label for="number_of_children">Number of children</label>
+          <input id="number_of_children" name="number_of_children" type="number" min="0" max="50" value="<%= p.numberOfChildren == null ? '' : p.numberOfChildren %>" />
+        </div>
+      </div>
+    </article>
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">Residence</h2>
+      <div class="bb-mp-form__grid">
+        <div class="bb-mp-field">
+          <label for="address_line_1">Address line 1</label>
+          <input id="address_line_1" name="address_line_1" type="text" value="<%= addr.line1 || '' %>" autocomplete="address-line1" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_line_2">Address line 2</label>
+          <input id="address_line_2" name="address_line_2" type="text" value="<%= addr.line2 || '' %>" autocomplete="address-line2" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_city">City</label>
+          <input id="address_city" name="address_city" type="text" value="<%= addr.city || '' %>" autocomplete="address-level2" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_district">District</label>
+          <input id="address_district" name="address_district" type="text" value="<%= addr.district || '' %>" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_province">Province</label>
+          <input id="address_province" name="address_province" type="text" value="<%= addr.province || '' %>" autocomplete="address-level1" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_country_code">Country</label>
+          <input id="address_country_code" name="address_country_code" type="text" maxlength="2" value="<%= addr.countryCode || 'ZM' %>" autocomplete="country" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="address_postal_code">Postal code</label>
+          <input id="address_postal_code" name="address_postal_code" type="text" value="<%= addr.postalCode || '' %>" autocomplete="postal-code" />
+        </div>
+      </div>
+    </article>
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">Next of kin / emergency</h2>
+      <div class="bb-mp-form__grid">
+        <div class="bb-mp-field">
+          <label for="next_of_kin_name">Name</label>
+          <input id="next_of_kin_name" name="next_of_kin_name" type="text" value="<%= kin.name || '' %>" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="next_of_kin_relationship">Relationship</label>
+          <input id="next_of_kin_relationship" name="next_of_kin_relationship" type="text" value="<%= kin.relationship || '' %>" />
+        </div>
+        <div class="bb-mp-field">
+          <label for="next_of_kin_phone">Phone</label>
+          <input id="next_of_kin_phone" name="next_of_kin_phone" type="tel" value="<%= kin.phoneDisplay || kin.phoneNormalized || '' %>" />
+        </div>
+      </div>
+    </article>
+
+    <div class="bb-mp-form__actions">
+      <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Save profile</button>
+      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/profile">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/member-shell-end') %>

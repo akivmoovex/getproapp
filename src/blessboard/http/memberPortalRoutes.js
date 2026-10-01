@@ -21,7 +21,10 @@ const {
 const {
   getMemberPortalProfile,
   updateMemberPortalProfile,
+  startMemberPhoneVerification,
+  completeMemberPhoneVerification,
   STATUS: PORTAL_STATUS,
+  MARITAL_STATUS,
 } = require("../services/memberPortalService");
 const {
   getMemberPortalJourneySummary,
@@ -256,9 +259,13 @@ function mapMemberProfileFieldErrors(reason) {
   }
   const messages = {
     preferred_name: "Enter a preferred name without special markup (max 100 characters).",
-    email_display: "Enter a valid display email, or leave blank to use your sign-in email.",
+    email_display: "Enter a valid email address.",
     phone: "Enter a valid phone number, or leave it blank.",
-    contact_required: "Keep at least one contact method: your sign-in email or a phone number.",
+    contact_required: "Keep at least one contact method: email or phone.",
+    validation: "Please check your profile details and try again.",
+    no_pending_phone: "No phone change is waiting for verification.",
+    otp_failed: "Verification failed. Check the code and try again.",
+    rate_limited: "Too many attempts. Try again later.",
   };
   const msg = messages[code] || "Please check your profile details and try again.";
   if (code === "preferred_name") fieldErrors.preferredName = msg;
@@ -270,6 +277,49 @@ function mapMemberProfileFieldErrors(reason) {
   }
   summaryItems.push(msg);
   return { fieldErrors, summaryItems };
+}
+
+/**
+ * Build domain update payload from member profile edit form.
+ * @param {object} body
+ * @param {{ e164: string|null, fields: object }} phoneResolved
+ */
+function buildSelfProfileUpdateFromBody(body, phoneResolved) {
+  const b = body || {};
+  const childrenRaw = b.number_of_children != null ? String(b.number_of_children).trim() : "";
+  return {
+    firstName: b.first_name,
+    lastName: b.last_name,
+    preferredName: b.preferred_name,
+    dateOfBirth: b.date_of_birth || null,
+    occupation: b.occupation,
+    maritalStatus: b.marital_status || null,
+    numberOfChildren: childrenRaw === "" ? null : Number(childrenRaw),
+    address: {
+      line1: b.address_line_1,
+      line2: b.address_line_2,
+      city: b.address_city,
+      district: b.address_district,
+      province: b.address_province,
+      countryCode: b.address_country_code,
+      postalCode: b.address_postal_code,
+    },
+    nextOfKin: {
+      name: b.next_of_kin_name,
+      relationship: b.next_of_kin_relationship,
+      phone: b.next_of_kin_phone,
+      phoneDisplay: b.next_of_kin_phone,
+    },
+    emailDisplay: b.email_display,
+    phone: phoneResolved && phoneResolved.e164,
+    phoneNormalized: phoneResolved && phoneResolved.e164,
+    phoneDisplay:
+      phoneResolved && phoneResolved.fields
+        ? [phoneResolved.fields.phoneCountry, phoneResolved.fields.phoneNational]
+            .filter(Boolean)
+            .join(" ")
+        : null,
+  };
 }
 
 /**
@@ -391,47 +441,75 @@ function createMemberPortalRouter(deps) {
       userId: req.v5Session.session.userId,
       churchId: tenant.church.id,
       branchId: tenant.primaryBranch.id,
+      branchDisplayName:
+        tenant.primaryBranch.displayName || tenant.primaryBranch.name || null,
+    });
+    if (!loaded.ok || !loaded.profile) {
+      return res.status(403).type("text").send("You do not have member access to this site.");
+    }
+    if (String((req.query && req.query.edit) || "") === "1") {
+      return res.redirect(303, "/member/profile/edit");
+    }
+    const html = renderMemberView(
+      "member/profile.ejs",
+      shellLocals(req, res, "profile", {
+        pageTitle: "My Profile",
+        stitchScreen: "BB-M21",
+        profile: loaded.profile,
+        error: null,
+        saved: String((req.query && req.query.saved) || "") === "1",
+        phoneVerified: String((req.query && req.query.phone) || "") === "verified",
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/member/profile/edit", rejectApex, requireMember, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const loaded = await getMemberPortalProfile(getPool(), {
+      userId: req.v5Session.session.userId,
+      churchId: tenant.church.id,
+      branchId: tenant.primaryBranch.id,
+      branchDisplayName:
+        tenant.primaryBranch.displayName || tenant.primaryBranch.name || null,
     });
     if (!loaded.ok || !loaded.profile) {
       return res.status(403).type("text").send("You do not have member access to this site.");
     }
     const phoneLocals = blessBoardPhoneFieldLocals({
       env,
-      e164Value: loaded.profile.phoneNormalized,
+      e164Value: loaded.profile.phonePendingNormalized || loaded.profile.phoneNormalized,
     });
     const html = renderMemberView(
-      "member/profile.ejs",
+      "member/profile-edit.ejs",
       shellLocals(req, res, "profile", {
+        pageTitle: "Edit My Profile",
+        stitchScreen: "BB-M22",
         loadPhoneField: true,
         profile: loaded.profile,
+        maritalOptions: MARITAL_STATUS,
         ...phoneLocals,
         error: null,
         fieldErrors: {},
         errorSummaryItems: [],
-        saved: String((req.query && req.query.saved) || "") === "1",
-        editMode: String((req.query && req.query.edit) || "") === "1",
       })
     );
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/member/profile", rejectApex, requireMember, async (req, res) => {
+  router.post("/member/profile/edit", rejectApex, requireMember, async (req, res) => {
     const submitted = req.body && req.body[CSRF_FIELD];
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-
     const tenant = resolveTenantForAuthorization(req);
     const body = req.body || {};
-    
-    // Resolve phone from split fields (optional for profile)
     const phoneResolved = resolveBlessBoardFormPhone(body, {
       required: false,
       env,
       allowLegacyPhone: false,
     });
     if (body.phone_national && String(body.phone_national).trim() && !phoneResolved.result.ok) {
-      // Invalid phone entered
       const loaded = await getMemberPortalProfile(getPool(), {
         userId: req.v5Session.session.userId,
         churchId: tenant.church.id,
@@ -443,70 +521,30 @@ function createMemberPortalRouter(deps) {
         nationalValue: phoneResolved.fields.phoneNational,
       });
       const html = renderMemberView(
-        "member/profile.ejs",
+        "member/profile-edit.ejs",
         shellLocals(req, res, "profile", {
+          pageTitle: "Edit My Profile",
+          stitchScreen: "BB-M22",
           loadPhoneField: true,
-          profile: loaded.profile
-            ? {
-                ...loaded.profile,
-                preferredName: body.preferredName !== undefined
-                  ? String(body.preferredName || "")
-                  : loaded.profile.preferredName,
-                emailDisplay: body.emailDisplay !== undefined
-                  ? String(body.emailDisplay || "")
-                  : loaded.profile.emailDisplay,
-                phoneDisplay: "",
-                phoneCountry: phoneResolved.fields.phoneCountry,
-                phoneNational: phoneResolved.fields.phoneNational,
-              }
-            : {
-                preferredName: String(body.preferredName || ""),
-                emailDisplay: String(body.emailDisplay || ""),
-                phoneDisplay: "",
-                phoneCountry: phoneResolved.fields.phoneCountry,
-                phoneNational: phoneResolved.fields.phoneNational,
-                firstName: "",
-                lastName: "",
-                emailNormalized: "",
-                phoneNormalized: null,
-                membershipStatus: "active",
-                isPrimaryBranch: true,
-              },
+          profile: loaded.profile || {},
+          maritalOptions: MARITAL_STATUS,
           ...phoneLocals,
           error: "Enter a valid phone number, or leave it blank.",
           fieldErrors: { phone: "Enter a valid phone number, or leave it blank." },
           errorSummaryItems: ["Enter a valid phone number, or leave it blank."],
-          saved: false,
-          editMode: true,
         })
       );
       return res.status(400).type("html").send(html);
     }
-    
-    const updateInput = {
+
+    const patch = buildSelfProfileUpdateFromBody(body, phoneResolved);
+    const updated = await updateMemberPortalProfile(getPool(), {
       userId: req.v5Session.session.userId,
       churchId: tenant.church.id,
       branchId: tenant.primaryBranch.id,
-      preferredName: body.preferredName,
-      phone: phoneResolved.e164,
-      emailDisplay: body.emailDisplay,
-    };
-    // Forward privileged form fields only when present so the service can reject them.
-    for (const key of [
-      "status",
-      "membershipStatus",
-      "firstName",
-      "lastName",
-      "emailNormalized",
-      "email",
-      "role",
-      "roles",
-    ]) {
-      if (Object.prototype.hasOwnProperty.call(body, key)) {
-        updateInput[key] = body[key];
-      }
-    }
-    const updated = await updateMemberPortalProfile(getPool(), updateInput);
+      organizationId: tenant.organization && tenant.organization.id,
+      ...patch,
+    });
 
     if (!updated.ok) {
       if (updated.status === PORTAL_STATUS.INVALID_INPUT) {
@@ -515,7 +553,7 @@ function createMemberPortalRouter(deps) {
           churchId: tenant.church.id,
           branchId: tenant.primaryBranch.id,
         });
-        const mapped = mapMemberProfileFieldErrors(updated.reason);
+        const mapped = mapMemberProfileFieldErrors(updated.detail || updated.reason);
         const phoneLocals = blessBoardPhoneFieldLocals({
           env,
           selectedCountry: phoneResolved.fields.phoneCountry,
@@ -523,46 +561,17 @@ function createMemberPortalRouter(deps) {
           e164Value: phoneResolved.e164,
         });
         const html = renderMemberView(
-          "member/profile.ejs",
+          "member/profile-edit.ejs",
           shellLocals(req, res, "profile", {
+            pageTitle: "Edit My Profile",
+            stitchScreen: "BB-M22",
             loadPhoneField: true,
-            profile: loaded.profile
-              ? {
-                  ...loaded.profile,
-                  preferredName:
-                    body.preferredName !== undefined
-                      ? String(body.preferredName || "")
-                      : loaded.profile.preferredName,
-                  emailDisplay:
-                    body.emailDisplay !== undefined
-                      ? String(body.emailDisplay || "")
-                      : loaded.profile.emailDisplay,
-                  phoneDisplay:
-                    body.phone !== undefined
-                      ? String(body.phone || "")
-                      : loaded.profile.phoneDisplay,
-                  phoneCountry: phoneResolved.fields.phoneCountry,
-                  phoneNational: phoneResolved.fields.phoneNational,
-                }
-              : {
-                  preferredName: String(body.preferredName || ""),
-                  emailDisplay: String(body.emailDisplay || ""),
-                  phoneDisplay: String(body.phone || ""),
-                  phoneCountry: phoneResolved.fields.phoneCountry,
-                  phoneNational: phoneResolved.fields.phoneNational,
-                  firstName: "",
-                  lastName: "",
-                  emailNormalized: "",
-                  phoneNormalized: null,
-                  membershipStatus: "active",
-                  isPrimaryBranch: true,
-                },
+            profile: Object.assign({}, loaded.profile || {}, patch),
+            maritalOptions: MARITAL_STATUS,
             ...phoneLocals,
-            error: mapped.summaryItems[0] || "Please check your profile details and try again.",
+            error: mapped.summaryItems[0] || "Please check your profile details.",
             fieldErrors: mapped.fieldErrors,
             errorSummaryItems: mapped.summaryItems,
-            saved: false,
-            editMode: true,
           })
         );
         return res.status(400).type("html").send(html);
@@ -577,7 +586,130 @@ function createMemberPortalRouter(deps) {
       return res.status(503).type("text").send("Profile could not be saved.");
     }
 
+    if (updated.phoneVerificationRequired) {
+      return res.redirect(303, "/member/profile/phone-verify?started=1");
+    }
     return res.redirect(303, "/member/profile?saved=1");
+  });
+
+  router.post("/member/profile", rejectApex, requireMember, (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    // Legacy alias: do not 307-preserve POST (would bypass clear CSRF failure mode).
+    return res.redirect(303, "/member/profile/edit");
+  });
+
+  router.get("/member/profile/phone-verify", rejectApex, requireMember, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const loaded = await getMemberPortalProfile(getPool(), {
+      userId: req.v5Session.session.userId,
+      churchId: tenant.church.id,
+      branchId: tenant.primaryBranch.id,
+    });
+    if (!loaded.ok || !loaded.profile) {
+      return res.status(403).type("text").send("You do not have member access to this site.");
+    }
+    if (!loaded.profile.phonePendingNormalized) {
+      return res.redirect(303, "/member/profile/edit");
+    }
+
+    let challengeId = null;
+    let testCode = null;
+    let error = null;
+    const shouldSend =
+      String((req.query && req.query.started) || "") === "1" ||
+      String((req.query && req.query.send) || "") === "1";
+    if (shouldSend) {
+      const started = await startMemberPhoneVerification(
+        getPool(),
+        {
+          userId: req.v5Session.session.userId,
+          churchId: tenant.church.id,
+          branchId: tenant.primaryBranch.id,
+          organizationId: tenant.organization && tenant.organization.id,
+          requestIp: req.ip,
+        },
+        env
+      );
+      if (started.ok) {
+        challengeId =
+          started.challenge && (started.challenge.id || started.challenge.verificationId);
+        testCode = started.testCode || null;
+      } else {
+        error =
+          started.status === PORTAL_STATUS.RATE_LIMITED
+            ? "Too many attempts. Try again later."
+            : "Could not send a verification code. Try again.";
+      }
+    }
+
+    const html = renderMemberView(
+      "member/profile-phone-verify.ejs",
+      shellLocals(req, res, "profile", {
+        pageTitle: "Verify New Phone",
+        stitchScreen: "BB-M23",
+        profile: loaded.profile,
+        challengeId,
+        testCode,
+        error,
+        saved: false,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/member/profile/phone-verify", rejectApex, requireMember, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const tenant = resolveTenantForAuthorization(req);
+    const body = req.body || {};
+
+    if (String(body.action || "") === "resend") {
+      return res.redirect(303, "/member/profile/phone-verify?send=1");
+    }
+
+    const completed = await completeMemberPhoneVerification(
+      getPool(),
+      {
+        userId: req.v5Session.session.userId,
+        churchId: tenant.church.id,
+        branchId: tenant.primaryBranch.id,
+        organizationId: tenant.organization && tenant.organization.id,
+        verificationId: body.verification_id,
+        code: body.code,
+      },
+      env
+    );
+
+    if (!completed.ok) {
+      const loaded = await getMemberPortalProfile(getPool(), {
+        userId: req.v5Session.session.userId,
+        churchId: tenant.church.id,
+        branchId: tenant.primaryBranch.id,
+      });
+      const html = renderMemberView(
+        "member/profile-phone-verify.ejs",
+        shellLocals(req, res, "profile", {
+          pageTitle: "Verify New Phone",
+          stitchScreen: "BB-M23",
+          profile: loaded.profile || {},
+          challengeId: body.verification_id || null,
+          testCode: null,
+          error:
+            completed.status === PORTAL_STATUS.RATE_LIMITED
+              ? "Too many attempts. Try again later."
+              : "Verification failed. Check the code and try again.",
+          saved: false,
+        })
+      );
+      return res.status(400).type("html").send(html);
+    }
+
+    return res.redirect(303, "/member/profile?saved=1&phone=verified");
   });
 
   router.post("/member/logout", rejectApex, async (req, res) => {

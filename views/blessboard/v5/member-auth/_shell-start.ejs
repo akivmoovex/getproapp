@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title><%= typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : 'Member Access' %> · BlessBoard</title>
+  <%- include('../partials/head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=v204-p2-1" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=v204-p2-1" />
+  <link rel="stylesheet" href="/blessboard/v5/member-auth.css?v=v204-p2-1" />
+  <link rel="stylesheet" href="/platform/phone-field.css?v=bb-phone-1" />
+</head>
+<body
+  class="bb-auth-body bb-auth-login bb-v204-member-auth<%= typeof bodyClass !== 'undefined' && bodyClass ? ' ' + bodyClass : '' %>"
+  data-product="blessboard"
+  data-bb-shell="member-auth"
+  data-bb-product="blessboard-v5"
+  data-bb-stitch-v204="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : '' %>"
+  data-bb-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : '' %>"
+  data-bb-page="<%= typeof stitchScreen !== 'undefined' && stitchScreen ? stitchScreen : 'member-auth' %>"
+  <% if (typeof errorState !== 'undefined' && errorState) { %>data-bb-auth-error="<%= errorState %>"<% } %>
+>
+  <a class="bb-auth-skip" href="#bb-member-auth-main">Skip to form</a>
+  <div class="bb-auth-layout">
+    <aside class="bb-auth-panel" aria-hidden="true">
+      <div class="bb-auth-panel__inner">
+        <p class="bb-auth-panel__eyebrow">Member portal</p>
+        <p class="bb-auth-panel__title"><%= typeof churchName !== 'undefined' && churchName ? churchName : 'Your church' %></p>
+        <p class="bb-auth-panel__lead">Sign in with your Church ID. Membership is verified exactly — we never guess identity from similar names or phones.</p>
+      </div>
+    </aside>
+    <main class="bb-auth-main" id="bb-member-auth-main">
+      <header class="bb-auth-main__header">
+        <a class="bb-auth-brand" href="/">
+          <span class="bb-platform-brand__lockup">
+            <span class="bb-auth-brand__name">BlessBoard</span>
+            <%- include('../partials/platform-brand-subtitle') %>
+          </span>
+        </a>
+        <a class="bb-auth-main__header-link" href="<%= typeof loginHref !== 'undefined' && loginHref ? loginHref : '/member/login' %>">Sign in</a>
+      </header>
+      <div class="bb-auth-main__body">
+        <div class="bb-auth-card bb-auth-card--login">

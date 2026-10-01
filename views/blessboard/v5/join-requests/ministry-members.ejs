@@ -1,0 +1,125 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var ministryRow = typeof ministry !== 'undefined' && ministry ? ministry : null;
+  var activeRows = Array.isArray(active) ? active : [];
+  var pendingMem = Array.isArray(pendingMemberships) ? pendingMemberships : [];
+  var pendingReqs = Array.isArray(pending) ? pending : [];
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  function memberLabel(m) {
+    if (!m) return 'Member';
+    if (m.member && m.member.displayName) return m.member.displayName;
+    return m.memberId || 'Member';
+  }
+  function formatJoined(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
+
+<section
+  class="bb-v204-r04"
+  data-bb-stitch-v204="BB-R04"
+  data-bb-screen="BB-R04"
+  data-bb-stitch-id="fe42f3a5c09146738394018a7b78f6bf"
+  aria-label="Ministry Members"
+>
+  <%- include('../partials/v204/page-header', {
+    title: (ministryRow && ministryRow.name ? ministryRow.name : 'Ministry') + ' — Member Management',
+    subtitle: (ministryRow && ministryRow.summary) || 'Sanctuary roster & pending join requests',
+    breadcrumbsHtml: '<a href="/branch-admin/join-requests">Requests Inbox</a> <span aria-hidden="true">›</span> <span>Member Roster</span>',
+    actionsHtml: '<a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/join-requests?status=pending">View in Parish Requests Queue →</a>'
+  }) %>
+
+  <div class="bb-v204-r04__stats" data-bb-r04-stats="1">
+    <div class="bb-v204-r04__stat">
+      <p class="bb-v204-r04__stat-label">Active Members</p>
+      <p class="bb-v204-r04__stat-value"><%= activeRows.length %></p>
+      <p class="bb-v204-r04__muted">Confirmed in service</p>
+    </div>
+    <div class="bb-v204-r04__stat">
+      <p class="bb-v204-r04__stat-label">Pending Requests</p>
+      <p class="bb-v204-r04__stat-value"><%= pendingReqs.length || pendingMem.length %></p>
+      <p class="bb-v204-r04__muted">Action Required</p>
+    </div>
+    <div class="bb-v204-r04__stat">
+      <p class="bb-v204-r04__stat-label">Branch</p>
+      <p class="bb-v204-r04__stat-value bb-v204-r04__stat-value--sm"><%= branchLabel %></p>
+    </div>
+  </div>
+
+  <section class="bb-v204-r04__section" data-bb-r04-pending="1">
+    <div class="bb-v204-r04__section-head">
+      <h2>Pending Ministry Requests</h2>
+      <p>(Requires ministry leader or pastoral endorsement)</p>
+    </div>
+    <% if (!pendingReqs.length) { %>
+    <%- include('../partials/v204/empty-state', {
+      title: 'No pending requests',
+      body: 'New join requests for this ministry will appear here.'
+    }) %>
+    <% } else { %>
+    <ul class="bb-v204-r04__pending-list">
+      <% pendingReqs.forEach(function (row) { %>
+      <li class="bb-v204-r04__pending-item">
+        <div>
+          <p class="bb-v204-r04__name"><%= row.memberName || 'Member' %></p>
+          <p class="bb-v204-r04__muted"><%= row.memberNumber || '' %> · <%= row.trackingId %></p>
+          <% if (row.message) { %><p class="bb-v204-r04__msg"><%= row.message %></p><% } %>
+        </div>
+        <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="/branch-admin/join-requests/<%= row.id %>">Review Pending Request</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-v204-r04__section" data-bb-r04-members="1">
+    <div class="bb-v204-r04__section-head">
+      <h2>Current Members</h2>
+      <p>Preserving attendance integrity V2.04</p>
+    </div>
+    <div class="bb-v204-r04__table-wrap">
+      <table class="bb-v204-r04__table">
+        <thead>
+          <tr>
+            <th scope="col">Member Identity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Joined Ministry</th>
+            <th scope="col">Row Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!activeRows.length) { %>
+          <tr>
+            <td colspan="4">
+              <%- include('../partials/v204/empty-state', {
+                title: 'No active members yet',
+                body: 'Approved join requests create ministry relationships here.'
+              }) %>
+            </td>
+          </tr>
+          <% } %>
+          <% activeRows.forEach(function (m) { %>
+          <tr>
+            <td><%= memberLabel(m) %></td>
+            <td>
+              <%- include('../partials/v204/status-chip', { label: 'Active', tone: 'success' }) %>
+            </td>
+            <td><%= formatJoined(m.joinedAt || m.createdAt) %></td>
+            <td>
+              <% if (m.memberId) { %>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/members/<%= m.memberId %>">View</a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p class="bb-v204-r04__muted">Showing <%= activeRows.length %> registered ministry members. Ministry roster changes reflect immediately in attendance sessions.</p>
+  </section>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

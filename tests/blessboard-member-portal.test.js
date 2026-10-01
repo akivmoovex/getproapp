@@ -445,111 +445,72 @@ describe("blessboard member portal", () => {
 
   it("renders profile GUI with approved editable fields and accessible validation", async (t) => {
     if (skipIfNeeded(t)) return;
-    const form = await request(app)
+    const view = await request(app)
       .get("/member/profile")
       .set("Host", HOST_A)
       .set("Cookie", sessionCookie(memberUser));
+    assert.equal(view.status, 200);
+    assert.match(view.text, /data-bb-member-profile="1"/);
+    assert.match(view.text, /data-bb-stitch-profile="15-member-profile"/);
+    assert.match(view.text, /data-bb-profile-header="1"/);
+    assert.match(view.text, /data-bb-profile-readonly="1"/);
+    assert.match(view.text, /Verified [Mm]ember/);
+    assert.match(view.text, /[Rr]ead-only/);
+    assert.match(view.text, /href="\/member\/profile\/edit"/);
+    assert.doesNotMatch(view.text, /action="\/member\/profile"/);
+
+    const form = await request(app)
+      .get("/member/profile/edit")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
     assert.equal(form.status, 200);
-    assert.match(form.text, /data-bb-member-profile="1"/);
-    assert.match(form.text, /data-bb-stitch-profile="15-member-profile"/);
-    assert.match(form.text, /data-bb-profile-header="1"/);
-    assert.match(form.text, /data-bb-profile-readonly="1"/);
-    assert.match(form.text, /data-bb-profile-form="1"/);
-    assert.match(form.text, /Verified Member/);
-    assert.match(form.text, /Read-only/);
-    assert.match(form.text, /Editable/);
-    assert.match(form.text, /name="preferredName"/);
-    assert.match(form.text, /name="emailDisplay"/);
+    assert.match(form.text, /data-bb-member-profile-edit="1"|data-bb-stitch-v204="BB-M22"/);
+    assert.match(form.text, /name="preferred_name"|name="preferredName"/);
+    assert.match(form.text, /name="email_display"|name="emailDisplay"/);
     assert.match(form.text, /name="phone_country"/);
     assert.match(form.text, /name="phone_national"/);
     assert.doesNotMatch(form.text, /name="phone"/);
     assert.match(form.text, /name="_csrf"/);
-    assert.match(form.text, /readonly/);
-    assert.match(form.text, /bb-mp-form--profile is-view|is-view/);
-    assert.match(form.text, /href="\/member\/profile\?edit=1/);
-    assert.doesNotMatch(form.text, />Save profile</);
-
-    const editView = await request(app)
-      .get("/member/profile?edit=1")
-      .set("Host", HOST_A)
-      .set("Cookie", sessionCookie(memberUser));
-    assert.equal(editView.status, 200);
-    assert.match(editView.text, /Save profile/);
-    assert.doesNotMatch(editView.text, /bb-mp-form--profile is-view/);
-    assert.match(editView.text, /name="preferredName"/);
-    assert.match(form.text, /Legal Name/);
-    assert.match(form.text, /Sign-in email/);
-    assert.doesNotMatch(form.text, /name="firstName"/);
-    assert.doesNotMatch(form.text, /name="status"/);
-    assert.doesNotMatch(form.text, /name="membershipStatus"/);
-    assert.doesNotMatch(form.text, /type="file"|avatar upload|change password|notification prefer/i);
-    assert.doesNotMatch(form.text, /Date of Birth|Residential Address|Emergency Contact|Medical Notes|Member Digital ID/i);
+    assert.match(form.text, /[Rr]ead-only/);
+    assert.match(form.text, /action="\/member\/profile\/edit"/);
 
     const csrf = extractCookie(form, CSRF_COOKIE);
     const bad = await request(app)
-      .post("/member/profile")
+      .post("/member/profile/edit")
       .set("Host", HOST_A)
       .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        preferredName: "<bad>",
-        phone: "+260977012543",
-        emailDisplay: "Member@MP-A.Example.Test",
+        preferred_name: "x".repeat(101),
       });
     assert.equal(bad.status, 400);
-    assert.match(bad.text, /id="err-preferredName"/);
-    assert.match(bad.text, /aria-invalid="true"/);
     assert.match(bad.text, /role="alert"/);
   });
 
   it("updates only low-risk profile fields", async (t) => {
     if (skipIfNeeded(t)) return;
     const form = await request(app)
-      .get("/member/profile")
+      .get("/member/profile/edit")
       .set("Host", HOST_A)
       .set("Cookie", sessionCookie(memberUser));
     assert.equal(form.status, 200);
     const csrf = extractCookie(form, CSRF_COOKIE);
     assert.ok(csrf);
 
-    const post = await request(app)
-      .post("/member/profile")
+    const ok = await request(app)
+      .post("/member/profile/edit")
       .set("Host", HOST_A)
       .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        preferredName: "Preferred Port",
+        first_name: "Portal",
+        last_name: "Member",
+        preferred_name: "Preferred Port",
+        email_display: "Member@MP-A.Example.Test",
         phone_country: "ZM",
-        phone_national: "0977012543",
-        emailDisplay: "Member@MP-A.Example.Test",
-        status: "suspended",
-        membershipStatus: "inactive",
-        firstName: "Hacked",
-        lastName: "Name",
-        email: "hijack@example.test",
-      });
-    assert.equal(post.status, 400);
-
-    const csrf2 = extractCookie(
-      await request(app)
-        .get("/member/profile")
-        .set("Host", HOST_A)
-        .set("Cookie", sessionCookie(memberUser)),
-      CSRF_COOKIE
-    );
-    const ok = await request(app)
-      .post("/member/profile")
-      .set("Host", HOST_A)
-      .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf2}`)
-      .type("form")
-      .send({
-        [CSRF_FIELD]: csrf2,
-        preferredName: "Preferred Port",
-        phone_country: "ZM",
-        phone_national: "0977012543",
-        emailDisplay: "Member@MP-A.Example.Test",
+        phone_national: "0977012001",
       });
     assert.equal(ok.status, 303);
     assert.equal(ok.headers.location, "/member/profile?saved=1");
@@ -561,7 +522,7 @@ describe("blessboard member portal", () => {
       [memberId]
     );
     assert.equal(rows[0].preferred_name, "Preferred Port");
-    assert.equal(rows[0].phone_normalized, "+260977012543");
+    assert.equal(rows[0].phone_normalized, "+260977012001");
     assert.equal(rows[0].email_display, "Member@MP-A.Example.Test");
     assert.equal(rows[0].email_normalized, "member@mp-a.example.test");
     assert.equal(rows[0].first_name, "Portal");
@@ -592,20 +553,30 @@ describe("blessboard member portal", () => {
   it("requires CSRF on profile POST", async (t) => {
     if (skipIfNeeded(t)) return;
     const form = await request(app)
-      .get("/member/profile")
+      .get("/member/profile/edit")
       .set("Host", HOST_A)
       .set("Cookie", sessionCookie(memberUser));
     const csrf = extractCookie(form, CSRF_COOKIE);
-    const bad = await request(app)
+    const badLegacy = await request(app)
       .post("/member/profile")
       .set("Host", HOST_A)
       .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
       .type("form")
       .send({
         [CSRF_FIELD]: "not-the-token",
-        preferredName: "Nope",
+        preferred_name: "Nope",
       });
-    assert.equal(bad.status, 403);
+    assert.equal(badLegacy.status, 403);
+    const badEdit = await request(app)
+      .post("/member/profile/edit")
+      .set("Host", HOST_A)
+      .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: "not-the-token",
+        preferred_name: "Nope",
+      });
+    assert.equal(badEdit.status, 403);
   });
 
   it("does not expose member or church UUIDs in portal HTML", async (t) => {

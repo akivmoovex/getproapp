@@ -1,0 +1,63 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value).length === 10 ? value + 'T00:00:00' : value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatTime(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) {
+      var raw = String(value);
+      var m = raw.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : '—';
+    }
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  var titleText = s.title || s.serviceEventLabel || 'Service session';
+%>
+
+<section
+  class="bb-v204-a10"
+  data-bb-stitch-v204="BB-A10"
+  data-bb-screen="BB-A10"
+  data-bb-session-close="1"
+  aria-label="Close Session"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Close Session',
+    subtitle: 'Closing stops normal check-in. You can lock the final session afterward.',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions/' + s.id + '">Session Dashboard</a> <span aria-hidden="true">›</span> <span>Close Session</span>'
+  }) %>
+
+  <% if (error) { %>
+  <div class="bb-v204-a10__error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="bb-v204-a10__card" data-bb-a10-confirm="1">
+    <%- include('../partials/v204/status-chip', { label: 'SESSION OPEN', tone: 'success' }) %>
+    <h2><%= titleText %></h2>
+    <dl class="bb-v204-a10__dl">
+      <div><dt>Branch</dt><dd><%= branchLabel %></dd></div>
+      <div><dt>Date</dt><dd><%= formatDate(s.sessionDate) %></dd></div>
+      <div><dt>Start</dt><dd><%= formatTime(s.startTime) %></dd></div>
+      <div><dt>Late threshold</dt><dd><%= Number(s.lateThresholdMinutes) || 0 %> min</dd></div>
+    </dl>
+    <p>After close, members cannot check in through normal channels. Corrections remain a separate authorized workflow. Locking (next step) protects the final session.</p>
+
+    <form method="post" action="/branch-admin/attendance/sessions/<%= s.id %>/transition" class="bb-v204-a10__actions">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="to_status" value="closed" />
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm Close Session</button>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

@@ -1,0 +1,37 @@
+<%#
+  Shared field + error pattern (product-neutral).
+  Locals:
+    name?, label?, hint?, error?, required?, invalid?,
+    controlHtml (trusted control markup), className?, id?
+%>
+<%
+  var _name = typeof name !== 'undefined' && name ? String(name) : '';
+  var _id = typeof id !== 'undefined' && id ? String(id) : (_name ? ('gp-ops-field-' + _name) : '');
+  var _label = typeof label !== 'undefined' && label ? String(label) : '';
+  var _hint = typeof hint !== 'undefined' && hint ? String(hint) : '';
+  var _error = typeof error !== 'undefined' && error ? String(error) : '';
+  var _invalid = (typeof invalid !== 'undefined' && invalid) || !!_error;
+  var _required = typeof required !== 'undefined' && required;
+  var _cls = 'gp-ops-field' + (_invalid ? ' is-invalid' : '') + (typeof className !== 'undefined' && className ? ' ' + className : '');
+  var _hintId = _id && _hint ? (_id + '-hint') : '';
+  var _errorId = _id && _error ? (_id + '-error') : '';
+%>
+<div class="<%= _cls %>" data-gp-ops="field" <% if (_name) { %>data-gp-ops-field="<%= _name %>"<% } %>>
+  <% if (_label) { %>
+  <label class="gp-ops-field__label" <% if (_id) { %>for="<%= _id %>"<% } %>>
+    <%= _label %>
+    <% if (_required) { %><span class="gp-ops-field__required" aria-hidden="true">*</span><% } %>
+  </label>
+  <% } %>
+  <div class="gp-ops-field__control">
+    <% if (typeof controlHtml !== 'undefined' && controlHtml) { %>
+    <%- controlHtml %>
+    <% } %>
+  </div>
+  <% if (_hint) { %>
+  <p class="gp-ops-field__hint" <% if (_hintId) { %>id="<%= _hintId %>"<% } %>><%= _hint %></p>
+  <% } %>
+  <% if (_error) { %>
+  <p class="gp-ops-field__error" role="alert" <% if (_errorId) { %>id="<%= _errorId %>"<% } %>><%= _error %></p>
+  <% } %>
+</div>

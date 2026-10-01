@@ -1,0 +1,62 @@
+<%#
+  BB-M13 Member Login — Church ID + password (tenant hosts).
+  Locals: csrfToken, churchName, error, errorState, memberNumberValue, activateHref, forgotHref, lostChurchIdHref
+%>
+<%- include('_shell-start', {
+  pageTitle: typeof pageTitle !== 'undefined' ? pageTitle : 'Member Login',
+  stitchScreen: 'BB-M13',
+  churchName: typeof churchName !== 'undefined' ? churchName : '',
+  bodyClass: 'bb-v204-m13',
+  loginHref: '/member/login',
+  errorState: typeof errorState !== 'undefined' ? errorState : null
+}) %>
+
+<div class="bb-auth-card__intro">
+  <p class="bb-auth-step">Member portal · Sign in</p>
+  <h1 class="bb-auth-card__title">Member login</h1>
+  <p class="bb-auth-card__lead">Sign in with your Church ID and password. Membership is verified exactly.</p>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="bb-auth-error bb-auth-error--<%= errorState || 'generic' %>" role="alert" data-bb-auth-error-banner="<%= errorState || 'generic' %>">
+  <p class="bb-auth-error__body"><%= error %></p>
+</div>
+<% } %>
+
+<form class="bb-auth-form" method="post" action="/member/login" novalidate autocomplete="on">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="member_number">Church ID</label>
+    <input
+      class="bb-auth-input bb-auth-input--mono"
+      id="member_number"
+      name="member_number"
+      type="text"
+      autocomplete="username"
+      required
+      spellcheck="false"
+      placeholder="CH-XXXXX"
+      value="<%= typeof memberNumberValue !== 'undefined' && memberNumberValue ? memberNumberValue : '' %>"
+    />
+  </div>
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="password">Password</label>
+    <input class="bb-auth-input" id="password" name="password" type="password" autocomplete="current-password" required />
+  </div>
+  <div class="bb-auth-actions">
+    <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Sign in</button>
+  </div>
+</form>
+
+<p class="bb-auth-footer">
+  <span class="bb-auth-footer__links">
+    <a href="<%= activateHref || '/member/activate' %>">First-time activation</a>
+    <a href="<%= forgotHref || '/member/forgot-password' %>">Forgot password</a>
+  </span>
+</p>
+<p class="bb-auth-footnote">
+  Lost your Church ID? Contact your church administration —
+  <a href="<%= lostChurchIdHref || '/member/forgot-password?lost=1' %>">we cannot look it up automatically</a>.
+</p>
+
+<%- include('_shell-end') %>

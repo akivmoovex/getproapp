@@ -13,10 +13,24 @@ const {
   registerWebsiteAddSectionHandler,
   registerWebsiteFieldRegistrar,
   registerIdentityNormalizers,
+  registerPersonProductAdapter,
   registerPlatformAdminSettingsContrib,
   registerBlessBoardOperationalMediaStorageFactory,
   registerWebsiteAvailabilitySync,
 } = require("../../platform/contracts/productRuntimeRegistry");
+const {
+  PERSON_RELATIONSHIP_KEY,
+  projectPersonDraftFromBlessBoardMember,
+} = require("../../platform/person");
+const {
+  BLESSBOARD_DUPLICATE_POLICY,
+} = require("../../platform/person/duplicate");
+const {
+  presentBlessBoardMatch,
+} = require("../services/blessBoardMemberDuplicateService");
+const {
+  blessBoardStaffMemberAdapter,
+} = require("../services/blessBoardStaffMemberWorkflowAdapter");
 const {
   registerPublicationGovernance,
 } = require("../../platform/website/publicationOrchestrator");
@@ -77,6 +91,16 @@ function registerBlessBoardPlatformContracts() {
   registerIdentityNormalizers(PRODUCT.BLESSBOARD, {
     normalizeEmail,
     normalizePhone: normalizeBlessBoardPhone,
+  });
+
+  // V2.04: declare membership relationship key; do not migrate members here.
+  registerPersonProductAdapter(PRODUCT.BLESSBOARD, {
+    relationshipKeys: [PERSON_RELATIONSHIP_KEY.BB_MEMBERSHIP],
+    defaultRelationshipKey: PERSON_RELATIONSHIP_KEY.BB_MEMBERSHIP,
+    projectPersonDraft: projectPersonDraftFromBlessBoardMember,
+    duplicatePolicy: BLESSBOARD_DUPLICATE_POLICY,
+    presentMatch: presentBlessBoardMatch,
+    staffManagedWorkflow: blessBoardStaffMemberAdapter,
   });
 
   // PC10: BB governance adapter owns HQ/branch/multi-site rules; platform

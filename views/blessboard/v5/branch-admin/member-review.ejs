@@ -1,0 +1,127 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var review = typeof review !== 'undefined' && review ? review : {};
+  var values = review.values || {};
+  var demo = review.demographics || {};
+  var profile = review.profile || {};
+  var kin = (profile.nextOfKin) || {};
+  var address = (profile.address) || {};
+  var draftTok = typeof draftToken !== 'undefined' ? draftToken : '';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var churchIdPreview = review.churchIdPreview || 'Assigned on save';
+  var membershipStatus = review.membershipStatus || 'active';
+  var portalStatus = review.portalAccessStatus || 'not_activated';
+  function membershipLabel(s) {
+    if (s === 'pending') return 'Probationary Member';
+    if (s === 'transferred') return 'Transferred In';
+    return 'Active Member';
+  }
+  function portalLabel(s) {
+    if (s === 'active') return 'Portal Active';
+    if (s === 'blocked') return 'Blocked';
+    return 'NOT ACTIVATED';
+  }
+  var dupPassed = !review.duplicateOverride;
+%>
+
+<section
+  class="bb-v204-m04"
+  data-bb-member-review="1"
+  data-bb-stitch-v204="BB-M04"
+  data-bb-screen="BB-M04"
+  data-bb-stitch-id="6e22944ed9ab450a9ce51370f0acd9e0"
+  aria-label="Review New Member Record"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Review New Member Record',
+    subtitle: 'Confirm administrative details before provisioning Church ID and generating official membership.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/new">Register New Member</a> <span aria-hidden="true">›</span> <span>Review Summary</span>'
+  }) %>
+
+  <p class="bb-v204-m04__step" data-bb-m04-step="1">Step 3 of 3 · Final Verification</p>
+
+  <% if (dupPassed) { %>
+  <div class="bb-v204-m04__dup-ok" role="status" data-bb-m04-dup-passed="1">
+    <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+    <p>Duplicate Check Passed: No conflicting records found for this phone or identity.</p>
+  </div>
+  <% } else { %>
+  <div class="bb-v204-m04__dup-override" role="status" data-bb-m04-dup-override="1">
+    <span class="material-symbols-outlined" aria-hidden="true">person_check</span>
+    <p>Staff confirmed this is a different person after reviewing possible matches. No automatic merge.</p>
+  </div>
+  <% } %>
+
+  <div class="bb-v204-m04__sections">
+    <section class="bb-v204-m02__section" aria-labelledby="bb-m04-identity-creds">
+      <h2 id="bb-m04-identity-creds">1. Church Identity &amp; Credentials</h2>
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= churchIdPreview %></span> <span class="bb-ba-muted">Ready to provision</span></dd></div>
+        <div><dt>Membership status</dt><dd><%- include('../partials/v204/status-chip', { label: membershipLabel(membershipStatus), tone: 'success' }) %></dd></div>
+        <div><dt>Portal Access Status</dt><dd><%- include('../partials/v204/status-chip', { label: portalLabel(portalStatus), tone: 'neutral' }) %></dd></div>
+      </dl>
+      <p class="bb-v204-m04__portal-note">Portal invitations are strictly decoupled and managed via Access tab after creation.</p>
+    </section>
+
+    <section class="bb-v204-m02__section" aria-labelledby="bb-m04-identity">
+      <h2 id="bb-m04-identity">2. Identity</h2>
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Full legal name</dt><dd><%= values.fullName || ((demo.firstName || '') + ' ' + (demo.lastName || '')).trim() || '—' %></dd></div>
+        <div><dt>Preferred name</dt><dd><%= values.preferredName || demo.preferredName || '—' %></dd></div>
+        <div><dt>Gender</dt><dd><%= values.gender || '—' %></dd></div>
+        <div><dt>Date of birth</dt><dd><%= values.dateOfBirth || demo.dateOfBirth || '—' %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-v204-m02__section" aria-labelledby="bb-m04-contact">
+      <h2 id="bb-m04-contact">3. Contact</h2>
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Primary phone</dt><dd><%= demo.phoneDisplay || values.phone || '—' %></dd></div>
+        <div><dt>Email</dt><dd><%= demo.emailDisplay || values.email || '—' %></dd></div>
+        <div><dt>Address</dt><dd><%= address.line1 || values.addressLine1 || '—' %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-v204-m02__section" aria-labelledby="bb-m04-personal">
+      <h2 id="bb-m04-personal">4. Personal &amp; Family</h2>
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Occupation</dt><dd><%= profile.occupation || values.occupation || '—' %></dd></div>
+        <div><dt>Marital status</dt><dd><%= profile.maritalStatus || values.maritalStatus || '—' %></dd></div>
+        <div><dt>Number of children</dt><dd><%= profile.numberOfChildren != null ? profile.numberOfChildren : (values.numberOfChildren || '—') %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-v204-m02__section" aria-labelledby="bb-m04-emergency">
+      <h2 id="bb-m04-emergency">5. Emergency / Next of Kin</h2>
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Full name</dt><dd><%= kin.name || values.nextOfKinName || '—' %></dd></div>
+        <div><dt>Relationship</dt><dd><%= kin.relationship || values.nextOfKinRelationship || '—' %></dd></div>
+        <div><dt>Emergency phone</dt><dd><%= kin.phoneDisplay || values.nextOfKinPhone || '—' %></dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <footer class="bb-v204-m04__actions">
+    <form method="post" action="/branch-admin/members/new/review">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="draft_token" value="<%= draftTok %>" />
+      <input type="hidden" name="action" value="back_edit" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--ghost" data-bb-m04-back="1">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to Edit
+      </button>
+    </form>
+    <form method="post" action="/branch-admin/members/new/review" data-bb-m04-confirm-form="1">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="draft_token" value="<%= draftTok %>" />
+      <input type="hidden" name="action" value="confirm_create" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m04-confirm="1">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        + Confirm &amp; Create Member
+      </button>
+    </form>
+  </footer>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

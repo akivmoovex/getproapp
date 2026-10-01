@@ -13,6 +13,9 @@
   <% if (typeof loadPhoneField !== 'undefined' && loadPhoneField) { %>
   <link rel="stylesheet" href="/platform/phone-field.css?v=bb-phone-1" />
   <% } %>
+  <% if (typeof loadGpOpsAssets !== 'undefined' && loadGpOpsAssets) { %>
+  <link rel="stylesheet" href="/platform/gp-ops-shared.css?v=v204-qa-3" />
+  <% } %>
   <% var loadEngineCss = (typeof loadWebsiteEngineCss !== 'undefined' && loadWebsiteEngineCss)
     || (typeof activeNav !== 'undefined' && (activeNav === 'website' || activeNav === 'content')); %>
   <% if (loadEngineCss) { %>

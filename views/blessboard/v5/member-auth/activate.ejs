@@ -1,0 +1,91 @@
+<%#
+  BB-M14 First-Time Verification — Church ID + full name + phone; email optional.
+%>
+<%- include('_shell-start', {
+  pageTitle: typeof pageTitle !== 'undefined' ? pageTitle : 'First-Time Verification',
+  stitchScreen: 'BB-M14',
+  churchName: typeof churchName !== 'undefined' ? churchName : '',
+  bodyClass: 'bb-v204-m14',
+  loginHref: typeof loginHref !== 'undefined' ? loginHref : '/member/login',
+  errorState: typeof errorState !== 'undefined' ? errorState : null
+}) %>
+<%
+  var v = typeof values !== 'undefined' && values ? values : {};
+%>
+
+<div class="bb-auth-card__intro">
+  <p class="bb-auth-step">Step 1 of 2 · Activation</p>
+  <h1 class="bb-auth-card__title">First-time verification</h1>
+  <p class="bb-auth-card__lead">Confirm your membership with Church ID, full name, and phone. Email is optional.</p>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="bb-auth-error" role="alert" data-bb-auth-error-banner="<%= errorState || 'verification_failed' %>">
+  <p class="bb-auth-error__body"><%= error %></p>
+</div>
+<% } %>
+
+<form class="bb-auth-form" method="post" action="/member/activate" novalidate autocomplete="on">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="member_number">Church ID</label>
+    <input
+      class="bb-auth-input bb-auth-input--mono"
+      id="member_number"
+      name="member_number"
+      type="text"
+      required
+      autocomplete="username"
+      spellcheck="false"
+      placeholder="CH-XXXXX"
+      value="<%= v.memberNumber || '' %>"
+    />
+  </div>
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="full_name">Full name</label>
+    <input
+      class="bb-auth-input"
+      id="full_name"
+      name="full_name"
+      type="text"
+      required
+      autocomplete="name"
+      value="<%= v.fullName || '' %>"
+    />
+  </div>
+  <%- include('../partials/phone-field', {
+    id: 'phone',
+    label: 'Phone',
+    required: true,
+    defaultCountry: (typeof selectedCountry !== 'undefined' && selectedCountry) || 'ZM',
+    selectedCountry: (typeof selectedCountry !== 'undefined' && selectedCountry) || 'ZM',
+    nationalValue: (typeof nationalValue !== 'undefined' && nationalValue) || '',
+    e164Value: '',
+    countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || [],
+    showLegacyHidden: false,
+    hint: 'Must match the phone on your membership record exactly.',
+    error: null,
+    placeholder: '97 123 4567'
+  }) %>
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="email">Email <span class="bb-auth-optional">(optional)</span></label>
+    <input
+      class="bb-auth-input"
+      id="email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      value="<%= v.email || '' %>"
+    />
+  </div>
+  <div class="bb-auth-actions">
+    <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Continue</button>
+  </div>
+</form>
+
+<p class="bb-auth-footer">
+  <a href="<%= loginHref || '/member/login' %>">Already activated? Sign in</a>
+</p>
+<p class="bb-auth-footnote">If we cannot verify your membership, contact your church administration. We will not create a membership from this screen.</p>
+
+<%- include('_shell-end') %>

@@ -1,0 +1,40 @@
+<%#
+  BB-M16 Portal Activated (also reused after password reset success)
+%>
+<%- include('_shell-start', {
+  pageTitle: typeof pageTitle !== 'undefined' ? pageTitle : 'Portal Activated',
+  stitchScreen: 'BB-M16',
+  churchName: typeof churchName !== 'undefined' ? churchName : '',
+  bodyClass: 'bb-v204-m16',
+  loginHref: typeof loginHref !== 'undefined' ? loginHref : '/member/login'
+}) %>
+
+<div class="bb-auth-card__intro">
+  <p class="bb-auth-step">Activation complete</p>
+  <h1 class="bb-auth-card__title"><%= typeof successTitle !== 'undefined' && successTitle ? successTitle : 'Portal access activated' %></h1>
+  <p class="bb-auth-card__lead">
+    <%= typeof successBody !== 'undefined' && successBody
+      ? successBody
+      : 'Your member portal is ready. Sign in with your Church ID and the password you just created.' %>
+  </p>
+</div>
+
+<div class="bb-auth-success bb-v204-auth-success" role="status" data-bb-portal-activated="1">
+  <p class="bb-auth-success__title">You’re all set</p>
+  <p class="bb-auth-success__body">
+    Permanent member identifier is ready for portal sign-in.
+  </p>
+  <div class="bb-auth-id-card">
+    <p class="bb-auth-id-card__label">Church ID</p>
+    <p class="bb-auth-id-card__value"><%= memberNumber || '—' %></p>
+  </div>
+  <% if (typeof churchName !== 'undefined' && churchName) { %>
+  <p class="bb-auth-success__body" style="margin-top:0.75rem"><%= churchName %></p>
+  <% } %>
+</div>
+
+<div class="bb-auth-actions">
+  <a class="bb-auth-btn bb-auth-btn--primary" href="<%= loginHref || '/member/login' %>">Continue to sign in</a>
+</div>
+
+<%- include('_shell-end') %>

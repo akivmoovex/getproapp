@@ -1,0 +1,139 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var v = typeof values !== 'undefined' && values ? values : {};
+  var errs = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  var opts = Array.isArray(serviceEventOptions) ? serviceEventOptions : [];
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+%>
+
+<section
+  class="bb-v204-a02"
+  data-bb-stitch-v204="BB-A02"
+  data-bb-screen="BB-A02"
+  data-bb-stitch-id="d4b24ec7d4f944afa5ec89bcf0983391"
+  aria-label="Create Attendance Session"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Create Attendance Session',
+    subtitle: 'Specify parish jurisdiction and ecclesiastical event categorization.',
+    badgeHtml: '<span class="gp-ops-badge gp-ops-badge--warning"><span class="gp-ops-badge__dot" aria-hidden="true"></span>DRAFT</span>',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance">Attendance</a> <span aria-hidden="true">›</span> <a href="/branch-admin/attendance/sessions">Sessions</a> <span aria-hidden="true">›</span> <span>New Session</span>'
+  }) %>
+
+  <% if (error) { %>
+  <div class="bb-v204-a02__error" role="alert"><%= error %></div>
+  <% } %>
+
+  <form
+    method="post"
+    action="/branch-admin/attendance/sessions/new"
+    class="bb-v204-a02__form"
+    data-bb-a02-form="1"
+    novalidate
+  >
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+
+    <section class="bb-v204-a02__section" data-bb-a02-section="context" aria-labelledby="bb-a02-context-heading">
+      <header class="bb-v204-a02__section-head">
+        <h2 id="bb-a02-context-heading">Session &amp; Gathering Context</h2>
+        <p>Specify parish jurisdiction and ecclesiastical event categorization.</p>
+      </header>
+
+      <%- include('../partials/v204/field', {
+        name: 'branch_display',
+        label: 'Parish Sanctuary / Branch Campus',
+        hint: 'Sets physical geofence boundaries and kiosk routing protocols.',
+        required: true,
+        controlHtml: '<input class="bb-ba-input" id="gp-ops-field-branch_display" type="text" value="' + esc(branchLabel) + '" readonly disabled />'
+      }) %>
+
+      <%- include('../partials/v204/field', {
+        name: 'service_event_ref',
+        label: 'Service / Gathering Event Type',
+        hint: 'Classifies statistical reports in the diocesan ledger.',
+        required: true,
+        error: errs.service_event_ref || null,
+        controlHtml: (function () {
+          var html = '<select class="bb-ba-input" id="gp-ops-field-service_event_ref" name="service_event_ref" required>';
+          opts.forEach(function (o) {
+            var sel = String(v.service_event_ref || '') === String(o.value) ? ' selected' : '';
+            html += '<option value="' + esc(o.value) + '"' + sel + '>' + esc(o.label) + '</option>';
+          });
+          html += '</select>';
+          return html;
+        })()
+      }) %>
+
+      <%- include('../partials/v204/field', {
+        name: 'title',
+        label: 'Service Title / Custom Gathering Notes',
+        hint: 'Optional Bulletin Label',
+        controlHtml: '<input class="bb-ba-input" id="gp-ops-field-title" type="text" name="title" maxlength="200" value="' + esc(v.title || '') + '" placeholder="Optional Bulletin Label" />'
+      }) %>
+    </section>
+
+    <section class="bb-v204-a02__section" data-bb-a02-section="schedule" aria-labelledby="bb-a02-schedule-heading">
+      <header class="bb-v204-a02__section-head">
+        <h2 id="bb-a02-schedule-heading">Schedule &amp; Lateness Policies</h2>
+        <p>Establish operational windows and automatic member engagement tagging rules.</p>
+      </header>
+
+      <div class="bb-v204-a02__grid">
+        <%- include('../partials/v204/field', {
+          name: 'session_date',
+          label: 'Service Date',
+          hint: 'Liturgical calendar synched.',
+          required: true,
+          error: errs.session_date || null,
+          controlHtml: '<input class="bb-ba-input" id="gp-ops-field-session_date" type="date" name="session_date" required value="' + esc(v.session_date || '') + '" />'
+        }) %>
+
+        <%- include('../partials/v204/field', {
+          name: 'start_time',
+          label: 'Scheduled Start Time',
+          hint: 'Processional bell sounds. Check-ins commence when session is OPEN.',
+          required: true,
+          error: errs.start_time || null,
+          controlHtml: '<input class="bb-ba-input" id="gp-ops-field-start_time" type="time" name="start_time" required value="' + esc(v.start_time || '') + '" />'
+        }) %>
+
+        <%- include('../partials/v204/field', {
+          name: 'late_threshold_minutes',
+          label: 'Late Arrival Threshold',
+          hint: 'Minutes after start before late flags apply.',
+          required: true,
+          error: errs.late_threshold_minutes || null,
+          controlHtml: '<input class="bb-ba-input" id="gp-ops-field-late_threshold_minutes" type="number" name="late_threshold_minutes" min="0" max="240" required value="' + esc(v.late_threshold_minutes || '15') + '" />'
+        }) %>
+      </div>
+
+      <p class="bb-v204-a02__info" data-bb-a02-late-info="1">
+        <strong>Automatic Lateness Classification:</strong>
+        Members checking in after the threshold are recorded as late — check-in is not rejected.
+      </p>
+
+      <%- include('../partials/v204/field', {
+        name: 'notes',
+        label: 'Internal notes',
+        controlHtml: '<textarea class="bb-ba-input" id="gp-ops-field-notes" name="notes" rows="3" maxlength="2000">' + esc(v.notes || '') + '</textarea>'
+      }) %>
+    </section>
+
+    <div class="bb-v204-a02__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions">Cancel</a>
+      <button type="submit" name="action" value="save_draft" class="bb-ba-btn bb-ba-btn--secondary">Save as Draft</button>
+      <button type="submit" name="action" value="save_open" class="bb-ba-btn bb-ba-btn--primary">Save &amp; Open Session Now</button>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

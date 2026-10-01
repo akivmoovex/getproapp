@@ -574,7 +574,7 @@ describe("V8 BlessBoard membership workflow", () => {
     );
     assert.match(branchMembers, /data-bb-screen-desktop="BB18-D"/);
     assert.match(branchMembers, /data-bb-screen-mobile="BB18-M"/);
-    assert.match(branchMembers, /data-bb-stitch-id-mobile="108d56c422634faea23a285fde9f9cd5"/);
+    assert.match(branchMembers, /data-bb-stitch-id(?:-desktop)?="2b8333d5e64242bc9cde22dac5aacc3c"/);
     assert.match(branchMembers, /data-bb-members-overview="1"/);
     assert.match(branchMembers, /data-bb-members-metrics="1"/);
     assert.match(branchMembers, /data-bb-members-queue="1"/);

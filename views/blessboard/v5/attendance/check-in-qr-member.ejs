@@ -1,0 +1,55 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var v = typeof values !== 'undefined' && values ? values : {};
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var canCheck = typeof sessionOpen !== 'undefined' ? !!sessionOpen : false;
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : 'Branch';
+%>
+
+<section
+  class="bb-v204-a06"
+  data-bb-stitch-v204="BB-A06"
+  data-bb-screen="BB-A06"
+  aria-label="Member QR Check-In"
+>
+  <header class="bb-v204-a06__top">
+    <p class="bb-v204-a06__eyebrow">Member QR result</p>
+    <h1 class="bb-v204-a06__heading">Check-in confirmation</h1>
+    <p class="bb-v204-a06__sub"><%= s.title || 'Session' %> · <%= branchLabel %></p>
+  </header>
+
+  <%- include('partials/check-in-result', { result: typeof result !== 'undefined' ? result : null, compact: true }) %>
+
+  <% if (!canCheck) { %>
+  <div class="bb-v204-a06__blocked" role="alert">Session is not open.</div>
+  <% } %>
+
+  <form method="post" action="/branch-admin/attendance/sessions/<%= s.id %>/qr/check-in" class="bb-v204-a06__form" data-bb-a06-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+    <p class="bb-v204-a06__form-label">Redeem opaque QR token</p>
+    <%- include('../partials/v204/field', {
+      name: 'qr_token',
+      label: 'QR token',
+      hint: 'Opaque signed token only — never paste Church ID or phone.',
+      required: true,
+      controlHtml: '<input class="bb-ba-input bb-v204-a06__input" id="gp-ops-field-qr_token" name="qr_token" type="text" required autocomplete="off" inputmode="text" value="' + String(v.qr_token || '').replace(/"/g, '&quot;') + '" />'
+    }) %>
+    <%- include('../partials/v204/field', {
+      name: 'member_id',
+      label: 'Member ID (session tokens)',
+      hint: 'Member-claim tokens resolve member server-side; session tokens need member UUID.',
+      controlHtml: '<input class="bb-ba-input bb-v204-a06__input" id="gp-ops-field-member_id" name="member_id" type="text" autocomplete="off" value="' + String(v.member_id || '').replace(/"/g, '&quot;') + '" />'
+    }) %>
+    <button type="submit" class="bb-ba-btn bb-ba-btn--primary bb-v204-a06__submit" <%= !canCheck ? 'disabled' : '' %>>Redeem &amp; Check In</button>
+  </form>
+
+  <nav class="bb-v204-a04__modes">
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-in">Manual</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr">Display QR</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/peak">Peak</a>
+  </nav>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

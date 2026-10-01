@@ -3,8 +3,15 @@
   Include once before shell-specific CSS. Locals: designSystemVersion (optional).
   Platform color system loads first so product tokens can refine legacy aliases.
 %>
-<% var _dsV = typeof designSystemVersion !== 'undefined' && designSystemVersion ? designSystemVersion : 'v204-qa-3'; %>
+<% var _dsV = typeof designSystemVersion !== 'undefined' && designSystemVersion ? designSystemVersion : 'v204-p1-1'; %>
 <%- include('../../../platform/partials/head-platform-colors') %>
-<%- include('../../../platform/partials/head-fonts', { fontFamily: 'hanken', iconFont: 'subset', fontAssetVersion: _dsV }) %>
+<%- include('../../../platform/partials/head-fonts', { fontFamily: 'hanken-inter', iconFont: 'subset', fontAssetVersion: _dsV }) %>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+  rel="stylesheet"
+/>
 <link rel="stylesheet" href="/blessboard/v5/design-tokens.css?v=<%= _dsV %>" />
 <link rel="stylesheet" href="/blessboard/v5/design-system.css?v=<%= _dsV %>" />
+<link rel="stylesheet" href="/blessboard/v5/v204-foundation.css?v=<%= _dsV %>" />

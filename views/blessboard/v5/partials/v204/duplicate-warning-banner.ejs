@@ -1,0 +1,20 @@
+<%#
+  BB V2.04 duplicate-prevention warning banner.
+  Platform banner is product-neutral; BB supplies Church ID wording here only.
+  Locals: title?, body?, metaHtml?, className?
+%>
+<%
+  var _title = typeof title !== 'undefined' && title
+    ? title
+    : 'Duplicate prevention';
+  var _body = typeof body !== 'undefined' && body
+    ? body
+    : 'A person cannot have multiple Church IDs in this church. Verify matches before creating a new membership record.';
+%>
+<%- include('../../../../platform/partials/gp-ops-banner', {
+  tone: 'warning',
+  title: _title,
+  body: _body,
+  metaHtml: typeof metaHtml !== 'undefined' ? metaHtml : undefined,
+  className: typeof className !== 'undefined' ? className : undefined
+}) %>

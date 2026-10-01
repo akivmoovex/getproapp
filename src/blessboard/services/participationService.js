@@ -203,7 +203,8 @@ async function joinMinistry(db, input) {
       if (existing) {
         return { ok: false, status: STATUS.CONFLICT, membership: existing, reason: "duplicate" };
       }
-      const nextStatus = ministry.joinPolicy === "open" ? "active" : "pending";
+      // V2.04 M24/M25: Request to Join is always PENDING — never auto-add.
+      const nextStatus = "pending";
       const membership = await repo.insertMinistryMembership(client, {
         churchId,
         branchId,
@@ -211,7 +212,7 @@ async function joinMinistry(db, input) {
         memberId,
         status: nextStatus,
         message: msg.value,
-        joinedAt: nextStatus === "active" ? new Date().toISOString() : null,
+        joinedAt: null,
         assignmentSource: "self_join",
       });
       return { ok: true, status: STATUS.OK, membership };

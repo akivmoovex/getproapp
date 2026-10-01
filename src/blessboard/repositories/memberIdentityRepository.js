@@ -11,6 +11,7 @@ function mapMember(row) {
     id: row.id,
     churchId: row.church_id,
     userId: row.user_id,
+    platformPersonId: row.platform_person_id || null,
     firstName: row.first_name,
     lastName: row.last_name,
     preferredName: row.preferred_name,
@@ -18,7 +19,32 @@ function mapMember(row) {
     emailDisplay: row.email_display,
     phoneNormalized: row.phone_normalized,
     phoneDisplay: row.phone_display,
+    memberNumber: row.member_number || null,
     status: row.status,
+    portalAccessStatus: row.portal_access_status || "not_activated",
+    dateOfBirth: row.date_of_birth || null,
+    occupation: row.occupation || null,
+    maritalStatus: row.marital_status || null,
+    numberOfChildren:
+      row.number_of_children == null ? null : Number(row.number_of_children),
+    address: {
+      line1: row.address_line_1 || null,
+      line2: row.address_line_2 || null,
+      city: row.address_city || null,
+      district: row.address_district || null,
+      province: row.address_province || null,
+      countryCode: row.address_country_code || null,
+      postalCode: row.address_postal_code || null,
+    },
+    nextOfKin: {
+      name: row.next_of_kin_name || null,
+      relationship: row.next_of_kin_relationship || null,
+      phoneDisplay: row.next_of_kin_phone_display || null,
+      phoneNormalized: row.next_of_kin_phone_normalized || null,
+    },
+    phonePendingNormalized: row.phone_pending_normalized || null,
+    phonePendingDisplay: row.phone_pending_display || null,
+    phoneVerificationRequired: row.phone_verification_required === true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -68,9 +94,18 @@ function mapRegistration(row) {
   };
 }
 
-const MEMBER_COLS = `id, church_id, user_id, first_name, last_name, preferred_name,
+const MEMBER_COLS = `id, church_id, user_id, platform_person_id,
+                     first_name, last_name, preferred_name,
                      email_normalized, email_display, phone_normalized, phone_display,
-                     status, created_at, updated_at`;
+                     member_number, status, portal_access_status,
+                     date_of_birth, occupation, marital_status, number_of_children,
+                     address_line_1, address_line_2, address_city, address_district,
+                     address_province, address_country_code, address_postal_code,
+                     next_of_kin_name, next_of_kin_relationship,
+                     next_of_kin_phone_display, next_of_kin_phone_normalized,
+                     phone_pending_normalized, phone_pending_display,
+                     phone_verification_required,
+                     created_at, updated_at`;
 
 const MEMBERSHIP_COLS = `id, member_id, branch_id, membership_status, is_primary,
                          joined_at, created_at, updated_at`;
@@ -180,13 +215,28 @@ async function findLiveMemberByPhone(client, churchId, phoneNormalized) {
 async function insertMember(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO blessboard.members
-       (church_id, user_id, first_name, last_name, preferred_name,
-        email_normalized, email_display, phone_normalized, phone_display, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (church_id, user_id, platform_person_id, first_name, last_name, preferred_name,
+        email_normalized, email_display, phone_normalized, phone_display,
+        member_number, status, portal_access_status,
+        date_of_birth, occupation, marital_status, number_of_children,
+        address_line_1, address_line_2, address_city, address_district,
+        address_province, address_country_code, address_postal_code,
+        next_of_kin_name, next_of_kin_relationship,
+        next_of_kin_phone_display, next_of_kin_phone_normalized)
+     VALUES (
+       $1,$2,$3,$4,$5,$6,
+       $7,$8,$9,$10,
+       $11,$12,$13,
+       $14,$15,$16,$17,
+       $18,$19,$20,$21,
+       $22,$23,$24,
+       $25,$26,$27,$28
+     )
      RETURNING ${MEMBER_COLS}`,
     [
       fields.churchId,
       fields.userId || null,
+      fields.platformPersonId || null,
       fields.firstName,
       fields.lastName,
       fields.preferredName || null,
@@ -194,7 +244,24 @@ async function insertMember(client, fields) {
       fields.emailDisplay || null,
       fields.phoneNormalized || null,
       fields.phoneDisplay || null,
-      fields.status || "pending",
+      fields.memberNumber || null,
+      fields.status || "active",
+      fields.portalAccessStatus || "not_activated",
+      fields.dateOfBirth || null,
+      fields.occupation || null,
+      fields.maritalStatus || null,
+      fields.numberOfChildren != null ? fields.numberOfChildren : null,
+      fields.addressLine1 || null,
+      fields.addressLine2 || null,
+      fields.addressCity || null,
+      fields.addressDistrict || null,
+      fields.addressProvince || null,
+      fields.addressCountryCode || null,
+      fields.addressPostalCode || null,
+      fields.nextOfKinName || null,
+      fields.nextOfKinRelationship || null,
+      fields.nextOfKinPhoneDisplay || null,
+      fields.nextOfKinPhoneNormalized || null,
     ]
   );
   return mapMember(rows[0]);
@@ -508,6 +575,10 @@ async function listMembersForBranch(client, input) {
     input.membershipStatus != null && String(input.membershipStatus).trim()
       ? String(input.membershipStatus).trim().toLowerCase()
       : null;
+  const portalAccessStatus =
+    input.portalAccessStatus != null && String(input.portalAccessStatus).trim()
+      ? String(input.portalAccessStatus).trim().toLowerCase()
+      : null;
   const qRaw = input.q != null ? String(input.q).trim() : "";
   const q = qRaw.slice(0, 100);
   const limit = Math.min(Math.max(Number(input.limit) || 20, 1), 50);
@@ -525,6 +596,10 @@ async function listMembersForBranch(client, input) {
     where.push(`mb.membership_status = $${i++}`);
     params.push(membershipStatus);
   }
+  if (portalAccessStatus) {
+    where.push(`m.portal_access_status = $${i++}`);
+    params.push(portalAccessStatus);
+  }
   if (q) {
     const {
       prepareIdentitySearchQuery,
@@ -537,7 +612,8 @@ async function listMembersForBranch(client, input) {
         `(m.phone_normalized = $${i}
           OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
           OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1})`
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}
+          OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1})`
       );
       params.push(search.phoneNormalized, like);
       i += 2;
@@ -545,7 +621,8 @@ async function listMembersForBranch(client, input) {
       where.push(
         `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
           OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
-          OR lower(COALESCE(m.phone_display, '')) LIKE $${i})`
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}
+          OR lower(COALESCE(m.member_number, '')) LIKE $${i})`
       );
       params.push(like);
       i += 1;
@@ -567,7 +644,7 @@ async function listMembersForBranch(client, input) {
   const { rows } = await client.query(
     `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
-            m.status, m.created_at, m.updated_at,
+            m.member_number, m.status, m.portal_access_status, m.created_at, m.updated_at,
             mb.membership_status, mb.is_primary, mb.joined_at
        FROM blessboard.members m
        INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
@@ -660,9 +737,18 @@ async function listMembersForChurch(client, input) {
     where.push(`mb.branch_id = $${i++}`);
     params.push(branchId);
   }
+  const portalAccessStatus =
+    input.portalAccessStatus != null && String(input.portalAccessStatus).trim()
+      ? String(input.portalAccessStatus).trim().toLowerCase()
+      : null;
+
   if (status) {
     where.push(`m.status = $${i++}`);
     params.push(status);
+  }
+  if (portalAccessStatus) {
+    where.push(`m.portal_access_status = $${i++}`);
+    params.push(portalAccessStatus);
   }
   if (q) {
     const {
@@ -676,7 +762,8 @@ async function listMembersForChurch(client, input) {
         `(m.phone_normalized = $${i}
           OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
           OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1})`
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}
+          OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1})`
       );
       params.push(search.phoneNormalized, like);
       i += 2;
@@ -684,7 +771,8 @@ async function listMembersForChurch(client, input) {
       where.push(
         `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
           OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
-          OR lower(COALESCE(m.phone_display, '')) LIKE $${i})`
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}
+          OR lower(COALESCE(m.member_number, '')) LIKE $${i})`
       );
       params.push(like);
       i += 1;
@@ -716,7 +804,7 @@ async function listMembersForChurch(client, input) {
   const { rows } = await client.query(
     `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
-            m.status, m.created_at, m.updated_at,
+            m.member_number, m.status, m.portal_access_status, m.created_at, m.updated_at,
             mb.membership_status, mb.is_primary, mb.joined_at,
             b.branch_key, b.display_name AS branch_display_name
        FROM blessboard.members m
@@ -1230,6 +1318,246 @@ async function setPrimaryMembershipBranch(client, { memberId, fromBranchId, toBr
   }
 }
 
+/**
+ * Candidate load for staff-managed member duplicate evaluation (org/church scoped).
+ * Returns lite rows suitable for the shared person match engine.
+ */
+async function findStaffDuplicateMemberCandidates(client, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  if (!churchId) return [];
+  const params = [churchId];
+  const clauses = [];
+  let i = 2;
+
+  if (input.memberNumber) {
+    clauses.push(`lower(trim(m.member_number)) = lower(trim($${i++}))`);
+    params.push(String(input.memberNumber).trim());
+  }
+  if (input.phoneNormalized) {
+    clauses.push(`m.phone_normalized = $${i++}`);
+    params.push(input.phoneNormalized);
+  }
+  if (input.emailNormalized) {
+    clauses.push(`m.email_normalized = $${i++}`);
+    params.push(input.emailNormalized);
+  }
+  if (input.firstName && input.lastName) {
+    clauses.push(
+      `(lower(m.first_name) = lower($${i}) AND lower(m.last_name) = lower($${i + 1}))`
+    );
+    params.push(input.firstName, input.lastName);
+    i += 2;
+  }
+  if (!clauses.length) return [];
+
+  params.push(Math.min(Number(input.limit) || 20, 50));
+  const { rows } = await client.query(
+    `SELECT ${MEMBER_COLS}
+       FROM blessboard.members m
+      WHERE m.church_id = $1
+        AND m.status IN ('pending', 'active', 'inactive', 'suspended', 'transferred')
+        AND (${clauses.join(" OR ")})
+      ORDER BY m.created_at DESC
+      LIMIT $${i}`,
+    params
+  );
+  return rows.map(mapMember);
+}
+
+async function findMemberByChurchAndNumber(client, { churchId, memberNumber }) {
+  const number = String(memberNumber || "").trim();
+  if (!churchId || !number) return null;
+  const { rows } = await client.query(
+    `SELECT ${MEMBER_COLS}
+       FROM blessboard.members
+      WHERE church_id = $1
+        AND lower(trim(member_number)) = lower(trim($2))
+      LIMIT 1`,
+    [churchId, number]
+  );
+  return mapMember(rows[0] || null);
+}
+
+async function updateMemberNumber(client, { memberId, memberNumber }) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.members
+        SET member_number = $2,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${MEMBER_COLS}`,
+    [memberId, memberNumber || null]
+  );
+  return mapMember(rows[0] || null);
+}
+
+async function updatePortalAccessStatus(client, { memberId, portalAccessStatus }) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.members
+        SET portal_access_status = $2,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${MEMBER_COLS}`,
+    [memberId, portalAccessStatus]
+  );
+  return mapMember(rows[0] || null);
+}
+
+/**
+ * Allocate next church-scoped Church ID (CH-NNNNN). Unique per church.
+ */
+async function allocateNextChurchId(client, { churchId, attempts = 8 }) {
+  const church = String(churchId || "").trim();
+  if (!church) return { ok: false, code: "church_required" };
+
+  const { rows: maxRows } = await client.query(
+    `SELECT COALESCE(MAX(
+       CASE
+         WHEN member_number ~ '^CH-[0-9]{1,10}$'
+         THEN CAST(substring(member_number from 4) AS INTEGER)
+         ELSE 0
+       END
+     ), 0)::int AS max_n
+       FROM blessboard.members
+      WHERE church_id = $1
+        AND member_number IS NOT NULL`,
+    [church]
+  );
+  let next = (maxRows[0] && Number(maxRows[0].max_n) ? Number(maxRows[0].max_n) : 0) + 1;
+  const maxAttempts = Math.min(Math.max(Number(attempts) || 8, 1), 20);
+
+  for (let i = 0; i < maxAttempts; i += 1) {
+    const candidate = `CH-${String(next).padStart(5, "0")}`;
+    const existing = await findMemberByChurchAndNumber(client, {
+      churchId: church,
+      memberNumber: candidate,
+    });
+    if (!existing) {
+      return { ok: true, memberNumber: candidate };
+    }
+    next += 1;
+  }
+  return { ok: false, code: "church_id_allocate_exhausted" };
+}
+
+async function updateMembershipLifecycleStatus(client, { memberId, status }) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.members
+        SET status = $2,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${MEMBER_COLS}`,
+    [memberId, status]
+  );
+  return mapMember(rows[0] || null);
+}
+
+async function setMemberPlatformPersonId(client, { memberId, platformPersonId }) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.members
+        SET platform_person_id = $2,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${MEMBER_COLS}`,
+    [memberId, platformPersonId || null]
+  );
+  return mapMember(rows[0] || null);
+}
+
+/**
+ * Domain profile update — never touches member_number or official branch membership.
+ */
+async function updateMemberDomainProfile(client, fields) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.members SET
+       first_name = COALESCE($2, first_name),
+       last_name = COALESCE($3, last_name),
+       preferred_name = CASE WHEN $4::boolean THEN $5 ELSE preferred_name END,
+       date_of_birth = CASE WHEN $6::boolean THEN $7::date ELSE date_of_birth END,
+       occupation = CASE WHEN $8::boolean THEN $9 ELSE occupation END,
+       marital_status = CASE WHEN $10::boolean THEN $11 ELSE marital_status END,
+       number_of_children = CASE WHEN $12::boolean THEN $13::int ELSE number_of_children END,
+       address_line_1 = CASE WHEN $14::boolean THEN $15 ELSE address_line_1 END,
+       address_line_2 = CASE WHEN $16::boolean THEN $17 ELSE address_line_2 END,
+       address_city = CASE WHEN $18::boolean THEN $19 ELSE address_city END,
+       address_district = CASE WHEN $20::boolean THEN $21 ELSE address_district END,
+       address_province = CASE WHEN $22::boolean THEN $23 ELSE address_province END,
+       address_country_code = CASE WHEN $24::boolean THEN $25 ELSE address_country_code END,
+       address_postal_code = CASE WHEN $26::boolean THEN $27 ELSE address_postal_code END,
+       next_of_kin_name = CASE WHEN $28::boolean THEN $29 ELSE next_of_kin_name END,
+       next_of_kin_relationship = CASE WHEN $30::boolean THEN $31 ELSE next_of_kin_relationship END,
+       next_of_kin_phone_display = CASE WHEN $32::boolean THEN $33 ELSE next_of_kin_phone_display END,
+       next_of_kin_phone_normalized = CASE WHEN $34::boolean THEN $35 ELSE next_of_kin_phone_normalized END,
+       email_display = CASE WHEN $36::boolean THEN $37 ELSE email_display END,
+       email_normalized = CASE WHEN $36::boolean THEN lower(trim($37)) ELSE email_normalized END,
+       phone_pending_normalized = CASE WHEN $38::boolean THEN $39 ELSE phone_pending_normalized END,
+       phone_pending_display = CASE WHEN $40::boolean THEN $41 ELSE phone_pending_display END,
+       phone_verification_required = CASE WHEN $42::boolean THEN $43 ELSE phone_verification_required END,
+       phone_normalized = CASE WHEN $44::boolean THEN $45 ELSE phone_normalized END,
+       phone_display = CASE WHEN $46::boolean THEN $47 ELSE phone_display END,
+       updated_at = now()
+     WHERE id = $1
+     RETURNING ${MEMBER_COLS}`,
+    [
+      fields.memberId,
+      fields.firstName != null ? fields.firstName : null,
+      fields.lastName != null ? fields.lastName : null,
+      fields.preferredName !== undefined,
+      fields.preferredName !== undefined ? fields.preferredName : null,
+      fields.dateOfBirth !== undefined,
+      fields.dateOfBirth !== undefined ? fields.dateOfBirth : null,
+      fields.occupation !== undefined,
+      fields.occupation !== undefined ? fields.occupation : null,
+      fields.maritalStatus !== undefined,
+      fields.maritalStatus !== undefined ? fields.maritalStatus : null,
+      fields.numberOfChildren !== undefined,
+      fields.numberOfChildren !== undefined ? fields.numberOfChildren : null,
+      fields.addressLine1 !== undefined,
+      fields.addressLine1 !== undefined ? fields.addressLine1 : null,
+      fields.addressLine2 !== undefined,
+      fields.addressLine2 !== undefined ? fields.addressLine2 : null,
+      fields.addressCity !== undefined,
+      fields.addressCity !== undefined ? fields.addressCity : null,
+      fields.addressDistrict !== undefined,
+      fields.addressDistrict !== undefined ? fields.addressDistrict : null,
+      fields.addressProvince !== undefined,
+      fields.addressProvince !== undefined ? fields.addressProvince : null,
+      fields.addressCountryCode !== undefined,
+      fields.addressCountryCode !== undefined ? fields.addressCountryCode : null,
+      fields.addressPostalCode !== undefined,
+      fields.addressPostalCode !== undefined ? fields.addressPostalCode : null,
+      fields.nextOfKinName !== undefined,
+      fields.nextOfKinName !== undefined ? fields.nextOfKinName : null,
+      fields.nextOfKinRelationship !== undefined,
+      fields.nextOfKinRelationship !== undefined
+        ? fields.nextOfKinRelationship
+        : null,
+      fields.nextOfKinPhoneDisplay !== undefined,
+      fields.nextOfKinPhoneDisplay !== undefined
+        ? fields.nextOfKinPhoneDisplay
+        : null,
+      fields.nextOfKinPhoneNormalized !== undefined,
+      fields.nextOfKinPhoneNormalized !== undefined
+        ? fields.nextOfKinPhoneNormalized
+        : null,
+      fields.emailDisplay !== undefined,
+      fields.emailDisplay !== undefined ? fields.emailDisplay : null,
+      fields.phonePendingNormalized !== undefined,
+      fields.phonePendingNormalized !== undefined
+        ? fields.phonePendingNormalized
+        : null,
+      fields.phonePendingDisplay !== undefined,
+      fields.phonePendingDisplay !== undefined ? fields.phonePendingDisplay : null,
+      fields.phoneVerificationRequired !== undefined,
+      fields.phoneVerificationRequired === true,
+      fields.phoneNormalized !== undefined,
+      fields.phoneNormalized !== undefined ? fields.phoneNormalized : null,
+      fields.phoneDisplay !== undefined,
+      fields.phoneDisplay !== undefined ? fields.phoneDisplay : null,
+    ]
+  );
+  return mapMember(rows[0] || null);
+}
+
 module.exports = {
   mapMember,
   mapMembership,
@@ -1269,6 +1597,14 @@ module.exports = {
   insertReviewEvent,
   listReviewEvents,
   updatePastoralNotes,
+  findStaffDuplicateMemberCandidates,
+  findMemberByChurchAndNumber,
+  updateMemberNumber,
+  updatePortalAccessStatus,
+  allocateNextChurchId,
+  updateMembershipLifecycleStatus,
+  setMemberPlatformPersonId,
+  updateMemberDomainProfile,
   insertTransferRequest,
   getTransferById,
   listTransfers,

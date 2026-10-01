@@ -9,13 +9,18 @@
 
   var flash = '';
   if (saved === 'joined') {
-    flash = isPending ? 'Your request to join was submitted.' : 'You joined this ministry.';
+    flash = 'Your request to join was submitted and is pending approval.';
   } else if (saved === 'left') {
     flash = 'Your ministry membership was updated.';
   }
 %>
 
-<section class="bb-mp-part-detail-page" data-bb-member-ministry-detail="1" data-bb-stitch-ministries="18-member-my-ministries">
+<section
+  class="bb-mp-part-detail-page bb-v204-m25"
+  data-bb-member-ministry-detail="1"
+  data-bb-stitch-v204="BB-M25"
+  data-bb-stitch-ministries="BB-M25"
+>
   <p class="bb-mp-back">
     <a href="/member/ministries">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -41,8 +46,6 @@
       <span class="bb-mp-chip bb-mp-chip--active" data-bb-status="active">Active</span>
       <% } else if (isPending) { %>
       <span class="bb-mp-chip bb-mp-chip--pending" data-bb-status="pending">Pending request</span>
-      <% } else if (isOpen) { %>
-      <span class="bb-mp-chip bb-mp-chip--open" data-bb-status="open">Open to join</span>
       <% } else { %>
       <span class="bb-mp-chip bb-mp-chip--request" data-bb-status="request">Request to join</span>
       <% } %>
@@ -70,11 +73,22 @@
     <div class="bb-mp-ann-body"><%= item.description %></div>
     <% } %>
 
+    <% if (canJoin || isPending) { %>
+    <p class="bb-mp-join-note" role="note">
+      <% if (isPending) { %>
+      Your request is awaiting pastoral review. This does not grant automatic ministry membership.
+      <% } else { %>
+      Submission initiates pastoral intake review. It does not grant automatic membership.
+      <% } %>
+    </p>
+    <% } %>
+
     <div class="bb-mp-part-detail__actions">
       <% if (isActive || isPending) { %>
       <p class="bb-mp-part-detail__state" role="status">
         <% if (isPending) { %>
-        Your request is waiting for church review.
+        <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
+        Awaiting pastoral review
         <% } else { %>
         You are an active member of this ministry.
         <% } %>
@@ -84,7 +98,7 @@
         class="bb-mp-btn bb-mp-btn--outline"
         data-bb-ds-modal-open="bb-mp-ministry-leave"
       >
-        <%= isPending ? 'Cancel request' : 'Leave ministry' %>
+        <%= isPending ? 'Withdraw / cancel request' : 'Leave ministry' %>
       </button>
 
       <div
@@ -133,7 +147,8 @@
           ></textarea>
         </div>
         <button type="submit" class="bb-mp-btn bb-mp-btn--primary">
-          <%= isOpen ? 'Join ministry' : 'Request to join' %>
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Request to join ministry
         </button>
       </form>
       <% } %>

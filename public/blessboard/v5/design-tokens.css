@@ -9,66 +9,70 @@
  * values; a :root alias of var(--color-brand-primary) freezes the
  * platform default and would not follow a future product override.
  *
- * Stitch refs retained for layout/type scale only.
+ * V2.04 ops shells (branch-admin / hq / member / member-auth) remap to
+ * Stitch Sanctuary Modern via platform colors.css F2 + this file's ops block.
+ * Apex marketing retains Sacred Modernity (Hanken + violet brand).
  */
 
 :root {
   color-scheme: light;
 
-  /* —— Typography (Stitch Hanken Grotesk scale) —— */
+  /* —— Typography (apex / marketing: Hanken Grotesk) —— */
   --bb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
+  --bb-font-body: var(--bb-font-sans);
+  --bb-font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
   --bb-font-weight-regular: 400;
   --bb-font-weight-medium: 500;
   --bb-font-weight-semibold: 600;
   --bb-font-weight-bold: 700;
-  /* Stitch: H1 Hero 64 / H2 Section 40 / H3 Subhead 28 */
-  --bb-text-hero: 4rem; /* 64px — Stitch H1 */
-  --bb-text-h1: 2.5rem; /* 40px — Stitch H2 */
-  --bb-text-h2: 1.75rem; /* 28px — Stitch H3 */
-  --bb-text-h3: 1.25rem; /* 20px — in-page titles */
+  /* Marketing: H1 Hero 64 / H2 Section 40 / H3 Subhead 28 */
+  --bb-text-hero: 4rem; /* 64px */
+  --bb-text-h1: 2.5rem; /* 40px */
+  --bb-text-h2: 1.75rem; /* 28px */
+  --bb-text-h3: 1.25rem; /* 20px */
   --bb-text-body-lg: 1.125rem; /* 18px */
   --bb-text-body: 1rem; /* 16px */
   --bb-text-label: 0.875rem; /* 14px */
-  --bb-text-caption: 0.75rem; /* 12px — badges */
+  --bb-text-caption: 0.75rem; /* 12px */
   --bb-leading-tight: 1.2;
   --bb-leading-snug: 1.3;
   --bb-leading-normal: 1.5;
   --bb-leading-relaxed: 1.6;
 
   /* —— Spacing (4px base: 4–128) —— */
-  --bb-space-1: 0.25rem; /* 4 */
-  --bb-space-2: 0.5rem; /* 8 */
-  --bb-space-3: 1rem; /* 16 */
-  --bb-space-4: 1.5rem; /* 24 */
-  --bb-space-5: 2rem; /* 32 */
-  --bb-space-6: 3rem; /* 48 */
-  --bb-space-7: 4rem; /* 64 */
-  --bb-space-8: 6rem; /* 96 */
-  --bb-space-9: 8rem; /* 128 */
+  --bb-space-1: 0.25rem;
+  --bb-space-2: 0.5rem;
+  --bb-space-3: 1rem;
+  --bb-space-4: 1.5rem;
+  --bb-space-5: 2rem;
+  --bb-space-6: 3rem;
+  --bb-space-7: 4rem;
+  --bb-space-8: 6rem;
+  --bb-space-9: 8rem;
 
-  /* —— Layout (Stitch: container-max 1280 · header h-20 · section 56–64) —— */
-  --bb-max: 80rem; /* 1280px — Stitch max-w-7xl; audit prefers 1120–1200 (accepted) */
-  --bb-max-narrow: 40rem; /* forms / auth */
-  --bb-gutter: 2rem; /* 32 desktop */
-  --bb-gutter-mobile: 1rem; /* 16 — mobile header gutter */
-  --bb-section: 4rem; /* 64px section rhythm (within 56–72) */
-  --bb-section-desktop: 4rem; /* 64px — was 80px; keep standard band, not 80–96 ocean */
-  --bb-header-h: 5rem; /* 80px Stitch desktop/mobile header (h-20) */
+  /* —— Layout —— */
+  --bb-max: 80rem;
+  --bb-max-narrow: 40rem;
+  --bb-gutter: 2rem;
+  --bb-gutter-mobile: 1rem;
+  --bb-section: 4rem;
+  --bb-section-desktop: 4rem;
+  --bb-header-h: 5rem;
   --bb-header-h-compact: 4.5rem;
-  --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
-  --bb-shell-content-max: 64rem; /* HQ + branch-admin main column cap (narrower than public --bb-max) */
-  --bb-drawer-w: 22rem;
+  --bb-sidebar-w: 16.5rem;
+  --bb-shell-content-max: 64rem;
+  --bb-drawer-w: 30rem; /* 480px Stitch drawer */
 
   /* —— Radii —— */
-  --bb-radius: 1rem; /* 16 — buttons, cards, inputs (Stitch) */
-  --bb-radius-sm: 0.5rem; /* 8 — icon buttons, chips */
-  --bb-radius-md: 0.75rem; /* intermediate cards / marketing tiles */
+  --bb-radius: 1rem;
+  --bb-radius-sm: 0.5rem;
+  --bb-radius-md: 0.75rem;
   --bb-radius-pill: 999px;
 
   /* —— Controls —— */
-  --bb-control-h: 3rem; /* 48 */
-  --bb-icon-size: 1.5rem; /* 24 */
-  --bb-touch-min: 2.75rem; /* 44 */
+  --bb-control-h: 3rem;
+  --bb-icon-size: 1.5rem;
+  --bb-touch-min: 2.75rem;
 
   /* —— Z-index —— */
   --bb-z-header: 40;
@@ -84,27 +88,24 @@
 [data-product="blessboard"],
 [data-bb-product],
 [data-gp-product="blessboard"] {
-  /* —— Brand → platform —— */
   --bb-color-primary: var(--color-brand-primary);
   --bb-color-primary-hover: var(--color-brand-primary-hover);
   --bb-color-primary-soft: var(--color-brand-primary-light);
   --bb-color-primary-deep: var(--color-brand-primary-active);
   --bb-color-accent: var(--color-brand-accent);
-  /* Decorative GetPro orange (logos, marks). Do not use for normal body text. */
   --bb-color-accent-readable: var(--color-brand-accent-readable);
   --bb-color-on-primary: var(--color-brand-on-primary);
 
-  /* —— Surfaces & text → platform —— */
   --bb-color-page: var(--color-background);
   --bb-color-surface: var(--color-surface);
   --bb-color-surface-dim: var(--color-surface-subtle);
   --bb-color-ink: var(--color-text-primary);
+  --bb-color-text: var(--bb-color-ink);
   --bb-color-muted: var(--color-text-secondary);
   --bb-color-border: var(--color-border-default);
   --bb-color-focus-ring: var(--color-focus-ring);
   --bb-color-overlay: color-mix(in srgb, var(--color-text-primary) 45%, transparent);
 
-  /* —— Feedback → platform semantic —— */
   --bb-color-success: var(--color-success-text);
   --bb-color-success-bg: var(--color-success-bg);
   --bb-color-success-border: var(--color-success-border);
@@ -118,7 +119,6 @@
   --bb-color-info-bg: var(--color-info-bg);
   --bb-color-info-border: var(--color-info-border);
 
-  /* —— Gradients (atmosphere; token refs only) —— */
   --bb-gradient-page:
     radial-gradient(1200px 500px at 0% 0%, var(--color-brand-primary-light) 0%, transparent 55%),
     radial-gradient(900px 400px at 100% 0%, color-mix(in srgb, var(--color-info-bg) 80%, var(--color-surface)) 0%, transparent 50%),
@@ -136,9 +136,6 @@
     color-mix(in srgb, var(--color-brand-primary) 22%, var(--color-surface))
   );
 
-  /*
-   * Legacy short aliases (--bb-ink/--bb-bg/…) retained while consumers remain; appearance names (--bb-violet) removed in Batch 8.
-   */
   --bb-primary: var(--bb-color-primary);
   --bb-accent: var(--bb-color-accent);
   --bb-ink: var(--bb-color-ink);
@@ -153,24 +150,20 @@
   --bb-ok: var(--bb-color-success);
   --bb-err: var(--bb-color-error);
   --bb-disabled: var(--color-disabled-text);
-  /* HQ / platform-admin local chrome aliases */
   --bb-hq-border: var(--color-border-default);
   --bb-hq-line: var(--color-border-default);
   --bb-hq-muted: var(--color-text-secondary);
   --bb-hq-surface: var(--color-surface);
   --bb-pa-page: var(--color-background);
-  /* Website branding preview defaults (JS may override) */
   --preview-primary: var(--color-brand-primary);
   --preview-accent: var(--color-brand-accent);
 
-  /* —— Shadows mixing product brand/text —— */
   --bb-shadow-sm: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --bb-shadow-md: 0 10px 30px color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
   --bb-shadow-lg: 0 16px 40px color-mix(in srgb, var(--color-text-primary) 10%, transparent);
   --bb-shadow: var(--bb-shadow-md);
   --bb-shadow-focus: 0 0 0 4px var(--color-focus-ring);
 
-  /* —— Cross-platform semantic aliases (product UI surfaces) —— */
   --product-primary: var(--color-brand-primary);
   --product-primary-strong: var(--color-brand-primary-active);
   --product-primary-hover: var(--color-brand-primary-hover);
@@ -183,6 +176,58 @@
   --product-link: var(--color-brand-primary);
 }
 
+/*
+ * V2.04 ops — Sanctuary Modern type / radius / elevation
+ * (Stitch DS foundation). Colors come from colors.css F2.
+ */
+[data-product="blessboard"][data-bb-shell="branch-admin"],
+[data-product="blessboard"][data-bb-shell="hq-admin"],
+[data-product="blessboard"][data-bb-shell="member"],
+[data-product="blessboard"][data-bb-shell="member-auth"],
+[data-product="blessboard"][data-bb-shell="platform-admin"] {
+  --bb-font-sans: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+  --bb-font-body: Inter, system-ui, sans-serif;
+  --bb-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --bb-text-hero: 2.25rem;
+  --bb-text-h1: 1.75rem;
+  --bb-text-h2: 1.25rem;
+  --bb-text-h3: 1rem;
+  --bb-text-body-lg: 1rem;
+  --bb-text-body: 0.875rem;
+  --bb-text-label: 0.75rem;
+  --bb-text-caption: 0.6875rem;
+
+  --bb-radius: 0.5rem;
+  --bb-radius-sm: 0.25rem;
+  --bb-radius-md: 0.75rem;
+  --bb-radius-lg: 1rem;
+
+  --bb-control-h: 2.5rem;
+  --bb-touch-min: 3rem;
+
+  --bb-color-navy: var(--palette-navy-700);
+  --bb-color-gold: var(--palette-amber-600);
+
+  --bb-shadow-sm:
+    0 1px 3px 0 color-mix(in srgb, var(--palette-ink-920) 4%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--palette-ink-920) 2%, transparent);
+  --bb-shadow-md:
+    0 10px 15px -3px color-mix(in srgb, var(--palette-ink-920) 8%, transparent),
+    0 4px 6px -4px color-mix(in srgb, var(--palette-ink-920) 4%, transparent);
+  --bb-shadow-lg:
+    0 20px 25px -5px color-mix(in srgb, var(--palette-ink-920) 12%, transparent),
+    0 8px 10px -6px color-mix(in srgb, var(--palette-ink-920) 6%, transparent);
+  --bb-shadow: var(--bb-shadow-sm);
+
+  --bb-gradient-page: var(--bb-color-page);
+  --bb-gradient-mesh: var(--bb-color-page);
+
+  font-family: var(--bb-font-body);
+  color: var(--bb-color-ink);
+  background: var(--bb-color-page);
+}
+
 @media (max-width: 767px) {
   :root {
     --bb-gutter: var(--bb-gutter-mobile);
@@ -190,5 +235,15 @@
     --bb-text-hero: 2.5rem;
     --bb-text-h1: 2rem;
     --bb-section: 3rem;
+  }
+
+  [data-product="blessboard"][data-bb-shell="branch-admin"],
+  [data-product="blessboard"][data-bb-shell="hq-admin"],
+  [data-product="blessboard"][data-bb-shell="member"],
+  [data-product="blessboard"][data-bb-shell="member-auth"],
+  [data-product="blessboard"][data-bb-shell="platform-admin"] {
+    --bb-text-hero: 1.75rem;
+    --bb-text-h1: 1.5rem;
+    --bb-control-h: 3rem;
   }
 }

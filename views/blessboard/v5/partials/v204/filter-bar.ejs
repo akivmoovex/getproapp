@@ -1,0 +1,11 @@
+<%#
+  BB V2.04 search + filter bar → platform gp-ops-filter-bar.
+%>
+<%- include('../../../../platform/partials/gp-ops-filter-bar', {
+  action: typeof action !== 'undefined' ? action : '',
+  method: typeof method !== 'undefined' ? method : 'get',
+  q: typeof q !== 'undefined' ? q : '',
+  qName: typeof qName !== 'undefined' ? qName : 'q',
+  filtersHtml: typeof filtersHtml !== 'undefined' ? filtersHtml : undefined,
+  submitLabel: typeof submitLabel !== 'undefined' ? submitLabel : 'Search'
+}) %>

@@ -3,17 +3,14 @@
 /**
  * Patient duplicate detection — warning workflow only (no automatic merge).
  *
- * Strength:
- * - strong: live authoritative identifier match within HCO, OR exact normalized
- *   phone match (household/shared phone is legitimate — overrideable warning,
- *   NOT a uniqueness constraint and NOT auto-merge)
+ * Scoring is delegated to the shared V2.04 platform person match engine.
+ * AC keeps candidate fetch, privacy masking, and the public matchStrength API
+ * (strong / moderate / weak) so existing ACN10 behavior stays intact.
+ *
+ * Strength mapping (preserved):
+ * - strong: exact identifier OR exact phone (overrideable; phone ≠ identity proof)
  * - moderate: email+similar name, name+DOB
  * - weak: name only (informational; never blocks)
- *
- * Phone exact match → strong possible-duplicate warning → authorized staff with
- * activeclinic.patient.duplicate_override may confirm a distinct patient.
- * Authoritative identifier conflicts (NRC/passport) are enforced separately via
- * HCO-scoped uniqueness and are not overrideable.
  */
 
 const patientRepo = require("../repositories/patientRepository");
@@ -24,34 +21,19 @@ const {
   maskIdentifier,
   formatApproximateAge,
 } = require("./patientPrivacyHelpers");
+const {
+  scorePersonMatch,
+  toActiveClinicMatchStrength,
+  toDateOnly,
+  ACTIVECLINIC_DUPLICATE_POLICY,
+  evaluatePersonDuplicates,
+  PERSON_MATCH_CODE,
+} = require("../../platform/person/duplicate");
 
 const RESULT = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
 });
-
-function similarName(a, b) {
-  return (
-    String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase()
-  );
-}
-
-function toDateOnly(value) {
-  if (value == null || value === "") return null;
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-    return value.slice(0, 10);
-  }
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    // node-pg maps DATE to local midnight; use local Y-M-D (not toISOString).
-    const y = value.getFullYear();
-    const m = String(value.getMonth() + 1).padStart(2, "0");
-    const d = String(value.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
-  const text = String(value).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10);
-  return null;
-}
 
 function mapPatientLite(row) {
   return {
@@ -68,7 +50,7 @@ function mapPatientLite(row) {
   };
 }
 
-function toMatchSummary(patient, strength, reasons) {
+function toMatchSummary(patient, strength, reasons, matchCode) {
   return {
     patientId: patient.id,
     patientNumber: patient.patientNumber,
@@ -80,8 +62,14 @@ function toMatchSummary(patient, strength, reasons) {
     phoneMasked: maskPhone(patient.phoneNormalized),
     status: patient.status,
     matchStrength: strength,
+    matchCode: matchCode || null,
     reasons,
   };
+}
+
+function buildProbeIdentifiers(input, identifierHitsByPatientId) {
+  // Identifiers are matched via live lookup; attach hits onto candidates below.
+  return Array.isArray(input.identifiers) ? input.identifiers : [];
 }
 
 /**
@@ -97,7 +85,7 @@ async function findPotentialPatientDuplicates(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT, matches: [], blocking: false };
   }
 
-  const identifiers = Array.isArray(input.identifiers) ? input.identifiers : [];
+  const identifiers = buildProbeIdentifiers(input);
   const rows = await patientRepo.findDuplicateCandidates(db, {
     organizationId,
     healthcareOrganizationId,
@@ -114,73 +102,126 @@ async function findPotentialPatientDuplicates(db, input) {
   });
 
   const excludeId = input.excludePatientId || null;
-  const matches = [];
 
+  // Resolve live identifier hits once per probe identifier (HCO-scoped).
+  const liveHits = [];
+  for (const idn of identifiers) {
+    const type = idn.identifierType || idn.type;
+    const value = idn.identifierValueNormalized || idn.valueNormalized;
+    if (!type || !value) continue;
+    const live = await identifierRepo.findLiveByTypeAndValue(db, {
+      organizationId,
+      healthcareOrganizationId,
+      identifierType: type,
+      identifierValueNormalized: value,
+    });
+    if (live) {
+      liveHits.push({
+        patientId: live.patient_id,
+        key: String(type),
+        valueNormalized: String(value),
+      });
+    }
+  }
+
+  const probe = {
+    phoneNormalized: input.phoneNormalized || null,
+    emailNormalized: input.emailNormalized || null,
+    firstName: input.firstName || null,
+    lastName: input.lastName || null,
+    dateOfBirth: input.dateOfBirth || null,
+    productIdentifiers: [
+      ...identifiers
+        .map((x) => ({
+          key: String(x.identifierType || x.type || "").trim(),
+          valueNormalized: String(
+            x.identifierValueNormalized || x.valueNormalized || ""
+          ).trim(),
+          blocking: true,
+        }))
+        .filter((x) => x.key && x.valueNormalized),
+      ...(input.patientNumber
+        ? [
+            {
+              key: "patient_number",
+              valueNormalized: String(input.patientNumber).trim(),
+              blocking: true,
+            },
+          ]
+        : []),
+    ],
+  };
+
+  const candidates = [];
   for (const row of rows) {
     if (excludeId && row.id === excludeId) continue;
     const patient = mapPatientLite(row);
-    const reasons = [];
-    let strength = "weak";
-
-    for (const idn of identifiers) {
-      const type = idn.identifierType || idn.type;
-      const value = idn.identifierValueNormalized || idn.valueNormalized;
-      const live = await identifierRepo.findLiveByTypeAndValue(db, {
-        organizationId,
-        healthcareOrganizationId,
-        identifierType: type,
-        identifierValueNormalized: value,
-      });
-      if (live && live.patient_id === patient.id) {
-        strength = "strong";
-        reasons.push(`identifier:${type}`);
+    const productIdentifiers = [
+      {
+        key: "patient_number",
+        valueNormalized: String(patient.patientNumber || "").trim(),
+        blocking: true,
+      },
+    ];
+    for (const hit of liveHits) {
+      if (hit.patientId === patient.id) {
+        productIdentifiers.push({
+          key: hit.key,
+          valueNormalized: hit.valueNormalized,
+          blocking: true,
+        });
       }
     }
-
-    if (
-      input.phoneNormalized &&
-      patient.phoneNormalized === input.phoneNormalized
-    ) {
-      strength = "strong";
-      reasons.push("phone_exact");
-    }
-
-    if (
-      input.emailNormalized &&
-      patient.emailNormalized === input.emailNormalized &&
-      (similarName(patient.firstName, input.firstName) ||
-        similarName(patient.lastName, input.lastName))
-    ) {
-      if (strength !== "strong") strength = "moderate";
-      reasons.push("email_and_name");
-    }
-
-    if (
-      input.dateOfBirth &&
-      patient.dateOfBirth &&
-      toDateOnly(patient.dateOfBirth) === toDateOnly(input.dateOfBirth) &&
-      similarName(patient.lastName, input.lastName) &&
-      similarName(patient.firstName, input.firstName)
-    ) {
-      if (strength !== "strong") strength = "moderate";
-      reasons.push("name_and_dob");
-    }
-
-    if (
-      similarName(patient.firstName, input.firstName) &&
-      similarName(patient.lastName, input.lastName) &&
-      !reasons.length
-    ) {
-      strength = "weak";
-      reasons.push("name_only");
-    }
-
-    if (!reasons.length) continue;
-    matches.push(toMatchSummary(patient, strength, reasons));
+    candidates.push({
+      id: patient.id,
+      subjectRef: patient.id,
+      organizationId,
+      productCode: "activeclinic",
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      phoneNormalized: patient.phoneNormalized,
+      emailNormalized: patient.emailNormalized,
+      dateOfBirth: patient.dateOfBirth,
+      productIdentifiers,
+      _patient: patient,
+    });
   }
 
-  const order = { strong: 0, moderate: 1, weak: 2 };
-  matches.sort((a, b) => order[a.matchStrength] - order[b.matchStrength]);
+  const evaluated = evaluatePersonDuplicates({
+    trusted: { organizationId },
+    productCode: "activeclinic",
+    probe,
+    candidates,
+    policy: ACTIVECLINIC_DUPLICATE_POLICY,
+    excludeSubjectRef: excludeId,
+    presentMatch(candidate, scored) {
+      const patient = candidate._patient;
+      const strength = toActiveClinicMatchStrength(
+        scored.matchCode,
+        scored.reasons
+      );
+      return toMatchSummary(
+        patient,
+        strength,
+        scored.reasons,
+        scored.matchCode
+      );
+    },
+  });
+
+  if (!evaluated.ok) {
+    return {
+      ok: false,
+      code: RESULT.INVALID_INPUT,
+      matches: [],
+      blocking: false,
+    };
+  }
+
+  const matches = evaluated.matches
+    .filter((m) => m.display && m.display.matchStrength)
+    .map((m) => m.display)
+    .slice(0, 20);
 
   const hasStrong = matches.some((m) => m.matchStrength === "strong");
   const hasModerate = matches.some((m) => m.matchStrength === "moderate");
@@ -188,10 +229,13 @@ async function findPotentialPatientDuplicates(db, input) {
   return {
     ok: true,
     code: RESULT.OK,
-    matches: matches.slice(0, 20),
+    matches,
     blocking: hasStrong || hasModerate,
     hasStrong,
     hasModerate,
+    // Additive shared-contract fields (non-breaking).
+    overallMatchCode: evaluated.overallMatchCode || PERSON_MATCH_CODE.NO_MATCH,
+    matchAction: evaluated.action,
   };
 }
 
@@ -224,4 +268,8 @@ module.exports = {
   RESULT,
   findPotentialPatientDuplicates,
   findIdentifierConflict,
+  // Shared engine re-exports for AC callers that want the V2.04 contract directly.
+  scorePersonMatch,
+  evaluatePersonDuplicates,
+  ACTIVECLINIC_DUPLICATE_POLICY,
 };

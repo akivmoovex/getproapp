@@ -25,6 +25,15 @@ const GP_OPS_PARTIALS = [
   "gp-ops-empty-state.ejs",
   "gp-ops-card.ejs",
   "gp-ops-timeline.ejs",
+  "gp-ops-page-header.ejs",
+  "gp-ops-form-section.ejs",
+  "gp-ops-field.ejs",
+  "gp-ops-search-input.ejs",
+  "gp-ops-banner.ejs",
+  "gp-ops-match-card.ejs",
+  "gp-ops-confirm-dialog.ejs",
+  "gp-ops-loading-state.ejs",
+  "gp-ops-success-state.ejs",
 ];
 
 describe("PC09 platform ops UI primitives", () => {
@@ -47,14 +56,15 @@ describe("PC09 platform ops UI primitives", () => {
   it("gp-ops defaults stay product-neutral (no BB violet / baked AC Stitch)", () => {
     const css = read("public/platform/gp-ops-shared.css");
     assert.match(css, /Structural only/);
-    assert.match(css, /--gp-ops-primary:\s*#2563eb/);
+    assert.match(css, /--gp-ops-primary:\s*var\(--color-brand-primary\)/);
     assert.doesNotMatch(css, /--gp-ops-primary:\s*#6C5CE7/i);
+    assert.doesNotMatch(css, /#6C5CE7/i);
     assert.doesNotMatch(css, /Hanken Grotesk/);
     assert.doesNotMatch(css, /font-family:\s*Inter/);
     assert.match(css, /--gp-ops-radius:\s*0\.5rem/);
   });
 
-  it("AC staff shell loads gp-ops then AC tokens; BB shells do not mount gp-ops CSS", () => {
+  it("AC staff shell loads gp-ops then AC tokens; BB shells opt-in only (no default mount)", () => {
     const acShell = read("views/activeclinic/layouts/app-shell.ejs");
     const gpIdx = acShell.indexOf("gp-ops-shared.css");
     const tokenIdx = acShell.indexOf("ac-app-tokens.css");
@@ -64,7 +74,8 @@ describe("PC09 platform ops UI primitives", () => {
 
     const bbHq = read("views/blessboard/v5/partials/hq-shell-start.ejs");
     const bbPublic = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
-    assert.doesNotMatch(bbHq, /gp-ops-shared\.css/);
+    assert.match(bbHq, /loadGpOpsAssets/);
+    assert.match(bbHq, /gp-ops-shared\.css/);
     assert.doesNotMatch(bbPublic, /gp-ops-shared\.css/);
     assert.doesNotMatch(bbHq, /ac-app-tokens\.css/);
     assert.doesNotMatch(bbPublic, /ac-app\.css/);

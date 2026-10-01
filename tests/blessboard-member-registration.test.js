@@ -552,7 +552,8 @@ describe("blessboard member registration http", () => {
     assert.match(directory.text, /Nora/);
     assert.match(directory.text, /href="\/branch-admin\/members\/[0-9a-f-]{36}"/i);
     assert.doesNotMatch(directory.text, /email_normalized|phone_normalized/i);
-    assert.doesNotMatch(directory.text, /1,248|42 New|Export CSV|Add Member|Small Groups|\bVolunteers\b|\bDonors\b/i);
+    assert.doesNotMatch(directory.text, /1,248|42 New|Export CSV|Small Groups|\bVolunteers\b|\bDonors\b/i);
+    assert.match(directory.text, /data-bb-stitch-v204="BB-M01"/);
     assert.doesNotMatch(directory.text, /type="checkbox"|bulk/i);
     assert.doesNotMatch(directory.text, new RegExp(churchA.id, "i"));
 
@@ -571,13 +572,14 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(profile.status, 200);
     assert.match(profile.text, /data-bb-member-detail="1"/);
-    assert.match(profile.text, /data-bb-stitch-member-detail="27-branch-member-profile"/);
+    assert.match(profile.text, /data-bb-stitch-member-detail="27-branch-member-profile"|data-bb-stitch-v204="BB-M06"/);
     assert.match(profile.text, /data-bb-member-summary="1"/);
     assert.match(profile.text, /data-bb-member-contact="1"/);
     assert.match(profile.text, /data-bb-member-membership="1"/);
     assert.match(profile.text, /data-bb-member-account="1"/);
     assert.match(profile.text, /data-bb-member-sections="1"/);
-    assert.match(profile.text, /data-bb-member-unavailable="1"/);
+    // V2.04: History may be authorized (link) or unavailable (marker); either is valid.
+    assert.match(profile.text, /data-bb-member-unavailable="1"|data-bb-m06-history="1"/);
     assert.match(profile.text, /Read-only/);
     assert.match(profile.text, /Nora/);
     assert.match(profile.text, /Login linked/);

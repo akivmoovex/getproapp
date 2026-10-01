@@ -451,7 +451,8 @@ describe("V8 BlessBoard membership workflow", () => {
       ["views/blessboard/v5/branch-admin/registration-detail.ejs", "BB12"],
       ["views/blessboard/v5/branch-admin/registration-detail.ejs", "BB13"],
       ["views/blessboard/v5/branch-admin/member-detail.ejs", "BB14"],
-      ["views/blessboard/v5/branch-admin/member-detail.ejs", "BB15"],
+      // V2.04: BB15 edit lives on member-edit (BB-M07); detail keeps a BB15 nav affordance.
+      ["views/blessboard/v5/branch-admin/member-edit.ejs", "BB15"],
       ["views/platform/forms/bb-membership-transfer.ejs", "BB16"],
       ["views/blessboard/v5/hq/members.ejs", "BB17"],
       ["views/blessboard/v5/branch-admin/members.ejs", "BB18"],
@@ -516,16 +517,33 @@ describe("V8 BlessBoard membership workflow", () => {
       path.join(__dirname, "..", "views/blessboard/v5/branch-admin/member-detail.ejs"),
       "utf8"
     );
+    // V2.04 split: BB14 profile remains on member-detail; BB15 edit + BB16 transfer
+    // live on dedicated templates (BB-M07 / BB-M11) rather than embedded forms.
+    assert.match(memberDetail, /data-bb-stitch-v204="BB-M06"/);
+    assert.match(memberDetail, /data-screen="BB14"/);
     assert.match(memberDetail, /data-bb-screen-desktop="BB14-D"/);
-    assert.match(memberDetail, /data-bb-screen-desktop="BB15-D"/);
-    assert.match(memberDetail, /data-bb-screen-mobile="BB15-M"/);
-    assert.match(memberDetail, /data-bb-screen-desktop="BB16-D"/);
-    assert.match(memberDetail, /data-bb-screen-mobile="BB16-M"/);
-    assert.match(memberDetail, /confirm_transfer/);
-    assert.match(memberDetail, /data-bb-member-edit-form="1"/);
-    assert.match(memberDetail, /data-bb-member-transfer-form="1"/);
-    assert.match(memberDetail, /bb-ba-actions--sticky/);
+    assert.match(memberDetail, /data-bb-m06-edit="1"/);
     assert.doesNotMatch(memberDetail, /Attendance Rate|Volunteer Hours|Birthday|ECCL-/i);
+
+    const memberEdit = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/member-edit.ejs"),
+      "utf8"
+    );
+    assert.match(memberEdit, /data-bb-stitch-v204="BB-M07"/);
+    assert.match(memberEdit, /data-screen="BB15"/);
+    assert.match(memberEdit, /data-bb-screen-desktop="BB15-D"/);
+    assert.match(memberEdit, /data-bb-screen-mobile="BB15-M"/);
+    assert.match(memberEdit, /data-bb-m07-form="1"|data-bb-member-edit-form="1"/);
+
+    const memberTransfer = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/member-transfer.ejs"),
+      "utf8"
+    );
+    assert.match(memberTransfer, /data-bb-stitch-v204="BB-M11"/);
+    assert.match(memberTransfer, /data-screen="BB16"/);
+    assert.match(memberTransfer, /data-bb-screen-desktop="BB16-D"/);
+    assert.match(memberTransfer, /data-bb-screen-mobile="BB16-M"/);
+    assert.match(memberTransfer, /confirm_transfer|data-bb-m11-form="1"/);
 
     const formsDash = fs.readFileSync(
       path.join(__dirname, "..", "views/platform/forms/bb-membership-forms.ejs"),
@@ -574,7 +592,7 @@ describe("V8 BlessBoard membership workflow", () => {
     );
     assert.match(branchMembers, /data-bb-screen-desktop="BB18-D"/);
     assert.match(branchMembers, /data-bb-screen-mobile="BB18-M"/);
-    assert.match(branchMembers, /data-bb-stitch-id-mobile="108d56c422634faea23a285fde9f9cd5"/);
+    assert.match(branchMembers, /data-bb-stitch-id(?:-desktop)?="2b8333d5e64242bc9cde22dac5aacc3c"/);
     assert.match(branchMembers, /data-bb-members-overview="1"/);
     assert.match(branchMembers, /data-bb-members-metrics="1"/);
     assert.match(branchMembers, /data-bb-members-queue="1"/);

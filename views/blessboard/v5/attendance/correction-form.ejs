@@ -1,0 +1,97 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var ci = typeof checkIn !== 'undefined' && checkIn ? checkIn : {};
+  var orig = typeof original !== 'undefined' && original ? original : {};
+  var v = typeof values !== 'undefined' && values ? values : {};
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var isLocked = typeof locked !== 'undefined' && locked;
+  function fmt(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString();
+  }
+%>
+
+<section
+  class="bb-v204-a12"
+  data-bb-stitch-v204="BB-A12"
+  data-bb-screen="BB-A12"
+  data-bb-attendance-correct="1"
+  aria-label="Correct Attendance"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Correct Attendance',
+    subtitle: 'Never silently overwrite — original state, new state, actor, timestamp, and reason are required.',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions/' + s.id + '/audit">Audit</a> <span aria-hidden="true">›</span> <span>Correct</span>'
+  }) %>
+
+  <% if (error) { %>
+  <div class="bb-v204-a12__error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="bb-v204-a12__panel">
+    <h2>Original check-in (immutable method &amp; time)</h2>
+    <dl class="bb-v204-a12__dl">
+      <div><dt>Member</dt><dd><%= ci.memberName || 'Member' %><% if (ci.memberNumber) { %> · <%= ci.memberNumber %><% } %></dd></div>
+      <div><dt>Method</dt><dd><code><%= orig.method || ci.method || '—' %></code> (preserved)</dd></div>
+      <div><dt>Checked in at</dt><dd><%= fmt(orig.checkedInAt || ci.checkedInAt) %> (preserved)</dd></div>
+      <div><dt>Status</dt><dd><%= orig.status || ci.status %></dd></div>
+      <div><dt>Late</dt><dd><%= orig.lateArrival ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Wrong branch</dt><dd><%= orig.wrongBranch ? 'Yes' : 'No' %></dd></div>
+    </dl>
+  </div>
+
+  <form
+    method="post"
+    action="/branch-admin/attendance/sessions/<%= s.id %>/check-ins/<%= ci.id %>/correct"
+    class="bb-v204-a12__form"
+    data-bb-a12-form="1"
+  >
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+
+    <%- include('../partials/v204/field', {
+      name: 'status',
+      label: 'Corrected status',
+      required: true,
+      controlHtml: (function () {
+        var opts = ['present', 'late', 'voided'];
+        var html = '<select class="bb-ba-input" id="gp-ops-field-status" name="status" required>';
+        opts.forEach(function (o) {
+          html += '<option value="' + o + '"' + (String(v.status) === o ? ' selected' : '') + '>' + o + '</option>';
+        });
+        html += '</select>';
+        return html;
+      })()
+    }) %>
+
+    <%- include('../partials/v204/field', {
+      name: 'late_arrival',
+      label: 'Late arrival',
+      controlHtml: '<select class="bb-ba-input" id="gp-ops-field-late_arrival" name="late_arrival"><option value="0"' + (String(v.late_arrival) !== '1' ? ' selected' : '') + '>No</option><option value="1"' + (String(v.late_arrival) === '1' ? ' selected' : '') + '>Yes</option></select>'
+    }) %>
+
+    <%- include('../partials/v204/field', {
+      name: 'wrong_branch',
+      label: 'Wrong branch flag',
+      controlHtml: '<select class="bb-ba-input" id="gp-ops-field-wrong_branch" name="wrong_branch"><option value="0"' + (String(v.wrong_branch) !== '1' ? ' selected' : '') + '>No</option><option value="1"' + (String(v.wrong_branch) === '1' ? ' selected' : '') + '>Yes</option></select>'
+    }) %>
+
+    <%- include('../partials/v204/field', {
+      name: 'reason',
+      label: 'Reason',
+      hint: 'Required (3–500 characters). Stored with actor and timestamp.',
+      required: true,
+      controlHtml: '<textarea class="bb-ba-input" id="gp-ops-field-reason" name="reason" rows="3" minlength="3" maxlength="500" required>' + String(v.reason || '').replace(/</g, '&lt;') + '</textarea>'
+    }) %>
+
+    <div class="bb-v204-a12__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/audit">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" <%= isLocked ? 'disabled' : '' %>>Submit Correction</button>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

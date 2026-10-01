@@ -6,8 +6,11 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=v204-qa-3" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=v204-p4-1" />
   <link rel="stylesheet" href="/platform/phone-field.css?v=bb-phone-1" />
+  <% if (typeof loadGpOpsAssets !== 'undefined' && loadGpOpsAssets) { %>
+  <link rel="stylesheet" href="/platform/gp-ops-shared.css?v=v204-p1-1" />
+  <% } %>
   <% var loadEngineCss = (typeof loadWebsiteEngineCss !== 'undefined' && loadWebsiteEngineCss)
     || (typeof activeNav !== 'undefined' && (activeNav === 'website' || activeNav === 'content')); %>
   <% if (loadEngineCss) { %>
@@ -57,13 +60,14 @@
   var baBranch = typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : '';
 %>
 <body
-  class="bb-ba-body"
+  class="bb-ba-body<%= typeof kioskMode !== 'undefined' && kioskMode ? ' bb-ba-body--kiosk' : '' %>"
   data-product="blessboard"
   data-bb-shell="branch-admin"
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
   data-bb-page="<%= activeNav || 'home' %>"
   data-bb-stitch-shell="25-branch-admin-dashboard"
+  <%= typeof kioskMode !== 'undefined' && kioskMode ? 'data-bb-kiosk="1"' : '' %>
 >
   <a class="bb-ba-skip" href="#bb-ba-main">Skip to content</a>
   <div id="bb-shell-nav-live" class="bb-shell-sr-only" aria-live="polite" aria-atomic="true"></div>

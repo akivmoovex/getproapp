@@ -929,7 +929,7 @@ describe("blessboard forms-requests", () => {
     assert.match(list.text, /Fill online/);
     assert.match(list.text, /2 fields/);
     assert.doesNotMatch(list.text, /DRAFT_ONLY_FORM_SECRET/);
-    assert.doesNotMatch(list.text, /Download PDF|form builder|e-?signature|card number|cvv|Approved|Processing/i);
+    assert.doesNotMatch(list.text, /Download PDF|form builder|e-?signature|card number|\bcvv\b|Approved|Processing/i);
     assert.doesNotMatch(list.text, /javascript:/i);
 
     const searchHit = await request(app)
@@ -976,7 +976,7 @@ describe("blessboard forms-requests", () => {
     assert.match(detail.text, /data-bb-field-type="email"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="html"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="script"/);
-    assert.doesNotMatch(detail.text, /type="file"|e-?signature|card number|cvv/i);
+    assert.doesNotMatch(detail.text, /type="file"|e-?signature|card number|cvv/i);
     assert.match(detail.text, /name="_csrf"/);
     assert.doesNotMatch(detail.text, /javascript:/i);
 

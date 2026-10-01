@@ -13,9 +13,47 @@ const {
   registerWebsiteAddSectionHandler,
   registerWebsiteFieldRegistrar,
   registerIdentityNormalizers,
+  registerPersonProductAdapter,
   registerOutboundEmailStatusResolver,
   registerWebsiteAvailabilitySync,
 } = require("../../platform/contracts/productRuntimeRegistry");
+const {
+  PERSON_RELATIONSHIP_KEY,
+  projectPersonDraftFromActiveClinicPatient,
+} = require("../../platform/person");
+const {
+  ACTIVECLINIC_DUPLICATE_POLICY,
+  toActiveClinicMatchStrength,
+} = require("../../platform/person/duplicate");
+const {
+  formatPatientDisplayName,
+  maskPhone,
+  formatApproximateAge,
+} = require("../services/patientPrivacyHelpers");
+const {
+  activeClinicStaffPatientAdapter,
+} = require("../services/activeClinicStaffPatientWorkflowAdapter");
+
+function presentActiveClinicPersonMatch(candidate, scored, decision) {
+  const strength = toActiveClinicMatchStrength(scored.matchCode, scored.reasons);
+  return {
+    subjectRef: candidate.subjectRef || candidate.id || null,
+    matchCode: scored.matchCode,
+    matchStrength: strength,
+    reasons: scored.reasons.slice(),
+    action: decision.action,
+    displayName: formatPatientDisplayName({
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      preferredName: candidate.preferredName,
+    }),
+    phoneMasked: maskPhone(candidate.phoneNormalized),
+    approximateAge: formatApproximateAge(
+      candidate.dateOfBirth,
+      candidate.estimatedDateOfBirth === true
+    ),
+  };
+}
 const {
   registerPublicationGovernance,
 } = require("../../platform/website/publicationOrchestrator");
@@ -86,6 +124,18 @@ function registerActiveClinicPlatformContracts() {
       return result.normalized || "";
     },
     normalizePhone: normalizeActiveClinicPhone,
+  });
+
+  // V2.04: declare patient relationship key; do not migrate patients here.
+  // Clinical consent / Patient Number remain ActiveClinic-owned.
+  // Duplicate policy reuses AC stronger WARN_REVIEW override gate.
+  registerPersonProductAdapter(PRODUCT.ACTIVECLINIC, {
+    relationshipKeys: [PERSON_RELATIONSHIP_KEY.AC_PATIENT],
+    defaultRelationshipKey: PERSON_RELATIONSHIP_KEY.AC_PATIENT,
+    projectPersonDraft: projectPersonDraftFromActiveClinicPatient,
+    duplicatePolicy: ACTIVECLINIC_DUPLICATE_POLICY,
+    presentMatch: presentActiveClinicPersonMatch,
+    staffManagedWorkflow: activeClinicStaffPatientAdapter,
   });
 
   // PC10: AC governance adapter owns clinic submit/unpublish/publish policy;

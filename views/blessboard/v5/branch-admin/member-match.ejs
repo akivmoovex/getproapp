@@ -1,0 +1,122 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var cards = Array.isArray(matches) ? matches : [];
+  var values = (draft && draft.values) || {};
+  var enteredName = values.fullName || [values.firstName, values.lastName].filter(Boolean).join(' ') || 'New registration';
+  var churchIdPreview = (typeof churchIdPreview !== 'undefined' && churchIdPreview)
+    ? churchIdPreview
+    : ((draft && draft.churchIdPreview) || 'Pending');
+  var hardBlock = typeof blocked !== 'undefined' && blocked;
+  var draftTok = typeof draftToken !== 'undefined' ? draftToken : '';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function reasonLabel(r) {
+    var key = String(r || '');
+    if (key.indexOf('phone') >= 0) return 'Phone match';
+    if (key.indexOf('email') >= 0) return 'Email match';
+    if (key.indexOf('dob') >= 0 || key.indexOf('date') >= 0) return 'Name + date of birth';
+    if (key.indexOf('member_number') >= 0 || key.indexOf('church') >= 0) return 'Church ID collision';
+    if (key.indexOf('name') >= 0) return 'Name similarity';
+    return key || 'Possible match';
+  }
+%>
+
+<section
+  class="bb-v204-m03"
+  data-bb-member-match="1"
+  data-bb-stitch-v204="BB-M03"
+  data-bb-screen="BB-M03"
+  data-bb-stitch-id="dcd7f88a977a4e63bab8327b32c1206a"
+  aria-label="Possible Existing Member Detected"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Possible Existing Member Detected',
+    subtitle: 'BlessBoard found records in the church directory that may belong to this person. Please verify before creating a new membership record.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/new">Register</a> <span aria-hidden="true">›</span> <span>Possible match</span>'
+  }) %>
+
+  <%- include('../partials/v204/duplicate-warning-banner', {
+    title: 'Duplicate Prevention Engine',
+    body: hardBlock
+      ? 'An exact Church ID collision was found. Creating another membership with the same Church ID is blocked. Open the existing member or return to the form.'
+      : 'A person cannot have multiple Church IDs within this church. Never merge records automatically without verified identity.'
+  }) %>
+
+  <div class="bb-v204-m03__grid">
+    <article class="bb-v204-m03__card" data-bb-m03-entered="1">
+      <header class="bb-v204-m03__card-head">
+        <h2>Entered Information (New Registration)</h2>
+        <%- include('../partials/v204/status-chip', { label: 'In Queue', tone: 'neutral' }) %>
+      </header>
+      <div class="bb-v204-m03__card-body">
+        <p class="bb-v204-m03__name"><%= enteredName %></p>
+        <dl class="bb-v204-m03__dl">
+          <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= churchIdPreview %></span> <span class="bb-ba-muted">(pending)</span></dd></div>
+          <div><dt>Phone</dt><dd><%= values.phone || values.phoneNational || '—' %></dd></div>
+          <div><dt>Email</dt><dd><%= values.email || '—' %></dd></div>
+          <div><dt>Date of birth</dt><dd><%= values.dateOfBirth || '—' %></dd></div>
+        </dl>
+      </div>
+    </article>
+
+    <div class="bb-v204-m03__matches" data-bb-m03-matches="1">
+      <h2 class="bb-v204-m03__matches-title">Possible Existing Match Found</h2>
+      <% if (!cards.length) { %>
+      <%- include('../partials/v204/empty-state', {
+        title: 'No visible matches in this church',
+        body: 'Matches from other churches are never shown.'
+      }) %>
+      <% } %>
+      <% cards.forEach(function (card) { %>
+      <%- include('../partials/v204/person-match-card', {
+        title: card.nameHint || 'Existing member',
+        subtitle: card.memberNumber ? ('Church ID ' + card.memberNumber) : 'Church ID unavailable',
+        scoreLabel: reasonLabel((card.reasons && card.reasons[0]) || card.matchCode),
+        tone: hardBlock ? 'danger' : 'warning',
+        fields: [
+          { label: 'Phone', value: card.phoneDisplay || '—', highlight: (card.reasons || []).some(function (r) { return String(r).indexOf('phone') >= 0; }) },
+          { label: 'Email', value: card.emailDisplay || '—', highlight: (card.reasons || []).some(function (r) { return String(r).indexOf('email') >= 0; }) },
+          { label: 'Membership', value: card.membershipStatus || '—' },
+          { label: 'Portal', value: card.portalAccessStatus || 'not_activated' }
+        ],
+        actionsHtml: ''
+      }) %>
+      <form method="post" action="/branch-admin/members/new/match" class="bb-v204-m03__open-form">
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+        <input type="hidden" name="draft_token" value="<%= draftTok %>" />
+        <input type="hidden" name="action" value="open_existing" />
+        <input type="hidden" name="member_id" value="<%= card.memberId %>" />
+        <button type="submit" class="bb-ba-btn bb-ba-btn--secondary" data-bb-m03-open="1">
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          Open Existing Member<%= card.memberNumber ? (' (' + card.memberNumber + ')') : '' %>
+        </button>
+      </form>
+      <% }) %>
+    </div>
+  </div>
+
+  <footer class="bb-v204-m03__actions">
+    <form method="post" action="/branch-admin/members/new/match">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="draft_token" value="<%= draftTok %>" />
+      <input type="hidden" name="action" value="back" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--ghost" data-bb-m03-back="1">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to Form
+      </button>
+    </form>
+    <% if (!hardBlock) { %>
+    <form method="post" action="/branch-admin/members/new/match">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="draft_token" value="<%= draftTok %>" />
+      <input type="hidden" name="action" value="different_person" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m03-different="1">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        This Is a Different Person
+      </button>
+    </form>
+    <% } %>
+  </footer>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

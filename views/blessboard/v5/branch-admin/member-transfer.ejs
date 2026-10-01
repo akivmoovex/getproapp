@@ -1,0 +1,52 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var branches = Array.isArray(branches) ? branches : [];
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var err = typeof errorMessage !== 'undefined' ? errorMessage : null;
+%>
+
+<section class="bb-v204-m11" data-bb-stitch-v204="BB-M11" data-bb-screen="BB-M11" data-screen="BB16" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M" data-bb-member-transfer-form="1" aria-label="Branch Transfer">
+  <%- include('../partials/v204/page-header', {
+    title: 'Branch Transfer',
+    subtitle: 'Authorized same-church transfer. Historical attendance remains unchanged.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '">Profile</a> <span aria-hidden="true">›</span> <span>Transfer</span>'
+  }) %>
+
+  <% if (err) { %><p class="bb-ba-banner bb-ba-banner--danger" role="alert"><%= err %></p><% } %>
+
+  <form method="post" action="/branch-admin/members/<%= m.id %>/transfer" class="bb-v204-m02__form" data-bb-m11-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+    <section class="bb-v204-m02__section">
+      <dl class="bb-v204-m03__dl">
+        <div><dt>Member</dt><dd><%= [m.firstName, m.lastName].filter(Boolean).join(' ') || '—' %></dd></div>
+        <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span></dd></div>
+        <div><dt>Current branch</dt><dd><%= branchDisplayName || '—' %></dd></div>
+      </dl>
+      <div class="bb-ba-field">
+        <label for="to_branch_id">Destination branch</label>
+        <select id="to_branch_id" name="to_branch_id" required>
+          <option value="">Select branch</option>
+          <% branches.forEach(function (b) { %>
+          <option value="<%= b.id %>"<%= String(b.id) === String(typeof values !== 'undefined' && values.toBranchId || '') ? ' selected' : '' %>><%= b.displayName || b.name || b.branchKey || b.id %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-ba-field">
+        <label for="reason">Transfer reason</label>
+        <textarea id="reason" name="reason" rows="3" required maxlength="1000"><%= typeof values !== 'undefined' && values.reason ? values.reason : '' %></textarea>
+      </div>
+      <label class="bb-ba-check">
+        <input type="checkbox" name="confirm_transfer" value="1" required />
+        I confirm this transfer stays within the same church and attendance history will not be rewritten.
+      </label>
+    </section>
+    <footer class="bb-v204-m02__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m11-confirm="1">Request Transfer</button>
+    </footer>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

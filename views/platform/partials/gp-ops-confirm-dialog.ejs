@@ -1,0 +1,34 @@
+<%#
+  Shared confirmation dialog shell (product-neutral).
+  Locals: id (required), title, body?, bodyHtml?, actionsHtml?, open?, labelledBy?, className?
+%>
+<%
+  var _id = typeof id !== 'undefined' && id ? String(id) : 'gp-ops-confirm';
+  var _title = typeof title !== 'undefined' && title ? String(title) : 'Confirm';
+  var _labelledBy = typeof labelledBy !== 'undefined' && labelledBy ? String(labelledBy) : (_id + '-title');
+  var _open = typeof open !== 'undefined' && open;
+  var _cls = 'gp-ops-dialog' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div
+  class="<%= _cls %>"
+  id="<%= _id %>"
+  data-gp-ops="confirm-dialog"
+  data-gp-ops-dialog
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="<%= _labelledBy %>"
+  <% if (!_open) { %>hidden<% } %>
+>
+  <div class="gp-ops-dialog__backdrop" data-gp-ops-dialog-close tabindex="-1"></div>
+  <div class="gp-ops-dialog__panel" tabindex="-1">
+    <h2 id="<%= _labelledBy %>" class="gp-ops-dialog__title"><%= _title %></h2>
+    <% if (typeof bodyHtml !== 'undefined' && bodyHtml) { %>
+    <div class="gp-ops-dialog__body"><%- bodyHtml %></div>
+    <% } else if (typeof body !== 'undefined' && body) { %>
+    <p class="gp-ops-dialog__body"><%= body %></p>
+    <% } %>
+    <% if (typeof actionsHtml !== 'undefined' && actionsHtml) { %>
+    <div class="gp-ops-dialog__actions"><%- actionsHtml %></div>
+    <% } %>
+  </div>
+</div>

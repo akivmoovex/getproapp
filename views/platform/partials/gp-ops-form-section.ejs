@@ -1,0 +1,32 @@
+<%#
+  Shared form section group (product-neutral).
+  Locals: title?, description?, bodyHtml?, className?, id?, labelledBy?
+%>
+<%
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _title = typeof title !== 'undefined' && title ? String(title) : '';
+  var _headingId = _id ? (_id + '-heading') : (typeof labelledBy !== 'undefined' && labelledBy ? labelledBy : '');
+  var _cls = 'gp-ops-form-section' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<section
+  class="<%= _cls %>"
+  data-gp-ops="form-section"
+  <% if (_id) { %>id="<%= _id %>"<% } %>
+  <% if (_headingId) { %>aria-labelledby="<%= _headingId %>"<% } %>
+>
+  <% if (_title || (typeof description !== 'undefined' && description)) { %>
+  <header class="gp-ops-form-section__header">
+    <% if (_title) { %>
+    <h2 class="gp-ops-form-section__title" <% if (_headingId) { %>id="<%= _headingId %>"<% } %>><%= _title %></h2>
+    <% } %>
+    <% if (typeof description !== 'undefined' && description) { %>
+    <p class="gp-ops-form-section__description"><%= description %></p>
+    <% } %>
+  </header>
+  <% } %>
+  <div class="gp-ops-form-section__body">
+    <% if (typeof bodyHtml !== 'undefined' && bodyHtml) { %>
+    <%- bodyHtml %>
+    <% } %>
+  </div>
+</section>

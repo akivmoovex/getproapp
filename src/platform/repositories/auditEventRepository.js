@@ -150,6 +150,10 @@ async function listAuditEvents(client, opts) {
     params.push(opts.entityType);
     where += ` AND entity_type = $${params.length}`;
   }
+  if (opts.entityId) {
+    params.push(opts.entityId);
+    where += ` AND entity_id = $${params.length}`;
+  }
   if (opts.outcome) {
     params.push(opts.outcome);
     where += ` AND outcome = $${params.length}`;
@@ -216,6 +220,10 @@ async function listAuditEvents(client, opts) {
     if (opts.entityType) {
       legacyParams.push(opts.entityType);
       legacyWhere += ` AND entity_type = $${legacyParams.length}`;
+    }
+    if (opts.entityId) {
+      legacyParams.push(opts.entityId);
+      legacyWhere += ` AND entity_id = $${legacyParams.length}`;
     }
     if (opts.outcome) {
       legacyParams.push(opts.outcome);
