@@ -4,6 +4,19 @@
  * Password-reset email delivery (transactional). Default: unavailable stub.
  */
 
+const {
+  liveEmailTransportDecision,
+  readResendSenderConfig,
+} = require("../../platform/email/outboundEmailTransport");
+const { createResendAdapter } = require("../../platform/email/resendEmailAdapter");
+
+const BB_SENDER_ENV_KEYS = Object.freeze({
+  adapterKeys: ["BLESSBOARD_EMAIL_DELIVERY_ADAPTER", "EMAIL_DELIVERY_ADAPTER"],
+  fromEmailKeys: ["BLESSBOARD_EMAIL_FROM", "EMAIL_FROM"],
+  fromNameKeys: ["BLESSBOARD_EMAIL_FROM_NAME", "EMAIL_FROM_NAME"],
+  replyToKeys: ["BLESSBOARD_EMAIL_REPLY_TO", "EMAIL_REPLY_TO"],
+});
+
 const DELIVERY_CODE = Object.freeze({
   EMAIL_SENDING_UNAVAILABLE: "email_sending_unavailable",
   INVALID_INPUT: "invalid_input",
@@ -36,7 +49,26 @@ function createUnavailablePasswordResetEmailAdapter() {
   });
 }
 
-const defaultAdapter = createUnavailablePasswordResetEmailAdapter();
+function resolvePasswordResetEmailAdapter(env, deps) {
+  if (deps && deps.adapter && typeof deps.adapter.send === "function") {
+    return deps.adapter;
+  }
+  const source = env && typeof env === "object" ? env : process.env;
+  const decision = liveEmailTransportDecision(source, BB_SENDER_ENV_KEYS);
+  if (!decision.allowed || decision.adapterName !== "resend") {
+    return createUnavailablePasswordResetEmailAdapter();
+  }
+  const config = readResendSenderConfig(source, BB_SENDER_ENV_KEYS);
+  if (!config.ok) return createUnavailablePasswordResetEmailAdapter();
+  return createResendAdapter({
+    id: "blessboard_password_reset_resend",
+    apiKey: config.apiKey,
+    from: config.fromHeader,
+    replyTo: config.replyTo || null,
+    fetchImpl: deps && deps.fetchImpl,
+    log: deps && deps.log,
+  });
+}
 
 /**
  * @param {{
@@ -44,8 +76,9 @@ const defaultAdapter = createUnavailablePasswordResetEmailAdapter();
  *   publicBaseUrl: string,
  *   resetUrl: string,
  *   expiresAt: Date|string,
+ *   env?: object,
  * }} input
- * @param {{ adapter?: object }} [deps]
+ * @param {{ adapter?: object, fetchImpl?: Function, log?: Function }} [deps]
  */
 async function sendPasswordResetEmail(input, deps = {}) {
   const src = input && typeof input === "object" ? input : {};
@@ -83,7 +116,7 @@ ${expiresLabel ? `<p style="font-size:13px;color:#5c566e">This link expires on $
 <p style="font-size:13px;color:#5c566e">This link can be used only once. If you did not request a reset, you can ignore this email.</p>
 </body></html>`;
 
-  const adapter = (deps && deps.adapter) || defaultAdapter;
+  const adapter = resolvePasswordResetEmailAdapter(src.env, deps);
   try {
     const result = await adapter.send({
       recipient,
@@ -91,7 +124,14 @@ ${expiresLabel ? `<p style="font-size:13px;color:#5c566e">This link expires on $
       text,
       html,
     });
-    if (result && result.accepted_for_processing === true) {
+    const accepted = Boolean(
+      result &&
+        (result.accepted_for_processing === true ||
+          result.accepted === true ||
+          result.status === "queued" ||
+          result.status === "sent")
+    );
+    if (accepted) {
       return {
         ok: true,
         code: DELIVERY_CODE.SENT,
@@ -118,6 +158,8 @@ ${expiresLabel ? `<p style="font-size:13px;color:#5c566e">This link expires on $
 
 module.exports = {
   DELIVERY_CODE,
+  BB_SENDER_ENV_KEYS,
   createUnavailablePasswordResetEmailAdapter,
+  resolvePasswordResetEmailAdapter,
   sendPasswordResetEmail,
 };
