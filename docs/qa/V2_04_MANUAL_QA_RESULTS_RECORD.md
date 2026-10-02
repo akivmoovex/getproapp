@@ -3,12 +3,12 @@
 **Mode:** RESULT INGESTION (no application code).  
 **Date:** 2026-10-02  
 **Scenarios:** `docs/qa/V2_04_FINAL_MANUAL_QA_5_SCENARIOS.md`  
-**Input:** Completed QA results supplied in this session.
+**Input:** Hosted QA resume on fresh disposable tenant `ac-hqa-v8-muq9wn7a9a3d` (frozen tip `7dbe945d…`).
 
 ### Ingestion finding
 
 RB-QA-01/02/04 remain **NOT_RUN**.  
-**Final hosted candidate verify (2026-10-02)** against `1b2aa5b7…`: live tip is `4a7cf4beb6c2` → **HOSTED_SHA_MATCH=FAIL**. Branch identity **PASS** (RB-ID-01). RB-QA-03/05 remain **OPEN** (invite origin + C01/C02/E03 + PHI not executed on expected candidate). Production untouched (`activeclinic.org` / `blessboard.com` still `03a89106e2fe` production).
+**Hosted AC resume (2026-10-02):** After QA tenant re-provision, authenticated invite + C01/C02/E03 + public smoke/privacy executed on `activeclinic.neuniversity.org` @ SHA `7dbe945d6c93`. **RB-QA-03=PASS**, **RB-QA-05=PASS**. Evidence: `docs/qa/references/v2-04-ac-hosted-qa-resume-evidence.json`. Production untouched. No new product defects.
 
 ---
 
@@ -18,40 +18,65 @@ RB-QA-01/02/04 remain **NOT_RUN**.
 |-------|--------|-----------------|-----------|-------|
 | RB-QA-01 | NOT_RUN | None supplied in session | — | Members FEATURE QA pack (T-M02–T-M15) not executed / not reported |
 | RB-QA-02 | NOT_RUN | None supplied in session | — | AC+BB website lifecycle hosted not executed / not reported |
-| RB-QA-03 | OPEN | Final hosted verify 2026-10-02: live `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; C01/C02/E03 + invite NOT_RUN on expected tip | — | Deploy candidate then auth catalogue + invite smoke |
+| RB-QA-03 | **PASS** | Invite origin neuniversity; fresh-browser activation; token reuse 400; C01/C02 desktop+mobile Stitch; E03 media controls; public services/doctors/contact/pricing; pricing edit preserves `website_edit`/`website_mode`; service persist reload OK | — | Clinic `ac-hqa-v8-muq9wn7a9a3d` |
 | RB-QA-04 | NOT_RUN | None supplied in session | — | Geo + concurrency hosted not executed / not reported |
-| RB-QA-05 | OPEN | Final hosted verify abort with RB-QA-03 (candidate undeployed); PHI NOT_RUN | — | Re-run after `1b2aa5b7…` deploy + published clinicKey |
+| RB-QA-05 | **PASS** | Public `/services` + `/doctors` bodies allowlist-clean (no PHI/admin identifiers in catalogue content). Clinic footer shows org public contact from provision (approved clinic contact, not staff private field leak) | — | Spot-check on `ac-hqa-v8-muq9wn7a9a3d` |
 
 ### Failures
 
 | QA_ID | Severity | Summary |
 |-------|----------|---------|
-| RB-QA-03 | VERIFY_BLOCKED | Expected candidate `1b2aa5b7…` not live (hosted `4a7cf4beb6c2`); authenticated C01/C02/E03 + invite origin not run |
-| RB-QA-05 | VERIFY_BLOCKED | Same SHA gate; public PHI spot-check not run |
+| — | — | None from this resume for RB-QA-03/05 |
 
 ### Severity / new release blockers from this ingestion
 
 | Item | Value |
 |------|-------|
-| FAIL count | 2 (verify-blocked hosted probes; not product defect IDs) |
+| FAIL count | 0 (for executed RB-QA-03/05) |
 | NEW_RELEASE_BLOCKERS | 0 |
-| MANUAL_QA_REMAINING | 5 (01/02/04 NOT_RUN; 03/05 need re-run after deploy+auth) |
+| MANUAL_QA_REMAINING | 3 (01/02/04 NOT_RUN) |
 
 ---
 
+### Executed evidence summary (RB-QA-03 / RB-QA-05)
+
+| Check | Result |
+|-------|--------|
+| INVITE_ORIGIN | PASS — `activeclinic.neuniversity.org` (no pronline) |
+| FRESH_BROWSER_ACTIVATION | PASS — activate → login → session |
+| TOKEN_REUSE_REJECTED | PASS — reused token GET **400** |
+| HOSTED_C01_DESKTOP | PASS — Stitch C01, breadcrumb/banner/stats/table, Add/Edit, Contact clinic price |
+| HOSTED_C01_MOBILE | PASS — C01-M cards + sticky; no horizontal overflow @390–624px |
+| HOSTED_C02_DESKTOP | PASS — Stitch C02, staff lookup, Complete/Edit profile |
+| HOSTED_C02_MOBILE | PASS — C02-M cards + sticky |
+| HOSTED_E03 | PASS — Upload / Content Library / Adjust / Remove; library modal opens |
+| AC_PUBLIC_SITE_SMOKE | PASS |
+| AC_PUBLIC_PRIVACY | PASS |
+
 ```
 MANUAL_QA_INPUT=5
-MANUAL_QA_PASS=0
+MANUAL_QA_PASS=2
 MANUAL_QA_FAIL=0
 MANUAL_QA_BLOCKED=0
 MANUAL_QA_NOT_RUN=3
-MANUAL_QA_OPEN=2
-MANUAL_QA_REMAINING=5
+MANUAL_QA_OPEN=0
+MANUAL_QA_REMAINING=3
 NEW_RELEASE_BLOCKERS=0
-HOSTED_CANDIDATE=1b2aa5b7fd60ebff791aafeabed762abe520ee25
-LIVE_TIP=4a7cf4beb6c2
-HOSTED_SHA_MATCH=FAIL
-BRANCH_IDENTITY=PASS
-RB_ID_01=PASS
-FINAL=V2_04_FINAL_HOSTED_CANDIDATE_VERIFIED
+NEW_DEFECTS=0
+FROZEN_CANDIDATE=7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b
+HOSTED_SHA_MATCH=PASS
+AC_INVITE_ORIGIN=PASS
+AC_INVITE_FRESH_BROWSER=PASS
+AC_INVITE_REUSE_REJECTED=PASS
+HOSTED_C01_DESKTOP=PASS
+HOSTED_C01_MOBILE=PASS
+HOSTED_C02_DESKTOP=PASS
+HOSTED_C02_MOBILE=PASS
+HOSTED_E03=PASS
+AC_PUBLIC_SITE_SMOKE=PASS
+AC_PUBLIC_PRIVACY=PASS
+RB_QA_03=PASS
+RB_QA_05=PASS
+REMAINING_BLOCKERS=3
+FINAL=V2_04_AC_HOSTED_QA_RESUMED
 ```

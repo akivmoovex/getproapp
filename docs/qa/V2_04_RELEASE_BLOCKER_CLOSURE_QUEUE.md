@@ -77,9 +77,9 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | ~~RB-TEST-07~~ | PLATFORM | Shared editor matrix (A4) | AUTOMATED_TEST | P1 | ENG-03/04 CLOSED | — | — | ~~Shared matrix~~ | **CLOSED Wave3** — AC+BB adapter + wave suite matrix lock | — | — | **4 CLOSED** |
 | RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID capture; prefer ENG-01/02 | NO | RB-ID-01 (capture); RB-ENG-01/02 preferred | Execute T-M02–T-M15-class on TESTING | FEATURE_QA note: Members pack PASS/FAIL by scenario | LARGE | HIGH | 5 |
 | RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID capture; prefer TEST-07 | NO | RB-ID-01 (capture); prefer RB-TEST-07 | Publish/unpublish/version/restore/true-stale on AC+BB tip | Hosted lifecycle QA note bound to SHA | MEDIUM | MEDIUM | 5 |
-| RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Hub management-only (no fake canvas); Edit Website; draft/publish smoke | Hosted hub/editor note PASS | SMALL | LOW | 5 |
-| RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 5 |
-| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | YES | prefer RB-ID capture | Spot-check doctor/services pages vs allowlist | PHI spot-check note vs PD-V204-AC-P1-02 PASS | SMALL | MEDIUM | 5 |
+| RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | — | — | RB-ID-01 **PASS** | Hosted invite + C01/C02/E03 + public smoke | **PASS** 2026-10-02 (`ac-hqa-v8-muq9wn7a9a3d`) | SMALL | LOW | 3 |
+| RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 3 |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | — | — | Spot-check doctor/services pages vs allowlist | **PASS** 2026-10-02 allowlist clean | SMALL | MEDIUM | 3 |
 | RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | Apex `GETPRO_GIT_BRANCH=V4` + shared metadata file + Hostinger redeploy | NO | Live BB+AC UNKNOWN until redeploy of shared-metadata fix | Redeploy testing app → re-probe About+healthz (BB/AC expect `shared.build-identity`) | BB+AC `branch=V4` / `V4 testing` | SMALL | HIGH | 6 OPEN — code fixed |
 
 ---
@@ -128,22 +128,22 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 |------------|--------|----------|
 | RB-QA-01 | **NOT_RUN** | No tester evidence in session |
 | RB-QA-02 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-03 | **OPEN** | Final hosted verify: live `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; HOSTED_C01/C02/E03 + invite FAIL/not executed on expected tip |
+| RB-QA-03 | **PASS** | Hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke (`docs/qa/references/v2-04-ac-hosted-qa-resume-evidence.json`) |
 | RB-QA-04 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-05 | **OPEN** | Final hosted verify abort with RB-QA-03; PHI NOT_RUN |
+| RB-QA-05 | **PASS** | Public services/doctors allowlist spot-check PASS on same clinic |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
-**MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0** (03/05 verify-blocked, not product defects).
+**MANUAL_QA_REMAINING=3** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0**.
 
-**Prerequisite:** TESTING identity sheet **captured**; **RB-ID-01 PASS** on live tip `4a7cf4beb6c2` (V4 + shared.build-identity). Final candidate `1b2aa5b7…` not yet hosted.
+**Prerequisite:** TESTING identity **PASS**; **NEW_APPLICATION_CANDIDATE=`7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`** (CASE A freeze 2026-10-02).
 
-**Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website + geo/concurrency + PHI signed.
+**Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website lifecycle + geo/concurrency still outstanding (01/02/04).
 
 ### WAVE 6 — RELEASE IDENTITY — SHARED BUILD METADATA FIX (2026-10-02)
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-ID-01 | **PASS** (live tip `4a7cf4beb6c2`) | Hub/AC/BB `V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity`. Final app candidate `1b2aa5b7…` still undeployed (SHA gate separate). |
+| RB-ID-01 | **PASS** (live tip = frozen candidate `7dbe945d6c93`) | Hub/AC/BB `V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity`. Tip reconciled CASE A over `1b2aa5b7…`. |
 
 #### Hostinger model (confirmed)
 
@@ -212,25 +212,28 @@ WAVE5_MANUAL=5
 WAVE6_BUILD_IDENTITY=1
 DEPENDENCY_CHAINS=6
 INDEPENDENT_FAST_CLOSURES=2
-REMAINING_BLOCKERS=6
+REMAINING_BLOCKERS=3
 ENGINEERING_REMAINING=0
 AUTOMATED_TEST_REMAINING=0
-MANUAL_QA_REMAINING=5
-BUILD_IDENTITY_REMAINING=1
+MANUAL_QA_REMAINING=3
+BUILD_IDENTITY_REMAINING=0
 BB_SHA_MATCH=PASS
 AC_SHA_MATCH=PASS
-BB_BRANCH_IDENTITY=FAIL
-AC_BRANCH_IDENTITY=FAIL
-UNKNOWN_LABEL_FOUND=YES
+BB_BRANCH_IDENTITY=PASS
+AC_BRANCH_IDENTITY=PASS
+UNKNOWN_LABEL_FOUND=NO
 STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
-RB_ID_01=FAIL
+RB_ID_01=PASS
+RB_QA_03=PASS
+RB_QA_05=PASS
 HUB_BRANCH=V4
-BB_BRANCH=OTHER
-AC_BRANCH=OTHER
-BRANCH_SOURCE_ALL=OTHER
+BB_BRANCH=V4
+AC_BRANCH=V4
+BRANCH_SOURCE_ALL=PASS
 SHA_PARITY=PASS
 HOSTINGER_SUBDOMAIN_ENV_SUPPORTED=NO
 SHARED_BUILD_IDENTITY_SOURCE=.getpro/build-identity.json
-FINAL=V2_04_SHARED_BUILD_IDENTITY_FIXED
+NEW_DEFECTS=0
+FINAL=V2_04_AC_HOSTED_QA_RESUMED
 ```

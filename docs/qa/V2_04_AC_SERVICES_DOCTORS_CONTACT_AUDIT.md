@@ -243,6 +243,18 @@ Earlier “SERVICES_STITCH_PARITY=PASS / DOCTORS_STITCH_PARITY=PASS” from mana
 **Included in candidate:** catalogue list/forms + `website-cms.css` C01/C02 block + catalogue CMS route preview/returnTo aliases + parity test + Stitch screen map/PNGs.  
 **Excluded from candidate:** build-identity shared-metadata work, public-site management / Contact R07 dirty tree, `.tmp_*` artifacts.
 
+### Hosted tip reconciliation freeze (2026-10-02) — CASE A
+
+| Field | Value |
+|-------|--------|
+| PREVIOUS_CANDIDATE | `1b2aa5b7fd60ebff791aafeabed762abe520ee25` (invite origin fix) |
+| NEW_APPLICATION_CANDIDATE | `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b` |
+| Intervening | **1** commit — **DOC_ONLY** (QA handoff/pack docs) |
+| C01 / C02 / E03 / invite origin / build-identity | YES |
+| RUNTIME_AUDIT_CLEAN | YES (0 tracked `.tmp_runtime_audit`) |
+| Focused contracts | **45/45** |
+| Auth FEATURE (RB-QA-03/05) | Still OPEN |
+
 ```
 C01_DESKTOP_IMPLEMENTED=YES
 C01_MOBILE_IMPLEMENTED=YES
@@ -254,8 +266,8 @@ E03_CATALOGUE_INTEGRATION=PASS
 SERVICES_STITCH_PARITY=PASS
 DOCTORS_STITCH_PARITY=PASS
 FOCUSED_TESTS=11/11
-NEW_APPLICATION_CANDIDATE_SHA=33e5c29612942e1484086432214b733f353f8601
-FINAL=AC_C01_C02_TRUE_STITCH_PARITY_COMPLETE
+NEW_APPLICATION_CANDIDATE_SHA=7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b
+FINAL=V2_04_HOSTED_TIP_RECONCILED
 ```
 
 ```

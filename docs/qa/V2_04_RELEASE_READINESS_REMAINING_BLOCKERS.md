@@ -59,15 +59,15 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
 | RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
 | RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
-| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **OPEN** (final hosted verify 2026-10-02: live SHA `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; C01/C02/E03 + invite origin not verified on expected tip) | Hub/editor + C01/C02 visual not FEATURE-proven on **candidate** tip | Deploy `1b2aa5b7…` → authenticated catalogue + invite origin smoke | RB-ID-01 **PASS** on live tip | NO |
+| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **PASS** (2026-10-02 hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke) | — | — | RB-ID-01 **PASS** | — |
 | RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
-| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **OPEN** (final hosted verify abort: candidate `1b2aa5b7…` undeployed; PHI NOT_RUN) | Public pages need hygiene sign-off vs allowlist | Spot-check after deploy of `1b2aa5b7…` + published clinicKey | RB-PROD-07 **CLOSED** | YES (after sample clinic) |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **PASS** (2026-10-02: public services/doctors bodies allowlist-clean on `ac-hqa-v8-muq9wn7a9a3d`; footer org public contact only) | — | — | RB-PROD-07 **CLOSED** | — |
 
 ### E. RELEASE IDENTITY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **PASS** (hosted 2026-10-02 on tip `4a7cf4beb6c2`): Hub/AC/BB all `branch=V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity`; no UNKNOWN. Note: tip ≠ final app candidate `1b2aa5b7…` (invite-origin fix still undeployed). | — (identity labels OK on current tip) | Keep verifying after each Hostinger redeploy | Apex env + shared metadata | YES (identity); redeploy still needed for candidate SHA |
+| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **PASS** (hosted tip = frozen candidate `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`): Hub/AC/BB `V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity` | — | Re-verify after redeploys | Apex env + shared metadata | YES |
 
 ---
 
@@ -78,12 +78,12 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 | **A. ENGINEERING** | — (Wave3 closed) | **0** |
 | **B. PRODUCT** | — (Wave2 closed) | **0** |
 | **C. AUTOMATED TEST** | — (Wave3 closed) | **0** |
-| **D. MANUAL QA** | RB-QA-01…05 | **5** |
-| **E. RELEASE IDENTITY** | RB-ID-01 (**PASS** on tip `4a7cf4beb6c2`) | **0** open |
+| **D. MANUAL QA** | RB-QA-01, RB-QA-02, RB-QA-04 (RB-QA-03/05 **PASS**) | **3** |
+| **E. RELEASE IDENTITY** | RB-ID-01 (**PASS** on tip `7dbe945d6c93`) | **0** open |
 | **Closed Wave1** | RB-ENG-03, RB-ENG-04 | **2** |
 | **Closed Wave2** | RB-PROD-01…08, RB-ENG-01, RB-ENG-02 | **10** |
 | **Closed Wave3** | RB-ENG-05, RB-TEST-01…07 | **8** |
-| **Total remaining unique** | | **6** |
+| **Total remaining unique** | | **3** |
 
 ### Editor P1 → blocker map
 
@@ -91,7 +91,7 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 |---------------|------------------|-----------|
 | A1 BB inline coverage | **CLOSED Wave1** | ~~RB-ENG-03~~ |
 | A2 Image payload contract | **CLOSED Wave1** | ~~RB-ENG-04~~ |
-| A3 Hub management-only | AC code CLOSED; hosted verify remains | RB-QA-03 (verify only) |
+| A3 Hub management-only | AC code CLOSED; hosted verify **PASS** | ~~RB-QA-03~~ |
 | A4 Shared editor regression matrix | YES | RB-TEST-07 |
 | B1 AC submit-for-review maturity | Not HARD — only if publish-review claim required | Out of this hard set unless Product elevates |
 | B2 Diagnostics parity | Fold into lifecycle + shared suite | RB-QA-02 + RB-TEST-07 |
@@ -102,10 +102,10 @@ Roadmap **Phase 5** product adapters / branding and all **P2** items are **not**
 
 | Set | IDs | Why fast |
 |-----|-----|----------|
-| Manual PHI | RB-QA-05 | Policy frozen; hosted spot-check |
+| — | — | RB-QA-03/05 closed on hosted resume |
 
-**FASTEST_CLOSABLE_NOW = 1**  
-**Not fast:** RB-ID-01 (BRANCH=UNKNOWN on BB+AC); RB-QA-01…04 (need identity / FEATURE pack).
+**FASTEST_CLOSABLE_NOW = 0** among remaining.  
+**Still open MANUAL_QA:** RB-QA-01 (Members pack), RB-QA-02 (website lifecycle), RB-QA-04 (geo + concurrency).
 
 ---
 
@@ -114,8 +114,8 @@ Roadmap **Phase 5** product adapters / branding and all **P2** items are **not**
 1. **RB-ID-01** — fix BB+AC branch label (not UNKNOWN), then re-verify; sheet already captured for SHA/env/DB/About=2.04.  
 2. ~~RB-PROD-01…08 + RB-ENG-01/02~~ **CLOSED Wave2**.  
 3. ~~RB-ENG-05 + RB-TEST-01…07~~ **CLOSED Wave3**.  
-4. Execute **RB-QA-01** (Members FEATURE QA) + **RB-QA-02…04** (website / geo / concurrency).  
-5. Execute **RB-QA-05** (public PHI spot-check vs allowlist).
+4. Execute **RB-QA-01** (Members FEATURE QA) + **RB-QA-02** (website lifecycle) + **RB-QA-04** (geo / concurrency).  
+5. ~~**RB-QA-05**~~ **PASS** (2026-10-02 public PHI spot-check). ~~**RB-QA-03**~~ **PASS** (invite + C01/C02/E03 hosted).
 
 Until that set is closed (or Product **explicitly waives** a subset in writing), readiness stays **NO**.
 
@@ -126,9 +126,9 @@ Until that set is closed (or Product **explicitly waives** a subset in writing),
 
 ### Manual QA ingestion note (2026-10-02)
 
-- Session ingestion: **no tester evidence supplied** for RB-QA-01…05.
-- Classification: all five **NOT_RUN** (see `V2_04_MANUAL_QA_RESULTS_RECORD.md`).
-- MANUAL_QA_REMAINING=5 · NEW_RELEASE_BLOCKERS=0 · READY_FOR_PRODUCTION_QA still **NO**.
+- Early session: RB-QA-01…05 lacked evidence → classified NOT_RUN/OPEN.
+- **Hosted AC resume (same day):** after disposable tenant re-provision, **RB-QA-03=PASS** and **RB-QA-05=PASS** on tip `7dbe945d…` / clinic `ac-hqa-v8-muq9wn7a9a3d`.
+- MANUAL_QA_REMAINING=3 (01/02/04) · NEW_RELEASE_BLOCKERS=0 · READY_FOR_PRODUCTION_QA still **NO**.
 
 ### Wave6 build-identity verification note (2026-10-02, READ-ONLY)
 
@@ -220,6 +220,7 @@ BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_ID
 - Evidence: `docs/qa/V2_04_AC_SERVICES_DOCTORS_CONTACT_AUDIT.md`; focused suite `tests/v2-04-ac-public-site-management-fix.test.js` + related AC website tests **65/65 PASS**.  
 - **True C01/C02 Stitch parity (same day):** catalogue list renders Stitch structure (`data-ac-stitch-screen=C01|C02`), desktop table + mobile cards + sticky bar; doctor photo forms wire shared E03 media-field framing. Screen map: `docs/design/stitch-exports/AC_MW_C01_C02_E03_SCREEN_MAP.md`. Focused **11/11** (`tests/v2-04-ac-catalogue-c01-c02-stitch-parity.test.js`). Prior contract-only “STITCH_PARITY=PASS” superseded. Hosted visual sign-off still via **RB-QA-03** / **RB-QA-05**.
 - **C01/C02/E03 application candidate frozen (same day):** SHA `33e5c29612942e1484086432214b733f353f8601` on `V4` (previous hosted tip `554d37406ef5`). **Not deployed** from Cursor; production untouched. Ready for operator Hostinger testing deploy + RB-QA-03/05 re-run.
+- **Hosted tip reconciliation (2026-10-02):** Live `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b` is **CASE A** clean docs-only descendant of invite-origin candidate `1b2aa5b7…`. **NEW_APPLICATION_CANDIDATE** frozen to `7dbe945d6c93…`. Contains C01/C02/E03, build-identity, invite-origin fix, public-site fixes; `.tmp_runtime_audit` clean. Focused contracts **45/45**. Auth FEATURE smoke still via RB-QA-03/05.
 
 ### Wave2 closure note (2026-10-02)
 
@@ -232,27 +233,30 @@ BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_ID
 ---
 
 ```
-REMAINING_RELEASE_BLOCKERS=5
+REMAINING_RELEASE_BLOCKERS=3
 ENGINEERING=0
 PRODUCT=0
 AUTOMATED_TEST=0
-MANUAL_QA=5
+MANUAL_QA=3
 BUILD_IDENTITY=0
-FASTEST_CLOSABLE_NOW=0
-READY_FOR_PRODUCTION_QA=NO
-EXPECTED_CANDIDATE=1b2aa5b7fd60ebff791aafeabed762abe520ee25
-LIVE_TIP=4a7cf4beb6c2
-HOSTED_SHA_MATCH=FAIL
+NEW_APPLICATION_CANDIDATE=7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b
+HOSTED_SHA=7dbe945d6c93
+HOSTED_SHA_MATCH=PASS
 BRANCH_IDENTITY=PASS
 RB_ID_01=PASS
-HUB_BRANCH=V4
-AC_BRANCH=V4
-BB_BRANCH=V4
-HUB_BRANCH_SOURCE=GETPRO_GIT_BRANCH
-AC_BRANCH_SOURCE=shared.build-identity
-BB_BRANCH_SOURCE=shared.build-identity
+AC_INVITE_ORIGIN=PASS
+AC_INVITE_FRESH_BROWSER=PASS
+AC_INVITE_REUSE_REJECTED=PASS
+HOSTED_C01_DESKTOP=PASS
+HOSTED_C01_MOBILE=PASS
+HOSTED_C02_DESKTOP=PASS
+HOSTED_C02_MOBILE=PASS
+HOSTED_E03=PASS
+AC_PUBLIC_SITE_SMOKE=PASS
+AC_PUBLIC_PRIVACY=PASS
+RB_QA_03=PASS
+RB_QA_05=PASS
 PRODUCTION_UNTOUCHED=YES
-RB_QA_03=OPEN
-RB_QA_05=OPEN
-FINAL=V2_04_FINAL_HOSTED_CANDIDATE_VERIFIED
+NEW_DEFECTS=0
+FINAL=V2_04_AC_HOSTED_QA_RESUMED
 ```
