@@ -672,7 +672,7 @@ describe("blessboard home service times (Prompt 50)", () => {
     }
   });
 
-  it("23–24: mobile editor markup remains usable", async () => {
+  it("23–25: mobile editor markup remains usable and publish action survives loading-state disable", async () => {
     requireDb();
     const { res } = await authedGet("/hq/content/pages/home", users.hq);
     assert.equal(res.status, 200);
@@ -680,5 +680,12 @@ describe("blessboard home service times (Prompt 50)", () => {
     assert.match(res.text, /data-bb-service-times-add/);
     assert.doesNotMatch(res.text, /overflow-x:\s*scroll/);
     assert.match(res.text, /bb-hq-nav|data-bb-hq|bb-hq-shell/i);
+
+    // Regression: disabling submit buttons during the submit event removes
+    // their name/value from form serialization unless the clicked action is
+    // copied to a hidden field first.
+    assert.match(res.text, /event\.submitter/);
+    assert.match(res.text, /data-bb-service-times-action/);
+    assert.match(res.text, /actionInput\.name = "action"/);
   });
 });
