@@ -3193,7 +3193,7 @@ const VERSIONS = Object.freeze([
         description:
           "BlessBoard and ActiveClinic About pages show product Version 2.05 with a separate Git build SHA via the shared applicationBuildInfo V8 scheme.",
         workflow: "Open /about on BlessBoard and ActiveClinic testing hosts",
-        expectedBehavior: "Version 2.05 + real build SHA; production catalogue profile remains 1.3",
+        expectedBehavior: "Version 2.05 + real build SHA via shared applicationBuildInfo (all deployments, including production)",
         products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
         featureType: "release_metadata",
         implementationStatus: STATUS.IMPLEMENTED,

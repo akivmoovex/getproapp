@@ -5,38 +5,36 @@
  * Reuses the same short Git SHA source as /healthz (readGitShaShort).
  * Does not shell out to git on each call beyond the existing env/.git HEAD read.
  *
- * V7 (production catalogue profile / legacy non-v8 platformLine):
- *   productVersion  → "1.3"   (human product label)
- *   versionBase     → "1.03"  (system version prefix)
- *   version         → "1.03.<12-char deployed SHA>" or "1.03.(unavailable)"
- *
- * V8 platform line (neuniversity moovex-platform-v8-testing AND V9/V10 pronline
- * moovex-platform-testing with platformLine=v8):
+ * Canonical current product line (all deployments, including production):
  *   productVersion  → "2.05"
  *   versionBase     → "2.05"
  *   version         → "2.05" (Git SHA is shown separately as `build`; no invented build number)
+ *
+ * Legacy V7 catalogue labels (historical reference only; not selected for About):
+ *   productVersion  → "1.3"
+ *   versionBase     → "1.03"
+ *   version         → "1.03.<12-char deployed SHA>"
  */
 
 const { readGitShaShort } = require("../../startup/startupProcessMarker");
 const { getDeploymentEnvMode } = require("../config/deploymentEnv");
-const { isV8Deployment } = require("../config/v8DeploymentIsolation");
 
-/** System version base for V7 release 1.3 (About / diagnostics). */
+/** System version base for V7 release 1.3 (historical). */
 const VERSION_BASE_V7 = "1.03";
 
-/** Human product version label for V7 release 1.3. */
+/** Human product version label for V7 release 1.3 (historical). */
 const PRODUCT_VERSION_V7 = "1.3";
 
-/** System / product version for V8 (GetPro V2.05 line). */
+/** System / product version for the canonical GetPro V2.05 line. */
 const VERSION_BASE_V8 = "2.05";
 const PRODUCT_VERSION_V8 = "2.05";
 
 /**
- * Backward-compatible aliases — default to V7 so existing imports keep working.
- * Prefer getApplicationBuildInfo({ env }) for deployment-aware values.
+ * Canonical aliases — current product About/version source is V2.05.
+ * Prefer getApplicationBuildInfo({ env }) for environment + build SHA.
  */
-const VERSION_BASE = VERSION_BASE_V7;
-const PRODUCT_VERSION = PRODUCT_VERSION_V7;
+const VERSION_BASE = VERSION_BASE_V8;
+const PRODUCT_VERSION = PRODUCT_VERSION_V8;
 
 const UNAVAILABLE = "(unavailable)";
 
@@ -57,23 +55,21 @@ function resolveBuildSha(options) {
 /**
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{
- *   platformLine: "v7"|"v8",
+ *   platformLine: "v8",
  *   productVersion: string,
  *   versionBase: string,
  * }}
  */
 function resolveVersionScheme(env) {
-  if (isV8Deployment(env || process.env)) {
-    return {
-      platformLine: "v8",
-      productVersion: PRODUCT_VERSION_V8,
-      versionBase: VERSION_BASE_V8,
-    };
-  }
+  // About/product version is canonical V2.05 for every deployment profile,
+  // including production (moovex-platform-production / activeclinic-org-production).
+  // Deployment isolation platformLine (v7 vs v8) is orthogonal and must not
+  // pin About to the legacy 1.03 catalogue label.
+  void env;
   return {
-    platformLine: "v7",
-    productVersion: PRODUCT_VERSION_V7,
-    versionBase: VERSION_BASE_V7,
+    platformLine: "v8",
+    productVersion: PRODUCT_VERSION_V8,
+    versionBase: VERSION_BASE_V8,
   };
 }
 
@@ -91,7 +87,7 @@ function resolveVersionScheme(env) {
  *   available: boolean,
  *   environment: "testing"|"production",
  *   environmentLabel: string,
- *   platformLine: "v7"|"v8",
+ *   platformLine: "v8",
  * }}
  */
 function getApplicationBuildInfo(options) {
@@ -105,12 +101,8 @@ function getApplicationBuildInfo(options) {
   const environmentLabel =
     environment.charAt(0).toUpperCase() + environment.slice(1);
 
-  // V8: show product version alone; Git SHA lives in `build` only.
-  // V7: preserve historical 1.03.<sha> compound format.
-  const version =
-    scheme.platformLine === "v8"
-      ? scheme.versionBase
-      : `${scheme.versionBase}.${build}`;
+  // Canonical V2.05: show product version alone; Git SHA lives in `build` only.
+  const version = scheme.versionBase;
 
   return {
     productVersion: scheme.productVersion,
