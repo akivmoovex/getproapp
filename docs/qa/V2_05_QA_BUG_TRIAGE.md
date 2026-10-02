@@ -3,11 +3,11 @@
 **Branch:** `V5`  
 **TESTED_BASELINE_SHA:** `751293ffaf72a1d964c54901c449aed221f8a69f` (QA01–QA09 sweep; 68 PASS / 0 FAIL on that baseline working tree)  
 **INTEGRATED_V5_SHA:** `8d859e11906ff58e363f143b0ee26f10053acf9e`  
-**Scope:** Authoritative defect list QA01–QA09 only. No V2.03/V2.04 historical pass results used as proof of current behavior.
+**Scope:** Authoritative V2.05 QA defect register. QA01–QA09 are the original defect sweep; QA10–QA12 are manual QA findings added 2 Oct 2026. No V2.03/V2.04 historical pass results are used as proof of current behavior.
 
 > Historical note: Do not treat the baseline 68-pass result as evidence against a later integrated SHA unless tests were re-run at that SHA.
 
-## Triage table
+## Triage table — fixes, partial fixes, open items
 
 | ID | Product | Severity | Reproduced | Root Cause | Fix | Automated Coverage | Current Result | Manual QA Needed |
 |---|---|---|---|---|---|---|---|---|
@@ -20,6 +20,37 @@
 | QA07 | BB Platform | P2 | Open / product gap | Public announcements require `published` (+ schedule window) **and** `public` audience; church site hides branch-only items. No public attendance surface. Stitch AN/attendance rows still PARTIAL; T-M09 NOT_RUN historically. | No safe product change in this sweep (workflow ambiguity, not a single code bug). | Existing announcement/attendance suites; no draft→public E2E | **OPEN** | Manual: draft → publish + public audience → public page; attendance admin only |
 | QA08 | BB Platform | P2 | Open (coverage) | Regression/manual gaps: RB-QA-01 NOT_RUN scenarios, FR sanity matrix, mobile companions PARTIAL — not a single reproducible app bug. | No code change this sweep. | Wave3/security/member-portal suites exist but do not close NOT_RUN manual pack | **OPEN** | Run remaining members/security/mobile manual scenarios |
 | QA09 | AC + BB | P2 | Covered by suite | Forgot/reset password recovery audited earlier on V5; enumeration-safe routes + product isolation. | Prior recovery work (passwordReset* + views) retained in working tree. | `tests/v2-05-password-recovery.test.js` | **FIXED** (suite green) | Spot-check AC + BB forgot → email/SMS path on hosted |
+| QA10 | BB Website | P2 / Major | Yes (manual QA) | Inline Public Website image-upload control is visible but does not respond to click. The same image can be selected/uploaded when entering **Edit Entire Section**, so the failure is isolated to the direct/inline media interaction path rather than upload storage itself. | **OPEN — no fix recorded yet.** Inspect inline media control event binding, overlay/z-index/pointer target, hidden file-input association, and parity with the working Edit Entire Section media field. | No dedicated regression test recorded yet. Add browser/DOM contract coverage for direct inline image control opening the file input and retaining existing Edit Entire Section behavior. | **OPEN** | Reproduce on desktop and mobile; click the direct image icon, select a local image, save draft, preview, publish, and verify public image. |
+| QA11 | BB Auth / Account | P2 / Major | Yes (manual QA) | User email change reports success and the new email is stored/displayed, but authentication identity remains bound to the old email: new email login is denied while old email login still succeeds. This indicates profile/contact email update and login-identity credential update are not synchronized, or the wrong email field is being updated. | **OPEN — no fix recorded yet.** Trace email-change write path versus auth identity/user credential record; define whether email change must atomically update the login identifier, enforce uniqueness, invalidate stale identifier/session state as appropriate, and preserve audit/security controls. | No dedicated V2.05 regression test recorded yet. Add tests proving: new email can log in after successful change; old email can no longer log in; duplicate email is rejected; product/tenant isolation remains intact. | **OPEN** | Change email on hosted V5, sign out fully, test new email login, test old email rejection, password recovery to new email, and duplicate-email handling. |
+| QA12 | BB Website | P2 / Major | Yes (manual QA / screenshot) | A section immediately above the sermon/banner content (shown as **“Full library”** in the supplied QA screenshot) has no visible section editing/removal controls. The surrounding website editor exposes edit controls, but this section cannot be edited or removed from the public-page editing flow. | **OPEN — no fix recorded yet.** Identify the section key/type and ensure it participates in the same editability contract as other public-page sections: edit control, section settings/content editing where applicable, remove/hide action where product rules allow, permissions, draft persistence, preview, and publish. | No dedicated regression test recorded yet. Extend website-editor section-contract coverage to assert editable/removable controls for this section and public output after draft/publish. | **OPEN** | Verify on the affected Sermons/Public Website page at desktop and 390px: edit text/content, hide/remove section if supported, save draft, preview, publish, and confirm live page. |
+
+## New manual QA findings — 2 Oct 2026
+
+### QA10 — Direct inline Public Website image upload does nothing
+- **Bug type:** Functional / UI interaction
+- **Feature:** Public Website — Image Upload
+- **Severity:** P2 / Major
+- **Observed:** Clicking the image-upload icon directly on the public website editor produces no response.
+- **Control comparison:** **Edit Entire Section** can select and upload an image successfully.
+- **Expected:** The direct inline image icon opens the operating-system file selector and completes the same supported upload flow.
+- **Status:** **OPEN**
+
+### QA11 — Email change does not update login identity
+- **Bug type:** Functional / Authentication identity consistency
+- **Feature:** Account / registered email change
+- **Severity:** P2 / Major
+- **Observed:** The application confirms the new email was saved, but login with the new email is denied while the old email still authenticates.
+- **Expected:** After a successful email change, the new email is the active login identifier and the old email is no longer accepted.
+- **Status:** **OPEN**
+- **Security QA note:** Also verify password recovery destination/identifier, duplicate-email rejection, active sessions, and tenant/product isolation after the fix.
+
+### QA12 — Public-page section lacks edit/remove tools
+- **Bug type:** Functional / Website editor UI
+- **Feature:** Public Website — section editing
+- **Severity:** P2 / Major
+- **Observed:** The section immediately above the sermon/banner card, shown as **“Full library”** in the QA screenshot, has no usable edit or remove controls.
+- **Expected:** Every user-manageable public section should expose the approved editing affordance and, where the product permits it, hide/remove controls, with changes flowing through draft → preview → publish.
+- **Status:** **OPEN**
 
 ## Website main-flow suite (QA01–QA04)
 
@@ -63,4 +94,16 @@ NODE_ENV=test node --test \
 ## P1 / P2 summary
 
 - **P1 blockers remaining:** none from QA01–QA04 after fixes (QA01 not a bug). Device retest still required for QA03.  
-- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps); QA05 needs hosted confirmation if 503 persists after schema deploy.
+- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps), QA10 (direct inline image upload), QA11 (email-change login identity), QA12 (section edit/remove controls). QA05 remains a partial fix pending hosted confirmation if 503 persists after schema deploy.
+
+
+## Current QA status snapshot
+
+| Category | IDs |
+|---|---|
+| **FIXED** | QA02, QA03, QA04, QA06, QA09 |
+| **PARTIAL_FIX / hosted confirmation** | QA05 |
+| **OPEN** | QA07, QA08, QA10, QA11, QA12 |
+| **NOT_A_BUG** | QA01 |
+
+**Release note:** The previously recorded automated results do not prove QA10–QA12 because these are newly reported manual findings and dedicated regression coverage has not yet been added.
