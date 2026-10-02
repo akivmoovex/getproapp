@@ -208,8 +208,9 @@ test.describe("Visual regression", () => {
     await page.goto("/company/1", { waitUntil: "networkidle", timeout: 60_000 });
     await expect(page.locator("h1.pro-company-profile__title")).toBeVisible({ timeout: 30_000 });
     await waitForFonts(page);
-    await expect(page.locator("body")).toHaveScreenshot("company.png", {
-      fullPage: true,
+    // Viewport (not fullPage body): full-page height drifts 1px across OS font metrics and
+    // Playwright hard-fails on dimension mismatch before maxDiffPixelRatio can apply.
+    await expect(page).toHaveScreenshot("company.png", {
       mask: [
         maskFooter(page),
         page.locator(".pro-company-profile__logo-wrap"),
