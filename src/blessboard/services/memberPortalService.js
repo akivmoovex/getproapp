@@ -196,6 +196,15 @@ async function updateMemberPortalProfile(db, input, deps) {
         profile: null,
       };
     }
+    if (result.code === DOMAIN_RESULT.DUPLICATE_EMAIL) {
+      return {
+        ok: false,
+        status: STATUS.CONFLICT,
+        reason: "email_in_use",
+        detail: "email_in_use",
+        profile: null,
+      };
+    }
     if (result.code === DOMAIN_RESULT.UNAUTHORIZED) {
       return { ok: false, status: STATUS.FORBIDDEN, reason: "unauthorized", profile: null };
     }

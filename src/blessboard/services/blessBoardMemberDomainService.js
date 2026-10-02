@@ -13,6 +13,7 @@
  */
 
 const memberRepo = require("../repositories/memberIdentityRepository");
+const authRepo = require("../repositories/blessBoardAuthRepository");
 const {
   MEMBERSHIP_STATUS,
   CANONICAL_MEMBERSHIP_STATUSES,
@@ -50,6 +51,7 @@ const RESULT = Object.freeze({
   UNAUTHORIZED: "unauthorized",
   NOT_FOUND: "member_not_found",
   DUPLICATE_CHURCH_ID: "duplicate_church_id",
+  DUPLICATE_EMAIL: "duplicate_email",
   CHURCH_ID_IMMUTABLE: "church_id_immutable",
   BRANCH_NOT_MEMBER_EDITABLE: "branch_not_member_editable",
   SELF_CREATE_FORBIDDEN: "self_create_forbidden",
@@ -59,7 +61,28 @@ const RESULT = Object.freeze({
   TENANT_MISMATCH: "tenant_mismatch",
   REASON_REQUIRED: "reason_required",
   INVALID_TRANSITION: "invalid_transition",
+  LOOKUP_ERROR: "lookup_error",
 });
+
+/**
+ * Run fn with a pool client; uses an existing client as-is.
+ * @param {{ connect?: Function, query?: Function }} db
+ * @param {(client: { query: Function }) => Promise<any>} fn
+ */
+async function withClient(db, fn) {
+  if (db && typeof db.query === "function" && typeof db.release === "function") {
+    return fn(db);
+  }
+  if (db && typeof db.connect === "function") {
+    const client = await db.connect();
+    try {
+      return await fn(client);
+    } finally {
+      client.release();
+    }
+  }
+  return fn(db);
+}
 
 function requireReason(raw, { min = 3, max = 1000 } = {}) {
   const reason = raw == null ? "" : String(raw).trim();
@@ -471,6 +494,7 @@ async function updateMemberProfile(db, input, deps) {
     const email = normalizePersonEmail(input.email);
     if (!email.ok) return { ok: false, code: RESULT.VALIDATION_FAILED, detail: email };
     patch.emailDisplay = email.display;
+    patch._emailNormalized = email.normalized;
   }
 
   // Phone recovery / change preserves verification requirements.
@@ -506,6 +530,117 @@ async function updateMemberProfile(db, input, deps) {
     patch.phoneVerificationRequired = false;
   }
 
+  const nextEmailNormalized =
+    patch._emailNormalized !== undefined
+      ? patch._emailNormalized
+      : member.emailNormalized || null;
+  delete patch._emailNormalized;
+
+  const emailChanging =
+    Object.prototype.hasOwnProperty.call(patch, "emailDisplay") &&
+    String(nextEmailNormalized || "") !== String(member.emailNormalized || "");
+
+  const linkedUserId = member.userId ? String(member.userId) : null;
+
+  // When profile email changes and a login user is linked, update the canonical
+  // blessboard.users login identity in the same transaction (phone-first login unchanged).
+  if (emailChanging && linkedUserId) {
+    try {
+      return await withClient(db, async (client) => {
+        const ownsTx = typeof client.query === "function";
+        if (ownsTx) await client.query("BEGIN");
+        try {
+          if (nextEmailNormalized) {
+            const existing = await authRepo.findUserByEmail(client, nextEmailNormalized);
+            if (existing && String(existing.id) !== linkedUserId) {
+              if (ownsTx) await client.query("ROLLBACK");
+              return {
+                ok: false,
+                code: RESULT.DUPLICATE_EMAIL,
+                detail: "email_in_use",
+              };
+            }
+          } else {
+            // Clearing login email requires the user to still have a phone contact.
+            const linkedUser = await authRepo.findUserById(client, linkedUserId);
+            if (!linkedUser) {
+              if (ownsTx) await client.query("ROLLBACK");
+              return { ok: false, code: RESULT.LOOKUP_ERROR, detail: "linked_user" };
+            }
+            if (!linkedUser.phone_normalized) {
+              if (ownsTx) await client.query("ROLLBACK");
+              return {
+                ok: false,
+                code: RESULT.VALIDATION_FAILED,
+                detail: "contact_required",
+              };
+            }
+          }
+
+          const updated = await memberRepo.updateMemberDomainProfile(client, {
+            memberId,
+            ...patch,
+          });
+
+          await authRepo.updateUserEmail(client, {
+            userId: linkedUserId,
+            emailNormalized: nextEmailNormalized,
+            emailDisplay: patch.emailDisplay,
+          });
+
+          await auditMemberChange(client, {
+            actionKey: "members.edit",
+            organizationId: input.organizationId,
+            churchId,
+            branchId: input.branchId || null,
+            actorUserId: input.actorUserId || null,
+            memberId,
+            metadata: {
+              actor_kind: isMemberSelf ? "member_self" : "staff",
+              phone_verification_required: updated.phoneVerificationRequired,
+              fields: Object.keys(patch),
+              login_email_updated: true,
+            },
+          });
+
+          if (ownsTx) await client.query("COMMIT");
+          return {
+            ok: true,
+            code: RESULT.OK,
+            member: updated,
+            phoneVerificationRequired: updated.phoneVerificationRequired,
+            loginEmailUpdated: true,
+          };
+        } catch (err) {
+          if (ownsTx) {
+            try {
+              await client.query("ROLLBACK");
+            } catch {
+              /* ignore */
+            }
+          }
+          if (authRepo.isUniqueViolation(err)) {
+            return {
+              ok: false,
+              code: RESULT.DUPLICATE_EMAIL,
+              detail: "email_in_use",
+            };
+          }
+          throw err;
+        }
+      });
+    } catch (err) {
+      if (authRepo.isUniqueViolation(err)) {
+        return {
+          ok: false,
+          code: RESULT.DUPLICATE_EMAIL,
+          detail: "email_in_use",
+        };
+      }
+      throw err;
+    }
+  }
+
   const updated = await memberRepo.updateMemberDomainProfile(db, {
     memberId,
     ...patch,
@@ -522,6 +657,7 @@ async function updateMemberProfile(db, input, deps) {
       actor_kind: isMemberSelf ? "member_self" : "staff",
       phone_verification_required: updated.phoneVerificationRequired,
       fields: Object.keys(patch),
+      login_email_updated: false,
     },
   });
 

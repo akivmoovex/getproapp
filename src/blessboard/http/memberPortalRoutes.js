@@ -261,6 +261,7 @@ function mapMemberProfileFieldErrors(reason) {
   const messages = {
     preferred_name: "Enter a preferred name without special markup (max 100 characters).",
     email_display: "Enter a valid email address.",
+    email_in_use: "That email is already used by another account. Choose a different email.",
     phone: "Enter a valid phone number, or leave it blank.",
     contact_required: "Keep at least one contact method: email or phone.",
     validation: "Please check your profile details and try again.",
@@ -270,7 +271,7 @@ function mapMemberProfileFieldErrors(reason) {
   };
   const msg = messages[code] || "Please check your profile details and try again.";
   if (code === "preferred_name") fieldErrors.preferredName = msg;
-  else if (code === "email_display") fieldErrors.emailDisplay = msg;
+  else if (code === "email_display" || code === "email_in_use") fieldErrors.emailDisplay = msg;
   else if (code === "phone") fieldErrors.phone = msg;
   else if (code === "contact_required") {
     fieldErrors.phone = msg;
@@ -547,7 +548,10 @@ function createMemberPortalRouter(deps) {
     });
 
     if (!updated.ok) {
-      if (updated.status === PORTAL_STATUS.INVALID_INPUT) {
+      if (
+        updated.status === PORTAL_STATUS.INVALID_INPUT ||
+        updated.status === PORTAL_STATUS.CONFLICT
+      ) {
         const loaded = await getMemberPortalProfile(getPool(), {
           userId: req.v5Session.session.userId,
           churchId: tenant.church.id,
@@ -574,7 +578,7 @@ function createMemberPortalRouter(deps) {
             errorSummaryItems: mapped.summaryItems,
           })
         );
-        return res.status(400).type("html").send(html);
+        return res.status(updated.status === PORTAL_STATUS.CONFLICT ? 409 : 400).type("html").send(html);
       }
       if (
         updated.status === PORTAL_STATUS.FORBIDDEN ||

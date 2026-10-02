@@ -21,7 +21,7 @@
 | QA08 | BB Platform | P2 | Open (coverage) | Regression/manual gaps: RB-QA-01 NOT_RUN scenarios, FR sanity matrix, mobile companions PARTIAL — not a single reproducible app bug. | No code change this sweep. | Wave3/security/member-portal suites exist but do not close NOT_RUN manual pack | **OPEN** | Run remaining members/security/mobile manual scenarios |
 | QA09 | AC + BB | P2 | Covered by suite | Forgot/reset password recovery audited earlier on V5; enumeration-safe routes + product isolation. | Prior recovery work (passwordReset* + views) retained in working tree. | `tests/v2-05-password-recovery.test.js` | **FIXED** (suite green) | Spot-check AC + BB forgot → email/SMS path on hosted |
 | QA10 | BB Website | P2 / Major | Yes (manual QA) | Inline Public Website image-upload control is visible but does not respond to click. The same image can be selected/uploaded when entering **Edit Entire Section**, so the failure is isolated to the direct/inline media interaction path rather than upload storage itself. | **OPEN — no fix recorded yet.** Inspect inline media control event binding, overlay/z-index/pointer target, hidden file-input association, and parity with the working Edit Entire Section media field. | No dedicated regression test recorded yet. Add browser/DOM contract coverage for direct inline image control opening the file input and retaining existing Edit Entire Section behavior. | **OPEN** | Reproduce on desktop and mobile; click the direct image icon, select a local image, save draft, preview, publish, and verify public image. |
-| QA11 | BB Auth / Account | P2 / Major | Yes (manual QA) | User email change reports success and the new email is stored/displayed, but authentication identity remains bound to the old email: new email login is denied while old email login still succeeds. This indicates profile/contact email update and login-identity credential update are not synchronized, or the wrong email field is being updated. | **OPEN — no fix recorded yet.** Trace email-change write path versus auth identity/user credential record; define whether email change must atomically update the login identifier, enforce uniqueness, invalidate stale identifier/session state as appropriate, and preserve audit/security controls. | No dedicated V2.05 regression test recorded yet. Add tests proving: new email can log in after successful change; old email can no longer log in; duplicate email is rejected; product/tenant isolation remains intact. | **OPEN** | Change email on hosted V5, sign out fully, test new email login, test old email rejection, password recovery to new email, and duplicate-email handling. |
+| QA11 | BB Auth / Account | P2 / Major | Yes (manual QA + code) | Member/profile email change updated only `blessboard.members.email_*`; login/forgot-password read `blessboard.users.email_normalized`, so old email kept working. | Atomically sync linked `blessboard.users` login email in `updateMemberProfile` (duplicate rejection + verified_at clear); portal maps `email_in_use`. | `tests/v2-05-qa11-email-change-login-identity.test.js` (+ recovery/auth suites) | **FIXED** | Spot-check hosted: change email, sign out, new login OK / old denied / phone OK / forgot-password to new |
 | QA12 | BB Website | P2 / Major | Yes (manual QA / screenshot) | A section immediately above the sermon/banner content (shown as **“Full library”** in the supplied QA screenshot) has no visible section editing/removal controls. The surrounding website editor exposes edit controls, but this section cannot be edited or removed from the public-page editing flow. | **OPEN — no fix recorded yet.** Identify the section key/type and ensure it participates in the same editability contract as other public-page sections: edit control, section settings/content editing where applicable, remove/hide action where product rules allow, permissions, draft persistence, preview, and publish. | No dedicated regression test recorded yet. Extend website-editor section-contract coverage to assert editable/removable controls for this section and public output after draft/publish. | **OPEN** | Verify on the affected Sermons/Public Website page at desktop and 390px: edit text/content, hide/remove section if supported, save draft, preview, publish, and confirm live page. |
 
 ## New manual QA findings — 2 Oct 2026
@@ -41,7 +41,7 @@
 - **Severity:** P2 / Major
 - **Observed:** The application confirms the new email was saved, but login with the new email is denied while the old email still authenticates.
 - **Expected:** After a successful email change, the new email is the active login identifier and the old email is no longer accepted.
-- **Status:** **OPEN**
+- **Status:** **FIXED** (V5) — profile email change now updates linked `blessboard.users` login identity atomically; regression suite `tests/v2-05-qa11-email-change-login-identity.test.js`.
 - **Security QA note:** Also verify password recovery destination/identifier, duplicate-email rejection, active sessions, and tenant/product isolation after the fix.
 
 ### QA12 — Public-page section lacks edit/remove tools
@@ -94,16 +94,16 @@ NODE_ENV=test node --test \
 ## P1 / P2 summary
 
 - **P1 blockers remaining:** none from QA01–QA04 after fixes (QA01 not a bug). Device retest still required for QA03.  
-- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps), QA10 (direct inline image upload), QA11 (email-change login identity), QA12 (section edit/remove controls). QA05 remains a partial fix pending hosted confirmation if 503 persists after schema deploy.
+- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps), QA10 (direct inline image upload), QA12 (section edit/remove controls). QA05 remains a partial fix pending hosted confirmation if 503 persists after schema deploy. QA11 email-change login identity is **FIXED**.
 
 
 ## Current QA status snapshot
 
 | Category | IDs |
 |---|---|
-| **FIXED** | QA02, QA03, QA04, QA06, QA09 |
+| **FIXED** | QA02, QA03, QA04, QA06, QA09, QA11 |
 | **PARTIAL_FIX / hosted confirmation** | QA05 |
-| **OPEN** | QA07, QA08, QA10, QA11, QA12 |
+| **OPEN** | QA07, QA08, QA10, QA12 |
 | **NOT_A_BUG** | QA01 |
 
 **Release note:** The previously recorded automated results do not prove QA10–QA12 because these are newly reported manual findings and dedicated regression coverage has not yet been added.

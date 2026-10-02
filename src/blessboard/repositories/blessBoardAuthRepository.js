@@ -430,6 +430,44 @@ async function updateUserPasswordHash(client, userId, passwordHash) {
 }
 
 /**
+ * Update the canonical login email on blessboard.users.
+ * Clears email_verified_at when the normalized address changes (ownership not re-proven).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   userId: string,
+ *   emailNormalized: string|null,
+ *   emailDisplay: string|null,
+ * }} fields
+ */
+async function updateUserEmail(client, fields) {
+  const userId = String((fields && fields.userId) || "").trim();
+  if (!userId) return null;
+  const emailNormalized =
+    fields.emailNormalized == null || String(fields.emailNormalized).trim() === ""
+      ? null
+      : String(fields.emailNormalized).trim().toLowerCase();
+  const emailDisplay =
+    fields.emailDisplay == null || String(fields.emailDisplay).trim() === ""
+      ? null
+      : String(fields.emailDisplay).trim();
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET email_normalized = $2,
+            email_display = $3,
+            email_verified_at = CASE
+              WHEN email_normalized IS DISTINCT FROM $2 THEN NULL
+              ELSE email_verified_at
+            END,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING id, email_normalized, email_display, status, phone_normalized,
+                password_hash, email_verified_at`,
+    [userId, emailNormalized, emailDisplay]
+  );
+  return r.rows[0] || null;
+}
+
+/**
  * Active (non-revoked, non-expired) deployment sessions for a user.
  * @param {{ query: Function }} client
  * @param {string} userId
@@ -654,6 +692,7 @@ module.exports = {
   countActiveChurchStaffRoles,
   touchLastLogin,
   updateUserPasswordHash,
+  updateUserEmail,
   countActiveSessionsForUser,
   revokeAllSessionsForUser,
   updateUserStatus,
