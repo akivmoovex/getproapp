@@ -134,6 +134,20 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
 
+
+### WAVE 5c — HOSTED TIP ONE-COMMIT RECONCILIATION — **CASE A** (2026-10-02)
+
+| Item | Result |
+|------|--------|
+| PREVIOUS | `600d1c07cfea3b287455226ab50d623809fa2ea8` |
+| HOSTED | `7ae27d6631e6cd46332491d3b9315969aeb6f279` |
+| CLASS | DOC_ONLY |
+| APPLICATION_DELTA | NO |
+| FREEZE | **YES** → NEW_APPLICATION_CANDIDATE=`7ae27d6631e6cd46332491d3b9315969aeb6f279` |
+| REDEPLOY | **NO** |
+
+Next: Wave 5 final blocker retest against frozen tip (SHA gate should PASS).
+
 ### WAVE 5b — POST-DEPLOY FINAL BLOCKER RETEST — **STOPPED** (2026-10-02)
 
 | Check | Result |

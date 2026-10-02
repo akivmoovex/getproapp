@@ -64,6 +64,7 @@ module.exports = {
   editSessionService,
   publicWebsiteUrl,
   websiteManagementPresentation,
+  websiteManagementFeatureContract: require("./websiteManagementFeatureContract"),
   platformAdminWebsitesService: require("./platformAdminWebsitesService"),
   inlineEditorContract,
   editableFieldSchema,

@@ -2,10 +2,29 @@
 
 **Mode:** RESULT INGESTION (no application code; no deploy).  
 **Date:** 2026-10-02  
-**Requested post-deploy candidate:** `600d1c07cfea3b287455226ab50d623809fa2ea8`  
+**Frozen application candidate (reconciled):** `7ae27d6631e6cd46332491d3b9315969aeb6f279`  
+**Previous candidate:** `600d1c07cfea3b287455226ab50d623809fa2ea8`  
 **Hosted tip (SHA gate):** Hub/AC/BB `gitSha=7ae27d6631e6`, `branch=V4` / About `V4 testing`  
 **Prior frozen tip on record:** `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`  
 **Tenants:** BB `bb-v8qa-muq9wn7a9a3d` · AC `ac-hqa-v8-muq9wn7a9a3d`
+
+
+### Hosted tip one-commit reconciliation (2026-10-02) — **CASE A / FREEZE**
+
+| Item | Result |
+|------|--------|
+| PREVIOUS_CANDIDATE | `600d1c07cfea3b287455226ab50d623809fa2ea8` |
+| HOSTED_SHA | `7ae27d6631e6` (`7ae27d6631e6cd46332491d3b9315969aeb6f279`) |
+| PREVIOUS_IS_ANCESTOR | YES |
+| INTERVENING_COMMITS | 1 |
+| COMMIT_CLASS | **DOC_ONLY** (2 QA markdown files only) |
+| APPLICATION_DELTA | **NO** |
+| REQUIRED_FIXES_PRESENT | **YES** |
+| SAFE_TO_FREEZE_HOSTED_SHA | **YES** |
+| NEW_APPLICATION_CANDIDATE | `7ae27d6631e6cd46332491d3b9315969aeb6f279` |
+| REDEPLOY_REQUIRED | **NO** |
+
+Next: rerun final blocker QA with exact-SHA gate against `7ae27d6631e6`.
 
 ### Post-deploy SHA gate — **STOP** (2026-10-02)
 

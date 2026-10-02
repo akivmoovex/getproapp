@@ -248,6 +248,24 @@
       <p>Upload and reuse photos for your church website.</p>
     </a>
     <% } %>
+    <% if (actions.library) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.library %>" data-bb-website-action="library" data-website-admin-page="library">
+      <h3>Media library</h3>
+      <p>Browse reusable photos and website media for your church.</p>
+    </a>
+    <% } %>
+    <% if (actions.branding) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.branding %>" data-bb-website-action="branding" data-website-admin-page="branding">
+      <h3>Branding</h3>
+      <p>Update logo, church identity, and brand presentation for the public site.</p>
+    </a>
+    <% } %>
+    <% if (actions.settings) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.settings %>" data-bb-website-action="settings" data-website-admin-page="settings">
+      <h3>Website settings</h3>
+      <p>Advanced website options, governance, and configuration.</p>
+    </a>
+    <% } %>
     <% if (actions.styles) { %>
     <a class="bb-wm-hub-tile" href="<%= actions.styles %>" data-bb-website-action="styles">
       <h3>Styles</h3>

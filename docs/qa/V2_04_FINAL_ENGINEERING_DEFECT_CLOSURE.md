@@ -1,6 +1,6 @@
 # V2.04 Final Engineering Defect Closure
 
-**Candidate status:** app candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` — **READY_FOR_HOSTED_DEPLOY was YES** after TESTING migration gate; **post-deploy SHA gate FAIL** vs exact `600d1c07…` (hosted `7ae27d66…`). **Do not close RB-QA-01 / RB-QA-02** until hosted manual retest after deploy.  
+**Candidate status:** frozen app candidate `7ae27d6631e6cd46332491d3b9315969aeb6f279` (`7ae27d6631e6`) — reconciled from previous `600d1c07cfea3b287455226ab50d623809fa2ea8` via DOC_ONLY tip commit. **READY for final blocker retest against hosted tip.** **Do not close RB-QA-01 / RB-QA-02** until that retest PASSes.  
 **Preserved packs:** Real Responsive Editor Viewport (12/12), AC Catalogue GUI shell fix (10/10).
 
 ## TESTING DB migration gate (2026-10-02)
@@ -27,6 +27,25 @@ Verified columns on `blessboard.members` after apply: `member_number` (text, NUL
 
 **120:** widens `members_status_check`; additive `portal_access_status NOT NULL DEFAULT 'not_activated'` + CHECK; `platform_person_id` (+ optional FK/index); profile/address/next-of-kin/phone-pending columns; RBAC permissions `members.block` / `members.manage_church_id`; backfill portal status from `user_id`/`suspended`; rebuilds contact uniqueness indexes for expanded live statuses.
 
+
+
+## Hosted tip one-commit reconciliation (2026-10-02)
+
+| Item | Result |
+|------|--------|
+| PREVIOUS_CANDIDATE | `600d1c07cfea3b287455226ab50d623809fa2ea8` |
+| HOSTED_SHA | `7ae27d6631e6` (`7ae27d6631e6cd46332491d3b9315969aeb6f279`) |
+| PREVIOUS_IS_ANCESTOR | **YES** |
+| INTERVENING_COMMITS | **1** (`7ae27d66 Ver 2.04 website fix`) |
+| COMMIT_CLASS | **DOC_ONLY** |
+| Files | `docs/qa/V2_04_FINAL_ENGINEERING_DEFECT_CLOSURE.md`, `docs/qa/V2_04_RELEASE_READINESS_REMAINING_BLOCKERS.md` only |
+| APPLICATION_DELTA | **NO** (`src`/`views`/`public`/`db`/`package*.json` identical to previous) |
+| REQUIRED_FIXES_PRESENT | **YES** |
+| SAFE_TO_FREEZE_HOSTED_SHA | **YES** (CASE A) |
+| NEW_APPLICATION_CANDIDATE | `7ae27d6631e6cd46332491d3b9315969aeb6f279` |
+| REDEPLOY_REQUIRED | **NO** |
+
+**Decision:** Freeze hosted tip as the V2.04 application candidate. Next step: rerun final blocker QA against `7ae27d6631e6` (exact-SHA gate should PASS).
 
 ## Post-deploy final blocker retest (2026-10-02) — STOPPED
 
