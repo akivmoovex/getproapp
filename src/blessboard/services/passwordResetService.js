@@ -208,8 +208,13 @@ async function requestPasswordReset(db, input, deps = {}) {
             publicBaseUrl,
             resetUrl,
             expiresAt,
+            env,
           },
-          { adapter: deps.emailAdapter }
+          {
+            adapter: deps.emailAdapter,
+            fetchImpl: deps.fetchImpl,
+            log: deps.log,
+          }
         );
 
         await recordBlessBoardAudit(db, {
@@ -385,8 +390,13 @@ async function platformAdminRequestPasswordReset(db, input, deps = {}) {
               publicBaseUrl,
               resetUrl,
               expiresAt,
+              env,
             },
-            { adapter: deps.emailAdapter }
+            {
+              adapter: deps.emailAdapter,
+              fetchImpl: deps.fetchImpl,
+              log: deps.log,
+            }
           );
           sent = Boolean(delivery.ok);
           deliveryCode = delivery.code;
