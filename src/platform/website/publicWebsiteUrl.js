@@ -65,10 +65,116 @@ function envMode(env) {
   return mode === "production" ? "production" : "testing";
 }
 
+/**
+ * DOMAIN_MATRIX row type for the active deployment.
+ * V8 neuniversity testing uses `testing-v8` (not the legacy V7 `testing` / pronline row).
+ * Authority: PLATFORM_DEPLOYMENT_CODE / BASE_DOMAIN (and optional profile), not env-name alone.
+ *
+ * @param {NodeJS.ProcessEnv|object|null|undefined} env
+ * @returns {"production"|"testing"|"testing-v8"}
+ */
+function domainMatrixTypeForEnv(env) {
+  const source = env && typeof env === "object" ? env : process.env || {};
+  if (envMode(source) === "production") return "production";
+
+  const code = String(
+    source.PLATFORM_DEPLOYMENT_CODE || source.platformDeploymentCode || ""
+  )
+    .trim()
+    .toLowerCase();
+  if (code === "moovex-platform-v8-testing") return "testing-v8";
+
+  const base = String(source.BASE_DOMAIN || source.canonicalDomain || "")
+    .trim()
+    .toLowerCase();
+  if (base === "neuniversity.org") return "testing-v8";
+
+  try {
+    const { getDeploymentProfile } = require("../config/deploymentProfiles");
+    const profile = getDeploymentProfile(source);
+    const canonical = String(
+      (profile && (profile.canonicalDomain || profile.publicOrigin)) || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/\/+$/, "");
+    if (canonical === "neuniversity.org" || canonical.endsWith(".neuniversity.org")) {
+      return "testing-v8";
+    }
+  } catch {
+    /* profile optional */
+  }
+
+  return "testing";
+}
+
+/**
+ * Pick the product hostname from a deployment profile apexDomains list.
+ * Skips www.* and platform hub apex hosts.
+ *
+ * @param {string} product
+ * @param {string[]|null|undefined} apexDomains
+ * @returns {string|null}
+ */
+function productHostFromApexDomains(product, apexDomains) {
+  const productKey = normalizeProduct(product);
+  if (!productKey || !Array.isArray(apexDomains)) return null;
+  const hosts = apexDomains
+    .map((h) => String(h || "").trim().toLowerCase())
+    .filter(Boolean)
+    .filter((h) => !h.startsWith("www."));
+  const productHosts = hosts.filter(
+    (h) => h === `${productKey}.org` || h.startsWith(`${productKey}.`)
+  );
+  if (!productHosts.length) return null;
+  const preferredOrder = [
+    `${productKey}.neuniversity.org`,
+    `${productKey}.pronline.org`,
+    `${productKey}.org`,
+  ];
+  for (const preferred of preferredOrder) {
+    if (productHosts.includes(preferred)) return preferred;
+  }
+  return productHosts[0];
+}
+
+/**
+ * Canonical absolute origin for a product under the active deployment profile.
+ * Prefer profile apexDomains product host; fall back to DOMAIN_MATRIX.
+ *
+ * @param {string} product
+ * @param {NodeJS.ProcessEnv|object|null|undefined} env
+ * @param {string|null|undefined} [deploymentCode]
+ * @returns {string}
+ */
+function publicOriginFromDeploymentForProduct(product, env, deploymentCode) {
+  const source = {
+    ...(env && typeof env === "object" ? env : {}),
+  };
+  if (deploymentCode) {
+    source.PLATFORM_DEPLOYMENT_CODE = String(deploymentCode).trim();
+  }
+  if (source.origin) return String(source.origin).replace(/\/$/, "");
+
+  try {
+    const { getDeploymentProfile } = require("../config/deploymentProfiles");
+    const profile = getDeploymentProfile(source);
+    if (profile) {
+      const host = productHostFromApexDomains(product, profile.apexDomains);
+      if (host) return `https://${host}`;
+    }
+  } catch {
+    /* fall through */
+  }
+
+  return publicOriginForProduct(product, source);
+}
+
 function publicOriginForProduct(product, env) {
   if (env && env.origin) return String(env.origin).replace(/\/$/, "");
   const productKey = normalizeProduct(product);
-  const type = envMode(env);
+  const type = domainMatrixTypeForEnv(env);
   const row = DOMAIN_MATRIX.find(
     (entry) => entry.productKey === productKey && entry.type === type && entry.domain
   );
@@ -653,6 +759,9 @@ module.exports = {
   publicWebsitePathPrefix,
   publicWebsiteAliasPathPrefix,
   publicOriginForProduct,
+  domainMatrixTypeForEnv,
+  productHostFromApexDomains,
+  publicOriginFromDeploymentForProduct,
   splitPathAndSearch,
   appendQuery,
   searchFromRequest,

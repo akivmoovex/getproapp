@@ -15,9 +15,34 @@ const {
 } = require("../src/activeclinic/services/activeClinicShareLinks");
 
 const TESTING_ORIGIN = "https://activeclinic.pronline.org";
+const V8_TESTING_ORIGIN = "https://activeclinic.neuniversity.org";
 const PRODUCTION_ORIGIN = "https://activeclinic.org";
 
 describe("ActiveClinic invitation env parity (simulation)", () => {
+  it("moovex-platform-v8-testing → ActiveClinic neuniversity host (not pronline)", () => {
+    const env = {
+      DEPLOYMENT_ENV: "testing",
+      NODE_ENV: "production",
+      PLATFORM_DEPLOYMENT_CODE: "moovex-platform-v8-testing",
+      DATABASE_IDENTITY_ENV: "testing",
+      BASE_DOMAIN: "neuniversity.org",
+    };
+    const origin = resolvePublicOrigin(env, "moovex-platform-v8-testing");
+    assert.equal(origin, V8_TESTING_ORIGIN);
+    const rawToken = "tok-v8-qa_Base64urlSafe-TOKEN.part~2";
+    const url = buildActivationUrl({
+      env,
+      deploymentCode: "moovex-platform-v8-testing",
+      rawToken,
+    });
+    assert.equal(
+      url,
+      `${V8_TESTING_ORIGIN}/activate/${encodeURIComponent(rawToken)}`
+    );
+    assert.equal(url.includes("activeclinic.pronline.org"), false);
+    assert.match(url, /\/activate\/tok-v8-qa_Base64urlSafe-TOKEN\.part~2$/);
+  });
+
   it("moovex-platform-testing → ActiveClinic testing host (not pronline.org apex)", () => {
     const env = {
       DEPLOYMENT_ENV: "testing",

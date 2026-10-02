@@ -77,6 +77,33 @@ describe("v7 unified website URLs", () => {
       "https://blessboard.com"
     );
     assert.equal(
+      publicOriginForProduct(PRODUCT_CODE.ACTIVECLINIC, {
+        NODE_ENV: "production",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-v8-testing",
+        BASE_DOMAIN: "neuniversity.org",
+      }),
+      "https://activeclinic.neuniversity.org"
+    );
+    assert.equal(
+      publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, {
+        NODE_ENV: "production",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-v8-testing",
+        BASE_DOMAIN: "neuniversity.org",
+      }),
+      "https://blessboard.neuniversity.org"
+    );
+    assert.equal(
+      publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, {
+        NODE_ENV: "production",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        BASE_DOMAIN: "pronline.org",
+      }),
+      "https://blessboard.pronline.org"
+    );
+    assert.equal(
       buildPublicOrganizationWebsiteUrl({
         product: PRODUCT_CODE.ACTIVECLINIC,
         organizationKey: "sunrise-clinic",
