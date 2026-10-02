@@ -2,6 +2,12 @@
 
 /**
  * Public forgot-password / reset-password routes for BlessBoard V5.
+ *
+ * Reset token may be supplied as:
+ *   - /reset-password?token=...
+ *   - /reset-password/:token
+ * Email delivery is only required for forgot-password outbound mail;
+ * GET/POST reset consume a token without needing the email adapter.
  */
 
 const express = require("express");
@@ -73,6 +79,93 @@ function createPasswordResetRouter(opts) {
     };
   }
 
+  function resolveResetToken(req) {
+    const fromBody = req.body && req.body.token != null ? String(req.body.token).trim() : "";
+    if (fromBody) return fromBody;
+    const fromQuery = req.query && req.query.token != null ? String(req.query.token).trim() : "";
+    if (fromQuery) return fromQuery;
+    const fromParams = req.params && req.params.token != null ? String(req.params.token).trim() : "";
+    return fromParams;
+  }
+
+  async function renderResetGet(req, res, token) {
+    const csrfToken = issueCsrf(req, res);
+    const inspection = await inspectPasswordResetToken(getPool(), token);
+    const html = renderV5Ejs("apex/reset-password.ejs", {
+      csrfToken,
+      token: inspection.ok ? token : "",
+      tokenValid: Boolean(inspection.ok),
+      tokenStatus: inspection.status,
+      error: null,
+      message: null,
+      loginHref: "/login",
+      forgotHref: "/forgot-password",
+    });
+    return res.status(inspection.ok ? 200 : 400).type("html").send(html);
+  }
+
+  async function handleResetPost(req, res) {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    const token = resolveResetToken(req);
+    if (!validateCsrf(req, submitted, env)) {
+      const csrfToken = issueCsrf(req, res);
+      const html = renderV5Ejs("apex/reset-password.ejs", {
+        csrfToken,
+        token,
+        tokenValid: true,
+        tokenStatus: STATUS.OK,
+        error: "Your session expired. Please try again.",
+        message: null,
+        loginHref: "/login",
+        forgotHref: "/forgot-password",
+      });
+      return res.status(403).type("html").send(html);
+    }
+
+    const result = await completePasswordReset(getPool(), {
+      token,
+      password: req.body && req.body.password,
+      passwordConfirm: req.body && req.body.password_confirm,
+      env,
+      deploymentCode: (getPlatformDeploymentCode(env).ok
+        ? getPlatformDeploymentCode(env).code
+        : null),
+    });
+
+    if (result.ok) {
+      return res.redirect(303, "/login?reset=1");
+    }
+
+    let error = "Unable to reset password. Request a new link.";
+    if (result.status === STATUS.WEAK_PASSWORD) {
+      error = "Password must be between 10 and 200 characters.";
+    } else if (result.status === STATUS.MISMATCH) {
+      error = "Password confirmation does not match.";
+    } else if (result.status === STATUS.EXPIRED) {
+      error = "This reset link has expired. Request a new link.";
+    } else if (result.status === STATUS.CONSUMED) {
+      error = "This reset link was already used. Request a new link.";
+    }
+
+    const csrfToken = issueCsrf(req, res);
+    const tokenStillValid = !(
+      result.status === STATUS.INVALID_TOKEN ||
+      result.status === STATUS.CONSUMED ||
+      result.status === STATUS.EXPIRED
+    );
+    const html = renderV5Ejs("apex/reset-password.ejs", {
+      csrfToken,
+      token: tokenStillValid ? token : "",
+      tokenValid: tokenStillValid,
+      tokenStatus: result.status,
+      error,
+      message: null,
+      loginHref: "/login",
+      forgotHref: "/forgot-password",
+    });
+    return res.status(400).type("html").send(html);
+  }
+
   router.get("/forgot-password", requireApex, (req, res) => {
     const html = renderV5Ejs("apex/forgot-password.ejs", forgotLocals(req, res, {}));
     res.status(200).type("html").send(html);
@@ -139,83 +232,17 @@ function createPasswordResetRouter(opts) {
   });
 
   router.get("/reset-password", requireApex, async (req, res) => {
-    const csrfToken = issueCsrf(req, res);
-    const token = String((req.query && req.query.token) || "").trim();
-    const inspection = await inspectPasswordResetToken(getPool(), token);
-    const html = renderV5Ejs("apex/reset-password.ejs", {
-      csrfToken,
-      token: inspection.ok ? token : "",
-      tokenValid: Boolean(inspection.ok),
-      tokenStatus: inspection.status,
-      error: null,
-      message: null,
-      loginHref: "/login",
-      forgotHref: "/forgot-password",
-    });
-    return res.status(inspection.ok ? 200 : 400).type("html").send(html);
+    const token = resolveResetToken(req);
+    return renderResetGet(req, res, token);
   });
 
-  router.post("/reset-password", requireApex, async (req, res) => {
-    const submitted = req.body && req.body[CSRF_FIELD];
-    const token = String((req.body && req.body.token) || "").trim();
-    if (!validateCsrf(req, submitted, env)) {
-      const csrfToken = issueCsrf(req, res);
-      const html = renderV5Ejs("apex/reset-password.ejs", {
-        csrfToken,
-        token,
-        tokenValid: true,
-        tokenStatus: STATUS.OK,
-        error: "Your session expired. Please try again.",
-        message: null,
-        loginHref: "/login",
-        forgotHref: "/forgot-password",
-      });
-      return res.status(403).type("html").send(html);
-    }
-
-    const result = await completePasswordReset(getPool(), {
-      token,
-      password: req.body && req.body.password,
-      passwordConfirm: req.body && req.body.password_confirm,
-      env,
-      deploymentCode: (getPlatformDeploymentCode(env).ok
-        ? getPlatformDeploymentCode(env).code
-        : null),
-    });
-
-    if (result.ok) {
-      return res.redirect(303, "/login?reset=1");
-    }
-
-    let error = "Unable to reset password. Request a new link.";
-    if (result.status === STATUS.WEAK_PASSWORD) {
-      error = "Password must be between 10 and 200 characters.";
-    } else if (result.status === STATUS.MISMATCH) {
-      error = "Password confirmation does not match.";
-    } else if (result.status === STATUS.EXPIRED) {
-      error = "This reset link has expired. Request a new link.";
-    } else if (result.status === STATUS.CONSUMED) {
-      error = "This reset link was already used. Request a new link.";
-    }
-
-    const csrfToken = issueCsrf(req, res);
-    const tokenStillValid = !(
-      result.status === STATUS.INVALID_TOKEN ||
-      result.status === STATUS.CONSUMED ||
-      result.status === STATUS.EXPIRED
-    );
-    const html = renderV5Ejs("apex/reset-password.ejs", {
-      csrfToken,
-      token: tokenStillValid ? token : "",
-      tokenValid: tokenStillValid,
-      tokenStatus: result.status,
-      error,
-      message: null,
-      loginHref: "/login",
-      forgotHref: "/forgot-password",
-    });
-    return res.status(400).type("html").send(html);
+  router.get("/reset-password/:token", requireApex, async (req, res) => {
+    const token = resolveResetToken(req);
+    return renderResetGet(req, res, token);
   });
+
+  router.post("/reset-password", requireApex, handleResetPost);
+  router.post("/reset-password/:token", requireApex, handleResetPost);
 
   return router;
 }
