@@ -1213,7 +1213,16 @@ async function attachWebsiteAdminChrome(opts) {
 
   const {
     buildManifest: buildBlessBoardSectionManifest,
+    ensureSermonsIntroPresentationSection,
   } = require("../website/blessboardSectionActionService");
+  // Edit/preview: soft-fill sermon library teaser must be a real section contract
+  // entry so SectionManager can attach edit/hide chrome (QA12).
+  if (showDraftContent && model.pageKey === "home") {
+    ensureSermonsIntroPresentationSection(model, structuredDrafts);
+    if (overlayMap && overlayMap.size) {
+      model.sections = applyDraftsToSections(model.sections, overlayMap);
+    }
+  }
   const sectionManifest = editingMode
     ? buildBlessBoardSectionManifest(model.pageKey, model.sections, structuredDrafts)
     : null;

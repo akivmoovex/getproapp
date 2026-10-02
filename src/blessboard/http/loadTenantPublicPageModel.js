@@ -1077,6 +1077,26 @@ async function loadTenantPublicPageModel(db, input) {
     ? pageResult.sections || []
     : (pageResult.sections || []).map(mapSection);
 
+  /** @type {string[]} */
+  let suppressedHomeTeaserKeys = [];
+  if (pageKey === "home" && pageResult.page && pageResult.page.id) {
+    try {
+      const contentRepo = require("../repositories/publicContentRepository");
+      const allHomeSections = await contentRepo.listSectionsForPage(db, pageResult.page.id, {});
+      if (
+        (allHomeSections || []).some(
+          (s) =>
+            String(s.sectionKey || "") === "sermons_intro" &&
+            String(s.status || "") === "archived"
+        )
+      ) {
+        suppressedHomeTeaserKeys = ["sermons_intro"];
+      }
+    } catch {
+      // Soft-fill may still show the teaser when lookup fails.
+    }
+  }
+
   const pageTitle =
     (pageResult.page && pageResult.page.title) || PAGE_KEY_TITLES[pageKey] || pageKey;
 
@@ -2086,6 +2106,7 @@ async function loadTenantPublicPageModel(db, input) {
         }
       : null,
     homeTeasers,
+    suppressedHomeTeaserKeys,
     homeDemoFallback,
     aboutDemoFallback,
     leadershipDemoFallback,

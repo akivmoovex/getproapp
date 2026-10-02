@@ -280,15 +280,23 @@ async function applyStructuredDraft(client, draft, ctx) {
     }
     if (draft.op === "visibility" && payload.sectionKey) {
       const pageKey = draft.pageKey || "home";
-      const page = await contentRepo.findPageByScope(client, {
+      const sectionKey = String(payload.sectionKey);
+      let page = await contentRepo.findPageByScope(client, {
         churchId,
         branchId: branchId || null,
         pageKey,
       });
-      if (!page) return;
-      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
-      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
-      if (!section) return;
+      let section = null;
+      if (page) {
+        const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+        section = (sections || []).find((s) => String(s.sectionKey) === sectionKey) || null;
+      }
+      // Soft-fill sermons_intro may have never been written to CMS; materialize then hide.
+      if (!section && sectionKey === "sermons_intro") {
+        page = await ensurePage(client, { churchId, branchId, pageKey });
+        section = await ensureSection(client, page, sectionKey, "text");
+      }
+      if (!page || !section) return;
       await contentRepo.updateSection(client, section.id, {
         status: payload.hidden === true ? "archived" : "published",
       });
@@ -372,15 +380,22 @@ async function applyStructuredDraft(client, draft, ctx) {
     }
     if (draft.op === "remove" && payload.sectionKey) {
       const pageKey = draft.pageKey || "home";
-      const page = await contentRepo.findPageByScope(client, {
+      const sectionKey = String(payload.sectionKey);
+      let page = await contentRepo.findPageByScope(client, {
         churchId,
         branchId: branchId || null,
         pageKey,
       });
-      if (!page) return;
-      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
-      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
-      if (!section) return;
+      let section = null;
+      if (page) {
+        const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+        section = (sections || []).find((s) => String(s.sectionKey) === sectionKey) || null;
+      }
+      if (!section && sectionKey === "sermons_intro") {
+        page = await ensurePage(client, { churchId, branchId, pageKey });
+        section = await ensureSection(client, page, sectionKey, "text");
+      }
+      if (!page || !section) return;
       await contentRepo.updateSection(client, section.id, {
         status: "archived",
         mediaUrl: null,

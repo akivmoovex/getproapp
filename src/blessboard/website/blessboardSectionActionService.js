@@ -8,8 +8,71 @@ const draftRepo = require("../repositories/websiteStructuredDraftRepository");
 
 const LOCKED_SECTIONS = new Set(["hero", "service_times", "services", "worship_times"]);
 
+/** Home sermon-library teaser — presentation section (not individual sermon records). */
+const SERMONS_INTRO_SECTION_KEY = "sermons_intro";
+
 function isLockedSection(sectionKey) {
   return LOCKED_SECTIONS.has(String(sectionKey || "").trim());
+}
+
+function hasPageSectionRemoveDraft(drafts, pageKey, sectionKey) {
+  const page = String(pageKey || "").trim();
+  const key = String(sectionKey || "").trim();
+  if (!page || !key) return false;
+  for (const d of drafts || []) {
+    if (d.draftKind !== "page_section" || d.op !== "remove") continue;
+    if (String(d.pageKey || "") !== page) continue;
+    const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+    if (sk === key) return true;
+  }
+  return false;
+}
+
+/**
+ * Soft-fill / empty CMS homes still render the sermon library teaser from template
+ * defaults ("Full library"). Ensure that area participates in the shared section
+ * manifest so edit/hide chrome attaches. Does not invent sermon entity records.
+ *
+ * @param {object} model
+ * @param {object[]} [structuredDrafts]
+ * @returns {object} model
+ */
+function ensureSermonsIntroPresentationSection(model, structuredDrafts) {
+  if (!model || String(model.pageKey || "") !== "home") return model;
+  const teasers = model.homeTeasers;
+  const sermonTeasers = teasers && Array.isArray(teasers.sermons) ? teasers.sermons : [];
+  if (!sermonTeasers.length) return model;
+  if (hasPageSectionRemoveDraft(structuredDrafts, "home", SERMONS_INTRO_SECTION_KEY)) {
+    return model;
+  }
+  const exists = (model.sections || []).some(
+    (s) => s && String(s.sectionKey || "") === SERMONS_INTRO_SECTION_KEY
+  );
+  if (exists) return model;
+
+  const fb =
+    model.homeDemoFallback && typeof model.homeDemoFallback === "object"
+      ? model.homeDemoFallback
+      : {};
+  const maxSort = (model.sections || []).reduce(
+    (max, s) => Math.max(max, Number(s && s.sortOrder) || 0),
+    0
+  );
+  model.sections = [
+    ...(model.sections || []),
+    {
+      sectionKey: SERMONS_INTRO_SECTION_KEY,
+      sectionType: "text",
+      heading: fb.sermonIntroHeading || "Latest Sermon",
+      bodyText: fb.sermonIntroBody || "",
+      mediaUrl: null,
+      sortOrder: maxSort > 0 ? maxSort + 10 : 40,
+      status: "draft",
+      layoutMetadata: { buttonText: "Full library" },
+      _softPresentation: true,
+    },
+  ];
+  return model;
 }
 
 function sectionOrderKeys(sections) {
@@ -312,9 +375,12 @@ async function applySectionAction(db, input) {
 
 module.exports = {
   LOCKED_SECTIONS,
+  SERMONS_INTRO_SECTION_KEY,
   buildManifest,
   applySectionAction,
   applyVisibilityDrafts,
   sectionOrderKeys,
   updateSectionContent,
+  ensureSermonsIntroPresentationSection,
+  hasPageSectionRemoveDraft,
 };

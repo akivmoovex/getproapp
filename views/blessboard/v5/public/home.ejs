@@ -113,6 +113,8 @@
   var contact = typeof publicContact !== 'undefined' && publicContact ? publicContact : null;
   var directionsHref = contact && contact.directionsUrl ? contact.directionsUrl : null;
   var previewDraftMode = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode;
+  var editingHome =
+    typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
   function sectionDraftHidden(section) {
     return section && (section._draftHidden === true || String(section.status || '') === 'archived');
   }
@@ -147,8 +149,21 @@
   var orderedTeaserKeys = homeMiddleOrder.filter(function (key) {
     return teaserSectionKeys.indexOf(key) >= 0;
   });
+  // Public soft-fill may still append missing teaser keys. In edit/preview, sermons_intro
+  // must come from the page_sections contract (CMS row or soft presentation stub) so
+  // hide/remove drafts are honored and SectionManager can attach chrome.
+  // Also skip public soft-append when the CMS row is archived (hide/remove published).
+  var suppressedTeasers =
+    typeof suppressedHomeTeaserKeys !== 'undefined' && Array.isArray(suppressedHomeTeaserKeys)
+      ? suppressedHomeTeaserKeys
+      : [];
   teaserSectionKeys.forEach(function (key) {
-    if (orderedTeaserKeys.indexOf(key) < 0) orderedTeaserKeys.push(key);
+    if (orderedTeaserKeys.indexOf(key) >= 0) return;
+    if (key === 'sermons_intro') {
+      if (editingHome || previewDraftMode) return;
+      if (suppressedTeasers.indexOf(key) >= 0) return;
+    }
+    orderedTeaserKeys.push(key);
   });
   var homeMiddleRenderOrder = homeMiddleOrder.filter(function (key) {
     return teaserSectionKeys.indexOf(key) < 0;
@@ -167,8 +182,6 @@
     if (type === 'plain_text' || type === 'image' || type === 'image_text' || type === 'cta') return true;
     return /^(text|image|story|cta)_/i.test(key);
   }
-  var editingHome =
-    typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
   var homeVideoUrl = (hero && hero.layoutMetadata && hero.layoutMetadata.videoUrl) || '';
   var homeVideoEmbed =
     typeof presentVideoEmbed === 'function' && homeVideoUrl
@@ -529,7 +542,7 @@
       <% }) %>
     </div>
   </section>
-  <% } else if (sectionKey === 'sermons_intro' && teasers.sermons && teasers.sermons.length) { %>
+  <% } else if (sectionKey === 'sermons_intro' && teasers.sermons && teasers.sermons.length && (editingHome || showSectionInPreview(sermonsIntroSec))) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" data-section="sermons_intro" aria-labelledby="bb-tp-home-sermons-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-sermons-heading',
