@@ -819,7 +819,7 @@
 }
 
 .bb-auth-btn--ghost:hover {
-  background: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-surface);
+  background: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-surface));
 }
 
 .bb-auth-footer {

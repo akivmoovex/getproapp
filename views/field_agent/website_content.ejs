@@ -104,11 +104,11 @@
               <div class="wc-speciality-row" style="display:flex;gap:0.4rem;align-items:center;">
                 <input class="input-field__control wc-speciality-input" type="text" list="wc-speciality-options" value="<%= sp %>" maxlength="120" <%= _ro ? 'readonly' : '' %> />
                 <% if (_isV) { %><span class="muted" style="font-weight:600;">Verified ✓</span><% } %>
-                <% if (!_ro) { %><button type="button" class="btn btn--secondary wc-speciality-remove">−</button><% } %>
+                <% if (!_ro) { %><%- include('../partials/components/button', { variant: 'secondary', type: 'button', label: '−', className: 'wc-speciality-remove' }) %><% } %>
               </div>
               <% }); %>
             </div>
-            <% if (!_ro) { %><p style="margin-top:0.4rem;"><button type="button" class="btn btn--secondary" id="wc-speciality-add">+ Add speciality</button></p><% } %>
+            <% if (!_ro) { %><p style="margin-top:0.4rem;"><%- include('../partials/components/button', { variant: 'secondary', type: 'button', id: 'wc-speciality-add', label: '+ Add speciality' }) %></p><% } %>
           </div>
           <div class="input-field">
             <label class="input-field__label">Business hours (24-hour)</label>
@@ -151,9 +151,9 @@
 
           <% if (!_ro) { %>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
-              <button type="button" class="btn btn--secondary" id="fa-wc-save-btn">Save draft</button>
-              <button type="button" class="btn" id="fa-wc-submit-btn">Submit for review</button>
-              <a class="btn btn--secondary" href="<%= tenantUrlPrefix %>/field-agent/submissions/<%= _sub.id %>/website-content/preview">Preview</a>
+              <%- include('../partials/components/button', { variant: 'secondary', type: 'button', id: 'fa-wc-save-btn', label: 'Save draft' }) %>
+              <%- include('../partials/components/button', { variant: 'default', type: 'button', id: 'fa-wc-submit-btn', label: 'Submit for review' }) %>
+              <%- include('../partials/components/button', { variant: 'secondary', href: tenantUrlPrefix + '/field-agent/submissions/' + _sub.id + '/website-content/preview', label: 'Preview' }) %>
             </div>
           <% } %>
         </form>
@@ -269,9 +269,17 @@
             row.style.display = "flex";
             row.style.gap = "0.4rem";
             row.style.alignItems = "center";
-            row.innerHTML =
-              '<input class="input-field__control wc-speciality-input" type="text" list="wc-speciality-options" maxlength="120" />' +
-              '<button type="button" class="btn btn--secondary wc-speciality-remove">−</button>';
+            var inp = document.createElement("input");
+            inp.className = "input-field__control wc-speciality-input";
+            inp.type = "text";
+            inp.setAttribute("list", "wc-speciality-options");
+            inp.maxLength = 120;
+            var rm = document.createElement("button");
+            rm.type = "button";
+            rm.className = "c-button btn btn--secondary wc-speciality-remove";
+            rm.textContent = "−";
+            row.appendChild(inp);
+            row.appendChild(rm);
             spWrap.appendChild(row);
           });
           spWrap.addEventListener("click", function (e) {

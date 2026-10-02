@@ -588,7 +588,7 @@ body.gp-website-field-editing .bb-tp-main {
   justify-content: center;
   align-items: stretch;
   padding: 0.75rem 0.5rem 1rem;
-  background: color-mix(in srgb, var(--color-text-primary, #1a1a1a) 6%, var(--color-surface, #f4f4f5));
+  background: color-mix(in srgb, var(--color-text-primary) 6%, var(--color-surface));
   overflow: auto;
 }
 .gp-website-viewport-stage__frame-wrap {
@@ -606,10 +606,10 @@ body.gp-website-field-editing .bb-tp-main {
   min-height: 24rem;
   border: 0;
   border-radius: 0.5rem;
-  background: #fff;
+  background: white;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-text-primary, #111) 12%, transparent),
-    0 12px 32px color-mix(in srgb, var(--color-text-primary, #111) 18%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--color-text-primary) 12%, transparent),
+    0 12px 32px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
 }
 body.gp-website-viewport-frame-active {
   overflow: hidden;
@@ -2867,7 +2867,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
   padding: 0.2rem;
   border: 1px solid var(--gp-website-color-border, rgba(0, 0, 0, 0.12));
   border-radius: 999px;
-  background: var(--gp-website-color-surface, #fff);
+  background: var(--gp-website-color-surface);
 }
 .gp-website-editor__viewport-btn {
   display: inline-flex;
@@ -2885,7 +2885,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
 }
 .gp-website-editor__viewport-btn.is-current {
   background: var(--gp-website-color-primary, currentColor);
-  color: var(--gp-website-color-primary-contrast, #fff);
+  color: var(--gp-website-color-primary-contrast);
 }
 .gp-website-editor__viewport-label {
   display: none;
@@ -2907,7 +2907,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
 .gp-website-editor[data-product="activeclinic"] .gp-website-editor__btn--primary {
   background: var(--color-brand-primary, currentColor);
   border-color: var(--color-brand-primary, currentColor);
-  color: var(--gp-website-color-primary-contrast, #fff);
+  color: var(--gp-website-color-primary-contrast);
 }
 
 /* --------------------------------------------------------------------------
@@ -2985,14 +2985,14 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
 [data-product="activeclinic"] .gp-website-field-editor__btn--ghost {
   margin-bottom: 0;
   border-color: var(--gp-we-outline-variant);
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
   color: var(--gp-we-primary);
   font-weight: var(--gp-we-btn-weight-secondary);
 }
 
 [data-product="activeclinic"] .gp-website-field-editor__link-btn:hover,
 [data-product="activeclinic"] .gp-website-field-editor__btn--ghost:hover {
-  background: color-mix(in srgb, var(--gp-we-primary) 8%, var(--color-surface, #fff));
+  background: color-mix(in srgb, var(--gp-we-primary) 8%, var(--color-surface));
   border-color: var(--gp-we-primary);
 }
 
@@ -3020,7 +3020,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
   padding: 4px;
   border: 1px solid var(--gp-we-outline-variant);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--gp-we-outline-variant) 18%, var(--color-surface, #fff));
+  background: color-mix(in srgb, var(--gp-we-outline-variant) 18%, var(--color-surface));
   width: fit-content;
   max-width: 100%;
 }
@@ -3043,7 +3043,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
 }
 
 [data-product="activeclinic"] .gp-website-framing__mode.is-current {
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
   color: var(--gp-we-primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 25, 35, 0.06);
@@ -3061,7 +3061,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
   padding: 0 14px;
   border: 1px solid var(--gp-we-outline-variant);
   border-radius: var(--gp-we-btn-radius);
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
   color: var(--gp-we-on-surface-variant);
   font-family: inherit;
   font-size: 0.8125rem;
@@ -3070,7 +3070,7 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
 
 [data-product="activeclinic"] .gp-website-framing__fit-btn.is-current {
   border-color: var(--gp-we-primary);
-  background: color-mix(in srgb, var(--gp-we-primary) 10%, var(--color-surface, #fff));
+  background: color-mix(in srgb, var(--gp-we-primary) 10%, var(--color-surface));
   color: var(--gp-we-primary);
   font-weight: 600;
 }

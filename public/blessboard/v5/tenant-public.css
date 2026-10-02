@@ -1524,7 +1524,7 @@ html {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #0f172a;
+  background: var(--palette-ink-920);
   overflow: hidden;
 }
 

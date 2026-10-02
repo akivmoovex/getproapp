@@ -45,7 +45,7 @@
           <section class="card" style="padding:0.75rem 1rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <strong><%= typeof previewLabel !== 'undefined' && previewLabel ? previewLabel : 'Preview' %></strong>
             <% if (typeof previewEditHref !== 'undefined' && previewEditHref) { %>
-              <a class="btn btn--secondary" href="<%= previewEditHref %>">Edit</a>
+              <%- include('partials/components/button', { variant: 'secondary', href: previewEditHref, label: 'Edit' }) %>
             <% } %>
           </section>
         <% } %>

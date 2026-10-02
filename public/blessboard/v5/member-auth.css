@@ -6,8 +6,8 @@
 
 body.bb-v204-member-auth {
   font-family: var(--bb-font-body, Inter, system-ui, sans-serif);
-  background: var(--color-background, #f8fafc);
-  color: var(--color-text-primary, #0f172a);
+  background: var(--color-background);
+  color: var(--color-text-primary);
   overflow-x: clip;
 }
 
@@ -18,7 +18,7 @@ body.bb-v204-member-auth .bb-auth-layout {
 body.bb-v204-member-auth .bb-auth-panel {
   background:
     radial-gradient(720px 360px at 15% 0%, color-mix(in srgb, var(--color-brand-primary) 35%, transparent) 0%, transparent 55%),
-    linear-gradient(165deg, var(--palette-navy-700, #1e293b) 0%, var(--color-brand-primary-active, #1e293b) 55%, var(--color-brand-primary) 100%);
+    linear-gradient(165deg, var(--palette-navy-700) 0%, var(--color-brand-primary-active) 55%, var(--color-brand-primary) 100%);
 }
 
 body.bb-v204-member-auth .bb-auth-main__header {
@@ -248,7 +248,7 @@ body.bb-v204-member-auth .bb-auth-btn--primary {
   border: 0;
   border-radius: var(--bb-radius, 0.5rem);
   background: var(--button-primary-bg, var(--color-brand-primary));
-  color: var(--button-primary-text, #fff);
+  color: var(--button-primary-text);
   font: inherit;
   font-weight: 600;
   text-decoration: none;

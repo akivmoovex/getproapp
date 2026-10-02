@@ -59,7 +59,7 @@
 
 .gp-website-pc__btn--primary {
   background: var(--gp-website-color-primary, currentColor);
-  color: var(--gp-website-color-primary-contrast, #fff);
+  color: var(--gp-website-color-primary-contrast);
 }
 
 .gp-website-pc__btn--secondary {
@@ -87,7 +87,7 @@
   aspect-ratio: 16 / 9;
   border-radius: var(--gp-website-radius, 0.5rem);
   overflow: hidden;
-  background: var(--gp-website-color-surface-elevated, #0f172a);
+  background: var(--gp-website-color-surface-elevated);
 }
 
 .gp-website-pc__video-iframe {
@@ -411,7 +411,7 @@
   height: 2rem;
   border-radius: 999px;
   background: var(--gp-website-color-primary, currentColor);
-  color: var(--gp-website-color-primary-contrast, #fff);
+  color: var(--gp-website-color-primary-contrast);
   font-weight: 700;
   font-size: 0.875rem;
 }

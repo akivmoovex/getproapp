@@ -34,7 +34,7 @@ body.bb-mp-drawer-open {
   border-radius: var(--bb-radius-sm, 0.5rem);
   outline: 2px solid var(--bb-color-primary);
   outline-offset: 2px;
-  box-shadow: var(--bb-shadow-focus));
+  box-shadow: var(--bb-shadow-focus);
   text-decoration: none;
   font-weight: 600;
 }
@@ -436,7 +436,7 @@ body.bb-mp-drawer-open {
     radial-gradient(720px 280px at 12% 0%, color-mix(in srgb, var(--color-text-inverse) 18%, transparent) 0%, transparent 55%),
     linear-gradient(135deg, var(--color-brand-primary-hover) 0%, var(--color-brand-primary) 48%, var(--color-brand-primary-active) 100%);
   color: var(--color-surface);
-  box-shadow: var(--bb-shadow-md));
+  box-shadow: var(--bb-shadow-md);
 }
 
 .bb-mp-badge {
@@ -1389,7 +1389,7 @@ a.bb-mp-dash-ann__card:hover {
 
 .bb-mp-ann-search:focus-within {
   border-color: var(--bb-color-primary);
-  box-shadow: var(--bb-shadow-focus));
+  box-shadow: var(--bb-shadow-focus);
 }
 
 .bb-mp-ann-search__submit {
@@ -2327,7 +2327,7 @@ a.bb-mp-dash-ann__card:hover {
   border: 1px solid var(--bb-line);
   border-radius: 1.25rem;
   padding: 1.25rem 1.15rem 1.35rem;
-  box-shadow: var(--bb-shadow-sm));
+  box-shadow: var(--bb-shadow-sm);
 }
 
 @media (min-width: 700px) {
@@ -2799,7 +2799,7 @@ a.bb-mp-dash-ann__card:hover {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  box-shadow: var(--bb-shadow-sm));
+  box-shadow: var(--bb-shadow-sm);
 }
 
 .bb-mp-giving-card__icon {
@@ -2935,7 +2935,7 @@ a.bb-mp-dash-ann__card:hover {
 .bb-mp-req-type:focus-within {
   outline: 2px solid var(--bb-color-primary);
   outline-offset: 2px;
-  box-shadow: var(--bb-shadow-focus));
+  box-shadow: var(--bb-shadow-focus);
 }
 
 .bb-mp-form--profile.is-view input[readonly] {
