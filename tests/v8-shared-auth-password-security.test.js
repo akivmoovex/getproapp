@@ -39,6 +39,10 @@ const {
   NEUTRAL_MESSAGE,
 } = require("../src/blessboard/services/passwordResetService");
 const {
+  resolvePasswordResetEmailAdapter,
+  BB_SENDER_ENV_KEYS,
+} = require("../src/blessboard/services/passwordResetEmailDelivery");
+const {
   createBlessBoardUser,
 } = require("../src/blessboard/services/createBlessBoardUser");
 const { createV5Session } = require("../src/platform/session/createV5Session");
@@ -178,6 +182,31 @@ describe("V8 registration identity reuse (no duplicate login blocking multi-tena
       password: "wrong-password-xx",
     });
     assert.equal(bad.ok, false);
+  });
+});
+
+describe("V8 BlessBoard password reset delivery wiring", () => {
+  it("uses shared outbound email transport gates and keeps non-production fail-closed", () => {
+    assert.deepEqual(BB_SENDER_ENV_KEYS.adapterKeys, [
+      "BLESSBOARD_EMAIL_DELIVERY_ADAPTER",
+      "EMAIL_DELIVERY_ADAPTER",
+    ]);
+    const adapter = resolvePasswordResetEmailAdapter(
+      {
+        NODE_ENV: "test",
+        DEPLOYMENT_ENV: "testing",
+        BLESSBOARD_EMAIL_DELIVERY_ADAPTER: "resend",
+        BLESSBOARD_EMAIL_FROM: "no-reply@example.org",
+        RESEND_API_KEY: "test-key-never-used",
+      },
+      {}
+    );
+    assert.equal(adapter.sendingAvailable, false);
+  });
+
+  it("preserves injected capture adapters for deterministic recovery tests", () => {
+    const injected = { sendingAvailable: true, async send() { return { accepted_for_processing: true }; } };
+    assert.equal(resolvePasswordResetEmailAdapter({}, { adapter: injected }), injected);
   });
 });
 
