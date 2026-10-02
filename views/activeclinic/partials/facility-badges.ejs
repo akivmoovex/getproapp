@@ -1,0 +1,17 @@
+<%#
+  Shared facility status / type / primary badges.
+  locals: status, statusLabel, facilityType, facilityTypeLabel, isPrimary
+%>
+<% if (typeof status !== 'undefined' && status) { %>
+<span class="ac-badge ac-badge--<%= status %>" data-ac-facility-status="<%= status %>">
+  <%= statusLabel || status %>
+</span>
+<% } %>
+<% if (typeof facilityType !== 'undefined' && facilityType) { %>
+<span class="ac-badge" data-ac-facility-type="<%= facilityType %>">
+  <%= facilityTypeLabel || facilityType %>
+</span>
+<% } %>
+<% if (typeof isPrimary !== 'undefined' && isPrimary) { %>
+<span class="ac-badge ac-badge--active" data-ac-facility-primary="1">Primary</span>
+<% } %>

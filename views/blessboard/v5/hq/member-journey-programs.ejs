@@ -1,0 +1,58 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var programRows = typeof programs !== 'undefined' && programs ? programs : [];
+  var types = typeof programTypes !== 'undefined' && programTypes ? programTypes : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-programs="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/classes">Classes</a>
+      <span aria-hidden="true">›</span>
+      <span>Programs</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Class programs</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create program</h2>
+    <form method="post" action="/hq/classes/programs" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Key <input name="programKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+      <label>Name <input name="displayName" required maxlength="200"/></label>
+      <label>Type
+        <select name="programType" required>
+          <% types.forEach(function (t) { %>
+            <option value="<%= t %>"><%= t %></option>
+          <% }) %>
+        </select>
+      </label>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create program</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Programs</h2>
+    <% if (!programRows.length) { %>
+      <p>No programs yet.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% programRows.forEach(function (p) { %>
+          <li><%= p.displayName %> (<%= p.programKey %>) · <%= p.programType %> · <%= p.status %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+  <p><a href="/hq/classes">Back to classes</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

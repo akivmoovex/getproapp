@@ -1,0 +1,31 @@
+<%#
+  Shared platform Content Library picker dialog with in-dialog upload.
+  Locals: mediaListUrl
+%>
+<dialog
+  class="gp-we-media-picker ac-mw-dialog"
+  id="gp-we-select-media"
+  data-gp-we-media-picker="1"
+  data-ac-mw-media-picker="1"
+  data-gp-we-media-url="<%= typeof mediaListUrl !== 'undefined' ? mediaListUrl : '' %>"
+  data-ac-mw-media-url="<%= typeof mediaListUrl !== 'undefined' ? mediaListUrl : '' %>"
+>
+  <div class="gp-we-media-picker__body ac-mw-dialog__body">
+    <header class="gp-we-media-picker__head">
+      <h3 class="gp-we-media-picker__title">Select image</h3>
+      <p class="gp-we-media-picker__lede">Upload from your computer or choose an image already in the Content Library.</p>
+    </header>
+    <div class="gp-we-media-picker__toolbar">
+      <label class="gp-we-media-field__btn gp-we-media-field__btn--primary">
+        <span>Upload from computer</span>
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-gp-we-picker-upload="1" hidden/>
+      </label>
+    </div>
+    <p class="gp-we-media-picker__status" data-gp-we-picker-status="1" role="status"></p>
+    <progress class="gp-we-media-picker__progress" data-gp-we-picker-progress="1" hidden max="100" value="0"></progress>
+    <div class="gp-we-media-picker__grid ac-mw-media-grid" data-gp-we-picker-grid="1" data-ac-mw-picker-grid="1"></div>
+    <div class="gp-we-media-picker__actions ac-mw-actions">
+      <button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-gp-we-picker-close="1" data-ac-mw-close="1">Close</button>
+    </div>
+  </div>
+</dialog>

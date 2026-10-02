@@ -12,7 +12,7 @@
     { key: 'for-churches', href: '/for-churches', label: 'For Churches' },
     { key: 'pricing', href: '/pricing', label: 'Pricing' },
     { key: 'directory', href: '/directory', label: 'Directory' },
-    { key: 'register-church', href: '/register-church', label: 'Register' }
+    { key: 'contact', href: '/contact', label: 'Contact' }
   ];
 %>
 <% if (isDrawer) { %>
@@ -43,7 +43,12 @@
     href="/login"
     class="<%= linkClass %><%= activeNav === 'login' ? ' is-active' : '' %>"
     <% if (activeNav === 'login') { %>aria-current="page"<% } %>
-  >Login</a>
+  >Sign In</a>
+  <a
+    href="/register-church"
+    class="<%= linkClass %><%= activeNav === 'register-church' ? ' is-active' : '' %>"
+    <% if (activeNav === 'register-church') { %>aria-current="page"<% } %>
+  >Register Your Church</a>
   <% } %>
 </div>
 <% } else { %>

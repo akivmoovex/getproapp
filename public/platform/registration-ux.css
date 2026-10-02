@@ -1,0 +1,180 @@
+/* Shared registration UX (return bar, consent, password rules) */
+
+.gp-registration-return {
+  margin: 0 0 1rem;
+}
+
+.gp-registration-return__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+}
+
+.gp-registration-return__link:hover,
+.gp-registration-return__link:focus {
+  text-decoration: underline;
+}
+
+.gp-registration-consent {
+  margin: 0 0 1rem;
+}
+
+.gp-registration-consent.is-error .gp-registration-consent__label {
+  color: var(--color-danger-text);
+}
+
+.gp-registration-consent__label {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.gp-registration-consent__label input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.gp-registration-consent__error {
+  margin: 0.5rem 0 0;
+  color: var(--color-danger-text);
+  font-size: 0.875rem;
+}
+
+.gp-registration-password-rules {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.5rem;
+  background: var(--color-surface-subtle);
+}
+
+.gp-registration-password-rules__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.gp-registration-password-rules__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gp-registration-password-rules__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.gp-registration-password-rules__item + .gp-registration-password-rules__item {
+  margin-top: 0.25rem;
+}
+
+.gp-registration-password-rules__item.is-met {
+  color: var(--color-success-text);
+}
+
+.gp-registration-password-rules__item.is-unmet {
+  color: var(--color-text-secondary);
+}
+
+.gp-registration-password-rules__item.is-met .gp-registration-password-rules__mark::before {
+  content: "✓";
+}
+
+.gp-registration-password-confirm-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.gp-registration-password-confirm-status.is-met {
+  color: var(--color-success-text);
+}
+
+.gp-registration-password-confirm-status.is-unmet {
+  color: var(--color-danger-text);
+}
+
+.gp-registration-password-row,
+.bb-apex-register-form__grid--password,
+.acw-register__grid--password {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: start;
+}
+
+.gp-registration-password-row__rules,
+.bb-apex-register-form__password-rules,
+.acw-register__policy {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 767px) {
+  .gp-registration-password-row,
+  .bb-apex-register-form__grid--password,
+  .acw-register__grid--password {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.gp-registration-password-rules__mark::before {
+  content: "○";
+  display: inline-block;
+  width: 1rem;
+}
+
+.gp-location-field {
+  position: relative;
+}
+
+.gp-location-listbox {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  background: var(--card-bg);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.gp-location-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.gp-location-option:hover,
+.gp-location-option:focus {
+  background: var(--color-brand-primary-light);
+  outline: none;
+}
+
+.gp-location-option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.gp-location-option--add {
+  font-weight: 600;
+  color: var(--color-link);
+}

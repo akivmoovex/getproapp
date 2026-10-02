@@ -3,12 +3,22 @@
 /**
  * Shared V5 session establishment after identity is already trusted
  * (password verified, or post-provision auto-login).
- * Does not invent a second session format — uses createV5Session.
+ * Login eligibility: catalogue user_role_assignments (+ optional member scope).
+ * Does not depend on blessboard.user_roles.
+ *
+ * Tenant context (organization / church / branch) always comes from the preferred
+ * catalogue (or member) role after optional requireOrganizationId scoping —
+ * the same path used by normal password login. Callers must not inject a second
+ * forced church/branch algorithm.
  */
 
 const repo = require("../repositories/blessBoardAuthRepository");
 const memberRepo = require("../repositories/memberIdentityRepository");
 const { createV5Session } = require("../../platform/session/createV5Session");
+const {
+  listCatalogueLoginRolesForUser,
+  preferCatalogueSessionRole,
+} = require("./blessBoardCatalogueLogin");
 
 const STATUS = Object.freeze({
   AUTHENTICATED: "authenticated",
@@ -16,9 +26,48 @@ const STATUS = Object.freeze({
   NO_ACTIVE_ROLE: "no_active_role",
   USER_NOT_FOUND: "user_not_found",
   TRANSACTION_ERROR: "transaction_error",
+  SESSION_CREATE_FAILED: "session_create_failed",
 });
 
 /**
+ * Safe classification for logs — no tokens, passwords, or PII payloads.
+ * @param {unknown} err
+ */
+function classifyEstablishSessionError(err) {
+  if (!err || typeof err !== "object") {
+    return {
+      code: "unknown_throw",
+      message: "transaction_error",
+      pgCode: null,
+      constraint: null,
+    };
+  }
+  const pgCode = err.code != null ? String(err.code).slice(0, 32) : null;
+  const constraint =
+    err.constraint != null ? String(err.constraint).slice(0, 120) : null;
+  const rawMessage = err.message != null ? String(err.message) : "";
+  // Strip anything that looks like a bearer/session token from messages.
+  const scrubbed = rawMessage
+    .replace(/[A-Za-z0-9_-]{40,}/g, "[redacted]")
+    .slice(0, 160);
+  let code = "query_error";
+  if (pgCode === "23503") code = "fk_violation";
+  else if (pgCode === "23505") code = "unique_violation";
+  else if (pgCode === "23514") code = "check_violation";
+  else if (pgCode === "25P02") code = "failed_transaction";
+  else if (pgCode === "40001" || pgCode === "40P01") code = "serialization_failure";
+  else if (/timeout|ECONN|ENOTFOUND|connection/i.test(scrubbed)) code = "connectivity";
+  return {
+    code,
+    message: scrubbed || "transaction_error",
+    pgCode,
+    constraint,
+  };
+}
+
+/**
+ * @deprecated Legacy helper retained for callers that still pass role arrays.
+ * Platform_admin org bypass removed — catalogue platform_administrator is org-agnostic via preferCatalogueSessionRole.
  * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
  * @param {string | null} requireOrganizationId
  */
@@ -26,33 +75,17 @@ function rolesApplicableToOrganization(roles, requireOrganizationId) {
   if (!requireOrganizationId) return roles;
   const orgId = String(requireOrganizationId);
   return (roles || []).filter((r) => {
-    if (String(r.role_key) === "platform_admin") return true;
+    const key = String(r.role_key || "");
+    if (key === "platform_administrator") return true;
     return String(r.organization_id || "") === orgId;
   });
 }
 
 /**
- * Prefer HQ / branch / platform roles scoped to the required organization when present.
- * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
- * @param {string | null} requireOrganizationId
+ * @deprecated Prefer preferCatalogueSessionRole. Kept for test/compat imports.
  */
 function preferSessionRole(roles, requireOrganizationId) {
-  const list = rolesApplicableToOrganization(roles, requireOrganizationId);
-  if (!list.length) return null;
-  if (requireOrganizationId) {
-    const orgId = String(requireOrganizationId);
-    const scoped =
-      list.find((r) => r.role_key === "church_hq_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "branch_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "platform_admin") ||
-      list[0];
-    return scoped;
-  }
-  return (
-    list.find((r) => r.role_key === "church_hq_admin") ||
-    list.find((r) => r.role_key === "branch_admin") ||
-    list[0]
-  );
+  return preferCatalogueSessionRole(roles, requireOrganizationId);
 }
 
 /**
@@ -87,10 +120,26 @@ async function resolveMemberScopeForOrganization(client, userId, organizationId)
         branch_id: row.branch_id,
         role_key: "member",
         memberId: member.id,
+        source: "member",
       };
     }
   }
   return null;
+}
+
+/**
+ * Canonical tenant ids for a new deployment session — catalogue/member preferred only.
+ * @param {{ organization_id?: string, church_id?: string|null, branch_id?: string|null }} preferred
+ */
+function sessionTenantContextFromPreferred(preferred) {
+  if (!preferred || typeof preferred !== "object") {
+    return { organizationId: null, churchId: null, branchId: null };
+  }
+  return {
+    organizationId: preferred.organization_id || null,
+    churchId: preferred.church_id || null,
+    branchId: preferred.branch_id || null,
+  };
 }
 
 /**
@@ -112,12 +161,13 @@ async function establishBlessBoardSession(db, input) {
   const deploymentCode = String((input && input.deploymentCode) || "")
     .trim()
     .toLowerCase();
+  // Scope role selection only. Do not treat organizationId as a forced session
+  // tenant override — login and registration both derive session tenant from
+  // preferCatalogueSessionRole / member scope.
   const requireOrganizationId =
     input && input.requireOrganizationId != null && String(input.requireOrganizationId).trim() !== ""
       ? String(input.requireOrganizationId).trim()
-      : input && input.organizationId != null && String(input.organizationId).trim() !== ""
-        ? String(input.organizationId).trim()
-        : null;
+      : null;
   const createSession = (input && input.createSession) || createV5Session;
 
   if (!userId || !deploymentCode) {
@@ -128,6 +178,7 @@ async function establishBlessBoardSession(db, input) {
       ok: false,
       status: STATUS.TRANSACTION_ERROR,
       message: "database required",
+      failureCode: "database_required",
       session: null,
       user: null,
     };
@@ -157,8 +208,12 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
-    const roles = await repo.listActiveRolesForUser(client, user.id);
-    const applicable = rolesApplicableToOrganization(roles, requireOrganizationId);
+    const catalogueRoles = await listCatalogueLoginRolesForUser(
+      client,
+      user.id,
+      requireOrganizationId
+    );
+    const applicable = rolesApplicableToOrganization(catalogueRoles, requireOrganizationId);
     let memberScope = null;
     if (requireOrganizationId) {
       memberScope = await resolveMemberScopeForOrganization(client, user.id, requireOrganizationId);
@@ -174,7 +229,8 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
-    const preferred = preferSessionRole(roles, requireOrganizationId) || memberScope;
+    const preferred =
+      preferCatalogueSessionRole(applicable, requireOrganizationId) || memberScope;
     if (!preferred) {
       await client.query("ROLLBACK");
       return {
@@ -186,21 +242,24 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
+    const tenant = sessionTenantContextFromPreferred(preferred);
     const created = await createSession(client, {
       deploymentCode,
       userId: user.id,
-      organizationId: (input && input.organizationId) || preferred.organization_id,
-      churchId: (input && input.churchId) || preferred.church_id,
-      branchId: (input && input.branchId) || preferred.branch_id,
+      organizationId: tenant.organizationId,
+      churchId: tenant.churchId,
+      branchId: tenant.branchId,
       ip: input.ip || null,
       userAgent: input.userAgent || null,
     });
     if (!created.ok) {
       await client.query("ROLLBACK");
+      const createCode = String(created.code || "session_create_failed").slice(0, 80);
       return {
         ok: false,
-        status: STATUS.TRANSACTION_ERROR,
-        message: created.code || "session_create_failed",
+        status: STATUS.SESSION_CREATE_FAILED,
+        message: createCode,
+        failureCode: createCode,
         session: null,
         user: null,
       };
@@ -214,6 +273,8 @@ async function establishBlessBoardSession(db, input) {
       organizationId: r.organization_id,
       churchId: r.church_id,
       branchId: r.branch_id,
+      scopeType: r.scope_type || null,
+      source: r.source || "catalogue",
     }));
     if (memberScope) {
       rolePayload.push({
@@ -221,6 +282,7 @@ async function establishBlessBoardSession(db, input) {
         organizationId: memberScope.organization_id,
         churchId: memberScope.church_id,
         branchId: memberScope.branch_id,
+        source: "member",
       });
     }
 
@@ -237,17 +299,23 @@ async function establishBlessBoardSession(db, input) {
         status: user.status,
       },
       roles: rolePayload,
+      preferredRoleKey: preferred.role_key,
+      tenantContext: tenant,
     };
-  } catch {
+  } catch (err) {
     try {
       if (client) await client.query("ROLLBACK");
     } catch {
       /* ignore */
     }
+    const classified = classifyEstablishSessionError(err);
     return {
       ok: false,
       status: STATUS.TRANSACTION_ERROR,
-      message: "transaction_error",
+      message: classified.message,
+      failureCode: classified.code,
+      pgCode: classified.pgCode,
+      constraint: classified.constraint,
       session: null,
       user: null,
     };
@@ -262,4 +330,6 @@ module.exports = {
   rolesApplicableToOrganization,
   preferSessionRole,
   resolveMemberScopeForOrganization,
+  sessionTenantContextFromPreferred,
+  classifyEstablishSessionError,
 };

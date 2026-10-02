@@ -1,0 +1,2666 @@
+"use strict";
+
+/**
+ * ActiveClinic P07 — Billing routes
+ * Billing dashboard, charge catalog, patient charges, invoices
+ */
+
+const {
+  validateCsrf,
+  CSRF_FIELD,
+} = require("../../platform/http/v5Csrf");
+const {
+  createRequireActiveClinicAuth,
+} = require("./loadActiveClinicAuth");
+const {
+  createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
+  renderSimpleState,
+} = require("./activeClinicPermissionMiddleware");
+const {
+  createActiveClinicAppRenderer,
+} = require("./renderActiveClinicShell");
+const {
+  listChargeCatalogItems,
+  createChargeCatalogItem,
+  getChargeCatalogItemById,
+  createInvoice,
+  addCatalogItemToDraftInvoice,
+  addCustomLineToDraftInvoice,
+  setDraftInvoiceAdjustment,
+  attachInvoicePaidBalances,
+  postInvoice,
+  listPaymentHistory,
+  voidInvoice,
+  amendPostedInvoice,
+  RESULT: BILLING_RESULT,
+  PERM: BILLING_PERM,
+  INVOICE_STATUS,
+} = require("../services/activeClinicBillingService");
+const billingOps = require("../services/activeClinicBillingOpsService");
+const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
+const {
+  financeIdsFromAuth,
+  financeIdsWithFacility,
+  hasFinancePermission,
+} = require("../services/activeClinicFinanceAuthz");
+
+/** Batch 2 Stitch AC-B2-09 (canonical pair from frozen map). */
+const STITCH_B2_09 = Object.freeze({
+  desktop: "29257b0d01c64fa4896a369efd3f6417",
+  mobile: "24632347e4ab4c89937b611457d94730",
+});
+/** Batch 1 ACN21–23 markers retained for dual regression. */
+const STITCH_ACN21_LIST = Object.freeze({
+  desktop: "0886c0c2471d4744aa0101aed17abd22",
+  mobile: "3af2006929ff463eaea366b3e5086091",
+});
+const STITCH_ACN22_DETAIL = "25af03d4c3724841a33fb03415ec1b4d";
+
+const INVOICE_LIST_STATUS_KEYS = Object.freeze([
+  "all",
+  "unpaid",
+  "partial",
+  "paid",
+  "draft",
+  "posted",
+  "void",
+]);
+
+function deriveInvoicePaymentPresentation(inv) {
+  const status = String((inv && inv.status) || "").toLowerCase();
+  const paidMinor = parseInt((inv && inv.paidMinor) || 0, 10) || 0;
+  const balanceMinor = parseInt((inv && inv.balanceMinor) || 0, 10) || 0;
+  if (status === "void") {
+    return { paymentStatusKey: "void", paymentStatusLabel: "Voided", paymentTone: "danger" };
+  }
+  if (status === "draft" || status === "pending") {
+    return { paymentStatusKey: "draft", paymentStatusLabel: "Draft", paymentTone: "neutral" };
+  }
+  if (status === "posted") {
+    if (balanceMinor <= 0) {
+      return {
+        paymentStatusKey: "paid",
+        paymentStatusLabel: "Paid in full",
+        paymentTone: "success",
+      };
+    }
+    if (paidMinor > 0) {
+      return {
+        paymentStatusKey: "partial",
+        paymentStatusLabel: "Partially paid",
+        paymentTone: "warning",
+      };
+    }
+    return {
+      paymentStatusKey: "unpaid",
+      paymentStatusLabel: "Unpaid",
+      paymentTone: "danger",
+    };
+  }
+  return {
+    paymentStatusKey: status || "unknown",
+    paymentStatusLabel: status || "Unknown",
+    paymentTone: "neutral",
+  };
+}
+
+function matchesInvoiceListFilter(inv, statusKey) {
+  const key = statusKey || "all";
+  if (key === "all") return true;
+  const status = String(inv.status || "").toLowerCase();
+  const presentation = deriveInvoicePaymentPresentation(inv);
+  if (key === "draft") return status === "draft" || status === "pending";
+  if (key === "posted") return status === "posted";
+  if (key === "void") return status === "void";
+  if (key === "unpaid" || key === "partial" || key === "paid") {
+    return presentation.paymentStatusKey === key;
+  }
+  return true;
+}
+
+function registerActiveClinicBillingRoutes(app, deps) {
+  const getPool = deps.getPool;
+  const env = deps.env;
+  const isProduction = deps.isProduction;
+  const requireAuth = createRequireActiveClinicAuth({ env, isProduction });
+  const requirePermission = createRequireActiveClinicPermission({
+    getPool,
+    env,
+    isProduction,
+  });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
+  const { renderShell } = createActiveClinicAppRenderer({ getPool, env, isProduction });
+
+  // ========================================================================
+  // BILLING DASHBOARD
+  // ========================================================================
+
+  app.get(
+    "/app/billing",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing");
+        }
+
+        const pool = getPool();
+        const today = new Date().toISOString().split("T")[0];
+
+        // Simple KPIs for dashboard
+        const unpaidInvoicesResult = await pool.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(total_amount_minor), 0) as total
+           FROM activeclinic.invoices
+           WHERE tenant_id = $1 AND facility_id = $2 AND status = 'posted'
+             AND id NOT IN (
+               SELECT DISTINCT invoice_id FROM activeclinic.payment_allocations
+             )`,
+          [auth.tenantId, facility.id]
+        );
+
+        const todayPaymentsResult = await pool.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(amount_minor), 0) as total
+           FROM activeclinic.payments
+           WHERE tenant_id = $1 AND facility_id = $2 AND payment_date = $3`,
+          [auth.tenantId, facility.id, today]
+        );
+
+        const activeInvoicesResult = await pool.query(
+          `SELECT COUNT(*)::int AS count
+             FROM activeclinic.invoices
+            WHERE tenant_id = $1 AND facility_id = $2
+              AND status IN ('draft', 'pending', 'posted')`,
+          [auth.tenantId, facility.id]
+        );
+
+        const perms = auth.permissions || [];
+        const capabilities = {
+          canManageCatalog: hasFinancePermission(perms, BILLING_PERM.CATALOG_MANAGE),
+          canReviewCharges: hasFinancePermission(
+            perms,
+            "activeclinic.billing.charge.review"
+          ),
+          canViewCorrections: hasFinancePermission(
+            perms,
+            "activeclinic.billing.corrections.view"
+          ),
+          canViewReports: hasFinancePermission(
+            perms,
+            "activeclinic.billing.reports.view"
+          ),
+          canOpenCashier: hasFinancePermission(perms, "activeclinic.cashier.open_session"),
+          canCollectPayment: hasFinancePermission(perms, BILLING_PERM.PAYMENT_COLLECT),
+          canCreateInvoice: hasFinancePermission(perms, BILLING_PERM.INVOICE_CREATE),
+          canCharge: hasFinancePermission(perms, BILLING_PERM.BILLING_CHARGE),
+          canAmend: hasFinancePermission(perms, BILLING_PERM.INVOICE_AMEND),
+          canOverride: hasFinancePermission(perms, BILLING_PERM.PRICE_OVERRIDE),
+        };
+
+        const dashboard = {
+          unpaidInvoices: {
+            count: parseInt(unpaidInvoicesResult.rows[0].count, 10),
+            totalMinor: parseInt(unpaidInvoicesResult.rows[0].total, 10),
+            totalFormatted: formatMoney(
+              parseInt(unpaidInvoicesResult.rows[0].total, 10)
+            ),
+          },
+          todayPayments: {
+            count: parseInt(todayPaymentsResult.rows[0].count, 10),
+            totalMinor: parseInt(todayPaymentsResult.rows[0].total, 10),
+            totalFormatted: formatMoney(
+              parseInt(todayPaymentsResult.rows[0].total, 10)
+            ),
+          },
+          activeInvoices: {
+            count: parseInt(activeInvoicesResult.rows[0].count, 10) || 0,
+          },
+        };
+
+        const headerActions = [];
+        if (capabilities.canCreateInvoice) {
+          headerActions.push({
+            label: "New invoice",
+            href: "/app/billing/invoices/new",
+          });
+        }
+        headerActions.push({ label: "Invoices", href: "/app/billing/invoices" });
+        if (capabilities.canManageCatalog) {
+          headerActions.push({ label: "Charge catalog", href: "/app/billing/catalog" });
+        }
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-dashboard-content.ejs",
+          pageHeader: {
+            title: "Billing & Invoices",
+            description: "Operational billing workspace for invoices and collections.",
+            actions: headerActions,
+          },
+          breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Billing" }],
+          pageData: {
+            dashboard,
+            capabilities,
+            stitch: {
+              desktop: STITCH_B2_09.desktop,
+              mobile: STITCH_B2_09.mobile,
+              batch1Desktop: "ece0b9d1d9384f5d8c1e3b944f122e47",
+              batch1Mobile: "649bd7649ebf4c6eb787612f844a637e",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // CHARGE CATALOG
+  // ========================================================================
+
+  app.get(
+    "/app/billing/catalog",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/catalog");
+        }
+
+        const result = await listChargeCatalogItems({
+          pool: getPool(),
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          staffId: auth.staff.id,
+        });
+
+        if (result.result !== BILLING_RESULT.OK) {
+          return await renderShell(req, res, {
+            activeNav: "billing",
+            content: "app/access-state.ejs",
+            pageHeader: { title: "Access denied", description: "", actions: [] },
+            breadcrumbs: [{ label: "Billing", href: "/app/billing" }, { label: "Catalog" }],
+            pageData: { reason: result.reason || "access_denied" },
+          });
+        }
+
+        const items = (result.items || []).map((item) => ({
+          ...item,
+          amountFormatted: formatMoney(item.amountMinor, item.currencyCode),
+        }));
+
+        const canManageCatalog = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.CATALOG_MANAGE
+        );
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-catalog-content.ejs",
+          pageHeader: {
+            title: "Charge catalog",
+            description: "Service and procedure price list.",
+            actions: canManageCatalog
+              ? [{ label: "Add charge item", href: "/app/billing/catalog/new" }]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Catalog" },
+          ],
+          pageData: {
+            items,
+            capabilities: { canManageCatalog },
+            stitch: {
+              desktop: "4ca894f70d6646eca246847cd8c39d6a",
+              mobile: "1ab29b0691c04233a1c972ea99f24351",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/catalog/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.catalog.manage"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-catalog-form-content.ejs",
+          pageHeader: {
+            title: "Add charge item",
+            description: "Create a new catalog item for billing.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Catalog", href: "/app/billing/catalog" },
+            { label: "Add item" },
+          ],
+          pageData: {
+            stitch: { desktop: "d5eb57a8319c4130be473f8dd23851d6" },
+            mode: "create",
+            item: {},
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/catalog",
+    requireAuth,
+    requirePermission("activeclinic.billing.catalog.manage"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const amountMinor = parseMoneyInput(req.body.amount || "0");
+        if (amountMinor === null || amountMinor < 0) {
+          return res.redirect(303, "/app/billing/catalog/new?error=invalid_amount");
+        }
+
+        const result = await createChargeCatalogItem({
+          pool: getPool(),
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          staffId: auth.staff.id,
+          code: String(req.body.code || "").trim().toUpperCase(),
+          name: String(req.body.name || "").trim(),
+          description: String(req.body.description || "").trim() || null,
+          category: String(req.body.category || "").trim() || null,
+          amountMinor,
+          currencyCode: "ZMW",
+        });
+
+        if (result.result !== BILLING_RESULT.CREATED) {
+          return res.redirect(303, `/app/billing/catalog/new?error=${result.result}`);
+        }
+
+        return res.redirect(303, "/app/billing/catalog");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PATIENT ACCOUNT / CHARGES
+  // ========================================================================
+
+  app.get(
+    "/app/billing/patients/:patientNumber",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const pool = getPool();
+        const patientResult = await pool.query(
+          `SELECT p.*
+           FROM activeclinic.patients p
+           WHERE p.organization_id = $1 AND p.patient_number = $2
+           LIMIT 1`,
+          [auth.tenantId, req.params.patientNumber]
+        );
+
+        if (patientResult.rows.length === 0) {
+          return res.status(404).send("Patient not found");
+        }
+
+        const patient = patientResult.rows[0];
+
+        const chargesResult = await pool.query(
+          `SELECT * FROM activeclinic.patient_charges
+           WHERE tenant_id = $1 AND patient_id = $2
+           ORDER BY charged_at DESC`,
+          [auth.tenantId, patient.id]
+        );
+
+        const invoicesResult = await pool.query(
+          `SELECT * FROM activeclinic.invoices
+           WHERE tenant_id = $1 AND patient_id = $2
+           ORDER BY invoice_date DESC`,
+          [auth.tenantId, patient.id]
+        );
+
+        const charges = chargesResult.rows.map((c) => ({
+          ...c,
+          totalAmountFormatted: formatMoney(
+            parseInt(c.total_amount_minor, 10),
+            c.currency_code
+          ),
+        }));
+
+        const invoices = invoicesResult.rows.map((inv) => ({
+          ...inv,
+          totalAmountFormatted: formatMoney(
+            parseInt(inv.total_amount_minor, 10),
+            inv.currency_code
+          ),
+        }));
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-patient-account-content.ejs",
+          pageHeader: {
+            title: `Patient account: ${patient.first_name} ${patient.last_name}`,
+            description: `Billing account for patient ${req.params.patientNumber}`,
+            actions: [
+              { label: "Create charge", href: `/app/billing/patients/${req.params.patientNumber}/charges/new` },
+              { label: "Create invoice", href: `/app/billing/invoices/new?patient=${req.params.patientNumber}` },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Patient account" },
+          ],
+          pageData: {
+            patient: {
+              patientNumber: req.params.patientNumber,
+              displayName: `${patient.first_name} ${patient.last_name}`,
+            },
+            charges,
+            invoices,
+            stitch: {
+              desktop: "a84263ac97b8484698dc36d00b498ffa",
+              mobile: "c15d892b327848a6a2897ae3a08a5803",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // INVOICE CREATE
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const patientNumber = req.query.patient || null;
+        let patient = null;
+        let pendingCharges = [];
+
+        if (patientNumber) {
+          const pool = getPool();
+          const patientResult = await pool.query(
+            `SELECT p.*
+             FROM activeclinic.patients p
+             WHERE p.organization_id = $1 AND p.patient_number = $2
+             LIMIT 1`,
+            [auth.tenantId, patientNumber]
+          );
+
+          if (patientResult.rows.length > 0) {
+            patient = patientResult.rows[0];
+
+            const chargesResult = await pool.query(
+              `SELECT * FROM activeclinic.patient_charges
+               WHERE tenant_id = $1 AND patient_id = $2 AND status = 'pending'
+               ORDER BY charged_at DESC`,
+              [auth.tenantId, patient.id]
+            );
+
+            pendingCharges = chargesResult.rows.map((c) => ({
+              ...c,
+              totalAmountFormatted: formatMoney(
+                parseInt(c.total_amount_minor, 10),
+                c.currency_code
+              ),
+            }));
+          }
+        }
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-create-content.ejs",
+          pageHeader: {
+            title: "Create invoice",
+            description: "Create a new patient invoice from charges.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Invoices", href: "/app/billing/invoices" },
+            { label: "Create" },
+          ],
+          pageData: {
+            patient: patient
+              ? {
+                  patientNumber,
+                  displayName: `${patient.first_name} ${patient.last_name}`,
+                  id: patient.id,
+                }
+              : null,
+            pendingCharges,
+            stitch: {
+              desktop: "25af03d4c3724841a33fb03415ec1b4d",
+              mobile: "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const patientNumber = String(req.body.patient_number || "").trim();
+        const chargeIds = Array.isArray(req.body.charge_ids)
+          ? req.body.charge_ids
+          : [req.body.charge_ids].filter(Boolean);
+
+        if (!patientNumber || chargeIds.length === 0) {
+          return res.redirect(303, "/app/billing/invoices/new?error=invalid_input");
+        }
+
+        const pool = getPool();
+        const patientResult = await pool.query(
+          `SELECT p.id FROM activeclinic.patients p
+           WHERE p.organization_id = $1 AND p.patient_number = $2
+           LIMIT 1`,
+          [auth.tenantId, patientNumber]
+        );
+
+        if (patientResult.rows.length === 0) {
+          return res.redirect(303, "/app/billing/invoices/new?error=patient_not_found");
+        }
+
+        const patientId = patientResult.rows[0].id;
+
+        const result = await createInvoice({
+          pool: getPool(),
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          staffId: auth.staff.id,
+          patientId,
+          chargeIds,
+        });
+
+        if (result.result !== BILLING_RESULT.CREATED) {
+          return res.redirect(303, `/app/billing/invoices/new?error=${result.result}`);
+        }
+
+        const adjustmentMinor = parseMoneyInput(req.body.adjustment || "0");
+        if (adjustmentMinor !== null && adjustmentMinor !== 0) {
+          await setDraftInvoiceAdjustment({
+            pool: getPool(),
+            tenantId: auth.tenantId,
+            facilityId: facility.id,
+            staffId: auth.staff.id,
+            invoiceId: result.invoice.id,
+            adjustmentMinor,
+          });
+        }
+
+        return res.redirect(303, `/app/billing/invoices/${result.invoice.id}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // INVOICE DETAIL
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/:invoiceId",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const pool = getPool();
+
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const invoiceResult = await pool.query(
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number
+           FROM activeclinic.invoices i
+           JOIN activeclinic.patients p ON i.patient_id = p.id
+           WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
+           LIMIT 1`,
+          [req.params.invoiceId, auth.tenantId, facility.id]
+        );
+
+        if (invoiceResult.rows.length === 0) {
+          return res.status(404).send("Invoice not found");
+        }
+
+        const invoice = invoiceResult.rows[0];
+
+        const [enriched] = await attachInvoicePaidBalances(pool, {
+          tenantId: auth.tenantId,
+          facilityId: invoice.facility_id,
+          invoices: [invoice],
+        });
+
+        const linesResult = await pool.query(
+          `SELECT * FROM activeclinic.invoice_lines
+           WHERE invoice_id = $1
+           ORDER BY line_number`,
+          [invoice.id]
+        );
+
+        const lines = linesResult.rows.map((line) => ({
+          ...line,
+          unitAmountFormatted: formatMoney(
+            parseInt(line.unit_amount_minor, 10),
+            line.currency_code
+          ),
+          lineTotalFormatted: formatMoney(
+            parseInt(line.line_total_minor, 10),
+            line.currency_code
+          ),
+        }));
+
+        const actions = [];
+        const perms = auth.permissions || [];
+        const balanceMinor =
+          (enriched && typeof enriched.balanceMinor === "number"
+            ? enriched.balanceMinor
+            : parseInt((enriched && enriched.balanceMinor) || 0, 10)) || 0;
+        if (
+          (invoice.status === "draft" || invoice.status === "pending") &&
+          hasFinancePermission(perms, BILLING_PERM.INVOICE_POST)
+        ) {
+          actions.push({
+            label: "Post invoice",
+            href: `/app/billing/invoices/${invoice.id}/post`,
+          });
+        }
+        if (
+          invoice.status === "posted" &&
+          balanceMinor > 0 &&
+          hasFinancePermission(perms, BILLING_PERM.PAYMENT_COLLECT)
+        ) {
+          actions.push({
+            label: "Collect payment",
+            href: `/app/cashier/payment?invoice=${invoice.id}`,
+          });
+        }
+        if (
+          invoice.status === "posted" &&
+          hasFinancePermission(perms, BILLING_PERM.INVOICE_VOID)
+        ) {
+          actions.push({
+            label: "Void invoice",
+            href: `/app/billing/invoices/${invoice.id}/void`,
+          });
+        }
+        if (
+          invoice.status === "posted" &&
+          hasFinancePermission(perms, BILLING_PERM.INVOICE_AMEND)
+        ) {
+          actions.push({
+            label: "Amend invoice",
+            href: `/app/billing/invoices/${invoice.id}/amend`,
+          });
+        }
+
+        if (
+          (invoice.status === "draft" || invoice.status === "pending") &&
+          hasFinancePermission(perms, BILLING_PERM.INVOICE_CREATE)
+        ) {
+          actions.push({
+            label: "Add item",
+            href: `/app/billing/invoices/${invoice.id}/items/new`,
+          });
+        }
+
+        const errorCode = String(req.query.error || "").trim() || null;
+        const errorMessages = {
+          invalid_input: "Invalid input. Check the form and try again.",
+          not_found: "The requested record was not found.",
+          immutable_record: "This invoice cannot be changed in its current state.",
+          access_denied: "You do not have permission for this action.",
+        };
+
+        const paymentPresentation = deriveInvoicePaymentPresentation({
+          ...invoice,
+          ...enriched,
+        });
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: errorCode
+            ? "app/billing-invoice-error-content.ejs"
+            : "app/billing-invoice-detail-content.ejs",
+          pageHeader: {
+            title: errorCode ? "Invoice error" : `Invoice ${invoice.invoice_number}`,
+            description: errorCode
+              ? "An error occurred while processing this invoice."
+              : `Status: ${invoice.status} · ${paymentPresentation.paymentStatusLabel}`,
+            actions,
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Invoices", href: "/app/billing/invoices" },
+            { label: invoice.invoice_number },
+          ],
+          pageData: {
+            invoice: {
+              ...invoice,
+              ...enriched,
+              ...paymentPresentation,
+              totalAmountFormatted: formatMoney(
+                parseInt(invoice.total_amount_minor, 10),
+                invoice.currency_code
+              ),
+              subtotalFormatted: formatMoney(
+                parseInt(invoice.subtotal_minor, 10),
+                invoice.currency_code
+              ),
+              taxAmountFormatted: formatMoney(
+                parseInt(invoice.tax_amount_minor, 10),
+                invoice.currency_code
+              ),
+              adjustmentFormatted: formatMoney(
+                parseInt(invoice.adjustment_minor || 0, 10),
+                invoice.currency_code
+              ),
+              paidAmountFormatted: formatMoney(
+                (enriched && enriched.paidMinor) || 0,
+                invoice.currency_code
+              ),
+              balanceFormatted: formatMoney(
+                (enriched && enriched.balanceMinor) || 0,
+                invoice.currency_code
+              ),
+              patientName: `${invoice.first_name} ${invoice.last_name}`,
+              patientNumber: invoice.patient_number,
+            },
+            lines,
+            capabilities: {
+              canCollectPayment: hasFinancePermission(
+                perms,
+                BILLING_PERM.PAYMENT_COLLECT
+              ),
+            },
+            error: errorCode
+              ? errorMessages[errorCode] || `Error: ${errorCode}`
+              : null,
+            stitch: errorCode
+              ? { desktop: "b1a8b1855b9b4e268cd42359707d292e" }
+              : {
+                  desktop: STITCH_B2_09.desktop,
+                  mobile: STITCH_B2_09.mobile,
+                  batch1Desktop: STITCH_ACN22_DETAIL,
+                  batch1Mobile: "",
+                },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // POST INVOICE (Finalize)
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/post",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.post"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const pool = getPool();
+
+        const invoiceResult = await pool.query(
+          `SELECT * FROM activeclinic.invoices WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+          [req.params.invoiceId, auth.tenantId]
+        );
+
+        if (invoiceResult.rows.length === 0) {
+          return res.status(404).send("Invoice not found");
+        }
+
+        const invoice = invoiceResult.rows[0];
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-post-content.ejs",
+          pageHeader: {
+            title: "Post invoice",
+            description: "Finalize this invoice (makes it immutable).",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Invoices", href: "/app/billing/invoices" },
+            { label: invoice.invoice_number, href: `/app/billing/invoices/${invoice.id}` },
+            { label: "Post" },
+          ],
+          pageData: {
+            invoice: {
+              ...invoice,
+              totalAmountFormatted: formatMoney(
+                parseInt(invoice.total_amount_minor, 10),
+                invoice.currency_code
+              ),
+            },
+            stitch: { desktop: "319d7fca2acb45a38432aa40a2e7cf30" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices/:invoiceId/post",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.post"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const result = await postInvoice({
+          pool: getPool(),
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          staffId: auth.staff.id,
+          invoiceId: req.params.invoiceId,
+        });
+
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}?error=${result.result}`);
+        }
+
+        return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // INVOICE LIST (AC-B2-09)
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
+        const pool = getPool();
+        const qRaw = String(req.query.q || "").trim();
+        const q = qRaw.slice(0, 120);
+        const statusRaw = String(req.query.status || "all")
+          .trim()
+          .toLowerCase();
+        const statusKey = INVOICE_LIST_STATUS_KEYS.includes(statusRaw)
+          ? statusRaw
+          : "all";
+
+        const params = [auth.tenantId, facility.id];
+        let searchSql = "";
+        if (q) {
+          params.push(`%${q.replace(/[%_\\]/g, "")}%`);
+          searchSql = ` AND (
+            i.invoice_number ILIKE $${params.length}
+            OR p.patient_number ILIKE $${params.length}
+            OR CONCAT(p.first_name, ' ', p.last_name) ILIKE $${params.length}
+            OR COALESCE(fl.description, '') ILIKE $${params.length}
+          )`;
+        }
+
+        const invoicesResult = await pool.query(
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number,
+                  fl.description AS service_summary
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+             LEFT JOIN LATERAL (
+               SELECT description
+                 FROM activeclinic.invoice_lines il
+                WHERE il.invoice_id = i.id
+                ORDER BY il.line_number ASC
+                LIMIT 1
+             ) fl ON true
+            WHERE i.tenant_id = $1 AND i.facility_id = $2
+            ${searchSql}
+            ORDER BY i.invoice_date DESC, i.created_at DESC
+            LIMIT 200`,
+          params
+        );
+
+        const withBalances = await attachInvoicePaidBalances(pool, {
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          invoices: invoicesResult.rows,
+        });
+
+        const mapped = withBalances.map((inv) => {
+          const presentation = deriveInvoicePaymentPresentation(inv);
+          return {
+            ...inv,
+            ...presentation,
+            totalAmountFormatted: formatMoney(
+              parseInt(inv.total_amount_minor, 10),
+              inv.currency_code
+            ),
+            paidAmountFormatted: formatMoney(inv.paidMinor || 0, inv.currency_code),
+            balanceFormatted: formatMoney(inv.balanceMinor || 0, inv.currency_code),
+            adjustmentFormatted: formatMoney(
+              parseInt(inv.adjustment_minor || 0, 10),
+              inv.currency_code
+            ),
+            patientName: `${inv.first_name} ${inv.last_name}`,
+            serviceSummary: inv.service_summary || "—",
+            canCollect:
+              inv.status === "posted" &&
+              (parseInt(inv.balanceMinor, 10) || 0) > 0,
+          };
+        });
+
+        const statusCounts = {
+          all: mapped.length,
+          unpaid: 0,
+          partial: 0,
+          paid: 0,
+          draft: 0,
+          posted: 0,
+          void: 0,
+        };
+        for (const inv of mapped) {
+          const st = String(inv.status || "").toLowerCase();
+          if (st === "draft" || st === "pending") statusCounts.draft += 1;
+          if (st === "posted") statusCounts.posted += 1;
+          if (st === "void") statusCounts.void += 1;
+          if (inv.paymentStatusKey === "unpaid") statusCounts.unpaid += 1;
+          if (inv.paymentStatusKey === "partial") statusCounts.partial += 1;
+          if (inv.paymentStatusKey === "paid") statusCounts.paid += 1;
+        }
+
+        const invoices = mapped.filter((inv) =>
+          matchesInvoiceListFilter(inv, statusKey)
+        );
+
+        const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+        const statusTabs = [
+          { key: "all", label: "All", count: statusCounts.all },
+          { key: "unpaid", label: "Unpaid", count: statusCounts.unpaid },
+          { key: "partial", label: "Partially paid", count: statusCounts.partial },
+          { key: "paid", label: "Settled / paid", count: statusCounts.paid },
+          { key: "draft", label: "Draft", count: statusCounts.draft },
+          { key: "void", label: "Void", count: statusCounts.void },
+        ].map((tab) => ({
+          ...tab,
+          active: tab.key === statusKey,
+          href: `/app/billing/invoices?status=${tab.key}${qParam}`,
+        }));
+
+        const canCreateInvoice = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.INVOICE_CREATE
+        );
+        const canCollectPayment = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.PAYMENT_COLLECT
+        );
+        const canOpenCashier = hasFinancePermission(
+          auth.permissions,
+          "activeclinic.cashier.open_session"
+        );
+
+        const headerActions = [];
+        if (canCreateInvoice) {
+          headerActions.push({
+            label: "Create invoice",
+            href: "/app/billing/invoices/new",
+          });
+        }
+        if (canOpenCashier) {
+          headerActions.push({ label: "Open cashier", href: "/app/cashier" });
+        }
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-list-content.ejs",
+          pageHeader: {
+            title: "Invoices",
+            description: "Patient invoices, balances, and payment status.",
+            actions: headerActions,
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Invoices" },
+          ],
+          pageData: {
+            invoices,
+            q,
+            statusKey,
+            statusTabs,
+            statusCounts,
+            capabilities: {
+              canCreateInvoice,
+              canCollectPayment,
+              canOpenCashier,
+            },
+            stitch: {
+              desktop: STITCH_B2_09.desktop,
+              mobile: STITCH_B2_09.mobile,
+              batch1Desktop: STITCH_ACN21_LIST.desktop,
+              batch1Mobile: STITCH_ACN21_LIST.mobile,
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // ELEVATED: VOID / AMEND POSTED INVOICE
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/void",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.void"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const { tenantId } = financeIdsFromAuth(auth);
+        const inv = await getPool().query(
+          `SELECT id, invoice_number, status FROM activeclinic.invoices
+            WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+          [req.params.invoiceId, tenantId]
+        );
+        if (!inv.rows.length) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invoice not found", { status: 404 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-void-content.ejs",
+          pageHeader: { title: "Void invoice" },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: inv.rows[0].invoice_number, href: `/app/billing/invoices/${inv.rows[0].id}` },
+            { label: "Void" },
+          ],
+          pageData: { invoice: inv.rows[0] },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices/:invoiceId/void",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.void"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await voidInvoice({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          invoiceId: req.params.invoiceId,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${req.params.invoiceId}/void?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/amend",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const { tenantId } = financeIdsFromAuth(auth);
+        const inv = await getPool().query(
+          `SELECT id, invoice_number, status, notes, adjustment_minor
+             FROM activeclinic.invoices
+            WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+          [req.params.invoiceId, tenantId]
+        );
+        if (!inv.rows.length) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invoice not found", { status: 404 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-amend-content.ejs",
+          pageHeader: { title: "Amend invoice" },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: inv.rows[0].invoice_number, href: `/app/billing/invoices/${inv.rows[0].id}` },
+            { label: "Amend" },
+          ],
+          pageData: { invoice: inv.rows[0] },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices/:invoiceId/amend",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const adj = parseMoneyInput(req.body.adjustment || "0");
+        const result = await amendPostedInvoice({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          invoiceId: req.params.invoiceId,
+          notes: String(req.body.notes || "").trim() || null,
+          adjustmentMinor: adj,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${req.params.invoiceId}/amend?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PHASE 4: AR / COLLECTIONS / CHARGE REVIEW / CREDIT NOTES / CORRECTIONS
+  // ========================================================================
+
+  app.get(
+    "/app/billing/ar",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/ar");
+        }
+        const result = await billingOps.listAccountsReceivable(getPool(), financeIdsWithFacility(auth, facility));
+        if (result.result === billingOps.RESULT.ACCESS_DENIED) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Billing view permission required.", { status: 403 })
+          );
+        }
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          totalFormatted: formatMoney(row.totalAmountMinor, row.currencyCode),
+          balanceFormatted: formatMoney(row.balanceMinor, row.currencyCode),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-ar-content.ejs",
+          pageHeader: {
+            title: "Accounts receivable",
+            description: "Posted invoices with outstanding balances.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Accounts receivable" },
+          ],
+          pageData: {
+            items,
+            stitch: { desktop: "1829edeb5d1741be9b6ae68a219ef7cc" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/collections",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/collections");
+        }
+        const result = await billingOps.listCollectionsQueue(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          minDaysOutstanding: toIntQuery(req.query.minDays, 0),
+        });
+        if (result.result === billingOps.RESULT.ACCESS_DENIED) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Billing view permission required.", { status: 403 })
+          );
+        }
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          balanceFormatted: formatMoney(row.balanceMinor, row.currencyCode),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-collections-content.ejs",
+          pageHeader: {
+            title: "Collections queue",
+            description: "Outstanding balances for follow-up.",
+            actions: [
+              { label: "Log contact", href: "/app/billing/collections/contact" },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Collections" },
+          ],
+          pageData: {
+            items,
+            stitch: { desktop: "16318693e2874e79a8463d91c6ba63ad" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/collections/contact",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-collections-contact-content.ejs",
+          pageHeader: {
+            title: "Record collections contact",
+            description: "Log patient outreach for outstanding balances.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Collections", href: "/app/billing/collections" },
+            { label: "Contact" },
+          ],
+          pageData: {
+            prefill: {
+              patientId: req.query.patientId || "",
+              invoiceId: req.query.invoiceId || "",
+            },
+            stitch: { desktop: "513301ae28e1423ab7431e299cf45eee" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/collections/contact",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.recordCollectionsContact(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          patientId: String(req.body.patientId || "").trim(),
+          invoiceId: String(req.body.invoiceId || "").trim() || null,
+          contactMethod: String(req.body.contactMethod || "").trim(),
+          outcome: String(req.body.outcome || "attempted").trim(),
+          notes: String(req.body.notes || "").trim() || null,
+        });
+        if (result.result !== billingOps.RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/billing/collections/contact?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/billing/collections?contacted=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/charges/review",
+    requireAuth,
+    requirePermission("activeclinic.billing.charge.review"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/charges/review");
+        }
+        const result = await billingOps.listPendingChargeReviews(getPool(), financeIdsWithFacility(auth, facility));
+        if (result.result === billingOps.RESULT.ACCESS_DENIED) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Charge review permission required.", { status: 403 })
+          );
+        }
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          totalFormatted: formatMoney(row.totalAmountMinor, row.currencyCode),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-charge-review-content.ejs",
+          pageHeader: {
+            title: "Charge review",
+            description: "Approve or reject charges pending review.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Charge review" },
+          ],
+          pageData: {
+            items,
+            stitch: { desktop: "954a9269255245dd9c6e375f8cbdd93b" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/charges/:id/review",
+    requireAuth,
+    requirePermission("activeclinic.billing.charge.review"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.reviewPatientCharge(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          chargeId: req.params.id,
+          decision: String(req.body.decision || "").trim(),
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/charges/review?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/billing/charges/review?reviewed=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/credit-notes",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/credit-notes");
+        }
+        const result = await billingOps.listCreditNotes(getPool(), financeIdsWithFacility(auth, facility));
+        const canCreate = hasFinancePermission(
+          auth.permissions,
+          "activeclinic.billing.invoice.amend"
+        );
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          amountFormatted: formatMoney(row.amountMinor, row.currencyCode),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-credit-notes-content.ejs",
+          pageHeader: {
+            title: "Credit notes",
+            description: "Posted credit notes against patient accounts.",
+            actions: canCreate
+              ? [{ label: "New credit note", href: "/app/billing/credit-notes/new" }]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Credit notes" },
+          ],
+          pageData: {
+            items,
+            capabilities: { canCreate },
+            stitch: { desktop: "92b97e715c6f4c308e61d3b39d66a1e9" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/credit-notes/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-credit-note-form-content.ejs",
+          pageHeader: {
+            title: "Create credit note",
+            description: "Issue an explicit credit without silently editing invoices.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Credit notes", href: "/app/billing/credit-notes" },
+            { label: "New" },
+          ],
+          pageData: {
+            prefill: {
+              patientId: req.query.patientId || "",
+              invoiceId: req.query.invoiceId || "",
+            },
+            stitch: { desktop: "92b97e715c6f4c308e61d3b39d66a1e9" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/credit-notes/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const amountMinor = parseMoneyInput(req.body.amount || "0");
+        const result = await billingOps.createCreditNote(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          patientId: String(req.body.patientId || "").trim(),
+          invoiceId: String(req.body.invoiceId || "").trim() || null,
+          amountMinor,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== billingOps.RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/billing/credit-notes/new?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/credit-notes/${result.creditNote.id}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/credit-notes/:id",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+        const result = await billingOps.getCreditNote(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          creditNoteId: req.params.id,
+        });
+        if (result.result === billingOps.RESULT.NOT_FOUND) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Credit note not found.", { status: 404 })
+          );
+        }
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load credit note.", { status: 403 })
+          );
+        }
+        const cn = result.creditNote;
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-credit-note-detail-content.ejs",
+          pageHeader: {
+            title: `Credit note ${cn.creditNoteNumber}`,
+            description: "Credit note detail.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Credit notes", href: "/app/billing/credit-notes" },
+            { label: cn.creditNoteNumber },
+          ],
+          pageData: {
+            creditNote: {
+              ...cn,
+              amountFormatted: formatMoney(cn.amountMinor, cn.currencyCode),
+            },
+            stitch: { desktop: "92b97e715c6f4c308e61d3b39d66a1e9" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/corrections",
+    requireAuth,
+    requirePermission("activeclinic.billing.corrections.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/corrections");
+        }
+        const result = await billingOps.listFinancialCorrections(
+          getPool(),
+          financeIdsWithFacility(auth, facility)
+        );
+        if (result.result === billingOps.RESULT.ACCESS_DENIED) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Corrections view permission required.", {
+              status: 403,
+            })
+          );
+        }
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          amountFormatted:
+            row.amountMinor != null
+              ? formatMoney(row.amountMinor, row.currencyCode || "ZMW")
+              : "—",
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-corrections-content.ejs",
+          pageHeader: {
+            title: "Financial corrections",
+            description: "Refunds, reversals, and credit notes.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Corrections" },
+          ],
+          pageData: {
+            items,
+            stitch: {
+              desktop: "54163d0beee74c29990bd83b77480af5",
+              mobile: "a21d364d62f04c78ac8477971377eca9",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/arrangements",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/arrangements");
+        }
+        const result = await billingOps.listPaymentArrangements(
+          getPool(),
+          financeIdsWithFacility(auth, facility)
+        );
+        const canCreate = hasFinancePermission(auth.permissions, BILLING_PERM.BILLING_VIEW);
+        const canReview = hasFinancePermission(
+          auth.permissions,
+          "activeclinic.billing.invoice.amend"
+        );
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          totalFormatted: formatMoney(row.totalAmountMinor, row.currencyCode),
+          installmentFormatted: formatMoney(
+            row.installmentAmountMinor,
+            row.currencyCode
+          ),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-arrangements-content.ejs",
+          pageHeader: {
+            title: "Payment arrangements",
+            description: "Payment plans and installment agreements.",
+            actions: canCreate
+              ? [{ label: "New arrangement", href: "/app/billing/arrangements/new" }]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Arrangements" },
+          ],
+          pageData: {
+            items,
+            capabilities: { canCreate, canReview },
+            stitch: { desktop: "02e1c1976d844c2cac63682e1853fa46" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/arrangements/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-arrangement-form-content.ejs",
+          pageHeader: {
+            title: "New payment arrangement",
+            description: "Request a payment plan for a patient balance.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Arrangements", href: "/app/billing/arrangements" },
+            { label: "New" },
+          ],
+          pageData: {
+            prefill: { patientId: req.query.patientId || "" },
+            stitch: { desktop: "02e1c1976d844c2cac63682e1853fa46" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/arrangements",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.createPaymentArrangement(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          patientId: String(req.body.patientId || "").trim(),
+          totalAmountMinor: parseMoneyInput(req.body.totalAmount || "0"),
+          numberOfInstallments: toIntQuery(req.body.numberOfInstallments, 0),
+          installmentAmountMinor: parseMoneyInput(req.body.installmentAmount || "0"),
+          installmentFrequency: String(req.body.installmentFrequency || "monthly").trim(),
+          startDate: String(req.body.startDate || "").trim() || undefined,
+          notes: String(req.body.notes || "").trim() || null,
+        });
+        if (result.result !== billingOps.RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/billing/arrangements/new?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/arrangements/${result.arrangement.id}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/arrangements/:id",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.getPaymentArrangement(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          arrangementId: req.params.id,
+        });
+        if (result.result === billingOps.RESULT.NOT_FOUND) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Arrangement not found.", { status: 404 })
+          );
+        }
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load arrangement.", { status: 403 })
+          );
+        }
+        const arr = result.arrangement;
+        const canReview =
+          arr.status === "pending" &&
+          hasFinancePermission(auth.permissions, "activeclinic.billing.invoice.amend");
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-arrangement-review-content.ejs",
+          pageHeader: {
+            title: `Arrangement ${arr.arrangementNumber}`,
+            description: "Payment arrangement detail and review.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Arrangements", href: "/app/billing/arrangements" },
+            { label: arr.arrangementNumber },
+          ],
+          pageData: {
+            arrangement: {
+              ...arr,
+              totalFormatted: formatMoney(arr.totalAmountMinor, arr.currencyCode),
+              installmentFormatted: formatMoney(
+                arr.installmentAmountMinor,
+                arr.currencyCode
+              ),
+            },
+            capabilities: { canReview },
+            stitch: { desktop: "2a0ae995f3e140da863e5aede4b2e71f" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/arrangements/:id/review",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.reviewPaymentArrangement(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          arrangementId: req.params.id,
+          action: String(req.body.action || "").trim(),
+          reviewNotes: String(req.body.reviewNotes || "").trim() || null,
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/arrangements/${req.params.id}?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/arrangements/${req.params.id}?reviewed=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/price-overrides",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/price-overrides");
+        }
+        const result = await billingOps.listPriceOverrideRequests(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          status: req.query.status || undefined,
+        });
+        const canApprove = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.PRICE_OVERRIDE
+        );
+        const canRequest = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.BILLING_CHARGE
+        );
+        const items = (result.items || []).map((row) => ({
+          ...row,
+          originalFormatted: formatMoney(row.originalAmountMinor, row.currencyCode),
+          requestedFormatted: formatMoney(row.requestedAmountMinor, row.currencyCode),
+        }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-price-overrides-content.ejs",
+          pageHeader: {
+            title: "Price override requests",
+            description: "Review requested catalogue price changes.",
+            actions: canRequest
+              ? [
+                  {
+                    label: "Request override",
+                    href: "/app/billing/price-overrides/new",
+                    primary: true,
+                  },
+                ]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Price overrides" },
+          ],
+          pageData: {
+            items,
+            capabilities: { canApprove, canRequest },
+            stitch: { desktop: "a953a043598945fdab38285c7dab7206" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/price-overrides/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.charge"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-price-override-form-content.ejs",
+          pageHeader: {
+            title: "Request price override",
+            description:
+              "Submit original and requested amounts with a reason for approval.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Price overrides", href: "/app/billing/price-overrides" },
+            { label: "New" },
+          ],
+          pageData: {
+            prefill: {
+              patientId: req.query.patientId || "",
+              patientChargeId: req.query.patientChargeId || "",
+            },
+            stitch: { desktop: "a953a043598945fdab38285c7dab7206" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/price-overrides",
+    requireAuth,
+    requirePermission("activeclinic.billing.charge"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.createPriceOverrideRequest(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          patientId: String(req.body.patientId || "").trim() || null,
+          patientChargeId: String(req.body.patientChargeId || "").trim() || null,
+          originalAmountMinor: parseMoneyInput(req.body.originalAmount || "0"),
+          requestedAmountMinor: parseMoneyInput(req.body.requestedAmount || "0"),
+          currencyCode: String(req.body.currencyCode || "ZMW").trim() || "ZMW",
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== billingOps.RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/billing/price-overrides/new?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/billing/price-overrides?created=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/price-overrides/:id/approve",
+    requireAuth,
+    requirePermission("activeclinic.billing.price.override"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.reviewPriceOverrideRequest(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          requestId: req.params.id,
+          action: "approve",
+          reviewNotes: String(req.body.reviewNotes || "").trim() || null,
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/price-overrides?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/billing/price-overrides?approved=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/price-overrides/:id/reject",
+    requireAuth,
+    requirePermission("activeclinic.billing.price.override"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const result = await billingOps.reviewPriceOverrideRequest(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          requestId: req.params.id,
+          action: "reject",
+          reviewNotes: String(req.body.reviewNotes || "").trim() || null,
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/price-overrides?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/billing/price-overrides?rejected=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/patients/:patientNumber/statement",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+        const result = await billingOps.getPatientAccountStatement(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          patientNumber: req.params.patientNumber,
+        });
+        if (result.result === billingOps.RESULT.NOT_FOUND) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Patient not found.", { status: 404 })
+          );
+        }
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load statement.", { status: 403 })
+          );
+        }
+        const st = result.statement;
+        const formatRows = (rows, amountKey) =>
+          rows.map((row) => ({
+            ...row,
+            amountFormatted: formatMoney(row[amountKey], row.currencyCode || "ZMW"),
+          }));
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-statement-content.ejs",
+          pageHeader: {
+            title: `Account statement · ${st.patient.patientNumber}`,
+            description: "Printable patient account statement.",
+            actions: [{ label: "Print", href: "javascript:window.print()" }],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Statement" },
+          ],
+          pageData: {
+            statement: {
+              ...st,
+              charges: formatRows(st.charges, "totalAmountMinor"),
+              invoices: st.invoices.map((row) => ({
+                ...row,
+                totalFormatted: formatMoney(row.totalAmountMinor, row.currencyCode),
+                balanceFormatted: formatMoney(row.balanceMinor, row.currencyCode),
+              })),
+              payments: formatRows(st.payments, "amountMinor"),
+              creditNotes: formatRows(st.creditNotes, "amountMinor"),
+              summary: {
+                ...st.summary,
+                chargesTotalFormatted: formatMoney(st.summary.chargesTotalMinor),
+                paymentsTotalFormatted: formatMoney(st.summary.paymentsTotalMinor),
+                creditsTotalFormatted: formatMoney(st.summary.creditsTotalMinor),
+                openBalanceFormatted: formatMoney(st.summary.openBalanceMinor),
+              },
+            },
+            stitch: { desktop: "666806c4ea194d478e3baf2b7876950c" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/reports/revenue",
+    requireAuth,
+    requirePermission("activeclinic.billing.reports.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility?return=/app/billing/reports/revenue");
+        }
+        const today = billingOps.businessCalendarDate();
+        const dateFrom = String(req.query.from || today).slice(0, 10);
+        const dateTo = String(req.query.to || today).slice(0, 10);
+        const result = await billingOps.getRevenueReportSummary(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          dateFrom,
+          dateTo,
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Reports view permission required.", {
+              status: 403,
+            })
+          );
+        }
+        const s = result.summary;
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-revenue-report-content.ejs",
+          pageHeader: {
+            title: "Revenue report",
+            description: "Posted invoices and payments summary.",
+            actions: [
+              {
+                label: "Detailed",
+                href: `/app/billing/reports/revenue/detailed?from=${dateFrom}&to=${dateTo}`,
+              },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Revenue report" },
+          ],
+          pageData: {
+            dateFrom,
+            dateTo,
+            summary: {
+              ...s,
+              postedInvoicesFormatted: formatMoney(s.postedInvoices.totalMinor),
+              paymentsFormatted: formatMoney(s.payments.totalMinor),
+              refundsFormatted: formatMoney(s.refunds.totalMinor),
+              creditNotesFormatted: formatMoney(s.creditNotes.totalMinor),
+              netCollectionsFormatted: formatMoney(s.netCollectionsMinor),
+            },
+            stitch: { desktop: "08921cb100ab462d8ec08c007f1bd895" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/reports/revenue/detailed",
+    requireAuth,
+    requirePermission("activeclinic.billing.reports.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(
+            303,
+            "/app/select-facility?return=/app/billing/reports/revenue/detailed"
+          );
+        }
+        const today = billingOps.businessCalendarDate();
+        const dateFrom = String(req.query.from || today).slice(0, 10);
+        const dateTo = String(req.query.to || today).slice(0, 10);
+        const result = await billingOps.getRevenueReportDetailed(getPool(), {
+          ...financeIdsWithFacility(auth, facility),
+          dateFrom,
+          dateTo,
+        });
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Reports view permission required.", {
+              status: 403,
+            })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-revenue-report-detailed-content.ejs",
+          pageHeader: {
+            title: "Revenue report (detailed)",
+            description: "Invoice and payment line detail for the selected range.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Revenue", href: "/app/billing/reports/revenue" },
+            { label: "Detailed" },
+          ],
+          pageData: {
+            dateFrom,
+            dateTo,
+            summary: result.summary,
+            invoices: (result.invoices || []).map((row) => ({
+              ...row,
+              totalFormatted: formatMoney(row.totalAmountMinor, row.currencyCode),
+            })),
+            payments: (result.payments || []).map((row) => ({
+              ...row,
+              amountFormatted: formatMoney(row.amountMinor, row.currencyCode),
+            })),
+            stitch: { desktop: "550a52476c254e258d58737fc1184bb6" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PHASE 5D: BILLING PARTIAL CLOSURE
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/error",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const pool = getPool();
+        const code = String(req.query.code || req.query.error || "unknown").trim();
+        const invoiceResult = await pool.query(
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+            WHERE i.id = $1 AND i.tenant_id = $2
+            LIMIT 1`,
+          [req.params.invoiceId, auth.tenantId]
+        );
+        if (!invoiceResult.rows.length) {
+          return res.status(404).send("Invoice not found");
+        }
+        const invoice = invoiceResult.rows[0];
+        const errorMessages = {
+          invalid_input: "Invalid input. Check the form and try again.",
+          not_found: "The requested record was not found.",
+          immutable_record: "This invoice cannot be changed in its current state.",
+          access_denied: "You do not have permission for this action.",
+        };
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-error-content.ejs",
+          pageHeader: { title: "Invoice error" },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: invoice.invoice_number, href: `/app/billing/invoices/${invoice.id}` },
+            { label: "Error" },
+          ],
+          pageData: {
+            invoice: {
+              ...invoice,
+              totalAmountFormatted: formatMoney(
+                parseInt(invoice.total_amount_minor, 10),
+                invoice.currency_code
+              ),
+              patientName: `${invoice.first_name} ${invoice.last_name}`,
+              patientNumber: invoice.patient_number,
+            },
+            error: errorMessages[code] || `Error: ${code}`,
+            stitch: { desktop: "b1a8b1855b9b4e268cd42359707d292e" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/items/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const pool = getPool();
+
+        const inv = await pool.query(
+          `SELECT i.id, i.invoice_number, i.status, i.patient_id,
+                  p.first_name, p.last_name, p.patient_number
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+            WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
+            LIMIT 1`,
+          [req.params.invoiceId, ids.tenantId, facility.id]
+        );
+        if (!inv.rows.length) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invoice not found", { status: 404 })
+          );
+        }
+        const invoice = inv.rows[0];
+        if (invoice.status !== INVOICE_STATUS.DRAFT && invoice.status !== INVOICE_STATUS.PENDING) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${invoice.id}?error=immutable_record`
+          );
+        }
+
+        const catalog = await listChargeCatalogItems({
+          pool,
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          activeOnly: true,
+        });
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-add-item-content.ejs",
+          pageHeader: {
+            title: "Add invoice item",
+            description: `Add a catalog charge to invoice ${invoice.invoice_number}.`,
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: invoice.invoice_number, href: `/app/billing/invoices/${invoice.id}` },
+            { label: "Add item" },
+          ],
+          pageData: {
+            invoice: {
+              id: invoice.id,
+              invoiceNumber: invoice.invoice_number,
+              patientName: `${invoice.first_name} ${invoice.last_name}`,
+              patientNumber: invoice.patient_number,
+            },
+            catalogItems: (catalog.items || []).map((item) => ({
+              ...item,
+              amountFormatted: formatMoney(item.amountMinor, item.currencyCode),
+            })),
+            error: req.query.error || null,
+            stitch: { desktop: "be4481e8f31b459facf2294f73311181" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices/:invoiceId/items/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const lineType = String(req.body.line_type || "catalog").trim().toLowerCase();
+        const quantity = parseInt(req.body.quantity || "1", 10);
+
+        let result;
+        if (lineType === "custom") {
+          const unitAmountMinor = parseMoneyInput(req.body.unit_price || "0");
+          result = await addCustomLineToDraftInvoice({
+            pool: getPool(),
+            tenantId: ids.tenantId,
+            facilityId: facility.id,
+            staffId: ids.staffId,
+            invoiceId: req.params.invoiceId,
+            description: String(req.body.description || "").trim(),
+            quantity,
+            unitAmountMinor: unitAmountMinor == null ? -1 : unitAmountMinor,
+          });
+        } else {
+          const catalogItemId = String(req.body.catalog_item_id || "").trim();
+          result = await addCatalogItemToDraftInvoice({
+            pool: getPool(),
+            tenantId: ids.tenantId,
+            facilityId: facility.id,
+            staffId: ids.staffId,
+            invoiceId: req.params.invoiceId,
+            catalogItemId,
+            quantity,
+          });
+        }
+
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${req.params.invoiceId}/items/new?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/catalog/:catalogItemId",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getChargeCatalogItemById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          catalogItemId: req.params.catalogItemId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Catalog item not found", { status: 404 })
+          );
+        }
+        const item = result.item;
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-catalog-detail-content.ejs",
+          pageHeader: {
+            title: item.name,
+            description: item.code,
+            actions: hasFinancePermission(auth.permissions, BILLING_PERM.CATALOG_MANAGE)
+              ? [{ label: "Catalog list", href: "/app/billing/catalog" }]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Catalog", href: "/app/billing/catalog" },
+            { label: item.name },
+          ],
+          pageData: {
+            item: {
+              ...item,
+              amountFormatted: formatMoney(item.amountMinor, item.currencyCode),
+            },
+            stitch: { desktop: "d5eb57a8319c4130be473f8dd23851d6" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/payments/history",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await listPaymentHistory({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          limit: toIntQuery(req.query.limit, 50),
+          offset: toIntQuery(req.query.offset, 0),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load payment history.", { status: 403 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-payment-history-content.ejs",
+          pageHeader: {
+            title: "Payment history",
+            description: "Facility payment transactions.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Payment history" },
+          ],
+          pageData: {
+            payments: (result.payments || []).map((row) => ({
+              ...row,
+              amountFormatted: formatMoney(row.amountMinor, row.currencyCode),
+            })),
+            stitch: { desktop: "45929cd32480420aaa5788be86e183f9" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+}
+
+function toIntQuery(value, fallback) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+module.exports = {
+  registerActiveClinicBillingRoutes,
+};

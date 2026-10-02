@@ -1,0 +1,38 @@
+<%#
+  Settings / website hub shell chrome — presentation only.
+  Locals: model, editEnabled, edit, className
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var navItems = Array.isArray(m.navItems) ? m.navItems : [];
+  var actions = Array.isArray(m.actions) ? m.actions : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+  var activeKey = m.activeKey || '';
+%>
+<section class="gp-website-pc gp-website-pc--settings-shell<%= extraClass %>" data-gp-website-component="settings_shell">
+  <header class="gp-website-pc__settings-header">
+    <% if (m.title) { %><h1 class="gp-website-pc__title"><%= m.title %></h1><% } %>
+    <% if (m.lead) { %><p class="gp-website-pc__lead"><%= m.lead %></p><% } %>
+    <% if (actions.length) { %>
+    <div class="gp-website-pc__actions">
+      <% actions.forEach(function (action, index) { %>
+      <a class="gp-website-pc__btn<%= index === 0 ? ' gp-website-pc__btn--primary' : ' gp-website-pc__btn--secondary' %>" href="<%= action.url || '#' %>"><%= action.label %></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </header>
+  <nav class="gp-website-pc__settings-nav" aria-label="Website settings">
+    <ul class="gp-website-pc__settings-nav-list">
+      <% navItems.forEach(function (item) {
+        var isActive = activeKey && item.key === activeKey;
+      %>
+      <li class="gp-website-pc__settings-nav-item<%= isActive ? ' is-active' : '' %>">
+        <a class="gp-website-pc__settings-nav-link" href="<%= item.href || '#' %>"<% if (isActive) { %> aria-current="page"<% } %>>
+          <span class="gp-website-pc__settings-nav-label"><%= item.label %></span>
+          <% if (item.description) { %><span class="gp-website-pc__settings-nav-desc"><%= item.description %></span><% } %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+  </nav>
+</section>

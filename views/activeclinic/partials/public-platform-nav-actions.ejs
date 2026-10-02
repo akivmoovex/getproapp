@@ -1,0 +1,15 @@
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  const variantName = typeof variant === "string" ? variant : "header";
+  const registerOn = /register/.test(pid);
+  const loginOn = /(^|-)login$/.test(pid);
+  const loginCurrent = loginOn ? ' aria-current="page"' : "";
+  const registerCurrent = registerOn ? ' aria-current="page"' : "";
+%>
+<% if (variantName === "header") { %>
+<a class="ac-public-nav__login ac-public-header__login" href="/login"<%- loginCurrent %>>Login</a>
+<a class="ac-public-nav__cta ac-public-header__cta" href="/register-clinic"<%- registerCurrent %>>Register Your Clinic</a>
+<% } else { %>
+<a href="/login"<%- loginCurrent %>>Login</a>
+<a href="/register-clinic"<%- registerCurrent %>>Register Your Clinic</a>
+<% } %>

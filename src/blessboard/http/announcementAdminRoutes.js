@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -26,10 +26,12 @@ const {
 } = require("../../platform/http/v5Csrf");
 const {
   STATUS,
+  SCHEDULER_DEPENDENCY,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,
   getAdminAnnouncement,
+  listAnnouncementPublicationHistory,
   presentAnnouncementForRender,
 } = require("../services/announcementsService");
 const {
@@ -37,6 +39,13 @@ const {
 } = require("../services/announcementProductPolicy");
 const { createMediaUploadService } = require("../media/mediaUploadService");
 const { sendPrivateMediaDownload } = require("./sendPrivateMediaDownload");
+const {
+  createBlessBoardMediaUploadMulter,
+  requireMediaUploadsEnabled,
+  createMulterSingleMiddleware,
+  respondWithMediaUpload,
+  VISIBILITY,
+} = require("./blessBoardMediaUploadHttp");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -109,6 +118,12 @@ function errorMessage(reason) {
   if (reason === "already_published") {
     return "This announcement is already published.";
   }
+  if (reason === "starts_at_required") {
+    return "Scheduled announcements require a start time.";
+  }
+  if (reason === "ends_before_starts") {
+    return "End time must be after the start time.";
+  }
   return "Please check the form and try again.";
 }
 
@@ -116,6 +131,7 @@ function parseAudiencesFromBody(body) {
   const keys = [];
   if (body.audience_members === "1" || body.audience_members === "on") keys.push("members");
   if (body.audience_admins === "1" || body.audience_admins === "on") keys.push("admins");
+  if (body.audience_public === "1" || body.audience_public === "on") keys.push("public");
   if (Array.isArray(body.audiences)) {
     for (const k of body.audiences) keys.push(String(k));
   } else if (typeof body.audiences === "string" && body.audiences) {
@@ -135,6 +151,17 @@ function formItemFromBody(body, id) {
     actionUrl: body.action_url || "",
     actionLabel: body.action_label || "",
     audiences: parseAudiencesFromBody(body),
+    timezone: body.timezone || "UTC",
+    startsAt: body.starts_at || null,
+    endsAt: body.ends_at || null,
+  };
+}
+
+function scheduleFieldsFromBody(body) {
+  return {
+    timezone: body.timezone,
+    startsAt: body.starts_at,
+    endsAt: body.ends_at,
   };
 }
 
@@ -160,13 +187,19 @@ function createAnnouncementAdminRouter(deps) {
     variant === "hq" ? "/hq/announcements" : "/branch-admin/announcements";
   const productPolicy = resolveAnnouncementProductPolicy(env);
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const requireAccess = createRequireBlessBoardPermission("announcements.view", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  // Attachment upload uses manage capability — not website.edit and not view-only.
+  const requireManage = createRequireBlessBoardPermission("announcements.manage", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const upload = createBlessBoardMediaUploadMulter(env);
+  const multerSingle = createMulterSingleMiddleware(upload);
+  const requireUploadsEnabled = requireMediaUploadsEnabled(env);
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -190,12 +223,23 @@ function createAnnouncementAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
+  function gateManage(req, res, next) {
+    if (
+      !requireSession(req, res, {
+        loginNext: req.originalUrl || loginNextDefault,
+      })
+    ) {
+      return;
+    }
+    return requireManage(req, res, next);
+  }
+
   async function shellLocals(req, res, extra) {
     const authzCtx = req.blessBoardAuthorizationContext;
     const roleKeys = ((authzCtx && authzCtx.effectiveRoles) || []).map((r) =>
       r && r.roleKey ? String(r.roleKey) : ""
     );
-    const isPlatformAdmin = roleKeys.includes("platform_admin");
+    const isPlatformAdmin = roleKeys.includes("platform_administrator");
     const testingPlatformAdminPublishBanner = Boolean(
       productPolicy.showTestingPlatformAdminPublishBanner && isPlatformAdmin
     );
@@ -331,9 +375,13 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   function mediaUploadUrlForScope(scope) {
-    if (variant === "branch") return "/branch-admin/content/media/upload";
-    if (scope && scope.branchKey) return `/hq/content/b/${scope.branchKey}/media/upload`;
-    return "/hq/content/media/upload";
+    // Purpose-scoped announcement attachment upload (announcements.manage + private).
+    // Does not use generic /content/media/upload (website.edit).
+    if (variant === "branch") return "/branch-admin/announcements/media/upload";
+    if (scope && scope.branchKey) {
+      return `/hq/announcements/b/${scope.branchKey}/media/upload`;
+    }
+    return "/hq/announcements/media/upload";
   }
 
   function editorScopeExtras(scope, isBranchScoped) {
@@ -375,11 +423,35 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   function registerRoutes(mountPrefix, isBranchScoped) {
+    // Must register before /:id so "media" is not captured as an announcement id.
+    router.post(
+      `${mountPrefix}/media/upload`,
+      rejectApex,
+      gateManage,
+      requireUploadsEnabled,
+      multerSingle,
+      async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        return respondWithMediaUpload(req, res, {
+          getPool,
+          mediaService,
+          env,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          uploadedByUserId: scope.actorUserId,
+          forceVisibility: VISIBILITY.PRIVATE,
+        });
+      }
+    );
+
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const q = String((req.query && req.query.q) || "").slice(0, 100);
-      const status = String((req.query && req.query.status) || "").trim().toLowerCase();
+      const statusRaw = String((req.query && req.query.status) || "").trim().toLowerCase();
+      const status = statusRaw === "timed" ? "scheduled" : statusRaw;
       const audience = String((req.query && req.query.audience) || "").trim().toLowerCase();
       let page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
       if (page > MAX_LIST_PAGE) page = MAX_LIST_PAGE;
@@ -474,7 +546,10 @@ function createAnnouncementAdminRouter(deps) {
         env,
         title: body.title,
         body: body.body,
-        status: body.status || "draft",
+        status:
+          body.status === "timed" || body.status === "scheduled"
+            ? "scheduled"
+            : body.status || "draft",
         isPinned: body.is_pinned === "1" || body.is_pinned === "on",
         isFeatured: body.is_featured === "1" || body.is_featured === "on",
         actionUrl: body.action_url,
@@ -483,6 +558,7 @@ function createAnnouncementAdminRouter(deps) {
         mediaAssetIds: body.media_asset_id ? [body.media_asset_id] : [],
         confirmPublish: body.confirm_publish,
         enforcePublishConfirm: true,
+        ...scheduleFieldsFromBody(body),
       });
       if (!created.ok) {
         const html = renderView(
@@ -512,12 +588,19 @@ function createAnnouncementAdminRouter(deps) {
       const id = String(req.params.id || "");
       const item = await loadScopedAnnouncement(req, res, scope, id);
       if (!item) return;
+      const history = await listAnnouncementPublicationHistory(getPool(), {
+        churchId: scope.churchId,
+        id,
+        limit: 40,
+      });
       const html = renderView(
         "announcements/admin-detail.ejs",
         await shellLocals(req, res, {
           pageTitle: item.title || "Announcement",
           basePath: scope.basePath,
           item,
+          publicationHistory: history.ok ? history.events : [],
+          scheduler: SCHEDULER_DEPENDENCY,
           error: null,
           saved: String((req.query && req.query.saved) || ""),
         })
@@ -627,6 +710,7 @@ function createAnnouncementAdminRouter(deps) {
           basePath: scope.basePath,
           item,
           error: null,
+          scheduler: SCHEDULER_DEPENDENCY,
           ...editorScopeExtras(scope, isBranchScoped),
         })
       );
@@ -647,6 +731,9 @@ function createAnnouncementAdminRouter(deps) {
         return res.redirect(303, `${scope.basePath}/${id}`);
       }
       const body = req.body || {};
+      const publishMode = String(body.publish_mode || "now").toLowerCase();
+      const nextStatus =
+        publishMode === "schedule" || publishMode === "timed" ? "scheduled" : "published";
       const updated = await updateAnnouncement(getPool(), id, {
         churchId: scope.churchId,
         scopeBranchId: scope.branchId,
@@ -654,10 +741,11 @@ function createAnnouncementAdminRouter(deps) {
         tenant: scope.tenant,
         productPolicy,
         env,
-        status: "published",
+        status: nextStatus,
         confirmPublish: body.confirm_publish,
         expectedUpdatedAt: body.expected_updated_at || item.updatedAt,
-        enforcePublishConfirm: true,
+        enforcePublishConfirm: nextStatus === "published",
+        ...scheduleFieldsFromBody(body),
       });
       if (!updated.ok) {
         const html = renderView(
@@ -667,6 +755,7 @@ function createAnnouncementAdminRouter(deps) {
             basePath: scope.basePath,
             item,
             error: errorMessage(updated.reason),
+            scheduler: SCHEDULER_DEPENDENCY,
             ...editorScopeExtras(scope, isBranchScoped),
           })
         );
@@ -678,7 +767,10 @@ function createAnnouncementAdminRouter(deps) {
               : 400;
         return res.status(code).type("html").send(html);
       }
-      return res.redirect(303, `${scope.basePath}/${id}?saved=published`);
+      return res.redirect(
+        303,
+        `${scope.basePath}/${id}?saved=${nextStatus === "scheduled" ? "scheduled" : "published"}`
+      );
     });
 
     router.post(`${mountPrefix}/:id/archive`, rejectApex, gate, async (req, res) => {
@@ -732,8 +824,9 @@ function createAnnouncementAdminRouter(deps) {
       const body = req.body || {};
       // Soft lifecycle only: never hard-delete. Publish transitions require /publish.
       let nextStatus = existing.status;
-      if (existing.status === "draft") {
-        nextStatus = "draft";
+      if (existing.status === "draft" || existing.status === "scheduled") {
+        nextStatus =
+          body.status === "scheduled" || body.status === "timed" ? "scheduled" : "draft";
       } else if (existing.status === "published") {
         nextStatus = "published";
       }
@@ -756,6 +849,7 @@ function createAnnouncementAdminRouter(deps) {
         confirmPublish: existing.status === "published" ? true : false,
         expectedUpdatedAt: body.expected_updated_at,
         enforcePublishConfirm: true,
+        ...scheduleFieldsFromBody(body),
       });
       if (!updated.ok) {
         const loaded = await getAdminAnnouncement(getPool(), {

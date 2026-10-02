@@ -23,8 +23,77 @@ const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
 const { buildPublicWebsiteNavigation } = require("./buildPublicWebsiteNavigation");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
 const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
+const { normalizePlainTextEntities } = require("../../platform/website/plainTextEntities");
+const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
 const publicDemo = require("../services/tenantPublicDemoContent");
+const {
+  listPublicWebsiteAnnouncements,
+} = require("../services/announcementsService");
+
+/**
+ * Public website image URL: allowlist then CDN presentation (drops /media, local FS, data:).
+ * @param {unknown} value
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function safePublicImageUrl(value, env) {
+  const allowed = safeExternalUrl(value);
+  if (!allowed) return null;
+  return presentRuntimeImageSrc(allowed, env || process.env);
+}
+
+/**
+ * Rewrite app-mediated website-engine media paths to absolute CDN URLs when the
+ * Hostinger object exists. Keeps database-payload delivery paths unchanged.
+ * @param {import('pg').Pool|null} db
+ * @param {string|null|undefined} organizationId
+ * @param {string|null|undefined} src
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {Promise<string|null>}
+ */
+async function hydratePublicImageUrl(db, organizationId, src, env) {
+  const presented = safePublicImageUrl(src, env);
+  if (!presented) return null;
+  if (/^https:\/\//i.test(presented)) return presented;
+  const { parseAppMediatedMediaSrc } = require("../../platform/media/cdnMediaPresentation");
+  const mediated = parseAppMediatedMediaSrc(presented);
+  if (!mediated.mediaId || !organizationId || !db || typeof db.query !== "function") {
+    return presented;
+  }
+  const mediaService = require("../../platform/website/mediaService");
+  const hydrated = await mediaService.hydrateWebsiteImageValue(db, {
+    organizationId,
+    value: { mediaId: mediated.mediaId, src: presented },
+    env: env || process.env,
+  });
+  if (hydrated && hydrated.src && /^https:\/\//i.test(hydrated.src)) {
+    return hydrated.src;
+  }
+  return presented;
+}
+
+async function hydrateEntityImageUrls(db, organizationId, items, env) {
+  if (!Array.isArray(items) || !items.length) return items;
+  const out = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") {
+      out.push(item);
+      continue;
+    }
+    const next = { ...item };
+    if (next.imageUrl) {
+      next.imageUrl = await hydratePublicImageUrl(db, organizationId, next.imageUrl, env);
+    }
+    if (next.mediaUrl) {
+      next.mediaUrl = await hydratePublicImageUrl(db, organizationId, next.mediaUrl, env);
+    }
+    if (next.thumbnailUrl) {
+      next.thumbnailUrl = await hydratePublicImageUrl(db, organizationId, next.thumbnailUrl, env);
+    }
+    out.push(next);
+  }
+  return out;
+}
 const {
   resolvePublicServiceTimesEntries,
 } = require("../services/homeServiceTimesService");
@@ -67,6 +136,7 @@ async function resolvePublishedPage(db, scope) {
       churchId: scope.churchId,
       branchId: contentBranchId,
       pageKey: scope.pageKey,
+      historicalBinding: scope.historicalBinding || null,
     });
     if (branchPage.ok && branchPage.page) {
       return { ...branchPage, contentScope: "branch" };
@@ -86,6 +156,7 @@ async function resolvePublishedPage(db, scope) {
     churchId: scope.churchId,
     branchId: null,
     pageKey: scope.pageKey,
+    historicalBinding: scope.historicalBinding || null,
   });
   if (churchPage.ok && churchPage.page) {
     return { ...churchPage, contentScope: "church" };
@@ -108,8 +179,13 @@ async function resolvePublishedPage(db, scope) {
 async function resolvePublishedList(db, listFn, churchId, contentBranchId, options) {
   const allowChurchFallback =
     !options || options.allowChurchContentFallback !== false;
+  const historicalBinding = options && options.historicalBinding ? options.historicalBinding : null;
   if (contentBranchId) {
-    const branchList = await listFn(db, { churchId, branchId: contentBranchId });
+    const branchList = await listFn(db, {
+      churchId,
+      branchId: contentBranchId,
+      historicalBinding,
+    });
     if (branchList.ok && branchList.items && branchList.items.length > 0) {
       return { ok: true, items: branchList.items, contentScope: "branch" };
     }
@@ -117,7 +193,7 @@ async function resolvePublishedList(db, listFn, churchId, contentBranchId, optio
       return { ok: true, items: [], contentScope: "branch" };
     }
   }
-  const churchList = await listFn(db, { churchId, branchId: null });
+  const churchList = await listFn(db, { churchId, branchId: null, historicalBinding });
   if (churchList.ok) {
     return {
       ok: true,
@@ -136,34 +212,54 @@ function sanitizeLayoutMetadata(meta) {
   if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
   const out = {};
   if (meta.schema != null) out.schema = String(meta.schema).slice(0, 64);
-  if (meta.buttonText != null) out.buttonText = String(meta.buttonText).slice(0, 48);
+  if (meta.buttonText != null) {
+    out.buttonText = normalizePlainTextEntities(meta.buttonText).slice(0, 48);
+  }
   if (meta.buttonUrl != null) out.buttonUrl = String(meta.buttonUrl).slice(0, 500);
-  if (meta.tagline != null) out.tagline = String(meta.tagline).slice(0, 200);
-  if (meta.eyebrow != null) out.eyebrow = String(meta.eyebrow).slice(0, 80);
+  if (meta.tagline != null) {
+    out.tagline = normalizePlainTextEntities(meta.tagline).slice(0, 200);
+  }
+  if (meta.eyebrow != null) {
+    out.eyebrow = normalizePlainTextEntities(meta.eyebrow).slice(0, 80);
+  }
   if (meta.secondaryButtonText != null) {
-    out.secondaryButtonText = String(meta.secondaryButtonText).slice(0, 48);
+    out.secondaryButtonText = normalizePlainTextEntities(meta.secondaryButtonText).slice(0, 48);
   }
   if (meta.secondaryButtonUrl != null) {
     out.secondaryButtonUrl = String(meta.secondaryButtonUrl).slice(0, 500);
   }
-  if (meta.altText != null) out.altText = String(meta.altText).slice(0, 200);
+  if (meta.altText != null) {
+    out.altText = normalizePlainTextEntities(meta.altText).slice(0, 200);
+  }
   if (meta.focal != null) out.focal = String(meta.focal).slice(0, 32);
   if (meta.fit != null) out.fit = String(meta.fit).slice(0, 32);
+  if (meta.imagePlacement != null && typeof meta.imagePlacement === "object" && !Array.isArray(meta.imagePlacement)) {
+    try {
+      const { validateImagePlacement } = require("../../platform/website/imagePlacement");
+      const checked = validateImagePlacement(meta.imagePlacement);
+      if (checked.ok && checked.value) out.imagePlacement = checked.value;
+    } catch {
+      /* keep public render resilient if placement module unavailable */
+    }
+  }
   if (meta.videoUrl != null) out.videoUrl = String(meta.videoUrl).slice(0, 500);
-  if (meta.videoTitle != null) out.videoTitle = String(meta.videoTitle).slice(0, 120);
+  if (meta.videoTitle != null) {
+    out.videoTitle = normalizePlainTextEntities(meta.videoTitle).slice(0, 120);
+  }
   if (Array.isArray(meta.entries)) {
     out.entries = meta.entries
       .filter((e) => e && typeof e === "object")
       .slice(0, 20)
       .map((e) => ({
         id: e.id != null ? String(e.id).slice(0, 64) : null,
-        name: e.name != null ? String(e.name).slice(0, 120) : "",
+        name: e.name != null ? normalizePlainTextEntities(e.name).slice(0, 120) : "",
         day: e.day != null ? String(e.day).slice(0, 16) : "",
         startTime: e.startTime != null ? String(e.startTime).slice(0, 8) : "",
         endTime: e.endTime != null ? String(e.endTime).slice(0, 8) : "",
-        location: e.location != null ? String(e.location).slice(0, 200) : "",
-        note: e.note != null ? String(e.note).slice(0, 200) : "",
+        location: e.location != null ? normalizePlainTextEntities(e.location).slice(0, 200) : "",
+        note: e.note != null ? normalizePlainTextEntities(e.note).slice(0, 200) : "",
         enabled: e.enabled !== false,
+        primary: e.primary === true,
         sortOrder: Number.isFinite(Number(e.sortOrder)) ? Number(e.sortOrder) : 0,
       }));
   }
@@ -174,9 +270,11 @@ function mapSection(section) {
   return {
     sectionKey: section.sectionKey,
     sectionType: section.sectionType,
-    heading: section.heading,
-    bodyText: section.bodyText,
-    mediaUrl: safeExternalUrl(section.mediaUrl),
+    heading:
+      section.heading != null ? normalizePlainTextEntities(section.heading) : section.heading,
+    bodyText:
+      section.bodyText != null ? normalizePlainTextEntities(section.bodyText) : section.bodyText,
+    mediaUrl: safePublicImageUrl(section.mediaUrl),
     sortOrder: section.sortOrder,
     status: section.status || null,
     layoutMetadata: sanitizeLayoutMetadata(section.layoutMetadata),
@@ -212,7 +310,7 @@ function mapLeader(row) {
     displayName: row.displayName,
     roleTitle: row.roleTitle,
     biography: row.biography,
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
     status: row.status || null,
   };
@@ -227,7 +325,7 @@ function mapMinistry(row) {
     meetingDay: row.meetingDay,
     contactEmail: row.contactEmail || null,
     contactHref: row.contactEmail ? safeExternalUrl(`mailto:${row.contactEmail}`) : null,
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
     status: row.status || null,
   };
@@ -243,7 +341,7 @@ function mapEvent(row, fallbackTimezone) {
     timezone: row.timezone || fallbackTimezone || null,
     location: row.location,
     registrationUrl: safeExternalUrl(row.registrationUrl),
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     status: row.status || null,
   };
 }
@@ -262,66 +360,40 @@ function mapSermon(row) {
     summary: parsed.summary,
     category: parsed.category,
     scripture: rowScripture || parsed.scripture || null,
-    mediaUrl: safeExternalUrl(row.mediaUrl),
+    mediaUrl: safePublicImageUrl(row.mediaUrl),
     resourceUrl: safeExternalUrl(row.resourceUrl),
     // Optional thumb for cards (soft-fill / future schema); never treat as playable mediaUrl.
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     status: row.status || null,
   };
 }
 
 /**
- * Testing/demo soft-fill for local event/sermon thumbs when CMS image is empty.
- * Uses same-site /church/images paths only — no Stitch hotlinks.
- * Only fills demo-owned titles (exact catalog match or [Demo] marker).
+ * Soft-fill missing event/sermon thumbs from platform demo assets (CDN only).
  */
 function softFillDemoEventImages(items) {
-  const catalog = testingDemoSpec.EVENTS || [];
-  return (items || []).map((ev) => {
-    if (!ev || ev.imageUrl) return ev;
-    const byTitle = catalog.find((c) => c.title === ev.title);
-    const demoMarked =
-      typeof testingDemoSpec.isDemoMarkedText === "function" &&
-      testingDemoSpec.isDemoMarkedText(ev.title);
-    if (!byTitle && !demoMarked) return ev;
-    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
-    if (!resolved && demoMarked) {
-      const demoItems = (items || []).filter(
-        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
-      );
-      const demoIndex = demoItems.findIndex((x) => x === ev || x.title === ev.title);
-      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
-      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
-    }
-    const safe = resolved ? safeExternalUrl(resolved) : null;
-    if (!safe) return ev;
-    return { ...ev, imageUrl: safe };
+  const pack = publicDemo.buildPublicDemoPack({});
+  const demos = pack.events || [];
+  return (items || []).map((item, i) => {
+    if (!item || item.imageUrl) return item;
+    const demo = demos[i % Math.max(demos.length, 1)];
+    return {
+      ...item,
+      imageUrl: publicDemo.mediaOrFallback(null, demo && demo.imageUrl),
+    };
   });
 }
 
 function softFillDemoSermonImages(items) {
-  const catalog = testingDemoSpec.SERMONS || [];
-  return (items || []).map((sermon) => {
-    if (!sermon || sermon.imageUrl) return sermon;
-    const byTitle = catalog.find((c) => c.title === sermon.title);
-    const demoMarked =
-      typeof testingDemoSpec.isDemoMarkedText === "function" &&
-      testingDemoSpec.isDemoMarkedText(sermon.title);
-    if (!byTitle && !demoMarked) return sermon;
-    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
-    if (!resolved && demoMarked) {
-      const demoItems = (items || []).filter(
-        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
-      );
-      const demoIndex = demoItems.findIndex(
-        (x) => x === sermon || x.title === sermon.title
-      );
-      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
-      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
-    }
-    const safe = resolved ? safeExternalUrl(resolved) : null;
-    if (!safe) return sermon;
-    return { ...sermon, imageUrl: safe };
+  const pack = publicDemo.buildPublicDemoPack({});
+  const demos = pack.sermons || [];
+  return (items || []).map((item, i) => {
+    if (!item || item.imageUrl) return item;
+    const demo = demos[i % Math.max(demos.length, 1)];
+    return {
+      ...item,
+      imageUrl: publicDemo.mediaOrFallback(null, demo && demo.imageUrl),
+    };
   });
 }
 
@@ -498,12 +570,7 @@ function mapGiving(row) {
   const qrRaw = row.qrImageUrl || row.qr_image_url || null;
   let qrImageUrl = null;
   if (qrRaw) {
-    const asPath = String(qrRaw);
-    if (asPath.startsWith("/church/images/") || asPath.startsWith("/_bb/media/")) {
-      qrImageUrl = asPath;
-    } else {
-      qrImageUrl = safeExternalUrl(asPath);
-    }
+    qrImageUrl = safePublicImageUrl(String(qrRaw));
   }
   const branchId =
     row.branchId != null
@@ -769,6 +836,11 @@ async function loadTenantPublicPageModel(db, input) {
   }
 
   const isPreview = Boolean(input.preview);
+  const historicalBinding =
+    input.historicalBinding && typeof input.historicalBinding === "object"
+      ? input.historicalBinding
+      : null;
+  const governancePreview = Boolean(input.governancePreview || historicalBinding);
   let allowChurchContentFallback = input.allowChurchContentFallback !== false;
   const churchId = tenant.church.id;
   const primaryBranchId = tenant.primaryBranch.id;
@@ -810,6 +882,21 @@ async function loadTenantPublicPageModel(db, input) {
     contactSettingsBranchId
   );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
+  let publicWebsiteStatus = websiteStatus;
+  if (scopedBranchActive && contentBranchId && publicWebsiteStatus !== "published") {
+    try {
+      const branchHome = await getPublishedPage(db, {
+        churchId,
+        branchId: contentBranchId,
+        pageKey: "home",
+      });
+      if (branchHome.ok && branchHome.page && String(branchHome.page.status || "") === "published") {
+        publicWebsiteStatus = "published";
+      }
+    } catch {
+      /* keep church-wide gate */
+    }
+  }
   let publicName = publicDemo.resolveCanonicalChurchName({
     publicName: settings && settings.publicName,
     churchDisplayName: tenant.church.displayName,
@@ -879,11 +966,11 @@ async function loadTenantPublicPageModel(db, input) {
     }
   }
 
-  if (websiteStatus === "suspended" && !isPreview) {
+  if (websiteStatus === "suspended" && !isPreview && !governancePreview) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
 
-  if (!isPreview && websiteStatus !== "published") {
+  if (!isPreview && !governancePreview && publicWebsiteStatus !== "published") {
     return {
       kind: KIND.SETUP,
       reason: "website_unpublished",
@@ -929,6 +1016,43 @@ async function loadTenantPublicPageModel(db, input) {
       publicContact.phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
     }
   }
+  // Published website-engine contact.details.* must win over settings soft defaults (BB-04).
+  if (organizationId) {
+    try {
+      const {
+        loadFieldOverlayMap,
+        overlayKey,
+      } = require("../website/blessboardEngineContentService");
+      const contactOverlay = await loadFieldOverlayMap(db, {
+        organizationId,
+        branchId: contentBranchId || null,
+        pageKey: "contact",
+        mode: isPreview ? "draft" : "live",
+        createIfMissing: false,
+      });
+      const email = contactOverlay.get(overlayKey("details", "email"));
+      const phone = contactOverlay.get(overlayKey("details", "phone"));
+      const address = contactOverlay.get(overlayKey("details", "address"));
+      if (email !== undefined || phone !== undefined || address !== undefined) {
+        publicContact = {
+          ...publicContact,
+          email: email !== undefined ? email : publicContact.email,
+          phone: phone !== undefined ? phone : publicContact.phone,
+          addressText: address !== undefined ? address : publicContact.addressText,
+          hasAny: true,
+        };
+        if (email !== undefined) {
+          publicContact.emailHref = email ? safeExternalUrl(`mailto:${email}`) : null;
+        }
+        if (phone !== undefined) {
+          const phoneDigits = String(phone || "").replace(/[^\d+]/g, "");
+          publicContact.phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
+        }
+      }
+    } catch {
+      /* non-fatal — keep settings-derived contact */
+    }
+  }
   const canonicalTimezone =
     (settings && settings.defaultTimezone) ||
     (branchSettings && branchSettings.timezone) ||
@@ -946,11 +1070,32 @@ async function loadTenantPublicPageModel(db, input) {
         contentBranchId,
         pageKey,
         allowChurchContentFallback,
+        historicalBinding,
       });
 
   let pageSections = isPreview
     ? pageResult.sections || []
     : (pageResult.sections || []).map(mapSection);
+
+  /** @type {string[]} */
+  let suppressedHomeTeaserKeys = [];
+  if (pageKey === "home" && pageResult.page && pageResult.page.id) {
+    try {
+      const contentRepo = require("../repositories/publicContentRepository");
+      const allHomeSections = await contentRepo.listSectionsForPage(db, pageResult.page.id, {});
+      if (
+        (allHomeSections || []).some(
+          (s) =>
+            String(s.sectionKey || "") === "sermons_intro" &&
+            String(s.status || "") === "archived"
+        )
+      ) {
+        suppressedHomeTeaserKeys = ["sermons_intro"];
+      }
+    } catch {
+      // Soft-fill may still show the teaser when lookup fails.
+    }
+  }
 
   const pageTitle =
     (pageResult.page && pageResult.page.title) || PAGE_KEY_TITLES[pageKey] || pageKey;
@@ -969,8 +1114,9 @@ async function loadTenantPublicPageModel(db, input) {
       return { items, contentScope: list.contentScope };
     }
     const list = await resolvePublishedList(db, publishedFn, churchId, contentBranchId, {
-      allowChurchContentFallback,
-    });
+        allowChurchContentFallback,
+        historicalBinding,
+      });
     let items = (list.items || []).map(mapper);
     if (prepare) items = prepare(items);
     return { items, contentScope: list.contentScope };
@@ -1013,6 +1159,15 @@ async function loadTenantPublicPageModel(db, input) {
     entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Sermons will appear here when published.";
+  } else if (pageKey === "announcements") {
+    const listed = await listPublicWebsiteAnnouncements(db, {
+      churchId,
+      branchId: contentBranchId,
+      limit: 50,
+    });
+    entities = listed.ok ? listed.items || [] : [];
+    entitiesScope = contentBranchId ? "branch" : "church";
+    entitiesEmptyMessage = "Announcements will appear here when published.";
   } else if (pageKey === "contact") {
     const list = await loadEntityList(
       listPublishedContactChannels,
@@ -1031,6 +1186,28 @@ async function loadTenantPublicPageModel(db, input) {
     entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Giving options will appear here when published.";
+  }
+
+  // Attach published entity image placement from page.layout_metadata (no entity-column migration).
+  {
+    const { attachEntityImagePlacements } = require("../website/entityImagePlacement");
+    const pageLayout =
+      pageResult.page && pageResult.page.layoutMetadata && typeof pageResult.page.layoutMetadata === "object"
+        ? pageResult.page.layoutMetadata
+        : null;
+    const kindForPage =
+      pageKey === "leadership"
+        ? "leader"
+        : pageKey === "ministries"
+          ? "ministry"
+          : pageKey === "events"
+            ? "event"
+            : pageKey === "sermons"
+              ? "sermon"
+              : null;
+    if (kindForPage && entities.length) {
+      entities = attachEntityImagePlacements(entities, pageLayout, kindForPage);
+    }
   }
 
   let homeTeasers = {
@@ -1089,6 +1266,7 @@ async function loadTenantPublicPageModel(db, input) {
         )
       : await resolvePublishedList(db, listPublishedContactChannels, churchId, contentBranchId, {
           allowChurchContentFallback,
+          historicalBinding,
         });
     const allChannels = (contactList.items || []).map(mapContact);
     socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType) && ch.href);
@@ -1185,6 +1363,44 @@ async function loadTenantPublicPageModel(db, input) {
       mapSermon
     );
     homeTeasers.sermons = (sermons.items || []).slice(0, 1);
+
+    // Placement lives on each collection page's layout_metadata — attach for home teasers.
+    try {
+      const { attachEntityImagePlacements } = require("../website/entityImagePlacement");
+      const contentRepo = require("../repositories/publicContentRepository");
+      async function layoutFor(pk) {
+        const page = await contentRepo.findPageByScope(db, {
+          churchId,
+          branchId: contentBranchId || null,
+          pageKey: pk,
+        });
+        return page && page.layoutMetadata && typeof page.layoutMetadata === "object"
+          ? page.layoutMetadata
+          : null;
+      }
+      homeTeasers.leaders = attachEntityImagePlacements(
+        homeTeasers.leaders,
+        await layoutFor("leadership"),
+        "leader"
+      );
+      homeTeasers.ministries = attachEntityImagePlacements(
+        homeTeasers.ministries,
+        await layoutFor("ministries"),
+        "ministry"
+      );
+      homeTeasers.events = attachEntityImagePlacements(
+        homeTeasers.events,
+        await layoutFor("events"),
+        "event"
+      );
+      homeTeasers.sermons = attachEntityImagePlacements(
+        homeTeasers.sermons,
+        await layoutFor("sermons"),
+        "sermon"
+      );
+    } catch {
+      /* keep teasers without placement if lookup fails */
+    }
   }
 
   const dataEnvironment = tenant.church.dataEnvironment || null;
@@ -1231,10 +1447,35 @@ async function loadTenantPublicPageModel(db, input) {
       ? ""
       : String(publicChurchHomePath(organizationKey) || "").replace(/\/$/, "");
 
-  const seoPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+  // Canonical public URLs always use the caller's branch-scoped prefix when provided.
+  const seoPathPrefix = pathPrefix || churchWidePathPrefix;
 
-  const seoOverrides =
-    websiteResolved && websiteResolved.flat ? websiteResolved.flat : {};
+  let seoOverrides =
+    websiteResolved && websiteResolved.flat ? { ...websiteResolved.flat } : {};
+  if (!scopedBranchActive && organizationId && churchId && primaryBranchId) {
+    try {
+      const { loadLegacyBlessBoardSeoFlat } = require("../website/blessboardEngineSeo");
+      const churchWideSeo = await loadLegacyBlessBoardSeoFlat(db, {
+        organizationId,
+        churchId,
+        branchId: primaryBranchId,
+      });
+      seoOverrides = { ...churchWideSeo, ...seoOverrides };
+    } catch {
+      /* keep prior overrides */
+    }
+  }
+  if (organizationId) {
+    try {
+      const { overlayBlessBoardEngineSeo } = require("../website/blessboardEngineSeo");
+      seoOverrides = await overlayBlessBoardEngineSeo(db, seoOverrides, {
+        organizationId,
+        preview: isPreview || governancePreview,
+      });
+    } catch {
+      /* keep branch scope SEO */
+    }
+  }
   const branchInactive =
     websiteResolved &&
     websiteResolved.branchStatus &&
@@ -1309,8 +1550,12 @@ async function loadTenantPublicPageModel(db, input) {
     descriptionOverride: seoOverrides["seo.description"] || null,
     ogTitleOverride: seoOverrides["seo.og_title"] || null,
     ogDescriptionOverride: seoOverrides["seo.og_description"] || null,
-    ogImageUrl: seoOverrides["seo.og_image_url"] || null,
-    forceNoindex: seoOverrides["seo.noindex"] === true ? true : null,
+    ogImageUrl: safePublicImageUrl(seoOverrides["seo.og_image_url"]) || null,
+    canonicalUrlOverride: seoOverrides["seo.canonical_url"] || null,
+    forceNoindex: governancePreview ? true : seoOverrides["seo.noindex"] === true ? true : null,
+    robotsOverride: governancePreview ? "noindex, nofollow" : seoOverrides["seo.robots"] || null,
+    sitemapIncludeOverride:
+      seoOverrides["seo.sitemap_include"] === false ? false : null,
     branchInactive: Boolean(branchInactive),
   });
 
@@ -1331,7 +1576,9 @@ async function loadTenantPublicPageModel(db, input) {
   let showEmptyState = false;
   if (pageKey === "contact") {
     showEmptyState = !hasEntities && !hasSections && !publicContact.hasAny;
-  } else if (["leadership", "ministries", "events", "sermons", "giving"].includes(pageKey)) {
+  } else if (
+    ["leadership", "ministries", "events", "sermons", "announcements", "giving"].includes(pageKey)
+  ) {
     showEmptyState = !hasEntities && !hasSections;
   } else if (pageKey === "home") {
     showEmptyState = !hasSections && !hasHomeTeasers;
@@ -1350,6 +1597,7 @@ async function loadTenantPublicPageModel(db, input) {
 
   // Stage 2: published sites with sparse CMS get a complete sample presentation.
   // Draft CMS rows are never read here; soft-fill never invents live statistics.
+  // Named people/events/ministries from the demo pack are labeled template examples.
   let homeDemoFallback = null;
   let aboutDemoFallback = null;
   let leadershipDemoFallback = null;
@@ -1361,21 +1609,36 @@ async function loadTenantPublicPageModel(db, input) {
   let usedPublicDemoFill = false;
 
   if (pageKey === "home") {
-    homeDemoFallback = demoPack.home;
+    homeDemoFallback = Object.freeze({
+      ...demoPack.home,
+      heroMediaUrl: publicDemo.mediaOrFallback(demoPack.home.heroMediaUrl),
+    });
     if (!homeTeasers.ministries.length) {
-      homeTeasers.ministries = demoPack.ministries.slice(0, 3);
+      homeTeasers.ministries = publicDemo.markPublicTemplateExamples(
+        demoPack.ministries.slice(0, 3),
+        ["name", "leaderName"]
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.leaders.length) {
-      homeTeasers.leaders = demoPack.leaders.slice(0, 3);
+      homeTeasers.leaders = publicDemo.markPublicTemplateExamples(
+        demoPack.leaders.slice(0, 3),
+        ["displayName", "roleTitle"]
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.events.length) {
-      homeTeasers.events = demoPack.events.slice(0, 2);
+      homeTeasers.events = publicDemo.markPublicTemplateExamples(
+        demoPack.events.slice(0, 2),
+        "title"
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.sermons.length) {
-      homeTeasers.sermons = demoPack.sermons.slice(0, 1);
+      homeTeasers.sermons = publicDemo.markPublicTemplateExamples(
+        demoPack.sermons.slice(0, 1),
+        ["title", "speakerName"]
+      );
       usedPublicDemoFill = true;
     }
     homeTeasers = {
@@ -1414,16 +1677,41 @@ async function loadTenantPublicPageModel(db, input) {
   if (pageKey === "about") {
     aboutDemoFallback = Object.freeze({
       heroHeading: demoPack.about.heroHeading,
-      heroBody: demoPack.about.heroBody,
-      heroMediaUrl: demoPack.about.heroMediaUrl,
-      story: demoPack.about.story,
-      storyMediaUrl: demoPack.about.story.mediaUrl,
-      mission: demoPack.about.mission,
-      vision: demoPack.about.vision,
+      heroBody: publicDemo.withPublicTemplateNotice(demoPack.about.heroBody),
+      heroMediaUrl: safePublicImageUrl(demoPack.about.heroMediaUrl),
+      story: Object.freeze({
+        ...demoPack.about.story,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.story.bodyText),
+      }),
+      storyMediaUrl: safePublicImageUrl(demoPack.about.story.mediaUrl),
+      mission: Object.freeze({
+        ...demoPack.about.mission,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.mission.bodyText),
+      }),
+      vision: Object.freeze({
+        ...demoPack.about.vision,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.vision.bodyText),
+      }),
       values: demoPack.about.values,
-      beliefs: demoPack.about.beliefs,
-      community: demoPack.about.community,
-      gallery: demoPack.about.gallery,
+      beliefs: Object.freeze({
+        ...demoPack.about.beliefs,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.beliefs.bodyText),
+      }),
+      community: Object.freeze({
+        ...demoPack.about.community,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.community.bodyText),
+      }),
+      lifeTogether: Object.freeze({
+        ...demoPack.about.lifeTogether,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.lifeTogether.bodyText),
+        mediaUrl: publicDemo.mediaOrFallback(demoPack.about.lifeTogether.mediaUrl),
+      }),
+      visitorCtaHeading: demoPack.about.visitorCtaHeading,
+      visitorCtaBody: publicDemo.withPublicTemplateNotice(demoPack.about.visitorCtaBody),
+      visitorCtaMediaUrl: publicDemo.mediaOrFallback(demoPack.about.visitorCtaMediaUrl),
+      gallery: (demoPack.about.gallery || [])
+        .map((url) => publicDemo.mediaOrFallback(url))
+        .filter(Boolean),
     });
     showEmptyState = false;
   }
@@ -1432,10 +1720,18 @@ async function loadTenantPublicPageModel(db, input) {
     leadershipDemoFallback = Object.freeze({
       introHeading: demoPack.leadership.introHeading,
       introBody: demoPack.leadership.introBody,
-      introMediaUrl: demoPack.leadership.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.leadership.introMediaUrl),
     });
     if (!entities.length) {
-      entities = demoPack.leaders.slice();
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.leaders.slice(), ["displayName", "roleTitle"])
+        .map((l, i) => ({
+          ...l,
+          imageUrl: publicDemo.mediaOrFallback(
+            l.imageUrl,
+            demoPack.leaders[i % demoPack.leaders.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((l, i) => ({
@@ -1453,10 +1749,18 @@ async function loadTenantPublicPageModel(db, input) {
     ministriesDemoFallback = Object.freeze({
       introHeading: demoPack.ministriesPage.introHeading,
       introBody: demoPack.ministriesPage.introBody,
-      introMediaUrl: demoPack.ministriesPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.ministriesPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = demoPack.ministries.slice();
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.ministries.slice(), ["name", "leaderName"])
+        .map((m, i) => ({
+          ...m,
+          imageUrl: publicDemo.mediaOrFallback(
+            m.imageUrl,
+            demoPack.ministries[i % demoPack.ministries.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((m, i) => ({
@@ -1474,10 +1778,18 @@ async function loadTenantPublicPageModel(db, input) {
     eventsDemoFallback = Object.freeze({
       introHeading: demoPack.eventsPage.introHeading,
       introBody: demoPack.eventsPage.introBody,
-      introMediaUrl: demoPack.eventsPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.eventsPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = preparePublicEvents(demoPack.events.slice());
+      entities = publicDemo
+        .markPublicTemplateExamples(preparePublicEvents(demoPack.events.slice()), "title")
+        .map((e, i) => ({
+          ...e,
+          imageUrl: publicDemo.mediaOrFallback(
+            e.imageUrl,
+            demoPack.events[i % demoPack.events.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((e, i) => ({
@@ -1498,10 +1810,18 @@ async function loadTenantPublicPageModel(db, input) {
     sermonsDemoFallback = Object.freeze({
       introHeading: demoPack.sermonsPage.introHeading,
       introBody: demoPack.sermonsPage.introBody,
-      introMediaUrl: demoPack.sermonsPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.sermonsPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = demoPack.sermons.slice();
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.sermons.slice(), ["title", "speakerName"])
+        .map((s, i) => ({
+          ...s,
+          imageUrl: publicDemo.mediaOrFallback(
+            s.imageUrl,
+            demoPack.sermons[i % demoPack.sermons.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((s, i) => ({
@@ -1518,13 +1838,50 @@ async function loadTenantPublicPageModel(db, input) {
     showEmptyState = false;
   }
 
+  // Historical structured rows may still store app-mediated /c/.../website/media/:id.
+  // Prefer absolute CDN URLs for public HTML when Hostinger objects exist.
+  if (organizationId && Array.isArray(entities) && entities.length) {
+    entities = await hydrateEntityImageUrls(db, organizationId, entities, process.env);
+  }
+  if (homeTeasers && typeof homeTeasers === "object") {
+    if (Array.isArray(homeTeasers.leaders)) {
+      homeTeasers = {
+        ...homeTeasers,
+        leaders: await hydrateEntityImageUrls(db, organizationId, homeTeasers.leaders, process.env),
+      };
+    }
+    if (Array.isArray(homeTeasers.ministries)) {
+      homeTeasers = {
+        ...homeTeasers,
+        ministries: await hydrateEntityImageUrls(
+          db,
+          organizationId,
+          homeTeasers.ministries,
+          process.env
+        ),
+      };
+    }
+    if (Array.isArray(homeTeasers.events)) {
+      homeTeasers = {
+        ...homeTeasers,
+        events: await hydrateEntityImageUrls(db, organizationId, homeTeasers.events, process.env),
+      };
+    }
+    if (Array.isArray(homeTeasers.sermons)) {
+      homeTeasers = {
+        ...homeTeasers,
+        sermons: await hydrateEntityImageUrls(db, organizationId, homeTeasers.sermons, process.env),
+      };
+    }
+  }
+
   if (pageKey === "contact") {
     contactDemoFallback = Object.freeze({
       introHeading: demoPack.contactPage.introHeading,
       introBody: demoPack.contactPage.introBody,
       visitorGuidance: demoPack.contactPage.visitorGuidance,
       officeHoursHeading: demoPack.contactPage.officeHoursHeading,
-      officeHoursBody: demoPack.contactPage.officeHoursBody,
+      officeHoursBody: publicDemo.withPublicTemplateNotice(demoPack.contactPage.officeHoursBody),
       directionsHeading: demoPack.contactPage.directionsHeading,
       directionsBody: demoPack.contactPage.directionsBody,
       serviceReminderHeading: demoPack.contactPage.serviceReminderHeading,
@@ -1545,25 +1902,21 @@ async function loadTenantPublicPageModel(db, input) {
       assistanceContact: demoPack.givingPage.assistanceContact,
     });
     if (!entities.length) {
-      entities = demoPack.givingMethods.map((m) => ({
-        ...m,
-        scope: "church",
-        branchId: null,
-      }));
+      entities = publicDemo.markPublicTemplateExamples(
+        demoPack.givingMethods.map((m) => ({
+          ...m,
+          scope: "church",
+          branchId: null,
+        })),
+        "label"
+      );
       usedPublicDemoFill = true;
     }
     showEmptyState = false;
   }
 
   let resolvedPublicContact = publicContact;
-  if (!publicContact.hasAny) {
-    resolvedPublicContact = {
-      ...demoPack.contact,
-      latitude: publicContact.latitude,
-      longitude: publicContact.longitude,
-    };
-    usedPublicDemoFill = true;
-  }
+  // Never present Demo Centre address/phone as this church's published contact.
 
   // Soft-fill social placeholders without href must not render (no empty icon chips).
   if (!socialLinks.length) {
@@ -1574,7 +1927,7 @@ async function loadTenantPublicPageModel(db, input) {
 
   const resolvedFooterTagline = footerTagline || demoPack.footer.description;
 
-  const navPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+  const navPathPrefix = pathPrefix || churchWidePathPrefix;
 
   // Navigation ministries: lightweight published list for dropdown labels.
   let navMinistries = [];
@@ -1753,6 +2106,7 @@ async function loadTenantPublicPageModel(db, input) {
         }
       : null,
     homeTeasers,
+    suppressedHomeTeaserKeys,
     homeDemoFallback,
     aboutDemoFallback,
     leadershipDemoFallback,
@@ -1770,7 +2124,7 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     giveHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=53",
+    cssHref: "/blessboard/v5/tenant-public.css?v=68",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,
@@ -1804,9 +2158,15 @@ async function loadTenantPublicPageModel(db, input) {
           ? "Content for this page is being prepared."
           : "This page is not published yet. Please check back soon.",
     isPreview,
+    governancePreview,
     previewMeta,
     seo,
     usedPublicDemoFill,
+    // Public visitors on a published site should not see the soft-fill warning banner.
+    // Preview / unpublished still show it so editors know sample content is active.
+    showPublicTemplateBanner: Boolean(
+      usedPublicDemoFill && (isPreview || String(websiteStatus || "") !== "published")
+    ),
     websiteAdmin: null,
     church: churchView,
     branch: branchView,

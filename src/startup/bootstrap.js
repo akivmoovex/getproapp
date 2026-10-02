@@ -8,6 +8,8 @@
  *   from path hints, then legacy suffixed files, then generic `.env.production` (`override: false`).
  *   A later conditional merge from the **same resolved path** remains for filled-key diagnostics (idempotent).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
+ *   Repo-root `.env` that declares production identity is **not** merged (leftover production files cannot
+ *   silently become `npm start` / `npm run dev` defaults).
  * - Snapshots DB-related env before any file merge for provenance logging.
  * - `dotenv` does not override existing process.env keys (`override: false`).
  *
@@ -17,6 +19,7 @@
 const fs = require("fs");
 const path = require("path");
 const {
+  TRACKED_PRESENCE_KEYS,
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
@@ -26,6 +29,14 @@ const {
   logEnvPresenceLostIfAny,
   buildWorkerLabel,
 } = require("./workerEnvTrace");
+const {
+  formatDatabaseUrlFingerprintLog,
+} = require("./databaseUrlFingerprint");
+const {
+  buildStartupProcessMarker,
+  formatStartupProcessMarkerLog,
+} = require("./startupProcessMarker");
+const { loadRepoDotenvIfSafe } = require("./localEnvSafety");
 
 /** Generic deterministic fallback (last resort in built-in list). */
 const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
@@ -39,6 +50,10 @@ const PRODUCTION_FALLBACK_HOME = "/home/u549637099";
 function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
   const explicit = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
   const hay = `${String(appRoot)}\n${String(cwd)}\n${String(startupEntry)}`.toLowerCase();
+  const {
+    shouldPreferNeuniversityProductionEnvFiles,
+  } = require("../platform/config/v8HostingerEnvCompat");
+  const preferNeuniversity = shouldPreferNeuniversityProductionEnvFiles(process.env, hay);
   const deterministic = [];
   // BlessBoard.org / V5 must prefer its own production file before any shared getpro/.env.production
   // that still carries blessboard.com canonical defaults.
@@ -47,7 +62,11 @@ function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/blessboard.org/.env.production`);
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.blessboard.org`);
   }
-  if (hay.includes("pronline")) {
+  // V8 neuniversity apps must not inherit pronline/.env.production (stale V7 deployment code).
+  if (preferNeuniversity) {
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/neuniversity/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.neuniversity`);
+  } else if (hay.includes("pronline")) {
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/pronline/.env.production`);
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);
   }
@@ -195,16 +214,66 @@ function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName, opts
 function runBootstrap() {
   if (_bootstrapSingleton) return _bootstrapSingleton;
 
+  // Hostinger sometimes injects NODE_ENV=Production. Normalize known values to lowercase
+  // before any production-only bootstrap branches (exact === "production" checks).
+  {
+    const raw = process.env.NODE_ENV;
+    if (raw != null && String(raw).trim() !== "") {
+      const lower = String(raw).trim().toLowerCase();
+      if (
+        (lower === "production" || lower === "test" || lower === "development") &&
+        String(raw) !== lower
+      ) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[getpro] NODE_ENV normalized from ${JSON.stringify(String(raw))} to ${JSON.stringify(lower)} ` +
+            `(use lowercase production|test|development on Hostinger).`
+        );
+        process.env.NODE_ENV = lower;
+      }
+    }
+  }
+
   const startupEntry = getStartupEntryLabel();
+  const appRoot = getAppRootFromBootstrap();
+
+  // TRUE earliest snapshot — before any dotenv / .env.production merge.
+  // Distinguishes "Hostinger never injected" from "bootstrap overwrote/removed".
+  const envPresencePreFile = snapshotEnvPresenceYesNo();
   /** Host-only DB presence before any production file merge (provenance). */
   const beforeDb = snapshotDbEnvPresence();
-  const appRoot = getAppRootFromBootstrap();
+  logEnvTracePhase("pre_file", { startupEntry, presence: envPresencePreFile });
+  logEnvPresenceDiagnosticLine({ startupEntry, presence: envPresencePreFile });
+  // eslint-disable-next-line no-console
+  console.log(formatDatabaseUrlFingerprintLog("pre_file", process.env, { sourceKind: "host-or-inherited" }));
+  // eslint-disable-next-line no-console
+  console.log(
+    formatStartupProcessMarkerLog(
+      buildStartupProcessMarker({ appRoot, phase: "pre_file" })
+    )
+  );
+
+  // Hostinger V8 apps: remap stale inherited moovex-platform-testing when BASE_DOMAIN
+  // is explicitly neuniversity.org (see v8HostingerEnvCompat.js). Runs after pre_file
+  // snapshot so logs still show the Hostinger-injected value.
+  const {
+    applyV8HostingerStaleDeploymentCodeCompat,
+  } = require("../platform/config/v8HostingerEnvCompat");
+  const v8EnvCompat = applyV8HostingerStaleDeploymentCodeCompat(process.env);
+  if (v8EnvCompat.applied) {
+    logEnvTracePhase("after_v8_hostinger_env_compat", {
+      startupEntry,
+      presence: snapshotEnvPresenceYesNo(),
+    });
+  }
 
   let earlyProductionEnvPath = null;
   let earlyProductionEnvExists = false;
   let earlyProductionEnvLoaded = false;
   /** @type {string[]} */
   let earlyProductionFileParsedKeys = [];
+  /** @type {string[]} */
+  let earlyProductionFilledKeys = [];
   /** @type {string[]} */
   let productionFallbackCandidatesOrdered = [];
   let productionFallbackCandidatesExistsSummary = "";
@@ -220,12 +289,17 @@ function runBootstrap() {
     earlyProductionEnvLoaded = res.loaded;
     earlyProductionFileParsedKeys = res.parsedKeys;
     earlyProductionLoadError = res.loadError;
+    const afterEarly = snapshotEnvPresenceYesNo();
+    earlyProductionFilledKeys = TRACKED_PRESENCE_KEYS.filter(
+      (k) => envPresencePreFile[k] === "no" && afterEarly[k] === "yes"
+    );
     logEarlyProductionEnvFileResolution({
       startupEntry,
       candidatesOrdered: res.candidatesOrdered,
       candidatesExistsSummary: res.candidatesExistsSummary,
       selectedPath: res.selectedPath,
       loaded: res.loaded,
+      filledKeys: earlyProductionFilledKeys,
     });
     if (earlyProductionLoadError != null && !res.loaded) {
       // eslint-disable-next-line no-console
@@ -235,11 +309,18 @@ function runBootstrap() {
         ).slice(0, 200)}`
       );
     }
+    logEnvTracePhase("after_early_production_file", { startupEntry, presence: afterEarly });
+    // eslint-disable-next-line no-console
+    console.log(
+      formatDatabaseUrlFingerprintLog("after_early_production_file", process.env, {
+        sourceKind: earlyProductionEnvLoaded ? "host+early-file-fill" : "host-or-inherited",
+      })
+    );
   }
 
+  // Backward-compatible alias: historically named "earliest" but was taken AFTER early file load.
+  // Prefer envPresencePreFile for Hostinger-vs-bootstrap diagnosis.
   const envPresenceEarliest = snapshotEnvPresenceYesNo();
-  logEnvTracePhase("earliest", { startupEntry });
-  logEnvPresenceDiagnosticLine({ startupEntry });
 
   const envPath = getEnvFilePath();
   const serverJsPath = getServerJsPath();
@@ -255,12 +336,27 @@ function runBootstrap() {
   let dotenvErrorMessage = null;
   /** @type {string[]} */
   let parsedDotenvKeys = [];
+  /** @type {{ ok: boolean, action: string, code: string, reasons?: string[], message?: string }} */
+  let repoDotenvSafety = isProduction
+    ? { ok: true, action: "skip_repo_dotenv_production_process", code: "production_process" }
+    : skipDotenvExplicit
+      ? { ok: true, action: "skip_explicit", code: "GETPRO_SKIP_DOTENV" }
+      : { ok: true, action: "merge", code: "pending" };
 
   if (!skipDotenv) {
-    const dotenvResult = require("dotenv").config({ path: envPath, quiet: true });
-    dotenvKeyCount = Object.keys(dotenvResult.parsed || {}).length;
-    parsedDotenvKeys = Object.keys(dotenvResult.parsed || {});
-    dotenvErrorMessage = dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null;
+    const loaded = loadRepoDotenvIfSafe(envPath, process.env);
+    repoDotenvSafety = loaded.assessment;
+    if (loaded.assessment && loaded.assessment.action === "refuse_merge") {
+      dotenvKeyCount = 0;
+      parsedDotenvKeys = [];
+      dotenvErrorMessage = null;
+      // eslint-disable-next-line no-console
+      console.error(loaded.assessment.message);
+    } else {
+      dotenvKeyCount = loaded.parsedKeys.length;
+      parsedDotenvKeys = loaded.parsedKeys;
+      dotenvErrorMessage = loaded.dotenvErrorMessage;
+    }
   }
 
   /** @type {string|null} */
@@ -303,14 +399,10 @@ function runBootstrap() {
       exists: productionFileExists,
       loaded: productionFileLoaded,
       mergeSkipped: productionFileMergeSkipped,
+      earlyAlreadyLoaded: earlyProductionEnvLoaded,
       filledKeys: productionFileFilledKeys,
       error: productionFileError,
-      presence: {
-        DATABASE_URL: fin.DATABASE_URL,
-        GETPRO_DATABASE_URL: fin.GETPRO_DATABASE_URL,
-        SESSION_SECRET: fin.SESSION_SECRET,
-        BASE_DOMAIN: fin.BASE_DOMAIN,
-      },
+      presence: fin,
     });
   }
 
@@ -327,13 +419,39 @@ function runBootstrap() {
   });
 
   const envPresenceFinal = snapshotEnvPresenceYesNo();
-  logEnvTracePhase("bootstrap_complete", { startupEntry });
-  logEnvPresenceLostIfAny(envPresenceEarliest, envPresenceFinal);
+  logEnvTracePhase("bootstrap_complete", { startupEntry, presence: envPresenceFinal });
+  // eslint-disable-next-line no-console
+  console.log(
+    formatDatabaseUrlFingerprintLog("bootstrap_complete", process.env, {
+      sourceKind: dbProvenance.kind === "host" ? "host-injected" : dbProvenance.kind,
+    })
+  );
+  const processMarker = buildStartupProcessMarker({ appRoot, phase: "bootstrap_complete" });
+  // eslint-disable-next-line no-console
+  console.log(formatStartupProcessMarkerLog(processMarker));
+  logEnvPresenceLostIfAny(envPresencePreFile, envPresenceFinal);
   logWorkerIdentityLine({
     startupEntry,
     skipDotenv,
     dotenvSkippedForProduction: isProduction,
   });
+
+  // Hostinger: apex worker has GETPRO_GIT_BRANCH; subdomain lsnode workers share
+  // the hbuild tree but not apex env. Seed shared filesystem metadata so BB/AC
+  // resolve the same deployment branch label without per-subdomain env.
+  try {
+    const {
+      seedSharedBuildIdentityFromEnv,
+    } = require("../platform/runtime/buildIdentity");
+    seedSharedBuildIdentityFromEnv({ appRoot, env: process.env });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[getpro] shared build-identity seed skipped: ${
+        err && err.message ? String(err.message).slice(0, 160) : "error"
+      }`
+    );
+  }
 
   _bootstrapSingleton = {
     appRoot,
@@ -348,12 +466,16 @@ function runBootstrap() {
     dotenvKeyCount,
     dotenvErrorMessage,
     parsedDotenvKeys,
+    repoDotenvSafety,
     envFileExists,
     effectiveVarName,
     dbProvenance,
     workerLabel: buildWorkerLabel(startupEntry),
+    envPresencePreFile,
     envPresenceEarliest,
     envPresenceFinal,
+    earlyProductionFilledKeys,
+    processMarker,
     productionEnvFilePath,
     productionFileExists,
     productionFileLoaded,
@@ -381,9 +503,11 @@ function logBootstrapMarker(boot) {
   const ls = boot.liteSpeedLsnode ? "yes (HTTP app still loaded from project; see serverJs path)" : "no";
   const dotenvWhy = boot.dotenvSkippedForProduction
     ? "skipped repo .env (NODE_ENV=production)"
-    : boot.skipDotenv
-      ? "skipped (GETPRO_SKIP_DOTENV)"
-      : `merged (${boot.dotenvKeyCount} keys from .env)`;
+    : boot.repoDotenvSafety && boot.repoDotenvSafety.action === "refuse_merge"
+      ? "refused repo .env (production identity in file)"
+      : boot.skipDotenv
+        ? "skipped (GETPRO_SKIP_DOTENV)"
+        : `merged (${boot.dotenvKeyCount} keys from .env)`;
   const prodFileWhy =
     boot.productionEnvFilePath != null
       ? ` | productionEnvFile path=${boot.productionEnvFilePath} exists=${boot.productionFileExists ? "yes" : "no"} loaded=${boot.productionFileLoaded ? "yes" : "no"} mergeSkipped=${boot.productionFileMergeSkipped ? "yes" : "no"} filled=${boot.productionFileFilledKeys && boot.productionFileFilledKeys.length ? boot.productionFileFilledKeys.join(",") : "none"}`

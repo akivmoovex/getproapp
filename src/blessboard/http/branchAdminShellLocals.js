@@ -10,6 +10,7 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const {
   BRANCH_ADMIN_NAV,
@@ -22,6 +23,9 @@ const {
   applyBranchWebsiteModeNav,
   applyBranchWebsiteModeModules,
 } = require("./websiteModeAdminNav");
+const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
 
 /**
  * @param {import('express').Request} req
@@ -85,7 +89,7 @@ async function buildBranchAdminShellLocals(req, res, opts) {
   const activeNav = String(opts.activeNav || "home");
   const tenant = resolveTenantForAuthorization(req);
   const csrfToken = issueCsrfToken(env);
-  setCsrfCookie(res, csrfToken, { secure: isProduction });
+  setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
   const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
 
   const churchId = tenant && tenant.church ? tenant.church.id : null;
@@ -93,10 +97,56 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     opts.websiteMode ||
     (await resolveBranchWebsiteModeForShell(req, opts.getPool, churchId));
 
-  const navItems = applyBranchWebsiteModeNav(
+  let permissionNavFlags = {
+    canViewGiving: false,
+    canViewWebsite: false,
+    canViewMembers: false,
+    canViewAttendance: false,
+    canViewAnnouncements: false,
+  };
+  let assignedBranchDisplayName = null;
+  if (opts.getPool && session && session.userId && tenant && tenant.resolved === true) {
+    try {
+      // Nav flags must be evaluated against the branch this admin is actually
+      // assigned to. Using the church primary branch hides a multi-branch
+      // branch admin's own website and content links.
+      const resourceContext = await createAssignedBranchResourceContextResolver({
+        getPool: opts.getPool,
+      })(req, tenant);
+      assignedBranchDisplayName = resourceContext.branchDisplayName || null;
+      permissionNavFlags = await buildPermissionNavFlags(opts.getPool(), {
+        actorUserId: session.userId,
+        tenant,
+        branchId: resourceContext.branchId,
+      });
+    } catch {
+      /* fail closed */
+    }
+  }
+
+  let navItems = applyBranchWebsiteModeNav(
     BRANCH_ADMIN_NAV.filter((item) => item.nav && item.enabled),
     websiteMode
   );
+  navItems = navItems.filter((item) => {
+    if (!item || !item.enabled) return false;
+    if (item.key === "giving" && !permissionNavFlags.canViewGiving) return false;
+    if (
+      (item.key === "content" || item.key === "website" || item.key === "website_submissions") &&
+      !permissionNavFlags.canViewWebsite
+    ) {
+      return false;
+    }
+    if (
+      (item.key === "members" || item.key === "registrations") &&
+      !permissionNavFlags.canViewMembers
+    ) {
+      return false;
+    }
+    if (item.key === "attendance" && !permissionNavFlags.canViewAttendance) return false;
+    if (item.key === "announcements" && !permissionNavFlags.canViewAnnouncements) return false;
+    return true;
+  });
   const portalModules = applyBranchWebsiteModeModules(BRANCH_ADMIN_MODULES, websiteMode);
   const mobileNav = buildBranchMobileNav(navItems, activeNav);
   const mobileTabs = BRANCH_ADMIN_MOBILE_TABS.map((key) =>
@@ -129,7 +179,11 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     csrfToken,
     csrfField: CSRF_FIELD,
     churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-    branchDisplayName: tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
+    // Identify the branch this admin actually administers, not the church
+    // primary branch, which would mislabel every multi-branch branch admin.
+    branchDisplayName:
+      assignedBranchDisplayName ||
+      (tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : ""),
     roleLabel: primaryRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,
@@ -137,6 +191,19 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     mobileTabs,
     portalModules,
     websiteMode: websiteMode || null,
+    supportBanner:
+      req.platformSupportBanner && req.platformSupportBanner.visible === true
+        ? {
+            visible: true,
+            supportType: req.platformSupportBanner.supportType || "branch",
+            churchName: req.platformSupportBanner.churchName || "this church",
+            branchName:
+              req.platformSupportBanner.branchName ||
+              (tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : null),
+            expiresAt: req.platformSupportBanner.expiresAt || null,
+            exitAction: "/branch-admin/support/exit",
+          }
+        : null,
     ...(opts.extra || {}),
   };
 }

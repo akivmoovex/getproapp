@@ -1,0 +1,47 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var events = Array.isArray(historyEvents) ? historyEvents : [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+%>
+
+<section class="bb-v204-m12" data-bb-stitch-v204="BB-M12" data-bb-screen="BB-M12" aria-label="Member History">
+  <%- include('../partials/v204/page-header', {
+    title: 'Member History',
+    subtitle: 'Human-readable activity for this membership. Technical system details are not shown.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '">Profile</a> <span aria-hidden="true">›</span> <span>History</span>'
+  }) %>
+
+  <p class="bb-ba-muted">
+    <%= [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Member' %>
+    · Church ID <span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span>
+  </p>
+
+  <% if (!events.length) { %>
+  <%- include('../partials/v204/empty-state', {
+    title: 'No history yet',
+    body: 'Membership changes, Church ID updates, portal blocks, and transfers will appear here.'
+  }) %>
+  <% } else { %>
+  <%- include('../partials/v204/audit-timeline', {
+    entries: events.map(function (ev) {
+      return {
+        title: ev.title,
+        summary: ev.detail,
+        at: formatWhen(ev.occurredAt)
+      };
+    })
+  }) %>
+  <% } %>
+
+  <footer class="bb-v204-m05__actions">
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>">Back to Profile</a>
+  </footer>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

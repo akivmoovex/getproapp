@@ -1,0 +1,569 @@
+{
+  "gitSha": "d2ce78f3b260",
+  "deploymentCode": "moovex-platform-v8-testing",
+  "productionSha": "03a89106e2fe",
+  "productionDeployment": "moovex-platform-production",
+  "stitch": {
+    "project": "12538817760086591589",
+    "desktop": "d8d264953e304d02946313240814a3bb",
+    "mobile": "863c719271a242e696406112b9f80ee9"
+  },
+  "bb": {
+    "product": "bb",
+    "cases": [
+      {
+        "tag": "bb-desktop1440",
+        "width": 1440,
+        "shotPath": "docs/qa/references/v2-01-toolbar-parity/bb-desktop1440-toolbar.png",
+        "historyShot": "docs/qa/references/v2-01-toolbar-parity/bb-desktop1440-field-history.png",
+        "historyOpen": true,
+        "metrics": {
+          "hasToolbar": true,
+          "siteName": "V8 QA Church mub23a6v6a6b — Headquarters",
+          "pendingVisible": false,
+          "publishLabel": "Publish",
+          "toolbar": {
+            "w": 1440,
+            "h": 56,
+            "top": 0,
+            "right": 1440,
+            "bottom": 56,
+            "left": 0,
+            "visible": true
+          },
+          "preview": {
+            "w": 81,
+            "h": 44,
+            "top": 6,
+            "right": 1149,
+            "bottom": 50,
+            "left": 1068,
+            "visible": true
+          },
+          "publish": {
+            "w": 77,
+            "h": 44,
+            "top": 6,
+            "right": 1234,
+            "bottom": 50,
+            "left": 1157,
+            "visible": true
+          },
+          "exit": {
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0,
+            "visible": false
+          },
+          "pencils": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 55,
+              "right": 348,
+              "bottom": 99,
+              "left": 304,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 12,
+              "right": 1493,
+              "bottom": 56,
+              "left": 1449,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 479,
+              "right": 1432,
+              "bottom": 523,
+              "left": 1388,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 143,
+              "right": 1050,
+              "bottom": 187,
+              "left": 1006,
+              "visible": true
+            }
+          ],
+          "histories": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 55,
+              "right": 300,
+              "bottom": 99,
+              "left": 256,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 12,
+              "right": 1446,
+              "bottom": 56,
+              "left": 1402,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 479,
+              "right": 1386,
+              "bottom": 523,
+              "left": 1342,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 143,
+              "right": 1005,
+              "bottom": 187,
+              "left": 961,
+              "visible": true
+            }
+          ],
+          "overflowX": 0,
+          "cssHref": [
+            "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-toolbar-parity-2",
+            "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-toolbar-parity-2"
+          ],
+          "autosaveClaims": false
+        },
+        "minTouch": 44,
+        "passTouch": true,
+        "passOverflow": true,
+        "passCss": true,
+        "passCluster": true,
+        "passNoAutosave": true
+      },
+      {
+        "tag": "bb-mobile390",
+        "width": 390,
+        "shotPath": "docs/qa/references/v2-01-toolbar-parity/bb-mobile390-toolbar.png",
+        "historyShot": "docs/qa/references/v2-01-toolbar-parity/bb-mobile390-field-history.png",
+        "historyOpen": true,
+        "metrics": {
+          "hasToolbar": true,
+          "siteName": "V8 QA Church mub23a6v6a6b — Headquarters",
+          "pendingVisible": false,
+          "publishLabel": "Publish",
+          "toolbar": {
+            "w": 390,
+            "h": 106,
+            "top": 0,
+            "right": 390,
+            "bottom": 106,
+            "left": 0,
+            "visible": true
+          },
+          "preview": {
+            "w": 44,
+            "h": 44,
+            "top": 61,
+            "right": 104,
+            "bottom": 105,
+            "left": 60,
+            "visible": true
+          },
+          "publish": {
+            "w": 66,
+            "h": 44,
+            "top": 61,
+            "right": 174,
+            "bottom": 105,
+            "left": 108,
+            "visible": true
+          },
+          "exit": {
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0,
+            "visible": false
+          },
+          "pencils": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 51,
+              "right": 52,
+              "bottom": 95,
+              "left": 8,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 20,
+              "right": 443,
+              "bottom": 64,
+              "left": 399,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 575,
+              "right": 217,
+              "bottom": 619,
+              "left": 173,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 291,
+              "right": 374,
+              "bottom": 335,
+              "left": 330,
+              "visible": true
+            }
+          ],
+          "histories": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": -4,
+              "right": 42,
+              "bottom": 40,
+              "left": -2,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": -35,
+              "right": 434,
+              "bottom": 9,
+              "left": 390,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 525,
+              "right": 386,
+              "bottom": 569,
+              "left": 342,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 337,
+              "right": 370,
+              "bottom": 381,
+              "left": 326,
+              "visible": true
+            }
+          ],
+          "overflowX": 0,
+          "cssHref": [
+            "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-toolbar-parity-2",
+            "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-toolbar-parity-2"
+          ],
+          "autosaveClaims": false
+        },
+        "minTouch": 44,
+        "passTouch": true,
+        "passOverflow": true,
+        "passCss": true,
+        "passCluster": false,
+        "passNoAutosave": true
+      }
+    ]
+  },
+  "ac": {
+    "product": "ac",
+    "cases": [
+      {
+        "tag": "ac-desktop1440",
+        "width": 1440,
+        "shotPath": "docs/qa/references/v2-01-toolbar-parity/ac-desktop1440-toolbar.png",
+        "historyShot": "docs/qa/references/v2-01-toolbar-parity/ac-desktop1440-field-history.png",
+        "historyOpen": true,
+        "metrics": {
+          "hasToolbar": true,
+          "siteName": "ac-v8-qa-mub23a6v6a6b",
+          "pendingVisible": false,
+          "publishLabel": "Publish",
+          "toolbar": {
+            "w": 1440,
+            "h": 56,
+            "top": 0,
+            "right": 1440,
+            "bottom": 56,
+            "left": 0,
+            "visible": true
+          },
+          "preview": {
+            "w": 84,
+            "h": 44,
+            "top": 6,
+            "right": 1140,
+            "bottom": 50,
+            "left": 1057,
+            "visible": true
+          },
+          "publish": {
+            "w": 81,
+            "h": 44,
+            "top": 6,
+            "right": 1229,
+            "bottom": 50,
+            "left": 1148,
+            "visible": true
+          },
+          "exit": {
+            "w": 135,
+            "h": 44,
+            "top": 6,
+            "right": 1424,
+            "bottom": 50,
+            "left": 1289,
+            "visible": true
+          },
+          "pencils": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 131,
+              "right": 361,
+              "bottom": 175,
+              "left": 317,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 236,
+              "right": 583,
+              "bottom": 280,
+              "left": 539,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 292,
+              "right": 746,
+              "bottom": 336,
+              "left": 702,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 522,
+              "right": 640,
+              "bottom": 566,
+              "left": 596,
+              "visible": true
+            }
+          ],
+          "histories": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 131,
+              "right": 314,
+              "bottom": 175,
+              "left": 270,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 236,
+              "right": 538,
+              "bottom": 280,
+              "left": 494,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 292,
+              "right": 700,
+              "bottom": 336,
+              "left": 656,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 522,
+              "right": 594,
+              "bottom": 566,
+              "left": 550,
+              "visible": true
+            }
+          ],
+          "overflowX": 161,
+          "cssHref": [
+            "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-toolbar-parity-2",
+            "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-toolbar-parity-2"
+          ],
+          "autosaveClaims": false
+        },
+        "minTouch": 44,
+        "passTouch": true,
+        "passOverflow": false,
+        "passCss": true,
+        "passCluster": true,
+        "passNoAutosave": true
+      },
+      {
+        "tag": "ac-mobile390",
+        "width": 390,
+        "shotPath": "docs/qa/references/v2-01-toolbar-parity/ac-mobile390-toolbar.png",
+        "historyShot": "docs/qa/references/v2-01-toolbar-parity/ac-mobile390-field-history.png",
+        "historyOpen": true,
+        "metrics": {
+          "hasToolbar": true,
+          "siteName": "ac-v8-qa-mub23a6v6a6b",
+          "pendingVisible": false,
+          "publishLabel": "Publish",
+          "toolbar": {
+            "w": 390,
+            "h": 98,
+            "top": 0,
+            "right": 390,
+            "bottom": 98,
+            "left": 0,
+            "visible": true
+          },
+          "preview": {
+            "w": 44,
+            "h": 44,
+            "top": 53,
+            "right": 104,
+            "bottom": 97,
+            "left": 60,
+            "visible": true
+          },
+          "publish": {
+            "w": 70,
+            "h": 44,
+            "top": 53,
+            "right": 178,
+            "bottom": 97,
+            "left": 108,
+            "visible": true
+          },
+          "exit": {
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0,
+            "visible": false
+          },
+          "pencils": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 187,
+              "right": 77,
+              "bottom": 231,
+              "left": 33,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 333,
+              "right": 253,
+              "bottom": 377,
+              "left": 209,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 504,
+              "right": 370,
+              "bottom": 548,
+              "left": 326,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 636,
+              "right": 370,
+              "bottom": 680,
+              "left": 326,
+              "visible": true
+            }
+          ],
+          "histories": [
+            {
+              "w": 44,
+              "h": 44,
+              "top": 132,
+              "right": 67,
+              "bottom": 176,
+              "left": 23,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 288,
+              "right": 253,
+              "bottom": 332,
+              "left": 209,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 458,
+              "right": 370,
+              "bottom": 502,
+              "left": 326,
+              "visible": true
+            },
+            {
+              "w": 44,
+              "h": 44,
+              "top": 636,
+              "right": 370,
+              "bottom": 680,
+              "left": 326,
+              "visible": true
+            }
+          ],
+          "overflowX": 31,
+          "cssHref": [
+            "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-toolbar-parity-2",
+            "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-toolbar-parity-2"
+          ],
+          "autosaveClaims": false
+        },
+        "minTouch": 44,
+        "passTouch": true,
+        "passOverflow": false,
+        "passCss": true,
+        "passCluster": false,
+        "passNoAutosave": true
+      }
+    ]
+  }
+}

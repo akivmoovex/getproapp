@@ -88,7 +88,7 @@ describe("blessboard attendance", () => {
         productTenantKey: "att-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -122,7 +122,7 @@ describe("blessboard attendance", () => {
         productTenantKey: "att-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -144,7 +144,7 @@ describe("blessboard attendance", () => {
         const assigned = await assignBlessBoardRole(pool, role);
         assert.equal(assigned.ok, true, assigned.message || assigned.reason);
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgA.records.organization.id,
         });
@@ -213,9 +213,26 @@ describe("blessboard attendance", () => {
         ORDER BY table_name`
     );
     assert.deepEqual(
-      tables.rows.map((r) => r.table_name),
+      tables.rows.map((r) => r.table_name).filter((n) =>
+        n === "attendance_entries" || n === "attendance_events"
+      ),
       ["attendance_entries", "attendance_events"]
     );
+    // V2.04 session-based attendance tables coexist with aggregate events.
+    const sessionTables = tables.rows.map((r) => r.table_name).filter((n) =>
+      n.startsWith("attendance_") &&
+      n !== "attendance_entries" &&
+      n !== "attendance_events"
+    );
+    for (const expected of [
+      "attendance_sessions",
+      "attendance_check_ins",
+      "attendance_check_in_tokens",
+      "attendance_corrections",
+      "attendance_offline_ingest_boundary",
+    ]) {
+      assert.ok(sessionTables.includes(expected), `missing ${expected}`);
+    }
     assert.equal(ATTENDANCE_POLICY.branchMayAmendSubmittedByRevertingToDraft, true);
 
     const tenant = makeTenant(churchA, orgA.records.organization, branchA);

@@ -1,0 +1,20 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var items = Array.isArray(m.items) ? m.items.filter(function (i) { return !i || i.visibility !== false; }) : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--gallery<%= extraClass %>" data-gp-website-component="gallery">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <ul class="gp-website-pc__gallery-grid">
+    <% items.forEach(function (item) {
+      var src = '';
+      if (typeof item.image === 'string') src = item.image;
+      else if (item.image && item.image.src) src = String(item.image.src);
+    %>
+    <li class="gp-website-pc__gallery-item">
+      <% if (src) { %><img class="gp-website-pc__img" src="<%= src %>" alt="<%= item.caption || '' %>" /><% } %>
+      <% if (item.caption) { %><p class="gp-website-pc__muted"><%= item.caption %></p><% } %>
+    </li>
+    <% }) %>
+  </ul>
+</section>

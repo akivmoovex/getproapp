@@ -1,0 +1,8 @@
+<%#
+  BB V2.04 audit timeline → platform gp-ops-timeline.
+%>
+<%- include('../../../../platform/partials/gp-ops-timeline', {
+  entries: typeof entries !== 'undefined' ? entries : [],
+  emptyTitle: typeof emptyTitle !== 'undefined' ? emptyTitle : 'No activity yet',
+  emptyBody: typeof emptyBody !== 'undefined' ? emptyBody : undefined
+}) %>

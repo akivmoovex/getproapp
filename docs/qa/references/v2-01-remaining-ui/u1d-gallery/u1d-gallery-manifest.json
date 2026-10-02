@@ -1,0 +1,165 @@
+{
+  "task": "U1-D",
+  "expectSha": "fb0575a8",
+  "hosted": {
+    "bb": {
+      "gitSha": "fb0575a832d6",
+      "deploymentCode": "moovex-platform-v8-testing"
+    },
+    "ac": {
+      "gitSha": "fb0575a832d6",
+      "deploymentCode": "moovex-platform-v8-testing"
+    },
+    "prod": {
+      "gitSha": "03a89106e2fe",
+      "deploymentCode": "moovex-platform-production"
+    }
+  },
+  "cases": [
+    {
+      "tag": "bb-desktop1440-gallery",
+      "width": 1440,
+      "height": 900,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1d-gallery/bb-desktop1440-gallery.png",
+      "metrics": {
+        "title": "Choose Website Theme",
+        "cardCount": 2,
+        "cards": [
+          {
+            "id": "bb.default",
+            "name": "BlessBoard Classic",
+            "draft": true,
+            "live": true,
+            "preview": true,
+            "choose": "Selected in draft",
+            "previewH": 205
+          },
+          {
+            "id": "bb.contemporary-fellowship",
+            "name": "Contemporary Fellowship",
+            "draft": false,
+            "live": false,
+            "preview": true,
+            "choose": "Choose for draft",
+            "previewH": 205
+          }
+        ],
+        "crossProductLeak": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-theme-gallery.css?v=v2-u1d-gallery-1"
+        ],
+        "overflowX": false,
+        "gridCols": "422px 422px"
+      }
+    },
+    {
+      "tag": "bb-mobile390-gallery",
+      "width": 390,
+      "height": 844,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1d-gallery/bb-mobile390-gallery.png",
+      "metrics": {
+        "title": "Choose Website Theme",
+        "cardCount": 2,
+        "cards": [
+          {
+            "id": "bb.default",
+            "name": "BlessBoard Classic",
+            "draft": true,
+            "live": true,
+            "preview": true,
+            "choose": "Selected in draft",
+            "previewH": 189
+          },
+          {
+            "id": "bb.contemporary-fellowship",
+            "name": "Contemporary Fellowship",
+            "draft": false,
+            "live": false,
+            "preview": true,
+            "choose": "Choose for draft",
+            "previewH": 189
+          }
+        ],
+        "crossProductLeak": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-theme-gallery.css?v=v2-u1d-gallery-1"
+        ],
+        "overflowX": false,
+        "gridCols": "326px"
+      }
+    },
+    {
+      "tag": "ac-desktop1440-gallery",
+      "width": 1440,
+      "height": 900,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1d-gallery/ac-desktop1440-gallery.png",
+      "metrics": {
+        "title": "Choose Website Theme",
+        "cardCount": 2,
+        "cards": [
+          {
+            "id": "ac.default",
+            "name": "ActiveClinic Classic",
+            "draft": true,
+            "live": true,
+            "preview": true,
+            "choose": "Selected in draft",
+            "previewH": 205
+          },
+          {
+            "id": "ac.family-wellness-mint",
+            "name": "Family Wellness Mint",
+            "draft": false,
+            "live": false,
+            "preview": true,
+            "choose": "Choose for draft",
+            "previewH": 205
+          }
+        ],
+        "crossProductLeak": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/platform/website-theme-gallery.css?v=v2-u1d-gallery-1"
+        ],
+        "overflowX": false,
+        "gridCols": "422px 422px"
+      }
+    },
+    {
+      "tag": "ac-mobile390-gallery",
+      "width": 390,
+      "height": 844,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1d-gallery/ac-mobile390-gallery.png",
+      "metrics": {
+        "title": "Choose Website Theme",
+        "cardCount": 2,
+        "cards": [
+          {
+            "id": "ac.default",
+            "name": "ActiveClinic Classic",
+            "draft": true,
+            "live": true,
+            "preview": true,
+            "choose": "Selected in draft",
+            "previewH": 189
+          },
+          {
+            "id": "ac.family-wellness-mint",
+            "name": "Family Wellness Mint",
+            "draft": false,
+            "live": false,
+            "preview": true,
+            "choose": "Choose for draft",
+            "previewH": 189
+          }
+        ],
+        "crossProductLeak": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/platform/website-theme-gallery.css?v=v2-u1d-gallery-1"
+        ],
+        "overflowX": false,
+        "gridCols": "326px"
+      }
+    }
+  ],
+  "stitchRef": "docs/qa/references/v2-01-stitch-parity/stitch/s6-theme-gallery-desktop__2d53fd58.png"
+}

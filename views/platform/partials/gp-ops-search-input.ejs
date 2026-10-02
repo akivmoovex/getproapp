@@ -1,0 +1,24 @@
+<%#
+  Shared search input (product-neutral). Prefer inside gp-ops-filter-bar when filtering.
+  Locals: name?, value?, placeholder?, id?, className?, label?
+%>
+<%
+  var _name = typeof name !== 'undefined' && name ? String(name) : 'q';
+  var _value = typeof value !== 'undefined' && value ? String(value) : '';
+  var _placeholder = typeof placeholder !== 'undefined' && placeholder ? String(placeholder) : 'Search';
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _label = typeof label !== 'undefined' && label ? String(label) : 'Search';
+  var _cls = 'gp-ops-search' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<label class="<%= _cls %>" data-gp-ops="search-input">
+  <span class="gp-ops-visually-hidden"><%= _label %></span>
+  <input
+    class="gp-ops-input gp-ops-search__input"
+    type="search"
+    name="<%= _name %>"
+    value="<%= _value %>"
+    placeholder="<%= _placeholder %>"
+    <% if (_id) { %>id="<%= _id %>"<% } %>
+    autocomplete="off"
+  />
+</label>

@@ -1,0 +1,10 @@
+<%#
+  BB V2.04 success state → platform gp-ops-success-state.
+%>
+<%- include('../../../../platform/partials/gp-ops-success-state', {
+  title: typeof title !== 'undefined' ? title : 'Success',
+  body: typeof body !== 'undefined' ? body : undefined,
+  actionHref: typeof actionHref !== 'undefined' ? actionHref : undefined,
+  actionLabel: typeof actionLabel !== 'undefined' ? actionLabel : undefined,
+  className: typeof className !== 'undefined' ? className : undefined
+}) %>

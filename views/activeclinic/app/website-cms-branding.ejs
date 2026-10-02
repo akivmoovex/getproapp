@@ -1,0 +1,100 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  var logo = values["home.logo"] && typeof values["home.logo"] === "object" ? values["home.logo"] : { src: values["home.logo"] || "" };
+  var hero = values["home.hero.image"] && typeof values["home.hero.image"] === "object" ? values["home.hero.image"] : { src: values["home.hero.image"] || "" };
+  var primary = values["brand.primary_color"] || "";
+  var accent = values["brand.accent_color"] || "";
+  var previewName = cms.clinicName || "Your clinic";
+%>
+<section
+  class="ac-mw"
+  data-ac-page-section="website-branding"
+  data-ac-mw-screen="MW08-02"
+  data-ac-stitch-screen="H03"
+  data-ac-stitch-screen-mobile="H03-M"
+>
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Brand &amp; Appearance</h2>
+      <p class="ac-mw-muted">Logo, brand colours, and optional cover image via the shared media library. Colours map to semantic brand tokens — not a separate theme engine. Save as a draft, then publish when ready.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <div class="ac-mw-brand-layout">
+    <form class="ac-mw-form" method="post" action="/app/settings/website/branding" data-ac-mw-brand-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <p class="ac-mw-form__legend">Clinic logo</p>
+      <%- include('../partials/website-cms-media-field', {
+        mediaField: {
+          idName: "logoMediaId",
+          srcName: "logoSrc",
+          altName: "logoAlt",
+          altLabel: "Logo description",
+          mediaId: logo.mediaId || "",
+          src: logo.src || "",
+          alt: logo.alt || "",
+          placementName: "logoPlacementJson",
+          placement: logo.placement || null,
+          contentKey: "home.logo"
+        }
+      }) %>
+      <label data-ac-mw-color="1">
+        Primary colour
+        <span class="ac-mw-color">
+          <input type="color" data-ac-mw-color-swatch value="<%= primary || '#006068' %>" aria-label="Primary colour picker"/>
+          <input type="text" name="primaryColor" maxlength="7" value="<%= primary %>" placeholder="#006068" data-ac-mw-color-text autocomplete="off"/>
+        </span>
+      </label>
+      <label data-ac-mw-color="1">
+        Accent colour
+        <span class="ac-mw-color">
+          <input type="color" data-ac-mw-color-swatch value="<%= accent || '#0f766e' %>" aria-label="Accent colour picker"/>
+          <input type="text" name="accentColor" maxlength="7" value="<%= accent %>" placeholder="#0f766e" data-ac-mw-color-text autocomplete="off"/>
+        </span>
+      </label>
+      <p class="ac-mw-hint">Use a 6-digit colour such as #006068. Leave blank to keep the ActiveClinic default teal. These set <code>brand.primary_color</code> / <code>brand.accent_color</code> only.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="favicon_app_icon" data-ac-stitch-disposition="FUTURE_CAPABILITY">Favicon / app icon from Stitch is a future capability — no favicon field in the website vocabulary. Use logo media for brand mark.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="header_style_mode" data-ac-stitch-disposition="PRESENTATION_ONLY">Header style (sticky / docked) is presentation CSS — not a separate config field. Header visibility flags remain editable under <a href="/app/settings/website/chrome">Header &amp; Footer</a>.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="booking_gateway_engine" data-ac-stitch-disposition="FUTURE_CAPABILITY">External booking gateway pickers (HotDoc / HealthEngine) are a future capability — not website branding configuration.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="accreditation_badges" data-ac-stitch-disposition="FUTURE_CAPABILITY">Accreditation badge pickers are a future capability — no badge catalogue in website content.</p>
+      <p class="ac-mw-hint">Social links are edited under <a href="/app/settings/website/chrome">Header &amp; Footer</a> (existing chrome fields).</p>
+      <p class="ac-mw-form__legend">Cover / hero image (optional)</p>
+      <%- include('../partials/website-cms-media-field', {
+        mediaField: {
+          idName: "heroMediaId",
+          srcName: "heroSrc",
+          altName: "heroAlt",
+          altLabel: "Cover image description",
+          mediaId: hero.mediaId || "",
+          src: hero.src || "",
+          alt: hero.alt || "",
+          placementName: "heroPlacementJson",
+          placement: hero.placement || null,
+          contentKey: "home.hero.image"
+        }
+      }) %>
+      <div class="ac-mw-actions">
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save branding</button>
+      </div>
+    </form>
+    <aside class="ac-mw-brand-preview" data-ac-mw-brand-preview="1" data-preview-name="<%= previewName %>" aria-label="Live branding preview">
+      <p class="ac-mw-readonly__label">Preview</p>
+      <div class="ac-mw-brand-preview__site">
+        <div class="ac-mw-brand-preview__bar">
+          <img data-ac-mw-preview-logo src="<%= logo.src || '' %>" alt="" <%= logo.src ? "" : "hidden" %>/>
+          <strong data-ac-mw-preview-name><%= previewName %></strong>
+        </div>
+        <div class="ac-mw-brand-preview__hero">
+          <img data-ac-mw-preview-hero src="<%= hero.src || '' %>" alt="" <%= hero.src ? "" : "hidden" %>/>
+          <span class="ac-mw-brand-preview__cta" data-ac-mw-preview-cta>Book appointment</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>
+</section>

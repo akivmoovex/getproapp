@@ -1,0 +1,386 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var org = organization || {};
+  var inst = instance || null;
+  var versions = versions || [];
+  var pending = pendingSubmissions || [];
+  var cl = checklist || null;
+  var avail = availability || null;
+  var hco = avail && avail.healthcareOrganization;
+  var approved = avail && avail.latestApprovedVersion || (typeof liveVersion !== 'undefined' ? liveVersion : null);
+  var ready = (avail && avail.readiness) || null;
+  var last = avail && avail.lastToggle;
+  var canToggle = canToggleAvailability === true;
+  var notice = String(notice || '');
+  var error = String(error || '');
+  var isPublic = typeof websitePublished === 'boolean'
+    ? websitePublished
+    : Boolean(hco && hco.websitePublished);
+  var product = typeof productCode !== 'undefined' ? productCode : 'activeclinic';
+  var acts = typeof actions !== 'undefined' && actions ? actions : {};
+  var publicHref = (typeof publicPath !== 'undefined' && publicPath) || (avail && (avail.publicPath || avail.publicUrl)) || '';
+  var mediaRows = typeof media !== 'undefined' && media ? media : [];
+  var audits = typeof auditEvents !== 'undefined' && auditEvents ? auditEvents : [];
+  var diag = typeof diagnostics !== 'undefined' && diagnostics ? diagnostics : { issues: [], issueCount: 0, healthy: true };
+  var orgHref = acts.organization || ('/admin/organizations/' + encodeURIComponent(org.organization_key || ''));
+%>
+<section class="bb-pa-page" data-bb-pa-website-detail="1" data-product="<%= product %>">
+  <h1><%= product === 'blessboard' ? 'Church website' : 'Clinic website' %></h1>
+  <p>
+    <a href="<%= orgHref %>" data-action-open-organization="1"><%= org.display_name %></a>
+    · <%= org.organization_key %>
+    · <%= typeof productLabel !== 'undefined' ? productLabel : product %>
+  </p>
+  <% if (notice === 'published') { %>
+  <p class="bb-pa-notice" data-website-availability-notice="published">Website is public.<% if (publicHref) { %> <a href="<%= publicHref %>"><%= publicHref %></a><% } %></p>
+  <% } else if (notice === 'unpublished') { %>
+  <p class="bb-pa-notice" data-website-availability-notice="unpublished">Website is not public. Content and versions were kept.</p>
+  <% } else if (notice === 'restored') { %>
+  <p class="bb-pa-notice">Previous version restored as a new live version. History was kept.</p>
+  <% } else if (notice === 'offline' || notice === 'hide') { %>
+  <p class="bb-pa-notice">Website hidden. Content and drafts were kept. The tenant account remains active.</p>
+  <% } else if (notice === 'suspend' || notice === 'block') { %>
+  <p class="bb-pa-notice">Website blocked. Public access and customer publishing are disabled until it is unblocked.</p>
+  <% } else if (notice === 'restore-site' || notice === 'unhide' || notice === 'unblock') { %>
+  <p class="bb-pa-notice">Website restored to public visibility.</p>
+  <% } else if (notice === 'request-changes') { %>
+  <p class="bb-pa-notice">Changes requested. Current public version was left in place unless taken offline.</p>
+  <% } else if (notice === 'policy') { %>
+  <p class="bb-pa-notice">Publishing policy updated.</p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-pa-error" data-website-availability-error="<%= error %>">Could not update website availability (<%= error %>).</p>
+  <% } %>
+
+  <h2>Website overview</h2>
+  <dl class="bb-pa-dl" data-website-availability="<%= isPublic ? 'public' : 'not-public' %>">
+    <dt>Product</dt>
+    <dd><%= typeof productLabel !== 'undefined' ? productLabel : product %></dd>
+    <dt>Organisation</dt>
+    <dd>
+      <a href="<%= orgHref %>" data-action-open-organization="1"><%= org.display_name %></a>
+      (<%= org.organization_key %>)
+    </dd>
+    <dt>Public URL</dt>
+    <dd>
+      <% if (publicHref) { %>
+      <a href="<%= publicHref %>" data-action-view-live="1"><%= publicHref %></a>
+      <% } else { %>Not assigned<% } %>
+    </dd>
+    <dt>Customer hub</dt>
+    <dd>
+      <% if (acts.customerHub) { %>
+      <a href="<%= acts.customerHub %>" data-action-customer-hub="1"><%= acts.customerHub %></a>
+      <span class="bb-pa-hint"> (tenant settings — not Platform Admin)</span>
+      <% } else { %>—<% } %>
+    </dd>
+    <dt>Website status</dt>
+    <dd data-website-status="<%= typeof websiteStatus !== 'undefined' ? websiteStatus : '' %>"><%= typeof websiteStatus !== 'undefined' && websiteStatus ? websiteStatus : (isPublic ? 'Public' : 'Not public') %></dd>
+    <dt>Published version</dt>
+    <dd data-published-version="<%= approved && approved.versionNumber ? approved.versionNumber : '' %>"><% if (approved && approved.versionNumber) { %>v<%= approved.versionNumber %><% } else { %>None<% } %></dd>
+    <dt>Last approved version</dt>
+    <dd data-last-approved-version="<%= typeof lastApprovedVersionNumber !== 'undefined' && lastApprovedVersionNumber ? lastApprovedVersionNumber : '' %>"><% if (typeof lastApprovedVersionNumber !== 'undefined' && lastApprovedVersionNumber) { %>v<%= lastApprovedVersionNumber %><% } else { %>None<% } %></dd>
+    <dt>Review status</dt>
+    <dd data-review-status="<%= typeof reviewStatus !== 'undefined' ? reviewStatus : '' %>"><%= typeof reviewStatusLabel !== 'undefined' && reviewStatusLabel ? reviewStatusLabel : '—' %></dd>
+    <dt>Current draft</dt>
+    <dd data-draft-state="<%= typeof currentDraft !== 'undefined' ? currentDraft : '' %>"><%= typeof currentDraft !== 'undefined' && currentDraft ? currentDraft : (unpublishedCount > 0 ? 'Unpublished changes' : 'Current') %></dd>
+    <dt>Unpublished changes</dt>
+    <dd data-unpublished-count="<%= unpublishedCount || 0 %>"><%= unpublishedCount || 0 %></dd>
+    <dt>Last modification</dt>
+    <dd data-last-modified="<%= typeof lastModifiedLabel !== 'undefined' ? lastModifiedLabel : '' %>"><%= typeof lastModifiedLabel !== 'undefined' && lastModifiedLabel ? lastModifiedLabel : '—' %></dd>
+    <dt>Last editor</dt>
+    <dd data-last-editor="<%= typeof lastEditor !== 'undefined' ? lastEditor : '' %>"><%= typeof lastEditor !== 'undefined' && lastEditor ? lastEditor : '—' %></dd>
+    <dt>Last publisher</dt>
+    <dd data-last-publisher="<%= typeof lastPublisher !== 'undefined' ? lastPublisher : '' %>"><%= typeof lastPublisher !== 'undefined' && lastPublisher ? lastPublisher : '—' %></dd>
+    <dt>Lifecycle</dt>
+    <dd><%= (inst && inst.lifecycleStatus) || '—' %></dd>
+    <dt>Publishing policy</dt>
+    <dd><%= (inst && inst.publishPolicy) || '—' %></dd>
+    <% if (ready) { %>
+    <dt>Readiness</dt>
+    <dd>
+      <% if (ready.readyToPublish) { %>Ready for public launch
+      <% } else if (ready.userMessages && ready.userMessages.length) { %>
+        Not ready: <%= ready.userMessages.join(', ') %>
+      <% } else { %>Unknown<% } %>
+    </dd>
+    <% } %>
+    <% if (last) { %>
+    <dt>Last publication toggle</dt>
+    <dd><%= last.actionKey === 'website.availability.publish' ? 'Published' : 'Unpublished' %> · <%= last.at %></dd>
+    <% } %>
+  </dl>
+
+  <p class="bb-pa-actions">
+    <% if (publicHref) { %>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= publicHref %>" data-action-view-live="1">View live</a>
+    <% } %>
+    <% if (acts.previewDraft) { %>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= acts.previewDraft %>" data-action-preview-draft="1">Preview draft</a>
+    <% } %>
+    <% if (acts.customerHub) { %>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= acts.customerHub %>" data-action-customer-hub="1">Open customer hub</a>
+    <% } %>
+    <% if (acts.openEditor) { %>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= acts.openEditor %>" data-action-open-editor="1">Open public editor</a>
+    <% } %>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-changes" data-action-change-summary="1">View change summary</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-history" data-action-history="1">View history</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-audit" data-action-audit="1">Audit events</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-moderation" data-action-moderation="1">Moderation</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-media" data-action-media="1">Media usage</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-diagnostics" data-action-diagnostics="1">Diagnostics</a>
+  </p>
+
+  <% if (canToggle) { %>
+    <% if (!isPublic) { %>
+    <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/publish" data-website-availability-form="publish">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="bb-pa-btn" <%= (product === 'activeclinic' && !approved) ? 'disabled' : '' %>>Publish Website</button>
+    </form>
+    <% } else { %>
+    <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/unpublish" data-website-availability-form="unpublish">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Unpublish Website</button>
+    </form>
+    <% } %>
+  <% } %>
+
+  <% if (inst && (canTakeOffline || canSuspend || canRestore || canModerate || canManagePolicy)) { %>
+  <h2>Moderation</h2>
+  <p>These actions affect the public website only. They do not disable the tenant account.</p>
+  <% if (canTakeOffline) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/hide" data-website-moderation="offline" data-website-governance="hide">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="bb-pa-hint">The website will no longer be publicly visible. Content and drafts will be retained.</p>
+    <label>Reason <input name="reason" maxlength="500" required/></label>
+    <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Hide Website</button>
+  </form>
+  <% } %>
+  <% if (canSuspend) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/block" data-website-moderation="suspend" data-website-governance="block">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="bb-pa-hint">Public access and customer publishing will be disabled until the website is unblocked.</p>
+    <label>Reason <input name="reason" maxlength="500" required/></label>
+    <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Block Website</button>
+  </form>
+  <% } %>
+  <% if (canRestore && (typeof canResume === 'undefined' || canResume)) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/<%= inst && inst.lifecycleStatus === 'suspended' ? 'unblock' : inst && inst.lifecycleStatus === 'offline' ? 'unhide' : 'restore-site' %>" data-website-moderation="restore">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn"><%= inst && inst.lifecycleStatus === 'suspended' ? 'Unblock Website' : inst && inst.lifecycleStatus === 'offline' ? 'Unhide Website' : 'Unhide / Unblock Website' %></button>
+  </form>
+  <% } %>
+  <% if (canModerate) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/request-changes" data-website-moderation="request-changes">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Request <input name="note_public" maxlength="500" required/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Request Changes</button>
+  </form>
+  <% } %>
+  <% if (canManagePolicy) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/policy" data-website-moderation="policy">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Policy
+      <select name="publish_policy">
+        <option value="TENANT_PUBLISH" <%= inst.publishPolicy === 'TENANT_PUBLISH' ? 'selected' : '' %>>Organisation publishes</option>
+        <option value="AUTO_PUBLISH_WITH_MODERATION" <%= inst.publishPolicy === 'AUTO_PUBLISH_WITH_MODERATION' ? 'selected' : '' %>>Auto-publish with moderation</option>
+        <option value="REVIEW_BEFORE_PUBLISH" <%= inst.publishPolicy === 'REVIEW_BEFORE_PUBLISH' ? 'selected' : '' %>>Review before publish</option>
+        <option value="PLATFORM_LOCKED" <%= inst.publishPolicy === 'PLATFORM_LOCKED' ? 'selected' : '' %>>Platform locked</option>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Update policy</button>
+  </form>
+  <% } %>
+  <% } %>
+
+  <% if (!inst && product !== 'blessboard') { %>
+  <p>No website instance for this organisation.</p>
+  <% } else { %>
+  <% if (inst) { %>
+  <p>Template <%= inst.templateId %> v<%= inst.templateVersion %> · status <%= inst.status %> · unpublished <%= unpublishedCount || 0 %></p>
+  <% } %>
+  <% if (cl) { %>
+  <p>Checklist <%= cl.percent || 0 %>% complete</p>
+  <% } %>
+  <% if (pending.length) { %>
+  <h2>Pending submissions</h2>
+  <ul>
+    <% pending.forEach(function (s) { %>
+    <li><a href="/admin/website-changes/<%= s.id %>"><%= s.status %> · <%= s.changeCount || 0 %> keys</a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <h2 id="website-diagnostics">Diagnostics</h2>
+  <div data-website-diagnostics="1" data-diagnostics-healthy="<%= diag.healthy ? '1' : '0' %>">
+    <% if (!diag.issues || !diag.issues.length) { %>
+    <p class="bb-pa-hint">No governance or readiness issues detected.</p>
+    <% } else { %>
+    <ul data-website-diagnostics-list="1">
+      <% diag.issues.forEach(function (issue) { %>
+      <li data-diagnostics-severity="<%= issue.severity || 'info' %>" data-diagnostics-code="<%= issue.code || '' %>">
+        <strong><%= issue.severity || 'info' %></strong> — <%= issue.message %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <h2 id="website-changes">Changes since publication</h2>
+  <% var summary = typeof changeSummary !== 'undefined' && changeSummary ? changeSummary : []; %>
+  <% if (!summary.length) { %>
+  <p class="bb-pa-hint">No unpublished draft changes.</p>
+  <% } else { %>
+  <ul data-website-change-summary="1">
+    <% summary.forEach(function (group) { %>
+    <li>
+      <strong><%= group.page %></strong>
+      <ul>
+        <% (group.items || []).forEach(function (item) { %>
+        <li><%= item %></li>
+        <% }) %>
+      </ul>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <h2 id="website-audit">Audit events</h2>
+  <table class="bb-pa-table" data-website-audit="1">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Actor</th>
+        <th>Action</th>
+        <th>Field / key</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!audits.length) { %>
+      <tr><td colspan="4">No website audit events recorded yet.</td></tr>
+      <% } %>
+      <% audits.forEach(function (ev) { %>
+      <tr>
+        <td><%= ev.createdLabel || ev.createdAt || '—' %></td>
+        <td><%= ev.actorLabel || '—' %></td>
+        <td><%= ev.actionKey || '—' %></td>
+        <td><%= ev.contentKey || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h2 id="website-moderation">Moderation status</h2>
+  <% var mods = typeof moderationEvents !== 'undefined' && moderationEvents ? moderationEvents : []; %>
+  <table class="bb-pa-table" data-website-moderation-events="1">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Action</th>
+        <th>Reason / notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!mods.length) { %>
+      <tr><td colspan="3">No moderation events recorded yet.</td></tr>
+      <% } %>
+      <% mods.forEach(function (ev) { %>
+      <tr>
+        <td><%= ev.createdAt || ev.created_at || '—' %></td>
+        <td><%= ev.actionKey || ev.action_key || '—' %></td>
+        <td><%= ev.notes || ev.reason || ev.notePublic || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h2 id="website-media">Media usage</h2>
+  <table class="bb-pa-table" data-website-media="1">
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Type</th>
+        <th>Usages</th>
+        <th>Kinds</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!mediaRows.length) { %>
+      <tr><td colspan="5">No active website media for this organisation.</td></tr>
+      <% } %>
+      <% mediaRows.forEach(function (m) { %>
+      <tr>
+        <td><%= m.originalFilename || m.id %></td>
+        <td><%= m.mimeType || '—' %></td>
+        <td><%= m.usageCount || 0 %></td>
+        <td><%= m.usageKinds || '—' %></td>
+        <td>
+          <% if (m.inspectHref) { %>
+          <a class="bb-pa-link" href="<%= m.inspectHref %>" data-action-inspect-media="1">Inspect</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h2 id="website-history">Version history</h2>
+  <p>Editing a published website updates the draft only. Publish creates the next immutable version. Restore creates a new current version from history.</p>
+  <table class="bb-pa-table" data-website-version-history="1">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Editor</th>
+        <th>When</th>
+        <th>Session</th>
+        <th>Fields</th>
+        <th>Pages / sections</th>
+        <th>Policy</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!versions.length) { %>
+      <tr><td colspan="9">No website versions yet.</td></tr>
+      <% } %>
+      <% versions.forEach(function (v) { %>
+      <tr>
+        <td>v<%= v.versionNumber %></td>
+        <td><%= v.editorLabel || 'Editor' %></td>
+        <td><%= v.publishedLabel || '—' %></td>
+        <td>
+          <% if (v.sessionStartLabel) { %>
+            <%= v.sessionStartLabel %><% if (v.sessionEndLabel) { %> – <%= v.sessionEndLabel %><% } %>
+            <% if (v.sessionOpen) { %> (open)<% } %>
+          <% } else { %>Single publish<% } %>
+        </td>
+        <td><%= v.fieldCount || (v.changedKeys && v.changedKeys.length) || v.changeCount || 0 %></td>
+        <td>
+          <%= (v.pagesAffected || []).join(', ') || '—' %>
+          <% if (v.sectionsAffected && v.sectionsAffected.length) { %>
+            <br/><span class="bb-pa-muted"><%= v.sectionsAffected.join(', ') %></span>
+          <% } %>
+        </td>
+        <td><%= v.sourcePolicy || (inst && inst.publishPolicy) || '—' %></td>
+        <td><%= v.moderationStatus || v.status %></td>
+        <td>
+          <% if (product === 'activeclinic' && v.id) { %>
+          <a class="bb-pa-link" href="/admin/recent-website-changes/version/<%= v.id %>">View changes</a>
+          <% } %>
+          <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/versions/<%= v.id %>/restore" style="display:inline" data-action-restore="1">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore version</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

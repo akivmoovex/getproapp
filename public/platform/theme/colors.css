@@ -1,0 +1,691 @@
+/**
+ * GetPro platform color system (V2.04 foundation)
+ * =================================================
+ * Canonical source of truth: `src/platform/ui/theme/colors.css`
+ * Runtime URL (static mirror): `/platform/theme/colors.css`
+ *
+ * Hierarchy:
+ *   PRIMITIVES → PLATFORM SEMANTIC → PRODUCT BRAND → COMPONENT TOKENS → UI
+ *
+ * Rules:
+ * - Application UI must consume semantic / component tokens — not primitives,
+ *   and not raw HEX/RGB/HSL when an appropriate token exists.
+ * - BlessBoard and ActiveClinic keep distinct brand colors.
+ * - ActiveClinic is dual-surface: public/portal/auth (teal) vs staff (blue).
+ *
+ * Product selectors (preferred first):
+ *   [data-product="blessboard"] | [data-product="activeclinic"]
+ * Compatibility (existing shells):
+ *   [data-bb-product], [data-gp-product="blessboard"]
+ *   [data-ac-product="activeclinic"], [data-gp-product="activeclinic"]
+ * Surface (ActiveClinic):
+ *   [data-surface="public"|"staff"] — preferred
+ *   [data-ac-shell="staff-app"] — staff compatibility
+ *
+ * Audit: docs/qa/V2_04_GUI_COLOR_THEME_AUDIT.md
+ * Spec:  docs/design/PLATFORM_COLOR_SYSTEM.md
+ */
+
+/* =========================================================
+   A. PRIMITIVE PALETTE
+   Raw scales for semantic mapping only.
+   Do NOT use primitives in component CSS when a semantic token exists.
+   ========================================================= */
+
+:root {
+  --palette-white: #ffffff;
+  --palette-black: #000000;
+
+  /* Near-black inks (audit: BB ink / AC ink / platform text) */
+  --palette-ink-950: #1a1c1e;
+  --palette-ink-900: #181c1e;
+  --palette-ink-850: #111827;
+
+  /* Neutrals (slate-adjacent; ODS / shared) */
+  --palette-slate-50: #f8fafc;
+  --palette-slate-100: #f3f4f6;
+  --palette-slate-200: #e5e7eb;
+  --palette-slate-300: #c4c7c9;
+  --palette-slate-400: #9ca3af;
+  --palette-slate-500: #6b7280;
+  --palette-slate-600: #44474e;
+  --palette-slate-700: #3e494a;
+
+  /* Warm BB page tint */
+  --palette-warm-50: #fbf9f6;
+  --palette-warm-100: #f2f0ed;
+
+  /* Cool AC public page tint */
+  --palette-cool-50: #f8f9ff;
+  --palette-cool-100: #f1f4f6;
+
+  /* Brand — BlessBoard Sacred Modernity violet (apex / marketing) */
+  --palette-violet-500: #6c5ce7;
+  --palette-violet-600: #5341cd;
+  --palette-violet-800: #3d348b;
+  --palette-violet-50: #efeaff;
+
+  /* Brand — GetPro / BB accent orange (decorative; not small text) */
+  --palette-orange-500: #ff9800;
+  --palette-orange-700: #c2410c; /* readable accent for small text */
+
+  /* Brand — ActiveClinic public teal */
+  --palette-teal-800: #004f56;
+  --palette-teal-700: #006068;
+  --palette-teal-600: #0f766e;
+  --palette-teal-50: #d5faff;
+  --palette-navy-800: #213145;
+
+  /*
+   * Brand — Grace Royal / Sanctuary Modern blue scale
+   * Shared primitive: ActiveClinic staff + BlessBoard V2.04 ops (Stitch).
+   * Products map via their own brand selectors — do not merge product CSS.
+   */
+  --palette-blue-600: #2563eb;
+  --palette-blue-700: #1d4ed8;
+  --palette-blue-50: #eff6ff;
+
+  /* BlessBoard V2.04 Stitch Sanctuary Modern (ops shells only) */
+  --palette-ink-920: #0f172a; /* Sanctuary Obsidian text */
+  --palette-navy-700: #1e293b; /* brand-navy / nav chrome */
+  --palette-slate-125: #f1f5f9; /* surface-hover */
+  --palette-slate-175: #e2e8f0; /* border-subtle */
+  --palette-slate-250: #cbd5e1; /* border-strong */
+  --palette-slate-450: #64748b; /* muted / draft chips */
+  --palette-slate-550: #475569; /* text-secondary */
+  --palette-amber-600: #d97706; /* brand-gold / ministry honors */
+
+  /* Semantic status primitives (platform-resolved drift) */
+  --palette-green-700: #027a48; /* shared success — strong AA on soft bg */
+  --palette-green-50: #ecfdf3;
+  --palette-green-200: #a7f3d0;
+
+  --palette-amber-700: #b54708; /* shared warning (BB + AC public) */
+  --palette-amber-50: #fffaeb;
+  --palette-amber-200: #fedf89;
+
+  --palette-red-700: #ba1a1a; /* shared danger — stronger chip text than #dc2626 on soft */
+  --palette-red-50: #fef2f2;
+  --palette-red-200: #fecdca;
+
+  --palette-sky-700: #026aa2; /* shared info (not brand primary) */
+  --palette-sky-50: #f0f9ff;
+  --palette-sky-200: #b2ddff;
+
+  --palette-border-bb: #d1dce0; /* BB border reference */
+}
+
+/* =========================================================
+   B. PLATFORM NEUTRALS (semantic)
+   Shared vocabulary. Products may tint background/surface via brand blocks.
+   ========================================================= */
+
+:root {
+  /*
+   * Page canvas
+   * Used for the primary application / page background.
+   * Not for cards, dialogs, or elevated panels (use --color-surface).
+   */
+  --color-background: var(--palette-slate-50);
+
+  /*
+   * Primary elevated surface
+   * Used for cards, panels, dialogs, and form containers.
+   */
+  --color-surface: var(--palette-white);
+
+  /*
+   * Subtle recessed surface
+   * Used for zebra rows, muted wells, sidebar rails, and soft grouping.
+   * Not for primary CTAs.
+   */
+  --color-surface-subtle: var(--palette-slate-100);
+
+  /*
+   * Highest elevation surface
+   * Used for popovers, sticky headers, and floating chrome on top of cards.
+   */
+  --color-surface-elevated: var(--palette-white);
+
+  /*
+   * Primary body / heading text
+   * Used for titles and primary readable copy on light surfaces.
+   * Chosen for AA on warm and cool page backgrounds (#1A1C1E).
+   */
+  --color-text-primary: var(--palette-ink-950);
+
+  /*
+   * Secondary supporting text
+   * Used for descriptions and labels. Prefer over muted for important secondary copy.
+   */
+  --color-text-secondary: var(--palette-slate-600);
+
+  /*
+   * Muted / tertiary text
+   * Used for captions, meta, and helper text.
+   * Uses #6B7280 (passes AA on white) — NOT #8A94A6 (audit FAIL on canvas).
+   * Do not use for primary content or critical errors.
+   */
+  --color-text-muted: var(--palette-slate-500);
+
+  /*
+   * Inverse text
+   * Used on filled brand / dark surfaces (primary buttons, inverse chips).
+   */
+  --color-text-inverse: var(--palette-white);
+
+  /*
+   * Default border
+   * Used for card edges, dividers, and default input borders.
+   */
+  --color-border-default: var(--palette-slate-200);
+
+  /*
+   * Subtle border
+   * Used for hairline separators and low-emphasis outlines.
+   */
+  --color-border-subtle: var(--palette-slate-100);
+
+  /*
+   * Strong border
+   * Used for emphasized containers and high-contrast outlines.
+   */
+  --color-border-strong: var(--palette-slate-300);
+
+  /*
+   * Disabled control background
+   * Used for disabled inputs and buttons — not for muted informational text alone.
+   */
+  --color-disabled-bg: var(--palette-slate-100);
+
+  /*
+   * Disabled control text
+   * Prefer #6B7280 over #9A93A8 (audit FAIL on BB page). Color alone must not
+   * be the only disabled cue (also disable pointer events / aria-disabled).
+   */
+  --color-disabled-text: var(--palette-slate-500);
+
+  /*
+   * Disabled control border
+   */
+  --color-disabled-border: var(--palette-slate-200);
+}
+
+/* =========================================================
+   C. PLATFORM SEMANTIC STATES
+   Shared across BlessBoard and ActiveClinic. Deliberately resolves audit drift
+   (multiple greens / reds / warnings) to one platform family.
+   ========================================================= */
+
+:root {
+  /* —— Success —— */
+  /*
+   * Success foreground
+   * Used for success text, icons, and status emphasis.
+   * Canonical: #027A48 (stronger chip contrast than staff #16A34A on soft bg).
+   */
+  --color-success: var(--palette-green-700);
+  --color-success-bg: var(--palette-green-50);
+  --color-success-border: var(--palette-green-200);
+  --color-success-text: var(--palette-green-700);
+
+  /* —— Warning —— */
+  /*
+   * Warning foreground
+   * Used for caution text and icons. Canonical: #B54708 (BB + AC public shared).
+   */
+  --color-warning: var(--palette-amber-700);
+  --color-warning-bg: var(--palette-amber-50);
+  --color-warning-border: var(--palette-amber-200);
+  --color-warning-text: var(--palette-amber-700);
+
+  /* —— Danger / error —— */
+  /*
+   * Danger foreground
+   * Used for errors, destructive emphasis, and invalid fields.
+   * Canonical: #BA1A1A (better soft-bg chip text than #DC2626 large-only pair).
+   * Do not use for non-error brand accents.
+   */
+  --color-danger: var(--palette-red-700);
+  --color-danger-bg: var(--palette-red-50);
+  --color-danger-border: var(--palette-red-200);
+  --color-danger-text: var(--palette-red-700);
+
+  /* —— Info —— */
+  /*
+   * Info foreground
+   * Used for informational callouts. Canonical: #026AA2.
+   * Do not use brand primary as info unless the product theme intentionally maps it.
+   */
+  --color-info: var(--palette-sky-700);
+  --color-info-bg: var(--palette-sky-50);
+  --color-info-border: var(--palette-sky-200);
+  --color-info-text: var(--palette-sky-700);
+}
+
+/* =========================================================
+   D. PRODUCT BRAND DEFAULTS + INTERACTION TOKENS
+   Defaults match platform GetPro violet so unscoped pages still resolve.
+   Product selectors below override brand identity.
+   ========================================================= */
+
+:root {
+  /* Brand (default = BlessBoard / platform violet until product attr applies) */
+  --color-brand-primary: var(--palette-violet-500);
+  --color-brand-primary-hover: var(--palette-violet-600);
+  --color-brand-primary-active: var(--palette-violet-800);
+  --color-brand-primary-light: var(--palette-violet-50);
+  /*
+   * Decorative GetPro / BB orange. Do NOT use for small body text (audit FAIL).
+   * Use --color-brand-accent-readable for text lockups.
+   */
+  --color-brand-accent: var(--palette-orange-500);
+  --color-brand-accent-readable: var(--palette-orange-700);
+  --color-brand-on-primary: var(--palette-white);
+
+  /*
+   * Links inherit product brand primary (not a separate global blue).
+   */
+  --color-link: var(--color-brand-primary);
+  --color-link-hover: var(--color-brand-primary-hover);
+
+  /*
+   * Focus indicator color (solid). Ring uses translucent brand.
+   */
+  --color-focus: var(--color-brand-primary);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
+
+  /*
+   * Text selection highlight
+   */
+  --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
+}
+
+/* =========================================================
+   E. COMPONENT SEMANTIC TOKENS
+   Preferred API for application UI. Values resolve through brand + semantic.
+   ========================================================= */
+
+:root {
+  /* —— Buttons —— */
+  --button-primary-bg: var(--color-brand-primary);
+  --button-primary-bg-hover: var(--color-brand-primary-hover);
+  --button-primary-bg-active: var(--color-brand-primary-active);
+  --button-primary-text: var(--color-brand-on-primary);
+  --button-primary-border: var(--color-brand-primary);
+
+  --button-secondary-bg: var(--color-surface);
+  --button-secondary-bg-hover: var(--color-brand-primary-light);
+  --button-secondary-text: var(--color-brand-primary);
+  --button-secondary-border: var(--color-brand-primary);
+
+  --button-danger-bg: var(--color-danger);
+  --button-danger-bg-hover: color-mix(in srgb, var(--color-danger) 88%, var(--palette-black));
+  --button-danger-text: var(--color-text-inverse);
+
+  /* —— Inputs —— */
+  --input-bg: var(--color-surface);
+  --input-text: var(--color-text-primary);
+  --input-placeholder: var(--color-text-muted);
+  --input-border: var(--color-border-default);
+  --input-border-hover: var(--color-border-strong);
+  --input-border-focus: var(--color-brand-primary);
+  --input-focus-ring: var(--color-focus-ring);
+  --input-disabled-bg: var(--color-disabled-bg);
+  --input-disabled-text: var(--color-disabled-text);
+
+  /* —— Cards —— */
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-border-default);
+  --card-text: var(--color-text-primary);
+  --card-muted-text: var(--color-text-secondary);
+
+  /* —— Navigation —— */
+  --nav-bg: var(--color-surface);
+  --nav-text: var(--color-text-primary);
+  --nav-text-muted: var(--color-text-muted);
+  --nav-hover-bg: var(--color-surface-subtle);
+  --nav-hover-text: var(--color-text-primary);
+  --nav-active-bg: var(--color-brand-primary-light);
+  --nav-active-text: var(--color-brand-primary);
+  --nav-border: var(--color-border-default);
+
+  /* —— Tables —— */
+  --table-bg: var(--color-surface);
+  --table-header-bg: var(--color-surface-subtle);
+  --table-header-text: var(--color-text-secondary);
+  --table-row-hover: var(--color-brand-primary-light);
+  --table-border: var(--color-border-default);
+
+  /* —— Modals —— */
+  --modal-bg: var(--color-surface);
+  --modal-text: var(--color-text-primary);
+  --modal-border: var(--color-border-default);
+  --modal-overlay: color-mix(in srgb, var(--palette-ink-950) 45%, transparent);
+
+  /* —— Badges / status (map to shared semantic states) —— */
+  --badge-success-bg: var(--color-success-bg);
+  --badge-success-text: var(--color-success-text);
+  --badge-success-border: var(--color-success-border);
+
+  --badge-warning-bg: var(--color-warning-bg);
+  --badge-warning-text: var(--color-warning-text);
+  --badge-warning-border: var(--color-warning-border);
+
+  --badge-danger-bg: var(--color-danger-bg);
+  --badge-danger-text: var(--color-danger-text);
+  --badge-danger-border: var(--color-danger-border);
+
+  --badge-info-bg: var(--color-info-bg);
+  --badge-info-text: var(--color-info-text);
+  --badge-info-border: var(--color-info-border);
+
+  --badge-neutral-bg: var(--color-surface-subtle);
+  --badge-neutral-text: var(--color-text-secondary);
+  --badge-neutral-border: var(--color-border-default);
+
+  /* —— Website editor chrome (shared BB + AC editor UI) ——
+   * Prefer these for pencil/toolbar/overlay/selection chrome.
+   * Brand-aware values resolve through --color-brand-* / data-product.
+   * Do NOT use for tenant website content presentation colors.
+   */
+  --editor-toolbar-bg: var(--color-surface);
+  --editor-toolbar-border: var(--color-border-default);
+  --editor-toolbar-text: var(--color-text-primary);
+  --editor-control-bg: var(--color-surface);
+  --editor-control-text: var(--color-text-primary);
+  --editor-control-border: var(--color-border-default);
+  --editor-control-hover-bg: var(--color-brand-primary-light);
+  --editor-selection-border: var(--color-brand-primary);
+  --editor-hover-border: var(--color-brand-primary);
+  --editor-edit-control-bg: var(--color-brand-primary);
+  --editor-edit-control-text: var(--color-brand-on-primary);
+  --editor-canvas-bg: var(--color-background);
+  --editor-rail-bg: var(--color-brand-primary-light);
+  --editor-overlay-bg: var(--modal-overlay);
+  --editor-muted-text: var(--color-text-secondary);
+  --editor-outline: var(--color-border-strong);
+  --editor-preview-banner-bg: var(--color-text-primary);
+  --editor-preview-banner-text: var(--color-text-inverse);
+}
+
+/* =========================================================
+   F. PRODUCT BRAND — BLESSBOARD (default)
+   Sacred Modernity violet — apex marketing, tenant public, legacy shells.
+   ========================================================= */
+
+[data-product="blessboard"],
+[data-bb-product],
+[data-gp-product="blessboard"] {
+  --color-brand-primary: var(--palette-violet-500);
+  --color-brand-primary-hover: var(--palette-violet-600);
+  --color-brand-primary-active: var(--palette-violet-800);
+  --color-brand-primary-light: var(--palette-violet-50);
+  --color-brand-accent: var(--palette-orange-500);
+  --color-brand-accent-readable: var(--palette-orange-700);
+  --color-brand-on-primary: var(--palette-white);
+
+  --color-background: var(--palette-warm-50);
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-warm-100);
+  --color-text-primary: var(--palette-ink-950);
+  --color-text-secondary: var(--palette-slate-600);
+  --color-border-default: var(--palette-border-bb);
+
+  --color-link: var(--color-brand-primary);
+  --color-link-hover: var(--color-brand-primary-hover);
+  --color-focus: var(--color-brand-primary);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
+  --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
+}
+
+/* =========================================================
+   F2. PRODUCT BRAND — BLESSBOARD V2.04 OPS (Sanctuary Modern)
+   Stitch project 12773983203917549893 design foundation.
+   Scoped to authenticated ops shells only — does not alter apex marketing
+   or ActiveClinic (AC staff independently maps the same blue primitives).
+   ========================================================= */
+
+[data-product="blessboard"][data-bb-shell="branch-admin"],
+[data-product="blessboard"][data-bb-shell="hq-admin"],
+[data-product="blessboard"][data-bb-shell="member"],
+[data-product="blessboard"][data-bb-shell="member-auth"],
+[data-product="blessboard"][data-bb-shell="platform-admin"] {
+  --color-brand-primary: var(--palette-blue-600);
+  --color-brand-primary-hover: var(--palette-blue-700);
+  --color-brand-primary-active: var(--palette-navy-700);
+  --color-brand-primary-light: var(--palette-blue-50);
+  --color-brand-accent: var(--palette-amber-600);
+  --color-brand-accent-readable: var(--palette-orange-700);
+  --color-brand-on-primary: var(--palette-white);
+
+  --color-background: var(--palette-slate-50);
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-slate-125);
+  --color-text-primary: var(--palette-ink-920);
+  --color-text-secondary: var(--palette-slate-550);
+  --color-text-muted: var(--palette-slate-450);
+  --color-border-default: var(--palette-slate-175);
+  --color-border-strong: var(--palette-slate-250);
+
+  --color-link: var(--color-brand-primary);
+  --color-link-hover: var(--color-brand-primary-hover);
+  --color-focus: var(--color-brand-primary);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
+  --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
+
+  /* Nav chrome (Stitch brand-navy) */
+  --nav-bg: var(--palette-navy-700);
+  --nav-text: var(--palette-white);
+  --nav-text-muted: color-mix(in srgb, var(--palette-white) 72%, transparent);
+  --nav-hover-bg: color-mix(in srgb, var(--palette-white) 8%, var(--palette-navy-700));
+  --nav-hover-text: var(--palette-white);
+  --nav-active-bg: color-mix(in srgb, var(--palette-blue-600) 28%, var(--palette-navy-700));
+  --nav-active-text: var(--palette-white);
+  --nav-border: color-mix(in srgb, var(--palette-white) 12%, var(--palette-navy-700));
+}
+
+/* =========================================================
+   G. PRODUCT BRAND — ACTIVECLINIC (public / portal / auth default = teal)
+   Audit §3A. Cool page tint. Staff blue is section H.
+   ========================================================= */
+
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"] {
+  --color-brand-primary: var(--palette-teal-700);
+  --color-brand-primary-hover: var(--palette-teal-600);
+  --color-brand-primary-active: var(--palette-teal-800);
+  --color-brand-primary-light: var(--palette-teal-50);
+  --color-brand-accent: var(--palette-navy-800);
+  --color-brand-accent-readable: var(--palette-navy-800);
+  --color-brand-on-primary: var(--palette-white);
+
+  --color-background: var(--palette-cool-50);
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-cool-100);
+  --color-text-primary: var(--palette-ink-900);
+  --color-text-secondary: var(--palette-slate-700);
+  --color-border-default: var(--palette-slate-300);
+
+  --color-link: var(--color-brand-primary-active);
+  --color-link-hover: var(--color-brand-primary);
+  --color-focus: var(--color-brand-primary);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
+  --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
+}
+
+/* Explicit public surface (documents intent; same as AC default) */
+[data-product="activeclinic"][data-surface="public"],
+[data-ac-product="activeclinic"][data-surface="public"],
+[data-ac-shell="public"],
+[data-ac-shell="auth"],
+[data-ac-shell="patient"] {
+  --color-brand-primary: var(--palette-teal-700);
+  --color-brand-primary-hover: var(--palette-teal-600);
+  --color-brand-primary-active: var(--palette-teal-800);
+  --color-brand-primary-light: var(--palette-teal-50);
+  --color-brand-accent: var(--palette-navy-800);
+  --color-background: var(--palette-cool-50);
+}
+
+/* =========================================================
+   H. PRODUCT BRAND — ACTIVECLINIC STAFF (blue ODS)
+   Audit §3B. Overrides teal when staff surface is active.
+   ========================================================= */
+
+[data-product="activeclinic"][data-surface="staff"],
+[data-ac-product="activeclinic"][data-surface="staff"],
+[data-ac-shell="staff-app"],
+body.ac-app-body {
+  --color-brand-primary: var(--palette-blue-600);
+  --color-brand-primary-hover: var(--palette-blue-700);
+  --color-brand-primary-active: var(--palette-blue-700);
+  --color-brand-primary-light: var(--palette-blue-50);
+  --color-brand-accent: var(--palette-teal-600);
+  --color-brand-accent-readable: var(--palette-teal-600);
+  --color-brand-on-primary: var(--palette-white);
+
+  --color-background: var(--palette-slate-50);
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-slate-100);
+  --color-text-primary: var(--palette-ink-850);
+  --color-text-secondary: var(--palette-slate-500);
+  --color-border-default: var(--palette-slate-200);
+
+  --color-link: var(--color-brand-primary);
+  --color-link-hover: var(--color-brand-primary-hover);
+  --color-focus: var(--color-brand-primary);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 45%, transparent);
+  --color-selection: color-mix(in srgb, var(--color-brand-primary) 28%, transparent);
+}
+
+/* =========================================================
+   I. PRODUCT-SCOPE COMPONENT ALIAS REBIND
+   Custom properties inherit as *computed* values. Aliases declared on
+   :root that reference --color-brand-* / surface tokens therefore freeze
+   the :root default (platform violet) and do not follow a later
+   data-product brand override on <body>.
+
+   Re-declare product-sensitive component aliases on product scopes so
+   var(--color-brand-primary) resolves against the cascaded product brand
+   on the same element (BlessBoard violet, AC public teal, AC staff blue).
+   ========================================================= */
+
+[data-product="blessboard"],
+[data-bb-product],
+[data-gp-product="blessboard"],
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"],
+[data-ac-shell],
+body.ac-app-body,
+body.ac-auth-body,
+body.ac-public-body {
+  /* Buttons */
+  --button-primary-bg: var(--color-brand-primary);
+  --button-primary-bg-hover: var(--color-brand-primary-hover);
+  --button-primary-bg-active: var(--color-brand-primary-active);
+  --button-primary-text: var(--color-brand-on-primary);
+  --button-primary-border: var(--color-brand-primary);
+  --button-secondary-bg: var(--color-surface);
+  --button-secondary-bg-hover: var(--color-brand-primary-light);
+  --button-secondary-text: var(--color-brand-primary);
+  --button-secondary-border: var(--color-brand-primary);
+
+  /* Inputs */
+  --input-bg: var(--color-surface);
+  --input-text: var(--color-text-primary);
+  --input-placeholder: var(--color-text-muted);
+  --input-border: var(--color-border-default);
+  --input-border-hover: var(--color-border-strong);
+  --input-border-focus: var(--color-brand-primary);
+  --input-focus-ring: var(--color-focus-ring);
+
+  /* Cards / nav / tables / modals */
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-border-default);
+  --card-text: var(--color-text-primary);
+  --card-muted-text: var(--color-text-secondary);
+  --nav-bg: var(--color-surface);
+  --nav-text: var(--color-text-primary);
+  --nav-text-muted: var(--color-text-muted);
+  --nav-hover-bg: var(--color-surface-subtle);
+  --nav-hover-text: var(--color-text-primary);
+  --nav-active-bg: var(--color-brand-primary-light);
+  --nav-active-text: var(--color-brand-primary);
+  --nav-border: var(--color-border-default);
+  --table-bg: var(--color-surface);
+  --table-header-bg: var(--color-surface-subtle);
+  --table-header-text: var(--color-text-secondary);
+  --table-row-hover: var(--color-brand-primary-light);
+  --table-border: var(--color-border-default);
+  --modal-bg: var(--color-surface);
+  --modal-text: var(--color-text-primary);
+  --modal-border: var(--color-border-default);
+
+  /* Editor chrome */
+  --editor-toolbar-bg: var(--color-surface);
+  --editor-toolbar-border: var(--color-border-default);
+  --editor-toolbar-text: var(--color-text-primary);
+  --editor-control-bg: var(--color-surface);
+  --editor-control-text: var(--color-text-primary);
+  --editor-control-border: var(--color-border-default);
+  --editor-control-hover-bg: var(--color-brand-primary-light);
+  --editor-selection-border: var(--color-brand-primary);
+  --editor-hover-border: var(--color-brand-primary);
+  --editor-edit-control-bg: var(--color-brand-primary);
+  --editor-edit-control-text: var(--color-brand-on-primary);
+  --editor-canvas-bg: var(--color-background);
+  --editor-rail-bg: var(--color-brand-primary-light);
+  --editor-muted-text: var(--color-text-secondary);
+  --editor-outline: var(--color-border-strong);
+  --editor-preview-banner-bg: var(--color-text-primary);
+  --editor-preview-banner-text: var(--color-text-inverse);
+}
+
+/* =========================================================
+   I2. BLESSBOARD V2.04 OPS — rebind after product aliases
+   Section I resets nav to light surfaces; Sanctuary Modern ops need
+   navy rail + blue interactive brand. Re-declare on the same shells.
+   ========================================================= */
+
+[data-product="blessboard"][data-bb-shell="branch-admin"],
+[data-product="blessboard"][data-bb-shell="hq-admin"],
+[data-product="blessboard"][data-bb-shell="member"],
+[data-product="blessboard"][data-bb-shell="member-auth"],
+[data-product="blessboard"][data-bb-shell="platform-admin"] {
+  --button-primary-bg: var(--color-brand-primary);
+  --button-primary-bg-hover: var(--color-brand-primary-hover);
+  --button-primary-bg-active: var(--color-brand-primary-active);
+  --button-primary-text: var(--color-brand-on-primary);
+  --button-primary-border: var(--color-brand-primary);
+  --button-secondary-bg: var(--color-surface);
+  --button-secondary-bg-hover: var(--color-brand-primary-light);
+  --button-secondary-text: var(--color-brand-primary);
+  --button-secondary-border: var(--color-border-default);
+
+  --input-border-focus: var(--color-brand-primary);
+  --input-focus-ring: var(--color-focus-ring);
+
+  --nav-bg: var(--palette-navy-700);
+  --nav-text: var(--palette-white);
+  --nav-text-muted: color-mix(in srgb, var(--palette-white) 72%, transparent);
+  --nav-hover-bg: color-mix(in srgb, var(--palette-white) 8%, var(--palette-navy-700));
+  --nav-hover-text: var(--palette-white);
+  --nav-active-bg: color-mix(in srgb, var(--palette-blue-600) 28%, var(--palette-navy-700));
+  --nav-active-text: var(--palette-white);
+  --nav-border: color-mix(in srgb, var(--palette-white) 12%, var(--palette-navy-700));
+
+  --table-header-bg: var(--palette-slate-50);
+  --table-row-hover: var(--palette-slate-125);
+  --table-border: var(--color-border-default);
+}
+
+/* =========================================================
+   J. SELECTION UTILITY
+   ========================================================= */
+
+::selection {
+  background: var(--color-selection);
+}

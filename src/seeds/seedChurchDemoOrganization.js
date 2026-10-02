@@ -414,10 +414,12 @@ async function seedAllCatalogueDemoOrganizationsIfMissing(pool) {
 /**
  * Boot-time demo seed: only when DEPLOYMENT_ENV=testing.
  * Production never auto-seeds demo tenants.
+ * Pass explicit app `env` at runtime; process.env is bootstrap-only.
  * @param {import("pg").Pool} pool
+ * @param {NodeJS.ProcessEnv} [env]
  */
-async function seedChurchDemoOrganizationsForDeploymentIfAllowed(pool) {
-  if (!isTestingDeployment()) {
+async function seedChurchDemoOrganizationsForDeploymentIfAllowed(pool, env) {
+  if (!isTestingDeployment(env)) {
     return { skipped: true, reason: "DEPLOYMENT_ENV is not testing" };
   }
   const results = await seedAllCatalogueDemoOrganizationsIfMissing(pool);

@@ -1,0 +1,267 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var f = typeof form !== 'undefined' && form ? form : {};
+  var values = f.values || {};
+  var fieldErrors = Array.isArray(f.fieldErrors) ? f.fieldErrors : [];
+  var errMap = {};
+  fieldErrors.forEach(function (e) {
+    if (e && e.field) errMap[e.field] = e.message || 'Invalid';
+  });
+  var branchesList = Array.isArray(branches) ? branches : [];
+  var orgName = typeof organizationName !== 'undefined' && organizationName ? organizationName : (churchDisplayName || 'your church');
+  var churchIdPreview = f.churchIdPreview || 'Assigned on save';
+  var membershipOptions = f.membershipOptions || [];
+  var genderOptions = f.genderOptions || [];
+  var maritalOptions = f.maritalOptions || [];
+  var relationshipOptions = f.relationshipOptions || [];
+  var isDuplicate = f.errors && f.errors.duplicate;
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function genderLabel(g) {
+    if (g === 'female') return 'Female';
+    if (g === 'male') return 'Male';
+    if (g === 'other') return 'Other';
+    if (g === 'prefer_not_to_say') return 'Prefer not to say';
+    return g;
+  }
+  function maritalLabel(m) {
+    if (!m) return m;
+    return String(m).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function relLabel(r) {
+    if (!r) return r;
+    return String(r).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+%>
+
+<section
+  class="bb-v204-m02"
+  data-bb-member-add="1"
+  data-bb-stitch-v204="BB-M02"
+  data-bb-screen="BB-M02"
+  data-bb-stitch-id="b31eebc2a7d944ed949e4032a01d8519"
+  aria-label="Register New Member"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Register New Member',
+    subtitle: 'Enroll an individual into ' + orgName + '’s tenant membership directory.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <span>Register New Member</span>'
+  }) %>
+
+  <%- include('../partials/v204/duplicate-warning-banner', {
+    title: 'Church Membership Creation Policy',
+    body: 'Only authorized church staff may create membership. Church ID is unique within this church and is not editable by the member. Creating membership does not activate portal access.'
+  }) %>
+
+  <% if (fieldErrors.length) { %>
+  <%- include('../partials/form-errors', {
+    title: isDuplicate ? 'Possible existing member detected' : 'Please correct the highlighted fields',
+    errors: fieldErrors
+  }) %>
+  <% } %>
+
+  <% if (isDuplicate) { %>
+  <div class="bb-v204-m02__dup" data-bb-m02-duplicate="1" role="alert">
+    <p>BlessBoard found records that may belong to this person. Resolve matches before creating a new Church ID. Dedicated match review is available in a later screen.</p>
+  </div>
+  <% } %>
+
+  <form
+    method="post"
+    action="/branch-admin/members/new"
+    class="bb-v204-m02__form"
+    data-bb-member-add-form="1"
+    novalidate
+  >
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+
+    <section class="bb-v204-m02__section" data-bb-m02-section="identity" aria-labelledby="bb-m02-identity-heading">
+      <header class="bb-v204-m02__section-head">
+        <h2 id="bb-m02-identity-heading">1. Identity Section</h2>
+        <p>As registered on national or government identification documents.</p>
+      </header>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field<%= errMap.full_name ? ' is-invalid' : '' %>">
+          <label for="full_name">Full Name (Legal Name) *</label>
+          <input id="full_name" name="full_name" type="text" required maxlength="120" value="<%= values.fullName || '' %>" placeholder="e.g. Abigail Grace Mensah" autocomplete="name" />
+          <% if (errMap.full_name) { %><p class="bb-ba-field__error" role="alert"><%= errMap.full_name %></p><% } %>
+        </div>
+        <div class="bb-ba-field">
+          <label for="preferred_name">Preferred Name (Optional)</label>
+          <input id="preferred_name" name="preferred_name" type="text" maxlength="80" value="<%= values.preferredName || '' %>" placeholder="e.g. Abby" />
+        </div>
+        <div class="bb-ba-field<%= errMap.gender ? ' is-invalid' : '' %>">
+          <label for="gender">Gender <span class="bb-ba-field__optional">(optional)</span></label>
+          <select id="gender" name="gender">
+            <option value="">Select</option>
+            <% genderOptions.forEach(function (g) { %>
+            <option value="<%= g %>" <%= values.gender === g ? 'selected' : '' %>><%= genderLabel(g) %></option>
+            <% }) %>
+          </select>
+          <% if (errMap.gender) { %><p class="bb-ba-field__error" role="alert"><%= errMap.gender %></p><% } %>
+          <p class="bb-ba-field__hint">Not stored on the membership record in V2.04.</p>
+        </div>
+        <div class="bb-ba-field<%= errMap.date_of_birth ? ' is-invalid' : '' %>">
+          <label for="date_of_birth">Date of Birth *</label>
+          <input id="date_of_birth" name="date_of_birth" type="date" required value="<%= values.dateOfBirth || '' %>" />
+          <p class="bb-ba-field__hint">Used to automatically route to adult fellowship rosters.</p>
+          <% if (errMap.date_of_birth) { %><p class="bb-ba-field__error" role="alert"><%= errMap.date_of_birth %></p><% } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section" data-bb-m02-section="contact" aria-labelledby="bb-m02-contact-heading">
+      <header class="bb-v204-m02__section-head">
+        <h2 id="bb-m02-contact-heading">2. Contact Section</h2>
+        <p>Communication</p>
+      </header>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field<%= errMap.phone ? ' is-invalid' : '' %>">
+          <label for="phone">Primary Phone *</label>
+          <%- include('../../../platform/partials/phone-field', {
+            id: 'phone',
+            required: true,
+            selectedCountry: values.phoneCountry || null,
+            nationalValue: values.phoneNational || '',
+            e164Value: values.phone || null,
+            error: errMap.phone || null
+          }) %>
+          <p class="bb-ba-field__hint">Validated for automated tenant SMS reminders and pastoral notifications.</p>
+        </div>
+        <div class="bb-ba-field<%= errMap.email ? ' is-invalid' : '' %>">
+          <label for="email">Email Address (Optional)</label>
+          <input id="email" name="email" type="email" maxlength="160" value="<%= values.email || '' %>" placeholder="name@example.com" autocomplete="email" />
+          <% if (errMap.email) { %><p class="bb-ba-field__error" role="alert"><%= errMap.email %></p><% } %>
+        </div>
+        <div class="bb-ba-field bb-v204-m02__span<%= errMap.address_line_1 ? ' is-invalid' : '' %>">
+          <label for="address_line_1">Residential Address *</label>
+          <input id="address_line_1" name="address_line_1" type="text" required maxlength="200" value="<%= values.addressLine1 || '' %>" placeholder="Street address, apartment, city, state" autocomplete="street-address" />
+          <% if (errMap.address_line_1) { %><p class="bb-ba-field__error" role="alert"><%= errMap.address_line_1 %></p><% } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section" data-bb-m02-section="membership" aria-labelledby="bb-m02-member-heading">
+      <header class="bb-v204-m02__section-head">
+        <h2 id="bb-m02-member-heading">3. Member Details Section</h2>
+        <p>Tenant Verified</p>
+      </header>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field">
+          <label>Church ID Preview</label>
+          <p class="bb-v204-m02__church-id-preview" data-bb-m02-church-id-preview="1">
+            Auto-provisioned: <strong><%= churchIdPreview %></strong>
+            <span class="bb-ba-muted">(Unique within church tenant, non-editable by member)</span>
+          </p>
+        </div>
+        <div class="bb-ba-field<%= errMap.branch_id ? ' is-invalid' : '' %>">
+          <label for="branch_id">Assigned Branch *</label>
+          <select id="branch_id" name="branch_id" required>
+            <% branchesList.forEach(function (b) {
+              var bid = b.id || b.branchId;
+              var selected = String(values.branchId || defaultBranchId || '') === String(bid);
+            %>
+            <option value="<%= bid %>" <%= selected ? 'selected' : '' %>><%= b.displayName || b.name || b.branchKey %></option>
+            <% }) %>
+          </select>
+          <% if (errMap.branch_id) { %><p class="bb-ba-field__error" role="alert"><%= errMap.branch_id %></p><% } %>
+        </div>
+        <div class="bb-ba-field">
+          <label for="membership_status">Initial Membership Status *</label>
+          <select id="membership_status" name="membership_status" required>
+            <% membershipOptions.forEach(function (opt) { %>
+            <option value="<%= opt.value %>" <%= values.membershipStatus === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-ba-field bb-v204-m02__span">
+          <span class="bb-ba-field__label">Baptism Status <span class="bb-ba-field__optional">(optional)</span></span>
+          <div class="bb-v204-m02__checks">
+            <label class="bb-v204-m02__check">
+              <input type="checkbox" name="baptism_water" value="1" <%= values.baptismWater ? 'checked' : '' %> />
+              Water Baptized
+            </label>
+            <label class="bb-v204-m02__check">
+              <input type="checkbox" name="baptism_spirit" value="1" <%= values.baptismSpirit ? 'checked' : '' %> />
+              Holy Spirit Baptized
+            </label>
+          </div>
+          <p class="bb-ba-field__hint">Not stored on the membership record in V2.04.</p>
+        </div>
+        <div class="bb-ba-field bb-v204-m02__span">
+          <%- include('../partials/v204/status-chip', { label: 'Portal: Not Invited', tone: 'neutral' }) %>
+          <p class="bb-ba-field__hint">Creating membership does not activate portal access.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section" data-bb-m02-section="personal" aria-labelledby="bb-m02-personal-heading">
+      <header class="bb-v204-m02__section-head">
+        <h2 id="bb-m02-personal-heading">4. Personal &amp; Family Information</h2>
+        <p>Household</p>
+      </header>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field">
+          <label for="occupation">Occupation</label>
+          <input id="occupation" name="occupation" type="text" maxlength="120" value="<%= values.occupation || '' %>" placeholder="e.g. Senior Architectural Consultant" />
+        </div>
+        <div class="bb-ba-field<%= errMap.marital_status ? ' is-invalid' : '' %>">
+          <label for="marital_status">Marital Status *</label>
+          <select id="marital_status" name="marital_status" required>
+            <option value="">Select</option>
+            <% maritalOptions.forEach(function (m) { %>
+            <option value="<%= m %>" <%= values.maritalStatus === m ? 'selected' : '' %>><%= maritalLabel(m) %></option>
+            <% }) %>
+          </select>
+          <% if (errMap.marital_status) { %><p class="bb-ba-field__error" role="alert"><%= errMap.marital_status %></p><% } %>
+        </div>
+        <div class="bb-ba-field<%= errMap.number_of_children ? ' is-invalid' : '' %>">
+          <label for="number_of_children">Number of Children</label>
+          <input id="number_of_children" name="number_of_children" type="number" min="0" max="50" value="<%= values.numberOfChildren || '' %>" />
+          <% if (errMap.number_of_children) { %><p class="bb-ba-field__error" role="alert"><%= errMap.number_of_children %></p><% } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section" data-bb-m02-section="emergency" aria-labelledby="bb-m02-emergency-heading">
+      <header class="bb-v204-m02__section-head">
+        <h2 id="bb-m02-emergency-heading">5. Emergency / Next of Kin</h2>
+        <p>Safety</p>
+      </header>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field<%= errMap.next_of_kin_name ? ' is-invalid' : '' %>">
+          <label for="next_of_kin_name">Full Name *</label>
+          <input id="next_of_kin_name" name="next_of_kin_name" type="text" required maxlength="120" value="<%= values.nextOfKinName || '' %>" placeholder="e.g. Michael K. Mensah" />
+          <% if (errMap.next_of_kin_name) { %><p class="bb-ba-field__error" role="alert"><%= errMap.next_of_kin_name %></p><% } %>
+        </div>
+        <div class="bb-ba-field<%= errMap.next_of_kin_relationship ? ' is-invalid' : '' %>">
+          <label for="next_of_kin_relationship">Relationship *</label>
+          <select id="next_of_kin_relationship" name="next_of_kin_relationship" required>
+            <option value="">Select</option>
+            <% relationshipOptions.forEach(function (r) { %>
+            <option value="<%= r %>" <%= values.nextOfKinRelationship === r ? 'selected' : '' %>><%= relLabel(r) %></option>
+            <% }) %>
+          </select>
+          <% if (errMap.next_of_kin_relationship) { %><p class="bb-ba-field__error" role="alert"><%= errMap.next_of_kin_relationship %></p><% } %>
+        </div>
+        <div class="bb-ba-field<%= errMap.next_of_kin_phone ? ' is-invalid' : '' %>">
+          <label for="next_of_kin_phone">Emergency Phone *</label>
+          <input id="next_of_kin_phone" name="next_of_kin_phone" type="tel" required value="<%= values.nextOfKinPhone || '' %>" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+          <% if (errMap.next_of_kin_phone) { %><p class="bb-ba-field__error" role="alert"><%= errMap.next_of_kin_phone %></p><% } %>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bb-v204-m02__actions">
+      <p class="bb-v204-m02__step">Step 1 of 3</p>
+      <div class="bb-v204-m02__action-btns">
+        <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members">Cancel</a>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m02-submit="1">
+          Continue
+        </button>
+      </div>
+    </footer>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

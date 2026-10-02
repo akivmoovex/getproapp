@@ -1,0 +1,374 @@
+<%
+  var website = (pageData && pageData.website) || {};
+  var ux = website.ux || website;
+  var actions = (ux.actions || website.actions) || {};
+  var hub = (pageData && pageData.hub) || {};
+  var managementHub = (pageData && pageData.managementHub) || null;
+  var hubStatus = (managementHub && managementHub.status) || null;
+  var hubModules = (managementHub && Array.isArray(managementHub.modules)) ? managementHub.modules : [];
+  var statusKey = website.statusKey || (ux && ux.state) || '';
+  var lastUpdated = ux.lastEditedLabel || website.lastEditedLabel || '';
+  var draftStatus = website.unpublishedChanges
+    ? 'Draft changes waiting to go live'
+    : (website.liveAvailable ? 'No draft changes' : 'Not published yet');
+  var builderHref = hub.builderHref || '/app/settings/website/pages';
+  var hiddenPages = Number(hub.hiddenPages) || 0;
+  var missingContent = Number(hub.missingContent) || 0;
+  var clinicLabel = (pageData && pageData.clinicLabel)
+    || (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName)
+    || (shell && shell.product && shell.product.displayName)
+    || 'Clinic website';
+  var publishStateLabel = website.liveAvailable ? 'Published' : 'Draft / Not published';
+  var clinicKey = (pageData && pageData.clinicKey) || '';
+%>
+<section
+  class="ac-settings-website ac-mw ac-mw--management-hub"
+  data-ac-page-section="settings-website"
+  data-ac-website-management="1"
+  data-ac-website-hub-role="management"
+  data-ac-website-state="<%= statusKey %>"
+  data-ac-website-exists="<%= website.exists ? '1' : '0' %>"
+  data-ac-website-draft-state="1"
+  data-ac-website-hub="1"
+  data-gp-website-management-hub="WebsiteManagementHub"
+  data-stitch-screen="AC-WEB-ADM-01"
+  data-stitch-screen-mobile="AC-WEB-ADM-01"
+  data-ac-mw-screen="MW10-01"
+  data-ac-mw-screen-mobile="MW10-02"
+  data-ac-stitch-screen="H01"
+  data-ac-stitch-screen-mobile="H01-M"
+  data-ac-stitch-hub="1"
+  <% if (clinicKey) { %>data-ac-website-clinic-key="<%= clinicKey %>"<% } %>
+>
+  <header class="ac-mw-hub-identity" data-ac-website-hub-identity="1">
+    <div>
+      <p class="ac-mw-hub-identity__kicker">Website Management Hub</p>
+      <h2 class="ac-mw-hub-identity__title" data-ac-website-clinic-name="1"><%= clinicLabel %></h2>
+      <p class="ac-mw-muted">Manage status, content areas, and publishing. Visual editing opens in the Website Editor — this page is not the editor canvas.</p>
+    </div>
+    <ul class="ac-mw-hub-identity__status" aria-label="Website status">
+      <li class="ac-mw-hub-chip<%= website.liveAvailable ? ' ac-mw-hub-chip--live' : '' %>" data-ac-website-publish-state="1"><%= publishStateLabel %></li>
+      <li class="ac-mw-hub-chip<%= website.unpublishedChanges ? ' ac-mw-hub-chip--draft' : '' %>" data-ac-website-draft-chip="1"><%= website.unpublishedChanges ? ('Unpublished changes (' + (website.unpublishedCount || 0) + ')') : 'No unpublished changes' %></li>
+    </ul>
+  </header>
+
+  <nav class="ac-mw-hub-manage-nav" aria-label="Website management areas" data-ac-website-hub-nav="1">
+    <a class="ac-mw-nav__link is-current" href="/app/settings/website" data-ac-website-hub-nav-item="overview">Overview</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/pages" data-ac-website-hub-nav-item="pages" data-ac-website-action="pages-nav">Pages</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/sections" data-ac-website-hub-nav-item="sections" data-ac-website-action="sections-nav">Sections</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/themes" data-ac-website-hub-nav-item="themes" data-ac-website-action="themes-nav">Themes</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/media" data-ac-website-hub-nav-item="media" data-ac-website-action="media-nav">Media</a>
+    <% if (actions.history) { %>
+    <a class="ac-mw-nav__link" href="<%= actions.history %>" data-ac-website-hub-nav-item="history" data-ac-website-action="history-nav">History</a>
+    <% } %>
+    <% if (website.canEdit && actions.editWebsite) { %>
+    <a class="ac-mw-nav__link ac-mw-nav__link--edit" href="<%= actions.editWebsite %>" data-ac-website-hub-nav-item="edit" data-ac-website-action="edit-nav">Edit Website</a>
+    <% } %>
+  </nav>
+
+  <% if (managementHub && managementHub.publishNudge) { %>
+  <%- include('../../platform/website-engine/publish-nudge', { publishNudge: managementHub.publishNudge }) %>
+  <% } %>
+
+  <% if (hubStatus) { %>
+  <div
+    class="ac-mw-hub-metrics"
+    data-ac-website-v205-status="1"
+    data-gp-website-hub-status="1"
+    data-gp-unpublished-change-count="<%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %>"
+  >
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Current live theme</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-live-theme="1"><%= hubStatus.liveThemeLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Draft theme</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-draft-theme="1"><%= hubStatus.draftThemeLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Unpublished changes</p>
+      <p
+        class="ac-mw-hub-metric__value"
+        data-ac-website-draft-changes-count="1"
+        data-gp-continuous-unpublished-count="1"
+      ><%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Last published</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-last-published-status="1"><%= hubStatus.lastPublishedLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Publish readiness</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-publish-readiness="1"><%= hubStatus.publishReadiness %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Domain / site status</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-domain-status="1"><%= hubStatus.domainStatus %></p>
+    </article>
+  </div>
+  <% } %>
+
+  <% if (!website.liveAvailable) { %>
+  <section class="ac-mw-firstuse" data-ac-mf-family="MF06" data-ac-mf-screen="MF06-03" data-ac-website-firstuse="1">
+    <article class="ac-mw-firstuse__welcome" data-ac-website-welcome="1">
+      <p class="ac-mw-firstuse__kicker">Website</p>
+      <h2>Your clinic website is ready to customize</h2>
+      <p class="ac-mw-muted">Registration already created an unpublished website. Finish the tasks below, then publish when you are ready. Publishing is optional and does not block clinic operations.</p>
+      <p class="ac-mw-muted" data-ac-website-firstuse-url="1">
+        Public URL:
+        <code><%= website.publicUrl || website.publicPath || '—' %></code>
+        <span>(not live yet)</span>
+      </p>
+    </article>
+    <article class="ac-mw-firstuse__progress">
+      <h3>Website setup</h3>
+      <p class="ac-mw-muted">These tasks open the existing Website Management tools. There is no second website onboarding wizard.</p>
+    </article>
+    <ol class="ac-mw-firstuse__list">
+      <li class="ac-mw-firstuse__item is-complete">
+        <h3>Review pages</h3>
+        <p>Your website already has a draft structure. Review or edit pages.</p>
+        <a class="ac-mw-btn" href="/app/settings/website/pages">Open pages</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Customize branding</h3>
+        <p>Logo, colours, and the look of the public site.</p>
+        <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/branding">Continue</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Public services and doctors</h3>
+        <p>Choose which services and practitioners appear on the public website.</p>
+        <a class="ac-mw-btn" href="/app/settings/website/catalogue">Open catalogue</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Preview and publish</h3>
+        <p>Publishing is optional. Preview first, then make the site public when you are ready.</p>
+        <% if (actions.publishPath && website.canPublish) { %>
+        <a class="ac-mw-btn" href="/app/settings/website/publish" data-ac-website-action="publish-review" data-gp-publish-workflow="PublishWorkflow">Review publish</a>
+        <% } else { %>
+        <a class="ac-mw-btn" href="<%= actions.preview || '/app/settings/website' %>">Preview</a>
+        <% } %>
+      </li>
+    </ol>
+  </section>
+  <% } %>
+  <div class="ac-mw-hub-metrics" data-ac-website-status="1">
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Website status</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-status-label="1"><%= ux.statusLabel || website.statusLabel || 'Website not published yet' %></p>
+      <% if (ux.statusHint || website.statusHint) { %>
+      <p class="ac-mw-muted" data-ac-website-status-hint="1"><%= ux.statusHint || website.statusHint %></p>
+      <% } %>
+      <p class="ac-mw-muted">Published version: <span data-ac-website-published-version="1"><%= website.publishedVersionLabel || (website.publishedVersionNumber ? ('Version ' + website.publishedVersionNumber) : 'None yet') %></span></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Public website URL</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-public-url="1">
+        <% if (website.publicUrl || website.publicPath) { %>
+          <% if (actions.viewLive) { %>
+          <a href="<%= actions.viewLive %>"><code><%= website.publicUrl || website.publicPath %></code></a>
+          <% } else { %>
+          <code><%= website.publicUrl || website.publicPath %></code>
+          <span class="ac-mw-muted"> (not live yet)</span>
+          <% } %>
+        <% } else { %>
+        —
+        <% } %>
+      </p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Last published</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-last-published="1"><%= website.lastPublishedLabel || 'Not published yet' %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Unpublished changes</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-unpublished="<%= website.unpublishedChanges ? '1' : '0' %>">
+        <%= website.unpublishedChanges ? ('Yes (' + (website.unpublishedCount || 0) + ')') : 'No' %>
+      </p>
+      <p class="ac-mw-muted" data-ac-website-draft-status="1"><%= draftStatus %></p>
+    </article>
+  </div>
+
+  <p class="ac-mw-hub-meta">
+    Last updated: <strong><%= lastUpdated || '—' %></strong>
+    · Last editor: <span data-ac-website-last-editor="1"><%= website.lastEditor || '—' %></span>
+    <% if (website.publishPolicyLabel) { %>
+    · Publish policy: <%= website.publishPolicyLabel %>
+    <% } %>
+  </p>
+
+  <ul class="ac-mw-hub-chips" aria-label="Website indicators">
+    <li class="ac-mw-hub-chip<%= website.unpublishedChanges ? ' ac-mw-hub-chip--draft' : '' %>"><%= website.unpublishedChanges ? 'Draft changes' : 'No draft changes' %></li>
+    <li class="ac-mw-hub-chip<%= website.liveAvailable ? ' ac-mw-hub-chip--live' : '' %>"><%= website.liveAvailable ? 'Published' : 'Not published' %></li>
+    <li class="ac-mw-hub-chip<%= hiddenPages ? ' ac-mw-hub-chip--hidden' : '' %>">Hidden pages (<%= hiddenPages %>)</li>
+    <li class="ac-mw-hub-chip<%= missingContent ? ' ac-mw-hub-chip--missing' : '' %>">Missing content (<%= missingContent %>)</li>
+    <li class="ac-mw-hub-chip">Last updated<%= lastUpdated ? ': ' + lastUpdated : '' %></li>
+  </ul>
+
+  <% if (!website.liveAvailable) { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="publish">Recommended next step: review your pages, then publish so patients can find your clinic.</p>
+  <% } else if (website.unpublishedChanges) { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="republish">You have unpublished changes. Preview them, then publish when you are ready.</p>
+  <% } else { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="maintain">Your website is live. Use the tiles below to update pages, branding, or reusable content.</p>
+  <% } %>
+
+  <div class="ac-mw-hub-quick" data-ac-website-actions="1">
+    <p class="ac-mw-hub-quick__label">Quick actions</p>
+    <div class="ac-mw-actions ac-mw-hub-quick__row">
+      <% if (website.canEdit && actions.editWebsite) { %>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit Website</a>
+      <% } %>
+      <% if (actions.preview) { %>
+      <a class="ac-mw-btn" href="<%= actions.preview %>" data-ac-website-action="preview">Preview</a>
+      <% } %>
+      <% if (actions.viewLive) { %>
+      <a class="ac-mw-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
+      <% } %>
+      <% if (website.canPublish && actions.publishPath) { %>
+      <form
+        method="post"
+        action="<%= actions.publishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');"
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="makePublic" value="1"/>
+        <input type="hidden" name="returnTo" value="/app/settings/website"/>
+        <button type="submit" class="ac-mw-btn" data-ac-website-action="publish">Publish</button>
+      </form>
+      <% } else if (!website.canPublish && actions.publishPath) { %>
+      <span class="ac-mw-muted" data-ac-website-action="publish-denied">Publish requires permission</span>
+      <% } %>
+      <% if (website.canPublish && actions.unpublishPath && website.liveAvailable) { %>
+      <form
+        method="post"
+        action="<%= actions.unpublishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Unpublish this website? Visitors will no longer see it. Content is preserved.');"
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="returnTo" value="/app/settings/website"/>
+        <button type="submit" class="ac-mw-btn" data-ac-website-action="unpublish">Unpublish</button>
+      </form>
+      <% } %>
+      <% if (actions.retry) { %>
+      <a class="ac-mw-btn" href="<%= actions.retry %>" data-ac-website-action="retry">Retry</a>
+      <% } %>
+      <% if (actions.contactPlatformAdmin) { %>
+      <span class="ac-muted" data-ac-website-action="contact-platform-admin">Contact Platform Admin</span>
+      <% } %>
+    </div>
+    <% if (!website.canEdit && !website.canPublish) { %>
+    <p class="ac-mw-muted" data-ac-website-readonly="1">You can view website status. Editing and publishing require additional permission.</p>
+    <% } %>
+  </div>
+
+  <% if (Array.isArray(hub.healthItems) && hub.healthItems.length) { %>
+  <section class="ac-mw-hub-health" data-ac-website-health="1" data-ac-stitch-hub-health="H01">
+    <div class="ac-mw-hub-health__head">
+      <h3>Website health &amp; completeness</h3>
+      <% if (hub.completenessPercent != null) { %>
+      <p class="ac-mw-hub-health__score" data-ac-website-completeness="1"><%= hub.completenessPercent %>% ready</p>
+      <% } %>
+    </div>
+    <ul class="ac-mw-hub-health__list">
+      <% hub.healthItems.forEach(function (item) { %>
+      <li class="ac-mw-hub-health__item<%= item.ok ? ' is-ok' : ' is-attention' %>" data-ac-website-health-item="<%= item.id %>">
+        <span class="ac-mw-hub-health__label"><%= item.label %></span>
+        <span class="ac-mw-hub-health__value"><%= item.value %></span>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="ac-mw-hub-activity" data-ac-website-activity="1">
+    <div class="ac-mw-hub-activity__head">
+      <h3>Recent website activity</h3>
+      <% if (actions.history) { %>
+      <a href="<%= actions.history %>" data-ac-website-action="history-link">Version history</a>
+      <% } %>
+    </div>
+    <ul class="ac-mw-hub-activity__list">
+      <li>
+        <strong>Last published</strong>
+        <span><%= website.lastPublishedLabel || 'Not published yet' %></span>
+      </li>
+      <li>
+        <strong>Last updated</strong>
+        <span><%= lastUpdated || '—' %><% if (website.lastEditor) { %> · <%= website.lastEditor %><% } %></span>
+      </li>
+      <li>
+        <strong>Unpublished changes</strong>
+        <span><%= website.unpublishedChanges ? ('Yes (' + (website.unpublishedCount || 0) + ')') : 'None' %></span>
+      </li>
+    </ul>
+    <p class="ac-mw-muted" data-ac-stitch-future="audit_csv">Audit CSV export is a future capability. Use version history for restore-as-new.</p>
+  </section>
+
+  <h3 class="ac-mw-hub-access__title">Manage your website</h3>
+  <% if (hubModules.length) { %>
+  <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01" data-gp-website-hub-modules="1">
+    <% hubModules.forEach(function (mod) { %>
+    <a class="ac-mw-hub-tile" href="<%= mod.href %>" data-ac-website-action="<%= mod.key %>" data-gp-website-hub-module="<%= mod.key %>">
+      <h3><%= mod.label %></h3>
+      <p><%= mod.description %></p>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01">
+    <a class="ac-mw-hub-tile" href="/app/settings/website/pages" data-ac-website-action="pages" data-ac-stitch-hub-link="H02">
+      <h3>Pages</h3>
+      <p>Add, hide, or update the pages on your clinic website.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/branding" data-ac-website-action="branding" data-ac-stitch-hub-link="H03">
+      <h3>Brand &amp; Appearance</h3>
+      <p>Update logo, colours, and the look of your site.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/media" data-ac-website-action="media" data-ac-stitch-hub-link="H04">
+      <h3>Media Library</h3>
+      <p>Upload and reuse photos for your website.</p>
+    </a>
+    <% if (actions.history) { %>
+    <a class="ac-mw-hub-tile" href="<%= actions.history %>" data-ac-website-action="history" data-ac-stitch-hub-link="H05">
+      <h3>Version History</h3>
+      <p>Review past versions and restore a previous draft.</p>
+    </a>
+    <% } %>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/settings" data-ac-website-action="settings" data-ac-stitch-hub-link="H06">
+      <h3>Website Settings</h3>
+      <p>Name, contact details, and opening information.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/sections" data-ac-website-action="sections">
+      <h3>Sections</h3>
+      <p>Choose which homepage sections visitors see.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="<%= builderHref %>" data-ac-website-action="builder">
+      <h3>Page Builder</h3>
+      <p>Arrange headings, text, images, and buttons on a page.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/navigation" data-ac-website-action="navigation">
+      <h3>Navigation</h3>
+      <p>Control the links in your website menu.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/chrome" data-ac-website-action="chrome">
+      <h3>Header &amp; Footer</h3>
+      <p>Logo visibility, contact row, social links, and footer note.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/seo" data-ac-website-action="seo">
+      <h3>SEO &amp; Social</h3>
+      <p>Search title, description, and sharing image.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/catalogue" data-ac-website-action="catalogue">
+      <h3>Public Catalogue</h3>
+      <p>Choose which doctors and services appear on your public website.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/library" data-ac-website-action="library">
+      <h3>Content Library</h3>
+      <p>Reuse website copy, photos, and placements. Show or hide doctors and services in Public Catalogue.</p>
+    </a>
+  </div>
+  <% } %>
+</section>

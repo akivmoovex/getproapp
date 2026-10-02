@@ -1,0 +1,59 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--contact<%= extraClass %>" data-gp-website-component="contact">
+  <% if (m.intro || (canEdit && editMap.intro)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.intro,
+    contentKey: editMap.intro || '',
+    value: m.intro || '',
+    tag: 'p',
+    className: 'gp-website-pc__lead',
+    fieldType: 'long_text'
+  }) %>
+  <% } %>
+  <dl class="gp-website-pc__facts">
+    <% if (m.phone || (canEdit && editMap.phone)) { %>
+    <div class="gp-website-pc__fact">
+      <dt>Phone</dt>
+      <dd><%- include('./editable-field', {
+        editEnabled: canEdit && !!editMap.phone,
+        contentKey: editMap.phone || '',
+        value: m.phone || '',
+        tag: 'span',
+        fieldType: 'phone',
+        label: 'Edit phone'
+      }) %></dd>
+    </div>
+    <% } %>
+    <% if (m.email || (canEdit && editMap.email)) { %>
+    <div class="gp-website-pc__fact">
+      <dt>Email</dt>
+      <dd><%- include('./editable-field', {
+        editEnabled: canEdit && !!editMap.email,
+        contentKey: editMap.email || '',
+        value: m.email || '',
+        tag: 'span',
+        fieldType: 'email',
+        label: 'Edit email'
+      }) %></dd>
+    </div>
+    <% } %>
+    <% if (m.address || (canEdit && editMap.address)) { %>
+    <div class="gp-website-pc__fact">
+      <dt>Address</dt>
+      <dd><%- include('./editable-field', {
+        editEnabled: canEdit && !!editMap.address,
+        contentKey: editMap.address || '',
+        value: m.address || '',
+        tag: 'span',
+        fieldType: 'long_text',
+        label: 'Edit address'
+      }) %></dd>
+    </div>
+    <% } %>
+  </dl>
+</section>

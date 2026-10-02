@@ -1,0 +1,311 @@
+:root {
+  /* Compatibility aliases → V2.04 semantic / brand tokens */
+  --mx-ann-bg: var(--color-background);
+  --mx-ann-surface: var(--color-surface);
+  --mx-ann-ink: var(--color-text-primary);
+  --mx-ann-muted: var(--color-text-muted);
+  --mx-ann-border: var(--color-border-default);
+  --mx-ann-accent: var(--color-brand-primary);
+  --mx-ann-accent-soft: var(--color-brand-primary-light);
+  --mx-ann-danger: var(--color-danger);
+  --mx-ann-radius: 14px;
+  --mx-ann-font: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Product classes inherit brand from data-product; keep explicit aliases for clarity */
+.mx-ann--blessboard,
+.mx-ann--activeclinic {
+  --mx-ann-accent: var(--color-brand-primary);
+  --mx-ann-accent-soft: var(--color-brand-primary-light);
+}
+
+.mx-ann {
+  margin: 0;
+  font-family: var(--mx-ann-font);
+  color: var(--mx-ann-ink);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, var(--mx-ann-accent-soft), transparent 60%),
+    var(--mx-ann-bg);
+  min-height: 100vh;
+}
+
+.mx-ann * { box-sizing: border-box; }
+
+.mx-ann-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.mx-ann-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.mx-ann-brand {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mx-ann-accent);
+  font-weight: 700;
+}
+
+.mx-ann-title {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.2;
+}
+
+.mx-ann-sub {
+  margin: 0.35rem 0 0;
+  color: var(--mx-ann-muted);
+  max-width: 42rem;
+}
+
+.mx-ann-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.mx-ann-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mx-ann-btn--primary {
+  background: var(--mx-ann-accent);
+  color: var(--button-primary-text);
+}
+
+.mx-ann-btn--ghost {
+  background: var(--mx-ann-surface);
+  border-color: var(--mx-ann-border);
+  color: var(--mx-ann-ink);
+}
+
+.mx-ann-btn--danger {
+  background: var(--mx-ann-danger);
+  color: var(--button-primary-text);
+}
+
+.mx-ann-panel {
+  background: var(--mx-ann-surface);
+  border: 1px solid var(--mx-ann-border);
+  border-radius: var(--mx-ann-radius);
+  padding: 1rem 1.1rem;
+}
+
+.mx-ann-banner {
+  background: var(--mx-ann-accent-soft);
+  border: 1px solid var(--mx-ann-border);
+  border-radius: var(--mx-ann-radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  color: var(--mx-ann-ink);
+  font-size: 0.9rem;
+}
+
+.mx-ann-banner--error {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--mx-ann-danger);
+}
+
+.mx-ann-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mx-ann-table th,
+.mx-ann-table td {
+  text-align: left;
+  padding: 0.65rem 0.4rem;
+  border-bottom: 1px solid var(--mx-ann-border);
+  vertical-align: top;
+}
+
+.mx-ann-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--badge-neutral-bg);
+  text-transform: lowercase;
+}
+
+.mx-ann-badge--draft { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+.mx-ann-badge--scheduled { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+.mx-ann-badge--published { background: var(--badge-success-bg); color: var(--badge-success-text); }
+.mx-ann-badge--expired { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+.mx-ann-badge--archived { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+
+.mx-ann-muted { color: var(--mx-ann-muted); font-size: 0.85rem; }
+.mx-ann-empty { color: var(--mx-ann-muted); margin: 0.5rem 0; }
+
+.mx-ann-cards { display: grid; gap: 0.75rem; }
+.mx-ann-card {
+  background: var(--mx-ann-surface);
+  border: 1px solid var(--mx-ann-border);
+  border-radius: var(--mx-ann-radius);
+  padding: 0.9rem 1rem;
+}
+
+.mx-ann-form .mx-ann-label {
+  display: block;
+  margin: 0.85rem 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.mx-ann-input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--mx-ann-border);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--color-surface);
+}
+
+.mx-ann-textarea { min-height: 9rem; resize: vertical; }
+
+.mx-ann-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.mx-ann-media {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--mx-ann-border);
+  border-radius: var(--mx-ann-radius);
+}
+
+.mx-ann-check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.mx-ann-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.mx-ann-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mx-ann-history li {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--mx-ann-border);
+}
+
+.mx-ann-preview__meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.mx-ann-preview__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.mx-ann-preview__body {
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.mx-ann-preview__media img {
+  max-width: 100%;
+  margin-top: 1rem;
+  border-radius: 12px;
+}
+
+.mx-ann-desktop-only { display: block; }
+.mx-ann-mobile-only { display: none; }
+
+@media (max-width: 720px) {
+  .mx-ann-shell {
+    padding: 1rem 1rem 5.5rem;
+  }
+
+  .mx-ann-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .mx-ann-title {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .mx-ann-desktop-only { display: none; }
+  .mx-ann-mobile-only { display: block; }
+  .mx-ann-grid2 { grid-template-columns: 1fr; }
+
+  .mx-ann-panel,
+  .mx-ann-form,
+  .mx-ann-card,
+  .mx-ann-banner {
+    padding: 0.9rem;
+  }
+
+  .mx-ann-form .mx-ann-label {
+    margin-top: 0.85rem;
+  }
+
+  .mx-ann-input,
+  .mx-ann-textarea {
+    font-size: 1rem; /* avoid iOS zoom */
+  }
+
+  .mx-ann-media {
+    margin-top: 1rem;
+  }
+
+  .mx-ann-actions {
+    flex-direction: column;
+    align-items: stretch;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 1rem -0.25rem 0;
+    padding: 0.75rem 0.25rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, transparent, var(--mx-ann-bg) 28%);
+  }
+
+  .mx-ann-actions .mx-ann-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .mx-ann-history {
+    padding-left: 1.1rem;
+  }
+}

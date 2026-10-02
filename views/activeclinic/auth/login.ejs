@@ -1,0 +1,135 @@
+<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
+  <%- include('../partials/auth-public-header') %>
+  <div
+    class="ac-auth-card ac-auth-card--split<%= error ? ' ac-auth-card--split-error' : '' %>"
+    data-ac-composition="<%= error ? 'p01-login-error' : 'p01-login' %>"
+    data-ac-auth-screen="<%= error ? 'login-error' : 'login' %>"
+    data-ac-stitch-ref="<%= typeof stitchRef !== 'undefined' ? stitchRef : 'a621bbc13d2542789cb76cb0c905b248' %>"
+  >
+    <%- include('../partials/auth-brand-panel', {
+      tagline: typeof taglineLong !== 'undefined' ? taglineLong : 'Run your clinic from one workspace.'
+    }) %>
+
+    <div class="ac-auth-form-panel">
+      <% if (error) { %>
+        <h1 class="ac-auth-h1">Authentication failed</h1>
+        <p class="ac-auth-desc">Check your sign-in details and try again.</p>
+      <% } else { %>
+        <h1 class="ac-auth-h1">
+          <span class="ac-auth-h1__desktop">Welcome back</span>
+          <span class="ac-auth-h1__mobile">Log in to your clinic</span>
+        </h1>
+        <p class="ac-auth-desc">
+          <span class="ac-auth-desc__desktop">Log in to manage your clinic.</span>
+          <span class="ac-auth-desc__mobile">Welcome back to ActiveClinic</span>
+        </p>
+      <% } %>
+
+      <% if (notice) { %>
+        <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
+      <% } %>
+      <% if (error) { %>
+        <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <form
+        method="post"
+        action="/login"
+        data-ac-login-form="1"
+        data-ac-loading="1"
+        data-gp-auth-identifier="1"
+        data-gp-auth-id-initial="<%= typeof loginMode !== 'undefined' ? loginMode : 'email' %>"
+        novalidate
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <% if (nextPath) { %>
+          <input type="hidden" name="next" value="<%= nextPath %>"/>
+        <% } %>
+
+        <%- include('../../platform/auth/identifier-tabs', {
+          loginMode: typeof loginMode !== 'undefined' ? loginMode : 'email',
+          tabIdPrefix: 'ac-login-id',
+          modeEmailHref: typeof modeEmailHref !== 'undefined' ? modeEmailHref : '/login?mode=email',
+          modePhoneHref: typeof modePhoneHref !== 'undefined' ? modePhoneHref : '/login?mode=phone'
+        }) %>
+
+        <div
+          class="gp-auth-id-panel ac-auth-field"
+          id="ac-login-id-panel-email"
+          role="tabpanel"
+          aria-labelledby="ac-login-id-tab-email"
+          data-gp-auth-id-panel="email"
+          <% if (typeof loginMode !== 'undefined' && loginMode === 'phone') { %>hidden<% } %>
+        >
+          <label for="login_email">Email address</label>
+          <input
+            class="ac-auth-input"
+            id="login_email"
+            name="login_email"
+            type="email"
+            autocomplete="username"
+            inputmode="email"
+            value="<%= typeof loginEmail !== 'undefined' ? loginEmail : (typeof identifier !== 'undefined' ? identifier : '') %>"
+            <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } else { %>disabled<% } %>
+            aria-invalid="<%= error ? 'true' : 'false' %>"
+          />
+        </div>
+
+        <div
+          class="gp-auth-id-panel ac-auth-field"
+          id="ac-login-id-panel-phone"
+          role="tabpanel"
+          aria-labelledby="ac-login-id-tab-phone"
+          data-gp-auth-id-panel="phone"
+          <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>hidden<% } %>
+        >
+          <%- include('../partials/phone-field', {
+            id: 'login_phone',
+            label: 'Phone number',
+            required: typeof loginMode !== 'undefined' && loginMode === 'phone',
+            disabled: typeof loginMode === 'undefined' || loginMode !== 'phone',
+            defaultCountry: defaultPhoneCountry || 'ZM',
+            selectedCountry: phoneCountry || defaultPhoneCountry || 'ZM',
+            nationalValue: (typeof loginMode !== 'undefined' && loginMode === 'phone') ? (identifier || '') : '',
+            countries: phoneCountries,
+            phoneValidationRelaxed: phoneValidationRelaxed,
+            showCountryName: true,
+            countryFieldName: 'phone_country',
+            nationalFieldName: 'phone_national',
+            showLegacyHidden: false,
+            error: error && typeof loginMode !== 'undefined' && loginMode === 'phone' ? 'Check this field and try again.' : null,
+            placeholder: '97 123 4567'
+          }) %>
+        </div>
+
+        <%- include('../partials/auth-password-field', {
+          id: 'password',
+          name: 'password',
+          label: 'Password',
+          autocomplete: 'current-password',
+          minlength: null,
+          describedBy: error ? 'ac-auth-error-summary' : null,
+          invalid: Boolean(error),
+          forgotHref: '/forgot-password'
+        }) %>
+        <button type="submit" class="ac-auth-btn" data-loading="Signing you in…">
+          Log in
+        </button>
+      </form>
+      <p class="ac-auth-hint ac-auth-hint--register">
+        Don't have a clinic? <a class="ac-auth-link" href="/register-clinic">Create one</a>
+      </p>
+    </div>
+  </div>
+  <%- include('../partials/auth-mf-footer') %>
+</main>
+<% if (error) { %>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var el = document.getElementById("ac-auth-error-summary");
+    if (el && typeof el.focus === "function") el.focus();
+  });
+</script>
+<% } %>

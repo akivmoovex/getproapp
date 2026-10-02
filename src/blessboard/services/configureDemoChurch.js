@@ -33,7 +33,11 @@ const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const scopeSettingsRepo = require("../repositories/websiteScopeSettingsRepository");
 const registry = require("./websiteSettingKeyRegistry");
 const { saveHomeServiceTimes } = require("./homeServiceTimesService");
-const { publishChurchWebsite } = require("./churchWebsitePublishService");
+const {
+  publish: publishProductWebsite,
+  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+} = require("../../platform/website/publicationOrchestrator");
+const { PRODUCT } = require("../../platform/registration/constants");
 const { updateChurchSettings } = require("./blessBoardSettingsService");
 
 const STATUS = Object.freeze({
@@ -49,6 +53,7 @@ const TO_KEY = "demo-church";
 const DISPLAY_NAME = "Demo Church";
 const HOSTNAME = "demo-church.blessboard.test";
 
+/** Platform soft-fill keys for Demo Church branches (presented as CDN on write/render). */
 const MEDIA = Object.freeze({
   hqHero: "/church/images/homepage/apex-feature-multibranch.jpg",
   lusakaHero: "/church/images/homepage/desktop-hero-auditorium.jpg",
@@ -366,7 +371,10 @@ async function ensureBranch(db, { organizationId, churchId, actorUserId, spec })
 
 async function patchSectionMedia(db, sectionId, mediaUrl) {
   if (!sectionId || !mediaUrl) return;
-  await contentRepo.updateSection(db, sectionId, { mediaUrl });
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  const presented = presentRuntimeImageSrc(mediaUrl, process.env, { allowMarketing: true });
+  if (!presented) return;
+  await contentRepo.updateSection(db, sectionId, { mediaUrl: presented });
 }
 
 async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, mediaUrl }) {
@@ -389,6 +397,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
     if (!created.ok || !created.section) return { ok: false, reason: "hero_create_failed" };
     hero = created.section;
@@ -399,6 +408,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
   }
   await patchSectionMedia(db, hero.id, mediaUrl);
@@ -407,6 +417,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
     status: "published",
     confirmPublish: true,
     enforcePublishConfirm: true,
+    allowPublishedWrite: true,
   });
   return { ok: true, pageId: page.id, sectionId: hero.id };
 }
@@ -441,6 +452,7 @@ async function ensureAboutSection(db, { churchId, branchId, heading, bodyText, m
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
   }
   if (mediaUrl) await patchSectionMedia(db, about.id, mediaUrl);
@@ -454,11 +466,19 @@ async function ensureContactHeading(db, { churchId, branchId, heading }) {
     pageKey: "contact",
   });
   if (!page) return { ok: false, reason: "contact_page_missing" };
-  await updatePublicPage(db, page.id, { title: heading, status: "draft" });
+  await updatePublicPage(db, page.id, {
+    title: heading,
+    status: "draft",
+    allowPublishedWrite: true,
+  });
   const sections = await contentRepo.listSectionsForPage(db, page.id);
   const intro = (sections || []).find((s) => s.sectionKey === "intro") || (sections || [])[0];
   if (intro) {
-    await updatePageSection(db, intro.id, { heading, status: "draft" });
+    await updatePageSection(db, intro.id, {
+      heading,
+      status: "draft",
+      allowPublishedWrite: true,
+    });
   }
   return { ok: true, pageId: page.id };
 }
@@ -488,6 +508,7 @@ async function ensureLocationsSection(db, { churchId }) {
     heading: HQ_CONTENT.locationsHeading,
     bodyText: HQ_CONTENT.locationsText,
     status: "draft",
+    allowPublishedWrite: true,
   });
   return { ok: true, section: loc };
 }
@@ -506,6 +527,7 @@ async function ensureMinistryHighlight(db, { churchId, branchId, name, descripti
       summary: description,
       description,
       status: "draft",
+      allowPublishedWrite: true,
     });
     return { ok: true, id: existing.id, created: false };
   }
@@ -626,29 +648,71 @@ async function applyHqWebsiteContent(db, { organizationId, churchId, actorUserId
   return { ok: true, organizationId, actorUserId: actorUserId || null };
 }
 
+/**
+ * Withdraw stale workflow submissions that block HQ publish on the shared demo tenant.
+ * Testing fixture repair only — does not change publication policy.
+ * @param {{ query: Function }} db
+ * @param {string} organizationId
+ */
+async function clearDemoChurchPublishBlockers(db, organizationId) {
+  const pending = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = 'withdrawn',
+            updated_at = now()
+      WHERE organization_id = $1
+        AND status IN ('pending_review', 'changes_requested')
+      RETURNING id`,
+    [organizationId]
+  );
+  const conflicts = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = 'withdrawn',
+            updated_at = now()
+      WHERE organization_id = $1
+        AND status = 'draft'
+        AND change_type ILIKE 'Conflict draft%'
+      RETURNING id`,
+    [organizationId]
+  );
+  return {
+    withdrawnPending: pending.rowCount || 0,
+    withdrawnConflicts: conflicts.rowCount || 0,
+  };
+}
+
 async function publishScope(db, { organizationId, churchId, branchId, actorUserId }) {
-  return publishChurchWebsite(db, {
-    organizationId,
-    churchId,
-    branchId: branchId || null,
-    actorUserId,
-    confirmPublish: true,
-    relaxPreviewRequirement: true,
-    forcePublishVersion: true,
-    deferServiceTimes: true,
-    mobilePreviewConfirmed: true,
+  return publishProductWebsite(db, {
+    productCode: PRODUCT.BLESSBOARD,
+    grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+    request: {
+      organizationId,
+      churchId,
+      branchId: branchId || null,
+      actorUserId,
+      confirmPublish: true,
+      relaxPreviewRequirement: true,
+      forcePublishVersion: true,
+      deferServiceTimes: true,
+      mobilePreviewConfirmed: true,
+    },
   });
 }
 
 async function reassignBranchAdmin(db, { organizationId, fromBranchId, toBranchId }) {
   if (!fromBranchId || !toBranchId || fromBranchId === toBranchId) return { ok: true, updated: 0 };
   const { rowCount } = await db.query(
-    `UPDATE blessboard.user_roles
-        SET branch_id = $3, updated_at = now()
-      WHERE organization_id = $1
-        AND branch_id = $2
-        AND role_key = 'branch_admin'
-        AND status = 'active'`,
+    `UPDATE blessboard.user_role_assignments a
+        SET scope_id = $3,
+            church_id = COALESCE(a.church_id, (SELECT church_id FROM blessboard.branches WHERE id = $3)),
+            updated_at = now()
+       FROM blessboard.roles r
+      WHERE a.role_id = r.id
+        AND a.organization_id = $1
+        AND a.scope_type = 'branch'
+        AND a.scope_id = $2
+        AND r.role_key = 'branch_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL`,
     [organizationId, fromBranchId, toBranchId]
   );
   return { ok: true, updated: rowCount || 0 };
@@ -870,6 +934,8 @@ async function configureDemoChurch(db, input) {
       spec: NDOLA,
     });
 
+    report.workflow = await clearDemoChurchPublishBlockers(db, org.id);
+
     if (publish) {
       report.publish.hq = await publishScope(db, {
         organizationId: org.id,
@@ -917,5 +983,6 @@ module.exports = {
   NDOLA,
   HQ_CONTENT,
   configureDemoChurch,
+  clearDemoChurchPublishBlockers,
   assertTestingIdentity,
 };

@@ -1,7 +1,10 @@
+<%
+  var _sectionSharedMedia = typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl;
+%>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } %>
 <%
   var sectionStatus = submitted && submitted.status != null ? submitted.status : section.status;
@@ -80,19 +83,25 @@
 
     <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-content-heading" data-bb-section-section="content">
       <h2 id="bb-ca-section-content-heading" class="bb-ba-section-title">Content</h2>
+      <%
+        // A live section's layout type has no draft representation, so it is
+        // read-only here and changed through the website editor instead.
+        var sectionTypeLocked = String(section.status || '').toLowerCase() === 'published';
+      %>
       <div class="bb-ba-field">
         <label for="section_type">Section type</label>
         <input
           id="section_type"
           name="section_type"
           type="text"
-          required
+          <%= sectionTypeLocked ? 'readonly' : 'required' %>
           maxlength="64"
           pattern="[a-z][a-z0-9_-]*"
           value="<%= submitted && submitted.section_type != null ? submitted.section_type : section.sectionType %>"
           autocomplete="off"
+          <%= sectionTypeLocked ? 'aria-describedby="bb-ca-section-type-hint"' : '' %>
         />
-        <p class="bb-ba-hint">Supported keys only. Unsupported widgets are not available.</p>
+        <p class="bb-ba-hint" id="bb-ca-section-type-hint"><%= sectionTypeLocked ? 'This section is live. Change its layout type in the website editor.' : 'Supported keys only. Unsupported widgets are not available.' %></p>
       </div>
       <div class="bb-ba-field">
         <label for="heading">Heading</label>
@@ -114,22 +123,52 @@
     <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-media-heading" data-bb-section-section="media">
       <h2 id="bb-ca-section-media-heading" class="bb-ba-section-title">Media</h2>
       <div class="bb-ba-field">
-        <label for="media_url">Media URL (HTTPS or uploaded)</label>
-        <input
-          id="media_url"
-          name="media_url"
-          type="text"
-          maxlength="2000"
-          value="<%= submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '') %>"
-          autocomplete="off"
-        />
+        <label>Section image</label>
+        <p class="bb-ba-hint">
+          Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        </p>
+        <%
+          var _secMediaSrc = submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '');
+          var _secMediaList = typeof websiteMediaListUrl !== 'undefined' ? String(websiteMediaListUrl || '') : '';
+        %>
+        <% if (_secMediaList) { %>
+        <%- include('../../../platform/website/partials/media-field', {
+          mediaField: {
+            idName: 'media_media_id',
+            srcName: 'media_url',
+            altName: 'media_alt_picker',
+            altLabel: 'Temporary picker description',
+            mediaId: '',
+            src: _secMediaSrc,
+            alt: '',
+            emptyText: 'No image selected — upload from computer or choose from the Content Library.'
+          },
+          mediaListUrl: _secMediaList
+        }) %>
+        <% } else { %>
+        <input id="media_url" name="media_url" type="hidden" value="<%= _secMediaSrc %>" />
         <%- include('media-upload', {
               uploadUrl: scope.basePath + '/media/upload',
               targetInputId: 'media_url',
               csrfToken: csrfToken,
-              visibility: 'public'
+              visibility: 'public',
+              currentSrc: _secMediaSrc,
+              srcName: 'media_url'
             }) %>
-        <p class="bb-ba-hint">Uses the existing church media library for this scope.</p>
+        <% } %>
+      </div>
+      <div class="bb-ba-field">
+        <label for="media_alt_text">Image alternative text</label>
+        <input
+          id="media_alt_text"
+          name="media_alt_text"
+          type="text"
+          maxlength="200"
+          value="<%= submitted && submitted.media_alt_text != null ? submitted.media_alt_text : ((section.layoutMetadata && section.layoutMetadata.altText) || '') %>"
+          autocomplete="off"
+          aria-describedby="bb-ca-section-alt-hint"
+        />
+        <p class="bb-ba-hint" id="bb-ca-section-alt-hint">Required whenever an image is set. Describe the image for screen reader users.</p>
       </div>
     </section>
 
@@ -196,8 +235,11 @@
 })();
 </script>
 
+<% if (_sectionSharedMedia) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } %>

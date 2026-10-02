@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-08-12T12:00:00.000Z",
+  "verdict": "PHASE14_COMPLETE",
+  "authorization_bypass": 0,
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "pushed": false,
+    "deployed": false,
+    "migrations": []
+  },
+  "stitch_projects": {
+    "public_booking_portal": "17813606734422395399",
+    "internal_ops": "12272131183982732110"
+  },
+  "routes_audited": 90,
+  "issues": {
+    "p1_fixed": [
+      "purchase_order_detail_cross_facility_leak"
+    ],
+    "p2_fixed": [
+      "billing_dashboard_showed_forbidden_actions",
+      "pharmacy_dashboard_hid_inventory_view_from_auditor",
+      "pharmacy_mutation_forms_missing_csrf_locals_500"
+    ],
+    "verified_ok": [
+      "credit_note_create_requires_invoice_amend",
+      "credit_note_get_tenant_and_facility_filtered",
+      "price_override_approve_requires_price_override",
+      "refund_request_collect_approve_refund_sod",
+      "corrections_and_revenue_denied_to_cashier",
+      "pharmacy_adjust_transfer_receive_po_submit_require_inventory_manage",
+      "substitution_requires_review_or_dispense",
+      "inactive_staff_eligibility_denied",
+      "inactive_department_module_unavailable",
+      "last_org_admin_removal_blocked",
+      "shell_nav_permission_keys"
+    ]
+  },
+  "fixes": [
+    {
+      "id": "po_facility_match",
+      "file": "src/activeclinic/services/activeClinicPharmacyOpsService.js",
+      "change": "getPurchaseOrder returns PURCHASE_ORDER_NOT_FOUND when facilityId does not match po.facility_id"
+    },
+    {
+      "id": "billing_dashboard_capabilities",
+      "files": [
+        "src/activeclinic/http/activeClinicBillingRoutes.js",
+        "views/activeclinic/app/billing-dashboard-content.ejs"
+      ],
+      "change": "Gate charge review, corrections, revenue, and cashier links on auth.permissions"
+    },
+    {
+      "id": "pharmacy_view_vs_manage",
+      "files": [
+        "src/activeclinic/services/loadActiveClinicPharmacyScreens.js",
+        "views/activeclinic/app/pharmacy-dashboard-content.ejs",
+        "views/activeclinic/app/pharmacy-inventory-content.ejs",
+        "views/activeclinic/app/pharmacy-prescription-detail-content.ejs"
+      ],
+      "change": "Split canViewInventory from canManageInventory; gate substitute with canSubstitute"
+    },
+    {
+      "id": "csrf_locals",
+      "file": "src/activeclinic/http/renderActiveClinicShell.js",
+      "change": "Pass csrfField and csrfToken into app content partials from shell.csrf"
+    }
+  ],
+  "negative_tests": {
+    "unauthenticated": "303_login",
+    "missing_permission": "403",
+    "wrong_tenant": "404_conceal",
+    "wrong_facility": "404_conceal",
+    "inactive_department": "403",
+    "inactive_staff": "403",
+    "last_admin": "last_org_admin_protected"
+  },
+  "tests": {
+    "phase14": {
+      "file": "tests/activeclinic-phase14-rbac.test.js",
+      "pass": 6,
+      "fail": 0
+    },
+    "related": {
+      "files": [
+        "tests/activeclinic-finance-rbac.test.js",
+        "tests/activeclinic-navigation-rbac.test.js",
+        "tests/activeclinic-rbac-role-matrix.test.js",
+        "tests/activeclinic-roles-access-admin.test.js"
+      ],
+      "pass": 28,
+      "fail": 0
+    }
+  },
+  "remaining_exceptions": [
+    "cashier_may_create_arrangements_and_collections_contacts_via_billing_view",
+    "catalog_get_is_billing_view",
+    "auditor_may_url_to_inventory_and_po_list_via_inventory_view",
+    "labels_get_allows_pharmacy_view_or_dispense",
+    "refund_request_is_payment_collect_by_design",
+    "public_booking_confirm_does_not_create_internal_appointment"
+  ],
+  "next": "PHASE_15_CODE_QUALITY_CLEANUP"
+}

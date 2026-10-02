@@ -1,0 +1,15 @@
+<%
+  var loadingTitle = typeof title === 'string' && title ? title : 'Loading';
+  var loadingText = typeof message === 'string' && message ? message : 'Please wait…';
+  var marker = typeof stateMarker === 'string' && stateMarker ? stateMarker : 'loading';
+%>
+<div class="ac-loading-state" data-ac-state-key="loading" data-ac-loading="<%= marker %>" role="status" aria-live="polite" aria-busy="true">
+  <div class="ac-loading-state__spinner" aria-hidden="true"></div>
+  <h2 class="ac-loading-state__title"><%= loadingTitle %></h2>
+  <p class="ac-loading-state__text"><%= loadingText %></p>
+  <div class="ac-skeleton-grid" aria-hidden="true">
+    <div class="ac-skeleton-line"></div>
+    <div class="ac-skeleton-line ac-skeleton-line--short"></div>
+    <div class="ac-skeleton-line"></div>
+  </div>
+</div>

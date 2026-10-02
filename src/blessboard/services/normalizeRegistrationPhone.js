@@ -3,169 +3,81 @@
 /**
  * Canonical phone normalization for BlessBoard V5 public church registration.
  * Prefer E.164 when input + country data support it; reject ambiguous values.
- * Does not invent country codes. Not Zambia-only.
+ *
+ * Delegates to normalizeBlessBoardPhone. Registration callers that omit country
+ * still default to Zambia (+260) for national numbers (phone-first identity).
+ * Pass `{ requireCountry: true }` when inventing a default must be refused.
  */
 
-const PHONE_E164_RE = /^\+[1-9]\d{6,14}$/;
+const {
+  PHONE_E164_RE,
+  COUNTRY_CALLING_CODES,
+  DEFAULT_COUNTRY,
+  normalizeBlessBoardPhone,
+  resolveCallingCode,
+  digitsOnly,
+} = require("./normalizeBlessBoardPhone");
+
 const DUPLICATE_PHONE_MESSAGE =
   "This phone number is already linked to a BlessBoard church registration. Use a different number, or contact BlessBoard support if you need help.";
 
 /**
- * ISO-2 and common English country names → ITU calling codes (digits only, no +).
- * Free-text country fields are matched case-insensitively after trim.
- * Keep this list intentionally modest — unknown countries require an international (+…) number.
- */
-const COUNTRY_CALLING_CODES = Object.freeze({
-  zm: "260",
-  zambia: "260",
-  za: "27",
-  "south africa": "27",
-  us: "1",
-  usa: "1",
-  "united states": "1",
-  "united states of america": "1",
-  ca: "1",
-  canada: "1",
-  gb: "44",
-  uk: "44",
-  "united kingdom": "44",
-  ke: "254",
-  kenya: "254",
-  ng: "234",
-  nigeria: "234",
-  gh: "233",
-  ghana: "233",
-  tz: "255",
-  tanzania: "255",
-  ug: "256",
-  uganda: "256",
-  mw: "265",
-  malawi: "265",
-  bw: "267",
-  botswana: "267",
-  zw: "263",
-  zimbabwe: "263",
-  au: "61",
-  australia: "61",
-  in: "91",
-  india: "91",
-});
-
-/**
- * Statuses that occupy the phone for a new self-registration.
- * Included: open / in-flight applications and any provisioned (or provisioning) tenant link.
- * Excluded (terminal / abandoned enquiry): rejected, cancelled, and closed without provision.
+ * Statuses that occupy the phone for a *different* applicant's self-registration.
+ * Same-email reuse (multi-org / retry) is allowed at the application layer.
  *
- * application_status IN ('submitted', 'duplicate_review')
- * OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
+ * In-flight: submitted / review / provisioning
+ * Occupying completed: active + provisioned (blocks a different email only)
  */
-const PHONE_UNIQUENESS_APPLICATION_STATUSES = Object.freeze(["submitted", "duplicate_review"]);
+const PHONE_UNIQUENESS_APPLICATION_STATUSES = Object.freeze([
+  "submitted",
+  "review_required",
+  "provisioning",
+  "active",
+]);
 const PHONE_UNIQUENESS_PROVISIONING_STATUSES = Object.freeze([
   "provisioning",
   "provisioned",
   "provisioning_failed",
 ]);
 
-function trim(value, max) {
-  return String(value == null ? "" : value)
-    .trim()
-    .slice(0, max == null ? 500 : max);
-}
-
-function digitsOnly(value) {
-  return String(value || "").replace(/\D/g, "");
-}
-
-/**
- * @param {unknown} country
- * @returns {string | null} calling-code digits or null
- */
-function resolveCallingCode(country) {
-  const key = trim(country, 120).toLowerCase();
-  if (!key) return null;
-  if (COUNTRY_CALLING_CODES[key]) return COUNTRY_CALLING_CODES[key];
-  if (/^[a-z]{2}$/.test(key) && COUNTRY_CALLING_CODES[key]) return COUNTRY_CALLING_CODES[key];
-  return null;
-}
-
 /**
  * @param {unknown} phone
- * @param {unknown} [country]
+ * @param {unknown | {
+ *   country?: unknown,
+ *   phoneCountry?: unknown,
+ *   phoneNational?: unknown,
+ *   env?: object,
+ *   validationMode?: string,
+ *   defaultCountry?: string | null,
+ *   requireCountry?: boolean,
+ * }} [countryOrOptions]
  * @returns {{
  *   ok: true,
  *   display: string,
- *   normalized: string
+ *   normalized: string,
+ *   countryCode?: string | null
  * } | {
  *   ok: false,
  *   error: string,
  *   field: "phone"
  * }}
  */
-function normalizeRegistrationPhone(phone, country) {
-  const display = trim(phone, 50);
-  if (!display) {
-    return { ok: false, error: "Please enter a phone number.", field: "phone" };
-  }
-
-  let cleaned = display.replace(/[^\d+]/g, "");
-  if (cleaned.startsWith("00")) {
-    cleaned = `+${cleaned.slice(2)}`;
-  }
-
-  if (cleaned.includes("+") && !cleaned.startsWith("+")) {
-    return {
-      ok: false,
-      error: "Please enter a valid phone number with country code (for example +1…).",
-      field: "phone",
-    };
-  }
-
-  if (cleaned.startsWith("+")) {
-    const normalized = `+${digitsOnly(cleaned.slice(1))}`;
-    if (!PHONE_E164_RE.test(normalized)) {
-      return {
-        ok: false,
-        error: "Please enter a valid phone number with country code (for example +1…).",
-        field: "phone",
-      };
-    }
-    return { ok: true, display, normalized };
-  }
-
-  const callingCode = resolveCallingCode(country);
-  if (!callingCode) {
-    return {
-      ok: false,
-      error:
-        "Please enter your phone number with an international country code (for example +260…), or use a recognized country name.",
-      field: "phone",
-    };
-  }
-
-  let national = digitsOnly(cleaned);
-  if (!national) {
-    return { ok: false, error: "Please enter a valid phone number.", field: "phone" };
-  }
-  if (national.startsWith("0")) {
-    national = national.slice(1);
-  }
-  if (national.length < 6 || national.length > 12) {
-    return {
-      ok: false,
-      error: "Please enter a valid phone number.",
-      field: "phone",
-    };
-  }
-
-  const normalized = `+${callingCode}${national}`;
-  if (!PHONE_E164_RE.test(normalized)) {
-    return {
-      ok: false,
-      error: "Please enter a valid phone number.",
-      field: "phone",
-    };
-  }
-  return { ok: true, display, normalized };
+function normalizeRegistrationPhone(phone, countryOrOptions) {
+  const opts =
+    countryOrOptions != null && typeof countryOrOptions === "object"
+      ? countryOrOptions
+      : { country: countryOrOptions };
+  const result = normalizeBlessBoardPhone(phone, {
+    defaultCountry: DEFAULT_COUNTRY,
+    ...opts,
+  });
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    display: result.display,
+    normalized: result.normalized,
+    countryCode: result.countryCode || null,
+  };
 }
 
 /**
@@ -176,9 +88,27 @@ function normalizeRegistrationPhone(phone, country) {
 function phoneUniquenessSqlPredicate(alias) {
   const a = alias ? `${alias}.` : "";
   return `(
-    ${a}application_status IN ('submitted', 'duplicate_review')
+    ${a}application_status IN ('submitted', 'review_required', 'provisioning', 'active')
     OR ${a}provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
   )`;
+}
+
+/**
+ * Whether an occupying phone row blocks a new application for this email.
+ * Same email may proceed (idempotent retry or multi-org identity reuse).
+ * @param {object|null|undefined} occupyingRow
+ * @param {string} applicantEmail
+ */
+function phoneOccupancyBlocksApplicant(occupyingRow, applicantEmail) {
+  if (!occupyingRow) return false;
+  const left = String(occupyingRow.contact_email || "")
+    .trim()
+    .toLowerCase();
+  const right = String(applicantEmail || "")
+    .trim()
+    .toLowerCase();
+  if (left && right && left === right) return false;
+  return true;
 }
 
 module.exports = {
@@ -190,5 +120,6 @@ module.exports = {
   normalizeRegistrationPhone,
   resolveCallingCode,
   phoneUniquenessSqlPredicate,
+  phoneOccupancyBlocksApplicant,
   digitsOnly,
 };

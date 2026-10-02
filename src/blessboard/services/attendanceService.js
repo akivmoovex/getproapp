@@ -10,6 +10,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -119,33 +120,24 @@ function parseEventDate(raw) {
 }
 
 async function authorizeActor(client, input) {
-  const authz = await authorizeBlessBoardTenantAccess(
+  const permission = input.permission || "attendance.view";
+  const result = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission,
       branchId: input.branchId,
     }
   );
-  if (!authz.ok) {
+  if (!result.ok || !result.allowed) {
     return {
       ok: false,
-      reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED,
-      effectiveRoles: [],
+      reason: result.reason || "denied",
       mode: null,
     };
   }
-  const roles = authz.context.effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasBranch = roles.some((r) => r.roleKey === "branch_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
-  if (hasHq || hasPlatform) {
-    return { ok: true, effectiveRoles: roles, mode: "hq" };
-  }
-  if (hasBranch && input.branchId) {
-    return { ok: true, effectiveRoles: roles, mode: "branch" };
-  }
-  return { ok: false, reason: "role", effectiveRoles: roles, mode: null };
+  return { ok: true, mode: result.mode };
 }
 
 function canBranchEditEvent(event) {
@@ -199,6 +191,7 @@ async function createAttendanceEvent(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: authz.reason };
@@ -271,6 +264,7 @@ async function updateAttendanceEvent(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: existing.branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: authz.reason };
@@ -334,6 +328,7 @@ async function upsertAttendanceEntry(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: event.branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, entry: null, reason: authz.reason };
@@ -394,6 +389,7 @@ async function submitAttendanceEvent(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: event.branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: authz.reason };
@@ -444,6 +440,7 @@ async function approveAttendanceEvent(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: event.branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok || authz.mode !== "hq") {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: "hq_required" };
@@ -485,6 +482,7 @@ async function archiveAttendanceEvent(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: event.branchId,
+          permission: "attendance.record",
         });
         if (!authz.ok || authz.mode !== "hq") {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: "hq_required" };
@@ -527,6 +525,7 @@ async function getAttendanceEvent(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: event.branchId,
+          permission: "attendance.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: authz.reason };
@@ -560,6 +559,7 @@ async function listAttendanceEvents(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId || null,
+          permission: "attendance.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, events: [], reason: authz.reason };
@@ -606,6 +606,7 @@ async function getMonthlyAttendanceSummary(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId || null,
+          permission: "attendance.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, summary: null, reason: authz.reason };

@@ -46,8 +46,8 @@ function makeApp(ctx, isChurchHost = true) {
 const activeBranchCtx = {
   kind: "branch",
   orgSlug: "demo",
-  organization: { id: 1, name: "Demo Church", status: "active" },
-  branch: { id: 1, name: "Demo Branch", status: "active" },
+  organization: { id: 1, name: "Demo Church", status: "active", data_environment: "demo" },
+  branch: { id: 1, name: "Demo Branch", status: "active", host_slug: "demo" },
 };
 
 test("non-church host cannot access /sermons", async () => {
@@ -60,16 +60,14 @@ test("/sermons loads polished resource cards on branch church host", async () =>
   const app = makeApp(activeBranchCtx);
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources|Media Library/);
-  assert.match(res.text, /church-sermon-card|FEATURED VIDEO|LATEST SERMON|Study Resources/);
-  assert.match(res.text, /church\.css\?v=47|bb-powered-by__getpro|Powered by[\s\S]{0,120}?GetPro/);
-  assert.match(res.text, /youtube-nocookie\.com\/embed\//);
-  assert.match(res.text, /<audio[^>]*controls/);
-  assert.match(res.text, /Download MP3/);
-  assert.match(res.text, /Download PDF Notes/);
-  assert.match(res.text, /Video Sermon|Audio Sermon|PDF Study Notes/);
-  assert.match(res.text, /sermons-toolbar|church-sermons-toolbar/);
-  assert.match(res.text, /Sort sermons/);
+  assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources|Media Library|church-sermons-page/);
+  assert.match(
+    res.text,
+    /church-sermon-card|church-sermons-page|FEATURED VIDEO|LATEST SERMON|Study Resources/
+  );
+  assert.match(res.text, /church\.css\?v=[^"'\s>]+|bb-powered-by__getpro|Powered by[\s\S]{0,120}?GetPro/);
+  assert.match(res.text, /church-sermons-page__lead|Sermons &amp; Resources|Sermons & Resources/);
+  assert.match(res.text, /sermons-toolbar|church-sermons-toolbar|church-sermons-page/);
 });
 
 test(

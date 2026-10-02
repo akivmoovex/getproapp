@@ -1,0 +1,97 @@
+<%#
+  Shared Choose Website scope list (E1 / Stitch Screen 7 cards).
+  Locals: page (websiteScopeListPageModel.buildWebsiteScopeListPageView)
+%>
+<section
+  class="gp-we-scope-list"
+  data-gp-website-scope-list="1"
+  data-gp-we-screen="website-scope-list"
+  data-product="<%= page.productCode %>"
+  data-multi="<%= page.multiWebsite ? '1' : '0' %>"
+>
+  <header class="gp-we-scope-list__head">
+    <div>
+      <p class="gp-we-scope-list__eyebrow"><%= page.productLabel %> · Website Options</p>
+      <h1 class="gp-we-scope-list__title"><%= page.pageTitle %></h1>
+      <% if (page.siteLabel) { %>
+      <p class="gp-we-scope-list__site"><%= page.siteLabel %></p>
+      <% } %>
+    </div>
+    <% if (page.backHref) { %>
+    <a class="gp-we-history__back" href="<%= page.backHref %>"><%= page.backLabel %></a>
+    <% } %>
+  </header>
+
+  <p class="gp-we-scope-list__intro"><%= page.intro %></p>
+  <p class="gp-we-scope-list__safety" role="note"><%= page.safetyNote %></p>
+  <% if (page.hierarchyNote) { %>
+  <p class="gp-we-scope-list__hierarchy" data-scope-hierarchy-note="1"><%= page.hierarchyNote %></p>
+  <% } %>
+
+  <% if (page.notice) { %>
+  <p class="gp-we-scope-list__notice" role="status"><%= page.notice %></p>
+  <% } %>
+  <% if (page.error) { %>
+  <p class="gp-we-scope-list__error" role="alert"><%= page.error %></p>
+  <% } %>
+
+  <div class="gp-we-scope-list__grid" data-scope-list-grid="1">
+    <% page.websites.forEach(function (site) { %>
+    <article
+      class="gp-we-scope-card<%= site.isCurrent ? ' gp-we-scope-card--current' : '' %>"
+      data-scope-card="1"
+      data-scope-id="<%= site.id %>"
+      data-scope-kind="<%= site.scopeKind %>"
+    >
+      <div class="gp-we-scope-card__meta">
+        <% if (site.scopeLabel) { %>
+        <span class="gp-we-scope-card__kind"><%= site.scopeLabel %></span>
+        <% } %>
+        <span class="gp-we-scope-card__pub"><%= site.publicationLabel %></span>
+        <% if (site.isCurrent) { %>
+        <span class="gp-we-scope-card__current">Editing</span>
+        <% } %>
+      </div>
+      <h2 class="gp-we-scope-card__name"><%= site.name %></h2>
+      <p class="gp-we-scope-card__pending" data-scope-pending="<%= site.pendingChangeCount %>">
+        <%= site.pendingLabel %>
+      </p>
+      <% if (site.inheritNote) { %>
+      <p class="gp-we-scope-card__inherit"><%= site.inheritNote %></p>
+      <% } %>
+      <div class="gp-we-scope-card__actions">
+        <% if (site.canEdit && site.editHref) { %>
+        <a
+          class="gp-we-scope-card__btn gp-we-scope-card__btn--primary"
+          href="<%= site.editHref %>"
+          data-scope-edit="1"
+          data-website-switch-confirm="1"
+        >Edit Website</a>
+        <% } %>
+        <% if (site.liveHref) { %>
+        <a
+          class="gp-we-scope-card__btn gp-we-scope-card__btn--ghost"
+          href="<%= site.liveHref %>"
+          data-scope-live="1"
+          target="_blank"
+          rel="noopener"
+        >View Live Website</a>
+        <% } %>
+        <% if (site.settingsHref) { %>
+        <a
+          class="gp-we-scope-card__link"
+          href="<%= site.settingsHref %>"
+          data-scope-settings="1"
+        >Settings</a>
+        <% } %>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <% if (!page.websites.length) { %>
+  <p class="gp-we-scope-list__empty" role="status">
+    No websites are available for your account.
+  </p>
+  <% } %>
+</section>

@@ -1,0 +1,141 @@
+{
+  "generated_at": "2026-08-12T10:45:19.266Z",
+  "verdict": "PHASE7A_COMPLETE",
+  "p0_lt90_before": 73,
+  "p0_lt90_after": 0,
+  "screens_improved": 73,
+  "score_buckets": {
+    "<80": 0,
+    "80-89": 76,
+    "90-94": 192,
+    ">=95": 0,
+    "unscored": 93
+  },
+  "priority_bands": {
+    "P1 + score <90": 60,
+    "remaining": 301
+  },
+  "remaining_p0_lt90": [],
+  "improved_sample": [
+    {
+      "id": "210ee3ac1bbe43588ed84d2e663c6604",
+      "title": "P27 - Juflona Patient - Portal Offline State - Mobile",
+      "device": "MOBILE",
+      "before": 82,
+      "after": 91,
+      "view": "views/activeclinic/patient/offline.ejs"
+    },
+    {
+      "id": "e1b3f826511f408e85c401d3a455f26d",
+      "title": "P27 - Juflona Patient - Set New Password - Desktop",
+      "device": "DESKTOP",
+      "before": 82,
+      "after": 91,
+      "view": "views/activeclinic/patient/reset-password.ejs"
+    },
+    {
+      "id": "0c3315d05469499d9b645bc7978001bf",
+      "title": "P02 – Edit Patient Details – Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-form-content.ejs"
+    },
+    {
+      "id": "58bd5e04f71340ff8d067721eb5562d4",
+      "title": "P02 – Patient List – Mobile",
+      "device": "MOBILE",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patients-list-content.ejs"
+    },
+    {
+      "id": "b9615559155d41d591dbb91e18c6a090",
+      "title": "P02 – Patient Registration Success – Mobile",
+      "device": "MOBILE",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-success-content.ejs"
+    },
+    {
+      "id": "e1ef5e5d8a1840bcbf1f4dc859f7b812",
+      "title": "P02 – Register Patient Contact – Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-form-content.ejs"
+    },
+    {
+      "id": "026d2e6c69cd4181a282213ba1bb55da",
+      "title": "P02 – Register Patient Emergency and Medical – Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-form-content.ejs"
+    },
+    {
+      "id": "40d2005b64864f35ac8df831ddae7084",
+      "title": "P02 – Register Patient Identity – Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-form-content.ejs"
+    },
+    {
+      "id": "8ef4b4d96f1f4224994d0c627bb7550e",
+      "title": "P02 – Register Patient Review – Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/patient-form-content.ejs"
+    },
+    {
+      "id": "3735516f4ecb4624ac715c6f77e7810b",
+      "title": "P07 – Patient Invoice – Mobile",
+      "device": "MOBILE",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/billing-invoice-detail-content.ejs"
+    },
+    {
+      "id": "1ab29b0691c04233a1c972ea99f24351",
+      "title": "P07 – Service Catalogue – Mobile",
+      "device": "MOBILE",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/app/billing-catalog-content.ejs"
+    },
+    {
+      "id": "6b916729502c43f08ef4ed61bf959159",
+      "title": "P25 - Juflona Booking - Choose Procedure - Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 91,
+      "view": "views/activeclinic/booking/procedures-list.ejs"
+    },
+    {
+      "id": "e04f78111c6a43eb851a0db24cc2f001",
+      "title": "P25 - Juflona Booking - Procedure Review - Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 90,
+      "view": "views/activeclinic/booking/procedure-review.ejs"
+    },
+    {
+      "id": "e50e9dfeaf1a405bbf3f3c334ebbe039",
+      "title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
+      "device": "DESKTOP",
+      "before": 84,
+      "after": 91,
+      "view": "views/activeclinic/booking/my-booking-lookup.ejs"
+    },
+    {
+      "id": "cc39b8bf074e408682da114b26ed8897",
+      "title": "P27 - Juflona Patient - Password Updated - Mobile",
+      "device": "MOBILE",
+      "before": 84,
+      "after": 91,
+      "view": "views/activeclinic/patient/password-updated.ejs"
+    }
+  ]
+}

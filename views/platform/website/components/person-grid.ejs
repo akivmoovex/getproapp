@@ -1,0 +1,29 @@
+<%#
+  Platform person grid — collection of PersonPresentation items.
+  Locals: collection, editEnabled, edit, className
+%>
+<%
+  var c = typeof collection !== 'undefined' && collection ? collection : { items: [] };
+  var items = Array.isArray(c.items) ? c.items.filter(function (item) { return !item || item.visibility !== false; }) : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--person-grid<%= extraClass %>" data-gp-website-component="person_grid">
+  <% if (c.intro) { %><p class="gp-website-pc__lead"><%= c.intro %></p><% } %>
+  <% if (!items.length && c.emptyState) { %>
+  <div class="gp-website-pc__empty">
+    <% if (c.emptyState.heading) { %><h3 class="gp-website-pc__title"><%= c.emptyState.heading %></h3><% } %>
+    <% if (c.emptyState.body) { %><p class="gp-website-pc__body"><%= c.emptyState.body %></p><% } %>
+  </div>
+  <% } else { %>
+  <ul class="gp-website-pc__grid gp-website-pc__grid--people">
+    <% items.forEach(function (person) { %>
+    <li class="gp-website-pc__grid-item">
+      <%- include('./person-card', { person: person, editEnabled: false, className: '' }) %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+  <% if (typeof editEnabled !== 'undefined' && editEnabled && c.manageHref) { %>
+  <a class="gp-website-pc__link" href="<%= c.manageHref %>" data-ac-website-manage="doctors">Manage Doctors</a>
+  <% } %>
+</section>

@@ -10,8 +10,9 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
-  authorizeBlessBoardTenantAccess,
-} = require("../services/authorizeBlessBoardTenantAccess");
+  authorize,
+  listEffectivePermissions,
+} = require("../services/blessBoardRbacAuthorizationService");
 const {
   resolveWebsiteScope,
   SCOPE_TYPE,
@@ -33,8 +34,179 @@ const {
 const {
   buildWebsitePublicEditSettingsCatalog,
 } = require("../services/websitePublicEditSettingsLinks");
+const {
+  cdnMarketingAsset,
+  presentRuntimeImageSrc,
+} = require("../../platform/media/cdnMediaPresentation");
+const { findBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+const { resolveWebsiteContent, MODE } = require("../../platform/website/resolver");
+const mediaService = require("../../platform/website/mediaService");
+const {
+  imageFromWebsiteValue,
+  pickHexColor,
+  publicBrandStyle,
+} = require("../../platform/website/branding");
+const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, withWebsiteFrameQuery, withoutWebsiteFrameQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
+const { getPendingChangeSummary } = require("../../platform/website/websiteChangeManagerService");
+const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { isWebsiteFrameRequest } = require("../../platform/website-engine/editorViewportFrame");
+const { PERMISSIONS } = require("../../platform/website/permissions");
 
 const EDIT_QUERY = "website_edit";
+
+async function attachBlessBoardWebsiteBranding(db, model, tenant, mode, query) {
+  if (!model) return;
+  const env = process.env;
+  if (!model.websiteLogoUrl) {
+    model.websiteLogoUrl = cdnMarketingAsset(
+      "/church/images/brand/blessboard-small-church-logo.png",
+      env
+    );
+    model.websiteLogoAlt = "";
+    model.websiteLogoMediaId = "";
+  } else {
+    model.websiteLogoUrl =
+      presentRuntimeImageSrc(model.websiteLogoUrl, env) || model.websiteLogoUrl;
+  }
+  const organizationId =
+    tenant && tenant.organization && tenant.organization.id
+      ? String(tenant.organization.id)
+      : "";
+  if (!organizationId || !db || typeof db.query !== "function") return;
+  try {
+    const instance = await findBlessBoardWebsiteInstance(db, organizationId);
+    if (!instance) return;
+    const resolved = await resolveWebsiteContent(db, {
+      organizationId,
+      instance,
+      mode: mode === "draft" ? MODE.DRAFT : MODE.LIVE,
+    });
+    if (!resolved.ok) return;
+    const img = imageFromWebsiteValue(resolved.values && resolved.values["home.logo"]);
+    const presentedLogo = await mediaService.hydrateWebsiteImageValue(db, {
+      organizationId,
+      instance,
+      env,
+      value: {
+        src: img.src || null,
+        alt: img.alt || null,
+        mediaId: img.mediaId || null,
+        placement: img.placement || null,
+      },
+    });
+    if (presentedLogo.placement || img.placement) {
+      model.websiteLogoPlacement = presentedLogo.placement || img.placement;
+    }
+    if (presentedLogo.src) {
+      model.websiteLogoUrl = presentedLogo.src;
+      model.websiteLogoAlt = presentedLogo.alt || img.alt;
+      model.websiteLogoMediaId = presentedLogo.mediaId || img.mediaId;
+    } else if (presentedLogo.mediaId || img.mediaId) {
+      // Keep mediaId even when CDN presentation is briefly unavailable so the
+      // editor can reopen/replace without losing the draft reference.
+      model.websiteLogoMediaId = presentedLogo.mediaId || img.mediaId;
+      if (presentedLogo.alt || img.alt) model.websiteLogoAlt = presentedLogo.alt || img.alt;
+    }
+    const hero = imageFromWebsiteValue(resolved.values && resolved.values["home.hero.image"]);
+    const presentedHero = await mediaService.hydrateWebsiteImageValue(db, {
+      organizationId,
+      instance,
+      env,
+      value: {
+        src: hero.src || null,
+        alt: hero.alt || null,
+        mediaId: hero.mediaId || null,
+        placement: hero.placement || null,
+      },
+    });
+    const heroPlacement = presentedHero.placement || hero.placement || null;
+    if (heroPlacement) model.websiteHeroPlacement = heroPlacement;
+    if (presentedHero.src) {
+      model.websiteHeroUrl = presentedHero.src;
+      model.websiteHeroAlt = presentedHero.alt || hero.alt;
+      model.websiteHeroMediaId = presentedHero.mediaId || hero.mediaId;
+      if (model.homeDemoFallback) {
+        model.homeDemoFallback = {
+          ...model.homeDemoFallback,
+          heroMediaUrl: presentedHero.src,
+        };
+      }
+      const sections = Array.isArray(model.sections) ? model.sections : [];
+      const heroSection = sections.find(
+        (s) =>
+          s &&
+          (String(s.sectionKey || "") === "hero" ||
+            String(s.sectionType || "") === "hero" ||
+            String(s.sectionKey || "").indexOf("hero") >= 0)
+      );
+      if (heroSection) {
+        heroSection.mediaUrl = presentedHero.src;
+        heroSection.layoutMetadata = {
+          ...(heroSection.layoutMetadata || {}),
+          altText: hero.alt || (heroSection.layoutMetadata && heroSection.layoutMetadata.altText) || "",
+          imagePlacement: heroPlacement || undefined,
+        };
+      }
+    } else if (presentedHero.mediaId || hero.mediaId) {
+      model.websiteHeroMediaId = presentedHero.mediaId || hero.mediaId;
+    }
+    const brandPrimary = pickHexColor(resolved.values, "brand.primary_color");
+    const brandAccent = pickHexColor(resolved.values, "brand.accent_color");
+    if (brandPrimary) model.brandPrimary = brandPrimary;
+    if (brandAccent) model.brandAccent = brandAccent;
+    model.brandStyle = publicBrandStyle(PRODUCT_CODE.BLESSBOARD, brandPrimary, brandAccent);
+
+    const themeState = await loadWebsiteThemeState(db, {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      instance,
+      preferDraft: mode === "draft",
+      query: query || undefined,
+    });
+    if (themeState.ok && themeState.presentation) {
+      Object.assign(model, presentThemeAttrs(themeState.presentation));
+      model.websiteThemeDraftId = themeState.draftThemeId;
+      model.websiteThemePublishedId = themeState.publishedThemeId;
+      model.websiteThemePreviewOnly = themeState.previewOnly === true;
+    }
+  } catch {
+    /* keep default platform mark */
+  }
+}
+
+function queryRequestsWebsitePreview(req) {
+  const q = (req && req.query) || {};
+  if (String(q[EDIT_QUERY] || "") === "1") return true;
+  const mode = String(q.website_mode || "").trim().toLowerCase();
+  return mode === "draft" || mode === "preview";
+}
+
+/**
+ * Authorized editors may preview unpublished websites; anonymous visitors cannot.
+ * @param {{ query: Function }} pool
+ * @param {import('express').Request} req
+ * @param {object|null} tenant
+ * @param {string|null} [branchId]
+ */
+async function resolveAuthorizedPublicPreview(pool, req, tenant, branchId) {
+  if (!queryRequestsWebsitePreview(req)) return false;
+  const session =
+    req && req.v5Session && req.v5Session.authenticated && req.v5Session.session
+      ? req.v5Session.session
+      : null;
+  if (!session || !session.userId) return false;
+  try {
+    const cap = await resolveWebsiteEditCapability(pool, {
+      userId: session.userId,
+      tenant,
+      branchId: branchId || null,
+    });
+    return Boolean(cap && cap.canEdit);
+  } catch {
+    return false;
+  }
+}
 
 const SECTION_BASELINE_FIELDS = [
   "heading",
@@ -71,23 +243,59 @@ function buildDisplayBaselineMap(sections, publicContact) {
 }
 
 /**
- * @param {object|null|undefined} authz
+ * @param {{ query: Function }} pool
+ * @param {{
+ *   userId: string,
+ *   tenant: object,
+ *   branchId?: string|null,
+ * }} opts
  */
-function resolveWebsiteEditCapability(authz) {
-  if (!authz || !authz.authenticated || !authz.authorized) {
+async function resolveWebsiteEditCapability(pool, opts) {
+  const tenant = opts.tenant;
+  if (!tenant || tenant.resolved !== true) {
     return { canEdit: false, isHqEditor: false, isBranchEditor: false, actorRole: null };
   }
-  const roles = Array.isArray(authz.effectiveRoles) ? authz.effectiveRoles : [];
-  const keys = new Set(roles.map((r) => String(r.roleKey || "")));
-  const isHqEditor = keys.has("church_hq_admin") || keys.has("platform_admin");
-  const isBranchEditor = keys.has("branch_admin");
-  if (!isHqEditor && !isBranchEditor) {
+
+  const resourceContext = {
+    organizationId: tenant.organization.id,
+    churchId: tenant.church.id,
+    branchId: opts.branchId || null,
+  };
+
+  const editCheck = await authorize(pool, {
+    actor: { userId: opts.userId },
+    permission: "website.edit",
+    tenantContext: tenant,
+    resourceContext,
+  });
+
+  if (!editCheck.allowed) {
     return { canEdit: false, isHqEditor: false, isBranchEditor: false, actorRole: null };
   }
+
+  // Determine editor type from permissions context (for audit labels only)
+  const perms = await listEffectivePermissions(pool, {
+    actor: { userId: opts.userId },
+    tenantContext: tenant,
+    resourceContext,
+  });
+
+  const permissionKeys = (perms.permissions || []).map((p) =>
+    typeof p === "string" ? p : String((p && (p.permissionKey || p.permission_key)) || "")
+  );
+  const hasOrgSettingsManage = permissionKeys.includes("organisation.settings.manage");
+
+  const isHqEditor = hasOrgSettingsManage;
+  const isBranchEditor = !isHqEditor;
+
+  // actorRole for audit labels only
   let actorRole = null;
-  if (keys.has("platform_admin")) actorRole = "platform_admin";
-  else if (keys.has("church_hq_admin")) actorRole = "church_hq_admin";
-  else if (keys.has("branch_admin")) actorRole = "branch_admin";
+  if (hasOrgSettingsManage) {
+    actorRole = "church_hq_admin"; // or platform_admin
+  } else {
+    actorRole = "branch_admin";
+  }
+
   return { canEdit: true, isHqEditor, isBranchEditor, actorRole };
 }
 
@@ -113,6 +321,12 @@ function uuidEqual(a, b) {
  *   model: object,
  * }} input
  */
+function branchKeyFromPathPrefix(pathPrefix) {
+  const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
+  const m = String(pathPrefix || "").match(/\/c\/[^/]+\/([^/?#]+)/i);
+  return m ? normalizeBranchKey(m[1]) : null;
+}
+
 function canShowWebsiteEditChrome(input) {
   if (input && input.isHqEditor) return true;
   const draftBranchId = input && input.draftBranchId ? String(input.draftBranchId) : null;
@@ -124,8 +338,18 @@ function canShowWebsiteEditChrome(input) {
   const websiteMode = String(model.websiteMode || "");
 
   if (scopeType === "church" || scopeType === "") {
-    // Canonical shared-site edit surface for branch admins in SINGLE_SITE only.
-    return websiteMode === "single_site";
+    if (websiteMode === "single_site") return true;
+    const pathBranchKey = branchKeyFromPathPrefix(model.pathPrefix);
+    const pageBranch = model.branch && model.branch.id ? model.branch : null;
+    if (
+      pathBranchKey &&
+      pageBranch &&
+      pageBranch.key === pathBranchKey &&
+      uuidEqual(pageBranch.id, draftBranchId)
+    ) {
+      return true;
+    }
+    return false;
   }
 
   if (scopeType !== "branch") return false;
@@ -142,15 +366,17 @@ function canShowWebsiteEditChrome(input) {
 /**
  * @param {string} path
  * @param {boolean} editing
+ * @param {boolean} [frameMode]
  */
-function withEditQuery(path, editing) {
-  const raw = String(path || "/");
-  const [base, query = ""] = raw.split("?");
-  const params = new URLSearchParams(query);
-  if (editing) params.set(EDIT_QUERY, "1");
-  else params.delete(EDIT_QUERY);
-  const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
+function withEditQuery(path, editing, frameMode) {
+  let next = editing ? withEditorNavigationQuery(path) : withoutEditorNavigationQuery(path);
+  if (editing && frameMode) next = withWebsiteFrameQuery(next);
+  else next = withoutWebsiteFrameQuery(next);
+  return next;
+}
+
+function withPreviewQuery(path) {
+  return withPreviewNavigationQuery(path);
 }
 
 /**
@@ -179,6 +405,8 @@ async function attachWebsiteAdminChrome(opts) {
     req.blessBoardTenantContext = tenant;
   }
 
+  await attachBlessBoardWebsiteBranding(db, model, tenant, "live", req.query);
+
   let authz = req.blessBoardAuthorizationContext || null;
   const session =
     req.v5Session && req.v5Session.authenticated && req.v5Session.session
@@ -198,7 +426,7 @@ async function attachWebsiteAdminChrome(opts) {
       const websiteScope = await resolveWebsiteScope(db, {
         tenant,
         authenticatedUser: session.userId,
-        requestedBranchKey: null,
+        requestedBranchKey: branchKeyFromPathPrefix(model.pathPrefix),
         organizationId: tenant.organization ? tenant.organization.id : null,
         churchId: tenant.church ? tenant.church.id : null,
       });
@@ -206,43 +434,29 @@ async function attachWebsiteAdminChrome(opts) {
         isHqEditor = websiteScope.scopeType === SCOPE_TYPE.CHURCH;
         draftBranchId =
           websiteScope.scopeType === SCOPE_TYPE.BRANCH ? websiteScope.branchId : null;
-        if (isHqEditor) {
-          actorRole = "church_hq_admin";
-        } else if (websiteScope.scopeType === SCOPE_TYPE.BRANCH) {
-          actorRole = "branch_admin";
-        }
-
-        const authzBranchId =
-          websiteScope.scopeType === SCOPE_TYPE.BRANCH
-            ? websiteScope.branchId
-            : tenant.primaryBranch
-              ? tenant.primaryBranch.id
-              : null;
-        const result = await authorizeBlessBoardTenantAccess(db, {
-          userId: session.userId,
-          tenant,
-          branchId: authzBranchId,
-        });
-        authz = result.context || authz;
-        req.blessBoardAuthorizationContext = authz;
       }
     } catch {
       // keep prior fail-soft context
     }
   }
 
-  const capability = resolveWebsiteEditCapability(authz);
+  const capability = await resolveWebsiteEditCapability(db, {
+    userId: session && session.userId,
+    tenant,
+    branchId: draftBranchId,
+  });
+
   if (!capability.canEdit) {
     model.websiteAdmin = null;
     return model;
   }
 
-  // Prefer resolver outcome; fall back to role capability for HQ/platform.
+  // Prefer resolver outcome; fall back to capability for HQ/platform.
   if (capability.isHqEditor) {
     isHqEditor = true;
     draftBranchId = null;
     actorRole = capability.actorRole;
-  } else if (capability.isBranchEditor && draftBranchId == null) {
+  } else if (!isHqEditor && capability.isBranchEditor && draftBranchId == null) {
     // Resolver failed soft — do not fall back to primaryBranch.
     model.websiteAdmin = null;
     return model;
@@ -261,23 +475,66 @@ async function attachWebsiteAdminChrome(opts) {
     return model;
   }
 
+  // Publish authority is website.publish — not merely HQ edit scope. Editors with
+  // website.edit alone must not see Publish even when church-scoped (BB-BUG-001).
+  const publishCheck = await authorize(db, {
+    actor: { userId: session.userId },
+    permission: "website.publish",
+    tenantContext: tenant,
+    resourceContext: {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: draftBranchId,
+    },
+  });
+  const canPublishWebsite = publishCheck.allowed === true;
+
   const churchId = tenant && tenant.church ? tenant.church.id : authz.churchId;
   const organizationId =
     tenant && tenant.organization ? tenant.organization.id : authz.organizationId;
 
   const editingMode = String(req.query[EDIT_QUERY] || "") === "1";
+  const frameMode = editingMode && isWebsiteFrameRequest(req.query);
+  const previewDraftMode =
+    String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase() ===
+    "draft";
+  const showDraftContent = editingMode || previewDraftMode;
+  if (showDraftContent) {
+    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft", req.query);
+  }
 
   let draftCount = 0;
+  let websiteInstanceId = null;
   let overlayMap = new Map();
   let structuredDrafts = [];
   /** @type {Record<string, string>} */
   let publishedBaselines = Object.create(null);
   try {
-    draftCount = await countAllWebsiteDrafts(db, {
+    const overlayAndStructuredCount = await countAllWebsiteDrafts(db, {
+      organizationId,
       churchId,
       branchId: draftBranchId,
     });
-    if (editingMode) {
+    const engineInstance = await findBlessBoardWebsiteInstance(db, organizationId);
+    if (engineInstance && engineInstance.id) {
+      websiteInstanceId = engineInstance.id;
+      const pending = await getPendingChangeSummary(db, {
+        organizationId,
+        instanceId: websiteInstanceId,
+        grantedPermissions: [
+          PERMISSIONS.VIEW,
+          PERMISSIONS.EDIT,
+          ...(canPublishWebsite ? [PERMISSIONS.PUBLISH] : []),
+        ],
+      });
+      // Change Manager counts engine keys only. Overlay/structured drafts are
+      // still draft changes until bridged — never undercount the toolbar pill.
+      const engineCount = pending.ok ? Number(pending.pendingChangeCount) || 0 : 0;
+      draftCount = Math.max(engineCount, overlayAndStructuredCount);
+    } else {
+      draftCount = overlayAndStructuredCount;
+    }
+    if (showDraftContent) {
       // Capture visitor-visible text before draft overlays mutate the model.
       publishedBaselines = buildDisplayBaselineMap(model.sections, model.publicContact);
       try {
@@ -297,6 +554,7 @@ async function attachWebsiteAdminChrome(opts) {
       }
 
       overlayMap = await loadDraftOverlayMap(db, {
+        organizationId,
         churchId,
         branchId: draftBranchId,
         pageKey: model.pageKey,
@@ -354,6 +612,18 @@ async function attachWebsiteAdminChrome(opts) {
             heroMediaUrl: model._draftHeroMediaUrl,
           };
         }
+        if (model.aboutDemoFallback) {
+          model.aboutDemoFallback = {
+            ...model.aboutDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
+        if (model.contactDemoFallback) {
+          model.contactDemoFallback = {
+            ...model.contactDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
         const hasHero = (model.sections || []).some(
           (s) => s && String(s.sectionKey || "") === "hero"
         );
@@ -374,7 +644,13 @@ async function attachWebsiteAdminChrome(opts) {
         }
       }
       // Soft-fill section overlays for demo-backed copy (no CMS section yet).
+      // Demo fallbacks are Object.freeze'd for public render; thaw before draft mutation
+      // so About/Home soft-fill cannot throw and wipe draftCount/overlays below.
       if (overlayMap.size) {
+        const thawDemoFallback = (value) => {
+          if (!value || typeof value !== "object") return value;
+          return Array.isArray(value) ? value.slice() : { ...value };
+        };
         const applySoftSection = (fallbackObj, sectionKey, headingKey, bodyKey) => {
           if (!fallbackObj) return;
           const h = overlayMap.get(`${sectionKey}::heading`);
@@ -382,95 +658,118 @@ async function attachWebsiteAdminChrome(opts) {
           if (h !== undefined && headingKey) fallbackObj[headingKey] = h;
           if (b !== undefined && bodyKey) fallbackObj[bodyKey] = b;
         };
-        if (model.homeDemoFallback) {
-          applySoftSection(model.homeDemoFallback, "ministries_intro", "ministriesIntroHeading", "ministriesIntroBody");
-          applySoftSection(model.homeDemoFallback, "events_intro", "eventsIntroHeading", "eventsIntroBody");
-          applySoftSection(model.homeDemoFallback, "sermons_intro", "sermonIntroHeading", "sermonIntroBody");
-          applySoftSection(model.homeDemoFallback, "leadership_intro", "leadershipIntroHeading", "leadershipIntroBody");
-          applySoftSection(model.homeDemoFallback, "giving_cta", "givingHeading", "givingBody");
-          applySoftSection(model.homeDemoFallback, "contact_intro", "contactHeading", "contactBody");
-          const giveBtn = overlayMap.get("giving_cta::buttonText");
-          if (giveBtn !== undefined) model.homeDemoFallback.givingButtonText = giveBtn;
-        }
-        if (model.contactDemoFallback) {
-          applySoftSection(model.contactDemoFallback, "visitor_guidance", null, "visitorGuidance");
-          const vgHeading = overlayMap.get("visitor_guidance::heading");
-          if (vgHeading !== undefined) model.contactDemoFallback.visitorGuidanceHeading = vgHeading;
-          applySoftSection(model.contactDemoFallback, "office_hours", "officeHoursHeading", "officeHoursBody");
-          applySoftSection(model.contactDemoFallback, "directions", "directionsHeading", "directionsBody");
-          applySoftSection(model.contactDemoFallback, "service_reminder", "serviceReminderHeading", "serviceReminderBody");
-          applySoftSection(model.contactDemoFallback, "message", "messageHeading", "messageBody");
-        }
-        if (model.givingDemoFallback) {
-          applySoftSection(model.givingDemoFallback, "why", "whyHeading", null);
-          applySoftSection(model.givingDemoFallback, "ways", "waysHeading", "waysBody");
-          applySoftSection(model.givingDemoFallback, "accountability", "accountabilityHeading", null);
-          const accBody = overlayMap.get("accountability::bodyText");
-          if (accBody !== undefined) model.givingDemoFallback.accountability = accBody;
-          applySoftSection(model.givingDemoFallback, "stewardship", "stewardshipHeading", "stewardshipBody");
-          applySoftSection(model.givingDemoFallback, "assistance", "assistanceHeading", null);
-          const assistBody = overlayMap.get("assistance::bodyText");
-          if (assistBody !== undefined) model.givingDemoFallback.assistanceContact = assistBody;
-          const assistBtn = overlayMap.get("assistance::buttonText");
-          if (assistBtn !== undefined) model.givingDemoFallback.assistanceButtonText = assistBtn;
-          if (Array.isArray(model.givingDemoFallback.whyItems)) {
-            model.givingDemoFallback.whyItems = model.givingDemoFallback.whyItems.map((item) => {
-              const key = item.sectionKey || "";
-              if (!key) return item;
-              const title = overlayMap.get(`${key}::heading`);
-              const body = overlayMap.get(`${key}::bodyText`);
-              if (title === undefined && body === undefined) return item;
-              return {
-                ...item,
-                title: title !== undefined ? title : item.title,
-                body: body !== undefined ? body : item.body,
-              };
-            });
+        try {
+          if (model.homeDemoFallback) {
+            model.homeDemoFallback = thawDemoFallback(model.homeDemoFallback);
+            applySoftSection(model.homeDemoFallback, "ministries_intro", "ministriesIntroHeading", "ministriesIntroBody");
+            applySoftSection(model.homeDemoFallback, "events_intro", "eventsIntroHeading", "eventsIntroBody");
+            applySoftSection(model.homeDemoFallback, "sermons_intro", "sermonIntroHeading", "sermonIntroBody");
+            applySoftSection(model.homeDemoFallback, "leadership_intro", "leadershipIntroHeading", "leadershipIntroBody");
+            applySoftSection(model.homeDemoFallback, "giving_cta", "givingHeading", "givingBody");
+            applySoftSection(model.homeDemoFallback, "contact_intro", "contactHeading", "contactBody");
+            const giveBtn = overlayMap.get("giving_cta::buttonText");
+            if (giveBtn !== undefined) model.homeDemoFallback.givingButtonText = giveBtn;
           }
-        }
-        if (model.aboutDemoFallback) {
-          const valuesHeading = overlayMap.get("values::heading");
-          if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
-          const galleryHeading = overlayMap.get("gallery::heading");
-          if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
-          applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
-          const visitorBtn = overlayMap.get("visitor_cta::buttonText");
-          if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
-          ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
-            const block = model.aboutDemoFallback[key];
-            if (!block || typeof block !== "object") return;
-            const h = overlayMap.get(`${key}::heading`);
-            const b = overlayMap.get(`${key}::bodyText`);
-            if (h !== undefined || b !== undefined) {
-              model.aboutDemoFallback[key] = {
-                ...block,
-                heading: h !== undefined ? h : block.heading,
-                bodyText: b !== undefined ? b : block.bodyText,
-              };
+          if (model.contactDemoFallback) {
+            model.contactDemoFallback = thawDemoFallback(model.contactDemoFallback);
+            applySoftSection(model.contactDemoFallback, "visitor_guidance", null, "visitorGuidance");
+            const vgHeading = overlayMap.get("visitor_guidance::heading");
+            if (vgHeading !== undefined) model.contactDemoFallback.visitorGuidanceHeading = vgHeading;
+            applySoftSection(model.contactDemoFallback, "office_hours", "officeHoursHeading", "officeHoursBody");
+            applySoftSection(model.contactDemoFallback, "directions", "directionsHeading", "directionsBody");
+            applySoftSection(model.contactDemoFallback, "service_reminder", "serviceReminderHeading", "serviceReminderBody");
+            applySoftSection(model.contactDemoFallback, "message", "messageHeading", "messageBody");
+          }
+          if (model.givingDemoFallback) {
+            model.givingDemoFallback = thawDemoFallback(model.givingDemoFallback);
+            applySoftSection(model.givingDemoFallback, "why", "whyHeading", null);
+            applySoftSection(model.givingDemoFallback, "ways", "waysHeading", "waysBody");
+            applySoftSection(model.givingDemoFallback, "accountability", "accountabilityHeading", null);
+            const accBody = overlayMap.get("accountability::bodyText");
+            if (accBody !== undefined) model.givingDemoFallback.accountability = accBody;
+            applySoftSection(model.givingDemoFallback, "stewardship", "stewardshipHeading", "stewardshipBody");
+            applySoftSection(model.givingDemoFallback, "assistance", "assistanceHeading", null);
+            const assistBody = overlayMap.get("assistance::bodyText");
+            if (assistBody !== undefined) model.givingDemoFallback.assistanceContact = assistBody;
+            const assistBtn = overlayMap.get("assistance::buttonText");
+            if (assistBtn !== undefined) model.givingDemoFallback.assistanceButtonText = assistBtn;
+            if (Array.isArray(model.givingDemoFallback.whyItems)) {
+              model.givingDemoFallback.whyItems = model.givingDemoFallback.whyItems.map((item) => {
+                const key = item.sectionKey || "";
+                if (!key) return item;
+                const title = overlayMap.get(`${key}::heading`);
+                const body = overlayMap.get(`${key}::bodyText`);
+                if (title === undefined && body === undefined) return item;
+                return {
+                  ...item,
+                  title: title !== undefined ? title : item.title,
+                  body: body !== undefined ? body : item.body,
+                };
+              });
             }
-          });
-          if (Array.isArray(model.aboutDemoFallback.values)) {
-            model.aboutDemoFallback.values = model.aboutDemoFallback.values.map((item) => {
-              const key = item.sectionKey || "";
-              if (!key) return item;
-              const h = overlayMap.get(`${key}::heading`);
-              const b = overlayMap.get(`${key}::bodyText`);
-              if (h === undefined && b === undefined) return item;
-              return {
-                ...item,
-                heading: h !== undefined ? h : item.heading,
-                bodyText: b !== undefined ? b : item.bodyText,
-              };
-            });
           }
+          if (model.aboutDemoFallback) {
+            model.aboutDemoFallback = thawDemoFallback(model.aboutDemoFallback);
+            const valuesHeading = overlayMap.get("values::heading");
+            if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
+            const galleryGridHeading = overlayMap.get("gallery_heading::heading");
+            if (galleryGridHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryGridHeading;
+            applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
+            const visitorBtn = overlayMap.get("visitor_cta::buttonText");
+            if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
+            ["beliefs", "community", "mission", "vision", "story", "lifeTogether"].forEach((key) => {
+              const block = model.aboutDemoFallback[key];
+              if (!block || typeof block !== "object") return;
+              const sectionKey =
+                key === "lifeTogether"
+                  ? block.sectionKey === "gallery"
+                    ? "gallery"
+                    : "life_together"
+                  : key;
+              const h = overlayMap.get(`${sectionKey}::heading`);
+              const b = overlayMap.get(`${sectionKey}::bodyText`);
+              // Legacy Life Together key "gallery" plus canonical life_together.
+              const hLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::heading") : undefined;
+              const bLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::bodyText") : undefined;
+              const nextHeading = h !== undefined ? h : hLegacy !== undefined ? hLegacy : block.heading;
+              const nextBody = b !== undefined ? b : bLegacy !== undefined ? bLegacy : block.bodyText;
+              if (h !== undefined || b !== undefined || hLegacy !== undefined || bLegacy !== undefined) {
+                model.aboutDemoFallback[key] = {
+                  ...block,
+                  heading: nextHeading,
+                  bodyText: nextBody,
+                };
+              }
+            });
+            if (Array.isArray(model.aboutDemoFallback.values)) {
+              model.aboutDemoFallback.values = model.aboutDemoFallback.values.map((item) => {
+                const key = item.sectionKey || "";
+                if (!key) return item;
+                const h = overlayMap.get(`${key}::heading`);
+                const b = overlayMap.get(`${key}::bodyText`);
+                if (h === undefined && b === undefined) return item;
+                return {
+                  ...item,
+                  heading: h !== undefined ? h : item.heading,
+                  bodyText: b !== undefined ? b : item.bodyText,
+                };
+              });
+            }
+          }
+        } catch {
+          // Soft-fill is best-effort. Never discard counted drafts / CMS overlays.
         }
       }
     }
   } catch {
-    draftCount = 0;
-    overlayMap = new Map();
-    structuredDrafts = [];
-    publishedBaselines = Object.create(null);
+    // Soft-fill is isolated above. If an earlier step failed before overlays loaded,
+    // clear empty state only — never discard a successful draftCount (About freeze bug).
+    if (!overlayMap.size) {
+      structuredDrafts = [];
+      publishedBaselines = Object.create(null);
+    }
   }
 
   const hasDraftChanges = draftCount > 0;
@@ -483,34 +782,90 @@ async function attachWebsiteAdminChrome(opts) {
     accessRestricted: false,
   });
 
-  const csrfToken = issueCsrfToken(env || process.env);
+  const csrfToken = issueCsrfToken(env);
   setCsrfCookie(res, csrfToken, {
-    secure: String((env || process.env).NODE_ENV || "") === "production",
+    secure: String((env && env.NODE_ENV) || "") === "production",
+    env,
+    req,
   });
 
+  const {
+    presentEditorShell,
+    buildEditorPages,
+  } = require("../../platform/website-engine/editorShell");
+  const {
+    PRODUCT_CODE,
+    buildPublicOrganizationWebsitePath,
+    buildPublicWebsiteEditPath,
+    buildPublicWebsitePreviewPath,
+    buildPublicWebsiteDiscardPath,
+    buildPublicWebsiteUnpublishPath,
+    buildPublicWebsiteHistoryPath,
+    buildPublicWebsiteMediaLibraryPath,
+    buildPublicWebsiteStylesPath,
+    buildPublicWebsiteSeoPath,
+    buildPublicWebsiteAddSectionPath,
+    buildPublicWebsiteThemePath,
+    buildPublicWebsiteThemesPath,
+    buildPublicWebsiteWebsitesPath,
+  } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
+  const reqPath =
+    req && (req.originalUrl || req.url)
+      ? String(req.originalUrl || req.url).split("?")[0]
+      : "";
+  const orgKey =
+    (tenant && tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
+    "";
+  const publicBranchKey =
+    (model.websiteScope && model.websiteScope.branchKey) ||
+    (model.branch && model.branch.key) ||
+    branchKeyFromPathPrefix(model.pathPrefix) ||
+    null;
+  const pathBranchKeyForScope = branchKeyFromPathPrefix(model.pathPrefix);
+  const websiteScopeType =
+    (model.websiteScope && model.websiteScope.scopeType) ||
+    (publicBranchKey ? "branch" : "church");
+  const editorScope =
+    publicBranchKey && (websiteScopeType === "branch" || pathBranchKeyForScope)
+      ? { kind: "branch", branchKey: publicBranchKey }
+      : null;
+  const pathMode =
+    String(model.routingMode || "") === "path" ||
+    String(currentPath).indexOf("/c/") === 0 ||
+    reqPath.indexOf("/c/") === 0 ||
+    Boolean(orgKey && editorScope);
+  const publicBase = pathMode && orgKey
+    ? buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        scope: editorScope,
+      })
+    : "";
   const manageHref = isHqEditor ? "/hq/website" : "/branch-admin/content";
-  const saveUrl = isHqEditor
-    ? "/hq/content/api/inline-field"
-    : "/branch-admin/content/api/inline-field";
+  const saveUrl = pathMode && publicBase
+    ? `${publicBase}/website/drafts`
+    : "/website/drafts";
   const structuredSaveUrl = isHqEditor
     ? "/hq/content/api/structured-draft"
     : "/branch-admin/content/api/structured-draft";
-  const mediaUploadUrl = isHqEditor
-    ? "/hq/content/media/upload"
-    : "/branch-admin/content/media/upload";
-  const mediaListUrl = isHqEditor
-    ? "/hq/content/media"
-    : "/branch-admin/content/media";
+  const mediaUploadUrl = pathMode && publicBase
+    ? `${publicBase}/website/media`
+    : "/website/media";
+  const mediaListUrl = mediaUploadUrl;
   const reviewHref = isHqEditor
     ? "/hq/content/draft-changes"
     : "/branch-admin/content/draft-changes";
-  const publishUrl = isHqEditor
-    ? "/hq/content/api/inline-field/publish"
-    : "/branch-admin/content/api/inline-field/publish";
-  const draftPreviewHref = isHqEditor
-    ? "/hq/content/draft-preview/home"
-    : "/branch-admin/content/draft-preview/home";
+  const publishUrl = pathMode && publicBase
+    ? `${publicBase}/website/publish`
+    : "/website/publish";
+  const draftPreviewHref = orgKey
+    ? buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        scope: editorScope,
+      })
+    : "/hq/content/draft-preview/home";
 
   const overrides = Object.create(null);
   for (const [k, v] of overlayMap.entries()) {
@@ -520,20 +875,21 @@ async function attachWebsiteAdminChrome(opts) {
   if (editingMode && Array.isArray(model.navItems)) {
     model.navItems = model.navItems.map((item) => ({
       ...item,
-      href: withEditQuery(item.href, true),
+      href: withEditQuery(item.href, true, frameMode),
     }));
-    model.homeHref = withEditQuery(model.homeHref || model.pathPrefix || "/", true);
+    model.homeHref = withEditQuery(model.homeHref || model.pathPrefix || "/", true, frameMode);
     model.visitHref = withEditQuery(
       model.visitHref || `${model.pathPrefix || ""}/contact`,
-      true
+      true,
+      frameMode
     );
     if (model.giveHref) {
-      model.giveHref = withEditQuery(model.giveHref, true);
+      model.giveHref = withEditQuery(model.giveHref, true, frameMode);
     }
     const priorHrefFor = typeof model.hrefFor === "function" ? model.hrefFor.bind(model) : null;
     model.hrefFor = function hrefForEdit(pagePath) {
       const base = priorHrefFor ? priorHrefFor(pagePath) : String(pagePath || "/");
-      return withEditQuery(base, true);
+      return withEditQuery(base, true, frameMode);
     };
 
     function mapNavTree(items) {
@@ -541,7 +897,7 @@ async function attachWebsiteAdminChrome(opts) {
       return items.map((item) => {
         const next = {
           ...item,
-          href: item.href ? withEditQuery(item.href, true) : item.href,
+          href: item.href ? withEditQuery(item.href, true, frameMode) : item.href,
         };
         if (Array.isArray(item.children)) {
           next.children = mapNavTree(item.children);
@@ -559,7 +915,7 @@ async function attachWebsiteAdminChrome(opts) {
         ctaItem: model.navigation.ctaItem
           ? {
               ...model.navigation.ctaItem,
-              href: withEditQuery(model.navigation.ctaItem.href, true),
+              href: withEditQuery(model.navigation.ctaItem.href, true, frameMode),
             }
           : null,
       };
@@ -567,17 +923,137 @@ async function attachWebsiteAdminChrome(opts) {
     }
   }
 
-  const publicBranchKey =
-    (model.websiteScope && model.websiteScope.branchKey) ||
-    (model.branch && model.branch.key) ||
-    null;
   const primaryBranchKey =
     (tenant && tenant.primaryBranch && tenant.primaryBranch.key) ||
     (model.church && model.church.primaryBranchKey) ||
     null;
-  const websiteScopeType =
-    (model.websiteScope && model.websiteScope.scopeType) ||
-    (publicBranchKey ? "branch" : "church");
+  const draftPreviewHrefResolved = orgKey
+    ? buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : draftPreviewHref;
+  const backToEditHref = orgKey
+    ? buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : withEditQuery(currentPath, true);
+  const discardPath =
+    pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
+  const unpublishedChangesUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/unpublished-changes`
+      : orgKey
+        ? buildPublicWebsiteUnpublishedChangesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldHistoryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history`
+      : orgKey
+        ? buildPublicWebsiteFieldHistoryPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldRestoreUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history/restore`
+      : orgKey
+        ? buildPublicWebsiteFieldRestorePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const sectionActionsUrl =
+    pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
+  const addSectionUrl =
+    pathMode && publicBase ? `${publicBase}/website/add-section` : null;
+  const themeUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/theme`
+      : orgKey
+        ? buildPublicWebsiteThemePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const themesGalleryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/themes`
+      : orgKey
+        ? buildPublicWebsiteThemesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const websitesChooserUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/websites`
+      : orgKey
+        ? buildPublicWebsiteWebsitesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const unpublishPath =
+    isHqEditor && canPublishWebsite
+      ? buildPublicWebsiteUnpublishPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+        })
+      : null;
+
+  if (previewDraftMode && !editingMode) {
+    const mapPreviewNav = function mapPreviewNav(items) {
+      if (!Array.isArray(items)) return items;
+      return items.map((item) => {
+        const next = {
+          ...item,
+          href: item.href ? withPreviewQuery(item.href) : item.href,
+        };
+        if (Array.isArray(item.children)) next.children = mapPreviewNav(item.children);
+        return next;
+      });
+    };
+    if (Array.isArray(model.navItems)) {
+      model.navItems = model.navItems.map((item) => ({
+        ...item,
+        href: item.href ? withPreviewQuery(item.href) : item.href,
+      }));
+    }
+    if (model.navigation) {
+      model.navigation = {
+        ...model.navigation,
+        primaryItems: mapPreviewNav(model.navigation.primaryItems),
+        mobileItems: mapPreviewNav(model.navigation.mobileItems),
+        footerItems: mapPreviewNav(model.navigation.footerItems),
+        navItems: mapPreviewNav(model.navigation.navItems),
+        ctaItem: model.navigation.ctaItem
+          ? {
+              ...model.navigation.ctaItem,
+              href: model.navigation.ctaItem.href
+                ? withPreviewQuery(model.navigation.ctaItem.href)
+                : model.navigation.ctaItem.href,
+            }
+          : null,
+      };
+      model.footerNavItems = model.navigation.footerItems;
+    }
+  }
 
   const settingsCatalog = editingMode
     ? buildWebsitePublicEditSettingsCatalog({
@@ -592,16 +1068,255 @@ async function attachWebsiteAdminChrome(opts) {
       })
     : null;
 
+  const seoLink =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? {
+          available: true,
+          href: buildPublicWebsiteSeoPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          }),
+        }
+      : settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
+  const brandingHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteStylesPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : isHqEditor
+        ? "/hq/website/branding"
+        : null;
+  const historyHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteHistoryPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : null;
+  const mediaLibraryHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteMediaLibraryPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : null;
+  const editorPages = orgKey
+    ? buildEditorPages({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : [];
+  const moreItems = [];
+  if (manageHref) {
+    moreItems.push({
+      id: "settings",
+      label: "Website settings",
+      icon: "settings",
+      href: manageHref,
+      group: "general",
+    });
+  }
+  if (brandingHref) {
+    moreItems.push({
+      id: "branding",
+      label: "Branding",
+      icon: "palette",
+      href: brandingHref,
+      group: "general",
+    });
+  }
+  if (themesGalleryUrl) {
+    moreItems.push({
+      id: "theme",
+      label: "Choose Theme",
+      icon: "style",
+      href: themesGalleryUrl,
+      group: "general",
+    });
+  }
+  const multiSiteMode = String(model.websiteMode || "") === "multi_site";
+  // multi_site already means HQ + 2+ active branches; HQ editors may switch websites.
+  const showChangeWebsite =
+    Boolean(websitesChooserUrl) && multiSiteMode && isHqEditor;
+  if (showChangeWebsite) {
+    moreItems.push({
+      id: "change-website",
+      label: "Change Website",
+      icon: "account_tree",
+      href: websitesChooserUrl,
+      group: "general",
+    });
+  }
+  if (historyHref) {
+    moreItems.push({
+      id: "history",
+      label: "Version history",
+      icon: "history",
+      href: historyHref,
+      group: "general",
+    });
+  }
+  if (mediaLibraryHref) {
+    moreItems.push({
+      id: "assets",
+      label: "Assets",
+      icon: "folder",
+      href: mediaLibraryHref,
+      group: "product",
+    });
+  }
+  moreItems.push({
+    id: "features",
+    label: "Website features",
+    icon: "widgets",
+    action: "features",
+    group: "product",
+  });
+  if (seoLink && seoLink.available && seoLink.href) {
+    moreItems.push({
+      id: "seo",
+      label: "SEO",
+      icon: "search",
+      href: seoLink.href,
+      group: "product",
+    });
+  }
+  if (hasDraftChanges) {
+    moreItems.push({
+      id: "discard-draft",
+      label: "Discard draft changes",
+      icon: "delete",
+      action: "lifecycle",
+      lifecycle: "discard",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  if (canPublishWebsite && unpublishPath) {
+    moreItems.push({
+      id: "unpublish",
+      label: "Unpublish website",
+      icon: "public_off",
+      action: "lifecycle",
+      lifecycle: "unpublish",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+
+  const {
+    buildManifest: buildBlessBoardSectionManifest,
+    ensureSermonsIntroPresentationSection,
+  } = require("../website/blessboardSectionActionService");
+  // Edit/preview: soft-fill sermon library teaser must be a real section contract
+  // entry so SectionManager can attach edit/hide chrome (QA12).
+  if (showDraftContent && model.pageKey === "home") {
+    ensureSermonsIntroPresentationSection(model, structuredDrafts);
+    if (overlayMap && overlayMap.size) {
+      model.sections = applyDraftsToSections(model.sections, overlayMap);
+    }
+  }
+  const sectionManifest = editingMode
+    ? buildBlessBoardSectionManifest(model.pageKey, model.sections, structuredDrafts)
+    : null;
+
+  const {
+    describeAddSectionAvailability,
+  } = require("../../platform/website/sectionRegistry");
+  const existingSectionKeys = (model.sections || [])
+    .map((s) => String((s && (s.sectionKey || s.sectionType)) || ""))
+    .filter(Boolean);
+  const addSectionAvailability = describeAddSectionAvailability(
+    PRODUCT_CODE.BLESSBOARD,
+    model.pageKey,
+    existingSectionKeys
+  );
+
+  const churchDisplayName =
+    (tenant && tenant.church && (tenant.church.displayName || tenant.church.name)) ||
+    orgKey ||
+    "Website";
+  const websiteScopeKind =
+    websiteScopeType === "church" || websiteScopeType === "hq" ? "hq" : "branch";
+  const websiteName =
+    websiteScopeKind === "hq"
+      ? `${churchDisplayName} — Headquarters`
+      : String((model.branch && model.branch.displayName) || publicBranchKey || "Branch website");
+
+  const shellFacts = {
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey: model.pageKey,
+    pages: editorPages,
+    moreItems,
+    brandingHref,
+    historyHref,
+    hubHref: manageHref,
+    draft: hasDraftChanges,
+    unpublishedCount: draftCount,
+    websiteScopeKey: websiteScopeKeyFor(
+      PRODUCT_CODE.BLESSBOARD,
+      organizationId,
+      websiteInstanceId || organizationId
+    ),
+    websiteName,
+    websiteScopeKind,
+    changeWebsiteHref: showChangeWebsite ? websitesChooserUrl : null,
+    instanceId: websiteInstanceId,
+    organizationId,
+    canEdit: true,
+    canPublish: canPublishWebsite,
+    previewHref: draftPreviewHrefResolved,
+    backToEditHref,
+    publishPath: publishUrl,
+    publishSuccess: String((req.query && req.query.website_published) || "") === "1",
+    publishSuccessUrl:
+      buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        scope: editorScope,
+      }) || null,
+    openLiveWebsiteLabel: "Open Live Website",
+    discardPath,
+    unpublishedChangesUrl,
+    fieldHistoryUrl,
+    fieldRestoreUrl,
+    unpublishPath,
+    exitHref: withEditQuery(currentPath, false),
+    exitMethod: "GET",
+    saveUrl,
+    mediaUrl: mediaUploadUrl,
+    csrfToken,
+    csrfField: "_csrf",
+    sectionActionsUrl,
+    themeUrl,
+    themesGalleryUrl,
+    addSectionUrl: addSectionAvailability.canAddSection ? addSectionUrl : null,
+    canAddSection: addSectionAvailability.canAddSection,
+    addSectionEmptyHint: addSectionAvailability.emptyHint,
+    addSectionMemberAction: addSectionAvailability.memberAction,
+    collectionManaged: addSectionAvailability.collectionManaged === true,
+    sectionManifest,
+  };
+
   model.websiteAdmin = {
     canEdit: true,
     editingMode,
+    frameMode,
+    previewDraftMode: previewDraftMode && !editingMode,
     status,
     showDemoNotice: usedPublicDemoFill,
     manageHref,
     editHref: withEditQuery(currentPath, true),
     exitHref: withEditQuery(currentPath, false),
     reviewHref,
-    draftPreviewHref,
+    draftPreviewHref: draftPreviewHrefResolved,
     hasDraftChanges,
     draftCount,
     csrfToken,
@@ -610,6 +1325,19 @@ async function attachWebsiteAdminChrome(opts) {
     structuredSaveUrl,
     mediaUploadUrl,
     mediaListUrl,
+    pathPrefix: model.pathPrefix || publicBase || "",
+    canPublish: canPublishWebsite,
+    editorShell: editingMode
+      ? presentEditorShell({ ...shellFacts, editing: true })
+      : previewDraftMode
+        ? presentEditorShell({ ...shellFacts, previewMode: true, editing: false })
+        : null,
+    legacyInlineSaveUrl: isHqEditor
+      ? "/hq/content/api/inline-field"
+      : "/branch-admin/content/api/inline-field",
+    legacyInlinePublishUrl: isHqEditor
+      ? "/hq/content/api/inline-field/publish"
+      : "/branch-admin/content/api/inline-field/publish",
     demoImages: editingMode ? listDemoImages() : [],
     pageKey: model.pageKey,
     organizationId,
@@ -642,7 +1370,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=53";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=68";
 
   return model;
 }
@@ -651,6 +1379,7 @@ module.exports = {
   EDIT_QUERY,
   attachWebsiteAdminChrome,
   resolveWebsiteEditCapability,
+  resolveAuthorizedPublicPreview,
   canShowWebsiteEditChrome,
   withEditQuery,
   buildDisplayBaselineMap,

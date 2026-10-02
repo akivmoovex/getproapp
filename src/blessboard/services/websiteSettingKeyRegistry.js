@@ -234,6 +234,26 @@ const KEY_DEFS = Object.freeze({
     group: "seo",
     description: "Force noindex (HQ / governance)",
   },
+  "seo.canonical_url": {
+    type: VALUE_TYPES.URL,
+    maxLen: 500,
+    hideable: false,
+    group: "seo",
+    description: "Canonical URL override (https, defaults to the page's own URL)",
+  },
+  "seo.robots": {
+    type: VALUE_TYPES.ENUM,
+    enumValues: ["index", "noindex"],
+    hideable: false,
+    group: "seo",
+    description: "Search engine indexing for this site",
+  },
+  "seo.sitemap_include": {
+    type: VALUE_TYPES.BOOLEAN,
+    hideable: false,
+    group: "seo",
+    description: "Include this site in sitemap.xml",
+  },
 
   // —— Presentation chrome ——
   "presentation.branch_display_label": {

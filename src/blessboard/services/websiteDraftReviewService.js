@@ -132,12 +132,35 @@ function mediaThumb(url) {
  * Resolve publish vs submit-for-approval using existing approval settings.
  * Does not invent new governance — trusted branch publish stays inactive unless
  * resolveBranchEditMode reports trustedActive.
+ * @param {{
+ *   canPublish: boolean,
+ *   actorRole?: string,
+ *   settings: object|null,
+ * }} opts
  */
 function resolvePublishCapability(opts) {
-  const actorRole = String(opts.actorRole || "");
+  const canPublish = Boolean(opts.canPublish);
+  const actorRole = opts.actorRole ? String(opts.actorRole) : null;
   const settings = opts.settings || null;
 
-  if (actorRole === "church_hq_admin" || actorRole === "platform_admin") {
+  if (!canPublish) {
+    return {
+      action: "forbidden",
+      label: null,
+      reason: "forbidden",
+      message: "You do not have permission to publish website changes.",
+    };
+  }
+
+  // actorRole selects HQ vs branch governance path only (authz already gated by
+  // website.publish). Accept legacy chrome/test labels alongside catalogue keys.
+  const isHqPublisher =
+    !actorRole ||
+    actorRole === "organisation_administrator" ||
+    actorRole === "church_system_administrator" ||
+    actorRole === "platform_administrator" ||
+    actorRole === "church_hq_admin";
+  if (isHqPublisher) {
     const hqDirect =
       !settings ||
       settings.hqDirectPublishEnabled !== false;
@@ -157,7 +180,11 @@ function resolvePublishCapability(opts) {
     };
   }
 
-  if (actorRole === "branch_admin") {
+  if (
+    actorRole === "branch_administrator" ||
+    actorRole === "branch_pastor" ||
+    actorRole === "branch_admin"
+  ) {
     const resolved = approvalSettingsSvc.resolveBranchEditMode(settings || {});
     if (resolved.mode === "draft_only") {
       return {
@@ -378,14 +405,24 @@ async function loadWebsiteDraftChangesReview(db, opts) {
       let mLabel = null;
 
       if (d.draftKind === "image" || d.draftKind === "video") {
-        const prevUrl = previous.imageUrl || previous.videoUrl || previous.thumbnailUrl || "";
-        const nextUrl = payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || "";
-        previousDisplay = mediaLabel(prevUrl);
+        // Bug 22: never use YouTube URL as review thumbnail src.
+        const prevUrl =
+          previous.imageUrl || previous.thumbnailUrl || previous.previousImageUrl || "";
+        const nextUrl =
+          d.draftKind === "image"
+            ? payload.imageUrl || ""
+            : payload.thumbnailUrl || "";
+        const nextVideo =
+          d.draftKind === "video" && payload.videoUrl ? String(payload.videoUrl) : "";
+        previousDisplay = mediaLabel(prevUrl) || (previous.videoUrl ? "YouTube video" : "");
         newDisplay =
           d.op === "remove"
             ? "Removed"
-            : mediaLabel(nextUrl) +
-              (payload.altText ? ` — ${String(payload.altText).slice(0, 80)}` : "");
+            : d.draftKind === "video"
+              ? (nextVideo ? mediaLabel(nextVideo) : "YouTube video") +
+                (nextUrl ? ` · poster ${mediaLabel(nextUrl)}` : "")
+              : mediaLabel(nextUrl) +
+                (payload.altText ? ` — ${String(payload.altText).slice(0, 80)}` : "");
         thumb = d.op === "remove" ? null : mediaThumb(nextUrl);
         mLabel = newDisplay;
         contentItemLabel = `${sectionTitle(sectionKey)} · ${KIND_LABELS[d.draftKind]}`;
@@ -465,6 +502,7 @@ async function loadWebsiteDraftChangesReview(db, opts) {
       "Church";
 
     const capability = resolvePublishCapability({
+      canPublish: opts.canPublish === true,
       actorRole: opts.actorRole,
       settings: approvalLoad.ok ? approvalLoad.settings : null,
     });

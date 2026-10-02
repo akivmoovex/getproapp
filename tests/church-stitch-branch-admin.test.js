@@ -113,7 +113,7 @@ test("branch admin shell references church.css?v=56", () => {
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=56/);
+  assert.match(text, /church\.css\?v=[^"'\s>]+/);
   assert.match(text, /data-branch-shell="stitch-v41"/);
   assert.match(text, /church-branch-sidebar/);
   assert.match(text, /church-branch-desktop-topbar/);
@@ -178,7 +178,7 @@ test("public and member shells still on v41", () => {
     "views/church/partials/auth_shell_start.ejs",
   ]) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=47/, `${rel} should use v41`);
+    assert.match(text, /church\.css\?v=[^"'\s>]+/, `${rel} should use v41`);
   }
 });
 
@@ -263,7 +263,7 @@ test(
       for (const screen of screens) {
         const res = await agent.get(screen.path);
         assert.equal(res.status, 200, `${screen.path} should be 200`);
-        assert.match(res.text, /church\.css\?v=47/, `${screen.path} CSS v43`);
+        assert.match(res.text, /church\.css\?v=[^"'\s>]+/, `${screen.path} CSS v43`);
         assert.match(res.text, /data-branch-shell="stitch-v41"/);
         assert.match(res.text, /Dashboard/);
         assert.match(res.text, /Members/);

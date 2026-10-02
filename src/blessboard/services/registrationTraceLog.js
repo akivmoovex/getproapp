@@ -65,10 +65,23 @@ const ALLOWED_KEYS = Object.freeze(
     "missingColumns",
     "reasonCodes",
     "decision",
+    "reviewReason",
     "rootStatus",
     "persistError",
+    "identityResolution",
+    "emailMatched",
+    "phoneMatched",
+    "roleStatus",
+    "underlyingErrorClass",
     "administratorViaInvitation",
     "invitationCreated",
+    "workerPid",
+    "wizardStep",
+    "draftExists",
+    "sessionExists",
+    "csrfResult",
+    "httpStatus",
+    "publicRegistrationReference",
   ])
 );
 

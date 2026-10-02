@@ -13,7 +13,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <title><%= pageTitle || 'Sign in' %> · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=14" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=15" />
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
 </head>
 <body
@@ -51,7 +51,7 @@
         <a class="bb-auth-brand" href="/">
           <img
             class="bb-auth-brand__mark"
-            src="/church/images/brand/blessboard-small-church-logo.png"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
             alt=""
             width="32"
             height="32"

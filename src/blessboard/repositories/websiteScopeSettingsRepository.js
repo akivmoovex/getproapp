@@ -81,6 +81,24 @@ async function listActiveForBranch(db, scope) {
 }
 
 /**
+ * Active overrides for one setting key across every branch of a church.
+ * Used by sitemap generation, which must not issue a query per branch.
+ *
+ * @param {{ query: Function }} db
+ * @param {{ churchId: string, settingKey: string }} scope
+ */
+async function listActiveForChurchByKey(db, scope) {
+  const settingKey = normalizeSettingKey(scope && scope.settingKey);
+  if (!isUuid(scope && scope.churchId) || !settingKey) return [];
+  const res = await db.query(
+    `SELECT * FROM blessboard.website_scope_settings
+      WHERE church_id = $1 AND setting_key = $2 AND is_active = true`,
+    [scope.churchId, settingKey]
+  );
+  return (res.rows || []).map(mapRow);
+}
+
+/**
  * Upsert an active override or hidden state. Never writes inheritance_state=inherit.
  * @param {{ query: Function }} db
  * @param {object} input
@@ -159,6 +177,7 @@ module.exports = {
   mapRow,
   findActive,
   listActiveForBranch,
+  listActiveForChurchByKey,
   upsertActive,
   deactivateOverride,
 };

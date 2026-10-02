@@ -22,6 +22,8 @@ const FRIENDLY_ERRORS = Object.freeze({
   timezone: "Enter a valid timezone (for example Africa/Lusaka).",
   country_code: "Enter a 2-letter country code (for example ZM).",
   website_status: "Choose a valid website status.",
+  website_publish_via_hub:
+    "Publish the public website from Website, not from organization settings.",
   address_line_1: "Address line 1 is too long.",
   address_line_2: "Address line 2 is too long.",
   city: "City is too long.",
@@ -54,12 +56,17 @@ function emptyToNull(value) {
 
 /**
  * Normalize phone to E.164-compatible text (+ and digits only) for validation.
+ * Settings contact phones must include a country code (no invented default).
  * @param {unknown} value
  * @returns {{ ok: true, value: string | null } | { ok: false, reason: string }}
  */
 function normalizePhone(value) {
   const raw = emptyToNull(value);
   if (raw == null) return { ok: true, value: null };
+  const { normalizeBlessBoardPhone } = require("./normalizeBlessBoardPhone");
+  const checked = normalizeBlessBoardPhone(raw, { requireCountry: true });
+  if (checked.ok) return { ok: true, value: checked.normalized };
+  // Legacy: digits-only international numbers previously accepted via auto-+.
   let digits = String(raw).replace(/[^\d+]/g, "");
   if (digits.indexOf("+") > 0) {
     digits = digits.replace(/\+/g, "");

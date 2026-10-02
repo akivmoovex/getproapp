@@ -1,0 +1,69 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var item = cms.item || {};
+  var pages = cms.pages || [];
+  var usage = item.usage || [];
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+%>
+<section class="ac-mw" data-ac-page-section="website-library-use" data-ac-mw-screen="MW09-04">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Use Content on Page</h2>
+      <p class="ac-mw-muted">Reuse “<%= item.title || item.typeLabel || "this item" %>” on another page or section. The same item stays in the content library.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+
+  <div class="ac-mw-readonly">
+    <p class="ac-mw-readonly__label">Content item</p>
+    <p>
+      <span class="ac-mw-badge<%= item.isOperational ? ' ac-mw-badge--ops' : ' ac-mw-badge--web' %>"><%= item.sourceLabel || "" %></span>
+      <span class="ac-mw-badge ac-mw-badge--draft"><%= item.typeLabel || item.type %></span>
+    </p>
+    <p><%= item.title || "" %></p>
+  </div>
+
+  <div class="ac-mw-readonly" data-ac-library-usage="1">
+    <p class="ac-mw-readonly__label">Currently used on</p>
+    <% if (!usage.length) { %>
+    <p class="ac-mw-hint">Not used on a page yet.</p>
+    <% } else { %>
+    <ul class="ac-mw-usage">
+      <% usage.forEach(function (entry) { %>
+      <li>
+        <%= entry.label %><% if (entry.builtin) { %> <span class="ac-mw-muted">(clinic catalogue)</span><% } %>
+        <% if (cms.canEdit && entry.placement_id) { %>
+        <form method="post" action="/app/settings/website/library/<%= item.id %>/placements/<%= entry.placement_id %>/delete" style="display:inline">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <button type="submit" class="ac-mw-btn">Remove</button>
+        </form>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <% if (cms.canEdit) { %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/library/<%= item.id %>/use">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Page
+      <select name="pageId" required>
+        <option value="">Choose a page</option>
+        <% pages.forEach(function (page) { %>
+        <option value="<%= page.id %>"><%= page.title %> (<%= page.kind === "custom" ? ("/" + page.slug) : page.slug %>)</option>
+        <% }) %>
+      </select>
+    </label>
+    <p class="ac-mw-hint">Template pages show this item in their reusable content area. Custom pages add a reusable content block.</p>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/library/<%= item.id %>">Back to item</a>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Use on this page</button>
+    </div>
+  </form>
+  <% } %>
+</section>

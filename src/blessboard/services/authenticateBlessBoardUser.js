@@ -8,11 +8,16 @@
 const bcrypt = require("bcryptjs");
 const repo = require("../repositories/blessBoardAuthRepository");
 const { normalizeEmail } = require("./createBlessBoardUser");
+const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
 const {
   establishBlessBoardSession,
   rolesApplicableToOrganization,
   preferSessionRole,
 } = require("./establishBlessBoardSession");
+const {
+  resolvePhoneLoginStatus,
+  phoneMigrationPrompt,
+} = require("./phoneLoginStatus");
 
 const STATUS = Object.freeze({
   AUTHENTICATED: "authenticated",
@@ -23,13 +28,16 @@ const STATUS = Object.freeze({
 });
 
 const GENERIC_FAILURE = "invalid_credentials";
+const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
 /**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {{
- *   email: string,
+ *   email?: string,
+ *   identifier?: string,
  *   password: string,
  *   deploymentCode: string,
+ *   country?: string | null,
  *   requireOrganizationId?: string | null,
  *   ip?: string | null,
  *   userAgent?: string | null,
@@ -37,7 +45,10 @@ const GENERIC_FAILURE = "invalid_credentials";
  * }} input
  */
 async function authenticateBlessBoardUser(db, input) {
-  const email = normalizeEmail(input && input.email);
+  const rawIdentifier = String(
+    (input && (input.identifier != null ? input.identifier : input.email)) || ""
+  ).trim();
+  const email = normalizeEmail(rawIdentifier);
   const password = input && input.password != null ? String(input.password) : "";
   const deploymentCode = String((input && input.deploymentCode) || "")
     .trim()
@@ -47,7 +58,7 @@ async function authenticateBlessBoardUser(db, input) {
       ? String(input.requireOrganizationId).trim()
       : null;
 
-  if (!email || !password || !deploymentCode) {
+  if (!rawIdentifier || !password || !deploymentCode) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input", session: null, user: null };
   }
 
@@ -71,7 +82,16 @@ async function authenticateBlessBoardUser(db, input) {
       client = db;
     }
 
-    const user = await repo.findUserByEmail(client, email);
+    let user = null;
+    if (email && EMAIL_RE.test(email)) {
+      user = await repo.findUserByEmail(client, email);
+    }
+    if (!user) {
+      const phoneResult = normalizeRegistrationPhone(rawIdentifier, input && input.country);
+      if (phoneResult.ok) {
+        user = await repo.findUserByPhone(client, phoneResult.normalized);
+      }
+    }
     if (!user) {
       try {
         // Burn comparable CPU without revealing existence; ignore invalid-hash errors.
@@ -111,6 +131,47 @@ async function authenticateBlessBoardUser(db, input) {
       };
     }
 
+    if (
+      user.sign_in_locked_until &&
+      new Date(user.sign_in_locked_until).getTime() > Date.now()
+    ) {
+      try {
+        await bcrypt.compare(
+          password,
+          "$2a$12$C6UzMDM.H6dfI/f/IKxGhuR.Vo5.1qHqGhuR.Vo5.1qHqGhuR.Vo5."
+        );
+      } catch {
+        /* ignore */
+      }
+      return {
+        ok: false,
+        status: STATUS.INVALID_CREDENTIALS,
+        message: GENERIC_FAILURE,
+        session: null,
+        user: null,
+        failureCategory: "account_locked",
+      };
+    }
+
+    if (user.password_change_required === true) {
+      try {
+        await bcrypt.compare(
+          password,
+          "$2a$12$C6UzMDM.H6dfI/f/IKxGhuR.Vo5.1qHqGhuR.Vo5.1qHqGhuR.Vo5."
+        );
+      } catch {
+        /* ignore */
+      }
+      return {
+        ok: false,
+        status: STATUS.INVALID_CREDENTIALS,
+        message: GENERIC_FAILURE,
+        session: null,
+        user: null,
+        failureCategory: "password_change_required",
+      };
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
       return {
@@ -130,7 +191,7 @@ async function authenticateBlessBoardUser(db, input) {
       client = null;
     }
 
-    return establishBlessBoardSession(db, {
+    const established = await establishBlessBoardSession(db, {
       userId: user.id,
       deploymentCode,
       requireOrganizationId,
@@ -138,6 +199,20 @@ async function authenticateBlessBoardUser(db, input) {
       userAgent: input.userAgent || null,
       createSession: input.createSession,
     });
+    if (!established || !established.ok) return established;
+
+    const phoneStatus = resolvePhoneLoginStatus(user);
+    return {
+      ...established,
+      phoneStatus,
+      phoneMigrationPrompt: phoneMigrationPrompt(phoneStatus),
+      /**
+       * Ambiguous global phone matches fail closed in findUserByPhone (null).
+       * Tenant is then applied via deployment host / requireOrganizationId /
+       * invitation context — never by picking the first matching account.
+       */
+      phoneResolution: "exact_global_or_fail_closed",
+    };
   } catch {
     return {
       ok: false,

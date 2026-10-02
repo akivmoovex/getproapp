@@ -1,0 +1,11 @@
+<%#
+  Shared "Edit image" pencil for collection entities (ministry, event, leader, …).
+  Locals: editKind, editEntityKey, editPayload (object)
+%>
+<%- include('./structured-edit-trigger', {
+  editKind: typeof editKind !== 'undefined' ? editKind : 'image',
+  editEntityKey: typeof editEntityKey !== 'undefined' ? editEntityKey : 'default',
+  editLabel: 'Edit image',
+  editDialogTitle: 'Edit image',
+  editPayload: typeof editPayload !== 'undefined' && editPayload ? editPayload : {}
+}) %>

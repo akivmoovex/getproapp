@@ -1,0 +1,507 @@
+"use strict";
+
+/**
+ * ActiveClinic auth HTTP routes (login, org select, logout, password change).
+ * Views: AC-V6-S01 Stitch-backed auth layout.
+ */
+
+const rateLimit = require("express-rate-limit");
+const crypto = require("crypto");
+
+const {
+  issueCsrfToken,
+  setCsrfCookie,
+  validateCsrf,
+  CSRF_FIELD,
+  getCsrfCookieName,
+} = require("../../platform/http/v5Csrf");
+const {
+  clearV5SessionCookie,
+} = require("../../platform/session/v5SessionCookie");
+const {
+  issueAuthenticatedSessionCookie,
+  logoutAuthenticatedBrowserSession,
+  applyLogoutResponseHeaders,
+} = require("../../platform/session/sharedSessionSecurity");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { resolveHostname } = require("../../platform/host");
+const {
+  authenticateActiveClinicIdentity,
+  completeActiveClinicOrganizationSelection,
+  STATUS: AUTH_STATUS,
+} = require("../services/authenticateActiveClinicIdentity");
+const {
+  changeActiveClinicPassword,
+  RESULT: PW_RESULT,
+} = require("../services/changeActiveClinicPassword");
+const {
+  createRequireActiveClinicAuth,
+} = require("./loadActiveClinicAuth");
+const { createPlatformIdentitySession } = require("../../platform/session/createDeploymentSession");
+const {
+  renderLoginPage,
+  renderOrgSelectPage,
+  renderChangePasswordPage,
+  renderAccessUnavailablePage,
+  renderAccessDisabledPage,
+  renderPlatformAdminLanding,
+} = require("./renderActiveClinicAuth");
+const { resolveLoginIdentifierFromBody } = require("../../platform/auth/resolveLoginIdentifier");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+
+const AC_APP_DASHBOARD = postAuthDashboardPath("activeclinic"); // V2.05 Task 1: AC login → /app
+const {
+  buildLoginModeHrefs,
+  resolveLoginModeQuery,
+} = require("../../platform/auth/loginModeQuery");
+const { PRODUCT, resolvePostLoginPath } = require("../../platform/onboarding");
+
+const SELECTION_COOKIE = "activeclinic_org_xfer";
+
+function sha256Hex(value) {
+  return crypto.createHash("sha256").update(String(value)).digest("hex");
+}
+
+function clientIp(req) {
+  return String(
+    (req.headers && req.headers["x-forwarded-for"]) ||
+      req.ip ||
+      (req.socket && req.socket.remoteAddress) ||
+      ""
+  )
+    .split(",")[0]
+    .trim();
+}
+
+function safeNextPath(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s.startsWith("/") || s.startsWith("//")) return AC_APP_DASHBOARD;
+  if (s.includes("://") || s.includes("\\")) return AC_APP_DASHBOARD;
+  if (s.length > 200) return AC_APP_DASHBOARD;
+  return s === "/" ? AC_APP_DASHBOARD : s;
+}
+
+async function activeClinicPostLoginPath(db, result, requestedNext, deploymentCode) {
+  const elig = result && result.eligibility;
+  const organizationId = elig && elig.organization && elig.organization.id;
+  if (!organizationId) return safeNextPath(requestedNext);
+  const resolved = await resolvePostLoginPath(db, {
+    productCode: PRODUCT.ACTIVECLINIC,
+    organizationId,
+    actor: {
+      permissions: elig.permissions || [],
+      userId: result.session && (result.session.platformIdentityId || result.session.userId),
+    },
+    requestedPath: safeNextPath(requestedNext),
+    deploymentCode: deploymentCode || "",
+  });
+  return resolved.path || safeNextPath(requestedNext);
+}
+
+function loginErrorMessage(result) {
+  if (result.failureCategory === "account_locked") {
+    return "Sign-in is temporarily locked. Please wait and try again.";
+  }
+  return "We could not sign you in with those details. Check your phone number, email, or password and try again.";
+}
+
+/**
+ * @param {import('express').Express} app
+ * @param {{ getPool: Function, env: NodeJS.ProcessEnv, isProduction: boolean }} deps
+ */
+function registerActiveClinicAuthRoutes(app, deps) {
+  const getPool = deps.getPool;
+  const env = deps.env;
+  const isProduction = deps.isProduction;
+
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const id = String(resolved.identifier || "").trim().toLowerCase();
+      return sha256Hex(`${id}|${clientIp(req)}`);
+    },
+    handler: (req, res) => {
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const loginMode = resolved.mode === "phone" ? "phone" : "email";
+      return res.status(429).type("html").send(
+        renderLoginPage({
+          csrfToken,
+          error: "Too many sign-in attempts. Please wait a few minutes and try again.",
+          identifier: resolved.identifier,
+          loginEmail: req.body && req.body.login_email,
+          loginMode,
+          phoneCountry: req.body && req.body.phone_country,
+          ...buildLoginModeHrefs({ mode: loginMode }),
+        })
+      );
+    },
+  });
+
+  function issuePageCsrf(res, req) {
+    const token = issueCsrfToken(env);
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
+    return token;
+  }
+
+  app.get("/login", (req, res) => {
+    if (req.activeClinicAuth && req.activeClinicAuth.authenticated) {
+      if (req.activeClinicAuth.mustChangePassword) {
+        return res.redirect(303, "/account/change-password");
+      }
+      return res.redirect(303, AC_APP_DASHBOARD);
+    }
+    const csrfToken = issuePageCsrf(res, req);
+    let notice = null;
+    const loginMode = resolveLoginModeQuery(req.query && req.query.mode);
+    const modeHrefs = buildLoginModeHrefs(req.query);
+    if (req.query && req.query.activated === "1") {
+      notice = "Your account is activated. Sign in with your new password.";
+    } else if (req.query && req.query.reset === "1") {
+      notice = "Your password was updated. Sign in with your new password.";
+    } else if (req.query && req.query.expired === "1") {
+      notice = "Your session ended. Sign in again to continue.";
+    }
+    return res
+      .status(200)
+      .type("html")
+      .send(
+        renderLoginPage({
+          csrfToken,
+          error: null,
+          notice,
+          loginMode,
+          ...modeHrefs,
+        })
+      );
+  });
+
+  app.post("/login", loginLimiter, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        const csrfToken = issuePageCsrf(res, req);
+        const resolved = resolveLoginIdentifierFromBody(req.body);
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
+        return res.status(403).type("html").send(
+          renderLoginPage({
+            csrfToken,
+            error: "Your session expired. Please try again.",
+            identifier: resolved.identifier,
+            loginEmail: req.body && req.body.login_email,
+            loginMode,
+            phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: loginMode }),
+          })
+        );
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      if (!deployment.ok || !deployment.code) {
+        return res.status(503).type("html").send("Deployment unavailable");
+      }
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      if (resolved.mode === "phone" && resolved.phoneOk === false) {
+        const csrfToken = issuePageCsrf(res, req);
+        return res.status(400).type("html").send(
+          renderLoginPage({
+            csrfToken,
+            error: resolved.phoneError || "Enter a valid phone number.",
+            identifier: "",
+            loginEmail: req.body && req.body.login_email,
+            loginMode: "phone",
+            phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: "phone" }),
+          })
+        );
+      }
+      const result = await authenticateActiveClinicIdentity(getPool(), {
+        identifier: resolved.identifier,
+        password: req.body && req.body.password,
+        deploymentCode: deployment.code,
+        hostname: resolveHostname(req) || "activeclinic.org",
+        country: resolved.country || String((req.body && req.body.phone_country) || "ZM")
+          .trim()
+          .toUpperCase() || "ZM",
+        ip: clientIp(req),
+        userAgent: req.headers["user-agent"] || null,
+      });
+
+      if (result.status === AUTH_STATUS.SELECT_ORGANIZATION) {
+        res.cookie(SELECTION_COOKIE, result.selectionToken, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 5 * 60 * 1000,
+        });
+        return res.redirect(303, "/login/select-organization");
+      }
+
+      if (result.status === AUTH_STATUS.PLATFORM_ADMIN) {
+        const csrfToken = issuePageCsrf(res, req);
+        return res.status(200).type("html").send(renderPlatformAdminLanding({ csrfToken }));
+      }
+
+      if (result.status === AUTH_STATUS.ACCESS_UNAVAILABLE) {
+        if (result.failureCategory === "access_disabled") {
+          return res.status(403).type("html").send(renderAccessDisabledPage());
+        }
+        return res.status(403).type("html").send(renderAccessUnavailablePage());
+      }
+
+      if (!result.ok) {
+        const csrfToken = issuePageCsrf(res, req);
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
+        return res.status(401).type("html").send(
+          renderLoginPage({
+            csrfToken,
+            error: loginErrorMessage(result),
+            identifier: resolved.identifier,
+            loginEmail: req.body && req.body.login_email,
+            loginMode,
+            phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: loginMode }),
+          })
+        );
+      }
+
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: result.rawToken,
+        env,
+        isProduction,
+        getPool,
+      });
+      res.clearCookie(SELECTION_COOKIE, { path: "/" });
+      if (result.mustChangePassword || result.status === AUTH_STATUS.MUST_CHANGE_PASSWORD) {
+        return res.redirect(303, "/account/change-password");
+      }
+      const dest = await activeClinicPostLoginPath(
+        getPool(),
+        result,
+        req.body && req.body.next,
+        deployment.code
+      );
+      return res.redirect(303, dest);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  async function loadSelectionOrganizations(selectionToken) {
+    const { hashSessionToken } = require("../../platform/session/sessionToken");
+    const transferRepo = require("../../platform/repositories/authTransferRepository");
+    const {
+      listEligibleActiveClinicOrganizations,
+      mapSelectorOrganization,
+    } = require("../services/activeClinicLoginEligibility");
+    const existing = await transferRepo.findAuthTransferByHash(
+      getPool(),
+      hashSessionToken(selectionToken)
+    );
+    if (!existing || !existing.platform_identity_id) {
+      return { ok: false, organizations: [] };
+    }
+    if (existing.consumed_at) {
+      return { ok: false, organizations: [] };
+    }
+    if (existing.expires_at && new Date(existing.expires_at).getTime() <= Date.now()) {
+      return { ok: false, organizations: [] };
+    }
+    const listed = await listEligibleActiveClinicOrganizations(getPool(), {
+      platformIdentityId: existing.platform_identity_id,
+    });
+    if (!listed.ok) {
+      return { ok: false, organizations: [] };
+    }
+    return {
+      ok: true,
+      organizations: (listed.organizations || []).map(mapSelectorOrganization),
+    };
+  }
+
+  app.get("/login/select-organization", async (req, res, next) => {
+    try {
+      const token = req.cookies && req.cookies[SELECTION_COOKIE];
+      if (!token) return res.redirect(303, "/login");
+      const loaded = await loadSelectionOrganizations(token);
+      const csrfToken = issuePageCsrf(res, req);
+      if (!loaded.ok || loaded.organizations.length === 0) {
+        return res.status(200).type("html").send(
+          renderOrgSelectPage({
+            csrfToken,
+            error: "Your organization selection expired. Sign in again to continue.",
+            organizations: [],
+            selectorState: "expired",
+          })
+        );
+      }
+      return res.status(200).type("html").send(
+        renderOrgSelectPage({
+          csrfToken,
+          error: null,
+          organizations: loaded.organizations,
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/login/select-organization", async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, "/login");
+      }
+      const selectionToken = req.cookies && req.cookies[SELECTION_COOKIE];
+      const deployment = getPlatformDeploymentCode(env);
+      if (!deployment.ok || !selectionToken) {
+        return res.redirect(303, "/login");
+      }
+      const completed = await completeActiveClinicOrganizationSelection(getPool(), {
+        selectionToken,
+        organizationId: req.body && req.body.organization_id,
+        deploymentCode: deployment.code,
+        hostname: resolveHostname(req) || "activeclinic.org",
+        ip: clientIp(req),
+        userAgent: req.headers["user-agent"] || null,
+      });
+      if (!completed.ok) {
+        if (completed.failureCategory === "organization_not_eligible") {
+          return res.status(403).type("html").send(renderAccessDisabledPage());
+        }
+        return res.status(403).type("html").send(renderAccessUnavailablePage());
+      }
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: completed.rawSessionToken,
+        env,
+        isProduction,
+        getPool,
+      });
+      res.clearCookie(SELECTION_COOKIE, { path: "/" });
+      if (completed.mustChangePassword) {
+        return res.redirect(303, "/account/change-password");
+      }
+      const dest = await activeClinicPostLoginPath(
+        getPool(),
+        completed,
+        AC_APP_DASHBOARD,
+        deployment.code
+      );
+      return res.redirect(303, dest);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  async function handleLogout(req, res) {
+    try {
+      const identityId =
+        req.activeClinicAuth &&
+        req.activeClinicAuth.platformIdentity &&
+        req.activeClinicAuth.platformIdentity.id;
+      if (identityId) {
+        const editSessionService = require("../../platform/website/editSessionService");
+        await editSessionService.closeOpenSessionsForEditor(
+          getPool(),
+          identityId,
+          editSessionService.CLOSE_REASON.LOGOUT
+        ).catch(() => {});
+      }
+      await logoutAuthenticatedBrowserSession(req, res, {
+        env,
+        isProduction,
+        getPool,
+        extraCookieNames: [SELECTION_COOKIE],
+      });
+    } catch {
+      try {
+        clearV5SessionCookie(res, { secure: isProduction, env, req });
+        res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
+        res.clearCookie(SELECTION_COOKIE, { path: "/" });
+        applyLogoutResponseHeaders(res);
+      } catch {
+        /* ignore secondary clear failures */
+      }
+    }
+    return res.redirect(303, "/login");
+  }
+
+  // GET is the recovery path for stale CSRF / bookmarks / https://host/logout.
+  // POST remains the UI action. Neither depends on tenant/org/facility context.
+  app.get("/logout", handleLogout);
+  app.post("/logout", handleLogout);
+
+  const requireAuthPw = createRequireActiveClinicAuth({
+    allowPasswordChangeOnly: true,
+    env,
+    isProduction,
+  });
+
+  app.get("/account/change-password", requireAuthPw, (req, res) => {
+    const csrfToken = issuePageCsrf(res, req);
+    return res.status(200).type("html").send(renderChangePasswordPage({ csrfToken, error: null }));
+  });
+
+  app.post("/account/change-password", requireAuthPw, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        const csrfToken = issuePageCsrf(res, req);
+        return res.status(403).type("html").send(
+          renderChangePasswordPage({
+            csrfToken,
+            error: "Your session expired. Please try again.",
+          })
+        );
+      }
+      const auth = req.activeClinicAuth;
+      const deployment = getPlatformDeploymentCode(env);
+      const changed = await changeActiveClinicPassword(getPool(), {
+        platformIdentityId: auth.platformIdentity.id,
+        currentPassword: req.body && req.body.current_password,
+        newPassword: req.body && req.body.new_password,
+        confirmPassword: req.body && req.body.confirm_password,
+        deploymentCode: deployment.code,
+        organizationId: auth.organization && auth.organization.id,
+      });
+      if (!changed.ok) {
+        const csrfToken = issuePageCsrf(res, req);
+        const error =
+          changed.code === PW_RESULT.WEAK_PASSWORD
+            ? "Password must be at least 10 characters."
+            : changed.code === PW_RESULT.MISMATCH
+              ? "New password and confirmation do not match."
+              : "Current password is incorrect.";
+        return res.status(400).type("html").send(renderChangePasswordPage({ csrfToken, error }));
+      }
+
+      const fresh = await createPlatformIdentitySession(getPool(), {
+        deploymentCode: deployment.code,
+        platformIdentityId: auth.platformIdentity.id,
+        organizationId: auth.organization.id,
+        ip: clientIp(req),
+        userAgent: req.headers["user-agent"] || null,
+      });
+      if (fresh.ok) {
+        await issueAuthenticatedSessionCookie(req, res, {
+          rawToken: fresh.rawToken,
+          env,
+          isProduction,
+          getPool,
+        });
+      }
+      return res.redirect(303, AC_APP_DASHBOARD);
+    } catch (err) {
+      return next(err);
+    }
+  });
+}
+
+module.exports = {
+  registerActiveClinicAuthRoutes,
+  SELECTION_COOKIE,
+  renderLoginPage,
+};

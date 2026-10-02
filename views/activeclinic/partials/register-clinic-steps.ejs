@@ -1,0 +1,28 @@
+<%
+  var step = typeof wizardStep === 'string' ? wizardStep : 'clinic';
+  var order = { clinic: 1, administrator: 2, review: 3, success: 4, error: 4 };
+  var current = order[step] || 1;
+  var ofThree = current > 3 ? 3 : current;
+  var pct = step === 'success' || step === 'error' ? 100 : (ofThree === 1 ? 33 : ofThree === 2 ? 66 : 100);
+  var steps = [
+    { key: 'clinic', label: 'Clinic Details', shortLabel: 'Details' },
+    { key: 'administrator', label: 'Staff Setup', shortLabel: 'Staff' },
+    { key: 'review', label: 'Review', shortLabel: 'Review' }
+  ];
+  var captions = {
+    clinic: 'Step 1 of 3: Clinic Details',
+    administrator: 'Step 2 of 3: Staff Setup',
+    review: 'Step 3 of 3: Review'
+  };
+%>
+<% if (step !== 'success' && step !== 'error') { %>
+<%- include('../../platform/registration/stepper', {
+  currentStep: ofThree,
+  totalSteps: 3,
+  caption: captions[step] || captions.clinic,
+  percent: pct,
+  steps: steps,
+  variant: 'numbered',
+  wizardKey: step
+}) %>
+<% } %>

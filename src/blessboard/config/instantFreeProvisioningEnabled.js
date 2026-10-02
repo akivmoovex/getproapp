@@ -1,67 +1,48 @@
 "use strict";
 
 /**
- * BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED — emergency switch for automatic
- * Foundation (public `foundation` → DB `free`) and Growth (30-day trial)
- * self-service provisioning on /register-church.
+ * Compatibility alias for the shared self-registration provisioning kill switch.
  *
- * Default: **enabled** when unset. Explicit false/0/no/off disables and falls
- * back to enquiry-only for Foundation and Growth. Network always remains
- * support-contact only (never instant-provisioned).
- * Query/body cannot override this server flag.
+ * Canonical control: SELF_REGISTRATION_PROVISIONING_ENABLED
+ * Legacy alias: BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED
+ *
+ * The flag no longer selects a BlessBoard-only registration engine. When disabled,
+ * both products persist the application and enter review_required.
  */
 
-const ENV_KEY = "BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED";
-const DISABLE_VALUES = Object.freeze(["0", "false", "no", "off"]);
-const ENABLE_VALUES = Object.freeze(["1", "true", "yes", "on"]);
+const {
+  ENV_KEY: SHARED_ENV_KEY,
+  LEGACY_ENV_KEY,
+  DISABLE_VALUES,
+  ENABLE_VALUES,
+  parseSelfRegistrationProvisioningEnabled,
+  isSelfRegistrationProvisioningEnabled,
+} = require("../../platform/registration/killSwitch");
 
-/**
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {{
- *   ok: boolean,
- *   enabled: boolean,
- *   reason: string,
- *   raw: string,
- * }}
- */
+const ENV_KEY = LEGACY_ENV_KEY;
+
 function parseInstantFreeProvisioningEnabled(env) {
-  const source = env || process.env;
-  const raw = String(source[ENV_KEY] || "")
-    .trim()
-    .toLowerCase();
-  if (!raw) {
-    return { ok: true, enabled: true, reason: "default_enabled", raw: "" };
-  }
-  if (DISABLE_VALUES.includes(raw)) {
-    return { ok: true, enabled: false, reason: "explicit_disable", raw };
-  }
-  if (ENABLE_VALUES.includes(raw)) {
-    return { ok: true, enabled: true, reason: "explicit_enable", raw };
-  }
-  // Unsupported tokens fail closed to disabled (emergency-safe).
-  return { ok: false, enabled: false, reason: "unsupported", raw };
+  const parsed = parseSelfRegistrationProvisioningEnabled(env);
+  return {
+    ok: parsed.ok,
+    enabled: parsed.enabled,
+    reason: parsed.reason,
+    raw: parsed.raw,
+  };
 }
 
-/**
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {boolean}
- */
 function isInstantFreeProvisioningEnabled(env) {
-  return parseInstantFreeProvisioningEnabled(env).enabled;
+  return isSelfRegistrationProvisioningEnabled(env);
 }
 
-/**
- * Safe one-line diagnostic (no secrets).
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {string}
- */
 function formatInstantFreeProvisioningEnabledLog(env) {
-  const parsed = parseInstantFreeProvisioningEnabled(env);
-  return `${ENV_KEY}=${parsed.enabled ? "1" : "0"} (${parsed.reason})`;
+  const parsed = parseSelfRegistrationProvisioningEnabled(env);
+  return `${SHARED_ENV_KEY}=${parsed.enabled ? "1" : "0"} (${parsed.reason}; alias ${ENV_KEY})`;
 }
 
 module.exports = {
   ENV_KEY,
+  SHARED_ENV_KEY,
   DISABLE_VALUES,
   ENABLE_VALUES,
   parseInstantFreeProvisioningEnabled,

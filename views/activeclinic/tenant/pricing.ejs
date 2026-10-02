@@ -1,0 +1,45 @@
+<%
+  const pages = (clinic && clinic.publicPagePaths) || {};
+  const contactHref = pages.contact || (clinic && clinic.clinicKey ? ('/clinics/' + clinic.clinicKey + '/contact') : '/contact');
+  const servicesHref = pages.services || (clinic && clinic.clinicKey ? ('/clinics/' + clinic.clinicKey + '/services') : '/services');
+%>
+<section class="acp-page" data-ac-page-section="tenant-pricing">
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">Pricing</p>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'pricing.page_title', fieldValue: clinic.pricingPageTitle || 'Pricing', fieldType: 'short_text' }) %></h1>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'pricing.intro', fieldValue: clinic.pricingIntro || ('Fees listed here are only those ' + clinic.publicName + ' has chosen to publish. Contact the clinic for anything not shown.'), fieldType: 'long_text' }) %></p>
+  </header>
+  <% const pricing = typeof pricingDisplay !== 'undefined' && pricingDisplay ? pricingDisplay : null; %>
+  <% const patterns = pricing && Array.isArray(pricing.operationalCatalogue) ? pricing.operationalCatalogue : (Array.isArray(pricePatterns) ? pricePatterns : []); %>
+  <% if (pricing && pricing.insuranceIntro) { %>
+  <div class="ac-public-prose acp-prose-card" data-ac-pricing-insurance="1">
+    <%- include('../partials/website-editable-field', { contentKey: 'insurance.intro', fieldValue: pricing.insuranceIntro, fieldType: 'long_text' }) %>
+  </div>
+  <% } else if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+  <div class="ac-public-prose acp-prose-card" data-ac-pricing-insurance="1">
+    <%- include('../partials/website-editable-field', { contentKey: 'insurance.intro', fieldValue: '', fieldType: 'long_text' }) %>
+  </div>
+  <% } %>
+  <% if (!patterns.length) { %>
+  <div class="ac-public-empty acp-empty-state" data-ac-price-state="no-public-prices" data-ac-state-key="empty" data-ac-pricing-source="hybrid">
+    <p><strong>Fees not listed online</strong></p>
+    <p>Public price information has not been configured for <%= clinic.publicName %>. Contact the clinic for current fees — amounts shown here would only appear when verified by the clinic.</p>
+    <p><a class="ac-btn ac-btn--secondary" href="<%= contactHref %>" data-ac-pricing-cta="contact">Contact clinic for fees</a></p>
+  </div>
+  <% } else { %>
+  <p class="ac-public-note">Prices below are published by the clinic. Final charges may vary based on your visit.</p>
+  <ul class="ac-price-patterns acp-price-grid">
+    <% patterns.forEach(function(p) { %>
+    <li class="ac-price-pattern acp-price-card" data-ac-price-pattern="<%= p.patternKey || '' %>">
+      <h2><%= p.displayName %></h2>
+      <% if (p.description) { %><p><%= p.description %></p><% } %>
+      <% if (p.priceLabel) { %><p class="ac-price-pattern__amount acp-price-card__amount"><%= p.priceLabel %></p><% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+  <p class="acp-price-pattern-note" data-ac-price-patterns="honesty">
+    Public price patterns only list fees the clinic has chosen to publish. “Price to be confirmed” items in booking stay confirmation-based.
+  </p>
+  <p class="ac-public-note">ActiveClinic does not invent or estimate medical fees. <a href="<%= servicesHref %>" data-ac-pricing-cta="services">View services</a></p>
+</section>

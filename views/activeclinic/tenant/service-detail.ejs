@@ -1,0 +1,49 @@
+<%#
+  AC-MW-R06 Service Detail — Stitch Batch 3.
+  Existing AC service domain via CollectionPresentation (collection_card). No duplicate records.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const editingServiceDetail = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const detailEditHref = service && (service.editHref || (service.id ? ('/app/settings/website/catalogue/services/' + encodeURIComponent(service.id) + '/edit') : ''));
+%>
+<article
+  class="ac-stitch-page ac-stitch-page--r06 ac-public-section"
+  data-ac-page-section="tenant-service-detail"
+  data-ac-stitch-screen="R06"
+  data-ac-service-kind="<%= serviceKind || 'consultation' %>"
+  data-ac-service-key="<%= service && service.serviceKey ? service.serviceKey : '' %>"
+>
+  <p class="ac-public-breadcrumb"><a href="/clinics/<%= clinic.clinicKey %>/services">Services</a> · <%= serviceKind === 'informational' ? 'Information' : 'Consultation' %></p>
+
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <% if (html.service) { %>
+  <div class="ac-stitch-section ac-stitch-section--service-detail">
+    <%- html.service %>
+  </div>
+  <% } %>
+
+  <% if (service && service.durationMinutes) { %>
+  <p class="ac-public-muted">Typical duration: about <%= service.durationMinutes %> minutes (clinic-provided estimate).</p>
+  <% } %>
+
+  <% if (editingServiceDetail && detailEditHref) { %>
+  <p class="ac-service-detail__editor" data-ac-edit-service-wrap="1">
+    <a
+      class="ac-btn ac-btn--secondary ac-btn--pill"
+      href="<%= detailEditHref %>?returnTo=<%= encodeURIComponent('/clinics/' + clinic.clinicKey + '/services/' + service.serviceKey + '?website_edit=1&website_mode=draft') %>"
+      data-ac-edit-service="1"
+    >Edit service</a>
+  </p>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+</article>

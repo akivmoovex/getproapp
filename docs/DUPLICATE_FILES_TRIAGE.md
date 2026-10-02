@@ -1,6 +1,8 @@
 # Duplicate `* 2.*` files — triage (internal)
 
-**Status:** **10** files remain with a space-`2` suffix (e.g. `foo 2.js`), all under **`src/`**. They **differ** from the canonical `foo.ext` (not byte-identical). **No `* 3.*` files** remain. *(Count is repo-wide `find … -name '* 2.*'` excluding `node_modules`; your tree may differ slightly.)*
+**Status (V10 PL08 / PC21):** **0** `* 2.*` / `* 3.*` files remain under `src/`, `public/`, `views/`, `tests/`, or `db/`. PC20–PC21 deleted the STALE_FORK set; PL08 confirmed residual **0** and removed only non-authoritative `scripts/local/_tmp_v2_*` scratch harnesses. Stitch **design-reference directories** named `* 2` / `* 3` under `design-reference/stitch-screens/` are **retained** (not Finder runtime forks).
+
+**Historical note (pre-PC21):** previously **10** `src/**` space-`2` modules remained (field-agent cluster). They differed from canonical counterparts and had no runtime `require` of the fork path. All were removed in PC21.
 
 **Runtime:** Nothing in the repo **`require`s** or imports paths containing ` 2.` for app code. Admin field-agent routes use **`adminFieldAgentAnalytics.js`** / **`adminFieldAgentPayRuns.js`** (no ` 2`); `server.js` uses canonical **`./src/routes/fieldAgent`**. EJS **`render()`** calls use canonical view names (no ` 2` in template paths).
 

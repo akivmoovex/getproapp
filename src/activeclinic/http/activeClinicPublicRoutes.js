@@ -1,0 +1,1809 @@
+"use strict";
+
+/**
+ * ActiveClinic public HTTP routes (P20–P26).
+ * Platform public, tenant public, booking flows, my-booking lookup.
+ */
+
+const rateLimit = require("express-rate-limit");
+const crypto = require("crypto");
+const { issueCsrfToken, setCsrfCookie, validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  resolvePublishableClinicByKey,
+  listPublishableClinics,
+  listPublicStaffProfiles,
+  getPublicStaffProfile,
+  listWebsiteServices,
+  getWebsiteService,
+  listPublicProcedures,
+  getPublicProcedure,
+  listPublicPricePatterns,
+} = require("../services/activeClinicPublicVisibilityService");
+const {
+  validateClinicRegistrationInput,
+  listClinicTypeOptions,
+  clinicTypeLabel,
+  listZambiaProvinces,
+  isZambiaCountryCode,
+} = require("../services/activeClinicPublicOnboardingService");
+const {
+  submitAndProvisionClinicRegistration,
+  RESULT: SUBMIT_RESULT,
+} = require("../services/submitClinicRegistrationService");
+const {
+  authenticateActiveClinicIdentity,
+} = require("../services/authenticateActiveClinicIdentity");
+const {
+  issueAuthenticatedSessionCookie,
+} = require("../../platform/session/sharedSessionSecurity");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+const AC_APP_DASHBOARD = postAuthDashboardPath("activeclinic"); // V2.05 Task 1: AC register → /app
+const {
+  buildRegistrationSuccessRedirect,
+} = require("../../platform/registration/registrationSuccessPresentation");
+const {
+  buildRegistrationPageLocals,
+  PRODUCT_CODE: REG_PRODUCT,
+} = require("../../platform/registration/registrationRenderLocals");
+const { CONSENT_FIELD } = require("../../platform/registration/registrationConsent");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { getDeploymentEnvMode } = require("../../platform/config/deploymentEnv");
+const { resolveHostname } = require("../../platform/host");
+const {
+  lookupClinicRegistrationApplicantStatus,
+  GENERIC_NOT_FOUND,
+} = require("../services/clinicRegistrationApplicantStatusService");
+const {
+  applyLibraryPresentation,
+  libraryItemIsHidden,
+} = require("../website/clinicWebsiteCms");
+const {
+  createPublicContactInquiry,
+  createPlatformContactInquiry,
+  describePlatformContactErrors,
+  describeClinicContactErrors,
+} = require("../services/activeClinicPublicContactService");
+const {
+  newRegistrationRequestId,
+  classifyRegistrationError,
+  logClinicApplicationFailed,
+  logClinicApplicationCreated,
+} = require("../services/activeClinicPublicRegistrationLog");
+const {
+  newDirectoryRequestId,
+  classifyDirectoryError,
+  logDirectoryLoadFailed,
+  logDirectoryLoaded,
+} = require("../services/activeClinicPublicDirectoryLog");
+const { resolveDeploymentConfiguration } = require("../../platform/config/deploymentProfiles");
+const { renderPublicView } = require("./renderActiveClinicPublic");
+const { buildTermsOfServiceContent } = require("../legal/termsOfServiceContent");
+const { buildPrivacyPolicyContent } = require("../legal/privacyPolicyContent");
+const { registerActiveClinicPublicBookingRoutes } = require("./activeClinicPublicBookingRoutes");
+const {
+  sendClinicResolveFailure,
+  resolveClinicOrRespond,
+} = require("./activeClinicPublicRespond");
+const { attachActiveClinicWebsiteLocals, canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+const {
+  buildActiveClinicStitchPublicPage,
+  isStitchPublicTemplate,
+  isGalleryPageSlug,
+  GALLERY_PAGE_SLUGS,
+} = require("../website/activeClinicStitchPublicPages");
+const { buildActiveClinicPublicSeo } = require("../website/activeClinicPublicSeo");
+const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
+const cmsService = require("../website/clinicWebsiteCmsService");
+const {
+  PRODUCT_CODE,
+  sendCanonicalPublicWebsiteRedirect,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsitePagePaths,
+} = require("../../platform/website/publicWebsiteUrl");
+const { buildSitemapXml, buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+const {
+  resolveRegistrationLocation,
+  persistRegistrationLocation,
+} = require("../../platform/geography/locationService");
+const {
+  resolveActiveClinicRegistrationSuccessWebsite,
+} = require("../services/resolveActiveClinicRegistrationSuccessWebsite");
+const {
+  readRegistrationDraft,
+  writeRegistrationDraft,
+  clearRegistrationDraft,
+  STEP_FIELD_ALLOWLIST: AC_DRAFT_STEP_ALLOWLIST,
+  PROTECTED_KEYS: AC_DRAFT_PROTECTED_KEYS,
+} = require("../services/clinicRegistrationDraft");
+const { mergeDraftFields } = require("../../platform/registration/multiStepDraftMerge");
+const {
+  withRegistrationNavParam,
+  isRegistrationFreshStartRequest,
+} = require("../../platform/registration/registrationDraftLifecycle");
+const {
+  resolveRegistrationTransactionForGet,
+  clearRegistrationTransaction,
+  persistRegistrationPasswordFromBody,
+  mergeRegistrationBodyForValidation,
+} = require("../../platform/registration/registrationTransaction");
+const { PRODUCT } = require("../../platform/registration/constants");
+const {
+  registerPlatformLocationRoutes,
+} = require("../../platform/http/platformLocationRoutes");
+
+/** Absolute https origin for discovery documents. */
+function activeClinicOrigin(req) {
+  const host = req && typeof req.get === "function" ? String(req.get("host") || "") : "";
+  const clean = host.trim().toLowerCase().replace(/:\d+$/, "");
+  return clean ? `https://${clean}` : "";
+}
+
+/**
+ * Public URLs for one clinic mini-site. Nav pages come from the shared URL
+ * builder so sitemap and canonical never drift apart.
+ */
+function activeClinicSitemapUrls(req, clinic) {
+  const organizationKey = (clinic && clinic.clinicKey) || "";
+  if (!organizationKey) return [];
+  const paths = buildPublicWebsitePagePaths({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey,
+  });
+  if (!paths) return [];
+  const origin = activeClinicOrigin(req);
+  const skip = new Set(["patientLogin", "myBooking"]);
+  return Object.keys(paths)
+    .filter((key) => !skip.has(key) && paths[key])
+    .map((key) => `${origin}${paths[key]}`);
+}
+
+function clientIp(req) {
+  return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
+}
+
+function sha256Hex(value) {
+  return crypto.createHash("sha256").update(String(value)).digest("hex");
+}
+
+function issuePageCsrf(res, env, isProduction, req) {
+  const token = issueCsrfToken(env);
+  setCsrfCookie(res, token, { secure: isProduction, env, req });
+  return token;
+}
+
+function resolveDirectorySearchQuery(req) {
+  const q = req.query.q != null ? String(req.query.q) : "";
+  const search = req.query.search != null ? String(req.query.search) : "";
+  return (q || search || "").trim();
+}
+
+function resolveDirectoryFilters(req) {
+  const search = resolveDirectorySearchQuery(req);
+  const province = req.query.province ? String(req.query.province).trim() : null;
+  const city = req.query.city ? String(req.query.city).trim() : null;
+  const location = req.query.location ? String(req.query.location).trim() : null;
+  const service = req.query.service ? String(req.query.service).trim() : null;
+  return { search, province, city, location, service };
+}
+
+const PLATFORM_CONTACT_OK_COOKIE = "ac_platform_contact_ok";
+
+function setPlatformContactOkCookie(res, isProduction) {
+  res.cookie(PLATFORM_CONTACT_OK_COOKIE, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: Boolean(isProduction),
+    maxAge: 10 * 60 * 1000,
+    path: "/contact",
+  });
+}
+
+function clearPlatformContactOkCookie(res, isProduction) {
+  res.cookie(PLATFORM_CONTACT_OK_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: Boolean(isProduction),
+    maxAge: 0,
+    path: "/contact",
+  });
+}
+
+function hasPlatformContactOkCookie(req) {
+  const raw = req.headers && req.headers.cookie ? String(req.headers.cookie) : "";
+  return raw.split(";").some((part) => part.trim().startsWith(`${PLATFORM_CONTACT_OK_COOKIE}=1`));
+}
+
+function statusFormDataFrom(body, query) {
+  const fd = body || {};
+  const q = query || {};
+  return {
+    applicationNumber: String(fd.applicationNumber || q.ref || q.applicationNumber || "").trim(),
+    contactEmail: String(fd.contactEmail || "").trim(),
+    contactPhone: String(fd.contactPhone || "").trim(),
+    phoneCountry: String(fd.phone_country || fd.phoneCountry || "").trim(),
+    phoneNational: String(fd.phone_national || fd.phoneNational || "").trim(),
+  };
+}
+
+function resolveRegisterWizardStep(raw) {
+  const step = String(raw || "clinic").trim().toLowerCase();
+  if (step === "administrator" || step === "admin") return "administrator";
+  if (step === "review") return "review";
+  return "clinic";
+}
+
+function registerFormDataFromBody(body) {
+  const fd = body || {};
+  return {
+    clinicName: fd.clinicName || "",
+    clinicType: fd.clinicType || fd.facilityType || "",
+    contactName: fd.contactName || "",
+    contactEmail: fd.contactEmail || "",
+    contactPhone: fd.contactPhone || "",
+    phoneCountry: fd.phone_country || fd.phoneCountry || "",
+    phoneNational: fd.phone_national || fd.phoneNational || "",
+    province: fd.province || "",
+    city: fd.city || "",
+    locationId: fd.locationId || fd.location_id || "",
+    address: fd.address || "",
+    countryCode: fd.countryCode || fd.phone_country || "ZM",
+    notes: fd.notes || "",
+    password: fd.password || "",
+    passwordConfirm: fd.passwordConfirm || fd.password_confirm || "",
+    registration_consent: fd.registration_consent || fd.acceptTerms || fd.accept_terms || "",
+    acceptTerms: fd.acceptTerms || fd.accept_terms || fd.registration_consent || "",
+  };
+}
+
+function inferRegisterAction(action, formData) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value) return value;
+  if (formData.password || formData.contactName || formData.contactEmail) return "next-admin";
+  return "next-clinic";
+}
+
+function registerReviewFormData(formData, validated) {
+  const n = (validated && validated.normalized) || {};
+  const clinicType = n.clinicType || formData.clinicType || "clinic";
+  return {
+    clinicName: n.clinicName || formData.clinicName || "",
+    clinicType,
+    clinicTypeLabel: clinicTypeLabel(clinicType),
+    contactName: n.contactName || formData.contactName || "",
+    contactEmail: n.contactEmailDisplay || formData.contactEmail || "",
+    contactPhone: n.contactPhoneDisplay || formData.contactPhone || "",
+    province: n.province || formData.province || "",
+    city: n.city || formData.city || "",
+    locationId: n.locationId || formData.locationId || "",
+    address: n.address || formData.address || "",
+    countryCode: n.countryCode || formData.countryCode || "ZM",
+    notes: n.notes || formData.notes || "",
+    phoneCountry: formData.phoneCountry || "",
+    phoneNational: formData.phoneNational || "",
+  };
+}
+
+function withRegisterLocals(req, extra) {
+  return registerPageLocals({ ...(extra || {}), req });
+}
+
+function registerPageLocals(extra) {
+  const step = extra.wizardStep || "clinic";
+  const titles = {
+    clinic: "Register your clinic",
+    administrator: "Administrator details",
+    review: "Review your details",
+    success: "Clinic created",
+    error: "Registration unavailable",
+  };
+  const formData = extra.formData || {};
+  const registrationLocals = buildRegistrationPageLocals(extra.req || null, REG_PRODUCT.ACTIVECLINIC, {
+    step,
+    selectedCountry: formData.countryCode || formData.country || null,
+  });
+  return {
+    pageTitle: extra.pageTitle || titles[step] || "Register your clinic",
+    pageId: extra.pageId || "public-register-clinic",
+    chrome: extra.chrome || "mf-register",
+    clinicTypeOptions: listClinicTypeOptions(),
+    zambiaProvinces: listZambiaProvinces(),
+    isZambiaCountryCode,
+    wizardStep: step,
+    formState: extra.formState || "form",
+    validationErrors: extra.validationErrors || {},
+    formData,
+    error: extra.error || null,
+    ...registrationLocals,
+    ...extra,
+  };
+}
+
+async function applyRegistrationLocation(db, formData) {
+  const resolved = await resolveRegistrationLocation(db, {
+    countryCode: formData.countryCode,
+    city: formData.city,
+    locationId: formData.locationId,
+  });
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      errors: { city: resolved.error || "Select a valid city for the chosen country." },
+    };
+  }
+  return {
+    ok: true,
+    formData: {
+      ...formData,
+      city: resolved.city || formData.city || "",
+      locationId: resolved.locationId || "",
+      province: formData.province || resolved.provinceRegion || "",
+    },
+  };
+}
+
+async function fetchDirectoryClinics(getPoolFn, env, req, filters) {
+  if (String(env.NODE_ENV || "") === "test" && req.query._directoryError === "1") {
+    throw new Error("directory_unavailable");
+  }
+  return listPublishableClinics(getPoolFn(), filters);
+}
+
+/**
+ * @param {import('express').Express} app
+ * @param {{ getPool: Function, env: NodeJS.ProcessEnv, isProduction: boolean }} deps
+ */
+function registerActiveClinicPublicRoutes(app, deps) {
+  const getPool = deps.getPool;
+  registerPlatformLocationRoutes(app, { getPool });
+  const env = deps.env;
+  const isProduction = deps.isProduction;
+  const respondDeps = { env, isProduction, issuePageCsrf };
+
+  async function renderTenantView(req, res, clinic, template, extra) {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+    const extras = extra || {};
+    const presented = website.clinic || clinic;
+    const library = presented && presented.cmsLibrary;
+    if (template === "tenant/doctors") {
+      extras.profiles = applyLibraryPresentation(
+        extras.profiles || presented.doctors || [],
+        library,
+        "doctor",
+        "staffKey"
+      );
+    }
+    if (template === "tenant/services") {
+      extras.services = applyLibraryPresentation(
+        extras.services || presented.services || [],
+        library,
+        "service",
+        "serviceKey"
+      );
+    }
+    if (template === "tenant/pricing") {
+      extras.pricingDisplay = resolvePublicPricingDisplay({
+        patterns: extras.pricePatterns || [],
+        insuranceIntro:
+          presented && presented.websiteContent ? presented.websiteContent["insurance.intro"] : null,
+        pageVisible: presented ? presented.showPricing !== false : true,
+      });
+    }
+    if (isStitchPublicTemplate(template)) {
+      const doctorsForPage =
+        extras.profiles ||
+        presented.doctors ||
+        [];
+      const servicesForPage =
+        extras.services ||
+        presented.services ||
+        [];
+      const proceduresForPage = extras.procedures || [];
+      extras.websitePresentation = buildActiveClinicStitchPublicPage({
+        template,
+        clinic: presented,
+        doctors: doctorsForPage,
+        services: servicesForPage,
+        procedures: proceduresForPage,
+        profile: extras.profile || null,
+        service: extras.service || null,
+        serviceKind: extras.serviceKind || null,
+        gallery: extras.gallery || null,
+        customPage: extras.customPage || null,
+        pageBlocks: extras.pageBlocks || [],
+        websiteEdit: Boolean(website.websiteEdit),
+        navItems: website.clinicWebsiteNav && website.clinicWebsiteNav.desktop,
+      });
+      extras.websitePresentationWired = Boolean(
+        extras.websitePresentation && extras.websitePresentation.wired
+      );
+    }
+    const pageTitle =
+      extras.pageTitle ||
+      (presented && (presented.seoTitle || presented.websiteDisplayName || presented.publicName)) ||
+      "ActiveClinic";
+    const metaDescription =
+      extras.metaDescription || (presented && presented.seoDescription) || "";
+    const ogImageUrl = extras.ogImageUrl || (presented && presented.seoImageUrl) || "";
+    const seo = buildActiveClinicPublicSeo({
+      req,
+      env: process.env,
+      clinic: presented,
+      instance: website.instance,
+      template,
+      pageTitle,
+      metaDescription,
+      ogImageUrl,
+      robots: extras.robots || null,
+      isPreview: Boolean(website.websiteVersionPreview || website.websiteEdit),
+    });
+    return res.status(200).type("html").send(renderPublicView(template, {
+      csrfToken,
+      ...website,
+      clinic: presented,
+      pageTitle,
+      metaDescription,
+      ogImageUrl,
+      ...extras,
+      seo,
+    }));
+  }
+
+  // Rate limiters
+  // Count only final confirm submissions. Wizard next-clinic/next-admin posts must not
+  // share an empty-email IP bucket or QA/users burn the create quota before confirm.
+  const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => String((req.body && req.body.action) || "") !== "confirm",
+    keyGenerator: (req) =>
+      sha256Hex(
+        `register|${(req.body && (req.body.contactEmail || req.body.email)) || ""}|${clientIp(req)}`
+      ),
+    handler: (req, res) => {
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(429).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+        csrfToken,
+        error: "Too many requests. Please try again later.",
+        formState: "form",
+        validationErrors: {},
+        formData: registerFormDataFromBody(req.body),
+        wizardStep: "clinic",
+      })));
+    },
+  });
+
+  // Submit-only: wizard navigation POSTs only update a signed draft cookie and must
+  // not share a tight IP bucket. Patient phone is not present on /book/submit bodies
+  // (it lives in the draft), so key by clinic + IP. Override via AC_BOOKING_SUBMIT_RATE_MAX.
+  const bookingSubmitRateMaxRaw = Number(env.AC_BOOKING_SUBMIT_RATE_MAX);
+  const bookingSubmitRateMax =
+    Number.isFinite(bookingSubmitRateMaxRaw) && bookingSubmitRateMaxRaw > 0
+      ? bookingSubmitRateMaxRaw
+      : String(env.NODE_ENV || "") === "test"
+        ? 1000
+        : 10;
+  const bookingLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: bookingSubmitRateMax,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) =>
+      sha256Hex(`booking-submit|${req.params.clinicKey || ""}|${clientIp(req)}`),
+    handler: (req, res) => {
+      const clinicKey = String((req.params && req.params.clinicKey) || "").trim();
+      const backHref = clinicKey
+        ? `/clinics/${encodeURIComponent(clinicKey)}/book`
+        : "/clinics";
+      return res.status(429).type("html").send(
+        `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Too many requests</title></head><body><h1>Too many booking submissions</h1><p>Please wait a few minutes and try again.</p><p><a href="${backHref}">Return to booking</a></p></body></html>`
+      );
+    },
+  });
+
+  const lookupLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => sha256Hex(`lookup|${req.query.token || ""}|${clientIp(req)}`),
+    handler: (req, res) => {
+      return res.status(429).json({ ok: false, code: "rate_limit_exceeded" });
+    },
+  });
+
+  const statusLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => sha256Hex(`clinic-status|${clientIp(req)}`),
+    handler: (req, res) => {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(429).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Registration status",
+        robots: "noindex, nofollow",
+        lookupState: "form",
+        error: "Too many requests. Please try again later.",
+        validationErrors: {},
+        formData: statusFormDataFrom(req.body, req.query),
+        projection: null,
+      }));
+    },
+  });
+
+  // ========== Platform Public Routes ==========
+
+  app.get("/", (req, res) => {
+    // Public ACW01 homepage for the ActiveClinic product host. Do not send
+    // visitors (anonymous or signed-in) to /login or /app from `/`.
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    return res.status(200).type("html").send(renderPublicView("public/home", {
+      csrfToken,
+      pageTitle: "ActiveClinic",
+      pageId: "public-home",
+    }));
+  });
+
+  app.get("/about", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
+    const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
+    return res.status(200).type("html").send(renderPublicView("public/about", {
+      csrfToken,
+      pageTitle: "About ActiveClinic",
+      pageId: "public-about",
+      metaDescription:
+        "About ActiveClinic — digital tools for modern clinic operations and patient services.",
+      buildInfo: getApplicationBuildInfo({ env }),
+      buildIdentity: getBuildIdentity({ env }),
+    }));
+  });
+
+  app.get("/for-clinics", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/for-clinics", {
+      csrfToken,
+      pageTitle: "For Clinics",
+      pageId: "public-for-clinics",
+    }));
+  });
+
+  app.get("/features", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/features", {
+      csrfToken,
+      pageTitle: "Platform features",
+      pageId: "public-features",
+    }));
+  });
+
+  app.get("/clinic-website", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/clinic-website", {
+      csrfToken,
+      pageTitle: "Clinic websites",
+      pageId: "public-clinic-website",
+    }));
+  });
+
+  app.get("/for-patients", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/for-patients", {
+      csrfToken,
+      pageTitle: "For Patients",
+      pageId: "public-for-patients",
+    }));
+  });
+
+  // Apex /book is not a booking wizard — guide users to pick a clinic first.
+  // Clinic-scoped booking remains at /clinics/:clinicKey/book*.
+  app.get("/book", (req, res) => {
+    return res.redirect(302, "/clinics");
+  });
+
+  const contactLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => sha256Hex(`platform-contact|${clientIp(req)}`),
+    handler: (req, res) => {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(429).type("html").send(renderPublicView("public/contact", {
+        csrfToken,
+        pageTitle: "Contact",
+        pageId: "public-contact",
+        error: "Too many requests. Please try again later.",
+        validationErrors: {},
+        formData: req.body || {},
+      }));
+    },
+  });
+
+  app.get("/contact", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    return res.status(200).type("html").send(renderPublicView("public/contact", {
+      csrfToken,
+      pageTitle: "Contact",
+      pageId: "public-contact",
+      error: null,
+      validationErrors: {},
+      formData: {},
+    }));
+  });
+
+  app.get("/contact/success", (req, res) => {
+    if (!hasPlatformContactOkCookie(req)) {
+      return res.redirect(303, "/contact");
+    }
+    clearPlatformContactOkCookie(res, isProduction);
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    return res.status(200).type("html").send(renderPublicView("public/contact-success", {
+      csrfToken,
+      pageTitle: "Message received",
+      pageId: "public-contact-success",
+      robots: "noindex, nofollow",
+    }));
+  });
+
+  app.post("/contact", contactLimiter, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        const csrfToken = issuePageCsrf(res, env, isProduction, req);
+        return res.status(403).type("html").send(renderPublicView("public/contact", {
+          csrfToken,
+          pageTitle: "Contact",
+          pageId: "public-contact",
+          error: "Your session expired. Please try again.",
+          validationErrors: {},
+          formData: req.body || {},
+        }));
+      }
+
+      const result = await createPlatformContactInquiry(getPool(), {
+        senderName: req.body && req.body.senderName,
+        senderEmail: req.body && req.body.senderEmail,
+        senderPhone: req.body && req.body.senderPhone,
+        phoneCountry: req.body && (req.body.phone_country || req.body.phoneCountry || "ZM"),
+        phoneNational: req.body && (req.body.phone_national || req.body.phoneNational),
+        subject: req.body && req.body.subject,
+        message: req.body && req.body.message,
+      });
+
+      if (!result.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction, req);
+        return res.status(400).type("html").send(renderPublicView("public/contact", {
+          csrfToken,
+          pageTitle: "Contact",
+          pageId: "public-contact",
+          error: "Please check your information and try again.",
+          validationErrors: describePlatformContactErrors(result.code),
+          formData: req.body || {},
+        }));
+      }
+
+      setPlatformContactOkCookie(res, isProduction);
+      return res.redirect(303, "/contact/success");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/terms", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/legal-page", {
+      csrfToken,
+      req,
+      pageTitle: "Terms of Service",
+      pageId: "public-terms",
+      activeNav: "terms",
+      legalDoc: buildTermsOfServiceContent(),
+      ...buildRegistrationPageLocals(req, REG_PRODUCT.ACTIVECLINIC, {
+        step: String((req.query && req.query.step) || "").trim() || null,
+      }),
+    }));
+  });
+
+  app.get("/privacy", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/legal-page", {
+      csrfToken,
+      req,
+      pageTitle: "Privacy Policy",
+      pageId: "public-privacy",
+      activeNav: "privacy",
+      legalDoc: buildPrivacyPolicyContent(),
+      ...buildRegistrationPageLocals(req, REG_PRODUCT.ACTIVECLINIC, {
+        step: String((req.query && req.query.step) || "").trim() || null,
+      }),
+    }));
+  });
+
+  app.get("/solutions", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/for-clinics", {
+      csrfToken,
+      pageTitle: "For Clinics",
+      pageId: "public-solutions",
+    }));
+  });
+
+  app.get("/clinics", async (req, res) => {
+    const filters = resolveDirectoryFilters(req);
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const filtersPresent = Boolean(filters.search || filters.province || filters.city || filters.location || filters.service);
+    const requestId = newDirectoryRequestId();
+    const deployment = resolveDeploymentConfiguration(env);
+
+    if (req.query._directoryLoading === "1" && String(env.NODE_ENV || "") === "test") {
+      return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics: [],
+        ...filters,
+        directoryState: "loading",
+        requestId,
+        pageTitle: "Find a Clinic",
+        pageId: "public-clinics-directory",
+      }));
+    }
+
+    try {
+      const result = await fetchDirectoryClinics(getPool, env, req, filters);
+      const clinics = result.clinics || [];
+      logDirectoryLoaded({
+        requestId,
+        resultCount: clinics.length,
+        filtersPresent,
+        page: 1,
+      });
+
+      return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics,
+        ...filters,
+        directoryState: "ready",
+        directoryEmpty: clinics.length === 0,
+        requestId,
+        pageTitle: "Find a Clinic",
+        pageId: "public-clinics-directory",
+      }));
+    } catch (err) {
+      const classified = classifyDirectoryError(err);
+      logDirectoryLoadFailed({
+        requestId,
+        deploymentCode: deployment.code || null,
+        environmentCode: deployment.environment || null,
+        category: classified.category,
+        safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+        exceptionClass: err && err.name ? err.name : "Error",
+        repositoryFunction: classified.repositoryFunction,
+        stage: classified.stage,
+        filtersPresent,
+        includeStack: true,
+        err,
+      });
+      return res.status(503).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics: [],
+        ...filters,
+        directoryState: "error",
+        requestId,
+        schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
+        pageTitle: "Find a Clinic",
+        pageId: "public-clinics-directory",
+      }));
+    }
+  });
+
+  app.get("/clinics/search", async (req, res) => {
+    const filters = resolveDirectoryFilters(req);
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const filtersPresent = Boolean(filters.search || filters.province || filters.city || filters.location || filters.service);
+    const requestId = newDirectoryRequestId();
+    const deployment = resolveDeploymentConfiguration(env);
+
+    try {
+      const result = await fetchDirectoryClinics(getPool, env, req, filters);
+      const clinics = result.clinics || [];
+      logDirectoryLoaded({
+        requestId,
+        resultCount: clinics.length,
+        filtersPresent,
+        page: 1,
+      });
+
+      return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics,
+        ...filters,
+        directoryState: "ready",
+        directoryEmpty: clinics.length === 0,
+        requestId,
+        pageTitle: "Search clinics",
+        pageId: "public-clinics-search",
+      }));
+    } catch (err) {
+      const classified = classifyDirectoryError(err);
+      logDirectoryLoadFailed({
+        requestId,
+        deploymentCode: deployment.code || null,
+        environmentCode: deployment.environment || null,
+        category: classified.category,
+        safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+        exceptionClass: err && err.name ? err.name : "Error",
+        repositoryFunction: classified.repositoryFunction,
+        stage: classified.stage,
+        filtersPresent,
+        includeStack: true,
+        err,
+      });
+      return res.status(503).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics: [],
+        ...filters,
+        directoryState: "error",
+        requestId,
+        schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
+        pageTitle: "Search clinics",
+        pageId: "public-clinics-search",
+      }));
+    }
+  });
+
+  app.get("/register-clinic", async (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    const wizardStep = resolveRegisterWizardStep(req.query.step);
+    if (isRegistrationFreshStartRequest(req)) {
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.ACTIVECLINIC,
+        clearDraft: clearRegistrationDraft,
+      });
+      return res.redirect(302, "/register-clinic");
+    }
+    const draftResolution = resolveRegistrationTransactionForGet({
+      req,
+      res,
+      isProduction,
+      clearDraft: clearRegistrationDraft,
+      readDraft: readRegistrationDraft,
+      env,
+      productCode: PRODUCT.ACTIVECLINIC,
+    });
+
+    if (!draftResolution.restoreDraft) {
+      if (wizardStep !== "clinic" || req.query.step) {
+        return res.redirect(302, "/register-clinic");
+      }
+    }
+
+    const defaults = { countryCode: "ZM", clinicType: "clinic" };
+    const formData = draftResolution.formData
+      ? { ...defaults, ...draftResolution.formData }
+      : defaults;
+    const draft = draftResolution.restoreDraft ? draftResolution.draft : null;
+
+    if (wizardStep === "review") {
+      if (!draft || !draft.formData) {
+        return res.redirect(302, "/register-clinic?step=clinic");
+      }
+      const validated = validateClinicRegistrationInput(formData, { skipPassword: true });
+      if (!validated.ok) {
+        return res.status(200).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+          csrfToken,
+          formData,
+          wizardStep: "clinic",
+          formState: "validation_error",
+          validationErrors: validated.errors,
+        })));
+      }
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", withRegisterLocals(req, {
+        csrfToken,
+        formData: registerReviewFormData(formData, validated),
+        wizardStep: "review",
+      })));
+    }
+
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+      csrfToken,
+      wizardStep,
+      formData,
+    })));
+  });
+
+  app.post("/register-clinic", registerLimiter, async (req, res) => {
+    const draft = readRegistrationDraft(req, env);
+    const mergedBody = mergeRegistrationBodyForValidation(req, env, PRODUCT.ACTIVECLINIC, {
+      ...(draft && draft.formData ? draft.formData : {}),
+      ...(req.body || {}),
+    });
+    const formData = registerFormDataFromBody(mergedBody);
+    const action = inferRegisterAction(req.body && req.body.action, formData);
+
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(403).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+        csrfToken,
+        error: "Your session expired. Please try again.",
+        formData,
+        wizardStep: action === "next-admin" || action === "edit-admin" ? "administrator" : "clinic",
+      })));
+    }
+
+    if (action === "confirm") {
+      const requestId = newRegistrationRequestId();
+      const deployment = resolveDeploymentConfiguration(env);
+      try {
+        const located = await applyRegistrationLocation(getPool(), formData);
+        if (!located.ok) {
+          const csrfToken = issuePageCsrf(res, env, isProduction, req);
+          return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", withRegisterLocals(req, {
+            csrfToken,
+            validationErrors: located.errors,
+            formData: registerReviewFormData(formData),
+            wizardStep: "review",
+          })));
+        }
+        const locatedForm = located.formData;
+        const deploymentCode = requirePlatformDeploymentCode(env);
+        const mode = getDeploymentEnvMode(env);
+        const result = await submitAndProvisionClinicRegistration(getPool(), {
+          ...locatedForm,
+          deploymentCode: deploymentCode.ok ? deploymentCode.code : deployment.code,
+          dataEnvironment: mode === "production" ? "production" : "testing",
+          env,
+        });
+
+        if (!result.ok) {
+          const csrfToken = issuePageCsrf(res, env, isProduction, req);
+          if (result.code === "duplicate_application") {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "duplicate_application",
+              category: "duplicate_application",
+              failingOperation: "create_clinic_registration_application",
+              transactionStage: "duplicate_check",
+            });
+            const existingStatus = result.application && result.application.status;
+            const dupMessage =
+              existingStatus === "active"
+                ? "A clinic is already registered with this email or phone."
+                : "An application with this email or phone was recently submitted. A second copy was not created.";
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+              csrfToken,
+              error: dupMessage,
+              formData,
+              wizardStep: "administrator",
+            })));
+          }
+          if (result.errors && Object.keys(result.errors).length) {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "invalid_input",
+              category: "validation",
+              failingOperation: "validate_clinic_registration_input",
+              transactionStage: "validate",
+            });
+            if (result.errors[CONSENT_FIELD] || result.errors.acceptTerms) {
+              return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", withRegisterLocals(req, {
+                req,
+                csrfToken,
+                error: result.errors[CONSENT_FIELD] || result.errors.acceptTerms,
+                validationErrors: result.errors,
+                formData: registerReviewFormData(formData),
+                wizardStep: "review",
+              })));
+            }
+            const adminError = result.errors.contactName
+              || result.errors.contactEmail
+              || result.errors.contactPhone
+              || result.errors.password
+              || result.errors.passwordConfirm;
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+              csrfToken,
+              formState: "validation_error",
+              validationErrors: result.errors,
+              formData,
+              wizardStep: adminError ? "administrator" : "clinic",
+            })));
+          }
+          if (result.code === "schema_mismatch") {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "schema_mismatch",
+              category: "schema_mismatch",
+              failingOperation: "schema_compatibility_guard",
+              transactionStage: "pre_persist",
+            });
+            return res.status(503).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+              csrfToken,
+              error:
+                "Clinic registration is temporarily unavailable because this deployment’s database schema is incomplete. No application was created.",
+              formData,
+              wizardStep: "clinic",
+            })));
+          }
+          logClinicApplicationFailed({
+            requestId,
+            deploymentCode: deployment.code || null,
+            environmentCode: deployment.environment || null,
+            validationCategory: result.code || "rejected",
+            category: "rejected",
+            failingOperation: "create_clinic_registration_application",
+            transactionStage: "service",
+          });
+          return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+            csrfToken,
+            error: "Please check your information and try again.",
+            formData,
+            wizardStep: "clinic",
+          })));
+        }
+
+        logClinicApplicationCreated({
+          requestId,
+          deploymentCode: deployment.code || null,
+          environmentCode: deployment.environment || null,
+          applicationReference: result.application && result.application.applicationNumber,
+        });
+        const ref = result.application && result.application.applicationNumber
+          ? result.application.applicationNumber
+          : "";
+        if (result.ok && ref && locatedForm.city) {
+          try {
+            await persistRegistrationLocation(getPool(), {
+              countryCode: locatedForm.countryCode,
+              city: locatedForm.city,
+              locationId: locatedForm.locationId,
+              provinceRegion: locatedForm.province,
+              registrationReference: ref,
+            });
+          } catch {
+            /* location persistence must not block registration */
+          }
+        }
+        if (result.reviewRequired || result.code === SUBMIT_RESULT.REVIEW_REQUIRED) {
+          clearRegistrationTransaction(res, {
+            isProduction,
+            productCode: PRODUCT.ACTIVECLINIC,
+            clearDraft: clearRegistrationDraft,
+          });
+          return res.redirect(303, buildRegistrationSuccessRedirect({
+            productCode: "activeclinic",
+            reference: ref,
+            review: true,
+          }));
+        }
+        if (result.ok && result.code === SUBMIT_RESULT.OK && formData.password) {
+          try {
+            const auth = await authenticateActiveClinicIdentity(getPool(), {
+              identifier: formData.contactEmail,
+              password: formData.password,
+              deploymentCode: deploymentCode.ok ? deploymentCode.code : String(deployment.code || ""),
+              hostname: resolveHostname(req) || "activeclinic.org",
+              country: formData.countryCode || "ZM",
+              ip: clientIp(req),
+              userAgent: req.headers["user-agent"] || null,
+            });
+            if (auth && auth.ok && auth.rawToken) {
+              await issueAuthenticatedSessionCookie(req, res, {
+                rawToken: auth.rawToken,
+                env,
+                isProduction,
+                getPool,
+              });
+            }
+          } catch {
+            /* session best-effort; unauthenticated /app will require sign-in */
+          }
+        }
+        clearRegistrationTransaction(res, {
+          isProduction,
+          productCode: PRODUCT.ACTIVECLINIC,
+          clearDraft: clearRegistrationDraft,
+        });
+        // Canonical post-registration landing: Admin Console Dashboard (/app).
+        // Do not route newly registered admins to Website Management.
+        // Auto-login is best-effort; /app requires auth when cookie missing.
+        return res.redirect(303, AC_APP_DASHBOARD);
+      } catch (err) {
+        const classified = classifyRegistrationError(err);
+        logClinicApplicationFailed({
+          requestId,
+          deploymentCode: deployment.code || null,
+          environmentCode: deployment.environment || null,
+          category: classified.category,
+          safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+          exceptionClass: err && err.name ? err.name : "Error",
+          failingOperation: classified.failingOperation,
+          transactionStage: classified.transactionStage,
+          includeStack: true,
+          err,
+        });
+        const csrfToken = issuePageCsrf(res, env, isProduction, req);
+        return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", withRegisterLocals(req, {
+          csrfToken,
+          formData,
+          requestId,
+          schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
+          wizardStep: "error",
+          pageId: "public-register-clinic-server-error",
+        })));
+      }
+    }
+
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+
+    if (action === "next-clinic") {
+      const located = await applyRegistrationLocation(getPool(), formData);
+      if (!located.ok) {
+        return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+          csrfToken,
+          formState: "validation_error",
+          validationErrors: located.errors,
+          formData,
+          wizardStep: "clinic",
+        })));
+      }
+      const validated = validateClinicRegistrationInput(located.formData, { step: "clinic" });
+      if (!validated.ok) {
+        return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+          csrfToken,
+          formState: "validation_error",
+          validationErrors: validated.errors,
+          formData,
+          wizardStep: "clinic",
+        })));
+      }
+      const adminFormData = mergeDraftFields({
+        prior: draft && draft.formData,
+        incoming: formData,
+        options: {
+          fieldAllowlist: AC_DRAFT_STEP_ALLOWLIST.clinic,
+          protectedKeys: AC_DRAFT_PROTECTED_KEYS,
+          serverOverrides: {
+            clinicName: validated.normalized.clinicName,
+            clinicType: validated.normalized.clinicType,
+            countryCode: validated.normalized.countryCode,
+            province: validated.normalized.province || "",
+            city: validated.normalized.city || "",
+            address: validated.normalized.address || "",
+            notes: validated.normalized.notes || "",
+          },
+        },
+      });
+      writeRegistrationDraft(res, env, adminFormData, {
+        isProduction,
+        currentStep: "administrator",
+        priorDraft: draft,
+      });
+      return res.redirect(303, withRegistrationNavParam("/register-clinic?step=administrator"));
+    }
+
+    const validated = validateClinicRegistrationInput(formData);
+    if (!validated.ok) {
+      const adminError = validated.errors.contactName
+        || validated.errors.contactEmail
+        || validated.errors.contactPhone
+        || validated.errors.password
+        || validated.errors.passwordConfirm;
+      return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {
+        csrfToken,
+        formState: "validation_error",
+        validationErrors: validated.errors,
+        formData,
+        wizardStep: adminError ? "administrator" : "clinic",
+      })));
+    }
+
+    const reviewFormData = registerReviewFormData(formData, validated);
+    const nextDraft = mergeDraftFields({
+      prior: draft && draft.formData,
+      incoming: formData,
+      options: {
+        fieldAllowlist: [
+          ...AC_DRAFT_STEP_ALLOWLIST.clinic,
+          ...AC_DRAFT_STEP_ALLOWLIST.administrator,
+        ],
+        protectedKeys: AC_DRAFT_PROTECTED_KEYS,
+      },
+    });
+    writeRegistrationDraft(res, env, nextDraft, {
+      isProduction,
+      currentStep: "review",
+      priorDraft: draft,
+    });
+    persistRegistrationPasswordFromBody(res, env, mergedBody, {
+      isProduction,
+      productCode: PRODUCT.ACTIVECLINIC,
+    });
+    return res.redirect(303, withRegistrationNavParam("/register-clinic?step=review"));
+  });
+
+  app.get("/register-clinic/success", async (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
+    const reviewRequired = String(req.query.review || "") === "1";
+    const ready = String(req.query.ready || "") === "1";
+    let website = null;
+    if (ready && !reviewRequired && applicationReference) {
+      try {
+        website = await resolveActiveClinicRegistrationSuccessWebsite(getPool(), {
+          reference: applicationReference,
+          ready: true,
+          publicOrigin: activeClinicOrigin(req),
+        });
+      } catch {
+        website = null;
+      }
+    }
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", withRegisterLocals(req, {
+      csrfToken,
+      applicationReference: applicationReference || null,
+      reviewRequired,
+      ready: ready && !reviewRequired,
+      authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+      website,
+      wizardStep: "success",
+      pageId: "public-register-clinic-success",
+    })));
+  });
+
+  app.get("/register-clinic/status", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+      csrfToken,
+      pageTitle: "Registration status",
+      robots: "noindex, nofollow",
+      lookupState: "form",
+      error: null,
+      validationErrors: {},
+      formData: statusFormDataFrom({}, req.query),
+      projection: null,
+    }));
+  });
+
+  app.post("/register-clinic/status", statusLimiter, async (req, res, next) => {
+    const formData = statusFormDataFrom(req.body, req.query);
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(403).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Registration status",
+        robots: "noindex, nofollow",
+        lookupState: "form",
+        error: "Your session expired. Please try again.",
+        validationErrors: {},
+        formData,
+        projection: null,
+      }));
+    }
+    try {
+      const result = await lookupClinicRegistrationApplicantStatus(getPool(), {
+        applicationNumber: formData.applicationNumber,
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
+        phoneCountry: formData.phoneCountry,
+        phoneNational: formData.phoneNational,
+      });
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      if (!result.ok) {
+        const invalid = result.code === "invalid_input";
+        return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+          csrfToken,
+          pageTitle: "Registration status",
+          robots: "noindex, nofollow",
+          lookupState: "form",
+          error: invalid ? result.message : GENERIC_NOT_FOUND,
+          validationErrors: result.errors || {},
+          formData,
+          projection: null,
+        }));
+      }
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Registration status",
+        robots: "noindex, nofollow",
+        lookupState: "result",
+        error: null,
+        validationErrors: {},
+        formData,
+        projection: result.projection,
+      }));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  // ========== Tenant Public Routes ==========
+  // Canonical ActiveClinic public path is /clinics/:clinicKey.
+  // /c/:clinicKey is a compatibility alias using the shared URL template.
+  // GET/HEAD only — never redirect POST website/booking writes.
+
+  function redirectIfNotCanonical(req, res, next) {
+    const key = String(req.params.clinicKey || "").trim();
+    if (!key) return next();
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.ACTIVECLINIC, {
+        canonicalOrganizationKey: key,
+      })
+    ) {
+      return undefined;
+    }
+    return next();
+  }
+
+  app.use("/c/:clinicKey", redirectIfNotCanonical);
+  app.use("/clinics/:clinicKey", redirectIfNotCanonical);
+
+  app.get("/clinics/:clinicKey/sitemap.xml", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const presented = website.clinic || clinic;
+      const seo = buildActiveClinicPublicSeo({
+        req,
+        env: process.env,
+        clinic: presented,
+        instance: website.instance,
+        template: "tenant/home",
+      });
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      if (!seo.includeInSitemap) {
+        return res.status(200).send(buildSitemapXml([]));
+      }
+      return res.status(200).send(buildSitemapXml(activeClinicSitemapUrls(req, presented)));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/robots.txt", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const presented = website.clinic || clinic;
+      const seo = buildActiveClinicPublicSeo({
+        req,
+        env: process.env,
+        clinic: presented,
+        instance: website.instance,
+        template: "tenant/home",
+      });
+      const base = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: presented.clinicKey,
+      });
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.status(200).send(
+        buildRobotsTxt({
+          allow: !seo.noindex,
+          sitemapUrl:
+            !seo.noindex && base ? `${activeClinicOrigin(req)}${base}/sitemap.xml` : null,
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      return renderTenantView(req, res, clinic, "tenant/home");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/about", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      return renderTenantView(req, res, clinic, "tenant/about");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/contact", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      if (req.query.submitted === "1") {
+        return renderTenantView(req, res, clinic, "tenant/contact-success");
+      }
+
+      return renderTenantView(req, res, clinic, "tenant/contact", {
+        error: null,
+        formData: {},
+        validationErrors: {},
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/contact/success", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      return renderTenantView(req, res, clinic, "tenant/contact-success");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/contact", async (req, res, next) => {
+    try {
+      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
+      if (!clinicResult.ok) {
+        return sendClinicResolveFailure(res, clinicResult, respondDeps);
+      }
+
+      const clinic = clinicResult.clinic;
+
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(403).type("html").send(renderPublicView("tenant/contact", {
+          csrfToken,
+          clinic,
+          error: "Your session expired. Please try again.",
+          formData: req.body || {},
+        }));
+      }
+
+      const result = await createPublicContactInquiry(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        facilityId: clinic.primaryFacilityId || null,
+        senderName: req.body.senderName,
+        senderEmail: req.body.senderEmail,
+        senderPhone: req.body.senderPhone || null,
+        phoneCountry: req.body.phone_country || null,
+        phoneNational: req.body.phone_national || null,
+        clinicDefaultCountry: clinic.countryCode || null,
+        message: req.body.message,
+      });
+
+      if (!result.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(400).type("html").send(renderPublicView("tenant/contact", {
+          csrfToken,
+          clinic,
+          error: "Please check your information and try again.",
+          validationErrors: describeClinicContactErrors(result.code),
+          formData: req.body || {},
+        }));
+      }
+
+      return res.redirect(
+        303,
+        buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: req.params.clinicKey,
+          suffix: "contact/success",
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/pricing", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const priceResult = await listPublicPricePatterns(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+      });
+
+      return renderTenantView(req, res, clinic, "tenant/pricing", {
+        pricePatterns: priceResult.patterns || [],
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/location", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      return renderTenantView(req, res, clinic, "tenant/location");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  // R10: prefer CMS page slug (/p/gallery) over inventing a parallel gallery engine.
+  // Thin alias keeps a stable public URL while reusing the same gallery presentation.
+  app.get("/clinics/:clinicKey/gallery", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const pages = (website.clinic && website.clinic.cmsPages) || [];
+      const allowDraft =
+        canEditClinicWebsite(req, clinic) &&
+        (String(req.query.website_mode || "") === "draft" || String(req.query.website_edit || "") === "1");
+      const cmsPage = allowDraft
+        ? GALLERY_PAGE_SLUGS.map((slug) => cmsService.findDraftCustomPageBySlug(pages, slug)).find(Boolean)
+        : GALLERY_PAGE_SLUGS.map((slug) => cmsService.findCustomPageBySlug(pages, slug)).find(Boolean);
+      if (cmsPage && cmsPage.slug) {
+        return res.redirect(302, `/clinics/${clinic.clinicKey}/p/${encodeURIComponent(cmsPage.slug)}`);
+      }
+      return renderTenantView(req, res, clinic, "tenant/gallery", {
+        pageTitle: (website.clinic && website.clinic.galleryHeading) || "Clinic environment",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/patient-information", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      return renderTenantView(req, res, clinic, "tenant/patient-information");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/privacy", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      return renderTenantView(req, res, clinic, "tenant/privacy");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/terms", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      return renderTenantView(req, res, clinic, "tenant/terms");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  // P23: Services & Doctors
+  app.get("/clinics/:clinicKey/services", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const servicesResult = await listWebsiteServices(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+      });
+
+      const proceduresResult = await listPublicProcedures(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+      });
+
+      return renderTenantView(req, res, clinic, "tenant/services", {
+        services: applyLibraryPresentation(
+          servicesResult.services || [],
+          clinic.cmsLibrary,
+          "service",
+          "serviceKey"
+        ),
+        procedures: proceduresResult.procedures || [],
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/services/:serviceKey", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const serviceResult = await getWebsiteService(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        serviceKey: req.params.serviceKey,
+      });
+
+      const presentedClinic = (await attachActiveClinicWebsiteLocals(getPool(), req, clinic)).clinic || clinic;
+      if (!serviceResult.ok || libraryItemIsHidden(presentedClinic.cmsLibrary, "service", req.params.serviceKey)) {
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Service not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
+      }
+
+      const [presentedService] = applyLibraryPresentation(
+        [serviceResult.service],
+        presentedClinic.cmsLibrary,
+        "service",
+        "serviceKey"
+      );
+      const serviceKind =
+        clinic.publicBookingEnabled && presentedService && presentedService.bookable
+          ? "consultation"
+          : "informational";
+      return renderTenantView(req, res, clinic, "tenant/service-detail", {
+        service: presentedService || serviceResult.service,
+        serviceKind,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/procedures/:procedureKey", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+
+      if (!procedureResult.ok) {
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Procedure not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
+      }
+
+      return renderTenantView(req, res, clinic, "tenant/procedure-detail", {
+        procedure: procedureResult.procedure,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/doctors", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const profilesResult = await listPublicStaffProfiles(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+      });
+
+      return renderTenantView(req, res, clinic, "tenant/doctors", {
+        profiles: applyLibraryPresentation(
+          profilesResult.profiles || [],
+          clinic.cmsLibrary,
+          "doctor",
+          "staffKey"
+        ),
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/doctors/:staffKey", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const profileResult = await getPublicStaffProfile(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        staffKey: req.params.staffKey,
+      });
+
+      const presentedClinic = (await attachActiveClinicWebsiteLocals(getPool(), req, clinic)).clinic || clinic;
+      if (!profileResult.ok || libraryItemIsHidden(presentedClinic.cmsLibrary, "doctor", req.params.staffKey)) {
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Doctor not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
+      }
+
+      const [presentedProfile] = applyLibraryPresentation(
+        [profileResult.profile],
+        presentedClinic.cmsLibrary,
+        "doctor",
+        "staffKey"
+      );
+      return renderTenantView(req, res, clinic, "tenant/doctor-profile", {
+        profile: presentedProfile || profileResult.profile,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  // P24–P26: Booking wizard, procedure booking, my-booking
+  registerActiveClinicPublicBookingRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    respondDeps,
+    issuePageCsrf,
+    validateCsrf,
+    bookingLimiter,
+    lookupLimiter,
+  });
+
+  app.get("/clinics/:clinicKey/p/:pageSlug", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const pages = (website.clinic && website.clinic.cmsPages) || [];
+      const blocks = (website.clinic && website.clinic.cmsBlocks) || [];
+      const allowDraft =
+        canEditClinicWebsite(req, clinic) &&
+        (String(req.query.website_mode || "") === "draft" || String(req.query.website_edit || "") === "1");
+      const page = allowDraft
+        ? cmsService.findDraftCustomPageBySlug(pages, req.params.pageSlug)
+        : cmsService.findCustomPageBySlug(pages, req.params.pageSlug);
+      if (!page) {
+        return res.status(404).type("html").send(
+          renderPublicView("tenant/clinic-not-found", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            pageTitle: "Page not found",
+            shellVariant: "tenant",
+            clinic: website.clinic || clinic,
+          })
+        );
+      }
+      const pageBlocks = blocks.filter((block) => block && block.page_id === page.id);
+      if (isGalleryPageSlug(page.slug)) {
+        return renderTenantView(req, res, clinic, "tenant/gallery", {
+          customPage: page,
+          pageBlocks,
+          pageTitle: page.meta_title || page.title || "Clinic environment",
+          metaDescription: page.meta_description || "",
+        });
+      }
+      return renderTenantView(req, res, clinic, "tenant/custom-page", {
+        customPage: page,
+        pageBlocks,
+        pageTitle: page.meta_title || page.title || clinic.publicName,
+        metaDescription: page.meta_description || "",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+}
+
+module.exports = {
+  registerActiveClinicPublicRoutes,
+};

@@ -1,0 +1,16 @@
+<%#
+  Presentation chrome only — does not implement BlessBoard announcements domain.
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  if (m.visibility === false) { /* hidden */ } else {
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<aside class="gp-website-pc gp-website-pc--announcement<%= extraClass %>" data-gp-website-component="announcement">
+  <% if (m.title) { %><h2 class="gp-website-pc__title"><%= m.title %></h2><% } %>
+  <% if (m.body) { %><p class="gp-website-pc__body"><%= m.body %></p><% } %>
+  <% if (m.cta && m.cta.label) { %>
+  <a class="gp-website-pc__btn gp-website-pc__btn--primary" href="<%= m.cta.url || '#' %>"><%= m.cta.label %></a>
+  <% } %>
+</aside>
+<% } %>

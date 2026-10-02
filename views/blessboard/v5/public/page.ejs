@@ -12,6 +12,8 @@
   <%- include('./events') %>
 <% } else if (pageKey === 'sermons') { %>
   <%- include('./sermons') %>
+<% } else if (pageKey === 'announcements') { %>
+  <%- include('./announcements') %>
 <% } else if (pageKey === 'contact') { %>
   <%- include('./contact') %>
 <% } else if (pageKey === 'giving') { %>
@@ -26,12 +28,26 @@
 
     <% if (sections && sections.length) { %>
       <% sections.forEach(function (section) { %>
-      <section class="bb-tp-section" data-section="<%= section.sectionKey %>">
-        <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
-        <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
-        <% if (section.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
-        <% } %>
+      <section class="bb-tp-section bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
+        <h2>
+          <%- include('../partials/editable-text', {
+            editPageKey: pageKey || 'page',
+            editSectionKey: section.sectionKey,
+            editFieldKey: 'heading',
+            editValue: section.heading || '',
+            editLabel: 'Edit section heading'
+          }) %>
+        </h2>
+        <p>
+          <%- include('../partials/editable-text', {
+            editPageKey: pageKey || 'page',
+            editSectionKey: section.sectionKey,
+            editFieldKey: 'bodyText',
+            editValue: section.bodyText || '',
+            editLabel: 'Edit section body'
+          }) %>
+        </p>
+        <%- include('./partials/content-block-media', { section: section, editPageKey: pageKey || 'page' }) %>
       </section>
       <% }) %>
     <% } %>

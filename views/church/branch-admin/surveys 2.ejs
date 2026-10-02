@@ -1,0 +1,73 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Surveys</h1>
+          <p class="church-branch-topbar__subtitle">Custom surveys with consent, branching, and routing</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Create survey</h2>
+        <form class="church-form" method="post" action="/branch/surveys">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="title">Title</label>
+            <input class="church-input" id="title" name="title" required/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="consent_text">Consent text</label>
+            <textarea class="church-input" id="consent_text" name="consent_text" rows="3" required></textarea>
+          </div>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="sensitivity">Sensitivity</label>
+              <select class="church-input" id="sensitivity" name="sensitivity">
+                <option value="standard">Standard</option>
+                <option value="sensitive">Sensitive</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="authorised_audience">Authorised audience</label>
+              <select class="church-input" id="authorised_audience" name="authorised_audience">
+                <option value="branch_admin">Branch admin</option>
+                <option value="pastoral">Pastoral</option>
+                <option value="supervisor">Supervisor</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="route_on_submit">Route on submit</label>
+              <select class="church-input" id="route_on_submit" name="route_on_submit">
+                <option value="none">None</option>
+                <option value="prayer_request">Linked prayer request</option>
+                <option value="care_case">Linked care case</option>
+                <option value="appointment_request">Linked appointment request</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label"><input type="checkbox" name="is_recurring" value="1"/> Recurring</label>
+              <input class="church-input" name="recurrence_interval_days" type="number" placeholder="Interval days" min="1" max="365"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Create</button>
+        </form>
+        <form class="church-form church-form--inline" method="post" action="/branch/surveys/process-recurring" style="margin-top:1rem;">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--ghost" type="submit">Process recurring surveys</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Surveys</h2>
+        <ul class="church-list">
+          <% (surveys || []).forEach(function (s) { %>
+          <li>
+            <a href="/branch/surveys/<%= s.id %>"><%= s.title %></a>
+            · <%= s.status %><% if (s.is_recurring) { %> · recurring<% } %>
+            · <%= s.response_count || 0 %> responses
+            <% if (s.sensitivity === 'sensitive') { %> · audience: <%= s.authorised_audience %><% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

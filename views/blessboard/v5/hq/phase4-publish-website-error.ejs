@@ -28,7 +28,10 @@
     <% } %>
   </header>
 
-  <article class="bb-hq-card" role="alert">
+  <article class="bb-hq-card" role="alert" data-bb-publish-error="1"
+    <% if (e.requestId) { %>data-bb-publish-request-id="<%= e.requestId %>"<% } %>
+    <% if ((e.errorCodes || []).length) { %>data-bb-publish-error-code="<%= e.errorCodes[0] %>"<% } %>
+  >
     <h2 class="bb-hq-section-title">What needs attention</h2>
     <% if (problems.length) { %>
     <ul class="bb-phase4-publish__problems">
@@ -36,6 +39,9 @@
     </ul>
     <% } else { %>
     <p>Website information needs attention before publishing.</p>
+    <% } %>
+    <% if (e.requestId) { %>
+    <p class="bb-hq-muted" data-bb-publish-request-id-text="1">Request ID: <%= e.requestId %></p>
     <% } %>
   </article>
 

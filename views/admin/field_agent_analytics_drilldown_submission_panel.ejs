@@ -48,7 +48,7 @@
   </dl>
   <% var _canCorrect = typeof canCorrectSubmissions !== 'undefined' && canCorrectSubmissions; %>
   <% if (_canCorrect) { %>
-  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.08);">
+  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);">
     <h4 class="admin-dashboard-panel__title" style="font-size:1rem;margin:0 0 0.35rem 0;">Correction / dispute resolution</h4>
     <p class="muted" style="margin:0 0 0.75rem 0;font-size:0.85rem;">
       Override status when a decision was wrong or disputed. Requires a reason; all corrections are appended to the audit trail.
@@ -80,13 +80,13 @@
   <% } %>
   <% var _ah = typeof auditHistory !== 'undefined' && auditHistory ? auditHistory : []; %>
   <% if (_ah.length) { %>
-  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.08);">
+  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);">
     <h4 class="admin-dashboard-panel__title" style="font-size:1rem;margin:0 0 0.5rem 0;">Action history</h4>
     <p class="muted" style="margin:0 0 0.75rem 0;font-size:0.85rem;">Recorded moderation actions for this submission (newest first).</p>
     <ul class="faa-audit-history" style="list-style:none;margin:0;padding:0;">
       <% _ah.forEach(function (a) { %>
       <% var _corr = a.metadata && a.metadata.correction === true; %>
-      <li style="margin-bottom:0.65rem;padding-bottom:0.65rem;border-bottom:1px solid rgba(0,0,0,0.06);<%= _corr ? ' background:rgba(255,248,220,0.35);' : '' %>">
+      <li style="margin-bottom:0.65rem;padding-bottom:0.65rem;border-bottom:1px solid color-mix(in srgb, var(--color-text-primary) 6%, transparent);<%= _corr ? ' background:color-mix(in srgb, var(--color-warning-bg) 35%, transparent);' : '' %>">
         <div style="font-weight:600;">
           <%= a.action_type %>
           <span class="muted" style="font-weight:400;"> — <%= a.previous_status %> → <%= a.new_status %></span>

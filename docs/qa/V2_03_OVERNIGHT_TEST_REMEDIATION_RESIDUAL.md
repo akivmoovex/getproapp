@@ -1,0 +1,615 @@
+# Residual failure classification (post Prompt 2 remediation)
+
+TOTAL_LEAF_FAIL=228
+
+| Class | Count |
+|--|--:|
+| REGEX | 67 |
+| OTHER | 66 |
+| EQUALITY | 65 |
+| HTTP_STATUS | 13 |
+| FIXTURE_SETUP | 10 |
+| REDIRECT_302 | 2 |
+| PLAYWRIGHT | 2 |
+| REDIRECT_301 | 2 |
+| CDN | 1 |
+
+## By file
+
+- `tests/blessboard-v1-registration-review-matrix.test.js` — 10
+- `tests/blessboard-tenant-context-website-routes.test.js` — 9
+- `tests/blessboard-registration-approval-invitation.test.js` — 6
+- `tests/blessboard-testing-org-purge.test.js` — 6
+- `tests/church-visual-design.test.js` — 5
+- `tests/v7-inline-editor-coverage.test.js` — 5
+- `tests/blessboard-branch-admin-route-reconciliation.test.js` — 4
+- `tests/blessboard-foundation-checklist-public-links.test.js` — 4
+- `tests/blessboard-phase7-editors.test.js` — 4
+- `tests/blessboard-phase7-public-density-audit.test.js` — 4
+- `tests/blessboard-support-follow-up-ops.test.js` — 4
+- `tests/activeclinic-pass6-media.test.js` — 3
+- `tests/blessboard-member-registration.test.js` — 3
+- `tests/blessboard-registration-operator-approval.test.js` — 3
+- `tests/blessboard-v1-blocker-and-bugs-04-06.test.js` — 3
+- `tests/v7-public-performance-assets.test.js` — 3
+- `tests/v7-website-mobile-editor.test.js` — 3
+- `tests/activeclinic-clinic-onboarding.test.js` — 2
+- `tests/activeclinic-mf08-patient-registration.test.js` — 2
+- `tests/activeclinic-mf09-patient-dashboard.test.js` — 2
+- `tests/activeclinic-mw-stitch-parity.test.js` — 2
+- `tests/activeclinic-phase12-states.test.js` — 2
+- `tests/activeclinic-phase9-a11y.test.js` — 2
+- `tests/activeclinic-platform-02.test.js` — 2
+- `tests/blessboard-admin-onboarding-support.test.js` — 2
+- `tests/blessboard-member-journey-foundation.test.js` — 2
+- `tests/blessboard-member-journey-workflow.test.js` — 2
+- `tests/blessboard-phone-otp-workflows.test.js` — 2
+- `tests/blessboard-platform-admin-login-diagnosis.test.js` — 2
+- `tests/blessboard-registration-phone.test.js` — 2
+- `tests/blessboard-tenant-auth.test.js` — 2
+- `tests/blessboard-website-mode.test.js` — 2
+- `tests/church-public-giving-contact-visual.test.js` — 2
+- `tests/church-public-home-ministries-regression.test.js` — 2
+- `tests/church-public-ministries-visual.test.js` — 2
+- `tests/church-stitch-platform-admin.test.js` — 2
+- `tests/phase4-recent-website-changes.test.js` — 2
+- `tests/v7-bb-mobile-editor-pointer.test.js` — 2
+- `tests/v7-blessboard-website-engine-convergence.test.js` — 2
+- `tests/v7-blessboard-website-template.test.js` — 2
+- `tests/v7-default-website-template-qa.test.js` — 2
+- `tests/v7-layout-family-contract.test.js` — 2
+- `tests/v7-public-media-alt-text-rendering.test.js` — 2
+- `tests/v7-shared-content-media-library.test.js` — 2
+- `tests/v8-shared-module-coverage.test.js` — 2
+- `tests/activeclinic-editor-client-contracts.test.js` — 1
+- `tests/activeclinic-foundation-states-parity.test.js` — 1
+- `tests/activeclinic-logout-after-switch.test.js` — 1
+- `tests/activeclinic-mf-identity.test.js` — 1
+- `tests/activeclinic-mf03-registration.test.js` — 1
+- `tests/activeclinic-pass7-mobile.test.js` — 1
+- `tests/activeclinic-patient-portal.test.js` — 1
+- `tests/activeclinic-phase4-patient-print-card.test.js` — 1
+- `tests/activeclinic-phase5a-procedure-booking.test.js` — 1
+- `tests/activeclinic-phase8-mobile.test.js` — 1
+- `tests/activeclinic-platform-03.test.js` — 1
+- `tests/activeclinic-project-10611909237747031838-parity.test.js` — 1
+- `tests/activeclinic-public-root-routing.test.js` — 1
+- `tests/blessboard-admin-ops-alerts.test.js` — 1
+- `tests/blessboard-admin-registration-ops.test.js` — 1
+- `tests/blessboard-auth-http.test.js` — 1
+- `tests/blessboard-branch-display-name.test.js` — 1
+- `tests/blessboard-branch-mini-website-pages.test.js` — 1
+- `tests/blessboard-branch-mini-websites.test.js` — 1
+- `tests/blessboard-custom-domain-routing.test.js` — 1
+- `tests/blessboard-demo-church-config.test.js` — 1
+- `tests/blessboard-foundation-schema-status.test.js` — 1
+- `tests/blessboard-login-mobile-overflow.test.js` — 1
+- `tests/blessboard-phase7-remediation.test.js` — 1
+- `tests/blessboard-phone-first-forms.test.js` — 1
+- `tests/blessboard-platform-admin-directory.test.js` — 1
+- `tests/blessboard-platform-admin-integration.test.js` — 1
+- `tests/blessboard-platform-admin-mobile-nav.test.js` — 1
+- `tests/blessboard-production-registration-p1.test.js` — 1
+- `tests/blessboard-prompt7-stage3-website-settings-editor.test.js` — 1
+- `tests/blessboard-registration-public-miniwebsite.test.js` — 1
+- `tests/blessboard-registration-risk-review.test.js` — 1
+- `tests/blessboard-registration-schema-mismatch.test.js` — 1
+- `tests/blessboard-test-users-seed.test.js` — 1
+- `tests/blessboard-testing-demo-content-seed.test.js` — 1
+- `tests/blessboard-v1-reg-07-success-screen.test.js` — 1
+- `tests/blessboard-v1-registration-fixes.test.js` — 1
+- `tests/blessboard-v5-csrf-action-audit.test.js` — 1
+- `tests/blessboard-v5-mobile-burger-browser.test.js` — 1
+- `tests/blessboard-website-management-hub-parity.test.js` — 1
+- `tests/blessboard-website-mobile-editing.test.js` — 1
+- `tests/church-branch-hq-csrf-coverage.test.js` — 1
+- `tests/church-branding.test.js` — 1
+- `tests/church-data-environment.test.js` — 1
+- `tests/church-database-identity.test.js` — 1
+- `tests/church-db-resilience.test.js` — 1
+- `tests/church-hq-reports.test.js` — 1
+- `tests/church-low-bandwidth-performance.test.js` — 1
+- `tests/church-mvp-placeholder-screens.test.js` — 1
+- `tests/church-pilot-launch.test.js` — 1
+- `tests/church-platform-public-launch.test.js` — 1
+- `tests/church-platform-public-seo.test.js` — 1
+- `tests/church-public-directory-cards.test.js` — 1
+- `tests/church-public-events-sermons-visual.test.js` — 1
+- `tests/church-selection-verification.test.js` — 1
+- `tests/church-stitch-branch-admin.test.js` — 1
+- `tests/church-stitch-member.test.js` — 1
+- `tests/church-tenant-homepage.test.js` — 1
+- `tests/member-notification-preferences.test.js` — 1
+- `tests/phase4-system-states.test.js` — 1
+- `tests/shared-website-editor-wave1.test.js` — 1
+- `tests/shared-website-editor-wave4b1.test.js` — 1
+- `tests/shared-website-editor-wave4b2.test.js` — 1
+- `tests/v2-01-bb-inline-editor-parity.test.js` — 1
+- `tests/v2-01-field-history-restore.test.js` — 1
+- `tests/v2-01-publish-error-diagnostics.test.js` — 1
+- `tests/v2-01-shared-theme-gallery.test.js` — 1
+- `tests/v2-01-toolbar-reminders.test.js` — 1
+- `tests/v2-01-unpublished-changes-panel.test.js` — 1
+- `tests/v2-bb-home-leaders-image.test.js` — 1
+- `tests/v2-bb-season-image-edit.test.js` — 1
+- `tests/v2-shared-media-type-conversion.test.js` — 1
+- `tests/v2-shared-media-upload-parity.test.js` — 1
+- `tests/v7-auth-reg-stitch-parity.test.js` — 1
+- `tests/v7-blessboard-publish-engine-bridge.test.js` — 1
+- `tests/v7-branch-editor-canonical-actions.test.js` — 1
+- `tests/v7-branch-website-inline-save.test.js` — 1
+- `tests/v7-bugs-05-08-registration-ux.test.js` — 1
+- `tests/v7-color-system-consolidation.test.js` — 1
+- `tests/v7-hostinger-testing-runtime.test.js` — 1
+- `tests/v7-local-registration-to-website-e2e.test.js` — 1
+- `tests/v7-new-church-operational-readiness.test.js` — 1
+- `tests/v7-new-clinic-operational-readiness.test.js` — 1
+- `tests/v7-new-tenant-provisioning.test.js` — 1
+- `tests/v7-registration-website-audit-trail.test.js` — 1
+- `tests/v7-shared-seo-expansion.test.js` — 1
+- `tests/v7-shared-website-editor-persistence.test.js` — 1
+- `tests/v7-unified-onboarding.test.js` — 1
+- `tests/v7-unified-website-management.test.js` — 1
+- `tests/v7-unified-website-urls.test.js` — 1
+- `tests/v7-website-draft-live-integrity.test.js` — 1
+- `tests/v8-qa-homepage-v2-only.test.js` — 1
+- `tests/website-ui-completion.test.js` — 1
+
+## Leaf inventory
+
+- **REGEX** `tests/activeclinic-clinic-onboarding.test.js:227:3` — GET /register-clinic and /login expose the public onboarding path
+  - `        The input did not match the regular expression /Email address or phone number|Phone number or email|Email or phone number/. Input:                  '<!D`
+- **HTTP_STATUS** `tests/activeclinic-clinic-onboarding.test.js:398:3` — duplicate email or phone is blocked and credentials are already cleared after auto-provision
+  - `        Expected values to be strictly equal:                  303 !== 400                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 400`
+- **REGEX** `tests/activeclinic-editor-client-contracts.test.js:35:3` — shared lifecycle publish uses urlencoded body and connection failure copy
+  - `        The input did not match the regular expression /Publish failed — check your connection and retry\. Draft unchanged\./. Input:                  '/**\n' +`
+- **REGEX** `tests/activeclinic-foundation-states-parity.test.js:347:3` — access overview filtered uses no-results taxonomy
+  - `        The input did not match the regular expression /data-ac-state-key="no_results"/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en`
+- **REGEX** `tests/activeclinic-logout-after-switch.test.js:499:3` — Test 8: BlessBoard shared POST /logout CSRF gate is unchanged
+  - `        The input did not match the regular expression /terminateV5BrowserSession/. Input:                  '"use strict";\n' +           '\n' +           '/**\`
+- **REGEX** `tests/activeclinic-mf-identity.test.js:38:3` — MF01 login preserves identifier contract and one login route
+  - `        The input did not match the regular expression /<h1[^>]*>Sign In<\/h1>/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' + `
+- **REGEX** `tests/activeclinic-mf03-registration.test.js:75:3` — step 2 keeps V7 10-character password policy and empty password fields
+  - `        The input did not match the regular expression /Password must be at least 10 characters/. Input:                  '<!DOCTYPE html>\n' +           '<html`
+- **REGEX** `tests/activeclinic-mf08-patient-registration.test.js:267:3` — registration GET, valid phone-first register, login, profile, and isolation
+  - `        The input did not match the regular expression /No matching patient record found/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="`
+- **OTHER** `tests/activeclinic-mf08-patient-registration.test.js:403:3` — guest booking linkage remains available and does not invent OTP
+  - `400`
+- **HTTP_STATUS** `tests/activeclinic-mf09-patient-dashboard.test.js:269:3` — anonymous dashboard redirects; empty and booked dashboards stay current-data-only
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **REGEX** `tests/activeclinic-mf09-patient-dashboard.test.js:446:3` — keeps the dashboard usable at 390px
+  - `        The input did not match the regular expression /Welcome back|No bookings yet/. Input:                  '<!DOCTYPE html><html lang="en" style="--ac-keybo`
+- **REGEX** `tests/activeclinic-mw-stitch-parity.test.js:35:3` — CMS screens keep Stitch titles and working upload/publish controls
+  - `        The input did not match the regular expression /onsubmit="return confirm\(/. Input:                  '<%\n' +           '  var website = (pageData && pa`
+- **REGEX** `tests/activeclinic-mw-stitch-parity.test.js:128:3` — CMS shell hides staff ops chrome and versions ActiveClinic CSS
+  - `        The input did not match the regular expression /v7-urp-1/. Input:                  '"use strict";\n' +           '\n' +           '/**\n' +           ' `
+- **EQUALITY** `tests/activeclinic-pass6-media.test.js:21:3` — maps Julflona doctors deterministically and falls back for nurse
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'https://blessboard.pronline.org/media/testing/platform/activeclini`
+- **EQUALITY** `tests/activeclinic-pass6-media.test.js:33:3` — uses julflona hero for julflona clinic only
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/activeclinic/assets/clinic-hero-default.jpg'      `
+- **EQUALITY** `tests/activeclinic-pass6-media.test.js:47:3` — enriches locals with consistent doctor photoUrl across list fields
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'https://blessboard.pronline.org/media/testing/platform/activeclini`
+- **REGEX** `tests/activeclinic-pass7-mobile.test.js:53:3` — ships Pass 7 mobile CSS tokens and bottom-nav rules
+  - `        The input did not match the regular expression /Pass 7 — authenticated mobile shell/. Input:                  '/* ActiveClinic authenticated application`
+- **OTHER** `tests/activeclinic-patient-portal.test.js:327:3` — guest token registration links patient and lists only owned bookings
+  - `        400 <!DOCTYPE html>         <html lang="en">         <head>           <meta charset="utf-8"/>           <meta name="viewport" content="width=device-widt`
+- **OTHER** `tests/activeclinic-phase12-states.test.js:293:3` — major list views use canonical empty markers
+  - `views/activeclinic/app/clinical-queue-content.ejs missing clinical-queue-empty`
+- **REGEX** `tests/activeclinic-phase12-states.test.js:334:3` — clinical / patients / reception empty lists use canonical EMPTY
+  - `        The input did not match the regular expression /data-ac-empty="clinical-queue-empty"/. Input:                  '<!DOCTYPE html>\n' +           '<html la`
+- **REGEX** `tests/activeclinic-phase4-patient-print-card.test.js:203:3` — authorized receptionist can print patient card with real identity fields
+  - `        The input did not match the regular expression /1988-05-04/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +           '<`
+- **REGEX** `tests/activeclinic-phase5a-procedure-booking.test.js:158:3` — renders every required step and submits a normalized pending request
+  - `        The input did not match the regular expression /name="patientPhone"/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +    `
+- **REGEX** `tests/activeclinic-phase8-mobile.test.js:39:3` — uses MF03 transactional chrome on clinic registration (no marketing bottom nav)
+  - `        The input did not match the regular expression /v7-proj106-p7/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +          `
+- **REGEX** `tests/activeclinic-phase9-a11y.test.js:23:3` — shells expose skip links, main landmarks, lang, and a11y script
+  - `        The input did not match the regular expression /v7-proj106-p7/. Input:                  '"use strict";\n' +           '\n' +           '/**\n' +        `
+- **REGEX** `tests/activeclinic-phase9-a11y.test.js:122:3` — status and muted text meet AA contrast intent
+  - `        The input did not match the regular expression /--ac-muted:\s*#434653/. Input:                  '/* ActiveClinic authenticated application shell (V2.03 `
+- **REDIRECT_302** `tests/activeclinic-platform-02.test.js:183:3` — registration edit from review uses GET navigation with signed draft cookie
+  - `        Expected values to be strictly equal:                  302 !== 200                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 200`
+- **REDIRECT_302** `tests/activeclinic-platform-02.test.js:220:3` — registration confirm rejects invalid CSRF while GET edit stays available
+  - `        Expected values to be strictly equal:                  302 !== 200                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 200`
+- **REGEX** `tests/activeclinic-platform-03.test.js:106:3` — registration keeps three steps with shared aside layout shell
+  - `        The input did not match the regular expression /href="\/register-clinic\?step=clinic"/. Input:                  '<!DOCTYPE html>\n' +           '<html l`
+- **REGEX** `tests/activeclinic-project-10611909237747031838-parity.test.js:38:3` — asset versions reflect project 106 closure bump
+  - `        The input did not match the regular expression /v7-proj106-p7/. Input:                  '"use strict";\n' +           '\n' +           '/**\n' +        `
+- **REGEX** `tests/activeclinic-public-root-routing.test.js:158:3` — 2. anonymous activeclinic.pronline.org/login is ACW08 shared login
+  - `        The input did not match the regular expression /Sign In/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +           '<hea`
+- **EQUALITY** `tests/blessboard-admin-onboarding-support.test.js:212:3` — 1–7: summary service derives checklist, progress, publication, last activity
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-admin-onboarding-support.test.js:315:3` — 15–21: organization list filters and invalid handling
+  - `        Expected values to be strictly equal:                  true !== false                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-admin-ops-alerts.test.js:434:3` — unused growth trial window helper remains available for fixtures
+  - `        Expected values to be strictly equal:         + actual - expected                  + '2026-02-14T00:00:00.000Z'         - '2026-02-15T00:00:00.000Z'    `
+- **REGEX** `tests/blessboard-admin-registration-ops.test.js:389:3` — empty filter results remain usable with navigation
+  - `        The input did not match the regular expression /No registration applications|No applications match/i. Input:                  '<!DOCTYPE html>\n' +     `
+- **REGEX** `tests/blessboard-auth-http.test.js:205:3` — platform_admin login redirects to /admin and honors safe next paths
+  - `        The input did not match the regular expression /data-bb-platform-admin-link="1"/. Input:                  '\n' +           '\n' +           '<!DOCTYPE h`
+- **FIXTURE_SETUP** `tests/blessboard-branch-admin-route-reconciliation.test.js:247:3` — dashboard Quick Actions resolve to contentful module pages on apex
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-branch-admin-route-reconciliation.test.js:290:3` — unauthorized users cannot reach modules via apex session cookie alone
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-branch-admin-route-reconciliation.test.js:300:3` — Church Phase 6 /branch paths stay unavailable on V5 foundation
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-branch-admin-route-reconciliation.test.js:319:3` — unauthenticated module hits redirect to login (no client JS redirect)
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **EQUALITY** `tests/blessboard-branch-display-name.test.js:245:3` — registration-provided first-branch display name is persisted with HQ key hq
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'central-branch'         - 'hq'                code: 'ERR_ASSERTION`
+- **EQUALITY** `tests/blessboard-branch-mini-website-pages.test.js:666:3` — 11. Cross-organization access returns 404
+  - `        Expected values to be strictly equal:                  404 !== 301                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 301`
+- **EQUALITY** `tests/blessboard-branch-mini-websites.test.js:414:3` — 4. Unknown and foreign branch keys return 404
+  - `        Expected values to be strictly equal:                  404 !== 301                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 301`
+- **OTHER** `tests/blessboard-custom-domain-routing.test.js:464:3` — cookie remains host-only (no Domain attribute); apex does not receive tenant cookie scope
+  - `Expected "actual" to be strictly unequal to: 200`
+- **OTHER** `tests/blessboard-demo-church-config.test.js:414:3` — HTTP: legacy redirect, vanity, canonical, reserved routes, unknown vanity
+  - `301`
+- **EQUALITY** `tests/blessboard-foundation-checklist-public-links.test.js:62:3` — resolvePreviewActionUrl uses org-scoped admin preview for platform admin
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/admin/organizations/grace-community-church/website`
+- **EQUALITY** `tests/blessboard-foundation-checklist-public-links.test.js:139:3` — valid key + published homepage produces Publish complete with public path
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/admin/organizations/grace-community-church/website`
+- **EQUALITY** `tests/blessboard-foundation-checklist-public-links.test.js:309:3` — onboarding summary publish points at /c/:key after approval provision
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **OTHER** `tests/blessboard-foundation-checklist-public-links.test.js:332:3` — platform-admin preview and public route render the correct church
+  - `        The input was expected to not match the regular expression /not public yet/i. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\`
+- **OTHER** `tests/blessboard-foundation-schema-status.test.js:384:3` — upgrade from prior schema backfills pending apps and fixes max_branches
+  - `relation "blessboard.roles" does not exist`
+- **OTHER** `tests/blessboard-login-mobile-overflow.test.js:66:3` — all active BlessBoard V5 auth templates reference tenant-auth.css v=15
+  - `views/blessboard/v5/apex/login.ejs must use tenant-auth.css v=15`
+- **EQUALITY** `tests/blessboard-member-journey-foundation.test.js:495:5` — runs happy path with immutable events and edit denial after accept
+  - `            phone                          false !== true                        code: 'ERR_ASSERTION'           name: 'AssertionError'           expected: true`
+- **EQUALITY** `tests/blessboard-member-journey-foundation.test.js:607:5` — blocks duplicate active handover for same person/stages
+  - `            phone                          false !== true                        code: 'ERR_ASSERTION'           name: 'AssertionError'           expected: true`
+- **EQUALITY** `tests/blessboard-member-journey-workflow.test.js:211:3` — stale handover action is rejected
+  - `        phone                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: false       o`
+- **OTHER** `tests/blessboard-member-journey-workflow.test.js:261:3` — previous-stage edit denied after acceptance
+  - ``
+- **EQUALITY** `tests/blessboard-member-registration.test.js:270:3` — shows field-level errors, retains submitted values, and serves confirmation chrome
+  - `        Expected values to be strictly equal:         + actual - expected                  + '/register/submitted?ref=ed321caa-399c-4b04-a42e-343611dee886'     `
+- **EQUALITY** `tests/blessboard-member-registration.test.js:349:3` — ignores client church/branch ids and submits against host scope
+  - `        Expected values to be strictly equal:         + actual - expected                  + '/register/submitted?ref=3bb9f75c-9211-497e-b456-b7dfcd8a54c7'     `
+- **OTHER** `tests/blessboard-member-registration.test.js:1062:3` — does not collect sensitive categories on the public form
+  - `        The input was expected to not match the regular expression /national.?id|date of birth|ssn|health|password/i. Input:                  '<!DOCTYPE html>\n`
+- **EQUALITY** `tests/blessboard-phase7-editors.test.js:470:3` — mobile-money and bank-transfer methods persist all fields through publish
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'https://blessboard.pronline.org/media/testing/platform/blessboard/`
+- **OTHER** `tests/blessboard-phase7-editors.test.js:713:3` — display order is respected for published giving methods
+  - `        The expression evaluated to a falsy value:                    assert.ok(alphaIdx > 0 && zetaIdx > 0)                code: 'ERR_ASSERTION'       name: 'A`
+- **REGEX** `tests/blessboard-phase7-editors.test.js:782:3` — empty optional giving fields do not render placeholders or generic fallback copy
+  - `        The input did not match the regular expression /Sparse Method/. Input:                  '\n' +           '<!DOCTYPE html>\n' +           '<html lang="en`
+- **OTHER** `tests/blessboard-phase7-editors.test.js:839:3` — leadership introduction save and cancel
+  - `        The input was expected to not match the regular expression /Draft Leadership Title/. Input:                  '\n' +           '<!DOCTYPE html>\n' +     `
+- **OTHER** `tests/blessboard-phase7-public-density-audit.test.js:137:3` — inline editable inventory covers the eight public page keys expected by the product
+  - `        Expected values to be strictly deep-equal:         + actual - expected                    [             'event',             'giving_method',           `
+- **REGEX** `tests/blessboard-phase7-public-density-audit.test.js:263:3` — all eight public routes return 200 with shell, church name, and no admin chrome
+  - `        The input did not match the regular expression /data-bb-shell="tenant-public"/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en"`
+- **OTHER** `tests/blessboard-phase7-public-density-audit.test.js:306:3` — nav links for all eight destinations are present without duplicates on home
+  - `desktop nav present`
+- **REGEX** `tests/blessboard-phase7-public-density-audit.test.js:330:3` — SEO: each page has title, description, and canonical under /c/:key
+  - `        The input did not match the regular expression /<meta name="description"/i. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n'`
+- **EQUALITY** `tests/blessboard-phase7-remediation.test.js:239:3` — portal access resolves single and multi roles; rejects unsafe next
+  - `        Expected values to be strictly equal:                  '/account' !== '/hq'                code: 'ERR_ASSERTION'       name: 'AssertionError'       expe`
+- **OTHER** `tests/blessboard-phone-first-forms.test.js:37:3` — form field order places phone before email on key screens
+  - `views/blessboard/v5/public/register.ejs missing phone field`
+- **EQUALITY** `tests/blessboard-phone-otp-workflows.test.js:116:3` — activates phone-only invitation via purpose-bound OTP then phone login
+  - `        confirm                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: false      `
+- **OTHER** `tests/blessboard-phone-otp-workflows.test.js:182:3` — verifies phone on email-only account and recovers password by phone OTP
+  - `        The expression evaluated to a falsy value:                    assert.ok(reset.sessionsRevoked >= 1)                code: 'ERR_ASSERTION'       name: 'As`
+- **OTHER** `tests/blessboard-platform-admin-directory.test.js:419:3` — user detail projects safe fields and role summaries
+  - ``
+- **OTHER** `tests/blessboard-platform-admin-integration.test.js:127:3` — excludes Finance / pastoral / safeguarding from Platform Admin bundle
+  - `platform.users.invite`
+- **REGEX** `tests/blessboard-platform-admin-login-diagnosis.test.js:257:3` — invalid password and CSRF keep safe responses and emit expected events
+  - `        The input did not match the regular expression /Invalid email or password/i. Input:                  '\n' +           '<!DOCTYPE html>\n' +           '<`
+- **EQUALITY** `tests/blessboard-platform-admin-login-diagnosis.test.js:284:3` — missing platform_admin role is denied for /admin
+  - `        Expected values to be strictly equal:                  '/hq' !== '/account'                code: 'ERR_ASSERTION'       name: 'AssertionError'       expe`
+- **REGEX** `tests/blessboard-platform-admin-mobile-nav.test.js:264:3` — drawer renders canonical PLATFORM_ADMIN_NAV hrefs from server locals
+  - `        The input did not match the regular expression /PLATFORM_ADMIN_NAV\.filter/. Input:                  '"use strict";\n' +           '\n' +           '/**`
+- **REGEX** `tests/blessboard-production-registration-p1.test.js:86:3` — POST confirm with invalid CSRF stays on review with a non-empty alert
+  - `        The input did not match the regular expression /security token/i. Input:                  '\n' +           '\n' +           '\n' +           '<!DOCTYPE `
+- **REGEX** `tests/blessboard-prompt7-stage3-website-settings-editor.test.js:324:3` — 1–6. Editor renders inherited, branch-record, overridden, hidden, locked, missing states
+  - `        The input did not match the regular expression /Inherited from church/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +  `
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:256:3` — 2–3. Missing password does not block Foundation exception approval
+  - `        review_required                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: fal`
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:271:3` — 4. Growth exception approval creates one 30-day trial
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:358:3` — 6–9. Invitation created; accept sets password; short password rejected
+  - `        review_required                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: fal`
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:405:3` — 10–11. Existing user password hash unchanged and linked safely
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:455:3` — 12–13. Duplicate submission is idempotent; one active invitation
+  - `        review_required                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: fal`
+- **EQUALITY** `tests/blessboard-registration-approval-invitation.test.js:551:3` — 18. Apex invite accept works for provisioned invitation
+  - `        review_required                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: fal`
+- **EQUALITY** `tests/blessboard-registration-operator-approval.test.js:283:3` — 8. Foundation approve-and-provision is idempotent
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-registration-operator-approval.test.js:351:3` — 9. Growth approve-and-provision creates exactly one 30-day trial
+  - `        review_required                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: fal`
+- **EQUALITY** `tests/blessboard-registration-operator-approval.test.js:419:3` — 11–12. Network approval creates organization once and does not activate Network
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-registration-phone.test.js:130:3` — migration adds normalized column and active unique index
+  - `        Expected values to be strictly equal:                  0 !== 1                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 1      `
+- **OTHER** `tests/blessboard-registration-phone.test.js:282:3` — rejected/cancelled phones may be reused; closed enquiry may be reused
+  - `This phone number is already linked to a BlessBoard church registration. Use a different number, or contact BlessBoard support if you need help.`
+- **EQUALITY** `tests/blessboard-registration-public-miniwebsite.test.js:422:3` — retry after success does not duplicate organization, church, pages
+  - `        Expected values to be strictly equal:                  9 !== 8                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 8      `
+- **EQUALITY** `tests/blessboard-registration-risk-review.test.js:237:3` — 2. confirmed duplicate phone is blocked (reject, no provision)
+  - `        Expected values to be strictly equal:                  true !== false                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-registration-schema-mismatch.test.js:193:3` — missing required column produces schema_mismatch and creates no partial application
+  - `        Expected values to be strictly equal:         + actual - expected                  + undefined         - 'schema_mismatch'                code: 'ERR_ASS`
+- **EQUALITY** `tests/blessboard-support-follow-up-ops.test.js:297:3` — 4. Review approval provisions once
+  - `        not_eligible                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: false `
+- **EQUALITY** `tests/blessboard-support-follow-up-ops.test.js:346:3` — 5. Rejection preserves the record
+  - `        not_eligible                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       actual: false `
+- **EQUALITY** `tests/blessboard-support-follow-up-ops.test.js:380:3` — 6. Retry does not duplicate tenants
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **OTHER** `tests/blessboard-support-follow-up-ops.test.js:488:3` — 10. Audit history is complete for assign / contact / reject / approve
+  - `        The expression evaluated to a falsy value:                    assert.ok(                code: 'ERR_ASSERTION'       name: 'AssertionError'       expecte`
+- **EQUALITY** `tests/blessboard-tenant-auth.test.js:115:3` — resolveApexPostLoginPath routes platform_admin to /admin and others to /account
+  - `        Expected values to be strictly equal:         + actual - expected                  + '/account'         - '/admin'              ^                code: '`
+- **EQUALITY** `tests/blessboard-tenant-auth.test.js:365:3` — authorized HQ and platform_admin succeed; stores hash only
+  - `        Expected values to be strictly equal:                  200 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **EQUALITY** `tests/blessboard-tenant-context-website-routes.test.js:63:3` — platform admin never receives /hq tenant-session links
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/admin/organizations/demo3/website-preview'        `
+- **EQUALITY** `tests/blessboard-tenant-context-website-routes.test.js:85:3` — branch admin receives branch website workflow routes
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/branch-admin/website'                code: 'ERR_AS`
+- **EQUALITY** `tests/blessboard-tenant-context-website-routes.test.js:97:3` — routes branch_admin to /branch-admin
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:220:3` — HQ content home loads church data with session organization scope
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:232:3` — HQ without organization scope does not render an empty dashboard
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:248:3` — branch-admin loads assigned branch data on apex
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:264:3` — branch-admin website entry opens visual editor, not HQ editor
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:284:3` — loadActiveBranchForChurch rejects cross-church branch ids
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **FIXTURE_SETUP** `tests/blessboard-tenant-context-website-routes.test.js:301:3` — public /c/:key still renders after HQ session exists
+  - `        Local PostgreSQL unavailable: branch_not_found                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       o`
+- **EQUALITY** `tests/blessboard-test-users-seed.test.js:353:3` — church HQ admin can open /hq; branch admin is restricted to assigned branch
+  - `        Expected values to be strictly equal:                  0 !== 1                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 1      `
+- **OTHER** `tests/blessboard-testing-demo-content-seed.test.js:199:3` — apply seeds all expected content types (idempotent fill)
+  - `        The expression evaluated to a falsy value:                    assert.ok(hero.mediaUrl && hero.mediaUrl.includes("/church/images/"))                code:`
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:284:3` — 1. normally provisioned test organization is fully deleted
+  - `        Expected values to be strictly equal:                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:324:3` — 2–3. Demi Church Name 12 and Demo11 equivalents are deleted
+  - `        {"ok":false,"status":"identity_blocked","reason":"identity_key_mismatch"}                  false !== true                code: 'ERR_ASSERTION'       nam`
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:381:3` — 4–5. rich tenant graph is fully deleted with no org-scoped orphans
+  - `        {"ok":false,"status":"identity_blocked","reason":"identity_key_mismatch"}                  false !== true                code: 'ERR_ASSERTION'       nam`
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:434:3` — 6–7. failed organization is reported; remaining orgs still process
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'identity_key_mismatch'         - 'organization_purge_partial_failu`
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:551:3` — 9. non-test organization is never deleted
+  - `        {"ok":false,"status":"identity_blocked","reason":"identity_key_mismatch"}                  false !== true                code: 'ERR_ASSERTION'       nam`
+- **EQUALITY** `tests/blessboard-testing-org-purge.test.js:615:3` — 10. organizations page no longer lists deleted records after cleanup
+  - `        {"ok":false,"status":"identity_blocked","reason":"identity_key_mismatch"}                  false !== true                code: 'ERR_ASSERTION'       nam`
+- **OTHER** `tests/blessboard-v1-blocker-and-bugs-04-06.test.js:245:3` — Foundation registration creates exactly one website instance of eight draft pages
+  - `                                   <!DOCTYPE html>         <html lang="en">         <head>           <meta charset="utf-8" />           <meta name="viewport" co`
+- **HTTP_STATUS** `tests/blessboard-v1-blocker-and-bugs-04-06.test.js:410:3` — WEB-06: BlessBoard logo edits draft only until publish; restore brings the previous logo
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-blocker-and-bugs-04-06.test.js:587:3` — WEB-06: church admin cannot mutate another church logo
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **OTHER** `tests/blessboard-v1-reg-07-success-screen.test.js:195:3` — successful Foundation registration redirects to success with ref and ready=1
+  - `                                   <!DOCTYPE html>         <html lang="en">         <head>           <meta charset="utf-8" />           <meta name="viewport" co`
+- **REGEX** `tests/blessboard-v1-registration-fixes.test.js:245:3` — GET /register-church defaults Zambia (+260) with country + national fields
+  - `        The input did not match the regular expression /data-ac-phone-field/. Input:                  '\n' +           '\n' +           '\n' +           '<!DOCT`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:155:3` — Foundation fresh registration → instant success
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:165:3` — Growth fresh registration → instant success
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:174:3` — URL collision suffixes the key and still auto-provisions
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:206:3` — same request retry is idempotent (one church, success redirect)
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:233:3` — Network remains enquiry/review according to current product rule
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:251:3` — real risk hold (prior rejection) remains review
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:279:3` — kill switch disabled → no auto-provision
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **REGEX** `tests/blessboard-v1-registration-review-matrix.test.js:296:3` — new admin cannot access another church
+  - `        The input did not match the regular expression /^\/register-church\/success\?/. Input:                  ''                code: 'ERR_ASSERTION'       na`
+- **REGEX** `tests/blessboard-v1-registration-review-matrix.test.js:333:3` — existing user with another church is sign-in, not Platform Admin review
+  - `        The input did not match the regular expression /^\/register-church\/success\?/. Input:                  ''                code: 'ERR_ASSERTION'       na`
+- **HTTP_STATUS** `tests/blessboard-v1-registration-review-matrix.test.js:348:3` — orphan user with matching password auto-provisions
+  - `        Expected values to be strictly equal:                  400 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **OTHER** `tests/blessboard-v5-csrf-action-audit.test.js:200:3` — every V5 POST registration validates CSRF before mutating
+  - `        Expected values to be strictly deep-equal:         + actual - expected                  + [         +   'POST ${mountPrefix}/media/upload (src/blessboar`
+- **OTHER** `tests/blessboard-v5-mobile-burger-browser.test.js:564:3` — passes viewport matrix, drawer interactions, and breakpoint handoff
+  - `        /@1024: js errors Access to font at 'https://fonts.gstatic.com/s/materialsymbolsoutlined/v374/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMP`
+- **EQUALITY** `tests/blessboard-website-management-hub-parity.test.js:382:3` — published church shows View live and Unpublish; drafts surface unpublished changes including logo
+  - `        {"ok":false,"code":"invalid_media_url","content":null}                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'`
+- **REGEX** `tests/blessboard-website-mobile-editing.test.js:223:3` — Publish stays on the shared editor shell when draft changes exist
+  - `        The input did not match the regular expression />Publish</. Input:                  '\n' +           '<!DOCTYPE html>\n' +           '<html lang="en">\n`
+- **EQUALITY** `tests/blessboard-website-mode.test.js:40:3` — 1 active branch → single_site; no independent branch website
+  - `        Expected values to be strictly equal:                  true !== false                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **EQUALITY** `tests/blessboard-website-mode.test.js:182:3` — provisioned church with one active branch is single_site
+  - `        Expected values to be strictly equal:                  true !== false                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **OTHER** `tests/church-branch-hq-csrf-coverage.test.js:251:1` — representative Branch/HQ forms include CSRF field partial
+  - `views/church/branch-admin/attendance_tracker.ejs`
+- **OTHER** `tests/church-branding.test.js:43:1` — BlessBoard branding on vertical apex homepage
+  - ``
+- **OTHER** `tests/church-data-environment.test.js:87:1` — data environment catalogue and helpers
+  - ``
+- **OTHER** `tests/church-database-identity.test.js:310:1` — latestChurchSchemaMigration equals the highest-numbered migration on disk
+  - ``
+- **OTHER** `tests/church-db-resilience.test.js:115:1` — diagnostics reports DB timeout without exposing DATABASE_URL
+  - ``
+- **OTHER** `tests/church-hq-reports.test.js:126:1` — unauthenticated visitor redirects to HQ login
+  - ``
+- **OTHER** `tests/church-low-bandwidth-performance.test.js:39:1` — cross-branch rendered HTML: default table mode omits chart DOM
+  - ``
+- **OTHER** `tests/church-mvp-placeholder-screens.test.js:59:1` — /sermons loads polished resource cards on branch church host
+  - ``
+- **OTHER** `tests/church-pilot-launch.test.js:180:1` — diagnostics service exposes latest migration constant
+  - ``
+- **OTHER** `tests/church-platform-public-launch.test.js:60:1` — approved Zambia launch positioning appears on about page
+  - ``
+- **OTHER** `tests/church-platform-public-seo.test.js:106:1` — apex marketing pages include unique SEO metadata
+  - `/about must not include prohibited claims`
+- **OTHER** `tests/church-public-directory-cards.test.js:36:1` — buildOrganizationCard avoids branch-specific details for multi-branch orgs
+  - ``
+- **OTHER** `tests/church-public-events-sermons-visual.test.js:217:1` — 25-27 active nav, Member Login, Register remain
+  - ``
+- **OTHER** `tests/church-public-giving-contact-visual.test.js:191:1` — 18-23 contact form, validation, success/error, and existing protections
+  - ``
+- **OTHER** `tests/church-public-giving-contact-visual.test.js:268:1` — 30-33 active nav, member actions, and single footer attribution
+  - ``
+- **OTHER** `tests/church-public-home-ministries-regression.test.js:140:1` — 13-16 duplication and unsupported actions absent
+  - ``
+- **OTHER** `tests/church-public-home-ministries-regression.test.js:181:1` — 20-27 desktop/mobile markers, nav, login/register, footer
+  - ``
+- **OTHER** `tests/church-public-ministries-visual.test.js:70:1` — tenant ministries page renders active nav, hero, empty state, and tenant chrome
+  - ``
+- **OTHER** `tests/church-public-ministries-visual.test.js:117:1` — apex homepage remains unchanged by ministries repair
+  - ``
+- **OTHER** `tests/church-selection-verification.test.js:245:1` — branding CSS uses shared GetPro orange token for powered-by GetPro word
+  - ``
+- **OTHER** `tests/church-stitch-branch-admin.test.js:174:1` — public and member shells still on v41
+  - `views/church/partials/public_shell_start.ejs should use v41`
+- **OTHER** `tests/church-stitch-member.test.js:117:1` — member shell references church.css?v=47
+  - ``
+- **OTHER** `tests/church-stitch-platform-admin.test.js:116:1` — platform admin shell references church.css?v=47
+  - ``
+- **OTHER** `tests/church-stitch-platform-admin.test.js:131:1` — blessboard login uses church.css?v=47
+  - ``
+- **OTHER** `tests/church-tenant-homepage.test.js:75:1` — tenant homepage renders approved section hierarchy without fake content
+  - ``
+- **OTHER** `tests/church-visual-design.test.js:185:1` — BlessBoard apex homepage matches platform marketing markers
+  - ``
+- **OTHER** `tests/church-visual-design.test.js:303:1` — about page includes Stitch section markers and assets
+  - ``
+- **OTHER** `tests/church-visual-design.test.js:321:1` — leadership page includes Stitch section markers and empty state
+  - ``
+- **OTHER** `tests/church-visual-design.test.js:336:1` — public nav and mobile drawer include About and Leadership links
+  - ``
+- **OTHER** `tests/church-visual-design.test.js:360:1` — branch desktop public nav is church links, not apex SaaS Features/Pricing
+  - `branch nav should include Sermons`
+- **REGEX** `tests/member-notification-preferences.test.js:257:3` — opens preferences with stitch markers and masked contact info
+  - `        The input did not match the regular expression /\+?\*+6001/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +           '<`
+- **OTHER** `tests/phase4-recent-website-changes.test.js:558:3` — preview renders immutable snapshot content not present on the live site
+  - `        The expression evaluated to a falsy value:                    assert.ok(live.status === 200 || live.status === 404)                code: 'ERR_ASSERTION'`
+- **REGEX** `tests/phase4-recent-website-changes.test.js:694:3` — growth website overview exposes recent-changes path and link when plan is growth
+  - `        The input did not match the regular expression /href="\/hq\/website\/recent-changes"/. Input:                  '<!DOCTYPE html>\n' +           '<html la`
+- **REGEX** `tests/phase4-system-states.test.js:363:3` — 7 unauthorized role gets restricted state, not plan upgrade
+  - `        The input did not match the regular expression /data-bb-phase4-system-state-type="restricted"/. Input:                  '<!DOCTYPE html>\n' +           `
+- **REGEX** `tests/shared-website-editor-wave1.test.js:254:3` — BlessBoard and ActiveClinic render the shared Stitch editor chrome
+  - `        The input did not match the regular expression />Publish</. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +           '<h`
+- **REGEX** `tests/shared-website-editor-wave4b1.test.js:189:3` — image field dialog still exposes choose-existing media hook
+  - `        The input did not match the regular expression /choose existing/i. Input:                  '/**\n' +           ' * Shared website field editor (ActiveCl`
+- **REGEX** `tests/shared-website-editor-wave4b2.test.js:142:3` — BlessBoard home template orders teaser sections from sortOrder
+  - `        The input did not match the regular expression /orderedTeaserKeys\.forEach/. Input:                  '<%#\n' +           '  Phase 7 — Church Website Hom`
+- **EQUALITY** `tests/v2-01-bb-inline-editor-parity.test.js:58:3` — branch admin preview URL prefers draft preview path when org key known
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/branch-admin/website'                code: 'ERR_AS`
+- **REGEX** `tests/v2-01-field-history-restore.test.js:193:3` — wires History beside pencil and restore APIs for BB + AC
+  - `        The input did not match the regular expression /restoreFieldRevisionToDraft/. Input:                  '"use strict";\n' +           '\n' +           '/*`
+- **EQUALITY** `tests/v2-01-publish-error-diagnostics.test.js:301:3` — engine-bridge failure nested from publishChurchWebsite preserves engineCode
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'blessboard_publish_unavailable'         - 'website_engine_publish_`
+- **REGEX** `tests/v2-01-shared-theme-gallery.test.js:107:3` — wires gallery routes and Choose Theme menu for BB and AC
+  - `        The input did not match the regular expression /loadThemeGalleryPresentation/. Input:                  '"use strict";\n' +           '\n' +           '/`
+- **REGEX** `tests/v2-01-toolbar-reminders.test.js:212:3` — returns pendingChangeCount from BB and AC draft save routes
+  - `        The input did not match the regular expression /getPendingChangeSummary/. Input:                  '"use strict";\n' +           '\n' +           '/**\n'`
+- **REGEX** `tests/v2-01-unpublished-changes-panel.test.js:210:3` — wires shared panel into BB + AC shells and APIs with tenant-scoped URLs
+  - `        The input did not match the regular expression /getUnpublishedChangesPanel/. Input:                  '"use strict";\n' +           '\n' +           '/**`
+- **REGEX** `tests/v2-bb-home-leaders-image.test.js:32:3` — structured editor hydrates upload/library URLs from media.publicSrc (shared CDN DTO)
+  - `        The input did not match the regular expression /a\.deliveryPath \|\| a\.publicSrc \|\| a\.previewUrl/. Input:                  '/**\n' +           ' * P`
+- **REGEX** `tests/v2-bb-season-image-edit.test.js:39:3` — structured event form includes Upload / Content Library / Replace labels
+  - `        The input did not match the regular expression /buildImageForm\(\{ imageUrl: p\.imageUrl/. Input:                  '/**\n' +           ' * Phase 7 Stage`
+- **REGEX** `tests/v2-shared-media-type-conversion.test.js:93:3` — structured editor exposes Image vs YouTube modes with shared picker actions
+  - `        The input did not match the regular expression /Choose from Image Library/. Input:                  '/**\n' +           ' * Phase 7 Stage 5 — shared str`
+- **REGEX** `tests/v2-shared-media-upload-parity.test.js:58:3` — BlessBoard public editor cache bust includes media parity assets
+  - `        The input did not match the regular expression /website-inline-edit\.js\?v=v2-media-parity-1/. Input:                  '<%#\n' +           '  BlessBoard`
+- **OTHER** `tests/v7-auth-reg-stitch-parity.test.js:70:3` — canonical frames score ≥95 at Stitch viewports
+  - `AC REG review D scored 75`
+- **PLAYWRIGHT** `tests/v7-bb-mobile-editor-pointer.test.js:320:3` — five representative mobile fields open via pencil click
+  - `        page.waitForSelector: Timeout 30000ms exceeded.         Call log:           - waiting for locator('.gp-website-editor__toolbar') to be visible          `
+- **PLAYWRIGHT** `tests/v7-bb-mobile-editor-pointer.test.js:356:3` — burger navigation still opens and closes without leaving overlays
+  - `        locator.click: Timeout 30000ms exceeded.         Call log:           - waiting for locator('#bb-tp-menu-btn')             - locator resolved to <button `
+- **OTHER** `tests/v7-blessboard-publish-engine-bridge.test.js:145:3` — every public BlessBoard publish entry point calls publishFromLegacy
+  - `src/blessboard/http/blessboardWebsiteEditorRoutes.js must publish through publishChurchWebsite`
+- **EQUALITY** `tests/v7-blessboard-website-engine-convergence.test.js:157:3` — registration creates an unpublished shared-engine website
+  - `        Expected values to be strictly equal:                  1 !== 0                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 0      `
+- **EQUALITY** `tests/v7-blessboard-website-engine-convergence.test.js:306:3` — retains previous versions and restore-as-new recreates live content
+  - `        Expected values to be strictly equal:         + actual - expected                  + 'Faith, Community and Hope'         - 'Version one h-6682e3'       `
+- **EQUALITY** `tests/v7-blessboard-website-template.test.js:146:3` — demo pack specs cover every public page and inject registration fields
+  - `        missing page announcements                  false !== true                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: true       `
+- **EQUALITY** `tests/v7-blessboard-website-template.test.js:227:3` — demo church, church A, and church B do not share mutable content rows
+  - `        Expected values to be strictly equal:                  true !== false                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: `
+- **REGEX** `tests/v7-branch-editor-canonical-actions.test.js:181:3` — editor chrome emits branch-scoped action URLs
+  - `        The input did not match the regular expression /\/c\/branch-actions-a\/hq\/website\/drafts/. Input:                  '\n' +           '<!DOCTYPE html>\n`
+- **REGEX** `tests/v7-branch-website-inline-save.test.js:194:3` — regression: branch path save URL resolves and persists draft only to that branch
+  - `        The input did not match the regular expression /data-website-save-url="\/c\/branch-save-a\/hq\/website\/drafts"/. Input:                  '\n' +        `
+- **EQUALITY** `tests/v7-bugs-05-08-registration-ux.test.js:123:3` — scopes branch admin website action URLs to assigned branch when branchKey is provided
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/c/demo3/south-campus?website_edit=1&website_mode=d`
+- **REGEX** `tests/v7-color-system-consolidation.test.js:75:3` — ActiveClinic staff primary remains indigo
+  - `        The input did not match the regular expression /--ac-primary:\s*#003c90/. Input:                  '/* ActiveClinic authenticated application shell (V2.0`
+- **REGEX** `tests/v7-default-website-template-qa.test.js:216:3` — ActiveClinic new clinic HTML is complete, labeled, and uses registration data
+  - `        The input did not match the regular expression /null/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +           '<head>\`
+- **HTTP_STATUS** `tests/v7-default-website-template-qa.test.js:306:3` — BlessBoard new church HTML is complete, labeled, and uses registration data
+  - `        Expected values to be strictly equal:                  404 !== 200                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 200`
+- **REGEX** `tests/v7-hostinger-testing-runtime.test.js:181:3` — serves QA launcher and blocks product routes on pronline.org
+  - `        The input did not match the regular expression /getproapp\.pronline\.org/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en"><hea`
+- **REGEX** `tests/v7-inline-editor-coverage.test.js:250:3` — shared contract forbids field-level publish
+  - `        The input did not match the regular expression /data-website-cancel/. Input:                  '/**\n' +           ' * Shared website field editor (Activ`
+- **REGEX** `tests/v7-inline-editor-coverage.test.js:266:3` — ActiveClinic pencils exist for every inline allowlisted key
+  - `        The input did not match the regular expression /data-website-save="1"/. Input:                  '<section class="ac-public-section" data-ac-page-section`
+- **REGEX** `tests/v7-inline-editor-coverage.test.js:301:3` — BlessBoard registered inline fields have public pencils or shared partials
+  - `        The input did not match the regular expression /data-bb-inline-start="1"/. Input:                  '<%#\n' +           '  Shared inline editable text fi`
+- **REGEX** `tests/v7-inline-editor-coverage.test.js:363:3` — ActiveClinic draft pages expose pencils and field save stays draft-only
+  - `        The input did not match the regular expression /Save to draft/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +          `
+- **REGEX** `tests/v7-inline-editor-coverage.test.js:463:3` — BlessBoard public edit mode keeps pencil → draft save without publishing
+  - `        The input did not match the regular expression /data-bb-inline-start="1"/. Input:                  '\n' +           '<!DOCTYPE html>\n' +           '<ht`
+- **REGEX** `tests/v7-layout-family-contract.test.js:59:3` — ActiveClinic staff app uses sidebar + content max tokens
+  - `        The input did not match the regular expression /--ac-sidebar-w:\s*16\.5rem/. Input:                  '/* ActiveClinic authenticated application shell (V`
+- **OTHER** `tests/v7-layout-family-contract.test.js:178:3` — AC staff shell sibling pages share .ac-content left at 1440
+  - `staff content should clear sidebar, got 0`
+- **REDIRECT_301** `tests/v7-local-registration-to-website-e2e.test.js:156:3` — walks ActiveClinic and BlessBoard from registration through restore
+  - `        Moved Permanently. Redirecting to /c/e2e-church-bbe2e-702b06/hq-campus?website_edit=1                  301 !== 200                code: 'ERR_ASSERTION' `
+- **REDIRECT_301** `tests/v7-new-church-operational-readiness.test.js:233:3` — brand-new church HQ admin can open every provisioned surface without 403/404/500
+  - `        Moved Permanently. Redirecting to /c/ready-church-1-readybb1c2b086/hq-campus                  301 !== 200                code: 'ERR_ASSERTION'       nam`
+- **REGEX** `tests/v7-new-clinic-operational-readiness.test.js:230:3` — brand-new clinic admin can open every provisioned module without 403/404/500
+  - `        The input did not match the regular expression /Facility context/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +       `
+- **EQUALITY** `tests/v7-new-tenant-provisioning.test.js:394:3` — brand-new church: org, admin, HQ, plan, lifecycle, onboarding, website, editor
+  - `        Expected values to be strictly equal:                  'hq-campus' !== 'hq'                code: 'ERR_ASSERTION'       name: 'AssertionError'       expe`
+- **OTHER** `tests/v7-public-media-alt-text-rendering.test.js:32:3` — exposes altText through the public page model sanitizer
+  - `public page model must allowlist layout_metadata.altText`
+- **OTHER** `tests/v7-public-media-alt-text-rendering.test.js:54:3` — binds CMS section image alt attributes to layoutMetadata.altText
+  - `expected the shared section-image alt binding across public templates, found 1: about.ejs`
+- **OTHER** `tests/v7-public-performance-assets.test.js:31:3` — keeps public marketing shells off fonts.googleapis.com
+  - `views/blessboard/v5/partials/head-design-system.ejs`
+- **REGEX** `tests/v7-public-performance-assets.test.js:45:3` — preloads LCP hero images on both homepages
+  - `        The input did not match the regular expression /apex-hero-mobile\.jpg/. Input:                  '<%#\n' +           '  Apex shell start. Locals: pageTit`
+- **REGEX** `tests/v7-public-performance-assets.test.js:51:3` — does not load phone-field assets on the ActiveClinic public homepage
+  - `        The input did not match the regular expression /_needsPhoneField/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en">\n' +       `
+- **EQUALITY** `tests/v7-registration-website-audit-trail.test.js:397:3` — BlessBoard records submitted, review_required, rejection, provision, and retry trails
+  - `        {"ok":false,"error":"We could not save your request right now. Please try again shortly.","code":"23502","pgCode":"23502","httpStatus":503,"field":null}`
+- **OTHER** `tests/v7-shared-content-media-library.test.js:438:1` — BlessBoard serves a real Content Library page, not a raw JSON body
+  - `content negotiation helper required`
+- **OTHER** `tests/v7-shared-content-media-library.test.js:456:1` — BlessBoard content negotiation defaults to JSON without an Accept header
+  - `wantsHtml must exist`
+- **OTHER** `tests/v7-shared-seo-expansion.test.js:407:1` — BlessBoard sitemap excludes opted-out branches
+  - ``
+- **OTHER** `tests/v7-shared-website-editor-persistence.test.js:309:3` — AC: services + doctors catalogue save and website visibility
+  - `expected a doctor catalogue form`
+- **EQUALITY** `tests/v7-unified-onboarding.test.js:555:3` — BlessBoard HQ dashboard redirects into onboarding and never loops once complete
+  - `        Expected values to be strictly equal:                  200 !== 303                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: 303`
+- **REGEX** `tests/v7-unified-website-management.test.js:643:3` — shared editor markup uses pencil then save/cancel; field save is draft-only in JS
+  - `        The input did not match the regular expression /Saved to draft/. Input:                  '/**\n' +           ' * Shared website field editor (ActiveClin`
+- **EQUALITY** `tests/v7-unified-website-urls.test.js:236:3` — keeps settings, admin, and email preview links on the shared builder
+  - `        Expected values to be strictly equal:         + actual - expected                  + null         - '/admin/organizations/demo3/website-preview'        `
+- **CDN** `tests/v7-website-draft-live-integrity.test.js:663:3` — 2-5 text and image ✓ write draft only; authorized preview reads draft
+  - `That demo image is not available on CDN.`
+- **REGEX** `tests/v7-website-mobile-editor.test.js:43:3` — shared mobile JS syncs visualViewport and confirms publish
+  - `        The input did not match the regular expression /window\.confirm/. Input:                  '/**\n' +           ' * Shared mobile helpers for the unified `
+- **REGEX** `tests/v7-website-mobile-editor.test.js:74:3` — field types keep pencil / text / image / check / cancel usable on a phone
+  - `        The input did not match the regular expression /data-website-save="1"/. Input:                  '<%\n' +           "  var canEdit = typeof websiteEdit !`
+- **REGEX** `tests/v7-website-mobile-editor.test.js:105:3` — preview and publish confirmation stay reachable from editor chrome and review
+  - `        The input did not match the regular expression /Publish this website\? Public visitors will see the current draft\./. Input:                  '<%\n' +  `
+- **REGEX** `tests/v8-qa-homepage-v2-only.test.js:264:3` — 10. Existing V7 homepage behavior remains unchanged
+  - `        The input did not match the regular expression /getproapp\.pronline\.org/. Input:                  '<!DOCTYPE html>\n' +           '<html lang="en"><hea`
+- **EQUALITY** `tests/v8-shared-module-coverage.test.js:75:3` — resolves platform line and side-effect gates
+  - `        Expected values to be strictly equal:                  'v8' !== 'v7'                code: 'ERR_ASSERTION'       name: 'AssertionError'       expected: '`
+- **EQUALITY** `tests/v8-shared-module-coverage.test.js:112:3` — assertV8EnvironmentSafeOrError covers fail-closed branches
+  - `        Expected values to be strictly equal:         + actual - expected                  + undefined         - true                code: 'ERR_ASSERTION'      `
+- **REGEX** `tests/website-ui-completion.test.js:153:3` — field editor uses shared dialog controls and wires image upload
+  - `        The input did not match the regular expression /Saved to draft/. Input:                  '/**\n' +           ' * Shared website field editor (ActiveClin`

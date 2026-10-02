@@ -1,0 +1,11 @@
+<section
+  class="acw-page acw-register acw-register--success"
+  data-ac-page-section="register-clinic-success"
+  data-ac-acw-screen="ACW09-success"
+  data-ac-acw-step="success"
+  data-ac-mf-family="MF03"
+  data-ac-mf-screen="MF03-07"
+  data-ac-state-key="<%= typeof registrationSuccess !== 'undefined' && registrationSuccess && registrationSuccess.stateKey ? registrationSuccess.stateKey : (typeof reviewRequired !== 'undefined' && reviewRequired ? 'review_required' : (typeof ready !== 'undefined' && ready ? 'ready' : 'success_terminal')) %>"
+>
+  <%- include('../../platform/registration/registration-success-panel') %>
+</section>

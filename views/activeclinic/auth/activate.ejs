@@ -1,0 +1,42 @@
+<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
+  <div class="ac-auth-card ac-auth-card--single" data-ac-visual="stitch-gap">
+    <div class="ac-auth-form-panel">
+      <header class="ac-auth-mobile-header ac-auth-mobile-header--always">
+        <%- include('../partials/auth-mark') %>
+        <h1 class="ac-auth-mobile-header__brand">Activate account</h1>
+        <p class="ac-auth-mobile-header__sub"><%= purpose || 'Set your ActiveClinic password' %></p>
+      </header>
+      <p class="ac-auth-meta">
+        <strong><%= staffDisplayName %></strong><br/>
+        <span class="ac-auth-muted"><%= organizationName %></span>
+      </p>
+      <% if (error) { %>
+        <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1"><%= error %></div>
+      <% } %>
+      <form method="post" action="/activate/<%= encodeURIComponent(token) %>" data-ac-loading="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <%- include('../partials/auth-password-field', {
+          id: 'password',
+          name: 'password',
+          label: 'Create password',
+          autocomplete: 'new-password',
+          minlength: passwordMin,
+          describedBy: 'password-policy',
+          invalid: Boolean(error)
+        }) %>
+        <%- include('../partials/auth-password-field', {
+          id: 'password_confirm',
+          name: 'password_confirm',
+          label: 'Confirm password',
+          autocomplete: 'new-password',
+          minlength: passwordMin,
+          describedBy: 'password-policy',
+          invalid: Boolean(error)
+        }) %>
+        <p id="password-policy" class="ac-auth-hint">Use at least <%= passwordMin %> characters. Do not reuse passwords from other systems.</p>
+        <button type="submit" class="ac-auth-btn" data-loading="Activating…">Activate account</button>
+      </form>
+      <p class="ac-auth-hint"><a class="ac-auth-link" href="/login">Back to sign in</a></p>
+    </div>
+  </div>
+</main>

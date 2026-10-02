@@ -163,6 +163,17 @@ async function applyFieldDraft(client, draft, ctx) {
     patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
       [draft.fieldKey]: draft.newValue,
     });
+  } else if (draft.fieldKey === "image" || draft.fieldKey === "mediaUrl") {
+    const raw = draft.newValue;
+    const src =
+      raw && typeof raw === "object"
+        ? String(raw.src || raw.url || "")
+        : String(raw || "");
+    const alt = raw && typeof raw === "object" ? String(raw.alt || "") : "";
+    patch.mediaUrl = src || null;
+    patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
+      altText: alt || null,
+    });
   } else {
     throw mapError("INVALID_FIELD", "Unsupported draft field.");
   }
@@ -180,9 +191,32 @@ async function applyStructuredDraft(client, draft, ctx) {
 
   if (draft.draftKind === "image" || draft.draftKind === "video") {
     const pageKey = draft.pageKey || "home";
-    const sectionKey = draft.sectionKey || "hero";
+    let sectionKey = draft.sectionKey || "hero";
+    const {
+      isLifeTogetherSectionKey,
+      isAboutGallerySlotKey,
+      aboutGallerySlotIndex,
+      ABOUT_GALLERY_SLOT_COUNT,
+      LIFE_TOGETHER_SECTION_KEY,
+    } = require("../website/aboutSectionImageKeys");
+    // About Life Together must never target a gallery_* slot. Canonicalize legacy "gallery".
+    if (pageKey === "about" && isLifeTogetherSectionKey(sectionKey)) {
+      sectionKey = sectionKey === "gallery" ? "gallery" : LIFE_TOGETHER_SECTION_KEY;
+    }
+    if (pageKey === "about" && isAboutGallerySlotKey(sectionKey)) {
+      const idx = aboutGallerySlotIndex(sectionKey);
+      if (idx < 0 || idx >= ABOUT_GALLERY_SLOT_COUNT) {
+        throw mapError("INVALID_SECTION", "About gallery slots are limited to gallery_1..gallery_3.");
+      }
+    }
     const page = await ensurePage(client, { churchId, branchId, pageKey });
-    const section = await ensureSection(client, page, sectionKey, sectionKey);
+    const sectionType =
+      pageKey === "about" && isLifeTogetherSectionKey(sectionKey)
+        ? sectionKey === "gallery"
+          ? "gallery"
+          : "life_together"
+        : sectionKey;
+    const section = await ensureSection(client, page, sectionKey, sectionType);
     if (draft.op === "remove") {
       const updated = await contentRepo.updateSection(client, section.id, {
         mediaUrl: null,
@@ -191,30 +225,183 @@ async function applyStructuredDraft(client, draft, ctx) {
           altText: null,
           videoUrl: null,
           videoTitle: null,
+          mediaKind: null,
+          focal: null,
+          fit: null,
+          imagePlacement: null,
         }),
       });
       if (!updated.section) throw mapError("APPLY_FAILED", "Could not clear media.");
       return;
     }
-    const mediaUrl =
-      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null;
-    const layoutPatch =
-      draft.draftKind === "image"
-        ? {
-            altText: payload.altText || null,
-            focal: payload.focal || null,
-            fit: payload.fit || null,
-          }
-        : {
-            videoUrl: payload.videoUrl || null,
-            videoTitle: payload.title || null,
-          };
+    const { resolveSectionMediaFromDraft } = require("../website/sectionMediaDraftFields");
+    const resolved = resolveSectionMediaFromDraft({
+      draftKind: draft.draftKind,
+      payload,
+      existingMediaUrl: section.mediaUrl,
+      existingLayout: section.layoutMetadata,
+    });
     const updated = await contentRepo.updateSection(client, section.id, {
-      mediaUrl,
+      mediaUrl: resolved.mediaUrl,
       status: "published",
-      layoutMetadata: mergeLayoutMetadata(section.layoutMetadata, layoutPatch),
+      layoutMetadata: mergeLayoutMetadata(section.layoutMetadata, resolved.layoutPatch),
     });
     if (!updated.section) throw mapError("APPLY_FAILED", "Could not update media.");
+    return;
+  }
+
+  if (draft.draftKind === "page_section") {
+    if (draft.op === "reorder" && Array.isArray(payload.order)) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const byKey = new Map((sections || []).map((s) => [String(s.sectionKey), s]));
+      let position = 0;
+      for (const key of payload.order) {
+        const section = byKey.get(String(key));
+        if (!section) continue;
+        position += 1;
+        await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+      }
+      const ordered = new Set(payload.order.map(String));
+      const remainder = (sections || [])
+        .filter((s) => !ordered.has(String(s.sectionKey)))
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+      for (const section of remainder) {
+        position += 1;
+        await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+      }
+      return;
+    }
+    if (draft.op === "visibility" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const sectionKey = String(payload.sectionKey);
+      let page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      let section = null;
+      if (page) {
+        const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+        section = (sections || []).find((s) => String(s.sectionKey) === sectionKey) || null;
+      }
+      // Soft-fill sermons_intro may have never been written to CMS; materialize then hide.
+      if (!section && sectionKey === "sermons_intro") {
+        page = await ensurePage(client, { churchId, branchId, pageKey });
+        section = await ensureSection(client, page, sectionKey, "text");
+      }
+      if (!page || !section) return;
+      await contentRepo.updateSection(client, section.id, {
+        status: payload.hidden === true ? "archived" : "published",
+      });
+      return;
+    }
+    if (draft.op === "restore_default" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
+      if (!section) return;
+      const baseline = draft.previousPayload && typeof draft.previousPayload === "object" ? draft.previousPayload : {};
+      await contentRepo.updateSection(client, section.id, {
+        heading: baseline.heading != null ? baseline.heading : section.heading,
+        bodyText: baseline.bodyText != null ? baseline.bodyText : section.bodyText,
+        mediaUrl: baseline.mediaUrl != null ? baseline.mediaUrl : section.mediaUrl,
+        status: "published",
+      });
+      return;
+    }
+    if (draft.op === "add_section" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await ensurePage(client, { churchId, branchId, pageKey });
+      const existing = await contentRepo.findSectionByPageAndKey(client, page.id, payload.sectionKey);
+      if (existing) return;
+      const headingRaw =
+        payload.heading != null ? String(payload.heading).trim() : "";
+      const bodyRaw =
+        payload.bodyText != null ? String(payload.bodyText).trim() : "";
+      await contentRepo.insertSection(client, {
+        pageId: page.id,
+        sectionKey: String(payload.sectionKey),
+        sectionType: String(payload.sectionType || "plain_text"),
+        // CHECK constraints reject ""; NULL or length≥1 only.
+        heading: headingRaw || "New section",
+        bodyText: bodyRaw || null,
+        mediaUrl:
+          payload.mediaUrl != null && String(payload.mediaUrl).trim()
+            ? String(payload.mediaUrl).trim()
+            : null,
+        sortOrder: Number(payload.sortOrder) || 100,
+        status: "published",
+        layoutMetadata: payload.layout ? { layout: payload.layout } : null,
+      });
+      return;
+    }
+    if (draft.op === "update_section" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const section = await contentRepo.findSectionByPageAndKey(
+        client,
+        page.id,
+        String(payload.sectionKey)
+      );
+      if (!section) return;
+      const patch = { status: "published" };
+      if (payload.heading !== undefined) {
+        const h = String(payload.heading || "").trim();
+        patch.heading = h || "New section";
+      }
+      if (payload.bodyText !== undefined) {
+        const b = String(payload.bodyText || "").trim();
+        patch.bodyText = b || null;
+      }
+      if (payload.mediaUrl !== undefined) {
+        const m = payload.mediaUrl == null ? "" : String(payload.mediaUrl).trim();
+        patch.mediaUrl = m || null;
+      }
+      await contentRepo.updateSection(client, section.id, patch);
+      return;
+    }
+    if (draft.op === "remove" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const sectionKey = String(payload.sectionKey);
+      let page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      let section = null;
+      if (page) {
+        const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+        section = (sections || []).find((s) => String(s.sectionKey) === sectionKey) || null;
+      }
+      if (!section && sectionKey === "sermons_intro") {
+        page = await ensurePage(client, { churchId, branchId, pageKey });
+        section = await ensureSection(client, page, sectionKey, "text");
+      }
+      if (!page || !section) return;
+      await contentRepo.updateSection(client, section.id, {
+        status: "archived",
+        mediaUrl: null,
+      });
+      return;
+    }
     return;
   }
 
@@ -252,6 +439,42 @@ async function applyStructuredDraft(client, draft, ctx) {
   }
 
   await applyEntityDraft(client, draft, ctx);
+  if (
+    draft.draftKind === "leader" ||
+    draft.draftKind === "ministry" ||
+    draft.draftKind === "event" ||
+    draft.draftKind === "sermon"
+  ) {
+    await persistEntityPlacementFromDraft(client, draft, ctx);
+  }
+}
+
+async function persistEntityPlacementFromDraft(client, draft, ctx) {
+  if (!draft || draft.payload === undefined) return;
+  if (draft.op === "remove") return;
+  // placement:undefined means leave existing map entry alone.
+  if (!Object.prototype.hasOwnProperty.call(draft.payload || {}, "placement")) return;
+  const { churchId, branchId } = ctx;
+  const kind = draft.draftKind;
+  const entityKey = String(draft.entityKey || "");
+  if (!entityKey) return;
+  const pageKey =
+    kind === "leader"
+      ? "leadership"
+      : kind === "ministry"
+        ? "ministries"
+        : kind === "event"
+          ? "events"
+          : "sermons";
+  const page = await ensurePage(client, { churchId, branchId, pageKey });
+  const { mergeEntityImagePlacement } = require("../website/entityImagePlacement");
+  const nextLayout = mergeEntityImagePlacement(
+    page.layoutMetadata,
+    kind,
+    entityKey,
+    draft.payload.placement
+  );
+  await contentRepo.updatePage(client, page.id, { layoutMetadata: nextLayout });
 }
 
 async function applyEntityDraft(client, draft, ctx) {
@@ -323,6 +546,53 @@ async function applyEntityDraft(client, draft, ctx) {
         return;
       }
     }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("leader", entityKey)) {
+      const published = await contentRepo.listLeaders(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (name) =>
+        String(name || "")
+          .replace(/\s*\(template example\)\s*$/i, "")
+          .trim()
+          .toLowerCase();
+      const matched = published.find((row) => norm(row.displayName) === norm(fields.displayName));
+      if (matched) {
+        await updateFns.leader(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.leader;
+        const siblings = softFillItemsForKind("leader", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  displayName: siblingPayload.displayName || "Leader",
+                  roleTitle: siblingPayload.roleTitle || null,
+                  biography: siblingPayload.biography || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  sortOrder:
+                    siblingPayload.sortOrder != null ? Number(siblingPayload.sortOrder) : 0,
+                  status: "published",
+                };
+          await insertFns.leader(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
+        return;
+      }
+    }
     await insertFns.leader(client, {
       churchId,
       branchId: branchId || null,
@@ -332,8 +602,12 @@ async function applyEntityDraft(client, draft, ctx) {
   }
 
   if (kind === "ministry") {
+    const stripTemplate = (value) =>
+      String(value || "")
+        .replace(/\s*\(template example\)\s*$/i, "")
+        .trim();
     const fields = {
-      name: payload.name || "Ministry",
+      name: stripTemplate(payload.name) || "Ministry",
       summary: payload.summary || null,
       description: payload.description || null,
       meetingDay: payload.meetingDay || null,
@@ -350,6 +624,52 @@ async function applyEntityDraft(client, draft, ctx) {
         return;
       }
     }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("ministry", entityKey)) {
+      const published = await contentRepo.listMinistries(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (name) => stripTemplate(name).toLowerCase();
+      const matched = published.find((row) => norm(row.name) === norm(fields.name));
+      if (matched) {
+        await updateFns.ministry(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.ministry;
+        const siblings = softFillItemsForKind("ministry", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  name: stripTemplate(siblingPayload.name) || "Ministry",
+                  summary: siblingPayload.summary || null,
+                  description: siblingPayload.description || null,
+                  meetingDay: siblingPayload.meetingDay || null,
+                  contactEmail: siblingPayload.contactEmail || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  sortOrder:
+                    siblingPayload.sortOrder != null ? Number(siblingPayload.sortOrder) : 0,
+                  joinPolicy: siblingPayload.joinPolicy || "request",
+                  status: "published",
+                };
+          await insertFns.ministry(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
+        return;
+      }
+    }
     await insertFns.ministry(client, {
       churchId,
       branchId: branchId || null,
@@ -359,8 +679,12 @@ async function applyEntityDraft(client, draft, ctx) {
   }
 
   if (kind === "event") {
+    const stripTemplate = (value) =>
+      String(value || "")
+        .replace(/\s*\(template example\)\s*$/i, "")
+        .trim();
     const fields = {
-      title: payload.title || "Event",
+      title: stripTemplate(payload.title) || "Event",
       summary: payload.summary || null,
       startsAt: payload.startsAt || null,
       endsAt: payload.endsAt || null,
@@ -374,6 +698,51 @@ async function applyEntityDraft(client, draft, ctx) {
       const existing = await findFns.event(client, entityKey);
       if (existing && String(existing.churchId) === String(churchId)) {
         await updateFns.event(client, entityKey, fields);
+        return;
+      }
+    }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("event", entityKey)) {
+      const published = await contentRepo.listEvents(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (title) => stripTemplate(title).toLowerCase();
+      const matched = published.find((row) => norm(row.title) === norm(fields.title));
+      if (matched) {
+        await updateFns.event(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.event;
+        const siblings = softFillItemsForKind("event", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  title: stripTemplate(siblingPayload.title) || "Event",
+                  summary: siblingPayload.summary || null,
+                  startsAt: siblingPayload.startsAt || null,
+                  endsAt: siblingPayload.endsAt || null,
+                  timezone: siblingPayload.timezone || null,
+                  location: siblingPayload.location || null,
+                  registrationUrl: siblingPayload.registrationUrl || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  status: "published",
+                };
+          await insertFns.event(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
         return;
       }
     }
@@ -393,6 +762,7 @@ async function applyEntityDraft(client, draft, ctx) {
       summary: payload.summary || null,
       mediaUrl: payload.mediaUrl || null,
       resourceUrl: payload.resourceUrl || null,
+      imageUrl: payload.imageUrl || null,
       status: "published",
     };
     if (isExisting) {
@@ -486,6 +856,16 @@ async function applyEntityDraft(client, draft, ctx) {
 }
 
 /**
+ * Deterministic apply order: upserts/removes first, then reorder operations.
+ * @param {object[]} drafts
+ */
+function orderedStructuredDrafts(drafts) {
+  const list = Array.isArray(drafts) ? drafts.slice() : [];
+  const weight = (d) => (d && d.op === "reorder" ? 1 : 0);
+  return list.sort((a, b) => weight(a) - weight(b));
+}
+
+/**
  * Apply all active Phase 7 drafts in the current transaction, then mark applied.
  * @param {import('pg').PoolClient} client
  * @param {{
@@ -538,7 +918,9 @@ async function applyWebsiteDraftsInTransaction(client, opts) {
   for (const d of fieldDrafts) {
     await applyFieldDraft(client, d, ctx);
   }
-  for (const d of structuredDrafts) {
+  // Reorder drafts normalise positions across a whole collection, so they must
+  // settle after the per-item upserts that may also carry a sort order.
+  for (const d of orderedStructuredDrafts(structuredDrafts)) {
     await applyStructuredDraft(client, d, ctx);
   }
 
@@ -618,7 +1000,7 @@ async function applyProposedPhase7DraftsInTransaction(client, opts) {
     );
     fieldCount += 1;
   }
-  for (const d of structuredDrafts) {
+  for (const d of orderedStructuredDrafts(structuredDrafts)) {
     await applyStructuredDraft(
       client,
       {
@@ -642,6 +1024,8 @@ async function applyProposedPhase7DraftsInTransaction(client, opts) {
 module.exports = {
   applyWebsiteDraftsInTransaction,
   applyProposedPhase7DraftsInTransaction,
+  applyFieldDraft,
+  orderedStructuredDrafts,
   ensurePage,
   ensureSection,
 };

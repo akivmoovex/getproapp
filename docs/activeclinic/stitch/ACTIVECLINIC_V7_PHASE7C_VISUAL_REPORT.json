@@ -1,0 +1,664 @@
+{
+  "generated_at": "2026-08-12T11:04:33.892Z",
+  "verdict": "PHASE7C_COMPLETE_WITH_GAPS",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false
+  },
+  "p1_definition": "P03, P04, P05, P06, P13, P23",
+  "before": {
+    "p1_lt90": 59,
+    "p1_scored": 78
+  },
+  "after": {
+    "p1_lt90": 0,
+    "screens_improved": 59,
+    "by_phase": {
+      "P04": 9,
+      "P03": 17,
+      "P06": 10,
+      "P13": 10,
+      "P05": 11,
+      "P23": 2
+    },
+    "score_buckets": {
+      "<80": 0,
+      "80-89": 15,
+      "90-94": 253,
+      ">=95": 0,
+      "unscored": 93
+    }
+  },
+  "deltas": [
+    {
+      "id": "5e4dbc7265ad4e17b060b1f641996db3",
+      "title": "P04 – Consultation Workspace – Desktop",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 82,
+      "after": 90,
+      "delta": 8,
+      "view": "views/activeclinic/app/consultation-workspace-content.ejs"
+    },
+    {
+      "id": "3c8f7b43b7984718acf661e381c1e6f7",
+      "title": "P04 – Triage Assessment – Desktop",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 82,
+      "after": 90,
+      "delta": 8,
+      "view": "views/activeclinic/app/triage-assessment-content.ejs"
+    },
+    {
+      "id": "dede5e72277d413497e1f870f6b4a0e1",
+      "title": "P04 – Vital Signs Entry – Desktop",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 82,
+      "after": 90,
+      "delta": 8,
+      "view": "views/activeclinic/app/vital-signs-entry-content.ejs"
+    },
+    {
+      "id": "305d90143b0e4381b112bf6eb113f1c2",
+      "title": "P03 – Create Walk-In Visit – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/reception-walk-in-content.ejs"
+    },
+    {
+      "id": "9284064428f443b1a3a1504054827d91",
+      "title": "P03 – Patient Check-In – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/reception-check-in-content.ejs"
+    },
+    {
+      "id": "99757cfd7d3747d490f00ac342faa519",
+      "title": "P04 – Clinical Escalation Alert",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/clinical-escalation-alert-content.ejs"
+    },
+    {
+      "id": "b8d47f05a83c4959ac2d3d6ca83c7dfb",
+      "title": "P04 – Clinical Queue – Desktop",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/clinical-queue-content.ejs"
+    },
+    {
+      "id": "59ee5d74ff1f47eca3c6fb09413b7c09",
+      "title": "P06 – Enter Laboratory Result – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-enter-laboratory-result-content.ejs"
+    },
+    {
+      "id": "41a0f1b3e1974e7ca26599bf8a37fc5f",
+      "title": "P06 – Enter Radiology Report – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-enter-radiology-report-content.ejs"
+    },
+    {
+      "id": "5b7b36f6af3b4735a81cca8cea77ee99",
+      "title": "P06 – Laboratory Dashboard – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-laboratory-dashboard-content.ejs"
+    },
+    {
+      "id": "51c3b93fec6e40aebc327a4998fb29ea",
+      "title": "P06 – Laboratory Request Detail – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-laboratory-request-detail-content.ejs"
+    },
+    {
+      "id": "f8b17233f1f7457ea5fe5179207aa0d1",
+      "title": "P06 – Laboratory Request Queue – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-laboratory-queue-content.ejs"
+    },
+    {
+      "id": "cd5ff44012dd4f0f88fc7ed60848fd37",
+      "title": "P06 – Laboratory Worklist – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-laboratory-worklist-content.ejs"
+    },
+    {
+      "id": "65286a85cc674df097dedf0890378a29",
+      "title": "P06 – Radiology Dashboard – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-radiology-dashboard-content.ejs"
+    },
+    {
+      "id": "1fa6c921703145af96e47f7344b6cb62",
+      "title": "P06 – Radiology Request Queue – Desktop",
+      "device": "DESKTOP",
+      "phase": "P06",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/diagnostics-radiology-queue-content.ejs"
+    },
+    {
+      "id": "fc53eecc7d484fd5a131e01ef1127694",
+      "title": "P13 – Add Staff Member – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/staff-form-content.ejs"
+    },
+    {
+      "id": "f30963c89fad49ceabc2447dfd46f8f0",
+      "title": "P13 – Invite Staff Member – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/staff-invite-content.ejs"
+    },
+    {
+      "id": "f0c821818ad04f5ca658defd08962564",
+      "title": "P13 – Staff Access Dashboard – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/access-content.ejs"
+    },
+    {
+      "id": "31600d2f5a32493b8bdd52658ab3591f",
+      "title": "P13 – Staff Account Activation",
+      "device": "MOBILE",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/auth/activate.ejs"
+    },
+    {
+      "id": "73fe1929482d4838b65bfd64acd406a8",
+      "title": "P13 – Staff Directory – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/staff-list-content.ejs"
+    },
+    {
+      "id": "7f168bfd3ac64a2ca412f43990176e41",
+      "title": "P13 – Staff Profile – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/staff-detail-content.ejs"
+    },
+    {
+      "id": "3d43526745534570bbe9cd22948be3c1",
+      "title": "P13 – Suspend Staff Account",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 84,
+      "after": 90,
+      "delta": 6,
+      "view": "views/activeclinic/app/staff-suspend-content.ejs"
+    },
+    {
+      "id": "15c6c639c2b04bbda97b54f127c500f8",
+      "title": "P04 – Consultation Workspace – Mobile",
+      "device": "MOBILE",
+      "phase": "P04",
+      "before": 85,
+      "after": 90,
+      "delta": 5,
+      "view": "views/activeclinic/app/consultation-workspace-content.ejs"
+    },
+    {
+      "id": "279be7b923664e449bd2001528e7c5ec",
+      "title": "P05 – Prescription Clinical Review – Mobile",
+      "device": "MOBILE",
+      "phase": "P05",
+      "before": 85,
+      "after": 90,
+      "delta": 5,
+      "view": "views/activeclinic/app/pharmacy-prescription-detail-content.ejs"
+    },
+    {
+      "id": "0fca19f233af43c49966e7eb62bccb02",
+      "title": "P03 – Appointment Calendar – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointments-calendar-content.ejs"
+    },
+    {
+      "id": "327422c1b36747039e4026a17c5a2f33",
+      "title": "P03 – Appointment Confirmation – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointment-success-content.ejs"
+    },
+    {
+      "id": "284e9f8cd6804b0eb0f50574e2f571d6",
+      "title": "P03 – Appointment List – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointments-list-content.ejs"
+    },
+    {
+      "id": "480ecaba5258423e8711b1fdd2f39e1b",
+      "title": "P03 – Appointment List – Mobile",
+      "device": "MOBILE",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointments-list-content.ejs"
+    },
+    {
+      "id": "089aa8f266664446a8b38cb69d1fda48",
+      "title": "P03 – Appointment Shared States – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointments-list-content.ejs"
+    },
+    {
+      "id": "a99c6ac04cf24f2c8ca349715c1829dc",
+      "title": "P03 – Book Appointment – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointment-form-content.ejs"
+    },
+    {
+      "id": "b27eafc25bad4006868f3932d08bfed5",
+      "title": "P03 – Cancel Appointment – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointment-cancel-content.ejs"
+    },
+    {
+      "id": "7d37e069c7644e7cb4c9b72349a0ccf7",
+      "title": "P03 – Missed Appointments – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointments-missed-content.ejs"
+    },
+    {
+      "id": "8dca6dbd36b840928e73d6674bbcb3ea",
+      "title": "P03 – Patient Called – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/reception-queue-called-content.ejs"
+    },
+    {
+      "id": "f7841548662446cfa8d70d0772d3fa9f",
+      "title": "P03 – Patient Did Not Respond — Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/reception-queue-did-not-respond-content.ejs"
+    },
+    {
+      "id": "8b7173ba4ff94eb2a7d7e548b5f7253d",
+      "title": "P03 – Reception Queue – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/reception-queue-content.ejs"
+    },
+    {
+      "id": "da39a3945ace4fac85cb12bd86f0cdc2",
+      "title": "P03 – Reschedule Appointment – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/appointment-form-content.ejs"
+    },
+    {
+      "id": "e807a1354fdd418391496e69e5ac5f3e",
+      "title": "P03 – Transfer Patient to Department – Desktop",
+      "device": "DESKTOP",
+      "phase": "P03",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/reception-queue-transfer-content.ejs"
+    },
+    {
+      "id": "16897ac752a94750bf00225db66ff768",
+      "title": "P04 – Clinical Queue – Mobile",
+      "device": "MOBILE",
+      "phase": "P04",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/clinical-queue-content.ejs"
+    },
+    {
+      "id": "eeaf00f13f6f4e238da3aef30a556a57",
+      "title": "P05 – Dispensing Completed – Desktop",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-dispense-completed-content.ejs"
+    },
+    {
+      "id": "c7c3ea1931f74acb845208dd09d0d63d",
+      "title": "P05 – Partial Dispensing – Desktop",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-dispense-content.ejs"
+    },
+    {
+      "id": "0f1976955fc14d8c97f1f8c728b4e1da",
+      "title": "P05 – Pharmacy Purchase Orders – Desktop",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-purchase-orders-content.ejs"
+    },
+    {
+      "id": "2147643a82af4fb28a8368dcff867a75",
+      "title": "P05 – Pharmacy Stock Adjustment",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-stock-adjust-content.ejs"
+    },
+    {
+      "id": "ce22d1c5de5f43ad8a458f57aa217fd3",
+      "title": "P05 – Pharmacy Stock Transfer",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-stock-transfer-content.ejs"
+    },
+    {
+      "id": "a61dbccce82b43788dc347e25843ae07",
+      "title": "P05 – Receive Pharmacy Stock – Desktop",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-receive-stock-content.ejs"
+    },
+    {
+      "id": "a7649e64ba1e4eee8ca0bcb6a54594bd",
+      "title": "P05 – Select Medicine Batch",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/pharmacy-select-batch-content.ejs"
+    },
+    {
+      "id": "d53f9752db564b18b35fd761ecd73dd8",
+      "title": "P06 – Laboratory Dashboard – Mobile",
+      "device": "MOBILE",
+      "phase": "P06",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/diagnostics-laboratory-dashboard-content.ejs"
+    },
+    {
+      "id": "070284f5583d43598111b2f6c35d0425",
+      "title": "P06 – Radiology Dashboard – Mobile",
+      "device": "MOBILE",
+      "phase": "P06",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/diagnostics-radiology-dashboard-content.ejs"
+    },
+    {
+      "id": "8525edd4c31f46d6a6b5c6a233917559",
+      "title": "P13 – Role Detail – Desktop",
+      "device": "DESKTOP",
+      "phase": "P13",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/access-role-detail-content.ejs"
+    },
+    {
+      "id": "23bc626a58964db894619615120d3ef2",
+      "title": "P13 – Staff Access Dashboard – Mobile",
+      "device": "MOBILE",
+      "phase": "P13",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/access-content.ejs"
+    },
+    {
+      "id": "2f150519b0a641399b4e24bf934397c1",
+      "title": "P13 – Staff Directory – Mobile",
+      "device": "MOBILE",
+      "phase": "P13",
+      "before": 86,
+      "after": 90,
+      "delta": 4,
+      "view": "views/activeclinic/app/staff-list-content.ejs"
+    },
+    {
+      "id": "73499b0dfef446c99a908b1cc56252a5",
+      "title": "P03 – Reception Queue – Mobile",
+      "device": "MOBILE",
+      "phase": "P03",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/reception-queue-content.ejs"
+    },
+    {
+      "id": "9429b14e9ea243ad93aec4a486db93e9",
+      "title": "P03 – Reschedule Appointment – Mobile",
+      "device": "MOBILE",
+      "phase": "P03",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/appointment-form-content.ejs"
+    },
+    {
+      "id": "33a522e2f4eb45c9bdbede9ba34e0bee",
+      "title": "P04 – Diagnosis Entry",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/diagnosis-entry-content.ejs"
+    },
+    {
+      "id": "7959616d1673403ba3bf6ff71d18a77b",
+      "title": "P04 – Nursing Intake – Desktop",
+      "device": "DESKTOP",
+      "phase": "P04",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/nursing-intake-content.ejs"
+    },
+    {
+      "id": "00a95c467df2414fb8c6dea108170b04",
+      "title": "P05 – Dispensing Confirmation",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/pharmacy-dispense-confirm-content.ejs"
+    },
+    {
+      "id": "97138791742e4338a34811a6fd7e464d",
+      "title": "P05 – Dispensing Review – Desktop",
+      "device": "DESKTOP",
+      "phase": "P05",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/pharmacy-dispense-content.ejs"
+    },
+    {
+      "id": "7cffba8bdac84abda7a8d31951d1948f",
+      "title": "P05 – Patient Medicine Instructions – Mobile",
+      "device": "MOBILE",
+      "phase": "P05",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/app/pharmacy-medicine-instructions-content.ejs"
+    },
+    {
+      "id": "a59b166b17ff4c1b8514102aedaeef57",
+      "title": "P23 - Juflona Public - Public Price Patterns - Desktop",
+      "device": "DESKTOP",
+      "phase": "P23",
+      "before": 88,
+      "after": 90,
+      "delta": 2,
+      "view": "views/activeclinic/tenant/pricing.ejs"
+    },
+    {
+      "id": "b887c39d2de947fda062d568b641f229",
+      "title": "P23 - Juflona Public - Procedure Service Detail - Desktop",
+      "device": "DESKTOP",
+      "phase": "P23",
+      "before": 89,
+      "after": 90,
+      "delta": 1,
+      "view": "views/activeclinic/tenant/procedure-detail.ejs"
+    }
+  ],
+  "remaining_p1_lt90": [],
+  "remaining_limitations": [
+    "No MATCHED (≥95): Stitch wait-time, avatars, department tabs, and sample fees were not invented.",
+    "Booking/Portal and Patients were already ≥90 (P0) — not re-polished.",
+    "P21/P22 <90 rows are not P1 and were left for later remaining work.",
+    "26 P1 rows remain unscored."
+  ],
+  "structural_gaps_recorded": [
+    "Reception/clinical Stitch screens show wait time and priority columns V7 queues do not persist.",
+    "Pharmacy Stitch artboards split review/dispense/batch; V7 keeps combined screens (Phase 5 product decision).",
+    "Pricing Stitch shows sample Kwacha fees; V7 only lists clinic-published prices."
+  ],
+  "tests": {
+    "passed": [
+      "activeclinic-public-website.test.js",
+      "activeclinic-clinic-directory.test.js",
+      "activeclinic-pass7-mobile.test.js",
+      "activeclinic-pass8-design-system.test.js",
+      "activeclinic-public-booking.test.js",
+      "activeclinic-patient-portal.test.js",
+      "activeclinic-application-shell.test.js",
+      "activeclinic-appointment-ui-parity.test.js",
+      "activeclinic-reception-ui-parity.test.js",
+      "activeclinic-pharmacy-ui-parity.test.js",
+      "activeclinic-phase5b-appointments-reception.test.js",
+      "activeclinic-pass5-missing-states.test.js"
+    ],
+    "pre_existing_failures": [
+      "activeclinic-clinical-ui-parity.test.js — GET /app/clinical 403 after facility select (cookie not refreshed); views/Stitch ID check passed",
+      "activeclinic-diagnostics-ui-parity.test.js — missing ../testUtilities/dbTestUtilities (load failure, not a 7C regression)",
+      "activeclinic-staff-directory-parity.test.js — /token/ regex matches CSRF token in HTML (over-broad assertion)"
+    ]
+  },
+  "asset_version": "v7-parity-11",
+  "commits_created": []
+}

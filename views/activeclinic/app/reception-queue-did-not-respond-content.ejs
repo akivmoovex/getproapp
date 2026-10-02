@@ -1,0 +1,20 @@
+<%
+  var action = (pageData && pageData.action) || {};
+  var e = action.queueEntry || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-queue-did-not-respond" data-ac-page-section="reception-queue-did-not-respond" data-ac-stitch-did-not-respond="<%= action.stitch || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Patient did not respond</h2>
+    <p>Return queue <strong><%= e.queueNumber || '—' %></strong> to waiting and record the call attempt.</p>
+    <form method="post" action="/app/reception/queue/<%= e.id %>/did-not-respond">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <label class="ac-label" for="requeue_reason">Reason</label>
+      <textarea class="ac-input" id="requeue_reason" name="reason" maxlength="200" rows="3">did_not_respond</textarea>
+      <div class="ac-form-actions">
+        <button type="submit" class="ac-btn">Return to waiting</button>
+        <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>

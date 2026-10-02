@@ -1,0 +1,43 @@
+<%#
+  Shared ops pagination.
+  Locals: page, totalPages, baseHref, query (object), label
+%>
+<%
+  var _page = Math.max(1, parseInt(typeof page !== 'undefined' ? page : 1, 10) || 1);
+  var _total = Math.max(1, parseInt(typeof totalPages !== 'undefined' ? totalPages : 1, 10) || 1);
+  var _base = typeof baseHref !== 'undefined' && baseHref ? String(baseHref).trim() : '';
+  var _label = typeof label !== 'undefined' && label ? label : 'Pagination';
+  function buildHref(p) {
+    var parts = [];
+    if (typeof query === 'object' && query) {
+      Object.keys(query).forEach(function (k) {
+        if (k === 'page' || query[k] == null || query[k] === '') return;
+        parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(query[k])));
+      });
+    }
+    parts.push('page=' + encodeURIComponent(String(p)));
+    var q = parts.join('&');
+    return _base.indexOf('?') >= 0 ? (_base + '&' + q) : (_base + '?' + q);
+  }
+%>
+<% if (_total > 1 && _base && _base !== '#') { %>
+<nav class="gp-ops-pagination" aria-label="<%= _label %>" data-gp-ops="pagination">
+  <p class="gp-ops-pagination__status">Page <%= _page %> of <%= _total %></p>
+  <ul class="gp-ops-pagination__list">
+    <li>
+      <% if (_page > 1) { %>
+      <a class="gp-ops-pagination__link" href="<%= buildHref(_page - 1) %>" rel="prev">Previous</a>
+      <% } else { %>
+      <span class="gp-ops-pagination__link is-disabled" aria-disabled="true">Previous</span>
+      <% } %>
+    </li>
+    <li>
+      <% if (_page < _total) { %>
+      <a class="gp-ops-pagination__link" href="<%= buildHref(_page + 1) %>" rel="next">Next</a>
+      <% } else { %>
+      <span class="gp-ops-pagination__link is-disabled" aria-disabled="true">Next</span>
+      <% } %>
+    </li>
+  </ul>
+</nav>
+<% } %>

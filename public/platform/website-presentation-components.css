@@ -1,0 +1,637 @@
+/**
+ * Platform website presentation components (V2.04 Phase 2).
+ * Uses only --gp-website-* semantic tokens. Product shells map theme tokens
+ * via website-presentation-token-bridge.css. No product hex. No product token names here.
+ */
+
+.gp-website-pc {
+  /* Consumes --gp-website-* set by product token bridge; no product hex here. */
+  box-sizing: border-box;
+  color: var(--gp-website-color-text, inherit);
+  font-family: var(--gp-website-font-family, inherit);
+}
+
+.gp-website-pc *,
+.gp-website-pc *::before,
+.gp-website-pc *::after {
+  box-sizing: border-box;
+}
+
+.gp-website-pc__title {
+  margin: 0 0 calc(var(--gp-website-space, 1rem) * 0.5);
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--gp-website-color-text, inherit);
+}
+
+.gp-website-pc__lead,
+.gp-website-pc__body {
+  margin: 0 0 var(--gp-website-space, 1rem);
+  line-height: 1.55;
+  color: var(--gp-website-color-text, inherit);
+}
+
+.gp-website-pc__muted,
+.gp-website-pc__eyebrow,
+.gp-website-pc__eyebrow-text {
+  margin: 0 0 calc(var(--gp-website-space, 1rem) * 0.35);
+  color: var(--gp-website-color-muted, inherit);
+  font-size: 0.875rem;
+}
+
+.gp-website-pc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--gp-website-space, 1rem) * 0.75);
+}
+
+.gp-website-pc__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+}
+
+.gp-website-pc__btn--primary {
+  background: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast, #fff);
+}
+
+.gp-website-pc__btn--secondary {
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  color: var(--gp-website-color-text, inherit);
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.gp-website-pc__link {
+  color: var(--gp-website-color-primary, currentColor);
+  text-decoration: underline;
+}
+
+.gp-website-pc__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  object-fit: cover;
+}
+
+.gp-website-pc__video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  overflow: hidden;
+  background: var(--gp-website-color-surface-elevated, #0f172a);
+}
+
+.gp-website-pc__video-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.gp-website-pc__img--avatar,
+.gp-website-pc__img-placeholder--avatar {
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+}
+
+.gp-website-pc__img-placeholder {
+  min-height: 8rem;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border: 1px dashed var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc--hero {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.5);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .gp-website-pc--hero {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.gp-website-pc--image-text {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.25);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .gp-website-pc--image-text {
+    grid-template-columns: 1fr 1fr;
+  }
+  .gp-website-pc--image-end .gp-website-pc__media {
+    order: 2;
+  }
+}
+
+.gp-website-pc--cta {
+  padding: calc(var(--gp-website-space, 1rem) * 1.5);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  box-shadow: var(--gp-website-shadow, none);
+}
+
+.gp-website-pc__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.gp-website-pc--person-card,
+.gp-website-pc--collection-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gp-website-space, 1rem) * 0.75);
+  padding: var(--gp-website-space, 1rem);
+  background: var(--gp-website-color-surface, transparent);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+.gp-website-pc--person-card.is-featured,
+.gp-website-pc--collection-card.is-featured {
+  border-color: var(--gp-website-color-primary, currentColor);
+}
+
+.gp-website-pc__person-name,
+.gp-website-pc__card-title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.gp-website-pc__person-title,
+.gp-website-pc__person-subtitle,
+.gp-website-pc__card-subtitle,
+.gp-website-pc__person-description,
+.gp-website-pc__card-description {
+  margin: 0.25rem 0 0;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__facts {
+  margin: 0;
+}
+
+.gp-website-pc__fact {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.gp-website-pc__fact dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__fact dd {
+  margin: 0;
+}
+
+.gp-website-pc__hours-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gp-website-pc__hours-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc__gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+}
+
+.gp-website-pc__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.gp-website-pc__nav-link {
+  color: var(--gp-website-color-text, inherit);
+  text-decoration: none;
+}
+
+.gp-website-pc__nav-link:hover,
+.gp-website-pc__nav-link:focus-visible {
+  color: var(--gp-website-color-primary, currentColor);
+}
+
+.gp-website-pc--footer {
+  padding-top: calc(var(--gp-website-space, 1rem) * 1.5);
+  border-top: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc--announcement {
+  padding: var(--gp-website-space, 1rem);
+  border-left: 4px solid var(--gp-website-color-primary, currentColor);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+.gp-website-pc__empty {
+  padding: var(--gp-website-space, 1rem);
+  border: 1px dashed var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+/* —— Batch 1: person / service / nav extensions —— */
+
+.gp-website-pc__img--portrait,
+.gp-website-pc__img-placeholder--portrait {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  object-fit: cover;
+}
+
+.gp-website-pc__badges {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.gp-website-pc__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  color: var(--gp-website-color-text, inherit);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.gp-website-pc__actions--person {
+  margin-top: calc(var(--gp-website-space, 1rem) * 0.75);
+}
+
+.gp-website-pc__card-media--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc__img--icon {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.gp-website-pc__nav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.gp-website-pc__nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.gp-website-pc__nav-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+.gp-website-pc__nav-brand-name {
+  font-weight: 600;
+}
+
+.gp-website-pc__nav-cta {
+  margin-left: auto;
+}
+
+/* —— Batch 1: new shared Stitch design families —— */
+
+.gp-website-pc__fact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+}
+
+.gp-website-pc--fact-row .gp-website-pc__fact-list {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.gp-website-pc__fact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: calc(var(--gp-website-space, 1rem) * 0.75);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.gp-website-pc__fact-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__fact-value {
+  font-weight: 600;
+  color: var(--gp-website-color-text, inherit);
+}
+
+.gp-website-pc__fact-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gp-website-pc__step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+}
+
+.gp-website-pc__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.gp-website-pc__step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast, #fff);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.gp-website-pc__step-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.gp-website-pc__step-text {
+  margin: 0.35rem 0 0;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__faq-items {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.gp-website-pc__faq-item {
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface, transparent);
+  padding: 0.75rem 1rem;
+}
+
+.gp-website-pc__faq-question {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gp-website-pc__faq-answer {
+  margin-top: 0.5rem;
+  color: var(--gp-website-color-muted, inherit);
+  line-height: 1.55;
+}
+
+.gp-website-pc__settings-header {
+  margin-bottom: var(--gp-website-space, 1rem);
+}
+
+.gp-website-pc__settings-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.gp-website-pc__settings-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: var(--gp-website-space, 1rem);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  text-decoration: none;
+  color: inherit;
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.gp-website-pc__settings-nav-item.is-active .gp-website-pc__settings-nav-link,
+.gp-website-pc__settings-nav-link:hover,
+.gp-website-pc__settings-nav-link:focus-visible {
+  border-color: var(--gp-website-color-primary, currentColor);
+}
+
+.gp-website-pc__settings-nav-label {
+  font-weight: 600;
+}
+
+.gp-website-pc__settings-nav-desc {
+  color: var(--gp-website-color-muted, inherit);
+  font-size: 0.875rem;
+}
+
+.gp-website-pc__data-rows {
+  margin: 0;
+}
+
+.gp-website-pc__data-row {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc__data-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__data-value {
+  margin: 0;
+}
+
+/* —— Responsive: same components at 390px (no mobile-only partials) —— */
+
+@media (max-width: 390px) {
+  .gp-website-pc__grid,
+  .gp-website-pc__grid--people,
+  .gp-website-pc__gallery-grid,
+  .gp-website-pc__settings-nav-list,
+  .gp-website-pc--fact-row .gp-website-pc__fact-list {
+    grid-template-columns: 1fr;
+  }
+
+  .gp-website-pc__nav-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gp-website-pc__nav-list {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .gp-website-pc__nav-cta {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .gp-website-pc__actions {
+    flex-direction: column;
+  }
+
+  .gp-website-pc__btn {
+    width: 100%;
+  }
+
+  .gp-website-pc--person-card,
+  .gp-website-pc--collection-card {
+    padding: calc(var(--gp-website-space, 1rem) * 0.85);
+  }
+}
+
+@media (min-width: 768px) {
+  .gp-website-pc__data-row {
+    grid-template-columns: 12rem 1fr;
+    align-items: baseline;
+  }
+
+  .gp-website-pc__step-list {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+}
+
+
+/* —— V2.04 Batch 7: doctor directory person card —— */
+.gp-website-pc--person-directory {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr);
+  gap: calc(var(--gp-website-space, 1rem) * 1.1);
+  align-items: start;
+  padding: calc(var(--gp-website-space, 1rem) * 0.85);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: calc(var(--gp-website-radius, 0.5rem) * 1.25);
+  background: var(--gp-website-color-surface, transparent);
+}
+.gp-website-pc--person-directory .gp-website-pc__person-media--portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+.gp-website-pc--person-directory .gp-website-pc__img--portrait,
+.gp-website-pc--person-directory .gp-website-pc__img-placeholder--portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gp-website-pc__person-specialty {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gp-website-color-primary, currentColor) 12%, transparent);
+  color: var(--gp-website-color-primary, currentColor);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+.gp-website-pc__person-meta {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--gp-website-color-muted, inherit);
+}
+.gp-website-pc__badges {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.gp-website-pc__badge {
+  display: inline-flex;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  font-size: 0.75rem;
+}
+.gp-website-pc--person-directory .gp-website-pc__actions--person {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.gp-website-pc__grid--people {
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+@media (max-width: 390px) {
+  .gp-website-pc--person-directory {
+    grid-template-columns: 1fr;
+  }
+  .gp-website-pc--person-directory .gp-website-pc__person-media--portrait {
+    max-width: 12rem;
+  }
+}

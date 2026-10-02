@@ -1,0 +1,50 @@
+<%
+  var room = (pageData && pageData.room) || {};
+  var canManage = pageData && pageData.canManage === true;
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section
+  class="ac-rooms ac-rooms-detail"
+  data-ac-page-section="room-detail"
+  data-ac-stitch="ACN27"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'b8f071b326234022afb3eecc665be9bc' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '74a8167ce99e45388a7dd1fbe9a92a88' %>"
+  data-ac-room-id="<%= room.id || '' %>"
+>
+  <div class="ac-panel ac-rooms-detail__card">
+    <div class="ac-rooms-detail__head">
+      <span class="ac-badge ac-badge--room-<%= room.status %>"><%= room.statusLabel || room.status %></span>
+      <span class="ac-rooms__code"><%= room.roomCode %></span>
+    </div>
+    <h2 class="ac-rooms-detail__title"><%= room.displayName %></h2>
+    <dl class="ac-rooms-detail__dl">
+      <div>
+        <dt>Type</dt>
+        <dd><%= room.roomTypeLabel || room.roomType %></dd>
+      </div>
+      <div>
+        <dt>Facility</dt>
+        <dd><%= room.facilityDisplayName || '—' %></dd>
+      </div>
+      <div>
+        <dt>Department</dt>
+        <dd><%= room.departmentDisplayName || 'Unassigned' %></dd>
+      </div>
+      <div>
+        <dt>Floor / Area</dt>
+        <dd><%= room.floorArea || '—' %></dd>
+      </div>
+      <div class="ac-rooms-detail__full">
+        <dt>Description</dt>
+        <dd><%= room.description || '—' %></dd>
+      </div>
+    </dl>
+    <div class="ac-rooms-detail__actions">
+      <% if (canManage) { %>
+      <a class="ac-btn ac-btn--primary" href="/app/rooms/<%= encodeURIComponent(room.id) %>/edit">Edit room</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/rooms<%= room.facilityId ? ('?facility=' + encodeURIComponent(room.facilityId)) : '' %>">Back to list</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/facilities">Facilities</a>
+    </div>
+  </div>
+</section>

@@ -149,7 +149,13 @@
         </div>
         <div class="bb-hq-field">
           <label for="city">Town / city</label>
-          <input id="city" name="city" type="text" maxlength="120" value="<%= fval('city') %>" autocomplete="address-level2" />
+          <%- include('../../../platform/partials/gp-location-field', {
+            fieldId: 'city',
+            fieldName: 'city',
+            fieldValue: fval('city'),
+            countryFieldId: 'countryCode',
+            listboxId: 'cityListbox',
+          }) %>
         </div>
       </div>
 
@@ -177,11 +183,20 @@
           <input id="email" name="email" type="email" maxlength="254" value="<%= fval('email') %>" autocomplete="email" />
           <% if (ferr('email')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('email') %></p><% } %>
         </div>
-        <div class="bb-hq-field<%= ferr('phone') ? ' is-invalid' : '' %>">
-          <label for="phone">Public phone</label>
-          <input id="phone" name="phone" type="tel" maxlength="32" value="<%= fval('phone') %>" placeholder="+260 97…" autocomplete="tel" />
-          <% if (ferr('phone')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('phone') %></p><% } %>
-        </div>
+        <%- include('../partials/phone-field', {
+          id: 'phone',
+          label: 'Public phone',
+          required: false,
+          defaultCountry: 'ZM',
+          selectedCountry: (typeof formVals !== 'undefined' && formVals.phoneCountry) || 'ZM',
+          nationalValue: fval('phoneNational') || '',
+          e164Value: fval('phone') || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          showLegacyHidden: false,
+          hint: null,
+          error: ferr('phone') || null,
+          placeholder: '97 123 4567'
+        }) %>
       </div>
 
       <div class="bb-hq-field<%= ferr('timezone') ? ' is-invalid' : '' %>">
@@ -342,4 +357,7 @@
 })();
 </script>
 
+<link rel="stylesheet" href="/platform/location-autocomplete.css?v=1" />
+<script src="/platform/location-autocomplete.js?v=1" defer></script>
+<script src="/platform/gp-location-field-init.js?v=1" defer></script>
 <%- include('../partials/hq-shell-end') %>

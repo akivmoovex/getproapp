@@ -1,0 +1,22 @@
+{
+  "scenario1_gap_l": 78673,
+  "scenario1_gap_b": 18538,
+  "scenario1_gap_f": 1133,
+  "scenario2_l": "265972/328983",
+  "scenario2_l_pct": 80.85,
+  "scenario2_b": "41820/65653",
+  "scenario2_b_pct": 63.7,
+  "scenario2_f": "6647/7495",
+  "scenario2_f_pct": 88.69,
+  "scenario2_gap_l": 30113,
+  "scenario2_gap_b": 17268,
+  "high_risk": {
+    "files": 261,
+    "L": "86232/106558",
+    "B": "14097/21693",
+    "F": "1958/2160",
+    "Lp": 80.92,
+    "Bp": 64.98,
+    "Fp": 90.65
+  }
+}

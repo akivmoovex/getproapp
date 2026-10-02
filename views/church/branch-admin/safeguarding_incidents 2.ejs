@@ -1,0 +1,47 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Safeguarding incidents</h1>
+          <p class="church-branch-topbar__subtitle">Separate from ordinary pastoral care cases</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Report incident</h2>
+        <form class="church-form" method="post" action="/branch/safeguarding">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="summary">Incident summary</label>
+            <textarea class="church-input church-input--textarea" id="summary" name="summary" rows="4" required><%= form.summary || '' %></textarea>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Record incident</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Incidents</h2>
+        <% if ((incidents || []).length === 0) { %>
+        <p class="church-branch-empty">No safeguarding incidents recorded.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Status</th><th>Member</th><th></th></tr></thead>
+            <tbody>
+              <% incidents.forEach(function (i) { %>
+              <tr>
+                <td><%= new Date(i.created_at).toLocaleDateString('en-GB') %></td>
+                <td><%= i.status %></td>
+                <td><%= i.member_name || '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/safeguarding/<%= i.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

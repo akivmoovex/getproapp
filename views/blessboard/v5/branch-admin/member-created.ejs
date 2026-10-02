@@ -1,0 +1,69 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var displayHeading = [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Member';
+  var churchId = m.memberNumber || productIdentifier || '—';
+  function portalLabel(s) {
+    var key = String(s || 'not_activated').toLowerCase();
+    if (key === 'active') return 'Portal Active';
+    if (key === 'blocked') return 'Blocked';
+    return 'Not Activated';
+  }
+  function membershipLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'pending') return 'Probationary';
+    if (key === 'transferred') return 'Transferred';
+    if (key === 'active') return 'Active';
+    return key || 'Active';
+  }
+%>
+
+<section
+  class="bb-v204-m05"
+  data-bb-member-created="1"
+  data-bb-stitch-v204="BB-M05"
+  data-bb-screen="BB-M05"
+  data-bb-stitch-id="0ef251628eb0495699eda17db921f50b"
+  aria-label="Church Member Successfully Registered"
+>
+  <p class="bb-v204-m05__eyebrow" data-bb-m05-roster="1">Roster Confirmation</p>
+  <%- include('../partials/v204/success-state', {
+    title: 'Church Member Successfully Registered',
+    body: displayHeading + ' has been enrolled in the congregation roster. Portal account not provisioned. Invitations can be sent from the Member Access tab when ready.'
+  }) %>
+
+  <section class="bb-v204-m02__section bb-v204-m05__summary" data-bb-m05-summary="1" aria-labelledby="bb-m05-summary-heading">
+    <h2 id="bb-m05-summary-heading">Record Summary Card</h2>
+    <dl class="bb-v204-m03__dl">
+      <div><dt>Assigned Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= churchId %></span></dd></div>
+      <div><dt>Member</dt><dd><%= displayHeading %><% if (m.preferredName) { %> <span class="bb-ba-muted">Preferred: <%= m.preferredName %></span><% } %></dd></div>
+      <div><dt>Phone</dt><dd><%= m.phoneDisplay || '—' %></dd></div>
+      <div><dt>Email</dt><dd><%= m.emailDisplay || '—' %></dd></div>
+      <div>
+        <dt>Congregation Status</dt>
+        <dd><%- include('../partials/v204/status-chip', { label: membershipLabel(m.status || m.membershipStatus), tone: 'success' }) %></dd>
+      </div>
+      <div>
+        <dt>Online Portal Provisioning</dt>
+        <dd><%- include('../partials/v204/status-chip', { label: portalLabel(m.portalAccessStatus), tone: 'neutral' }) %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <footer class="bb-v204-m05__actions">
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members" data-bb-m05-directory="1">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Return to Members Directory
+    </a>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>" data-bb-m05-profile="1">
+      <span class="material-symbols-outlined" aria-hidden="true">person</span>
+      View Member Profile (<%= churchId %>)
+    </a>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/members/new" data-bb-m05-add-another="1">
+      <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+      + Add Another Member
+    </a>
+  </footer>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

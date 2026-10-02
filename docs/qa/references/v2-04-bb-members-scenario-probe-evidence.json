@@ -1,0 +1,99 @@
+{
+  "T_M02_members_list": {
+    "status": 503,
+    "snip": "Members are temporarily unavailable.",
+    "unavailable": true
+  },
+  "T_M02_registrations": {
+    "status": 200,
+    "snip": "Registration oversight · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard",
+    "unavailable": false
+  },
+  "T_M07_member_journey": {
+    "status": 200,
+    "snip": "Member journey · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator d",
+    "unavailable": false
+  },
+  "T_M09_attendance": {
+    "status": 200,
+    "snip": "Attendance · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard Dashboard a",
+    "unavailable": false
+  },
+  "T_M10_requests": {
+    "status": 200,
+    "snip": "Requests · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard Dashboard apa",
+    "unavailable": false
+  },
+  "T_M13_search_members": {
+    "status": 503,
+    "snip": "Members are temporarily unavailable.",
+    "unavailable": true
+  },
+  "T_M14_staff_access": {
+    "status": 200,
+    "snip": "Users · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard ",
+    "unavailable": false
+  },
+  "T_M14_roles": {
+    "status": 200,
+    "snip": "Staff permissions · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrato",
+    "unavailable": false
+  },
+  "T_M15_audit": {
+    "status": 200,
+    "snip": "Audit trail · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dash",
+    "unavailable": false
+  },
+  "branch_login": {
+    "status": 303,
+    "loc": "/branch-admin"
+  },
+  "branch_/hq/members": {
+    "status": 403,
+    "snip": "You do not have access to this site."
+  },
+  "branch_/branch-admin": {
+    "status": 200,
+    "snip": "Branch admin · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Campus A a"
+  },
+  "branch_/branch-admin/members": {
+    "status": 503,
+    "snip": "Members are temporarily unavailable."
+  },
+  "branch_/branch/members": {
+    "status": 503,
+    "snip": "This page is not yet available in BlessBoard V5."
+  },
+  "public_register_church": {
+    "status": 200
+  },
+  "member_register": {
+    "status": 503,
+    "snip": "This page is not yet available in BlessBoard V5."
+  },
+  "visitor_login_attempt": "prior evidence 401 for visitor/member emails",
+  "reviewer_login": {
+    "status": 303,
+    "loc": "/hq"
+  },
+  "reviewer_/hq/registrations": {
+    "status": 200,
+    "snip": "Registration oversight · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9"
+  },
+  "reviewer_/hq/members": {
+    "status": 503,
+    "snip": "Members are temporarily unavailable."
+  },
+  "reviewer_/hq/settings/staff-access": {
+    "status": 200,
+    "snip": "Users · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a"
+  },
+  "reviewer_/hq/website": {
+    "status": 200,
+    "snip": "Website · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a"
+  },
+  "cross_tenant_bb": {
+    "status": 404,
+    "snip": "Not found · BlessBoard Not found This BlessBoard site could not be found. BlessBoard home"
+  }
+}

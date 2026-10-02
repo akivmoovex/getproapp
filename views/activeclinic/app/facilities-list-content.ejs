@@ -1,0 +1,154 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var facilities = list.facilities || [];
+  var filters = list.filters || {};
+  var filterOptions = list.filterOptions || { types: [], statuses: [] };
+  var actions = list.actions || {};
+  var metrics = list.metrics || {};
+  var stitch = list.stitch || {};
+  var emptyMode = list.emptyMode;
+  var typeOptionsHtml = (filterOptions.types || []).map(function (t) {
+    return '<option value="' + t.value + '"' + (filters.type === t.value ? ' selected' : '') + '>' + t.label + '</option>';
+  }).join('');
+  var statusOptionsHtml = (filterOptions.statuses || []).map(function (s) {
+    return '<option value="' + s.value + '"' + (filters.status === s.value ? ' selected' : '') + '>' + s.label + '</option>';
+  }).join('');
+%>
+<section
+  class="ac-facilities ac-facilities-workspace--b2 ac-ops-queue"
+  data-ac-page-section="facilities-list"
+  data-ac-stitch="AC-B2-10"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'fb88329aa6af454a8e7b6675c6070b78' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '4c70614fd2534fa3a5baee0f61f1f964' %>"
+>
+  <header class="ac-ops-queue__header ac-facilities-workspace__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Facilities management</p>
+      <h2 class="ac-ops-queue__title">Facilities</h2>
+      <p class="ac-muted">Organization facility catalogue. Departments are configured separately per facility.</p>
+    </div>
+    <div class="ac-facilities-workspace__header-actions">
+      <% if (actions.canCreate) { %>
+      <a class="ac-btn ac-btn--primary" href="<%= actions.createHref || '/app/facilities/new' %>">Add facility</a>
+      <% } %>
+      <% if (actions.canManageDepartments) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.departmentsHref || '/app/settings/clinic-setup/departments' %>">Departments</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/rooms" data-ac-action="open-rooms">Rooms &amp; Spaces</a>
+    </div>
+  </header>
+
+  <% if (!emptyMode || emptyMode === 'filtered') { %>
+  <div class="ac-dashboard__summaries ac-metric-grid" data-ac-facility-metrics="1">
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Facilities</p>
+      <p class="ac-stat-card__value"><%= metrics.total || facilities.length || 0 %></p>
+      <p class="ac-muted"><%= metrics.activeCount || 0 %> active</p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Primary</p>
+      <p class="ac-stat-card__value"><%= metrics.primaryCount || 0 %></p>
+      <p class="ac-muted">Marked primary for the organization</p>
+    </article>
+  </div>
+  <% } %>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: '/app/facilities',
+    method: 'get',
+    q: filters.q || '',
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml:
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Type</span>' +
+      '<select class="gp-ops-input" name="type"><option value="">All types</option>' + typeOptionsHtml + '</select></label>' +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Status</span>' +
+      '<select class="gp-ops-input" name="status"><option value="">All statuses</option>' + statusOptionsHtml + '</select></label>' +
+      '<label class="gp-ops-filter-bar__check"><input type="checkbox" name="primary" value="1"' + (filters.primary ? ' checked' : '') + ' /> Primary only</label>'
+  }) %>
+
+  <% if (emptyMode === 'none') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'facilities-none',
+      title: 'No facilities have been added yet',
+      description: 'This organization does not have any facilities configured.',
+      primaryAction: actions.canCreate
+        ? { href: actions.createHref || '/app/facilities/new', label: 'Add facility' }
+        : null
+    }
+  }) %>
+  <% } else if (emptyMode === 'filtered') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'facilities-filtered',
+      title: 'No facilities match these filters',
+      description: 'Try different search terms, or clear filters to see all facilities you can access.',
+      secondaryAction: { href: '/app/facilities', label: 'Clear filters' }
+    }
+  }) %>
+  <% } else if (emptyMode === 'restricted') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'access_restricted',
+      marker: 'facilities-restricted',
+      title: 'No facilities available',
+      description: 'You do not have access to any facilities in this organization. Ask an administrator to assign you to a facility.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-desktop-table gp-ops-table-wrap ac-ops-queue__desktop ac-facilities-desktop" data-gp-ops="table" data-ac-table="facilities">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Type</th>
+            <th scope="col">Location</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% facilities.forEach(function (f) { %>
+          <tr class="<%= f.isSelected ? 'is-selected' : '' %>" data-ac-facility-row="<%= f.facilityKey %>">
+            <td>
+              <a href="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>"><%= f.displayName %></a>
+              <%- include('../partials/facility-badges', { isPrimary: f.isPrimary, status: null, facilityType: null }) %>
+              <% if (f.isSelected) { %><span class="ac-badge">Current</span><% } %>
+            </td>
+            <td><%= f.facilityTypeLabel %></td>
+            <td class="ac-muted"><%= f.locationSummary || '—' %></td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: f.statusLabel || f.status,
+                tone: f.status === 'active' ? 'success' : (f.status === 'archived' || f.status === 'suspended' ? 'danger' : 'neutral')
+              }) %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ul class="ac-card-list ac-mobile-table-cards ac-ops-queue__mobile ac-facilities-mobile" data-ac-cards="facilities" data-ac-mobile-list="facilities">
+    <% facilities.forEach(function (f) { %>
+    <li class="ac-card ac-mobile-record-card ac-ops-queue-card <%= f.isSelected ? 'is-selected' : '' %>" data-ac-facility-card="<%= f.facilityKey %>">
+      <a class="ac-card__link" href="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>">
+        <div class="ac-ops-queue-card__head">
+          <p class="ac-card__title"><%= f.displayName %></p>
+          <%- include('../../platform/partials/gp-ops-status-badge', {
+            label: f.statusLabel || f.status,
+            tone: f.status === 'active' ? 'success' : 'neutral'
+          }) %>
+        </div>
+        <p class="ac-muted"><%= f.locationSummary || 'No location set' %></p>
+        <p class="ac-muted"><%= f.facilityTypeLabel %><% if (f.isPrimary) { %> · Primary<% } %><% if (f.isSelected) { %> · Current<% } %></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

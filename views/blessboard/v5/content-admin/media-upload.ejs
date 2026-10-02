@@ -1,8 +1,10 @@
 <%#
-  Shared BlessBoard V5 media picker trigger.
-  Expects: uploadUrl OR mediaBase, targetInputId, csrfToken
-  Optional: visibility (public|private), fillField (deliveryPath|assetId), listUrl
-  Batch 22 — Sacred Modernity chrome; upload security unchanged.
+  Shared BlessBoard media picker for content-admin / settings.
+  Prefer the platform website media field (Upload from computer + Content Library)
+  when websiteMediaListUrl (or a /website/media listUrl) is available.
+  Falls back to the legacy BB dialog for document uploads (PDFs) only.
+  Locals: uploadUrl OR mediaBase, targetInputId, csrfToken
+  Optional: visibility, fillField, listUrl, websiteMediaListUrl, currentSrc, srcName, allowDocuments
 %>
 <%
   var _mediaBase = '';
@@ -19,7 +21,61 @@
     : (_mediaBase + '/media');
   var _visibility = typeof visibility !== 'undefined' && visibility ? visibility : 'public';
   var _fill = typeof fillField !== 'undefined' && fillField ? fillField : 'deliveryPath';
+  var _sharedList = '';
+  if (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) {
+    _sharedList = String(websiteMediaListUrl);
+  } else if (String(_listUrl || '').indexOf('/website/media') !== -1) {
+    _sharedList = String(_listUrl);
+  }
+  var _allowDocuments = typeof allowDocuments !== 'undefined' && allowDocuments;
+  var _useShared = Boolean(_sharedList) && !_allowDocuments;
+  var _srcName = typeof srcName !== 'undefined' && srcName
+    ? String(srcName)
+    : (typeof targetInputId !== 'undefined' && String(targetInputId).indexOf('qr') !== -1
+      ? 'qr_image_url'
+      : 'image_url');
+  var _currentSrc = typeof currentSrc !== 'undefined' ? String(currentSrc || '') : '';
+  if (!_currentSrc && typeof targetInputId !== 'undefined' && targetInputId) {
+    // Caller usually keeps a sibling hidden input; leave empty until selection.
+    _currentSrc = '';
+  }
 %>
+<% if (_useShared) { %>
+<div class="bb-media-upload-shared" data-bb-media-upload-shared="1" data-bb-target-id="<%= typeof targetInputId !== 'undefined' ? targetInputId : '' %>">
+  <%- include('../../../platform/website/partials/media-field', {
+    mediaField: {
+      idName: (typeof targetInputId !== 'undefined' ? targetInputId : 'media') + '_media_id',
+      srcName: _srcName,
+      altName: (typeof targetInputId !== 'undefined' ? targetInputId : 'media') + '_alt',
+      altLabel: 'Image description',
+      mediaId: '',
+      src: _currentSrc,
+      alt: '',
+      emptyText: 'No image selected — upload from computer or choose from the Content Library.'
+    },
+    mediaListUrl: _sharedList
+  }) %>
+</div>
+<script>
+(function () {
+  var wrap = document.currentScript && document.currentScript.previousElementSibling;
+  if (!wrap || !wrap.getAttribute("data-bb-target-id")) return;
+  var targetId = wrap.getAttribute("data-bb-target-id");
+  var target = targetId ? document.getElementById(targetId) : null;
+  var srcInput = wrap.querySelector("[data-gp-we-media-src]");
+  if (!target || !srcInput) return;
+  if (target.value && !srcInput.value) {
+    srcInput.value = target.value;
+    srcInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function sync() {
+    target.value = srcInput.value || "";
+  }
+  srcInput.addEventListener("input", sync);
+  srcInput.addEventListener("change", sync);
+})();
+</script>
+<% } else { %>
 <div
   class="bb-media-picker"
   data-bb-media-picker="1"
@@ -33,8 +89,9 @@
   data-fill="<%= _fill %>"
 >
   <button type="button" class="bb-media-picker__open" data-bb-media-open aria-haspopup="dialog">
-    <span class="material-symbols-outlined" aria-hidden="true">photo_library</span>
-    Choose or upload media
+    <span class="material-symbols-outlined" aria-hidden="true">upload</span>
+    Upload from computer or Content Library
   </button>
   <span class="bb-media-picker__summary" data-bb-media-summary>No file selected</span>
 </div>
+<% } %>

@@ -1,6 +1,26 @@
 const { runBootstrap, logBootstrapMarker } = require("./src/startup/bootstrap");
+const { shouldFailClosedHttpStart } = require("./src/startup/localEnvSafety");
 const boot = runBootstrap();
 logBootstrapMarker(boot);
+if (shouldFailClosedHttpStart(boot, process.env)) {
+  process.exit(1);
+}
+
+// Refuse unknown PLATFORM_DEPLOYMENT_CODE before domain diagnostics so a Hostinger typo
+// cannot log BlessBoard production defaults and then abort (misleading 503 evidence).
+const {
+  assertAuthoritativeProfileRuntimePairingOrExit,
+} = require("./src/platform/config/v5EnvValidation");
+const {
+  assertDeploymentProfileOrExit,
+  resolveDeploymentConfiguration,
+  hasAuthoritativeDeploymentProfile,
+  RUNTIME_V5_FOUNDATION,
+} = require("./src/platform/config/deploymentProfiles");
+assertDeploymentProfileOrExit();
+assertAuthoritativeProfileRuntimePairingOrExit();
+
+require("./src/startup/ensureProductPlatformContracts").ensureProductPlatformContracts();
 
 const {
   isPgConfigured,
@@ -16,6 +36,8 @@ assertBlessBoardOrgDbIsolationOrExit(boot);
 
 const { logBlessBoardRuntimeIsolationDiagnostics } = require("./src/startup/blessBoardRuntimeDiagnostics");
 logBlessBoardRuntimeIsolationDiagnostics();
+const { logPlatformRuntimeDiagnostics } = require("./src/startup/platformRuntimeDiagnostics");
+logPlatformRuntimeDiagnostics();
 
 if (!isPgConfigured()) {
   // Inconsistent env across restarts (missing vars on some boots) is usually a deployment/supervisor issue:
@@ -69,19 +91,6 @@ logPgStartupDiagnostics({
 });
 
 const { isV5FoundationMode } = require("./src/platform/config/v5FoundationMode");
-const {
-  assertAuthoritativeProfileRuntimePairingOrExit,
-} = require("./src/platform/config/v5EnvValidation");
-const {
-  assertDeploymentProfileOrExit,
-  resolveDeploymentConfiguration,
-  hasAuthoritativeDeploymentProfile,
-  RUNTIME_V5_FOUNDATION,
-} = require("./src/platform/config/deploymentProfiles");
-// Refuse unknown PLATFORM_DEPLOYMENT_CODE and security-sensitive legacy conflicts before other gates.
-assertDeploymentProfileOrExit();
-// Refuse silent fall-through when a V5-foundation profile has a conflicting DEPLOYMENT_ENV.
-assertAuthoritativeProfileRuntimePairingOrExit();
 
 const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
 assertProductionRequiredEnvOrExit(boot);
@@ -100,9 +109,8 @@ console.log(
 const deployment = resolveDeploymentConfiguration();
 const runtimeMode = deployment.runtimeMode;
 
-if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode())) {
-  // Official BlessBoard profiles (.com production + .org staging): platform DB —
-  // no legacy public.tenants / session / ensure*Schema.
+if (runtimeMode === RUNTIME_V5_FOUNDATION || runtimeMode === "legacy-redirect" || (!runtimeMode && isV5FoundationMode())) {
+  // Profiled multi-product foundation (BlessBoard, ActiveClinic, GetPro, Netraz, Moovex, redirects).
   void require("./src/platform/http/v5FoundationServer")
     .startV5FoundationServer({ boot })
     .catch((err) => {
@@ -112,6 +120,7 @@ if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode
     });
 } else if (!runtimeMode) {
   // Unprofiled GetPro / transitional: full legacy application.
+  // DBCL09: ACTIVE consumer — KEEP server.legacy.js until unset PLATFORM_DEPLOYMENT_CODE is fail-closed.
   require("./server.legacy");
 } else {
   // eslint-disable-next-line no-console

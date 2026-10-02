@@ -1,0 +1,33 @@
+<%
+  var field = typeof mediaField !== "undefined" && mediaField ? mediaField : {};
+  var listUrl = "";
+  if (typeof mediaListUrl !== "undefined" && mediaListUrl) {
+    listUrl = String(mediaListUrl);
+  } else if (typeof cms !== "undefined" && cms && cms.mediaListUrl) {
+    listUrl = String(cms.mediaListUrl);
+  } else if (typeof pageData !== "undefined" && pageData && pageData.cms && pageData.cms.mediaListUrl) {
+    listUrl = String(pageData.cms.mediaListUrl);
+  }
+  var framingEnabled = field.framingEnabled !== false;
+%>
+<%- include('../../platform/website/partials/media-field', {
+  mediaField: {
+    idName: field.idName || "imageMediaId",
+    srcName: field.srcName || "imageSrc",
+    altName: field.altName || "imageAlt",
+    altLabel: field.altLabel || "Image description",
+    mediaId: field.mediaId || "",
+    src: field.src || "",
+    alt: field.alt || "",
+    placementName: framingEnabled
+      ? (field.placementName || "imagePlacementJson")
+      : (field.placementName || ""),
+    placement: field.placement || null,
+    contentKey: field.contentKey || "cms.block.image",
+    framingEnabled: framingEnabled,
+    allowSeparateFraming: field.allowSeparateFraming !== false,
+    emptyText: field.emptyText || undefined,
+    previewClass: field.previewClass || undefined
+  },
+  mediaListUrl: listUrl
+}) %>

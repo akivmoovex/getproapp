@@ -1,0 +1,44 @@
+<%
+  var summary = (pageData && pageData.summary) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var dateFrom = (pageData && pageData.dateFrom) || '';
+  var dateTo = (pageData && pageData.dateTo) || '';
+%>
+<section class="ac-billing-revenue-report" data-ac-page-section="billing-revenue-report" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <form method="GET" action="/app/billing/reports/revenue" class="ac-form ac-form--inline">
+      <div class="ac-form-group">
+        <label for="from">From</label>
+        <input id="from" name="from" type="date" value="<%= dateFrom %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="to">To</label>
+        <input id="to" name="to" type="date" value="<%= dateTo %>" />
+      </div>
+      <button type="submit" class="ac-btn">Update</button>
+    </form>
+  </article>
+
+  <div class="ac-dashboard__summaries ac-metric-grid">
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Posted invoices</p>
+      <p class="ac-stat-card__value"><%= (summary.postedInvoices && summary.postedInvoices.count) || 0 %></p>
+      <p class="ac-muted ac-money"><%= summary.postedInvoicesFormatted || 'ZMW 0.00' %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Payments</p>
+      <p class="ac-stat-card__value"><%= (summary.payments && summary.payments.count) || 0 %></p>
+      <p class="ac-muted ac-money"><%= summary.paymentsFormatted || 'ZMW 0.00' %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Refunds</p>
+      <p class="ac-stat-card__value"><%= (summary.refunds && summary.refunds.count) || 0 %></p>
+      <p class="ac-muted ac-money"><%= summary.refundsFormatted || 'ZMW 0.00' %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Net collections</p>
+      <p class="ac-stat-card__value ac-money"><%= summary.netCollectionsFormatted || 'ZMW 0.00' %></p>
+      <p class="ac-muted">Credits <%= summary.creditNotesFormatted || 'ZMW 0.00' %></p>
+    </article>
+  </div>
+</section>

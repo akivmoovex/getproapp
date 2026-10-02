@@ -1,0 +1,18 @@
+<%#
+  Shared loading state (product-neutral).
+  Locals: title?, body?, className?
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? String(title) : 'Loading';
+  var _body = typeof body !== 'undefined' && body ? String(body) : '';
+  var _cls = 'gp-ops-state gp-ops-state--loading' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div class="<%= _cls %>" role="status" aria-live="polite" data-gp-ops="loading-state">
+  <div class="gp-ops-state__icon" aria-hidden="true">
+    <span class="gp-ops-spinner"></span>
+  </div>
+  <h2 class="gp-ops-state__title"><%= _title %></h2>
+  <% if (_body) { %>
+  <p class="gp-ops-state__body"><%= _body %></p>
+  <% } %>
+</div>

@@ -6,9 +6,6 @@
 
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
-const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -28,6 +25,12 @@ const {
   renderSystemStatePage,
   retryHrefFromRequest,
 } = require("./websiteSystemStateHttp");
+const { createRequireAnyBlessBoardPermission } = require("./requireBlessBoardShellAccess");
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
+const {
+  buildPublicWebsiteHistoryPath,
+  PRODUCT_CODE,
+} = require("../../platform/website/publicWebsiteUrl");
 
 function renderHqView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -123,8 +126,61 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     shellLocalsFn: shellLocals,
     sendControlled,
     loginNext: "/hq/website/version-history",
-    createRequireBlessBoardTenantRole,
   });
+  const requireWebsiteRestore = createRequireAnyBlessBoardPermission(
+    ["website.rollback", "website.restore"],
+    {
+      getPool,
+      resolveResourceContext: (_req, tenant) => ({
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: null,
+      }),
+      denyMessage: "You do not have permission to restore website versions.",
+    }
+  );
+
+  async function actorCanRestoreWebsite(req) {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !session || !session.userId) return false;
+    const flags = await buildPermissionNavFlags(getPool(), {
+      actorUserId: session.userId,
+      tenant,
+      branchId: null,
+    });
+    return flags.canRestoreWebsite === true;
+  }
+
+  function engineHistoryPathForTenant(tenant) {
+    const orgKey =
+      (tenant &&
+        tenant.organization &&
+        (tenant.organization.key || tenant.organization.organizationKey)) ||
+      null;
+    if (!orgKey) return null;
+    return buildPublicWebsiteHistoryPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: orgKey,
+    });
+  }
+
+  function stripRestoreActions(recent) {
+    if (!recent || typeof recent !== "object") return recent;
+    recent.canRestore = false;
+    const strip = (item) => {
+      if (!item || typeof item !== "object") return item;
+      return { ...item, canRestore: false, restoreHref: null };
+    };
+    if (recent.currentWebsite) recent.currentWebsite = strip(recent.currentWebsite);
+    if (Array.isArray(recent.previousWebsites)) {
+      recent.previousWebsites = recent.previousWebsites.map(strip);
+    }
+    if (recent.preview && typeof recent.preview === "object") {
+      recent.preview = strip(recent.preview);
+    }
+    return recent;
+  }
 
   function requireTenant(req, res) {
     const tenant = resolveTenantForAuthorization(req);
@@ -163,7 +219,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
   }
 
   router.get("/hq/website/version-history", rejectApex, gateHq, async (req, res) => {
-    const tenant = await requireNetworkHistory(req, res);
+    const tenant = requireTenant(req, res);
     if (!tenant) return;
 
     const result = await versionSvc.loadVersionHistory(getPool(), {
@@ -198,9 +254,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       null;
     const notice = String((req.query && req.query.notice) || "") || null;
     const html = await renderHqView(
-      "hq/phase4-network-website-version-history.ejs",
+      "hq/phase3-website-version-history.ejs",
       await shellLocals(req, res, {
-        pageTitle: "Network Website Version History",
+        pageTitle: "Website Version History",
         items: result.items,
         total: result.total,
         current: result.current,
@@ -383,6 +439,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/version-history/:versionId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -392,6 +449,12 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         versionId: req.params.versionId,
       });
       if (!result.ok) {
+        // Engine-published / draft_source rows fail classic prepare — send to
+        // engine history (restore-as-new surface used by the HQ hub).
+        const engineHistory = engineHistoryPathForTenant(tenant);
+        if (engineHistory) {
+          return res.redirect(302, engineHistory);
+        }
         if (result.status === versionSvc.STATUS.NOT_FOUND) {
           return sendControlled(req, res, 404, "Version not found.");
         }
@@ -423,6 +486,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/version-history/:versionId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -461,26 +525,35 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         selectedPageKeys = (prepared.pageOptions || []).map((p) => p.key);
       }
 
-      const result = await versionSvc.createRestoredDraft(getPool(), {
-        organizationId: tenant.organization.id,
-        churchId,
-        versionId: req.params.versionId,
-        actorUserId: userId,
-        restorationReason: body.restoration_reason || body.reason,
-        selectedPageKeys,
-        restoreTheme:
-          body.keep_current_theme !== "1" &&
-          body.keep_current_theme !== "on" &&
-          (body.restore_theme === "1" ||
-            body.restore_theme === "on" ||
-            body.restore_theme == null),
-        restoreNavigation:
-          body.keep_current_navigation !== "1" &&
-          body.keep_current_navigation !== "on" &&
-          (body.restore_navigation === "1" ||
-            body.restore_navigation === "on" ||
-            body.restore_navigation == null),
-        confirmed: body.confirm_restore === "1" || body.confirm_restore === "on",
+      const {
+        restore: restoreProductWebsite,
+        PERMISSIONS: WEBSITE_RESTORE_PERMISSIONS,
+      } = require("../../platform/website/publicationOrchestrator");
+      const { PRODUCT } = require("../../platform/registration/constants");
+      const result = await restoreProductWebsite(getPool(), {
+        productCode: PRODUCT.BLESSBOARD,
+        grantedPermissions: [WEBSITE_RESTORE_PERMISSIONS.RESTORE],
+        request: {
+          organizationId: tenant.organization.id,
+          churchId,
+          versionId: req.params.versionId,
+          actorUserId: userId,
+          restorationReason: body.restoration_reason || body.reason,
+          selectedPageKeys,
+          restoreTheme:
+            body.keep_current_theme !== "1" &&
+            body.keep_current_theme !== "on" &&
+            (body.restore_theme === "1" ||
+              body.restore_theme === "on" ||
+              body.restore_theme == null),
+          restoreNavigation:
+            body.keep_current_navigation !== "1" &&
+            body.keep_current_navigation !== "on" &&
+            (body.restore_navigation === "1" ||
+              body.restore_navigation === "on" ||
+              body.restore_navigation == null),
+          confirmed: body.confirm_restore === "1" || body.confirm_restore === "on",
+        },
       });
 
       if (!result.ok) {
@@ -571,6 +644,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       organizationKey: (tenant.organization && tenant.organization.key) || null,
       env,
     });
+    if (result.ok && !(await actorCanRestoreWebsite(req))) {
+      stripRestoreActions(result);
+    }
     if (!result.ok) {
       if (result.reason === "plan_not_growth") {
         const entitled = {
@@ -651,6 +727,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/recent-changes/:publicationId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -697,6 +774,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/recent-changes/:publicationId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -803,7 +881,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/website/restored-draft/discard", rejectApex, gateHq, async (req, res) => {
+  // Discard re-publishes the live CMS rows from the current version, so it needs
+  // the same restore authority as the routes that created the restored draft.
+  router.post("/hq/website/restored-draft/discard", rejectApex, gateHq, requireWebsiteRestore, async (req, res) => {
     const tenant = requireTenant(req, res);
     if (!tenant) return;
     const submitted = req.body && req.body[CSRF_FIELD];

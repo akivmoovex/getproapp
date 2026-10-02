@@ -1,0 +1,99 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : 'Branch';
+  var list = Array.isArray(rows) ? rows : [];
+  var counts = typeof stats !== 'undefined' && stats ? stats : { total: 0, present: 0, late: 0 };
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+%>
+
+<section
+  class="bb-v204-a08"
+  data-bb-stitch-v204="BB-A08"
+  data-bb-screen="BB-A08"
+  aria-label="Live Attendance Roster"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Live Attendance Roster',
+    subtitle: (s.title || 'Session') + ' · ' + branchLabel,
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions/' + s.id + '">Dashboard</a> <span aria-hidden="true">›</span> <span>Roster</span>',
+    actionsHtml: '<a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/' + s.id + '/roster">Refresh</a> <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/' + s.id + '/audit">Audit</a>'
+  }) %>
+
+  <div class="bb-v204-a03__stats">
+    <article class="bb-v204-a03__stat"><h3>Total</h3><p class="bb-v204-a03__stat-value"><%= Number(counts.total) || 0 %></p></article>
+    <article class="bb-v204-a03__stat"><h3>On-Time</h3><p class="bb-v204-a03__stat-value"><%= Number(counts.present) || 0 %></p></article>
+    <article class="bb-v204-a03__stat"><h3>Late</h3><p class="bb-v204-a03__stat-value"><%= Number(counts.late) || 0 %></p></article>
+  </div>
+
+  <% if (!list.length) { %>
+    <%- include('../partials/v204/empty-state', { title: 'No check-ins yet', body: 'Live roster will fill as members check in.' }) %>
+  <% } else { %>
+  <div class="bb-v204-a08__table-wrap" data-bb-a08-table="1">
+    <table class="bb-ba-table">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Church ID</th>
+          <th>Method</th>
+          <th>Status</th>
+          <th>Flags</th>
+          <th>Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% list.forEach(function (row) { %>
+        <tr>
+          <td><strong><%= row.memberName || 'Member' %></strong></td>
+          <td><%= row.memberNumber || '—' %></td>
+          <td><%= row.method || '—' %></td>
+          <td><%= row.status || '—' %></td>
+          <td>
+            <% if (row.lateArrival) { %><%- include('../partials/v204/status-chip', { label: 'Late', tone: 'warning' }) %><% } %>
+            <% if (row.wrongBranch) { %><%- include('../partials/v204/status-chip', { label: 'Wrong branch', tone: 'warning' }) %><% } %>
+            <% if (!row.lateArrival && !row.wrongBranch) { %>—<% } %>
+          </td>
+          <td><%= formatWhen(row.checkedInAt) %></td>
+          <td>
+            <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-ins/<%= row.id %>/correct">Correct</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bb-v204-a08__cards" data-bb-a08-cards="1" aria-label="Live roster cards">
+    <% list.forEach(function (row) { %>
+    <li class="bb-v204-a08__card">
+      <div class="bb-v204-a08__card-head">
+        <strong><%= row.memberName || 'Member' %></strong>
+        <% if (row.memberNumber) { %><span class="bb-v204-a04__church-id"><%= row.memberNumber %></span><% } %>
+      </div>
+      <p class="bb-v204-a08__card-meta">
+        <%= row.method || '—' %> · <%= row.status || '—' %> · <%= formatWhen(row.checkedInAt) %>
+      </p>
+      <div class="bb-v204-a08__card-flags">
+        <% if (row.lateArrival) { %><%- include('../partials/v204/status-chip', { label: 'Late', tone: 'warning' }) %><% } %>
+        <% if (row.wrongBranch) { %><%- include('../partials/v204/status-chip', { label: 'Wrong branch', tone: 'warning' }) %><% } %>
+      </div>
+      <a class="bb-ba-btn bb-ba-btn--ghost bb-v204-a08__card-action" href="/branch-admin/attendance/sessions/<%= s.id %>/check-ins/<%= row.id %>/correct">Correct</a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <nav class="bb-v204-a04__modes">
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-in">Manual</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/peak">Peak</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr">QR Display</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/audit">Audit</a>
+  </nav>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

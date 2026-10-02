@@ -1,7 +1,8 @@
 <%#
-  Admin website chrome — Stage 4 + Stage 2 settings discovery panel.
-  Admin view: status + Edit Website (+ demo notice). No pencils.
-  Editing mode: toolbar with Exit / Review / Website features / Edit SEO.
+  Admin website chrome.
+  View mode (AC parity): status + Preview + Edit Website + Website management.
+  Editing / preview mode: shared Stitch editor shell (toolbar, page rail, More, mobile nav).
+  Product destinations (Features, SEO, Pages, Assets) are configured into More.
 %>
 <%
   var wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -12,25 +13,76 @@
   <% if (wa.showDemoNotice && !wa.editingMode) { %>
   <div class="bb-tp-admin-demo-notice" role="status" data-bb-admin-demo-notice="1">
     <span class="material-symbols-outlined" aria-hidden="true">info</span>
-    <span>Demo content is helping fill empty areas. Replace it anytime — visitors will not see admin notices.</span>
+    <span>Template examples are filling empty people, event, and ministry lists. Visitors see a public template notice. Replace this content before presenting the site as finished.</span>
   </div>
   <% } %>
 
-  <% if (!wa.editingMode) { %>
-  <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view">
+  <% if (!wa.editingMode && !wa.previewDraftMode) { %>
+  <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view" data-website-chrome="1">
     <div class="bb-tp-admin-bar__inner">
       <div class="bb-tp-admin-bar__left">
         <span class="bb-tp-admin-status bb-tp-admin-status--<%= wa.status.key %>" data-bb-website-status="<%= wa.status.key %>">
           <%= wa.status.label %>
         </span>
         <% if (wa.manageHref) { %>
-        <a class="bb-tp-admin-bar__link" href="<%= wa.manageHref %>">Website management</a>
+        <a class="bb-tp-admin-bar__link" href="<%= wa.manageHref %>" data-website-manage="1">
+          <span class="bb-tp-btn__label-full">Website management</span>
+          <span class="bb-tp-btn__label-short">Manage</span>
+        </a>
         <% } %>
       </div>
       <div class="bb-tp-admin-bar__right">
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.editHref %>" data-bb-edit-website="1">Edit Website</a>
+        <% if (wa.draftPreviewHref) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.draftPreviewHref %>" data-website-preview="1" data-bb-preview-website="1">
+          <span class="bb-tp-btn__label-full">Preview</span>
+          <span class="bb-tp-btn__label-short">Preview</span>
+        </a>
+        <% } %>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.editHref %>" data-bb-edit-website="1" data-website-edit-control="1">
+          <span class="bb-tp-btn__label-full">Edit Website</span>
+          <span class="bb-tp-btn__label-short">Edit</span>
+        </a>
       </div>
     </div>
+  </div>
+  <% } else { %>
+  <% if (wa.frameMode && wa.editingMode && wa.editorShell) { %>
+  <%- include('../../../platform/website-engine/editor-frame-bootstrap', {
+    editorShell: wa.editorShell
+  }) %>
+  <% } else if (wa.previewDraftMode && wa.editorShell) { %>
+  <div
+    class="gp-website-editor-host gp-website-editor-host--preview"
+    data-bb-admin-mode="preview"
+    data-bb-stitch-screen-desktop="Phase 7 - Church Website Draft Preview - Desktop"
+    data-bb-stitch-screen-mobile="Phase 7 - Church Website Draft Preview - Mobile"
+  >
+    <%- include('../../../platform/website-engine/editor-chrome', {
+      editorShell: wa.editorShell
+    }) %>
+  </div>
+  <% } else if (wa.editorShell) { %>
+  <div
+    class="gp-website-editor-host"
+    data-bb-edit-toolbar="1"
+    data-bb-admin-mode="editing"
+    data-bb-csrf="<%= wa.csrfToken %>"
+    data-bb-save-url="<%= wa.legacyInlineSaveUrl || '/hq/content/api/inline-field' %>"
+    data-bb-publish-url="<%= wa.legacyInlinePublishUrl || '/hq/content/api/inline-field/publish' %>"
+    data-bb-page-key="<%= wa.pageKey %>"
+    data-bb-stitch-screen-desktop="Phase 7 - Church Website Editing Mode - Desktop"
+    data-bb-stitch-screen-mobile="Phase 7 - Church Website Editing Mode - Mobile"
+  >
+    <button
+      type="button"
+      class="gp-website-sr-only"
+      data-bb-features-toggle="1"
+      aria-expanded="false"
+      aria-controls="bb-tp-features-panel"
+    >Website features</button>
+    <%- include('../../../platform/website-engine/editor-chrome', {
+      editorShell: wa.editorShell
+    }) %>
   </div>
   <% } else { %>
   <div
@@ -62,7 +114,7 @@
       <div class="bb-tp-edit-toolbar__right">
         <button
           type="button"
-          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm"
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch"
           data-bb-features-toggle="1"
           aria-expanded="false"
           aria-controls="bb-tp-features-panel"
@@ -71,7 +123,7 @@
           <span class="bb-tp-btn__label-short">Features</span>
         </button>
         <% if (seoLink && seoLink.available && seoLink.href) { %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= seoLink.href %>" data-bb-edit-seo="1">
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= seoLink.href %>" data-bb-edit-seo="1">
           <span class="bb-tp-btn__label-full">Edit SEO</span>
           <span class="bb-tp-btn__label-short">SEO</span>
         </a>
@@ -87,18 +139,19 @@
         </span>
         <% } %>
         <% if (wa.hasDraftChanges) { %>
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
           <span class="bb-tp-btn__label-full">Review and Publish</span>
           <span class="bb-tp-btn__label-short">Review</span>
         </a>
         <% } %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= wa.exitHref %>" data-bb-exit-editing="1">
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.exitHref %>" data-bb-exit-editing="1">
           <span class="bb-tp-btn__label-full">Exit Editing</span>
           <span class="bb-tp-btn__label-short">Exit</span>
         </a>
       </div>
     </div>
   </div>
+  <% } %>
 
   <% if (catalog) { %>
   <div

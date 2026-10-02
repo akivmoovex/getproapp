@@ -1,0 +1,11 @@
+<section class="ac-public-section ac-public-state acp-empty-state acp-state-card" data-ac-page-section="tenant-clinic-not-found" data-ac-state-key="not_found">
+  <div class="ac-public-state__icon" aria-hidden="true">?</div>
+  <h1>Clinic not found</h1>
+  <p>We could not find a published clinic at this address. The clinic may have moved, or the link may be incorrect.</p>
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--primary" href="/">Back to ActiveClinic</a>
+    <% if (typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled) { %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics">Browse clinics</a>
+    <% } %>
+  </p>
+</section>

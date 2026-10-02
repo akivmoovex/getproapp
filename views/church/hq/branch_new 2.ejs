@@ -1,0 +1,68 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/hq/branches">&larr; Back to branch registry</a>
+          <h1 class="church-branch-topbar__title">Add branch</h1>
+          <p class="church-branch-topbar__subtitle"><%= organizationName %><% if (typeof pathRoutingEnabled !== 'undefined' && pathRoutingEnabled) { %> · Public path: /branches/your-slug<% } %></p>
+        </div>
+      </header>
+      <% if (error) { %>
+      <div class="church-branch-panel church-branch-panel--error" role="alert"><%= error %></div>
+      <% } %>
+      <form class="church-form" method="post" action="/hq/branches">
+        <%- include('../partials/csrf_field') %>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Branch details</h2>
+          <div class="church-field">
+            <label class="church-label" for="branch_name">Branch name</label>
+            <input class="church-input" id="branch_name" name="branch_name" required value="<%= form.branch_name || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="branch_slug">Branch slug</label>
+            <input class="church-input" id="branch_slug" name="branch_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= form.branch_slug || '' %>" placeholder="east-campus"/>
+            <p class="church-field-hint">Org-scoped URL segment<% if (pathRoutingEnabled) { %>: /branches/<em>slug</em><% } %>.</p>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="location_text">Address / location</label>
+            <input class="church-input" id="location_text" name="location_text" value="<%= form.location_text || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="service_times">Service schedule</label>
+            <input class="church-input" id="service_times" name="service_times" value="<%= form.service_times || '' %>" placeholder="Sunday 09:00"/>
+          </div>
+          <div class="church-form church-form--inline">
+            <div class="church-field">
+              <label class="church-label" for="city">City</label>
+              <input class="church-input" id="city" name="city" value="<%= form.city || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="country">Country</label>
+              <input class="church-input" id="country" name="country" value="<%= form.country || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Branch administrator</h2>
+          <div class="church-field">
+            <label class="church-label" for="branch_admin_full_name">Full name</label>
+            <input class="church-input" id="branch_admin_full_name" name="branch_admin_full_name" required value="<%= form.branch_admin_full_name || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="branch_admin_email">Email</label>
+            <input class="church-input" id="branch_admin_email" name="branch_admin_email" type="email" required value="<%= form.branch_admin_email || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="branch_admin_phone">Phone</label>
+            <input class="church-input" id="branch_admin_phone" name="branch_admin_phone" value="<%= form.branch_admin_phone || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="branch_admin_temporary_password">Temporary password</label>
+            <input class="church-input" id="branch_admin_temporary_password" name="branch_admin_temporary_password" type="password" required minlength="12" autocomplete="new-password"/>
+          </div>
+        </section>
+        <div class="church-form__actions">
+          <button class="church-btn church-btn--primary" type="submit">Create branch</button>
+          <a class="church-btn church-btn--ghost" href="/hq/branches">Cancel</a>
+        </div>
+      </form>
+<%- include('../partials/hq_shell_end') %>

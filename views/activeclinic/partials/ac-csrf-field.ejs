@@ -1,0 +1,6 @@
+<%
+  var csrf = (typeof shell !== 'undefined' && shell && shell.csrf) || {};
+  var field = (typeof csrfField !== 'undefined' && csrfField) || csrf.field || '_csrf';
+  var token = (typeof csrfToken !== 'undefined' && csrfToken) || csrf.token || '';
+%>
+<input type="hidden" name="<%= field %>" value="<%= token %>">

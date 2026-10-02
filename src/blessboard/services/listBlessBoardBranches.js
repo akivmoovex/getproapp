@@ -19,15 +19,22 @@ const BRANCH_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
 /**
  * @param {object} row
+ * @param {{ includeIds?: boolean }} [opts]
  */
-function mapBranch(row) {
+function mapBranch(row, opts) {
   if (!row) return null;
-  return {
+  const dto = {
     key: String(row.branch_key),
     displayName: String(row.display_name || ""),
     branchType: String(row.branch_type || ""),
     isPrimary: Boolean(row.is_primary),
   };
+  // Staff assignment forms (Add Member) need stable branch UUIDs as select values.
+  // Default list remains id-free for compact HQ DTOs / template leakage control.
+  if (opts && opts.includeIds === true && row.id != null) {
+    dto.id = String(row.id);
+  }
+  return dto;
 }
 
 /**
@@ -44,8 +51,9 @@ function normalizeBranchKey(raw) {
 /**
  * @param {{ query: Function }} db
  * @param {string} churchId
+ * @param {{ includeIds?: boolean }} [opts]
  */
-async function listBlessBoardBranches(db, churchId) {
+async function listBlessBoardBranches(db, churchId, opts) {
   const id = churchId != null ? String(churchId).trim() : "";
   if (!id) {
     return {
@@ -68,7 +76,7 @@ async function listBlessBoardBranches(db, churchId) {
 
   try {
     const rows = await repo.listActiveBranchesByChurchId(db, id);
-    const branches = rows.map(mapBranch).filter(Boolean);
+    const branches = rows.map((row) => mapBranch(row, opts)).filter(Boolean);
     return {
       ok: true,
       status: STATUS.OK,

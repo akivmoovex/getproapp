@@ -8,6 +8,8 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
+const { buildPlatformPhoneFieldLocals } = require("../../platform/services/platformPhoneFieldLocals");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const TENANT_LANDING_TEMPLATE = path.join(
   __dirname,
@@ -133,7 +135,7 @@ function classifyAuthErrorState(message) {
   if (/invalid or has expired|has expired|session has expired|please sign in again/i.test(m)) {
     return "expired";
   }
-  if (/invalid email or password/i.test(m)) return "credentials";
+  if (/invalid email(?:, phone number,)? or password/i.test(m)) return "credentials";
   return "generic";
 }
 
@@ -190,6 +192,11 @@ function renderLoginPage(opts) {
   const hostKind = opts.hostKind === "tenant" ? "tenant" : "apex";
   const error = opts.error ? String(opts.error) : "";
   const errorState = classifyAuthErrorState(error);
+  const loginMode = opts.loginMode === "phone" ? "phone" : "email";
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env: opts.env,
+    selectedCountry: opts.phoneCountry,
+  });
   // Hostname is safe to show only after authoritative transfer load (caller responsibility).
   const transferHostname =
     hostKind === "apex" && opts.transferHostname ? String(opts.transferHostname) : "";
@@ -212,6 +219,15 @@ function renderLoginPage(opts) {
     errorState,
     errorTitle: authErrorTitle(errorState),
     emailValue: opts.emailValue ? String(opts.emailValue) : "",
+    loginEmail: opts.loginEmail ? String(opts.loginEmail) : (opts.emailValue ? String(opts.emailValue) : ""),
+    loginMode,
+    modeEmailHref: opts.modeEmailHref || "/login?mode=email",
+    modePhoneHref: opts.modePhoneHref || "/login?mode=phone",
+    phoneCountry: opts.phoneCountry || phoneLocals.defaultPhoneCountry,
+    phoneNational: opts.phoneNational || "",
+    phoneCountries: phoneLocals.phoneCountries,
+    defaultPhoneCountry: phoneLocals.defaultPhoneCountry,
+    phoneValidationRelaxed: phoneLocals.phoneValidationRelaxed,
     // Intentionally omitted from template: raw transfer tokens must not appear in HTML.
     transferHostname,
     hostKind,
@@ -235,6 +251,7 @@ function renderAuthErrorPage(message) {
     message: text,
     errorState,
     pageTitle,
+    cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
   });
 }
 

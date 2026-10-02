@@ -75,7 +75,7 @@ function clampLimit(limit) {
 /**
  * Search active published churches allowed in the public directory.
  * @param {import("pg").Pool} pool
- * @param {{ q?: string, page?: number, limit?: number }} opts
+ * @param {{ q?: string, page?: number, limit?: number, env?: NodeJS.ProcessEnv }} opts
  */
 async function searchPublicOrganizations(pool, opts = {}) {
   const q = normalizeSearchQuery(opts.q);
@@ -84,14 +84,39 @@ async function searchPublicOrganizations(pool, opts = {}) {
   const offset = (page - 1) * limit;
 
   const params = [];
-  const { sqlPublicDirectoryEnvironmentFilter } = require("../../church/orgDataEnvironment");
+  const {
+    sqlPublicDirectoryEnvironmentFilter,
+    sqlPublicDirectoryProductionDemoNameExclusion,
+  } = require("../../church/orgDataEnvironment");
   const clauses = [
     `o.status = 'active'`,
     `c.status = 'active'`,
-    sqlPublicDirectoryEnvironmentFilter("o"),
-    // Missing church_settings is not an explicit unpublish (provisioning may omit the row).
-    // Explicit draft/suspended remain hidden.
-    `(cs.website_status IS NULL OR cs.website_status = 'published')`,
+    sqlPublicDirectoryEnvironmentFilter("o", opts.env),
+    sqlPublicDirectoryProductionDemoNameExclusion(opts.env),
+    // Directory eligibility must match a live public site:
+    // - missing church_settings is not an explicit unpublish
+    // - explicit suspended stays hidden
+    // - website_status=published lists the church
+    // - engine-published versions also list (primary-branch HQ publish historically
+    //   left website_status=draft while /c/:key served live content)
+    `(
+      COALESCE(cs.website_status, 'published') <> 'suspended'
+      AND (
+        cs.website_status IS NULL
+        OR cs.website_status = 'published'
+        OR EXISTS (
+          SELECT 1
+            FROM platform.website_instances wi
+            INNER JOIN platform.website_versions wv
+              ON wv.instance_id = wi.id
+             AND wv.organization_id = wi.organization_id
+             AND wv.status = 'published'
+           WHERE wi.organization_id = o.id
+             AND wi.product_code = 'blessboard'
+             AND COALESCE(wi.lifecycle_status, '') NOT IN ('suspended', 'offline')
+        )
+      )
+    )`,
     `EXISTS (
       SELECT 1 FROM blessboard.branches b_active
       WHERE b_active.church_id = c.id AND b_active.status = 'active'

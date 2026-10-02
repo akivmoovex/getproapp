@@ -110,7 +110,10 @@ test("apex marketing pages include unique SEO metadata", async () => {
   for (const page of MARKETING_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=75/, `${page.path} should load public CSS v75`);
+    // This suite guards SEO metadata. Assert the public stylesheet is loaded
+    // and cache-busted, not a specific number, which must change whenever
+    // marketing CSS is edited.
+    assert.match(res.text, /church\.css\?v=\d+/, `${page.path} should load cache-busted public CSS`);
 
     const config = PLATFORM_PUBLIC_SEO[page.key];
     assert.match(res.text, new RegExp(`<link rel="canonical" href="${config.path === "/" ? "https://blessboard.com/" : `https://blessboard.com${config.path}`}"`), `${page.path} canonical`);

@@ -1,0 +1,43 @@
+<%#
+  AC-MW-R02 About Our Clinic — Stitch Batch 2.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+%>
+<article class="ac-stitch-page ac-stitch-page--r02 acp-page" data-ac-page-section="tenant-about" data-ac-stitch-screen="R02">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <% if (html.story) { %>
+  <section class="ac-stitch-section ac-stitch-section--story" aria-label="Clinic story">
+    <%- html.story %>
+  </section>
+  <% } else if (!(typeof websiteEdit !== 'undefined' && websiteEdit)) { %>
+  <div class="acp-empty-state ac-public-empty">
+    <p>Public about content has not been configured for this clinic yet.</p>
+  </div>
+  <% } %>
+
+  <% if (html.mission) { %>
+  <section class="ac-stitch-section ac-stitch-section--mission" aria-label="Mission vision and values">
+    <%- html.mission %>
+  </section>
+  <% } %>
+
+  <% if (html.contact) { %>
+  <section class="ac-stitch-section ac-stitch-section--contact">
+    <%- html.contact %>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/organization', label: 'Manage clinic contact details', manageKind: 'contact' }) %>
+  </section>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <section class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </section>
+  <% } %>
+
+  <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_about', librarySkipTypes: [] }) %>
+</article>

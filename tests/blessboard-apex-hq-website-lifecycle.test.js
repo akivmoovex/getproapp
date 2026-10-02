@@ -66,7 +66,7 @@ function extractCsrfToken(html) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -110,7 +110,12 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
           applicationId: row.id,
           administratorPassword: PASSWORD,
           requestId: `req-${key}`,
-          actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+          actorContext: {
+            type: "test",
+            source: "unit",
+            dataEnvironment: "testing",
+            deploymentCode: "blessboard-org-staging",
+          },
         });
         assert.equal(result.ok, true, result.message || result.status);
         return result.records;
@@ -142,7 +147,7 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
 
   async function sessionCookie(userId, organizationId, churchId) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
       organizationId: organizationId || null,
       churchId: churchId || null,
@@ -285,14 +290,14 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
 
   it("path public /c/:organizationKey resolves after publish or shows setup", async () => {
     requireDb();
-    const res = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const res = await request(app).get(`/c/${rec.organizationKey}`).redirects(5).set("Host", APEX);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /not yet available in BlessBoard V5/i);
   });
 
   it("unknown organization path returns 404", async () => {
     requireDb();
-    const res = await request(app).get("/c/no-such-org-zzzz").set("Host", APEX);
+    const res = await request(app).get("/c/no-such-org-zzzz").redirects(5).set("Host", APEX);
     assert.equal(res.status, 404);
   });
 
@@ -339,12 +344,13 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
     assert.deepEqual(second.pagesCreated, []);
   });
 
-  it("member portal remains unavailable on apex", async () => {
+  it("member portal allows apex when session tenant is resolved (unlessTenant)", async () => {
     requireDb();
-    const res = await request(app)
+    // Unauthenticated apex passes rejectApex (unlessTenant) then membership gate.
+    const anon = await request(app)
       .get("/member")
       .set("Host", APEX)
       .set("Accept", "text/plain");
-    assert.equal(res.status, 503);
+    assert.equal(anon.status, 401);
   });
 });

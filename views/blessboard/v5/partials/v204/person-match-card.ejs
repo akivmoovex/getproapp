@@ -1,0 +1,16 @@
+<%#
+  BB V2.04 person match card wrapper → platform gp-ops-match-card.
+  Locals: title, subtitle?, scoreLabel?, tone?, fields?, headerMetaHtml?, actionsHtml?, className?, id?
+  Callers may include Church ID rows in fields — do not put that wording in platform.
+%>
+<%- include('../../../../platform/partials/gp-ops-match-card', {
+  title: typeof title !== 'undefined' ? title : 'Possible match',
+  subtitle: typeof subtitle !== 'undefined' ? subtitle : undefined,
+  scoreLabel: typeof scoreLabel !== 'undefined' ? scoreLabel : undefined,
+  tone: typeof tone !== 'undefined' ? tone : 'warning',
+  fields: typeof fields !== 'undefined' ? fields : [],
+  headerMetaHtml: typeof headerMetaHtml !== 'undefined' ? headerMetaHtml : undefined,
+  actionsHtml: typeof actionsHtml !== 'undefined' ? actionsHtml : undefined,
+  className: typeof className !== 'undefined' ? className : undefined,
+  id: typeof id !== 'undefined' ? id : undefined
+}) %>

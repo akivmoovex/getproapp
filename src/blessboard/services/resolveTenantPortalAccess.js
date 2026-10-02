@@ -2,31 +2,35 @@
 
 /**
  * Resolve post-login / header portal destinations for a tenant church context.
- * Reuses existing role keys and member membership rules — no second auth system.
+ * Catalogue role keys drive staff portals (V2.02). Member membership unchanged.
  */
 
-const authRepo = require("../repositories/blessBoardAuthRepository");
 const {
-  rolesApplicableToOrganization,
-} = require("./establishBlessBoardSession");
+  listCatalogueLoginRolesForUser,
+  isCatalogueHqRole,
+  isCatalogueBranchRole,
+  portalKeyForCatalogueRole,
+  PORTAL_PATHS_CATALOGUE,
+} = require("./blessBoardCatalogueLogin");
 const {
   requireActiveMemberForTenant,
 } = require("./requireActiveMemberForTenant");
 const { safeTenantNextPath } = require("../http/tenantLoginHelpers");
 
 const PORTAL_KEYS = Object.freeze({
-  HQ: "church_hq_admin",
-  BRANCH: "branch_admin",
+  HQ: "organisation_administrator",
+  BRANCH: "branch_administrator",
   MEMBER: "member",
-  PLATFORM: "platform_admin",
+  PLATFORM: "platform_administrator",
+  ACCOUNT: "account",
 });
 
 const PORTAL_PATHS = Object.freeze({
+  ...PORTAL_PATHS_CATALOGUE,
+  // Back-compat aliases used by older callers
   church_hq_admin: "/hq",
   branch_admin: "/branch-admin",
-  member: "/member",
   platform_admin: "/hq",
-  account: "/account",
 });
 
 /**
@@ -44,33 +48,32 @@ function filterValidStaffRolesForTenant(roles, tenant) {
   const branchStatus = String((tenant && tenant.branchStatus) || "active").toLowerCase();
   if (orgStatus && orgStatus !== "active") return [];
 
-  const applicable = rolesApplicableToOrganization(
-    (roles || []).map((r) => ({
+  return (roles || [])
+    .map((r) => ({
       role_key: String(r.roleKey || r.role_key || ""),
       organization_id: r.organizationId || r.organization_id || null,
       church_id: r.churchId || r.church_id || null,
       branch_id: r.branchId || r.branch_id || null,
-    })),
-    orgId || null
-  );
-
-  return applicable.filter((r) => {
-    const key = String(r.role_key || "");
-    if (key === PORTAL_KEYS.PLATFORM) return true;
-    if (key === PORTAL_KEYS.HQ) {
-      if (!orgId || String(r.organization_id) !== orgId) return false;
-      if (r.church_id && churchId && String(r.church_id) !== churchId) return false;
+    }))
+    .filter((r) => {
+      const key = String(r.role_key || "");
+      if (!key || key === "member") return false;
+      if (key === "platform_administrator") return true;
+      if (orgId && r.organization_id && String(r.organization_id) !== orgId) return false;
+      if (isCatalogueHqRole(key)) {
+        if (r.church_id && churchId && String(r.church_id) !== churchId) return false;
+        return true;
+      }
+      if (isCatalogueBranchRole(key)) {
+        if (branchStatus && branchStatus !== "active") return false;
+        if (branchId && r.branch_id && String(r.branch_id) !== branchId) return false;
+        if (r.church_id && churchId && String(r.church_id) !== churchId) return false;
+        return true;
+      }
+      // Other catalogue staff roles (website, finance, auditor, communications, …)
+      if (r.organization_id && orgId && String(r.organization_id) !== orgId) return false;
       return true;
-    }
-    if (key === PORTAL_KEYS.BRANCH) {
-      if (!orgId || String(r.organization_id) !== orgId) return false;
-      if (branchStatus && branchStatus !== "active") return false;
-      if (branchId && r.branch_id && String(r.branch_id) !== branchId) return false;
-      if (r.church_id && churchId && String(r.church_id) !== churchId) return false;
-      return true;
-    }
-    return false;
-  });
+    });
 }
 
 /**
@@ -88,10 +91,24 @@ function buildPortalOptions(staffRoles, hasMemberAccess) {
 
   for (const r of staffRoles || []) {
     const key = String(r.role_key || "");
-    if (key === PORTAL_KEYS.HQ || key === PORTAL_KEYS.PLATFORM) {
-      push(PORTAL_KEYS.HQ, PORTAL_PATHS.church_hq_admin, "Church HQ");
-    } else if (key === PORTAL_KEYS.BRANCH) {
-      push(PORTAL_KEYS.BRANCH, PORTAL_PATHS.branch_admin, "Branch Admin");
+    if (isCatalogueHqRole(key) || key === "platform_administrator") {
+      push(PORTAL_KEYS.HQ, PORTAL_PATHS.organisation_administrator, "Church HQ");
+    } else if (isCatalogueBranchRole(key)) {
+      push(PORTAL_KEYS.BRANCH, PORTAL_PATHS.branch_administrator, "Branch Admin");
+    } else {
+      const portalKey = portalKeyForCatalogueRole(key);
+      const href = PORTAL_PATHS[portalKey] || PORTAL_PATHS.account;
+      const label =
+        portalKey === "website_editor" || portalKey === "website_publisher"
+          ? "Website"
+          : portalKey === "auditor"
+            ? "Audit"
+            : portalKey === "communications_officer"
+              ? "Communications"
+              : portalKey === "finance_restricted"
+                ? "Finance"
+                : "My Portal";
+      push(portalKey, href, label);
     }
   }
   if (hasMemberAccess) {
@@ -137,7 +154,7 @@ async function resolveTenantPortalAccess(input) {
   let roles = Array.isArray(input.roles) ? input.roles : null;
   if (!roles) {
     try {
-      roles = await authRepo.listActiveRolesForUser(input.db, userId);
+      roles = await listCatalogueLoginRolesForUser(input.db, userId, organizationId);
     } catch {
       return {
         ok: false,

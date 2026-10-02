@@ -1,0 +1,171 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var searchQ = typeof q !== 'undefined' ? String(q) : '';
+  var rows = Array.isArray(candidates) ? candidates : [];
+  var sel = typeof selected !== 'undefined' && selected ? selected : null;
+  var exist = typeof existing !== 'undefined' && existing ? existing : null;
+  var counts = typeof stats !== 'undefined' && stats ? stats : { total: 0 };
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var canCheck = typeof sessionOpen !== 'undefined' ? !!sessionOpen : false;
+  function initials(m) {
+    var a = String((m && (m.firstName || m.first_name)) || '').charAt(0);
+    var b = String((m && (m.lastName || m.last_name)) || '').charAt(0);
+    return (a + b).toUpperCase() || '?';
+  }
+  function fullName(m) {
+    if (!m) return 'Member';
+    return [m.firstName || m.first_name, m.lastName || m.last_name].filter(Boolean).join(' ') || 'Member';
+  }
+  function selectHref(id) {
+    var params = ['member=' + encodeURIComponent(id)];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    return '/branch-admin/attendance/sessions/' + s.id + '/check-in?' + params.join('&');
+  }
+%>
+
+<section
+  class="bb-v204-a04"
+  data-bb-stitch-v204="BB-A04"
+  data-bb-screen="BB-A04"
+  data-bb-stitch-id="e14603722a2f4f7f94ba8a191a2ab0c1"
+  aria-label="Manual Check-In"
+>
+  <%- include('../partials/v204/page-header', {
+    title: (s.title || 'Service session'),
+    subtitle: branchLabel + ' · Manual Greeter Desk',
+    badgeHtml: '<span class="gp-ops-badge gp-ops-badge--' + (canCheck ? 'success' : 'neutral') + '"><span class="gp-ops-badge__dot" aria-hidden="true"></span>' + (canCheck ? 'Open' : (s.statusLabel || 'Closed')) + '</span>',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions/' + s.id + '">Session Dashboard</a> <span aria-hidden="true">›</span> <span>Manual Check-In</span>',
+    actionsHtml: '<a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/' + s.id + '">ESC to return</a>'
+  }) %>
+
+  <div class="bb-v204-a04__count" data-bb-a04-count="1">
+    <span>Session Count</span>
+    <strong><%= Number(counts.total) || 0 %></strong>
+  </div>
+
+  <%- include('partials/check-in-result', { result: typeof result !== 'undefined' ? result : null }) %>
+
+  <% if (!canCheck) { %>
+  <div class="bb-v204-a04__blocked" role="alert">Session is not open — normal check-in is stopped.</div>
+  <% } %>
+
+  <div class="bb-v204-a04__layout">
+    <section class="bb-v204-a04__search" data-bb-a04-search="1" aria-labelledby="bb-a04-search-heading">
+      <header>
+        <h2 id="bb-a04-search-heading">Fast Member Search</h2>
+        <p><%= rows.length %> Matches</p>
+      </header>
+      <form method="get" action="/branch-admin/attendance/sessions/<%= s.id %>/check-in" role="search" class="bb-v204-a04__search-form">
+        <label class="gp-ops-visually-hidden" for="bb-a04-q">Search members</label>
+        <input
+          id="bb-a04-q"
+          class="bb-ba-input"
+          type="search"
+          name="q"
+          value="<%= searchQ %>"
+          placeholder="Name, phone, or Church ID…"
+          autocomplete="off"
+          autofocus
+        />
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Search</button>
+      </form>
+
+      <% if (!rows.length && searchQ) { %>
+        <%- include('../partials/v204/empty-state', {
+          title: 'No matches',
+          body: 'Try another name, phone, or Church ID.'
+        }) %>
+      <% } %>
+
+      <ul class="bb-v204-a04__candidates">
+        <% rows.forEach(function (m) { %>
+        <li class="<%= sel && String(sel.id) === String(m.id) ? 'is-selected' : '' %>">
+          <a href="<%= selectHref(m.id) %>">
+            <span class="bb-v204-a04__avatar" aria-hidden="true"><%= initials(m) %></span>
+            <span>
+              <strong><%= fullName(m) %></strong>
+              <% if (m.memberNumber) { %><span class="bb-v204-a04__church-id"><%= m.memberNumber %></span><% } %>
+              <span class="bb-v204-a04__muted"><%= m.phoneDisplay || m.phone_display || '—' %></span>
+            </span>
+            <span class="bb-v204-a04__select-hint">Select record</span>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+
+    <section class="bb-v204-a04__verify" data-bb-a04-verify="1" aria-labelledby="bb-a04-verify-heading">
+      <header>
+        <h2 id="bb-a04-verify-heading">Member Verification Record</h2>
+        <%- include('../partials/v204/status-chip', {
+          label: sel ? (exist ? 'ALREADY CHECKED IN' : 'PENDING ADMISSION') : 'NO SELECTION',
+          tone: exist ? 'info' : (sel ? 'warning' : 'neutral')
+        }) %>
+      </header>
+
+      <% if (!sel) { %>
+        <%- include('../partials/v204/empty-state', {
+          title: 'SELECTED CANDIDATE',
+          body: 'Search and select a member to verify and check in.'
+        }) %>
+      <% } else { %>
+        <div class="bb-v204-a04__member" data-bb-a04-selected="1">
+          <span class="bb-v204-a04__avatar bb-v204-a04__avatar--lg" aria-hidden="true"><%= initials(sel) %></span>
+          <div>
+            <h3><%= fullName(sel) %></h3>
+            <% if (sel.preferredName) { %><p class="bb-v204-a04__muted">Preferred: “<%= sel.preferredName %>”</p><% } %>
+            <% if (sel.memberNumber) { %><p class="bb-v204-a04__church-id"><%= sel.memberNumber %> (Church-managed)</p><% } %>
+            <p class="bb-v204-a04__muted">Parish Jurisdiction · <%= branchLabel %></p>
+            <p>
+              Today's Presence State:
+              <strong><%= exist ? 'CHECKED IN' : 'NOT CHECKED IN TODAY' %></strong>
+            </p>
+          </div>
+        </div>
+
+        <% if (exist) { %>
+          <%- include('partials/check-in-result', {
+            result: {
+              ok: true,
+              kind: 'duplicate',
+              title: 'Already checked in',
+              message: 'Existing attendance returned — no second record will be created.',
+              checkIn: exist,
+              lateArrival: !!exist.lateArrival,
+              wrongBranch: !!exist.wrongBranch
+            }
+          }) %>
+        <% } %>
+
+        <form
+          method="post"
+          action="/branch-admin/attendance/sessions/<%= s.id %>/check-in"
+          class="bb-v204-a04__confirm"
+          data-bb-a04-confirm="1"
+        >
+          <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+          <input type="hidden" name="member_id" value="<%= sel.id %>" />
+          <input type="hidden" name="q" value="<%= searchQ %>" />
+          <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/check-in<%= searchQ ? ('?q=' + encodeURIComponent(searchQ)) : '' %>">Skip / Next Record</a>
+          <button
+            type="submit"
+            class="bb-ba-btn bb-ba-btn--primary"
+            <%= !canCheck || exist ? 'disabled' : '' %>
+          >Confirm Check-In (Enter ↵)</button>
+        </form>
+      <% } %>
+    </section>
+  </div>
+
+  <nav class="bb-v204-a04__modes" aria-label="Check-in modes">
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr">Display QR</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/qr/check-in">Member QR</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/peak">Peak Mode</a>
+    <a href="/branch-admin/attendance/sessions/<%= s.id %>/roster">Live Roster</a>
+  </nav>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

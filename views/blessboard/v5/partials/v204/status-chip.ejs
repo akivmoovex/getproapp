@@ -1,0 +1,9 @@
+<%#
+  BB V2.04 wrapper: status chip → platform gp-ops-status-badge.
+  Locals: label (required), tone?
+  BB supplies membership/portal labels — platform stays product-neutral.
+%>
+<%- include('../../../../platform/partials/gp-ops-status-badge', {
+  label: typeof label !== 'undefined' ? label : '',
+  tone: typeof tone !== 'undefined' ? tone : 'neutral'
+}) %>

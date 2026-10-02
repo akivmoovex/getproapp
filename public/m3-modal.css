@@ -1,7 +1,7 @@
 /**
  * Material 3 modal shell — single source of truth for overlays / dialogs.
  * Layout: flex only (no absolute positioning for header/body/footer flow).
- * Tokens: theme.css (--space-*, --color-*, --elevation-*, --modal-*).
+ * Tokens: V2.04 colors.css + spacing/elevation from shell theme.
  */
 
 /* Root overlay: centers the dialog; fades in when .m3-modal-overlay--open is set */
@@ -64,7 +64,7 @@
   background: var(--color-surface);
   color: var(--color-text-primary);
   border-radius: var(--radius-medium);
-  border: 1px solid var(--color-outline);
+  border: 1px solid var(--color-border-default);
   box-shadow: var(--elevation-2);
   overflow: hidden;
   transform: scale(0.96) translateY(var(--space-1));
@@ -87,7 +87,7 @@
   gap: var(--space-2);
   min-height: var(--modal-header-min-height);
   padding: var(--space-1) var(--space-2);
-  border-bottom: 1px solid var(--color-outline);
+  border-bottom: 1px solid var(--color-border-default);
   background: var(--color-surface);
 }
 
@@ -112,7 +112,7 @@
   height: var(--modal-close-btn-size);
   min-height: var(--modal-close-btn-size);
   border-radius: var(--border-radius-full);
-  border: 1px solid var(--color-outline-strong);
+  border: 1px solid var(--color-border-strong);
   background: var(--color-surface);
   font-size: 1.5rem;
   line-height: 1;
@@ -127,7 +127,7 @@
 }
 
 .m3-modal__close:hover {
-  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  background: color-mix(in srgb, var(--color-brand-primary) 10%, var(--color-surface));
 }
 
 .m3-modal__body {
@@ -160,7 +160,7 @@
   justify-content: flex-end;
   gap: var(--space-2);
   padding: var(--space-2);
-  border-top: 1px solid var(--color-outline);
+  border-top: 1px solid var(--color-border-default);
   background: var(--color-surface);
 }
 
@@ -257,7 +257,7 @@
 }
 
 .join-modal-layer .m3-modal-overlay__backdrop {
-  background: var(--color-scrim-join-backdrop);
+  background: var(--modal-overlay);
   backdrop-filter: blur(var(--space-half));
 }
 

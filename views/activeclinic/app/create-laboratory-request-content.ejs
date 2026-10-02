@@ -1,0 +1,24 @@
+<div data-ac-stitch="969bbfbdf9634dbc8af598ec2277e92f" data-ac-screen="create-laboratory-request">
+  <% if (pageData.orderForm.error) { %>
+  <p class="ac-error"><%= pageData.orderForm.error %></p>
+  <% } %>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>/order/lab">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="test_code">Test code/name *</label>
+      <input type="text" id="test_code" name="test_code" required placeholder="e.g. CBC, FBC, LFT" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="instructions">Instructions</label>
+      <textarea id="instructions" name="instructions" rows="3" placeholder="Special handling, fasting requirements, etc."></textarea>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Create lab request</button>
+      <a href="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

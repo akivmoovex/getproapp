@@ -1,0 +1,83 @@
+<%#
+  AC-MW-R08 Appointment Booking Entry — Stitch Batch 3.
+  Presentation chrome only around the EXISTING consultation booking wizard.
+  Do not invent a second booking engine.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+%>
+<section
+  class="ac-stitch-page ac-stitch-page--r08 ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-consultation-type"
+  data-ac-stitch-screen="R08"
+  data-ac-mf-family="MF10"
+  data-ac-mf-screen="MF10-01"
+>
+  <% if (!(typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly)) { %>
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <% } %>
+  <div class="acp-booking-layout">
+    <div class="acp-booking-layout__main">
+      <div class="ac-stitch-section ac-stitch-section--header acp-booking-header">
+        <%- html.header || '' %>
+        <% if (typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly) { %>
+        <p class="ac-public-note">Online booking is off for visitors. This intro is website copy only — saving it does not enable bookings or publish the site.</p>
+        <% } %>
+      </div>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && Object.keys(validationErrors).length) { %>
+      <div class="ac-public-error" role="alert">
+        <p>Please fix the following:</p>
+        <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
+      </div>
+      <% } %>
+      <% if (!(typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly)) { %>
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-loading="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="wizardAction" value="continue"/>
+        <% if (services && services.length) { %>
+        <fieldset class="ac-booking-choice-list acp-choice-grid acp-mf10-service-grid">
+          <legend class="ac-sr-only">Service</legend>
+          <% services.forEach(function (svc) { %>
+          <label class="ac-booking-choice acp-choice-card acp-mf10-card<%= (draft && draft.serviceKey === svc.serviceKey) ? ' acp-choice-card--selected' : '' %>">
+            <input type="radio" name="serviceKey" value="<%= svc.serviceKey %>"<%= (draft && draft.serviceKey === svc.serviceKey) ? ' checked' : '' %>/>
+            <span class="ac-booking-choice__body">
+              <strong><%= svc.displayName %></strong>
+              <% if (svc.summary) { %><span class="ac-booking-choice__meta"><%= svc.summary %></span><% } %>
+              <% if (svc.durationMinutes) { %><span class="acp-mf10-card__duration"><%= svc.durationMinutes %> mins</span><% } %>
+            </span>
+          </label>
+          <% }); %>
+          <label class="ac-booking-choice acp-choice-card acp-mf10-card<%= !(draft && draft.serviceKey) ? ' acp-choice-card--selected' : '' %>">
+            <input type="radio" name="serviceKey" value=""<%= !(draft && draft.serviceKey) ? ' checked' : '' %>/>
+            <span class="ac-booking-choice__body">
+              <strong>General consultation</strong>
+              <span class="ac-booking-choice__meta">Standard check-ups and general medical advice</span>
+            </span>
+          </label>
+        </fieldset>
+        <% } else { %>
+        <p class="ac-public-note">No specific consultation types are published. You can continue with a general request.</p>
+        <input type="hidden" name="serviceKey" value=""/>
+        <% } %>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary" data-loading="Continuing…">Continue to provider</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">Book a procedure instead</a>
+        </div>
+      </form>
+      <%- include('../partials/sms-honesty-note') %>
+      <% } else { %>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact page</a>
+      </p>
+      <% } %>
+      <% if (html.cta) { %>
+      <div class="ac-stitch-section ac-stitch-section--cta">
+        <%- html.cta %>
+      </div>
+      <% } %>
+    </div>
+    <%- include('../partials/booking-summary', { draft: typeof draft !== 'undefined' ? draft : null }) %>
+  </div>
+</section>

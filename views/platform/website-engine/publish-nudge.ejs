@@ -1,0 +1,128 @@
+<%#
+  Shared PublishNudge (V2.05 Task 5).
+  Non-blocking reminder when unpublishedChangeCount >= 5.
+  Driven by Change Manager draft-vs-published count — not keystrokes.
+%>
+<%
+  var nudge = typeof publishNudge !== 'undefined' && publishNudge ? publishNudge : null;
+  var count = nudge ? Number(nudge.unpublishedChangeCount) || 0 : 0;
+  var actions = (nudge && nudge.actions) || {};
+  var review = actions.reviewChanges || {};
+  var preview = actions.preview || {};
+  var publish = actions.publish || {};
+  var copy = (nudge && nudge.copy) || {};
+%>
+<% if (nudge && nudge.visible) { %>
+<style>
+  .gp-publish-nudge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem 1.25rem;
+    margin: 0 0 1.1rem;
+    padding: 0.95rem 1.1rem;
+    border: 1px solid color-mix(in srgb, #004357 22%, transparent);
+    border-radius: 0.85rem;
+    background: color-mix(in srgb, #ffdcc3 42%, #fff);
+  }
+  .gp-publish-nudge[hidden] { display: none !important; }
+  .gp-publish-nudge__title {
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #004357;
+  }
+  .gp-publish-nudge__hint {
+    margin: 0;
+    font-size: 0.86rem;
+    color: color-mix(in srgb, #004357 72%, #666);
+  }
+  .gp-publish-nudge__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .gp-publish-nudge__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 0.65rem;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: #004357;
+  }
+  .gp-publish-nudge__btn--primary {
+    background: #004357;
+    color: #fff;
+  }
+  .gp-publish-nudge__btn--secondary {
+    background: #fff;
+    border-color: color-mix(in srgb, #004357 28%, transparent);
+  }
+  .gp-publish-nudge__btn--ghost {
+    text-decoration: underline;
+    font-weight: 600;
+  }
+</style>
+<aside
+  class="gp-publish-nudge"
+  data-gp-publish-nudge="PublishNudge"
+  data-gp-publish-nudge-count="<%= count %>"
+  data-gp-publish-nudge-threshold="<%= Number(nudge.threshold) || 5 %>"
+  data-gp-publish-nudge-session-key="<%= nudge.sessionDismissKey || '' %>"
+  data-website-scope-key="<%= nudge.websiteScopeKey || '' %>"
+  role="status"
+  aria-live="polite"
+>
+  <div class="gp-publish-nudge__body">
+    <p class="gp-publish-nudge__title" data-gp-publish-nudge-title="1"><%= nudge.title || copy.title || ('You have ' + count + ' unpublished changes.') %></p>
+    <p class="gp-publish-nudge__hint">Publishing is optional. Review when you are ready — nothing goes live automatically.</p>
+  </div>
+  <div class="gp-publish-nudge__actions">
+    <% if (review.href) { %>
+    <a class="gp-publish-nudge__btn gp-publish-nudge__btn--secondary" href="<%= review.href %>" data-gp-publish-nudge-review="1"><%= review.label || 'Review Changes' %></a>
+    <% } else { %>
+    <button type="button" class="gp-publish-nudge__btn gp-publish-nudge__btn--secondary" data-gp-publish-nudge-review="1"><%= review.label || 'Review Changes' %></button>
+    <% } %>
+    <% if (preview.href) { %>
+    <a class="gp-publish-nudge__btn gp-publish-nudge__btn--secondary" href="<%= preview.href %>" data-gp-publish-nudge-preview="1" data-website-preview="1"><%= preview.label || 'Preview' %></a>
+    <% } %>
+    <% if (publish.available && publish.href) { %>
+    <a class="gp-publish-nudge__btn gp-publish-nudge__btn--primary" href="<%= publish.href %>" data-gp-publish-nudge-publish="1"><%= publish.label || 'Publish' %></a>
+    <% } %>
+    <button type="button" class="gp-publish-nudge__btn gp-publish-nudge__btn--ghost" data-gp-publish-nudge-dismiss="1"><%= (actions.dismiss && actions.dismiss.label) || 'Dismiss' %></button>
+  </div>
+</aside>
+<script>
+(function () {
+  var root = document.querySelector("[data-gp-publish-nudge='PublishNudge']");
+  if (!root || root.getAttribute("data-bound") === "1") return;
+  root.setAttribute("data-bound", "1");
+  var sessionKey = root.getAttribute("data-gp-publish-nudge-session-key") || "";
+  function sessionGet() {
+    try { return sessionKey ? window.sessionStorage.getItem(sessionKey) : null; } catch (_e) { return null; }
+  }
+  function sessionSet() {
+    try { if (sessionKey) window.sessionStorage.setItem(sessionKey, "1"); } catch (_e) {}
+  }
+  if (sessionGet() === "1") {
+    root.hidden = true;
+    return;
+  }
+  var dismiss = root.querySelector("[data-gp-publish-nudge-dismiss]");
+  if (dismiss) {
+    dismiss.addEventListener("click", function () {
+      sessionSet();
+      root.hidden = true;
+    });
+  }
+})();
+</script>
+<% } %>

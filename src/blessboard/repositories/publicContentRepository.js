@@ -111,6 +111,7 @@ function mapSermon(row) {
     summary: row.summary,
     mediaUrl: row.media_url,
     resourceUrl: row.resource_url,
+    imageUrl: row.image_url != null ? row.image_url : null,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -176,7 +177,7 @@ const MINISTRY_COLS = `id, church_id, branch_id, name, summary, description, mee
 const EVENT_COLS = `id, church_id, branch_id, title, summary, starts_at, ends_at, timezone,
                     location, registration_url, image_url, capacity, status, created_at, updated_at`;
 const SERMON_COLS = `id, church_id, branch_id, title, speaker_name, preached_at, summary,
-                     media_url, resource_url, status, created_at, updated_at`;
+                     media_url, resource_url, image_url, status, created_at, updated_at`;
 const CONTACT_COLS = `id, church_id, branch_id, channel_type, label, value, sort_order,
                       status, created_at, updated_at`;
 const GIVING_COLS = `id, church_id, branch_id, method_type, label, description, account_details,
@@ -190,14 +191,14 @@ const GIVING_COLS = `id, church_id, branch_id, method_type, label, description, 
 async function findPageByScope(client, scope) {
   const r = scope.branchId
     ? await client.query(
-        `SELECT ${PAGE_COLS_WITH_REVISION}
+        `SELECT ${PAGE_COLS}
            FROM blessboard.public_pages
           WHERE church_id = $1 AND branch_id = $2 AND page_key = $3
           LIMIT 1`,
         [scope.churchId, scope.branchId, scope.pageKey]
       )
     : await client.query(
-        `SELECT ${PAGE_COLS_WITH_REVISION}
+        `SELECT ${PAGE_COLS}
            FROM blessboard.public_pages
           WHERE church_id = $1 AND branch_id IS NULL AND page_key = $2
           LIMIT 1`,
@@ -237,7 +238,7 @@ async function findPageByScopeForProvision(client, scope) {
  */
 async function findPageById(client, pageId) {
   const r = await client.query(
-    `SELECT ${PAGE_COLS_WITH_REVISION} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
+    `SELECT ${PAGE_COLS} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
     [pageId]
   );
   return mapPage(r.rows[0] || null);
@@ -330,7 +331,7 @@ async function listSectionsForPage(client, pageId, opts = {}) {
     statusClause = ` AND status = $${params.length}`;
   }
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION}
+    `SELECT ${SECTION_COLS}
        FROM blessboard.page_sections
       WHERE page_id = $1${statusClause}
       ORDER BY sort_order ASC, created_at ASC`,
@@ -414,13 +415,47 @@ async function updateSection(client, sectionId, patch) {
 }
 
 /**
+ * Section update without revision_number — Foundation provision when
+ * migration 043 is not yet applied.
+ * @param {{ query: Function }} client
+ * @param {string} sectionId
+ * @param {object} patch
+ */
+async function updateSectionForProvision(client, sectionId, patch) {
+  const r = await client.query(
+    `UPDATE blessboard.page_sections
+        SET section_type = COALESCE($2, section_type),
+            heading = COALESCE($3, heading),
+            body_text = COALESCE($4, body_text),
+            media_url = COALESCE($5, media_url),
+            sort_order = COALESCE($6, sort_order),
+            status = COALESCE($7, status),
+            layout_metadata = COALESCE($8, layout_metadata),
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${SECTION_COLS}`,
+    [
+      sectionId,
+      patch.sectionType != null ? patch.sectionType : null,
+      patch.heading !== undefined ? patch.heading : null,
+      patch.bodyText !== undefined ? patch.bodyText : null,
+      patch.mediaUrl !== undefined ? patch.mediaUrl : null,
+      patch.sortOrder != null ? patch.sortOrder : null,
+      patch.status != null ? patch.status : null,
+      patch.layoutMetadata !== undefined ? patch.layoutMetadata : null,
+    ]
+  );
+  return { section: mapSection(r.rows[0] || null), conflict: false };
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string} pageId
  * @param {string} sectionKey
  */
 async function findSectionByPageAndKey(client, pageId, sectionKey) {
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION}
+    `SELECT ${SECTION_COLS}
        FROM blessboard.page_sections
       WHERE page_id = $1 AND section_key = $2
       LIMIT 1`,
@@ -452,7 +487,7 @@ async function findSectionByPageAndKeyForProvision(client, pageId, sectionKey) {
  */
 async function findSectionById(client, sectionId) {
   const r = await client.query(
-    `SELECT ${SECTION_COLS_WITH_REVISION} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
+    `SELECT ${SECTION_COLS} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
     [sectionId]
   );
   return mapSection(r.rows[0] || null);
@@ -620,16 +655,38 @@ async function findLeaderById(client, id) {
   return mapLeader(r.rows[0] || null);
 }
 
+function slugMinistryKey(name) {
+  const base = String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
+  if (base && /^[a-z][a-z0-9_]{0,63}$/.test(base)) return base;
+  return `ministry_${Date.now().toString(36)}`.slice(0, 64);
+}
+
 async function insertMinistry(client, fields) {
+  const orgRow = await client.query(
+    `SELECT organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    [fields.churchId]
+  );
+  const organizationId =
+    fields.organizationId || (orgRow.rows[0] && orgRow.rows[0].organization_id) || null;
+  const ministryKey = fields.ministryKey || slugMinistryKey(fields.name);
+  const ministryType = fields.ministryType || "other";
   const r = await client.query(
     `INSERT INTO blessboard.ministries
-       (church_id, branch_id, name, summary, description, meeting_day, contact_email,
-        image_url, sort_order, status, join_policy)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       (organization_id, church_id, branch_id, ministry_key, ministry_type, name, summary,
+        description, meeting_day, contact_email, image_url, sort_order, status, join_policy)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING ${MINISTRY_COLS}`,
     [
+      organizationId,
       fields.churchId,
       fields.branchId,
+      ministryKey,
+      ministryType,
       fields.name,
       fields.summary,
       fields.description,
@@ -758,8 +815,8 @@ async function insertSermon(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.sermons
        (church_id, branch_id, title, speaker_name, preached_at, summary,
-        media_url, resource_url, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        media_url, resource_url, image_url, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING ${SERMON_COLS}`,
     [
       fields.churchId,
@@ -770,6 +827,7 @@ async function insertSermon(client, fields) {
       fields.summary,
       fields.mediaUrl,
       fields.resourceUrl,
+      fields.imageUrl != null ? fields.imageUrl : null,
       fields.status || "draft",
     ]
   );
@@ -787,7 +845,8 @@ async function updateSermon(client, id, patch) {
             summary = COALESCE($5, summary),
             media_url = COALESCE($6, media_url),
             resource_url = COALESCE($7, resource_url),
-            status = COALESCE($8, status)`,
+            image_url = COALESCE($8, image_url),
+            status = COALESCE($9, status)`,
     values: [
       patch.title != null ? patch.title : null,
       patch.speakerName != null ? patch.speakerName : null,
@@ -795,6 +854,7 @@ async function updateSermon(client, id, patch) {
       patch.summary !== undefined ? patch.summary : null,
       patch.mediaUrl !== undefined ? patch.mediaUrl : null,
       patch.resourceUrl !== undefined ? patch.resourceUrl : null,
+      patch.imageUrl !== undefined ? patch.imageUrl : null,
       patch.status != null ? patch.status : null,
     ],
     findById: findSermonById,
@@ -942,7 +1002,7 @@ async function findGivingMethodById(client, id) {
  */
 async function findChurchStatus(client, churchId) {
   const r = await client.query(
-    `SELECT id, status FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    `SELECT id, status, organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
     [churchId]
   );
   return r.rows[0] || null;
@@ -962,12 +1022,14 @@ async function findBranchScope(client, branchId) {
 
 module.exports = {
   findPageByScope,
+  findPageByScopeForProvision,
   findPageById,
   ensureDraftPage,
   updatePage,
   listSectionsForPage,
   insertSection,
   updateSection,
+  updateSectionForProvision,
   findSectionById,
   findSectionByPageAndKey,
   findSectionByPageAndKeyForProvision,

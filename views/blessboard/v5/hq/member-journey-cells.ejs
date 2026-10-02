@@ -1,0 +1,53 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof cells !== 'undefined' && cells ? cells : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-cells="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <span>Cells</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Cells</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create cell</h2>
+    <form method="post" action="/hq/cells" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Key <input name="cellKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+      <label>Name <input name="displayName" required maxlength="200"/></label>
+      <label>Meeting schedule <input name="meetingSchedule" maxlength="500"/></label>
+      <label>Meeting location summary <input name="meetingLocationSummary" maxlength="500"/></label>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Branch cells</h2>
+    <% if (!rows.length) { %>
+      <p>No cells yet.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (c) { %>
+          <li>
+            <a href="/hq/cells/<%= c.id %>"><%= c.displayName %></a>
+            (<%= c.cellKey %>) · <%= c.status %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+  <p><a href="/hq/member-journey">Back to member journey</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

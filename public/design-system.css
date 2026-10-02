@@ -1,26 +1,25 @@
 /**
  * GetPro Design System V1 — canonical aliases & patterns
  * ========================================================
- * Loaded after public/theme.css via styles.css.
+ * Prefer V2.04 platform tokens (colors.css). Legacy theme.css aliases are no longer required for this file.
  * Human-readable spec: docs/DESIGN_SYSTEM.md
  *
  * Rules:
  * - Prefer these semantic names in NEW component CSS.
- * - Existing code may still use legacy aliases (--bg, --wf-primary, --space-1…).
+ * - Prefer --button-* / --color-brand-* / --color-success|danger|info-* over legacy WF flash/btn aliases.
  * - App spacing scale uses an 8px rhythm (--space-1 = 8px). DS “4px scale” lives in --gp-ds-*.
  */
 
 :root {
-  /* —— Color (canonical DS V1 names → theme tokens) —— */
+  /* —— Color (DS V1 convenience → V2.04 platform tokens) —— */
   --color-bg: var(--color-background);
-  --color-surface-alt: var(--color-surface-variant);
+  --color-surface-alt: var(--color-surface-subtle);
   --color-text: var(--color-text-primary);
-  --color-text-muted: var(--color-text-secondary);
-  --color-text-soft: var(--color-text-tertiary);
-  --color-primary-hover: var(--wf-primary-dark);
-  --color-primary-soft: rgba(var(--wf-primary-rgb), 0.08);
-  --color-border: var(--color-outline);
-  --color-border-strong: var(--color-outline-strong);
+  /* Do not redefine --color-text-muted / --color-border-strong (owned by colors.css). */
+  --color-text-soft: var(--color-text-muted);
+  --color-primary-hover: var(--color-brand-primary-hover);
+  --color-primary-soft: color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
+  --color-border: var(--color-border-default);
 
   /* —— Radius (DS naming — map to existing shape tokens) —— */
   --radius-sm: var(--radius-small);
@@ -108,16 +107,16 @@
 /* Buttons: semantic modifiers layered on top of existing `.btn` */
 .btn.btn--primary,
 .btn.btn-primary {
-  background: var(--btn-primary-bg);
+  background: var(--button-primary-bg);
   border: none;
-  color: var(--btn-primary-text);
+  color: var(--button-primary-text);
   box-shadow: var(--elevation-btn-primary);
 }
 
 .btn.btn--primary:hover,
 .btn.btn-primary:hover {
-  background: var(--btn-primary-hover);
-  color: var(--btn-primary-text);
+  background: var(--button-primary-bg-hover);
+  color: var(--button-primary-text);
   box-shadow: var(--elevation-btn-primary-hover);
 }
 
@@ -127,30 +126,30 @@
   border-radius: var(--radius-pill);
   padding: var(--space-1-5) var(--space-3);
   font-weight: 700;
-  border: var(--border-width-hairline) solid var(--wf-primary);
-  background: var(--surface);
-  color: var(--wf-primary-dark);
+  border: var(--border-width-hairline) solid var(--color-brand-primary);
+  background: var(--color-surface);
+  color: var(--color-brand-primary-hover);
 }
 
 .btn.btn--secondary:hover,
 .btn.btn-secondary-wf:hover,
 .btn.btn--outline:hover {
-  background: var(--primary-softer-bg);
-  border-color: var(--wf-primary-dark);
-  color: var(--wf-primary-dark);
+  background: var(--color-brand-primary-light);
+  border-color: var(--color-brand-primary-hover);
+  color: var(--color-brand-primary-hover);
 }
 
 .btn.btn--text {
   background: transparent;
   border: none;
-  color: var(--color-primary);
+  color: var(--color-brand-primary);
   box-shadow: none;
   min-height: var(--space-touch);
   padding-inline: var(--spacing-3);
 }
 
 .btn.btn--text:hover {
-  background: var(--primary-softer-bg);
+  background: var(--color-brand-primary-light);
   filter: none;
 }
 
@@ -214,7 +213,7 @@
 }
 
 .card__meta {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: var(--space-1-5);
 }
 
@@ -244,20 +243,20 @@
 .input-field__help {
   margin: var(--space-0-75) 0 0;
   font-size: var(--space-1-5);
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.4;
 }
 
 .input-field__error {
   margin: var(--space-0-75) 0 0;
   font-size: var(--space-1-5);
-  color: var(--flash-error-text);
+  color: var(--color-danger-text);
   line-height: 1.4;
 }
 
 /* When a control is inside an error input-field, prefer visible emphasis. */
 .input-field--error .input-field__control:focus-visible {
-  outline: var(--border-width-medium) solid var(--color-error);
+  outline: var(--border-width-medium) solid var(--color-danger);
   outline-offset: var(--border-width-hairline);
 }
 
@@ -272,7 +271,7 @@
 
 .form-step__subtitle {
   margin: var(--space-1) 0 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .form-step__actions {
@@ -326,21 +325,21 @@
 }
 
 .state-block--success {
-  border-color: var(--flash-success-border);
-  background: var(--flash-success-bg);
-  color: var(--flash-success-text);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 
 .state-block--error {
-  border-color: var(--flash-error-border);
-  background: var(--flash-error-bg);
-  color: var(--flash-error-text);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 
 .state-block--info {
-  border-color: var(--flash-info-border);
-  background: var(--flash-info-bg);
-  color: var(--flash-info-text);
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .state-block--empty {
@@ -365,8 +364,8 @@
   flex-shrink: 0;
   width: 1.1em;
   height: 1.1em;
-  border: 2px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
-  border-top-color: var(--color-primary);
+  border: 2px solid color-mix(in srgb, var(--color-brand-primary) 35%, var(--color-border));
+  border-top-color: var(--color-brand-primary);
   border-radius: 50%;
   animation: gp-state-spin 0.75s linear infinite;
 }
@@ -398,28 +397,28 @@
 
 /* Inline status modifiers (use with .form-status-message + .status-message) */
 .status-message--success {
-  color: var(--flash-success-text);
+  color: var(--color-success-text);
 }
 
 .muted.status-message--success,
 .status-message.status-message--success {
-  color: var(--flash-success-text);
+  color: var(--color-success-text);
 }
 
 .status-message--error {
-  color: var(--flash-error-text);
+  color: var(--color-danger-text);
 }
 
 .muted.status-message--error,
 .status-message.status-message--error {
-  color: var(--flash-error-text);
+  color: var(--color-danger-text);
 }
 
 .status-message--info,
 .status-message--neutral {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .status-message--loading {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }

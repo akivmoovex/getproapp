@@ -465,7 +465,7 @@
     var prominent = "";
     if (sub.status === "rejected" && sub.rejection_reason && String(sub.rejection_reason).trim()) {
       prominent +=
-        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid rgba(160,60,60,0.45);">' +
+        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid color-mix(in srgb, var(--color-danger-text) 45%, transparent);">' +
         '<div class="muted" style="font-size:0.85rem;margin-bottom:0.25rem;">Admin comment</div>' +
         '<p style="margin:0;font-weight:600;white-space:pre-wrap;">' +
         escapeHtml(String(sub.rejection_reason)) +
@@ -473,7 +473,7 @@
     }
     if (sub.status === "info_needed") {
       prominent +=
-        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid rgba(180,120,0,0.45);">' +
+        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid color-mix(in srgb, var(--color-warning-text) 45%, transparent);">' +
         '<div style="font-weight:600;margin-bottom:0.35rem;">More information needed</div>';
       if (sub.admin_info_request && String(sub.admin_info_request).trim()) {
         prominent +=
@@ -508,7 +508,7 @@
     var replyBlock = "";
     if (sub.field_agent_reply && String(sub.field_agent_reply).trim()) {
       replyBlock +=
-        '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.08);">' +
+        '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);">' +
         '<div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Reply to admin</div>' +
         '<p style="margin:0;white-space:pre-wrap;">' +
         escapeHtml(String(sub.field_agent_reply)) +
@@ -529,7 +529,7 @@
     var lower = "";
     if (hasLower) {
       lower =
-        '<div class="field-agent-dash-comments card" style="margin-top:1rem;padding:0.85rem 1rem;border-top:2px solid rgba(0,0,0,0.06);">' +
+        '<div class="field-agent-dash-comments card" style="margin-top:1rem;padding:0.85rem 1rem;border-top:2px solid color-mix(in srgb, var(--color-text-primary) 6%, transparent);">' +
         '<div style="font-weight:600;margin-bottom:0.5rem;font-size:0.95rem;">Comments &amp; history</div>' +
         prominent +
         replyBlock +

@@ -10,8 +10,14 @@ const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
+const {
+  HQ_SHELL_VISIBLE_PERMISSIONS,
+} = require("./shellVisiblePermissions");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -40,6 +46,10 @@ const {
   STATUS: CREATE_BRANCH_STATUS,
 } = require("../services/createBlessBoardBranch");
 const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
+const {
   appendWebsiteModeNoticeQuery,
   parseWebsiteModeNoticeCode,
   websiteModeNoticeMessage,
@@ -55,12 +65,27 @@ const {
   validateCsrf,
 } = require("../../platform/http/v5Csrf");
 const {
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
-const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+  logoutAuthenticatedBrowserSession,
+} = require("../../platform/session/sharedSessionSecurity");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { exitSupport } = require("../../platform/services/platformSupportModeService");
+const {
+  readSupportContextCookie,
+  clearSupportContextCookie,
+  cookieName: supportContextCookieName,
+} = require("../../platform/http/supportContextCookie");
 const { getApexOrigin } = require("./tenantLoginHelpers");
+const {
+  PRODUCT,
+  evaluateOrganizationOnboarding,
+  skipOnboardingStep,
+  completeOrganizationOnboarding,
+} = require("../../platform/onboarding");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteSettingsPath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {string} relativePath
@@ -129,9 +154,29 @@ function createHqAdminRouter(deps) {
   void deps.sendUnavailable;
 
   const router = express.Router();
-  const requireHqAccess = createRequireBlessBoardTenantRole({
+  // HQ shell: any church/org-scoped visible permission (branch-only grants excluded via branchId: null).
+  const requireHqAccess = createRequireAnyBlessBoardPermission(HQ_SHELL_VISIBLE_PERMISSIONS, {
     getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
+    resolveResourceContext: (_req, tenant) => ({
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: null,
+    }),
+    denyMessage:
+      "You do not have access to this church HQ workspace. Ask an administrator to assign an HQ module permission.",
+  });
+  const requireOrgSettingsManage = createRequireBlessBoardPermission(
+    "organisation.settings.manage",
+    null,
+    { getPool, scopeMode: "church" }
+  );
+  const requireBranchesView = createRequireBlessBoardPermission("branches.view", null, {
+    getPool,
+    scopeMode: "church",
+  });
+  const requireBranchesCreate = createRequireBlessBoardPermission("branches.create", null, {
+    getPool,
+    scopeMode: "church",
   });
 
   function sendMissingTenantContext(req, res) {
@@ -186,6 +231,29 @@ function createHqAdminRouter(deps) {
       return sendMissingTenantContext(req, res);
     }
     return requireHqAccess(req, res, next);
+  }
+
+  function onboardingActor(req) {
+    const authz = req.blessBoardAuthorizationContext || {};
+    const session = req.v5Session && req.v5Session.session;
+    return {
+      effectiveRoles: authz.effectiveRoles || [],
+      roles: authz.effectiveRoles || [],
+      permissions: authz.permissions || [],
+      userId: session && session.userId,
+    };
+  }
+
+  function onboardingScope(req, extra) {
+    const tenant = resolveTenantForAuthorization(req);
+    const deployment = getPlatformDeploymentCode(env);
+    return {
+      productCode: PRODUCT.BLESSBOARD,
+      organizationId: tenant && tenant.organization && tenant.organization.id,
+      actor: onboardingActor(req),
+      deploymentCode: deployment && deployment.ok ? deployment.code : "",
+      ...extra,
+    };
   }
 
   /**
@@ -268,6 +336,8 @@ function createHqAdminRouter(deps) {
       branchKeyManuallyEdited: String(b.branchKeyManuallyEdited || "") === "1" ? "1" : "0",
       email: String(b.email || "").trim(),
       phone: String(b.phone || "").trim(),
+      phoneCountry: String(b.phone_country || b.phoneCountry || "").trim().toUpperCase(),
+      phoneNational: String(b.phone_national || b.phoneNational || "").trim(),
       timezone: String(b.timezone || "").trim(),
       countryCode: String(b.countryCode || "").trim().toUpperCase(),
       addressLine1: String(b.addressLine1 || "").trim(),
@@ -279,19 +349,104 @@ function createHqAdminRouter(deps) {
   }
 
   router.get("/hq", rejectApex, gateHq, async (req, res) => {
+    let gate = { ok: false };
+    try {
+      gate = await evaluateOrganizationOnboarding(getPool(), onboardingScope(req, { persist: true }));
+    } catch {
+      gate = { ok: false };
+    }
+    if (gate.ok && gate.onboardingRequired === true) {
+      return res.redirect(303, "/hq/onboarding");
+    }
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
+    const tenant = resolveTenantForAuthorization(req);
+    const orgKey = tenant && tenant.organization && tenant.organization.key;
+    const organizationConsole = {
+      publicPath: orgKey
+        ? buildPublicOrganizationWebsitePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+          })
+        : null,
+      websiteHref: buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.BLESSBOARD }),
+      organizationHref: "/hq/settings",
+      staffHref: "/hq/settings/staff-access",
+      branchesHref: "/hq/branches",
+      settingsHref: "/hq/settings",
+      planHref: "/hq/settings",
+      onboardingHref: null,
+      onboardingStatus: gate.ok ? gate.status : null,
+    };
     const html = renderHqView(
       "hq/dashboard.ejs",
       await shellLocals(req, res, "home", {
         branches: listResult.branches,
         activeBranchCount: listResult.activeCount || 0,
+        organizationConsole,
       })
     );
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/branches", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/onboarding", rejectApex, gateHq, async (req, res) => {
+    const evaluation = await evaluateOrganizationOnboarding(
+      getPool(),
+      onboardingScope(req, { persist: true, markResumed: true })
+    );
+    if (
+      !evaluation.ok ||
+      evaluation.canManage !== true ||
+      evaluation.status === "completed" ||
+      evaluation.status === "skipped"
+    ) {
+      return res.redirect(303, "/hq");
+    }
+    const html = renderHqView(
+      "hq/onboarding.ejs",
+      await shellLocals(req, res, "home", { onboarding: evaluation })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/onboarding/skip", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    await skipOnboardingStep(getPool(), onboardingScope(req, { stepKey: req.body && req.body.step_key }));
+    return res.redirect(303, "/hq/onboarding");
+  });
+
+  router.post("/hq/onboarding/continue", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const evaluation = await evaluateOrganizationOnboarding(
+      getPool(),
+      onboardingScope(req, { persist: true, markResumed: true })
+    );
+    const href =
+      evaluation && evaluation.resumeStep && evaluation.resumeStep.destinationUrl
+        ? evaluation.resumeStep.destinationUrl
+        : "/hq/onboarding";
+    return res.redirect(303, href);
+  });
+
+  router.post("/hq/onboarding/complete", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const completed = await completeOrganizationOnboarding(getPool(), onboardingScope(req));
+    if (!completed.ok) {
+      return res.redirect(303, "/hq/onboarding");
+    }
+    return res.redirect(303, "/hq");
+  });
+
+  router.get("/hq/branches", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
     const tenant = resolveTenantForAuthorization(req);
@@ -324,7 +479,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/branches/new", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/new", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -334,6 +489,7 @@ function createHqAdminRouter(deps) {
       (tenant.organization.key && String(tenant.organization.key)) ||
       (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
       "";
+    const phoneLocals = blessBoardPhoneFieldLocals({ env });
     const html = renderHqView(
       "hq/branch-new.ejs",
       await shellLocals(req, res, "branches", {
@@ -342,12 +498,14 @@ function createHqAdminRouter(deps) {
         error: null,
         fieldErrors: {},
         organizationKey,
+        loadPhoneField: true,
+        ...phoneLocals,
       })
     );
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/branches", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/branches", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -365,6 +523,11 @@ function createHqAdminRouter(deps) {
       "";
 
     async function renderCreateForm(status, error, fieldErrors) {
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env,
+        selectedCountry: form.phoneCountry,
+        nationalValue: form.phoneNational,
+      });
       const html = renderHqView(
         "hq/branch-new.ejs",
         await shellLocals(req, res, "branches", {
@@ -373,6 +536,8 @@ function createHqAdminRouter(deps) {
           error,
           fieldErrors: fieldErrors || {},
           organizationKey,
+          loadPhoneField: true,
+          ...phoneLocals,
         })
       );
       return res.status(status).type("html").send(html);
@@ -390,6 +555,16 @@ function createHqAdminRouter(deps) {
       );
     }
 
+    // Resolve phone from split fields (optional)
+    const phoneResolved = resolveBlessBoardFormPhone(req.body, {
+      required: false,
+      env,
+      allowLegacyPhone: false,
+    });
+    if (form.phoneNational && !phoneResolved.result.ok) {
+      return renderCreateForm(400, "Enter a valid phone number, or leave it blank.", { phone: "Invalid phone number." });
+    }
+
     // Ignore client-supplied organization/church IDs — scope comes from session tenant only.
     const created = await createBlessBoardBranch(getPool(), {
       churchId: tenant.church.id,
@@ -397,7 +572,7 @@ function createHqAdminRouter(deps) {
       branchKey: form.branchKey,
       displayName: form.displayName,
       email: form.email,
-      phone: form.phone,
+      phone: phoneResolved.e164,
       timezone: form.timezone || null,
       countryCode: form.countryCode || null,
       addressLine1: form.addressLine1 || null,
@@ -411,6 +586,11 @@ function createHqAdminRouter(deps) {
     if (!created.ok) {
       if (created.status === CREATE_BRANCH_STATUS.LIMIT_EXCEEDED) {
         const refreshed = await loadBranchCapacity(tenant.organization.id);
+        const phoneLocals = blessBoardPhoneFieldLocals({
+          env,
+          selectedCountry: form.phoneCountry,
+          nationalValue: form.phoneNational,
+        });
         const html = renderHqView(
           "hq/branch-new.ejs",
           await shellLocals(req, res, "branches", {
@@ -421,6 +601,8 @@ function createHqAdminRouter(deps) {
               "Your plan’s active branch limit has been reached. Upgrade to add another campus.",
             fieldErrors: {},
             organizationKey,
+            loadPhoneField: true,
+            ...phoneLocals,
           })
         );
         return res.status(403).type("html").send(html);
@@ -447,7 +629,7 @@ function createHqAdminRouter(deps) {
     );
   });
 
-  router.get("/hq/branches/:branchKey/created", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/:branchKey/created", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -484,23 +666,38 @@ function createHqAdminRouter(deps) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+      extraCookieNames: [supportContextCookieName(env)],
+    });
+    clearSupportContextCookie(res, { secure: isProduction, env });
     return res.redirect(303, "/");
   });
 
-  router.get("/hq/settings", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/support/exit", rejectApex, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const session =
+      req.v5Session && req.v5Session.authenticated && req.v5Session.session
+        ? req.v5Session.session
+        : null;
+    if (!session || !session.userId) {
+      return res.redirect(303, "/login");
+    }
+    await exitSupport(getPool(), {
+      actorUserId: session.userId,
+      rawToken: readSupportContextCookie(req, env),
+      env,
+    });
+    clearSupportContextCookie(res, { secure: isProduction, env });
+    return res.redirect(303, "/admin");
+  });
+
+  router.get("/hq/settings", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -516,17 +713,42 @@ function createHqAdminRouter(deps) {
       );
     }
     let growthTrial = null;
+    let planSnapshot = { planKey: null, planDisplayName: null, subscriptionStatus: null };
     if (tenant.organization && tenant.organization.id) {
       const trialState = await getGrowthTrialOfferState(getPool(), tenant.organization.id);
       if (trialState.ok) growthTrial = trialState;
+      const entitled = await resolveOrganizationEntitlementsSafe(getPool(), {
+        organizationId: tenant.organization.id,
+      });
+      const entitlements = entitled && entitled.entitlements;
+      if (entitlements) {
+        const plan = entitlements.plan || null;
+        const subscription = entitlements.subscription || null;
+        planSnapshot = {
+          planKey: entitlements.planKey || (plan && plan.planKey) || null,
+          planDisplayName:
+            (plan && (plan.displayName || plan.planKey)) || entitlements.planKey || null,
+          subscriptionStatus: subscription && subscription.status ? String(subscription.status) : null,
+        };
+      }
     }
+    const catalogue = {
+      ...loaded.model.catalogue,
+      ...planSnapshot,
+    };
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      e164Value: loaded.model.primaryBranch && loaded.model.primaryBranch.phone_normalized,
+    });
     const html = renderHqView(
       "hq/settings.ejs",
       await shellLocals(req, res, "settings", {
         settings: loaded.model.settings,
-        catalogue: loaded.model.catalogue,
+        catalogue,
         primaryBranch: loaded.model.primaryBranch,
         growthTrial,
+        loadPhoneField: true,
+        ...phoneLocals,
         error: null,
         fieldError: null,
         saved: String((req.query && req.query.saved) || "") === "1",
@@ -537,7 +759,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/settings", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/settings", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -545,6 +767,9 @@ function createHqAdminRouter(deps) {
     const submitted = req.body && req.body[CSRF_FIELD];
     if (!validateCsrf(req, submitted, env)) {
       return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    if (req.body && (req.body.organizationId || req.body.churchId || req.body.branchId)) {
+      return sendControlled(req, res, 403, "Invalid settings request.");
     }
     const body = req.body || {};
     const session = req.v5Session && req.v5Session.session;
@@ -562,7 +787,7 @@ function createHqAdminRouter(deps) {
       const accepted = await acceptGrowthTrialOffer(getPool(), {
         organizationId: tenant.organization.id,
         actorUserId: session.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
         env,
       });
       if (!accepted.ok) {
@@ -584,10 +809,21 @@ function createHqAdminRouter(deps) {
       if (!branchId) {
         return sendControlled(req, res, 404, "First branch could not be found.");
       }
+      
+      // Resolve phone from split fields (optional)
+      const phoneResolved = resolveBlessBoardFormPhone(body, {
+        required: false,
+        env,
+        allowLegacyPhone: false,
+      });
+      if (body.phone_national && String(body.phone_national).trim() && !phoneResolved.result.ok) {
+        return res.redirect(303, "/hq/settings?error=phone");
+      }
+      
       const updated = await updateBranchSettings(getPool(), branchId, {
         publicName: body.publicName,
         email: body.email,
-        phone: body.phone,
+        phone: phoneResolved.e164,
         timezone: body.timezone,
         countryCode: body.countryCode,
         addressLine1: body.addressLine1,
@@ -632,6 +868,7 @@ function createHqAdminRouter(deps) {
       defaultCountryCode: body.defaultCountryCode,
       websiteStatus: body.websiteStatus,
       actorUserId: session && session.userId,
+      source: "hq_settings",
     });
     if (!updated.ok) {
       if (
@@ -675,7 +912,7 @@ function createHqAdminRouter(deps) {
    * Resolve branch key under current church, authorize for that branch UUID,
    * then open the existing branch-admin shell (no UUID in URL).
    */
-  router.get("/hq/branches/:branchKey", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/:branchKey", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");

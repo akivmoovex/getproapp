@@ -1,0 +1,376 @@
+{
+  "capturedAt": "2026-09-26T00:19:49.304Z",
+  "gitSha": "544f6b997a2b",
+  "deploymentCode": "moovex-platform-v8-testing",
+  "environment": "testing",
+  "viewports": {
+    "desktop": 1440,
+    "mobile": 390
+  },
+  "tenants": {
+    "bbOrg": "bb-v8qa-mub23a6v6a6b",
+    "acOrg": "ac-v8-qa-mub23a6v6a6b",
+    "roles": [
+      "bb church_hq_admin",
+      "ac clinic admin"
+    ]
+  },
+  "records": [
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "1-edit-website",
+      "file": "bb-desktop1440-s1-edit-website.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "2-edit-content",
+      "file": "bb-desktop1440-s2-edit-content.png",
+      "openedDialog": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "3-review-publish",
+      "file": "bb-desktop1440-s3-review-publish.png",
+      "openedPanel": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "1-publishing-reminder",
+      "status": "NOT SCORED_LIVE",
+      "note": "Reminder dialog not open at capture time (threshold-gated); Stitch ref + prior QA evidence used"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "4-history-restore",
+      "file": "bb-desktop1440-s4-history-restore.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/field-history?contentKey=home.hero.heading",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "5-add-organize-sections",
+      "file": "bb-desktop1440-s5-add-organize-sections.png",
+      "addSectionChrome": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "6-choose-theme",
+      "file": "bb-desktop1440-s6-choose-theme.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/themes",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "7-hq-branch-websites",
+      "file": "bb-desktop1440-s7-hq-branch-websites.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/websites",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "uie-choose-image",
+      "file": "bb-desktop1440-uie-choose-image.png",
+      "opened": true
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "uie-media-library",
+      "file": "bb-desktop1440-uie-media-library.png"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "uie-crop-position",
+      "file": "bb-desktop1440-uie-crop-position.png"
+    },
+    {
+      "product": "bb",
+      "viewport": "desktop1440",
+      "screen": "preview-draft",
+      "file": "bb-desktop1440-preview-draft.png",
+      "previewClicked": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "1-edit-website",
+      "file": "bb-mobile390-s1-edit-website.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "2-edit-content",
+      "file": "bb-mobile390-s2-edit-content.png",
+      "openedDialog": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "3-review-publish",
+      "file": "bb-mobile390-s3-review-publish.png",
+      "openedPanel": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "1-publishing-reminder",
+      "status": "NOT SCORED_LIVE",
+      "note": "Reminder dialog not open at capture time (threshold-gated); Stitch ref + prior QA evidence used"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "4-history-restore",
+      "file": "bb-mobile390-s4-history-restore.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/field-history?contentKey=home.hero.heading",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "5-add-organize-sections",
+      "file": "bb-mobile390-s5-add-organize-sections.png",
+      "addSectionChrome": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "6-choose-theme",
+      "file": "bb-mobile390-s6-choose-theme.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/themes",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "7-hq-branch-websites",
+      "file": "bb-mobile390-s7-hq-branch-websites.png",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq/website/websites",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "uie-choose-image",
+      "file": "bb-mobile390-uie-choose-image.png",
+      "opened": true
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "uie-media-library",
+      "file": "bb-mobile390-uie-media-library.png"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "uie-crop-position",
+      "file": "bb-mobile390-uie-crop-position.png"
+    },
+    {
+      "product": "bb",
+      "viewport": "mobile390",
+      "screen": "preview-draft",
+      "file": "bb-mobile390-preview-draft.png",
+      "previewClicked": true,
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/hq?website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "1-edit-website",
+      "file": "ac-desktop1440-s1-edit-website.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "2-edit-content",
+      "file": "ac-desktop1440-s2-edit-content.png",
+      "openedDialog": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "3-review-publish",
+      "file": "ac-desktop1440-s3-review-publish.png",
+      "openedPanel": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "1-publishing-reminder",
+      "status": "NOT SCORED_LIVE",
+      "note": "Reminder dialog not open at capture time (threshold-gated); Stitch ref + prior QA evidence used"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "4-history-restore",
+      "file": "ac-desktop1440-s4-history-restore.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/field-history?contentKey=home.hero.title",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "5-add-organize-sections",
+      "file": "ac-desktop1440-s5-add-organize-sections.png",
+      "addSectionChrome": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "6-choose-theme",
+      "file": "ac-desktop1440-s6-choose-theme.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/themes",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "7-hq-branch-websites",
+      "file": "ac-desktop1440-s7-hq-branch-websites.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/websites",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "uie-choose-image",
+      "file": "ac-desktop1440-uie-choose-image.png",
+      "opened": true
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "uie-media-library",
+      "file": "ac-desktop1440-uie-media-library.png"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "uie-crop-position",
+      "file": "ac-desktop1440-uie-crop-position.png"
+    },
+    {
+      "product": "ac",
+      "viewport": "desktop1440",
+      "screen": "preview-draft",
+      "file": "ac-desktop1440-preview-draft.png",
+      "previewClicked": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "1-edit-website",
+      "file": "ac-mobile390-s1-edit-website.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "2-edit-content",
+      "file": "ac-mobile390-s2-edit-content.png",
+      "openedDialog": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "3-review-publish",
+      "file": "ac-mobile390-s3-review-publish.png",
+      "openedPanel": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "1-publishing-reminder",
+      "status": "NOT SCORED_LIVE",
+      "note": "Reminder dialog not open at capture time (threshold-gated); Stitch ref + prior QA evidence used"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "4-history-restore",
+      "file": "ac-mobile390-s4-history-restore.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/field-history?contentKey=home.hero.title",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "5-add-organize-sections",
+      "file": "ac-mobile390-s5-add-organize-sections.png",
+      "addSectionChrome": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_edit=1&website_mode=draft"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "6-choose-theme",
+      "file": "ac-mobile390-s6-choose-theme.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/themes",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "7-hq-branch-websites",
+      "file": "ac-mobile390-s7-hq-branch-websites.png",
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/website/websites",
+      "status": "CAPTURED"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "uie-choose-image",
+      "file": "ac-mobile390-uie-choose-image.png",
+      "opened": true
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "uie-media-library",
+      "file": "ac-mobile390-uie-media-library.png"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "uie-crop-position",
+      "file": "ac-mobile390-uie-crop-position.png"
+    },
+    {
+      "product": "ac",
+      "viewport": "mobile390",
+      "screen": "preview-draft",
+      "file": "ac-mobile390-preview-draft.png",
+      "previewClicked": true,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b?website_mode=draft"
+    }
+  ]
+}

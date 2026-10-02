@@ -1,0 +1,53 @@
+/**
+ * BlessBoard Community presentation theme (V2.05).
+ * Presentation-only CSS pack — does not alter content, media, or sections.
+ */
+
+body.bb-tp-body.gp-website-theme--bb-community {
+  --bb-color-primary: #c2410c;
+  --bb-color-primary-hover: #9a3412;
+  --bb-color-primary-soft: rgba(194, 65, 12, 0.12);
+  --bb-color-primary-deep: #7c2d12;
+  --bb-color-on-primary: #fff7ed;
+  --bb-color-page: #fffbeb;
+  --bb-color-surface: #ffffff;
+  --bb-color-surface-dim: #fef3c7;
+  --bb-color-ink: #1c1917;
+  --bb-color-muted: #57534e;
+  --bb-color-border: rgba(194, 65, 12, 0.22);
+  --bb-color-focus-ring: rgba(194, 65, 12, 0.4);
+  --bb-bg: var(--bb-color-page);
+  --bb-ink: var(--bb-color-ink);
+  --bb-violet: var(--bb-color-primary);
+  --bb-violet-deep: var(--bb-color-primary-hover);
+  background:
+    radial-gradient(900px 420px at 8% 0%, color-mix(in srgb, var(--bb-color-primary) 10%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, var(--bb-color-surface-dim) 0%, var(--bb-color-page) 40%, var(--bb-color-surface) 100%);
+  color: var(--bb-ink);
+}
+
+body.gp-website-theme--bb-community .bb-tp-header {
+  background: color-mix(in srgb, var(--bb-color-surface) 94%, transparent);
+  border-bottom-color: var(--bb-color-border);
+}
+
+body.gp-website-theme--bb-community .bb-tp-nav a:hover,
+body.gp-website-theme--bb-community .bb-tp-nav a[aria-current="page"] {
+  color: var(--bb-color-primary);
+}
+
+body.gp-website-theme--bb-community .bb-tp-hero {
+  background: linear-gradient(135deg, var(--bb-color-surface-dim) 0%, var(--bb-color-surface) 70%);
+  color: var(--bb-color-ink);
+}
+
+body.gp-website-theme--bb-community .bb-tp-hero__title-accent {
+  color: var(--bb-color-primary);
+}
+
+body.gp-website-theme--bb-community .bb-tp-btn,
+body.gp-website-theme--bb-community a.bb-tp-btn--primary {
+  background: var(--bb-color-primary);
+  border-color: var(--bb-color-primary);
+  color: var(--bb-color-on-primary);
+}

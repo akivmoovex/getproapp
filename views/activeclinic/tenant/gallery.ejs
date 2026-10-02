@@ -1,0 +1,30 @@
+<%#
+  AC-MW-R10 Clinic Environment Gallery — Stitch Batch 4.
+  Shared gallery component + platform website media persistence. No AC gallery upload engine.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+%>
+<section class="ac-stitch-page ac-stitch-page--r10 ac-public-section" data-ac-page-section="tenant-gallery" data-ac-stitch-screen="R10">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <% if (html.gallery) { %>
+  <div class="ac-stitch-section ac-stitch-section--gallery" data-ac-gallery="1">
+    <%- html.gallery %>
+  </div>
+  <% } else { %>
+  <div class="ac-public-empty" data-ac-empty="gallery">
+    <%- html.empty || '' %>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/media', label: 'Manage website media', note: 'Gallery images use the shared website media library (platform.website_media).', manageKind: 'media' }) %>
+  </div>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+</section>

@@ -2,13 +2,14 @@
   Apex Register Your Church — Stitch 8640e853… / 515da582…
   Automatic Foundation + Growth trial provisioning by default (emergency env disable → enquiry).
   Network remains support-contact / enquiry only (no auto tenant).
-  Locals: authenticated, csrfToken, csrfField, submitted, networkSupportSuccess, workspaceReady, loginFallback,
+  Locals: authenticated, csrfToken, csrfField, submitted, networkSupportSuccess,
           review, organizationKeyPreview, form, formError, fieldError, selectedPlan,
           instantFreeEnabled
 %>
 <%
   var formData = typeof form !== 'undefined' && form ? form : {};
   var activeFieldError = typeof fieldError !== 'undefined' ? fieldError : null;
+  var step = typeof wizardStep !== 'undefined' ? wizardStep : 'church';
   var planValue = formData.selected_plan || (typeof selectedPlan !== 'undefined' && selectedPlan ? selectedPlan : '');
   var instantOn = typeof instantFreeEnabled !== 'undefined' && instantFreeEnabled;
   var orgKeyPreview = typeof organizationKeyPreview !== 'undefined' && organizationKeyPreview
@@ -16,15 +17,13 @@
   function fieldHasError(name) { return activeFieldError === name; }
   var showSuccessEnquiry = typeof submitted !== 'undefined' && submitted;
   var showNetworkSupportSuccess = typeof networkSupportSuccess !== 'undefined' && networkSupportSuccess;
-  var showSuccessWorkspace = typeof workspaceReady !== 'undefined' && workspaceReady;
   var showReview = typeof review !== 'undefined' && review;
-  var showLoginFallback = typeof loginFallback !== 'undefined' && loginFallback;
 %>
 <%- include('../partials/apex-shell-start') %>
 
-<section class="bb-apex-register" data-bb-apex-page="register-church" data-bb-register-mode="<%= instantOn ? 'instant-free' : 'application' %>">
-  <div class="bb-apex-container bb-apex-register__grid">
-    <aside class="bb-apex-register__aside" aria-labelledby="bb-register-aside-title">
+<section class="bb-apex-register gp-reg" data-bb-apex-page="register-church" data-gp-product="blessboard" data-bb-register-mode="<%= instantOn ? 'instant-free' : 'application' %>" data-bb-register-step="<%= step %>">
+  <div class="bb-apex-container bb-apex-register__grid gp-reg__layout">
+    <aside class="bb-apex-register__aside gp-reg__aside" aria-labelledby="bb-register-aside-title">
       <p class="bb-apex-mkt-hero__eyebrow">Join BlessBoard</p>
       <h1 class="bb-apex-register__aside-title" id="bb-register-aside-title">Nurture Your Community.</h1>
       <p class="bb-apex-register__aside-lead">
@@ -57,9 +56,16 @@
       <% } %>
     </aside>
 
-    <div class="bb-apex-register__panel">
+    <div class="bb-apex-register__panel gp-reg__panel">
       <div class="bb-apex-register__card">
-        <h2 class="bb-apex-register__card-title">Register Your Church</h2>
+        <% if (step === 'administrator') { %>
+        <h2 class="bb-apex-register__card-title">Create administrator account</h2>
+        <p class="bb-apex-register__card-lead">This account will manage your church workspace after registration.</p>
+        <% } else { %>
+        <h2 class="bb-apex-register__card-title">Let's set up your church</h2>
+        <% } %>
+
+        <%- include('../partials/register-church-steps') %>
 
         <% if (showReview) { %>
         <div class="bb-apex-register-success" role="status" data-bb-register-review="1">
@@ -76,41 +82,6 @@
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
-        <% } else if (showSuccessWorkspace) { %>
-        <div class="bb-apex-register-success" role="status" data-bb-register-workspace="1">
-          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-          <div>
-            <p class="bb-apex-register-success__title">Your church workspace has been created.</p>
-            <p class="bb-apex-register-success__body">
-              The <strong>Free</strong> plan is active. Your public church website is <strong>not published yet</strong>.
-              Your administrator account is ready so you can begin setup.
-            </p>
-            <% if (orgKeyPreview) { %>
-            <p class="bb-apex-register-success__body">
-              Organization key: <code><%= orgKeyPreview %></code>
-              — future public path preview: <code>/c/<%= orgKeyPreview %></code>
-              (the public site stays unpublished until you publish it).
-            </p>
-            <% } %>
-            <p class="bb-apex-register-success__body">
-              BlessBoard may contact you to offer optional onboarding assistance. A callback is not required to keep portal access.
-            </p>
-            <% if (showLoginFallback) { %>
-            <p class="bb-apex-register-success__body">
-              Sign in with the email and password you just created to continue.
-            </p>
-            <% } %>
-          </div>
-        </div>
-        <div class="bb-apex-register__actions">
-          <% if (showLoginFallback) { %>
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/login?next=%2Faccount">Sign in</a>
-          <% } else { %>
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/account">Go to your account</a>
-          <% } %>
-          <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
-        </div>
-
         <% } else if (showNetworkSupportSuccess) { %>
         <div class="bb-apex-register-success" role="status" data-bb-register-success="1" data-bb-register-network-support="1">
           <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
@@ -121,7 +92,7 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
@@ -139,11 +110,12 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
         <% } else { %>
+        <% if (step === 'church') { %>
         <p class="bb-apex-register__card-lead">
           <% if (instantOn) { %>
           Choose <strong>Foundation — Free</strong> or <strong>Growth</strong> to create your workspace now (Growth includes a 30-day trial), or select <strong>Network</strong> to request a conversation with BlessBoard.
@@ -151,8 +123,9 @@
           Provide your church details to request an invitation. Platform administrators review applications before any church is provisioned.
           <% } %>
         </p>
+        <% } %>
 
-        <% if (formError && !activeFieldError) { %>
+        <% if (formError) { %>
         <div class="bb-apex-register-alert" role="alert">
           <p><%= formError %></p>
           <% if (typeof showCsrfRetry !== 'undefined' && showCsrfRetry) { %>
@@ -170,6 +143,9 @@
           method="post"
           novalidate
           data-bb-register-form="1"
+          data-gp-registration-form="1"
+          data-bb-register-step="<%= step %>"
+          <% if (formError || fieldError) { %>data-gp-registration-dirty="1"<% } %>
           autocomplete="on"
         >
           <% if (!csrfToken) { %>
@@ -184,6 +160,15 @@
             <input id="register_company_website" type="text" name="company_website" tabindex="-1" autocomplete="off" />
           </div>
 
+          <% if (step === 'administrator') { %>
+          <input type="hidden" name="church_name" value="<%= formData.church_name || '' %>"/>
+          <input type="hidden" name="country" value="<%= formData.country || 'ZM' %>"/>
+          <input type="hidden" name="city" value="<%= formData.city || '' %>"/>
+          <input type="hidden" name="branch_name" value="<%= formData.branch_name || '' %>"/>
+          <input type="hidden" name="branch_count" value="<%= formData.branch_count || '' %>"/>
+          <input type="hidden" name="selected_plan" value="<%= planValue || '' %>"/>
+          <input type="hidden" name="message" value="<%= formData.message || '' %>"/>
+          <input type="hidden" name="organization_key" value="<%= orgKeyPreview || formData.organization_key || '' %>"/>
           <fieldset class="bb-apex-register-form__section">
             <legend class="bb-apex-register-form__section-head">
               <span class="material-symbols-outlined" aria-hidden="true">person</span>
@@ -202,8 +187,8 @@
                   value="<%= formData.contact_name || '' %>"
                   <%= fieldHasError('contact_name') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('contact_name') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('contact_name')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter the contact person name.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field">
@@ -218,47 +203,101 @@
                   value="<%= formData.email || '' %>"
                   <%= fieldHasError('email') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('email') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('email')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a valid email address.' %></p>
                 <% } %>
               </div>
             </div>
-            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_phone">Phone number</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('phone') ? ' is-error' : '' %>"
-                  id="register_phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  autocomplete="tel"
-                  value="<%= formData.phone || '' %>"
-                  <%= fieldHasError('phone') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('phone') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_role">Role in church</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('role_in_church') ? ' is-error' : '' %>"
-                  id="register_role"
-                  name="role_in_church"
-                  type="text"
-                  required
-                  placeholder="Pastor, administrator, elder, etc."
-                  value="<%= formData.role_in_church || '' %>"
-                  <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('role_in_church') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
+            <div class="bb-apex-field bb-apex-field--phone<%= fieldHasError('phone') ? ' is-error' : '' %>">
+              <%- include('../partials/phone-field', {
+                id: 'register_phone',
+                label: 'Phone number',
+                labelClass: 'bb-apex-register-label',
+                required: true,
+                defaultCountry: (typeof defaultCountry !== 'undefined' && defaultCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+                selectedCountry: formData.phone_country || (typeof selectedCountry !== 'undefined' && selectedCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+                nationalValue: formData.phone_national || '',
+                e164Value: formData.phone_national ? '' : (formData.phone || ''),
+                countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || [],
+                phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+                countryFieldName: 'phone_country',
+                nationalFieldName: 'phone_national',
+                legacyFieldName: 'phone',
+                showLegacyHidden: false,
+                showCountryName: true,
+                error: fieldHasError('phone') ? (formError || 'Please enter a valid phone number.') : null,
+                placeholder: '97 1234567'
+              }) %>
+            </div>
+            <div class="bb-apex-field">
+              <label class="bb-apex-register-label" for="register_role">Role in church</label>
+              <input
+                class="bb-apex-register-input<%= fieldHasError('role_in_church') ? ' is-error' : '' %>"
+                id="register_role"
+                name="role_in_church"
+                type="text"
+                required
+                placeholder="Pastor, administrator, elder, etc."
+                value="<%= formData.role_in_church || '' %>"
+                <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
+              />
+              <% if (fieldHasError('role_in_church')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter your role in the church.' %></p>
+              <% } %>
             </div>
           </fieldset>
 
+          <% if (instantOn && planValue !== 'network') { %>
+          <fieldset class="bb-apex-register-form__section" data-bb-instant-free-fields="1">
+            <legend class="bb-apex-register-form__section-head">
+              <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+              Administrator password
+            </legend>
+            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--password">
+              <div class="bb-apex-field">
+                <label class="bb-apex-register-label" for="register_password">Password</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('password') ? ' is-error' : '' %>"
+                  id="register_password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  required
+                  <%= fieldHasError('password') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('password')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please choose a password for your administrator account.' %></p>
+                <% } %>
+              </div>
+              <div class="bb-apex-field">
+                <label class="bb-apex-register-label" for="register_password_confirm">Confirm password</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('password_confirm') ? ' is-error' : '' %>"
+                  id="register_password_confirm"
+                  name="password_confirm"
+                  type="password"
+                  autocomplete="new-password"
+                  required
+                  aria-describedby="password-confirm-status"
+                  <%= fieldHasError('password_confirm') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('password_confirm')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Password and confirmation do not match.' %></p>
+                <% } %>
+                <p class="gp-registration-password-confirm-status" id="password-confirm-status" role="status" aria-live="polite"></p>
+              </div>
+              <div class="bb-apex-register-form__password-rules">
+                <%- include('../../../platform/partials/registration-password-rules', {
+                  passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
+                  passwordInputId: 'register_password',
+                }) %>
+              </div>
+            </div>
+          </fieldset>
+          <% } %>
+          <% } %>
+
+          <% if (step === 'church') { %>
           <fieldset class="bb-apex-register-form__section">
             <legend class="bb-apex-register-form__section-head">
               <span class="material-symbols-outlined" aria-hidden="true">church</span>
@@ -275,48 +314,72 @@
                 value="<%= formData.church_name || '' %>"
                 <%= fieldHasError('church_name') ? 'aria-invalid="true"' : '' %>
               />
-              <% if (fieldHasError('church_name') && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% if (fieldHasError('church_name')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter your church name.' %></p>
               <% } %>
             </div>
             <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_country">Country</label>
-                <input
+                <select
                   class="bb-apex-register-input<%= fieldHasError('country') ? ' is-error' : '' %>"
                   id="register_country"
                   name="country"
-                  type="text"
                   required
                   autocomplete="country-name"
-                  value="<%= formData.country || '' %>"
                   <%= fieldHasError('country') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('country') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                >
+                  <%
+                    var churchCountryList = (typeof registrationCountries !== 'undefined' && registrationCountries && registrationCountries.length)
+                      ? registrationCountries
+                      : ((typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || []);
+                    var selectedChurchCountry = String(formData.country || defaultCountry || 'ZM').toUpperCase();
+                    churchCountryList.forEach(function (c) {
+                  %>
+                  <option value="<%= c.iso %>"<%= selectedChurchCountry === c.iso ? ' selected' : '' %>><%= c.name %></option>
+                  <% }); %>
+                </select>
+                <% if (fieldHasError('country')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please select a country.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_city">Town or city</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('city') ? ' is-error' : '' %>"
-                  id="register_city"
-                  name="city"
-                  type="text"
-                  required
-                  autocomplete="address-level2"
-                  value="<%= formData.city || '' %>"
-                  <%= fieldHasError('city') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('city') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <%- include('../../../platform/partials/gp-location-field', {
+                  fieldId: 'register_city',
+                  fieldName: 'city',
+                  fieldValue: formData.city || '',
+                  countryFieldId: 'register_country',
+                  listboxId: 'registerCityListbox',
+                  locationIdName: 'locationId',
+                  locationIdFieldId: 'registerLocationId',
+                  locationIdValue: formData.locationId || '',
+                  inputClass: 'bb-apex-register-input' + (fieldHasError('city') ? ' is-error' : ''),
+                  required: true,
+                  ariaInvalid: fieldHasError('city'),
+                  ariaDescribedBy: fieldHasError('city') ? 'register_city_error' : '',
+                  placeholder: 'Start typing a city or town',
+                }) %>
+                <% if (fieldHasError('city')) { %>
+                <p class="bb-apex-register-field-error" id="register_city_error" role="alert"><%= formError || 'Please enter a city.' %></p>
                 <% } %>
               </div>
             </div>
             <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
               <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_branch_name">Branch name <span class="bb-apex-register-label__meta">(optional)</span></label>
-                <input class="bb-apex-register-input" id="register_branch_name" name="branch_name" type="text" value="<%= formData.branch_name || '' %>" />
+                <label class="bb-apex-register-label" for="register_branch_name">Branch name</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('branch_name') ? ' is-error' : '' %>"
+                  id="register_branch_name"
+                  name="branch_name"
+                  type="text"
+                  required
+                  value="<%= formData.branch_name || '' %>"
+                  <%= fieldHasError('branch_name') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('branch_name')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a branch name.' %></p>
+                <% } %>
               </div>
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_branch_count">Approximate number of branches <span class="bb-apex-register-label__meta">(optional)</span></label>
@@ -331,8 +394,8 @@
                   value="<%= formData.branch_count || '' %>"
                   <%= fieldHasError('branch_count') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('branch_count') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('branch_count')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a valid number of branches.' %></p>
                 <% } %>
               </div>
             </div>
@@ -362,8 +425,8 @@
                 <option value="growth"<%= planValue === 'growth' ? ' selected' : '' %>>Growth</option>
                 <option value="network"<%= planValue === 'network' ? ' selected' : '' %>>Network</option>
               </select>
-              <% if (fieldHasError('selected_plan') && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% if (fieldHasError('selected_plan')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please choose a plan.' %></p>
               <% } %>
             </div>
             <div class="bb-apex-field">
@@ -378,105 +441,56 @@
             </div>
           </fieldset>
 
-          <% if (instantOn) { %>
+          <% if (instantOn && planValue !== 'network') { %>
           <fieldset class="bb-apex-register-form__section" data-bb-instant-free-fields="1">
             <legend class="bb-apex-register-form__section-head">
-              <span class="material-symbols-outlined" aria-hidden="true">vpn_key</span>
-              Workspace setup
+              <span class="material-symbols-outlined" aria-hidden="true">language</span>
+              Website setup
             </legend>
             <p class="bb-apex-register__card-lead">
-              Required for <strong>Foundation — Free</strong> and <strong>Growth</strong> (30-day trial).
-              Your administrator portal is available immediately after creation.
-              The public path below is a preview only — the website is not published automatically.
+              Every Foundation church includes a free DIY mini-website. Your administrator portal and website draft are created immediately after registration. You can add your content, preview the site, and publish it when you are ready.
             </p>
             <div class="bb-apex-field">
-              <label class="bb-apex-register-label" for="register_organization_key">Organization key</label>
-              <input
-                class="bb-apex-register-input<%= fieldHasError('organization_key') ? ' is-error' : '' %>"
-                id="register_organization_key"
-                name="organization_key"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="64"
-                pattern="[a-zA-Z][a-zA-Z0-9_-]{0,63}"
-                value="<%= formData.organization_key || '' %>"
-                aria-describedby="register_organization_key_hint"
-                <%= fieldHasError('organization_key') ? 'aria-invalid="true"' : '' %>
-              />
+              <label class="bb-apex-register-label" for="register_church_url">Your church website</label>
+              <p
+                class="bb-apex-register-input bb-apex-register-input--readonly"
+                id="register_church_url"
+                data-bb-church-url="1"
+                tabindex="0"
+              ><span data-bb-church-url-preview><%= typeof registrationWebsitePreviewUrl !== 'undefined' && registrationWebsitePreviewUrl ? registrationWebsitePreviewUrl.replace(/^https?:\/\//, '') : ((typeof churchPublicUrlBase !== 'undefined' && churchPublicUrlBase ? churchPublicUrlBase : 'blessboard.com/c/') + (orgKeyPreview || 'your-church') + '/' + (branchKeyPreview || 'your-branch')) %></span></p>
+              <input type="hidden" name="organization_key" id="register_organization_key" value="<%= orgKeyPreview || '' %>" autocomplete="off"/>
+              <input type="hidden" name="branch_key_preview" id="register_branch_key_preview" value="<%= branchKeyPreview || '' %>" autocomplete="off"/>
               <p class="bb-apex-mkt-footnote" id="register_organization_key_hint">
-                Future public path preview: <code>/c/<span data-bb-org-key-preview><%= formData.organization_key || 'your-key' %></span></code>
-                (unpublished until you publish).
+                Created as a draft. It will not be public until you publish it.
               </p>
               <% if (fieldHasError('organization_key') && formError) { %>
               <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
               <% } %>
-            </div>
-            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_password">Administrator password</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('password') ? ' is-error' : '' %>"
-                  id="register_password"
-                  name="password"
-                  type="password"
-                  autocomplete="new-password"
-                  <%= fieldHasError('password') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('password') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_password_confirm">Confirm password</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('password_confirm') ? ' is-error' : '' %>"
-                  id="register_password_confirm"
-                  name="password_confirm"
-                  type="password"
-                  autocomplete="new-password"
-                  <%= fieldHasError('password_confirm') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('password_confirm') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
-            </div>
-          </fieldset>
-          <% } %>
-
-          <div class="bb-apex-register-form__footer">
-            <div class="bb-apex-field<%= fieldHasError('consent_contact') ? ' is-error' : '' %>">
-              <label class="bb-apex-register-checkbox">
-                <input
-                  type="checkbox"
-                  name="consent_contact"
-                  value="on"
-                  <%= formData.consent_contact ? ' checked' : '' %>
-                  required
-                  <%= fieldHasError('consent_contact') ? ' aria-invalid="true"' : '' %>
-                />
-                <span>
-                  I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>,
-                  and consent to BlessBoard contacting me about this request.
-                </span>
-              </label>
-              <% if (fieldHasError('consent_contact') && formError) { %>
+              <% if (fieldHasError('church_name') && formError && /church URL/i.test(String(formError))) { %>
               <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
               <% } %>
             </div>
+          </fieldset>
+          <% } %>
+          <% } %>
 
+          <div class="bb-apex-register-form__footer">
             <div class="bb-apex-register__actions">
-              <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit">
-                <%= instantOn ? 'Create church workspace' : 'Submit registration request' %>
+              <% if (step === 'church') { %>
+              <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit" name="action" value="next-church">
+                Continue
               </button>
-              <a class="bb-apex-btn bb-apex-btn--secondary" href="/pricing">Review plans</a>
+              <% } else if (step === 'administrator') { %>
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="/register-church?step=church<%= planValue ? ('&plan=' + encodeURIComponent(planValue)) : '' %>">Back</a>
+              <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit" name="action" value="next-admin">
+                Continue
+              </button>
+              <% } %>
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
             </div>
             <p class="bb-apex-mkt-footnote">
               <% if (instantOn) { %>
-              Foundation and Growth workspaces activate immediately (Growth includes a 30-day trial).
-              Network requests remain pending until BlessBoard follows up.
-              Callbacks are optional assistance — not required for portal access.
+              Foundation workspaces activate immediately and include the free church mini-website. Growth includes a 30-day trial. Network requests remain pending until BlessBoard follows up.
               <% } else { %>
               Applications remain pending until a platform administrator reviews them. No live church is created automatically.
               <% } %>
@@ -490,25 +504,34 @@
 </section>
 
 <script>
-(function () {
-  var form = document.querySelector("[data-bb-register-form]");
-  if (!form) return;
-  form.addEventListener("submit", function () {
-    var btn = form.querySelector(".bb-apex-register-submit");
-    if (!btn || btn.disabled) return;
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-    btn.textContent = "Submitting…";
-  });
+document.addEventListener("DOMContentLoaded", function () {
+  var nameInput = document.getElementById("register_church_name");
+  var branchInput = document.getElementById("register_branch_name");
   var keyInput = document.getElementById("register_organization_key");
-  var preview = document.querySelector("[data-bb-org-key-preview]");
-  if (keyInput && preview) {
-    keyInput.addEventListener("input", function () {
-      var v = (keyInput.value || "").trim().toLowerCase() || "your-key";
-      preview.textContent = v;
+  var branchKeyInput = document.getElementById("register_branch_key_preview");
+  var previewHost = <%- JSON.stringify(String(churchPublicHost || "").replace(/\/$/, "")) %>;
+  var previewOrigin = previewHost ? ("https://" + previewHost) : "https://blessboard.com";
+  if (window.GpRegistrationSlugPreview) {
+    window.GpRegistrationSlugPreview.initBlessBoardRegistrationUrlPreview({
+      churchInput: nameInput,
+      branchInput: branchInput,
+      previewEl: document.querySelector("[data-bb-church-url-preview]"),
+      orgHiddenInput: keyInput,
+      branchHiddenInput: branchKeyInput,
+      origin: previewOrigin,
     });
   }
-})();
+  if (window.GpRegistrationPasswordRules && document.getElementById("register_password")) {
+    window.GpRegistrationPasswordRules.init({
+      passwordInput: "#register_password",
+      confirmInput: "#register_password_confirm",
+      rulesRoot: ".gp-registration-password-rules",
+      confirmStatus: "#password-confirm-status",
+      minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
+      maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
+    });
+  }
+});
 </script>
 
 <%- include('../partials/apex-shell-end') %>

@@ -1,0 +1,50 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var ci = typeof checkIn !== 'undefined' && checkIn ? checkIn : {};
+  var corr = typeof correction !== 'undefined' && correction ? correction : {};
+  var orig = corr.originalValue || {};
+  var neu = corr.correctedValue || {};
+  function fmt(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString();
+  }
+%>
+
+<section
+  class="bb-v204-a13"
+  data-bb-stitch-v204="BB-A13"
+  data-bb-screen="BB-A13"
+  data-bb-correction-confirmed="1"
+  aria-label="Correction Confirmation"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Correction Confirmation',
+    subtitle: 'Attendance correction audited. Original method and check-in time were preserved.',
+    badgeHtml: '<span class="gp-ops-badge gp-ops-badge--success"><span class="gp-ops-badge__dot" aria-hidden="true"></span>AUDITED</span>'
+  }) %>
+
+  <div class="bb-v204-a13__card">
+    <%- include('../partials/v204/status-chip', { label: 'CORRECTION RECORDED', tone: 'success' }) %>
+    <h2><%= (ci && ci.memberName) || 'Member' %></h2>
+    <dl class="bb-v204-a12__dl">
+      <div><dt>Correction ID</dt><dd><code><%= corr.id %></code></dd></div>
+      <div><dt>Actor</dt><dd><code><%= corr.actorUserId %></code></dd></div>
+      <div><dt>Timestamp</dt><dd><%= fmt(corr.createdAt) %></dd></div>
+      <div><dt>Reason</dt><dd><%= corr.reason %></dd></div>
+      <div><dt>Original status</dt><dd><%= orig.status %></dd></div>
+      <div><dt>Corrected status</dt><dd><%= neu.status %></dd></div>
+      <div><dt>Preserved method</dt><dd><code><%= orig.method || neu.method || '—' %></code></dd></div>
+      <div><dt>Preserved checked-in time</dt><dd><%= fmt(orig.checkedInAt || neu.checkedInAt) %></dd></div>
+    </dl>
+  </div>
+
+  <div class="bb-v204-a12__actions">
+    <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/attendance/sessions/<%= s.id %>/audit">View Audit History</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/roster">Live Roster</a>
+  </div>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

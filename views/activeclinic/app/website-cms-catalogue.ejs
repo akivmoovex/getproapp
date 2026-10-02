@@ -1,0 +1,499 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var tab = cms.tab === "services" ? "services" : "doctors";
+  var isServices = tab === "services";
+  var doctors = cms.doctors || [];
+  var services = cms.services || [];
+  var rows = isServices ? services : doctors;
+  var canEdit = cms.canEdit === true;
+  var clinicKey = cms.clinicKey || "";
+  var previewHref = cms.previewHref || (clinicKey
+    ? ("/clinics/" + encodeURIComponent(clinicKey) + "/" + (isServices ? "services" : "doctors"))
+    : "");
+  var returnTo = cms.returnTo || "";
+  var returnQs = returnTo ? ("&returnTo=" + encodeURIComponent(returnTo)) : "";
+  var stitchScreen = isServices ? "C01" : "C02";
+  var stitchMobile = isServices ? "C01-M" : "C02-M";
+  var stitchId = isServices
+    ? "d64d1134d165472b8d80b5587eef84f8"
+    : "9a9ba9d9c7594f7d8190f77216a7c6d3";
+  var stitchIdMobile = isServices
+    ? "9fc7495dee354f8f8f945b928abb1914"
+    : "d772e512d7284473bd10d8895944957c";
+  var pageTitle = isServices ? "Services" : "Doctors";
+  var catalogueLabel = isServices ? "Services Catalogue" : "Doctors Catalogue";
+  var publishedCount = 0;
+  var hiddenCount = 0;
+  var incompleteCount = 0;
+  rows.forEach(function (item) {
+    if (item.websiteVisible) publishedCount += 1;
+    else if (item.needsProfile) incompleteCount += 1;
+    else hiddenCount += 1;
+  });
+  var totalCount = rows.length;
+  function statusKey(item) {
+    if (item.needsProfile) return "incomplete";
+    if (item.websiteVisible) return "published";
+    return "hidden";
+  }
+  function statusLabel(item) {
+    if (item.needsProfile) return "Incomplete";
+    if (item.websiteVisible) return "Published";
+    return "Hidden";
+  }
+  function durationLabel(mins) {
+    var n = Number(mins);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    return Math.round(n) + " mins";
+  }
+  function pricePresentation(item) {
+    // Pricing remains on public pricing page / ops — catalogue presents guidance only.
+    if (item && item.priceDisplay) {
+      return { amount: String(item.priceDisplay), kind: item.priceKind || "Exact" };
+    }
+    return { amount: "Contact clinic", kind: "Guidance" };
+  }
+  function categoryLabel(item) {
+    if (!item) return "";
+    if (isServices) return item.category || item.publicSummary || "General";
+    return item.specialty || item.subtitle || "Clinical";
+  }
+  function doctorTitleLine(item) {
+    var parts = [];
+    if (item.title) parts.push(item.title);
+    if (item.qualifications) parts.push(item.qualifications);
+    if (!parts.length && item.subtitle) parts.push(item.subtitle);
+    return parts.join(" · ");
+  }
+  function escapeAttr(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+%>
+<section
+  class="ac-mw ac-mw-catalogue ac-mw-catalogue--stitch"
+  data-ac-page-section="website-catalogue"
+  data-ac-mw-screen="catalogue"
+  data-ac-catalogue-tab="<%= tab %>"
+  data-ac-stitch-screen="<%= stitchScreen %>"
+  data-ac-stitch-screen-mobile="<%= stitchMobile %>"
+  data-ac-stitch-id="<%= stitchId %>"
+  data-ac-stitch-id-mobile="<%= stitchIdMobile %>"
+  data-ac-stitch-parity="catalogue"
+>
+  <%- include('../partials/website-cms-nav') %>
+
+  <nav class="ac-mw-c-breadcrumb" aria-label="Catalogue location" data-ac-catalogue-breadcrumb="1">
+    <a href="/app/settings">Settings</a>
+    <span class="ac-mw-c-breadcrumb__sep material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    <a href="/app/settings/website">Public Website</a>
+    <span class="ac-mw-c-breadcrumb__sep material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    <span class="ac-mw-c-breadcrumb__current"><%= catalogueLabel %></span>
+  </nav>
+
+  <div class="ac-mw-c-banner" data-ac-catalogue-banner="1">
+    <span class="material-symbols-outlined ac-mw-c-banner__icon" aria-hidden="true"><%= isServices ? "public" : "verified_user" %></span>
+    <div class="ac-mw-c-banner__body">
+      <% if (isServices) { %>
+      <p class="ac-mw-c-banner__title">These services are displayed on your public clinic website.</p>
+      <p class="ac-mw-c-banner__text">Operational catalogue remains the source of truth for booking availability. Public prices stay on the clinic pricing page.</p>
+      <% } else { %>
+      <p class="ac-mw-c-banner__title">Clinical credentialing &amp; public visibility sync</p>
+      <p class="ac-mw-c-banner__text">These practitioner profiles are displayed on your public clinic website. Operational staff accounts remain managed under Clinic Administration.</p>
+      <% } %>
+    </div>
+    <% if (previewHref) { %>
+    <a class="ac-mw-c-banner__link" href="<%= previewHref %>" data-ac-catalogue-preview="banner">
+      <%= isServices ? "View Services page" : "View Public Doctors page" %>
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+    </a>
+    <% } %>
+  </div>
+
+  <div class="ac-mw-c-head">
+    <div>
+      <div class="ac-mw-c-head__title-row">
+        <h1 class="ac-mw-c-title"><%= pageTitle %></h1>
+        <% if (!isServices) { %>
+        <span class="ac-mw-c-live-chip" data-ac-catalogue-live="1"><span class="ac-mw-c-live-chip__dot" aria-hidden="true"></span> Live Catalogue</span>
+        <% } %>
+      </div>
+      <p class="ac-mw-c-subtitle">
+        <%= isServices
+          ? "Manage the services displayed on your public clinic website."
+          : "Manage the healthcare professionals displayed on your public clinic website." %>
+      </p>
+    </div>
+    <div class="ac-mw-c-head__actions ac-mw-c-head__actions--desktop">
+      <% if (previewHref) { %>
+      <a class="ac-mw-btn ac-mw-c-btn-secondary" href="<%= previewHref %>" data-ac-catalogue-preview="1">
+        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        Preview public page
+      </a>
+      <% } %>
+      <% if (canEdit && isServices) { %>
+      <a class="ac-mw-btn ac-mw-btn--primary ac-mw-c-btn-primary" href="/app/settings/website/catalogue/services/new<%= returnTo ? ('?returnTo=' + encodeURIComponent(returnTo)) : '' %>" data-ac-catalogue-action="add-service">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Add service
+      </a>
+      <% } else if (canEdit) { %>
+      <a class="ac-mw-btn ac-mw-btn--primary ac-mw-c-btn-primary" href="/app/settings/website/catalogue/doctors/new<%= returnTo ? ('?returnTo=' + encodeURIComponent(returnTo)) : '' %>" data-ac-catalogue-action="add-doctor">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Add doctor
+      </a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
+  <% if (cms.saved) { %><p class="ac-mw-saved" role="status">Saved. Profiles marked visible appear on the public page; hidden profiles stay private.</p><% } %>
+
+  <nav class="ac-mw-tabs ac-mw-c-tabs" aria-label="Public catalogue">
+    <a class="ac-mw-nav__link<%= tab === 'doctors' ? ' is-current' : '' %>" href="/app/settings/website/catalogue?tab=doctors<%= returnQs %>" data-ac-catalogue-tab-link="doctors">Doctors</a>
+    <a class="ac-mw-nav__link<%= tab === 'services' ? ' is-current' : '' %>" href="/app/settings/website/catalogue?tab=services<%= returnQs %>" data-ac-catalogue-tab-link="services">Services</a>
+  </nav>
+
+  <div class="ac-mw-c-stats" data-ac-catalogue-stats="1">
+    <article class="ac-mw-c-stat" data-ac-catalogue-stat="published">
+      <p class="ac-mw-c-stat__label">Published <%= isServices ? "services" : "doctors" %></p>
+      <p class="ac-mw-c-stat__value"><%= publishedCount %></p>
+      <span class="material-symbols-outlined ac-mw-c-stat__icon ac-mw-c-stat__icon--ok" aria-hidden="true">check_circle</span>
+    </article>
+    <article class="ac-mw-c-stat" data-ac-catalogue-stat="hidden">
+      <p class="ac-mw-c-stat__label">Hidden <%= isServices ? "services" : "doctors" %></p>
+      <p class="ac-mw-c-stat__value"><%= hiddenCount %></p>
+      <span class="material-symbols-outlined ac-mw-c-stat__icon" aria-hidden="true">visibility_off</span>
+    </article>
+    <article class="ac-mw-c-stat" data-ac-catalogue-stat="total">
+      <p class="ac-mw-c-stat__label"><%= isServices ? "Total services" : "Total profiles" %></p>
+      <p class="ac-mw-c-stat__value"><%= totalCount %></p>
+      <span class="material-symbols-outlined ac-mw-c-stat__icon" aria-hidden="true"><%= isServices ? "inventory_2" : "group" %></span>
+      <% if (!isServices && incompleteCount) { %>
+      <p class="ac-mw-c-stat__hint"><%= incompleteCount %> need profile completion</p>
+      <% } %>
+    </article>
+  </div>
+
+  <div class="ac-mw-c-toolbar" data-ac-catalogue-toolbar="1">
+    <label class="ac-mw-c-search">
+      <span class="material-symbols-outlined" aria-hidden="true">search</span>
+      <input
+        type="search"
+        data-ac-catalogue-filter="q"
+        placeholder="<%= isServices ? 'Filter by service name or description…' : 'Filter by doctor name, specialty, or title…' %>"
+        aria-label="Filter catalogue"
+      />
+    </label>
+    <p class="ac-mw-c-showing" data-ac-catalogue-showing="1">Showing <strong data-ac-catalogue-showing-count="1"><%= totalCount %></strong> of <strong><%= totalCount %></strong></p>
+  </div>
+
+  <% if (!rows.length) { %>
+  <div class="ac-mw-c-empty" data-ac-catalogue-empty="<%= tab %>">
+    <span class="material-symbols-outlined" aria-hidden="true"><%= isServices ? "medical_services" : "group_off" %></span>
+    <% if (isServices) { %>
+    <h2>No clinic services yet</h2>
+    <p><% if (canEdit) { %><a href="/app/settings/website/catalogue/services/new">Add a service</a> to show it on the website.<% } else { %>Ask a website editor to add services.<% } %></p>
+    <% } else { %>
+    <h2>No doctor profiles yet</h2>
+    <p><% if (canEdit) { %><a href="/app/settings/website/catalogue/doctors/new">Add a doctor profile</a> for the public website (no login is created).<% } else { %>Ask a website editor to add public profiles.<% } %></p>
+    <% } %>
+  </div>
+  <% } else { %>
+
+  <!-- Desktop table (C01 / C02) -->
+  <div class="ac-mw-c-table-wrap" data-ac-catalogue-desktop="1">
+    <table class="ac-mw-c-table" data-ac-catalogue-table="<%= tab %>">
+      <thead>
+        <% if (isServices) { %>
+        <tr>
+          <th scope="col">Service Name &amp; Duration</th>
+          <th scope="col">Category / Department</th>
+          <th scope="col">Public Description</th>
+          <th scope="col">Price Display</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="ac-mw-c-table__actions">Actions</th>
+        </tr>
+        <% } else { %>
+        <tr>
+          <th scope="col">Practitioner &amp; Photo</th>
+          <th scope="col">Specialty &amp; Department</th>
+          <th scope="col">Public Bio Summary</th>
+          <th scope="col">Public Status</th>
+          <th scope="col" class="ac-mw-c-table__actions">Actions</th>
+        </tr>
+        <% } %>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (item) {
+          var st = statusKey(item);
+          var price = isServices ? pricePresentation(item) : null;
+          var searchBlob = [
+            item.name,
+            item.description,
+            item.subtitle,
+            item.bio,
+            categoryLabel(item),
+            item.title,
+            item.specialty
+          ].filter(Boolean).join(" ").toLowerCase();
+        %>
+        <tr
+          class="ac-mw-c-row"
+          data-ac-catalogue-item="1"
+          data-ac-catalogue-kind="<%= item.kind %>"
+          data-ac-catalogue-id="<%= item.id %>"
+          data-ac-catalogue-visible="<%= item.websiteVisible ? '1' : '0' %>"
+          data-ac-catalogue-bookable="<%= item.bookable ? '1' : '0' %>"
+          data-ac-catalogue-inactive="<%= item.inactive ? '1' : '0' %>"
+          data-ac-catalogue-needs-profile="<%= item.needsProfile ? '1' : '0' %>"
+          data-ac-catalogue-status="<%= st %>"
+          data-ac-catalogue-search="<%= escapeAttr(searchBlob) %>"
+        >
+          <% if (isServices) { %>
+          <td>
+            <div class="ac-mw-c-name"><%= item.name %></div>
+            <% if (durationLabel(item.defaultDurationMinutes)) { %>
+            <p class="ac-mw-c-meta"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= durationLabel(item.defaultDurationMinutes) %> duration</p>
+            <% } %>
+          </td>
+          <td><span class="ac-mw-c-chip ac-mw-c-chip--cat"><%= categoryLabel(item) %></span></td>
+          <td class="ac-mw-c-desc"><%= item.description || item.subtitle || "—" %></td>
+          <td>
+            <div class="ac-mw-c-price"><%= price.amount %></div>
+            <div class="ac-mw-c-price__kind"><%= price.kind %></div>
+          </td>
+          <td><span class="ac-mw-c-chip ac-mw-c-chip--<%= st %>"><%= statusLabel(item) %></span></td>
+          <% } else { %>
+          <td>
+            <div class="ac-mw-c-person">
+              <div class="ac-mw-c-avatar" aria-hidden="true">
+                <% if (item.image && item.image.src) { %>
+                <img src="<%= item.image.src %>" alt="" />
+                <% } else { %>
+                <span class="material-symbols-outlined">person</span>
+                <% } %>
+              </div>
+              <div>
+                <div class="ac-mw-c-name"><%= item.name %></div>
+                <p class="ac-mw-c-meta"><%= doctorTitleLine(item) %></p>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="ac-mw-c-name ac-mw-c-name--sm"><%= categoryLabel(item) %></div>
+            <% if (item.department || item.subtitle) { %>
+            <p class="ac-mw-c-meta"><%= item.department || "" %></p>
+            <% } %>
+          </td>
+          <td class="ac-mw-c-desc"><%= item.bio || item.subtitle || "—" %></td>
+          <td><span class="ac-mw-c-chip ac-mw-c-chip--<%= st %>"><%= statusLabel(item) %></span></td>
+          <% } %>
+          <td class="ac-mw-c-table__actions">
+            <% if (canEdit) { %>
+            <div class="ac-mw-c-actions" data-ac-catalogue-actions="1">
+              <% if (item.editHref) { %>
+              <a
+                class="ac-mw-c-icon-btn"
+                href="<%= item.editHref %><%= returnTo ? ((item.editHref.indexOf('?') >= 0 ? '&' : '?') + 'returnTo=' + encodeURIComponent(returnTo)) : '' %>"
+                data-ac-catalogue-action="edit"
+                title="<%= item.needsProfile ? 'Complete profile' : (isServices ? 'Edit service' : 'Edit profile') %>"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"><%= item.needsProfile ? 'edit_note' : 'edit' %></span>
+                <span class="ac-mw-c-icon-btn__label"><%= item.needsProfile ? 'Complete' : 'Edit' %></span>
+              </a>
+              <% } %>
+              <% if (item.websiteVisible) { %>
+              <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+                <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+                <input type="hidden" name="catalogue_action" value="hide"/>
+                <button type="submit" class="ac-mw-c-icon-btn" data-ac-catalogue-action="hide" title="Hide from website">
+                  <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+                </button>
+              </form>
+              <% } else if (item.canShow) { %>
+              <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+                <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+                <input type="hidden" name="catalogue_action" value="show"/>
+                <button type="submit" class="ac-mw-c-icon-btn ac-mw-c-icon-btn--primary" data-ac-catalogue-action="show" title="Show on website">
+                  <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                </button>
+              </form>
+              <% } %>
+              <% if (isServices && item.websiteVisible) { %>
+              <form method="post" action="/app/settings/website/catalogue/services/<%= item.id %>" onsubmit="return confirm('Hide this service from the public website? The operational catalogue record is kept.');">
+                <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+                <input type="hidden" name="catalogue_action" value="hide"/>
+                <button type="submit" class="ac-mw-c-icon-btn ac-mw-c-icon-btn--danger" data-ac-catalogue-action="remove-public" title="Remove from public site">
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </form>
+              <% } %>
+            </div>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards (C01-M / C02-M) -->
+  <div class="ac-mw-c-cards" data-ac-catalogue-mobile="1">
+    <% rows.forEach(function (item) {
+      var st = statusKey(item);
+      var price = isServices ? pricePresentation(item) : null;
+      var searchBlob = [
+        item.name,
+        item.description,
+        item.subtitle,
+        item.bio,
+        categoryLabel(item),
+        item.title,
+        item.specialty
+      ].filter(Boolean).join(" ").toLowerCase();
+    %>
+    <article
+      class="ac-mw-c-card"
+      data-ac-catalogue-item="1"
+      data-ac-catalogue-kind="<%= item.kind %>"
+      data-ac-catalogue-id="<%= item.id %>"
+      data-ac-catalogue-visible="<%= item.websiteVisible ? '1' : '0' %>"
+      data-ac-catalogue-bookable="<%= item.bookable ? '1' : '0' %>"
+      data-ac-catalogue-inactive="<%= item.inactive ? '1' : '0' %>"
+      data-ac-catalogue-needs-profile="<%= item.needsProfile ? '1' : '0' %>"
+      data-ac-catalogue-status="<%= st %>"
+      data-ac-catalogue-search="<%= escapeAttr(searchBlob) %>"
+    >
+      <div class="ac-mw-c-card__top">
+        <span class="ac-mw-c-chip ac-mw-c-chip--<%= st %>"><%= statusLabel(item) %></span>
+        <span class="ac-mw-c-card__cat"><%= categoryLabel(item) %></span>
+      </div>
+      <% if (!isServices) { %>
+      <div class="ac-mw-c-person ac-mw-c-person--card">
+        <div class="ac-mw-c-avatar" aria-hidden="true">
+          <% if (item.image && item.image.src) { %>
+          <img src="<%= item.image.src %>" alt="" />
+          <% } else { %>
+          <span class="material-symbols-outlined">person</span>
+          <% } %>
+        </div>
+        <div>
+          <h2 class="ac-mw-c-card__title"><%= item.name %></h2>
+          <p class="ac-mw-c-meta"><%= doctorTitleLine(item) %></p>
+        </div>
+      </div>
+      <% } else { %>
+      <h2 class="ac-mw-c-card__title"><%= item.name %></h2>
+      <% } %>
+      <% if (isServices) { %>
+      <div class="ac-mw-c-card__row">
+        <% if (durationLabel(item.defaultDurationMinutes)) { %>
+        <p class="ac-mw-c-meta"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= durationLabel(item.defaultDurationMinutes) %></p>
+        <% } %>
+        <div class="ac-mw-c-card__fee">
+          <span class="ac-mw-c-card__fee-label">Fee</span>
+          <span class="ac-mw-c-price"><%= price.amount %></span>
+        </div>
+      </div>
+      <% } else { %>
+      <p class="ac-mw-c-desc"><%= item.bio || item.subtitle || (item.needsProfile ? "Public profile needs biography and photo before publication." : "—") %></p>
+      <% } %>
+      <% if (canEdit) { %>
+      <div class="ac-mw-c-card__actions">
+        <% if (item.editHref) { %>
+        <a
+          class="ac-mw-btn ac-mw-c-card__edit<%= item.needsProfile ? ' ac-mw-btn--primary' : '' %>"
+          href="<%= item.editHref %><%= returnTo ? ((item.editHref.indexOf('?') >= 0 ? '&' : '?') + 'returnTo=' + encodeURIComponent(returnTo)) : '' %>"
+          data-ac-catalogue-action="edit"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+          <%= item.needsProfile ? "Complete Profile" : (isServices ? "Edit Service" : "Edit Public Profile") %>
+        </a>
+        <% } %>
+        <% if (item.websiteVisible) { %>
+        <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+          <input type="hidden" name="catalogue_action" value="hide"/>
+          <button type="submit" class="ac-mw-c-icon-btn" data-ac-catalogue-action="hide" title="Hide from website" aria-label="Hide from website">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+          </button>
+        </form>
+        <% } else if (item.canShow) { %>
+        <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+          <input type="hidden" name="catalogue_action" value="show"/>
+          <button type="submit" class="ac-mw-c-icon-btn ac-mw-c-icon-btn--primary" data-ac-catalogue-action="show" title="Show on website" aria-label="Show on website">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+          </button>
+        </form>
+        <% } %>
+      </div>
+      <% } %>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <% if (canEdit) { %>
+  <div class="ac-mw-c-sticky" data-ac-catalogue-sticky="1">
+    <% if (isServices) { %>
+    <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/catalogue/services/new<%= returnTo ? ('?returnTo=' + encodeURIComponent(returnTo)) : '' %>" data-ac-catalogue-action="add-service">
+      <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      Add service
+    </a>
+    <% } else { %>
+    <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/catalogue/doctors/new<%= returnTo ? ('?returnTo=' + encodeURIComponent(returnTo)) : '' %>" data-ac-catalogue-action="add-doctor">
+      <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      Add doctor
+    </a>
+    <% } %>
+    <% if (previewHref) { %>
+    <a class="ac-mw-btn" href="<%= previewHref %>" data-ac-catalogue-preview="sticky">
+      <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+      Preview Public
+    </a>
+    <% } %>
+  </div>
+  <% } %>
+
+  <p class="ac-mw-muted ac-mw-c-foot">Need reusable copy, photos, or placements? Use the <a href="/app/settings/website/library">Content Library</a>.</p>
+</section>
+<script>
+(function () {
+  var root = document.querySelector('[data-ac-page-section="website-catalogue"]');
+  if (!root) return;
+  var input = root.querySelector('[data-ac-catalogue-filter="q"]');
+  var countEl = root.querySelector('[data-ac-catalogue-showing-count]');
+  if (!input) return;
+  function applyFilter() {
+    var q = String(input.value || "").trim().toLowerCase();
+    var items = root.querySelectorAll("[data-ac-catalogue-item]");
+    var visible = 0;
+    items.forEach(function (el) {
+      var hay = String(el.getAttribute("data-ac-catalogue-search") || "");
+      var show = !q || hay.indexOf(q) !== -1;
+      el.hidden = !show;
+      if (show) visible += 1;
+    });
+    // Each item appears twice (desktop row + mobile card) — count unique ids.
+    var seen = {};
+    var unique = 0;
+    items.forEach(function (el) {
+      if (el.hidden) return;
+      var id = el.getAttribute("data-ac-catalogue-id");
+      if (!id || seen[id]) return;
+      seen[id] = 1;
+      unique += 1;
+    });
+    if (countEl) countEl.textContent = String(unique);
+  }
+  input.addEventListener("input", applyFilter);
+})();
+</script>

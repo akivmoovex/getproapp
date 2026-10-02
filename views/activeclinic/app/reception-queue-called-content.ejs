@@ -1,0 +1,24 @@
+<%
+  var action = (pageData && pageData.action) || {};
+  var e = action.queueEntry || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-queue-called" data-ac-page-section="reception-queue-called" data-ac-stitch-called="<%= action.stitch || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Patient called</h2>
+    <p>Queue <strong><%= e.queueNumber || '—' %></strong> has been called to <strong><%= (e.servicePoint && e.servicePoint.displayName) || 'the service point' %></strong>.</p>
+    <% if (e.assignedRoom) { %><p>Proceed to <strong><%= e.assignedRoom %></strong>.</p><% } %>
+    <div class="ac-form-actions">
+      <% if (action.detail && action.detail.actions && action.detail.actions.canStartServing) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/start-serving">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Start serving</button>
+      </form>
+      <% } %>
+      <% if (action.detail && action.detail.actions && action.detail.actions.canRequeue) { %>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>/did-not-respond">Did not respond</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>">Queue detail</a>
+    </div>
+  </div>
+</section>

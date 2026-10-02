@@ -1,0 +1,78 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var website = cms.website || {};
+  var actions = (website.actions || website.ux && website.ux.actions) || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+%>
+<section
+  class="ac-mw"
+  data-ac-page-section="website-settings"
+  data-ac-mw-screen="MW08-01"
+  data-ac-stitch-screen="H06"
+  data-ac-stitch-screen-mobile="H06-M"
+>
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Website Settings &amp; Configuration</h2>
+      <p class="ac-mw-muted">Name, contact, and opening information visitors see on your clinic website. This does not change clinic records used for appointments. Related: <a href="/app/settings/website/seo">SEO</a>, <a href="/app/settings/website/chrome">Header &amp; Footer</a>.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/settings">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Clinic website name
+      <input type="text" name="siteName" maxlength="120" value="<%= values['site.name'] || '' %>" placeholder="<%= cms.clinicName || '' %>"/>
+    </label>
+    <p class="ac-mw-hint">Leave blank to use the clinic name from your organisation profile.</p>
+    <div class="ac-mw-readonly">
+      <p class="ac-mw-readonly__label">Public URL</p>
+      <p data-ac-website-public-url="1">
+        <% if (website.publicUrl || website.publicPath) { %>
+          <% if (actions.viewLive) { %>
+          <a href="<%= actions.viewLive %>"><code><%= website.publicUrl || website.publicPath %></code></a>
+          <% } else { %>
+          <code><%= website.publicUrl || website.publicPath %></code>
+          <span class="ac-mw-muted"> (not live yet)</span>
+          <% } %>
+        <% } else { %>
+        —
+        <% } %>
+      </p>
+      <p class="ac-mw-hint">Assigned by ActiveClinic. Domain setup is not changed here.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="custom_domain" data-ac-stitch-disposition="FUTURE_CAPABILITY">Custom domain purchase/management from Stitch is a future capability — Platform Admin / infrastructure owns domains.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="ssl_certificate" data-ac-stitch-disposition="FUTURE_CAPABILITY">SSL certificate controls are a future capability — TLS is platform infrastructure.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="maintenance_mode" data-ac-stitch-disposition="FUTURE_CAPABILITY">Maintenance mode is a future capability — use publish / unpublish for public availability.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="website_timezone" data-ac-stitch-disposition="FUTURE_CAPABILITY">Website timezone is a future capability here — timezone lives on organization / facility settings.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="website_language" data-ac-stitch-disposition="FUTURE_CAPABILITY">Website language switcher is a future capability — no multi-language website model.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="analytics_embed" data-ac-stitch-disposition="FUTURE_CAPABILITY">Analytics / pixel embeds are a future capability in website settings.</p>
+    </div>
+    <label>
+      Phone
+      <input type="text" name="phone" maxlength="40" value="<%= values['contact.phone'] || '' %>" autocomplete="tel"/>
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" maxlength="254" value="<%= values['contact.email'] || '' %>" autocomplete="email"/>
+    </label>
+    <label>
+      Opening information
+      <textarea name="hours" maxlength="1000" placeholder="Mon–Fri 08:00–17:00"><%= values['location.hours'] || '' %></textarea>
+    </label>
+    <div class="ac-mw-readonly">
+      <p class="ac-mw-readonly__label">Website status</p>
+      <p data-ac-website-status-label="1"><span class="ac-mw-badge"><%= website.statusLabel || (website.ux && website.ux.statusLabel) || 'Not published yet' %></span></p>
+      <% if (website.statusHint || (website.ux && website.ux.statusHint)) { %>
+      <p class="ac-mw-hint"><%= website.statusHint || website.ux.statusHint %></p>
+      <% } %>
+      <p class="ac-mw-hint"><a href="/app/settings/website/publish">Review drafts and publish</a></p>
+    </div>
+    <div class="ac-mw-actions">
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save website settings</button>
+    </div>
+  </form>
+</section>

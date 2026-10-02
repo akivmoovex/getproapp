@@ -1,0 +1,61 @@
+<%#
+  Desktop brand panel for login (Stitch V7 shared auth project).
+%>
+<aside class="ac-auth-brand-panel" data-ac-auth-brand-panel="1" aria-label="ActiveClinic">
+  <div>
+    <div class="ac-auth-brand-lockup">
+      <%- include('auth-mark') %>
+      <p class="ac-auth-brand-lockup__title">ActiveClinic</p>
+    </div>
+    <p class="ac-auth-brand-panel__product">Run your clinic from one workspace</p>
+    <ul class="ac-auth-brand-panel__features">
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">group</span>
+        <span class="ac-auth-brand-panel__feature-body">
+          <span class="ac-auth-brand-panel__feature-title">Patients</span>
+          <span class="ac-auth-brand-panel__feature-text">Manage patient records seamlessly.</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">event</span>
+        <span class="ac-auth-brand-panel__feature-body">
+          <span class="ac-auth-brand-panel__feature-title">Appointments</span>
+          <span class="ac-auth-brand-panel__feature-text">Smart scheduling and reminders.</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span>
+        <span class="ac-auth-brand-panel__feature-body">
+          <span class="ac-auth-brand-panel__feature-title">Clinical workflows</span>
+          <span class="ac-auth-brand-panel__feature-text">Streamlined documentation.</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+        <span class="ac-auth-brand-panel__feature-body">
+          <span class="ac-auth-brand-panel__feature-title">Billing</span>
+          <span class="ac-auth-brand-panel__feature-text">Integrated invoicing and claims.</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+        <span class="ac-auth-brand-panel__feature-body">
+          <span class="ac-auth-brand-panel__feature-title">Staff access</span>
+          <span class="ac-auth-brand-panel__feature-text">Role-based permissions.</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+  <div class="ac-auth-secure-note">
+    <span class="ac-auth-secure-note__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z"/>
+        <path d="M9.5 12.5l1.8 1.8 3.7-3.8"/>
+      </svg>
+    </span>
+    <div>
+      <h2>Secure System Access</h2>
+      <p>You are accessing a secure healthcare system. All activities are logged and monitored for compliance.</p>
+    </div>
+  </div>
+</aside>

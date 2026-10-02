@@ -265,6 +265,25 @@ async function updateChurchSettings(db, churchId, input) {
       return { ok: false, status: STATUS.NOT_FOUND, settings: null };
     }
 
+    const nextWebsiteStatus = String(validated.value.websiteStatus || "");
+    const previousWebsiteStatus = String(
+      snapshot.websiteStatus || snapshot.website_status || "draft"
+    );
+    if (
+      String((input && input.source) || "") === "hq_settings" &&
+      nextWebsiteStatus === "published" &&
+      previousWebsiteStatus !== "published"
+    ) {
+      if (manageTx) await client.query("ROLLBACK");
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        settings: null,
+        reason: "website_publish_via_hub",
+        message: friendlySettingsError("website_publish_via_hub"),
+      };
+    }
+
     const settings = await repo.upsertChurchSettings(client, id, validated.value);
     if (!settings) {
       if (manageTx) await client.query("ROLLBACK");

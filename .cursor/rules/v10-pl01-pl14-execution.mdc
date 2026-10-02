@@ -1,0 +1,57 @@
+---
+description: V10 PL01–PL14 pre-live canonicalization — sequential gates, DB reset rules
+alwaysApply: true
+---
+
+# V10 PL01–PL14 execution rule
+
+Execute **strictly sequentially**. Do not skip forward after **BLOCKED**.
+
+## Phase gates
+
+### PL01–PL09
+
+- **NO** QA or production database deletion
+- **NO** testing/QA wipe, truncate, or drop of application DBs
+
+### PL10
+
+May reset **TESTING/QA only** after **all** of:
+
+1. PL09 explicitly returns `V10_FRESH_DB_BOOTSTRAP_PASS`
+2. `QA_RESET_AUTHORIZED: YES`
+
+Never treat production as in-scope for PL10.
+
+### PL12
+
+**READ-ONLY** production gate. Inspect / authorize only — no writes, no reset, no deploy.
+
+### PL13
+
+- **NEVER** run automatically as part of an unattended overnight chain
+- Requires **PL12 authorization** and **deliberate manual execution**
+
+## STOP immediately on
+
+- P0/P1
+- tenant isolation failure
+- RBAC/security regression
+- migration/bootstrap failure
+- DB identity ambiguity
+- unexpected production target
+- unresolved merge conflict
+
+## Hard denials
+
+- Do **not** force-push
+- Do **not** rewrite applied migration history for cosmetics
+- Do **not** merge church and clinical domains merely because databases can be reset
+- Do **not** auto-run PL13
+
+## Ownership
+
+- **Data** is disposable (when a later PL explicitly authorizes a reset)
+- **Architecture semantics** are not disposable
+- **Platform** owns mechanisms
+- **BlessBoard** and **ActiveClinic** own product semantics

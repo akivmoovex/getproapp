@@ -1,0 +1,127 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var reqRow = typeof request !== 'undefined' && request ? request : null;
+  var intent = typeof decision !== 'undefined' ? String(decision).toLowerCase() : 'approve';
+  var savedFlag = typeof saved !== 'undefined' ? String(saved).toLowerCase() : '';
+  var canAct = typeof canDecide !== 'undefined' ? !!canDecide : false;
+  var denied = typeof scopeDenied !== 'undefined' ? !!scopeDenied : false;
+  var err = typeof error !== 'undefined' && error ? String(error) : '';
+  var vals = typeof values === 'object' && values ? values : { reason: '' };
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var isReject = intent === 'reject' || intent === 'rejected';
+  var isApprove = intent === 'approve' || intent === 'approved';
+  var isCancel = intent === 'cancel' || intent === 'cancelled';
+  var showSuccess = !!savedFlag;
+%>
+
+<section
+  class="bb-v204-r03"
+  data-bb-stitch-v204="BB-R03"
+  data-bb-screen="BB-R03"
+  data-bb-stitch-id="ddc98054601e4362ad7e1f051efa83bb"
+  aria-label="Request Decision"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Confirm Request Adjudication',
+    subtitle: reqRow ? (reqRow.trackingId + ' · Canonical Roster Transfer & Ministry Onboarding Workflow') : '',
+    breadcrumbsHtml: '<a href="/branch-admin/join-requests">Parish Roster Requests</a> <span aria-hidden="true">›</span> <span>Confirm Decision</span>'
+  }) %>
+
+  <% if (err) { %>
+  <div class="bb-v204-r03__error" role="alert"><%= err %></div>
+  <% } %>
+
+  <% if (showSuccess && reqRow) { %>
+  <%- include('../partials/v204/success-state', {
+    title: isReject || savedFlag === 'reject' || savedFlag === 'rejected'
+      ? 'Request Rejected'
+      : (isCancel || savedFlag === 'cancel' || savedFlag === 'cancelled'
+        ? 'Request Cancelled'
+        : 'Request Approved'),
+    body: isReject || savedFlag === 'reject' || savedFlag === 'rejected'
+      ? 'Rejection reason recorded to the audit log. The applicant will be notified via portal.'
+      : (isCancel || savedFlag === 'cancel' || savedFlag === 'cancelled'
+        ? 'The pending join request was cancelled. No ministry relationship was created.'
+        : ('Creates Ministry Membership — ' + (reqRow.memberName || 'Member') + ' will be officially registered in ' + (reqRow.targetName || 'the target ministry') + '.')),
+    actionHref: '/branch-admin/join-requests?status=pending&saved=' + encodeURIComponent(savedFlag),
+    actionLabel: 'Back to Requests Inbox'
+  }) %>
+  <% } else if (reqRow) { %>
+
+  <div class="bb-v204-r03__summary" data-bb-r03-summary="1">
+    <div>
+      <p class="bb-v204-r03__tracking"><%= reqRow.trackingId %></p>
+      <p class="bb-v204-r03__name"><%= reqRow.memberName || 'Member' %></p>
+      <p class="bb-v204-r03__muted"><%= reqRow.memberNumber || '' %> · <%= reqRow.typeLabel %></p>
+    </div>
+    <div>
+      <p class="bb-v204-r03__label">Target Ministry</p>
+      <p class="bb-v204-r03__target"><%= reqRow.targetName || '—' %></p>
+    </div>
+  </div>
+
+  <% if (denied) { %>
+  <div class="bb-v204-r03__error" role="alert">You are not authorized to review this ministry/department.</div>
+  <% } %>
+
+  <div class="bb-v204-r03__paths" data-bb-r03-paths="1">
+    <article class="bb-v204-r03__path<%= isApprove ? ' is-active' : '' %>">
+      <h2>Path A: Approve Request</h2>
+      <p>Confirm Approval &amp; Relationship Creation</p>
+      <ul class="bb-v204-r03__matrix">
+        <li><strong>Creates Ministry Membership</strong> — officially registered in <%= reqRow.targetName || 'target' %></li>
+        <li><strong>Roster Assignment</strong> — added to active roster</li>
+        <li><strong>Member Portal Notification</strong> — confirmation in portal</li>
+        <li><strong>Attendance Session Eligibility</strong> — appears on call rosters</li>
+      </ul>
+      <% if (canAct && isApprove) { %>
+      <form method="post" action="/branch-admin/join-requests/<%= reqRow.id %>/decide">
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+        <input type="hidden" name="decision" value="approve" />
+        <%- include('../partials/v204/field', {
+          label: 'Pastoral Administrative Notes (Optional)',
+          name: 'reason',
+          controlHtml: '<textarea id="gp-ops-field-reason" name="reason" rows="3" class="gp-ops-input">' + String(vals.reason || '').replace(/</g, '&lt;') + '</textarea>'
+        }) %>
+        <div class="bb-v204-r03__actions">
+          <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/join-requests/<%= reqRow.id %>">Cancel Decision</a>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm Approval</button>
+        </div>
+      </form>
+      <% } else if (!isApprove) { %>
+      <p><a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?decision=approve">Switch to Approval Preview</a></p>
+      <% } %>
+    </article>
+
+    <article class="bb-v204-r03__path bb-v204-r03__path--reject<%= isReject ? ' is-active' : '' %>">
+      <h2>Path B: Reject Request</h2>
+      <p>Reject Request — Reason Required</p>
+      <p class="bb-v204-r03__warn">Rejection requires a documented pastoral or administrative justification recorded to the audit log.</p>
+      <% if (canAct && isReject) { %>
+      <form method="post" action="/branch-admin/join-requests/<%= reqRow.id %>/decide">
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+        <input type="hidden" name="decision" value="reject" />
+        <%- include('../partials/v204/field', {
+          label: 'Required Justification & Guidance',
+          name: 'reason',
+          required: true,
+          hint: 'Min. 3 characters — logged to member archival audit trail.',
+          controlHtml: '<textarea id="gp-ops-field-reason" name="reason" rows="4" class="gp-ops-input" required>' + String(vals.reason || '').replace(/</g, '&lt;') + '</textarea>'
+        }) %>
+        <div class="bb-v204-r03__actions">
+          <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?decision=approve">Back to Approval Preview</a>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm Rejection</button>
+        </div>
+      </form>
+      <% } else if (!isReject) { %>
+      <p><a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/join-requests/<%= reqRow.id %>/decision?decision=reject">Switch to Rejection Path</a></p>
+      <% } %>
+    </article>
+  </div>
+
+  <p class="bb-v204-r03__muted">All adjudications are logged under Diocesan Canon Policy BB-402 with reviewer identity and timestamp.</p>
+  <% } %>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

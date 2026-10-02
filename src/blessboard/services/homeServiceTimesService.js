@@ -32,9 +32,19 @@ const STATUS = Object.freeze({
 });
 
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+const TIME_WITH_SECONDS_RE = /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/;
 
 function emptyLayoutMetadata() {
   return { schema: SERVICE_TIMES_SCHEMA, entries: [] };
+}
+
+/** Normalize HH:MM or HTML time HH:MM:SS → HH:MM (24h). */
+function normalizeServiceTimeInput(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  if (!value) return "";
+  const m = TIME_WITH_SECONDS_RE.exec(value);
+  if (!m) return value;
+  return `${m[1]}:${m[2]}`;
 }
 
 function dayLabel(day) {
@@ -111,7 +121,9 @@ function validateServiceTimeEntries(rawEntries) {
         index: i,
       };
     }
-    const startTime = String(raw.startTime != null ? raw.startTime : raw.start_time || "").trim();
+    const startTime = normalizeServiceTimeInput(
+      raw.startTime != null ? raw.startTime : raw.start_time || ""
+    );
     if (!TIME_RE.test(startTime)) {
       return {
         ok: false,
@@ -120,7 +132,9 @@ function validateServiceTimeEntries(rawEntries) {
         index: i,
       };
     }
-    let endTime = String(raw.endTime != null ? raw.endTime : raw.end_time || "").trim();
+    let endTime = normalizeServiceTimeInput(
+      raw.endTime != null ? raw.endTime : raw.end_time || ""
+    );
     if (endTime === "") endTime = null;
     if (endTime && !TIME_RE.test(endTime)) {
       return {
@@ -155,10 +169,13 @@ function validateServiceTimeEntries(rawEntries) {
     }
     const enabled =
       raw.enabled === false || raw.enabled === "0" || raw.enabled === "false" ? false : true;
+    const primary =
+      raw.primary === true || raw.primary === "1" || raw.primary === "true" || raw.primary === "on";
     const sortOrder =
       raw.sortOrder != null && Number.isFinite(Number(raw.sortOrder))
         ? Math.max(0, Math.min(999, Number(raw.sortOrder)))
         : i;
+    const idRaw = raw.id != null ? String(raw.id).trim().slice(0, 64) : "";
 
     const dedupeKey = `${nameResult.value.toLowerCase()}|${day}|${startTime}|${endTime || ""}`;
     if (seen.has(dedupeKey)) {
@@ -172,6 +189,7 @@ function validateServiceTimeEntries(rawEntries) {
     seen.add(dedupeKey);
 
     entries.push({
+      ...(idRaw ? { id: idRaw } : {}),
       name: nameResult.value,
       day,
       startTime,
@@ -179,6 +197,7 @@ function validateServiceTimeEntries(rawEntries) {
       location: locationResult.value || null,
       note: noteResult.value || null,
       enabled,
+      primary,
       sortOrder,
     });
   }

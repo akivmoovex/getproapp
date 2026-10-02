@@ -1,0 +1,21 @@
+<section class="acp-auth-card ac-patient-card ac-patient-card--auth acp-confirmation-panel__card" data-ac-page-section="patient-verification-success">
+  <header class="acp-auth-card__header">
+    <p class="ac-public-eyebrow">Patient portal</p>
+    <h1>Verification request recorded</h1>
+  </header>
+  <div class="ac-patient-honesty ac-patient-honesty--success">
+    <p>
+      Your verification request has been noted. Automated SMS verification is not available —
+      a clinic staff member will contact you if follow-up is needed.
+    </p>
+  </div>
+  <% if (message) { %>
+  <p class="ac-patient-hint"><%= message %></p>
+  <% } %>
+  <p class="ac-patient-links ac-public-actions">
+    <a href="/clinics/<%= clinicKey %>/patient/login" class="ac-patient-btn ac-btn ac-btn--primary">Back to sign in</a>
+    <% if (patientAuth && patientAuth.authenticated) { %>
+    <a href="/clinics/<%= clinicKey %>/patient" class="ac-btn ac-btn--secondary">Go to dashboard</a>
+    <% } %>
+  </p>
+</section>

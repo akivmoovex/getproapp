@@ -1,0 +1,1283 @@
+/**
+ * ActiveClinic Patient Portal CSS (P27)
+ * Uses shared tokens from ac-tokens.css (--acp-* / status).
+ * Pass 8: hardcoded teals replaced with canonical public palette.
+ */
+
+.ac-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-ac-shell="patient"],
+.ac-patient-body {
+  font-family: var(--acp-font);
+  color: var(--acp-ink);
+  background: var(--acp-bg);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.ac-patient-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--acp-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 100;
+}
+
+.ac-patient-skip:focus,
+.ac-patient-skip:focus-visible {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+.ac-patient-header {
+  background: var(--acp-surface);
+  border-bottom: 1px solid var(--acp-border);
+  padding: 0.75rem 1rem;
+}
+
+.ac-patient-header__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ac-patient-header__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.ac-patient-header__clinic {
+  color: var(--acp-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ac-patient-header__clinic:hover {
+  text-decoration: underline;
+}
+
+.ac-patient-header__portal {
+  font-size: 0.875rem;
+  color: var(--acp-muted);
+}
+
+.ac-patient-header__links {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.ac-patient-header__links a {
+  color: var(--acp-primary);
+  text-decoration: none;
+}
+
+.ac-patient-header__links a:hover {
+  text-decoration: underline;
+}
+
+.ac-patient-nav--desktop {
+  background: var(--acp-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  display: none;
+  gap: 0.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ac-patient-nav--desktop a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.ac-patient-nav--desktop a:hover,
+.ac-patient-nav--desktop a[aria-current="page"] {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ac-patient-nav__logout {
+  display: inline;
+  margin-left: auto;
+}
+
+.ac-patient-nav__logout button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.ac-patient-nav--mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--acp-surface);
+  border-top: 1px solid var(--acp-border);
+  display: flex;
+  justify-content: space-around;
+  padding: 0.35rem 0;
+  z-index: 50;
+}
+
+.ac-patient-nav--mobile a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  color: var(--acp-muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5rem;
+  min-width: 3.5rem;
+}
+
+.ac-patient-nav--mobile a[aria-current="page"] {
+  color: var(--acp-primary);
+}
+
+.ac-patient-nav__icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+@media (min-width: 768px) {
+  .ac-patient-nav--desktop {
+    display: flex;
+  }
+
+  .ac-patient-nav--mobile {
+    display: none;
+  }
+
+  .ac-patient-main {
+    padding-bottom: 2rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .ac-patient-main {
+    padding-bottom: 4.5rem;
+  }
+}
+
+.ac-patient-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  overflow-x: clip;
+}
+
+.ac-patient-page h1,
+.ac-patient-card h1 {
+  color: var(--acp-primary);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.ac-patient-page h2,
+.ac-patient-section h2 {
+  color: var(--acp-ink);
+  font-size: 1.125rem;
+  margin: 0 0 0.75rem;
+}
+
+.ac-patient-card {
+  background: var(--acp-surface);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.ac-patient-card--auth {
+  margin-top: 1rem;
+}
+
+.ac-patient-field {
+  margin-bottom: 1rem;
+}
+
+.ac-patient-field label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.ac-patient-field input[type="text"],
+.ac-patient-field input[type="email"],
+.ac-patient-field input[type="tel"],
+.ac-patient-field input[type="password"],
+.ac-patient-field input[type="datetime-local"],
+.ac-patient-field textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--acp-border);
+  border-radius: 6px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.ac-patient-field textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.ac-patient-btn {
+  display: inline-block;
+  background: var(--acp-primary);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.ac-patient-btn:hover {
+  background: var(--acp-primary-hover);
+}
+
+.ac-patient-btn--secondary {
+  background: var(--acp-surface);
+  color: var(--acp-primary);
+  border: 1px solid var(--acp-primary);
+}
+
+.ac-patient-btn--secondary:hover {
+  background: var(--acp-primary-soft);
+}
+
+.ac-patient-btn--inline {
+  margin-top: 0.5rem;
+}
+
+.ac-patient-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+}
+
+.ac-patient-alert--error {
+  color: var(--ac-status-danger);
+  background: var(--ac-status-danger-bg);
+  border-left: 4px solid var(--ac-status-danger);
+}
+
+.ac-patient-alert--success {
+  color: var(--ac-status-success);
+  background: var(--ac-status-success-bg);
+  border-left: 4px solid var(--ac-status-success);
+}
+
+.ac-patient-honesty {
+  background: var(--ac-status-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--ac-status-warning) 35%, transparent);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+}
+
+.ac-patient-honesty--success {
+  background: var(--ac-status-success-bg);
+  border-color: color-mix(in srgb, var(--ac-status-success) 35%, transparent);
+}
+
+.ac-patient-hint {
+  font-size: 0.875rem;
+  color: var(--acp-muted);
+  margin: 1rem 0;
+}
+
+.ac-patient-links {
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.ac-patient-links a {
+  color: var(--acp-primary);
+}
+
+.ac-patient-meta {
+  color: var(--acp-muted);
+  font-size: 0.9375rem;
+  margin-bottom: 1rem;
+}
+
+.ac-patient-section {
+  background: var(--acp-surface);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.ac-patient-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ac-patient-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--acp-border);
+}
+
+.ac-patient-list li:last-child {
+  border-bottom: none;
+}
+
+.ac-patient-list a {
+  color: var(--acp-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ac-patient-badge {
+  font-size: 0.75rem;
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ac-patient-empty,
+.ac-patient-empty-state {
+  color: var(--acp-muted);
+  font-size: 0.9375rem;
+}
+
+.ac-patient-empty-state {
+  background: var(--acp-surface);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.ac-patient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ac-patient-actions a {
+  color: var(--acp-primary);
+  font-size: 0.9375rem;
+}
+
+.ac-patient-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ac-patient-filters a {
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  color: var(--acp-muted);
+  text-decoration: none;
+}
+
+.ac-patient-filters a[aria-current="true"] {
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
+  color: #fff;
+}
+
+.ac-patient-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.ac-patient-table {
+  width: 100%;
+  background: var(--acp-surface);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-collapse: collapse;
+}
+
+.ac-patient-table th,
+.ac-patient-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--acp-border);
+}
+
+.ac-patient-table th {
+  background: var(--acp-surface-low);
+  font-weight: 600;
+  color: var(--acp-primary);
+  font-size: 0.875rem;
+}
+
+.ac-patient-table a {
+  color: var(--acp-primary);
+  text-decoration: none;
+}
+
+.ac-patient-detail {
+  background: var(--acp-surface);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1rem;
+}
+
+.ac-patient-detail div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--acp-border);
+}
+
+.ac-patient-detail dt {
+  font-weight: 500;
+  color: var(--acp-muted);
+  font-size: 0.875rem;
+}
+
+.ac-patient-detail dd {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.ac-patient-form-inline {
+  background: var(--acp-surface-low);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ac-patient-form-inline form,
+form.ac-patient-form-inline {
+  background: var(--acp-surface-low);
+}
+
+[data-ac-shell="patient"] form:not(.ac-patient-nav__logout) {
+  background: var(--acp-surface);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.ac-patient-form-inline {
+  box-shadow: none;
+}
+
+/* Pass 2 — patient portal visual system (scoped to .ac-patient-body / .acp-*) */
+.ac-patient-body {
+  background:
+    radial-gradient(700px 280px at 10% -10%, var(--acp-primary-soft), transparent 55%),
+    linear-gradient(180deg, var(--acp-primary-soft), var(--acp-surface-low));
+  color: var(--acp-ink);
+}
+.ac-patient-header {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--acp-border);
+}
+.ac-patient-header__clinic,
+.ac-patient-header__links a {
+  color: var(--acp-primary);
+}
+.ac-patient-nav--desktop,
+.ac-patient-nav {
+  background: var(--acp-primary);
+}
+.ac-patient-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.15rem 3rem;
+}
+.acp-auth-card {
+  max-width: 26rem;
+  margin: 1.5rem auto;
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: 1.25rem;
+  padding: 1.75rem 1.35rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.08);
+}
+.acp-auth-card__header--centered {
+  text-align: center;
+}
+.acp-auth-card__mark {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.85rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, var(--acp-primary), var(--acp-primary-hover));
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.22);
+}
+.acp-auth-card__powered {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  color: var(--acp-muted);
+  font-size: 0.8rem;
+}
+.ac-patient-field__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.ac-patient-field__label-row label { margin: 0; }
+.ac-patient-field__forgot {
+  color: var(--acp-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ac-patient-field__forgot:hover { text-decoration: underline; }
+.ac-patient-links--stack {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+.ac-patient-links--stack .ac-btn { margin-top: 0.25rem; }
+.acp-auth-card .ac-public-eyebrow,
+.ac-patient-page .ac-public-eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+  margin: 0 0 0.4rem;
+}
+.acp-auth-card h1,
+.acp-portal-dashboard__header h1 {
+  margin: 0 0 0.4rem;
+  color: var(--acp-navy);
+  letter-spacing: -0.02em;
+}
+.acp-auth-card__lede { color: var(--acp-muted); }
+.ac-patient-btn,
+.ac-patient-card--auth .ac-btn--primary {
+  width: 100%;
+  background: var(--acp-primary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  min-height: 2.75rem;
+  font-weight: 600;
+}
+.acp-portal-grid {
+  display: grid;
+  gap: 1rem;
+}
+.acp-portal-panel {
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1.15rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.06);
+}
+.acp-portal-panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  color: var(--acp-navy);
+}
+.acp-booking-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
+.acp-booking-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--acp-border);
+}
+.acp-booking-list__item:last-child { border-bottom: none; }
+.acp-booking-list__item a { color: var(--acp-primary); font-weight: 600; text-decoration: none; }
+/* Status badges: use shared .acp-status-badge from ac-tokens.css */
+.acp-empty-state { color: var(--acp-muted); }
+.acp-portal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+.acp-portal-actions .ac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--acp-border);
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--acp-navy);
+  background: var(--acp-surface);
+}
+@media (min-width: 768px) {
+  .acp-portal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Pass 7 — patient portal mobile */
+@media (max-width: 767px) {
+  .ac-patient-body {
+    overflow-x: clip;
+  }
+
+  .ac-patient-header,
+  .ac-patient-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .ac-patient-main {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ac-patient-header__inner {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .acp-auth-card,
+  .ac-patient-auth-card,
+  .ac-patient-card,
+  [data-ac-page-section="patient-login"] .acp-auth-card,
+  .ac-patient-card--auth {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 1.25rem 1rem;
+  }
+
+  .ac-patient-main {
+    max-width: 100%;
+    overflow-x: clip;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .acp-portal-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .acp-portal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acp-portal-actions .ac-btn {
+    width: 100%;
+  }
+
+  .ac-patient-nav,
+  .ac-patient-tabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.35rem;
+  }
+
+  .ac-patient-nav a,
+  .ac-patient-tabs a,
+  .ac-patient-tabs button {
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    white-space: nowrap;
+  }
+}
+
+/* ===== Phase 7A — patient portal auth + bookings ===== */
+.ac-patient-main .acp-auth-card,
+.ac-patient-main .ac-patient-card--auth {
+  max-width: 28rem;
+  margin: 1.5rem auto;
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-xl);
+  padding: 1.5rem 1.35rem;
+  box-shadow: var(--acp-shadow-sm);
+}
+.ac-patient-main .acp-auth-card h1,
+.ac-patient-main .ac-patient-card--auth h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.65rem;
+  color: var(--acp-navy);
+}
+.ac-patient-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--acp-navy);
+}
+.ac-patient-field input,
+.ac-patient-field select {
+  width: 100%;
+  min-height: var(--acp-touch);
+  box-sizing: border-box;
+}
+.ac-patient-btn.ac-btn--primary,
+.ac-patient-card--auth .ac-btn--primary {
+  width: 100%;
+  min-height: var(--acp-touch);
+}
+.ac-patient-filters {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 0 1rem;
+}
+.ac-patient-filters a {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--acp-border);
+  text-decoration: none;
+  color: var(--acp-navy);
+  background: var(--acp-surface);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ac-patient-filters a[aria-current="true"] {
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
+  color: #fff;
+}
+.ac-patient-honesty {
+  background: var(--acp-surface-low);
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-md);
+  padding: 0.85rem 1rem;
+  margin: 0 0 1rem;
+}
+.ac-patient-honesty--success {
+  background: var(--ac-status-success-bg);
+  border-color: color-mix(in srgb, var(--ac-status-success) 35%, transparent);
+}
+.ac-patient-empty-state {
+  background: var(--acp-surface);
+  border: 1px dashed var(--acp-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--acp-muted);
+}
+.ac-patient-booking-cards { display: none; list-style: none; margin: 0; padding: 0; gap: 0.75rem; }
+.acp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+
+@media (max-width: 767px) {
+  .ac-patient-table-wrap.ac-patients-desktop { display: none; }
+  .ac-patient-booking-cards {
+    display: grid;
+  }
+  .ac-patient-booking-cards .ac-card {
+    background: var(--acp-surface);
+    border: 1px solid var(--acp-border);
+    border-radius: var(--ac-radius-lg);
+    padding: 1rem;
+  }
+  .ac-patient-booking-cards .ac-card__link {
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    gap: 0.3rem;
+  }
+}
+@media (min-width: 768px) {
+  .ac-patient-booking-cards { display: none; }
+}
+
+/* ===== Phase 8 — patient portal mobile composition ===== */
+@media (max-width: 767px) {
+  .ac-patient-body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .ac-patient-body .ac-btn,
+  .ac-patient-body input,
+  .ac-patient-body select,
+  .ac-patient-body textarea {
+    min-height: 2.75rem;
+  }
+  .ac-patient-body textarea {
+    min-height: 5.5rem;
+  }
+  .ac-patient-nav a,
+  .ac-patient-tabs a,
+  .ac-patient-tabs button {
+    min-height: 2.75rem;
+  }
+}
+
+.ac-patient-body a:focus-visible,
+.ac-patient-body button:focus-visible,
+.ac-patient-body input:focus-visible,
+.ac-patient-body select:focus-visible,
+.ac-patient-body textarea:focus-visible {
+  outline: 3px solid var(--acp-focus);
+  outline-offset: 2px;
+}
+
+.acp-mf08,
+.acp-mf08-form,
+.acp-mf08-card {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.acp-mf08__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf08-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.acp-mf08-guest {
+  margin: 0.5rem 0 1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--acp-surface);
+}
+.acp-mf08-guest summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+.acp-mf08-card,
+.acp-mf08-fieldset {
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.85rem;
+  padding: 1.15rem 1.2rem;
+}
+.acp-mf08-fieldset {
+  margin: 1rem 0;
+  min-width: 0;
+}
+.acp-mf08-fieldset legend {
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+@media (min-width: 768px) {
+  .acp-mf08-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .acp-mf08 .ac-patient-btn,
+  .acp-mf08 input {
+    min-height: 44px;
+  }
+}
+
+.acp-mf09__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf09-hero {
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1.2rem 1.25rem;
+  margin: 0 0 1.15rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.06);
+}
+.acp-mf09-hero h2 {
+  margin: 0 0 0.35rem;
+  color: var(--acp-navy);
+}
+.acp-mf09-hero__meta,
+.acp-mf09-hero__when {
+  margin: 0 0 0.45rem;
+  color: var(--acp-muted);
+}
+.acp-mf09-hero .ac-btn {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  min-height: 44px;
+}
+.acp-mf09-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+.acp-mf09-action {
+  display: grid;
+  gap: 0.2rem;
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  min-height: 44px;
+}
+.acp-mf09-action:hover,
+.acp-mf09-action:focus-visible {
+  border-color: var(--acp-primary);
+}
+.acp-mf09-action__title {
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.acp-mf09-action__hint {
+  color: var(--acp-muted);
+  font-size: 0.9rem;
+}
+.acp-mf09-booking {
+  list-style: none;
+}
+.acp-mf09-booking__link {
+  display: grid;
+  gap: 0.2rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.55rem 0;
+  min-height: 44px;
+}
+.acp-mf09-booking__title {
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.acp-mf09-booking__meta,
+.acp-mf09-booking__when {
+  color: var(--acp-muted);
+  font-size: 0.9rem;
+}
+.acp-mf09-empty {
+  margin-bottom: 1rem;
+}
+@media (min-width: 768px) {
+  .acp-mf09-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .acp-mf09-action,
+  .acp-mf09-hero .ac-btn,
+  .acp-mf09-booking__link {
+    min-height: 44px;
+  }
+}
+
+/* Project 10611909237747031838 closure — MF08/MF09 patient portal */
+.acp-mf08-card,
+.acp-mf09-hero,
+.acp-mf09-action,
+.acp-mf09-booking__link {
+  border-radius: var(--ac-card-radius, 8px);
+  box-shadow: 0 1px 2px rgba(25, 28, 30, 0.06);
+}
+.acp-mf08__kicker,
+.acp-mf09__kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf09-hero h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.acp-mf09-empty {
+  padding: 1.5rem 1rem;
+  border: 1px dashed var(--acp-border);
+  border-radius: var(--ac-card-radius, 8px);
+  text-align: center;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* V2.03 Batch 3 AC-P03 / AC-P07 portal leaves                         */
+/* ------------------------------------------------------------------ */
+
+.acp-portal-leaf__header {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong, var(--acp-primary));
+}
+
+.acp-portal-leaf__filters {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf__empty-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__when {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__note {
+  margin-top: 1.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__identity {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__identity-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__field-note {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.acp-portal-leaf__form .ac-patient-btn {
+  min-height: 2.75rem;
+}
+
+.acp-portal-leaf--bookings .ac-patient-table th,
+.acp-portal-leaf--bookings .ac-patient-table td {
+  vertical-align: top;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .acp-portal-leaf__filters a {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .acp-portal-leaf__form .ac-patient-btn,
+  .acp-portal-leaf--bookings .ac-patient-btn,
+  .acp-portal-leaf--booking-detail .acp-portal-leaf__form .ac-patient-btn,
+  .acp-portal-leaf--booking-detail .ac-patient-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .acp-portal-leaf__card {
+    border-radius: 12px;
+  }
+
+  .acp-portal-leaf__detail > div {
+    padding: 0.65rem 0;
+  }
+}
+
+.acp-portal-leaf__back {
+  margin-bottom: 0.75rem;
+}
+
+.acp-portal-leaf__detail-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__ref {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+.acp-portal-leaf__panel {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.acp-portal-leaf__subhead {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+.acp-portal-leaf__detail {
+  margin: 0;
+}
+
+.acp-portal-leaf__panel--actions .ac-patient-form-inline + .acp-portal-leaf__subhead {
+  border-top: 1px solid var(--acp-border);
+  padding-top: 1rem;
+}
+
+.acp-portal-leaf--billing .ac-patient-table th,
+.acp-portal-leaf--billing .ac-patient-table td {
+  vertical-align: top;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf--billing .acp-portal-leaf__filters a {
+    min-height: 2.75rem;
+  }
+}
+
+/* AC-P05 — released visit summary (patient portal) */
+.acp-portal-leaf--visit-summary .acp-visit-summary__toolbar,
+.acp-portal-leaf--visit-summaries .acp-portal-leaf__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-visit-summary__toolbar {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-portal-leaf__panel {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-portal-leaf__panel ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.acp-portal-leaf--visit-summaries .acp-portal-leaf__card .ac-card__title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf--visit-summary .acp-visit-summary__toolbar,
+  .acp-portal-leaf--visit-summary .ac-patient-btn,
+  .acp-portal-leaf--visit-summaries .ac-card__link {
+    min-height: 2.75rem;
+  }
+
+  .acp-portal-leaf--visit-summary .acp-visit-summary__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media print {
+  .ac-patient-nav,
+  .acp-portal-leaf__back,
+  .acp-visit-summary__toolbar,
+  [data-ac-pdf-deferred-note] {
+    display: none !important;
+  }
+
+  .acp-portal-leaf--visit-summary .acp-portal-leaf__panel {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
+

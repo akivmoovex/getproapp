@@ -1,0 +1,847 @@
+[
+  {
+    "RANK": 1,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationApplicationsAdminService.js",
+    "UNCOVERED_LINES": 469,
+    "UNCOVERED_BRANCHES": 286,
+    "UNCOVERED_FUNCTIONS": 7,
+    "TOTAL_LINES": 2908,
+    "TOTAL_BRANCHES": 884,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 2,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/repositories/platformChurchRegistrationRepository.js",
+    "UNCOVERED_LINES": 265,
+    "UNCOVERED_BRANCHES": 262,
+    "UNCOVERED_FUNCTIONS": 6,
+    "TOTAL_LINES": 3173,
+    "TOTAL_BRANCHES": 696,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "OTHER"
+    ]
+  },
+  {
+    "RANK": 3,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/http/loadTenantPublicPageModel.js",
+    "UNCOVERED_LINES": 154,
+    "UNCOVERED_BRANCHES": 187,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 2172,
+    "TOTAL_BRANCHES": 883,
+    "SECURITY_RISK": 45,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 4,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/memberRegistrationService.js",
+    "UNCOVERED_LINES": 356,
+    "UNCOVERED_BRANCHES": 153,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1426,
+    "TOTAL_BRANCHES": 292,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 5,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
+    "UNCOVERED_LINES": 457,
+    "UNCOVERED_BRANCHES": 150,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1333,
+    "TOTAL_BRANCHES": 250,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 6,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/forms/tenantFormService.js",
+    "UNCOVERED_LINES": 328,
+    "UNCOVERED_BRANCHES": 143,
+    "UNCOVERED_FUNCTIONS": 3,
+    "TOTAL_LINES": 1196,
+    "TOTAL_BRANCHES": 294,
+    "SECURITY_RISK": 35,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 7,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/websitePublishReviewService.js",
+    "UNCOVERED_LINES": 131,
+    "UNCOVERED_BRANCHES": 131,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 989,
+    "TOTAL_BRANCHES": 266,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "STATE_TRANSITION",
+      "WRITE_SUCCESS"
+    ]
+  },
+  {
+    "RANK": 8,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationDuplicateMatchQueryService.js",
+    "UNCOVERED_LINES": 181,
+    "UNCOVERED_BRANCHES": 128,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 835,
+    "TOTAL_BRANCHES": 231,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 9,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/churchWebsitePublishService.js",
+    "UNCOVERED_LINES": 158,
+    "UNCOVERED_BRANCHES": 121,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 1450,
+    "TOTAL_BRANCHES": 349,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "STATE_TRANSITION",
+      "WRITE_SUCCESS"
+    ]
+  },
+  {
+    "RANK": 10,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationDuplicateMatchesAdminLoader.js",
+    "UNCOVERED_LINES": 110,
+    "UNCOVERED_BRANCHES": 121,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 860,
+    "TOTAL_BRANCHES": 214,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 11,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicClinicalRoutes.js",
+    "UNCOVERED_LINES": 588,
+    "UNCOVERED_BRANCHES": 109,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1276,
+    "TOTAL_BRANCHES": 141,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 12,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicBillingService.js",
+    "UNCOVERED_LINES": 311,
+    "UNCOVERED_BRANCHES": 106,
+    "UNCOVERED_FUNCTIONS": 3,
+    "TOTAL_LINES": 2488,
+    "TOTAL_BRANCHES": 271,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION",
+      "CONFLICT"
+    ]
+  },
+  {
+    "RANK": 13,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicPatientService.js",
+    "UNCOVERED_LINES": 137,
+    "UNCOVERED_BRANCHES": 103,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1405,
+    "TOTAL_BRANCHES": 318,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 14,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/website/mediaService.js",
+    "UNCOVERED_LINES": 125,
+    "UNCOVERED_BRANCHES": 102,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 869,
+    "TOTAL_BRANCHES": 313,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 15,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/approveClinicRegistrationService.js",
+    "UNCOVERED_LINES": 249,
+    "UNCOVERED_BRANCHES": 101,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 1262,
+    "TOTAL_BRANCHES": 333,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 16,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicClinicalService.js",
+    "UNCOVERED_LINES": 218,
+    "UNCOVERED_BRANCHES": 91,
+    "UNCOVERED_FUNCTIONS": 3,
+    "TOTAL_LINES": 1722,
+    "TOTAL_BRANCHES": 212,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 17,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/staffAccessService.js",
+    "UNCOVERED_LINES": 221,
+    "UNCOVERED_BRANCHES": 89,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 967,
+    "TOTAL_BRANCHES": 205,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 18,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicPatientPortalRoutes.js",
+    "UNCOVERED_LINES": 855,
+    "UNCOVERED_BRANCHES": 85,
+    "UNCOVERED_FUNCTIONS": 6,
+    "TOTAL_LINES": 1772,
+    "TOTAL_BRANCHES": 157,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 19,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/inviteBlessBoardStaff.js",
+    "UNCOVERED_LINES": 179,
+    "UNCOVERED_BRANCHES": 83,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 981,
+    "TOTAL_BRANCHES": 290,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 20,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicPharmacyRoutes.js",
+    "UNCOVERED_LINES": 988,
+    "UNCOVERED_BRANCHES": 82,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 1863,
+    "TOTAL_BRANCHES": 126,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 21,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/loadActiveClinicPatientScreens.js",
+    "UNCOVERED_LINES": 44,
+    "UNCOVERED_BRANCHES": 82,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 842,
+    "TOTAL_BRANCHES": 192,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 22,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicPharmacyOpsService.js",
+    "UNCOVERED_LINES": 167,
+    "UNCOVERED_BRANCHES": 76,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 1420,
+    "TOTAL_BRANCHES": 173,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 23,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/services/billingSubscriptionService.js",
+    "UNCOVERED_LINES": 143,
+    "UNCOVERED_BRANCHES": 75,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 667,
+    "TOTAL_BRANCHES": 129,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION",
+      "CONFLICT"
+    ]
+  },
+  {
+    "RANK": 24,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicBillingOpsService.js",
+    "UNCOVERED_LINES": 467,
+    "UNCOVERED_BRANCHES": 73,
+    "UNCOVERED_FUNCTIONS": 9,
+    "TOTAL_LINES": 1693,
+    "TOTAL_BRANCHES": 160,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION",
+      "CONFLICT"
+    ]
+  },
+  {
+    "RANK": 25,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicPharmacyService.js",
+    "UNCOVERED_LINES": 163,
+    "UNCOVERED_BRANCHES": 72,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 1350,
+    "TOTAL_BRANCHES": 183,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 26,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/announcements/tenantAnnouncementService.js",
+    "UNCOVERED_LINES": 81,
+    "UNCOVERED_BRANCHES": 72,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 514,
+    "TOTAL_BRANCHES": 189,
+    "SECURITY_RISK": 35,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 27,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicClinicalDocumentRoutes.js",
+    "UNCOVERED_LINES": 240,
+    "UNCOVERED_BRANCHES": 70,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 745,
+    "TOTAL_BRANCHES": 103,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 28,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicPatientRoutes.js",
+    "UNCOVERED_LINES": 533,
+    "UNCOVERED_BRANCHES": 67,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1194,
+    "TOTAL_BRANCHES": 101,
+    "SECURITY_RISK": 40,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 29,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/loadActiveClinicStaffScreens.js",
+    "UNCOVERED_LINES": 52,
+    "UNCOVERED_BRANCHES": 67,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 578,
+    "TOTAL_BRANCHES": 190,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 30,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicBookingPatientLinkageService.js",
+    "UNCOVERED_LINES": 166,
+    "UNCOVERED_BRANCHES": 65,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 768,
+    "TOTAL_BRANCHES": 117,
+    "SECURITY_RISK": 50,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 31,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/media/hostingerMediaConfig.js",
+    "UNCOVERED_LINES": 110,
+    "UNCOVERED_BRANCHES": 63,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 736,
+    "TOTAL_BRANCHES": 188,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "OTHER"
+    ]
+  },
+  {
+    "RANK": 32,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicBillingRoutes.js",
+    "UNCOVERED_LINES": 1518,
+    "UNCOVERED_BRANCHES": 62,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 2666,
+    "TOTAL_BRANCHES": 132,
+    "SECURITY_RISK": 50,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION",
+      "CONFLICT"
+    ]
+  },
+  {
+    "RANK": 33,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/http/activeClinicStaffRoutes.js",
+    "UNCOVERED_LINES": 392,
+    "UNCOVERED_BRANCHES": 60,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 954,
+    "TOTAL_BRANCHES": 113,
+    "SECURITY_RISK": 30,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 34,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/registration/blessboardChurchRegistrationAdapter.js",
+    "UNCOVERED_LINES": 91,
+    "UNCOVERED_BRANCHES": 60,
+    "UNCOVERED_FUNCTIONS": 3,
+    "TOTAL_LINES": 539,
+    "TOTAL_BRANCHES": 157,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "OTHER"
+    ]
+  },
+  {
+    "RANK": 35,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicPatientPortalRegistrationService.js",
+    "UNCOVERED_LINES": 88,
+    "UNCOVERED_BRANCHES": 60,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 523,
+    "TOTAL_BRANCHES": 88,
+    "SECURITY_RISK": 50,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "WRITE_SUCCESS",
+      "STATE_TRANSITION"
+    ]
+  },
+  {
+    "RANK": 36,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationApplicationCommunicationService.js",
+    "UNCOVERED_LINES": 23,
+    "UNCOVERED_BRANCHES": 60,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 638,
+    "TOTAL_BRANCHES": 136,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 37,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicStaffService.js",
+    "UNCOVERED_LINES": 132,
+    "UNCOVERED_BRANCHES": 57,
+    "UNCOVERED_FUNCTIONS": 2,
+    "TOTAL_LINES": 665,
+    "TOTAL_BRANCHES": 154,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 38,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationVerificationFacts.js",
+    "UNCOVERED_LINES": 102,
+    "UNCOVERED_BRANCHES": 57,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 1493,
+    "TOTAL_BRANCHES": 397,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 39,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/clinicRegistrationReviewService.js",
+    "UNCOVERED_LINES": 53,
+    "UNCOVERED_BRANCHES": 56,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 626,
+    "TOTAL_BRANCHES": 126,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 40,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationQueuePresentation.js",
+    "UNCOVERED_LINES": 21,
+    "UNCOVERED_BRANCHES": 56,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 598,
+    "TOTAL_BRANCHES": 245,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 41,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/registration/activeClinicRegistrationAdapter.js",
+    "UNCOVERED_LINES": 144,
+    "UNCOVERED_BRANCHES": 55,
+    "UNCOVERED_FUNCTIONS": 3,
+    "TOTAL_LINES": 505,
+    "TOTAL_BRANCHES": 100,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "OTHER"
+    ]
+  },
+  {
+    "RANK": 42,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/activityRegistrationService.js",
+    "UNCOVERED_LINES": 48,
+    "UNCOVERED_BRANCHES": 55,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 459,
+    "TOTAL_BRANCHES": 109,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 43,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/websiteDraftPublishService.js",
+    "UNCOVERED_LINES": 88,
+    "UNCOVERED_BRANCHES": 54,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 580,
+    "TOTAL_BRANCHES": 109,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "STATE_TRANSITION",
+      "WRITE_SUCCESS"
+    ]
+  },
+  {
+    "RANK": 44,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/activeClinicFacilityRoomService.js",
+    "UNCOVERED_LINES": 45,
+    "UNCOVERED_BRANCHES": 53,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 418,
+    "TOTAL_BRANCHES": 103,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 45,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/services/authTransferService.js",
+    "UNCOVERED_LINES": 70,
+    "UNCOVERED_BRANCHES": 50,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 464,
+    "TOTAL_BRANCHES": 111,
+    "SECURITY_RISK": 0,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 46,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/websitePublishedSnapshotRead.js",
+    "UNCOVERED_LINES": 7,
+    "UNCOVERED_BRANCHES": 48,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 170,
+    "TOTAL_BRANCHES": 97,
+    "SECURITY_RISK": 25,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING",
+      "STATE_TRANSITION",
+      "WRITE_SUCCESS"
+    ]
+  },
+  {
+    "RANK": 47,
+    "PRODUCT": "PLATFORM",
+    "MODULE": "src/platform/services/provisionPlatformTenant.js",
+    "UNCOVERED_LINES": 61,
+    "UNCOVERED_BRANCHES": 47,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 547,
+    "TOTAL_BRANCHES": 196,
+    "SECURITY_RISK": 35,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 48,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/http/tenantLoginHelpers.js",
+    "UNCOVERED_LINES": 7,
+    "UNCOVERED_BRANCHES": 47,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 279,
+    "TOTAL_BRANCHES": 158,
+    "SECURITY_RISK": 45,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 49,
+    "PRODUCT": "AC",
+    "MODULE": "src/activeclinic/services/facilityService.js",
+    "UNCOVERED_LINES": 74,
+    "UNCOVERED_BRANCHES": 46,
+    "UNCOVERED_FUNCTIONS": 1,
+    "TOTAL_LINES": 537,
+    "TOTAL_BRANCHES": 140,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "TENANT_DENY",
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  },
+  {
+    "RANK": 50,
+    "PRODUCT": "BB",
+    "MODULE": "src/blessboard/services/registrationEmailVerificationDelivery.js",
+    "UNCOVERED_LINES": 70,
+    "UNCOVERED_BRANCHES": 46,
+    "UNCOVERED_FUNCTIONS": 0,
+    "TOTAL_LINES": 385,
+    "TOTAL_BRANCHES": 92,
+    "SECURITY_RISK": 20,
+    "BEHAVIORS": [
+      "NOT_FOUND",
+      "VALIDATION",
+      "ERROR_HANDLING"
+    ]
+  }
+]

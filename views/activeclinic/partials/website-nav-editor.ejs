@@ -1,0 +1,26 @@
+<% if (typeof websiteEdit !== 'undefined' && websiteEdit && typeof clinicWebsiteNav !== 'undefined' && clinicWebsiteNav) { %>
+<details class="ac-website-nav-editor" data-website-nav-editor="1">
+  <summary>Website menu</summary>
+  <p class="ac-website-overlay-note">Change labels for clinic pages. Optional pages can be hidden. Login, booking, and legal links stay platform-controlled.</p>
+  <ul class="ac-website-nav-editor__list">
+    <% (clinicWebsiteNav.editorItems || []).forEach(function (item) { %>
+    <li class="ac-website-nav-editor__item" data-ac-nav-editor-item="<%= item.key %>">
+      <span class="ac-website-nav-editor__label">
+        <%- include('./website-editable-field', { contentKey: item.labelKey, fieldValue: item.label || '', fieldType: 'short_text' }) %>
+      </span>
+      <% if (item.hideable && item.visibilityKey) { %>
+      <label class="ac-website-nav-editor__toggle">
+        <input
+          type="checkbox"
+          data-website-boolean="1"
+          data-website-key="<%= item.visibilityKey %>"
+          <%= item.visible ? 'checked' : '' %>
+        />
+        Show in menu
+      </label>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+</details>
+<% } %>

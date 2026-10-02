@@ -1,0 +1,21 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/discipleship">&larr; Discipleship</a>
+          <h1 class="church-branch-topbar__title">Member pathway history</h1>
+          <p class="church-branch-topbar__subtitle">Member #<%= memberId %><% if (pathway) { %> · <%= pathway.stage_name %><% } %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <ul class="church-list">
+          <% (history || []).forEach(function (h) { %>
+          <li>
+            <%= h.from_stage_name || '—' %> → <%= h.to_stage_name %>
+            <% if (h.milestone_name) { %> · <%= h.milestone_name %><% } %>
+            · <%= h.movement_reason || 'No reason' %>
+            · <%= new Date(h.created_at).toLocaleString('en-GB') %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

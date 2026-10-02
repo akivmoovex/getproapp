@@ -1,0 +1,577 @@
+"use strict";
+
+const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  PERMISSIONS,
+  hasWebsitePermission,
+  canViewWebsiteAdmin,
+} = require("../../platform/website/permissions");
+const {
+  assertWebsiteAction,
+} = require("../../platform/website-engine/permissionHooks");
+const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
+const instanceRepo = require("../../platform/website/instanceRepository");
+const versionService = require("../../platform/website/versionService");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsitePreviewPath,
+  buildPublicWebsiteHistoryPath,
+  buildPublicWebsitePublishPath,
+  buildPublicWebsiteDiscardPath,
+  buildPublicWebsiteUnpublishPath,
+  buildPublicWebsiteStylesPath,
+  buildPublicWebsiteSeoPath,
+  buildPublicWebsiteDraftsPath,
+  buildPublicWebsiteMediaPath,
+  buildPublicWebsiteSectionActionsPath,
+  buildPublicWebsiteAddSectionPath,
+  buildPublicWebsiteThemePath,
+  buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
+  buildPublicWebsiteSubmitPath,
+  buildPublicWebsiteFinishEditPath,
+  buildPublicWebsiteUnpublishedChangesPath,
+  buildPublicWebsiteFieldHistoryPath,
+  buildPublicWebsiteFieldRestorePath,
+  appendQuery,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
+  buildClinicWebsiteNav,
+  clinicWebsiteLinkQuery,
+} = require("../website/activeClinicClinicWebsiteNav");
+const submissionService = require("../../platform/website/submissionService");
+const { latestTenantVisibleNote } = require("../../platform/website/moderationEventService");
+const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
+const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
+const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
+const { presentEditorShell, buildEditorPages } = require("../../platform/website-engine/editorShell");
+const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { isWebsiteFrameRequest } = require("../../platform/website-engine/editorViewportFrame");
+const {
+  describeAddSectionAvailability,
+} = require("../../platform/website/sectionRegistry");
+const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
+
+function grantedPermissions(req) {
+  const auth = req.activeClinicAuth;
+  return (auth && Array.isArray(auth.permissions) ? auth.permissions : []).map(String);
+}
+
+function sameClinicOrganization(req, clinic) {
+  const auth = req.activeClinicAuth;
+  if (!auth || !auth.authenticated || !clinic) return false;
+  return Boolean(auth.organization && auth.organization.id === clinic.organizationId);
+}
+
+function canViewClinicWebsite(req, clinic) {
+  if (!sameClinicOrganization(req, clinic)) return false;
+  return canViewWebsiteAdmin(grantedPermissions(req));
+}
+
+/**
+ * Lifecycle authorization goes through the shared engine hook; this adapter only
+ * adds the ActiveClinic tenant-isolation rule.
+ * @param {import('express').Request} req
+ * @param {object} clinic
+ * @param {string} action
+ */
+function allowsClinicWebsiteAction(req, clinic, action) {
+  if (!sameClinicOrganization(req, clinic)) return false;
+  return assertWebsiteAction(grantedPermissions(req), action).ok === true;
+}
+
+function canEditClinicWebsite(req, clinic) {
+  return allowsClinicWebsiteAction(req, clinic, "edit");
+}
+
+function canSubmitClinicWebsite(req, clinic) {
+  if (!sameClinicOrganization(req, clinic)) return false;
+  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.SUBMIT);
+}
+
+function canPublishClinicWebsite(req, clinic) {
+  return allowsClinicWebsiteAction(req, clinic, "publish");
+}
+
+function canRestoreClinicWebsite(req, clinic) {
+  return allowsClinicWebsiteAction(req, clinic, "restore");
+}
+
+function canAccessClinicWebsiteAdmin(req, clinic) {
+  return (
+    canViewClinicWebsite(req, clinic) ||
+    canEditClinicWebsite(req, clinic) ||
+    canPublishClinicWebsite(req, clinic) ||
+    canRestoreClinicWebsite(req, clinic)
+  );
+}
+
+function clinicWebsiteActionUrls(clinicKey, pageKey) {
+  const base = {
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: clinicKey,
+    pageKey: pageKey || "home",
+  };
+  // Engine mutation endpoints are instance-scoped (no page segment). pageKey is only
+  // for view/edit/preview URLs — including it produced /clinics/:key/:page/website/drafts 404s.
+  return {
+    websiteSaveUrl: buildPublicWebsiteDraftsPath(base),
+    websiteMediaUrl: buildPublicWebsiteMediaPath(base),
+    websitePreviewUrl: buildPublicWebsitePreviewPath(base),
+    websiteEditUrl: buildPublicWebsiteEditPath(base),
+    websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
+    websitePublishUrl: buildPublicWebsitePublishPath(base),
+    websiteDiscardUrl: buildPublicWebsiteDiscardPath(base),
+    websiteUnpublishedChangesUrl: buildPublicWebsiteUnpublishedChangesPath(base),
+    websiteFieldHistoryUrl: buildPublicWebsiteFieldHistoryPath(base),
+    websiteFieldRestoreUrl: buildPublicWebsiteFieldRestorePath(base),
+    websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
+    websiteSectionActionsUrl: buildPublicWebsiteSectionActionsPath(base),
+    websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
+    websiteThemeUrl: buildPublicWebsiteThemePath(base),
+    websiteThemesUrl: buildPublicWebsiteThemesPath(base),
+    websiteWebsitesUrl: buildPublicWebsiteWebsitesPath(base),
+    websiteStylesUrl: buildPublicWebsiteStylesPath(base),
+    websiteSeoUrl: buildPublicWebsiteSeoPath(base),
+    websiteSubmitUrl: buildPublicWebsiteSubmitPath(base),
+    websiteFinishEditUrl: buildPublicWebsiteFinishEditPath(base),
+  };
+}
+
+function websiteEditorPageKeyFromRequest(req, clinicKey) {
+  const pathName = String((req && req.path) || "");
+  const prefix = `/clinics/${clinicKey}`;
+  let rest = pathName.startsWith(prefix) ? pathName.slice(prefix.length) : pathName;
+  rest = rest.replace(/^\//, "").split("/")[0] || "";
+  if (!rest) return "home";
+  const pages = listProductPageTypes(PRODUCT_CODE.ACTIVECLINIC);
+  const match = pages.find((page) => page.path === rest || page.key === rest);
+  return match ? match.key : "home";
+}
+
+function websiteEditorPagesForClinic(clinicKey, currentKey) {
+  return buildEditorPages({
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: clinicKey,
+    pageKey: currentKey,
+  });
+}
+
+function requestedMode(req, canEdit) {
+  const q = String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase();
+  const edit = String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
+  if (!canEdit) return MODE.LIVE;
+  if (q === "live") return MODE.LIVE;
+  if (q === "draft" || edit) return MODE.DRAFT;
+  return MODE.LIVE;
+}
+
+function previewVersionIdFromRequest(req, options) {
+  if (options && options.previewVersionId) return String(options.previewVersionId);
+  const q = req && req.query ? req.query : {};
+  return String(q.website_preview_version || q.websitePreviewVersion || "").trim();
+}
+
+function applyWebsiteLinkQuery(clinic, query) {
+  if (!clinic || !clinic.publicPagePaths || !query || !Object.keys(query).length) return clinic;
+  const next = {};
+  for (const [key, href] of Object.entries(clinic.publicPagePaths)) {
+    next[key] = appendQuery(href, query);
+  }
+  return {
+    ...clinic,
+    publicPagePaths: next,
+    publicBasePath: appendQuery(clinic.publicBasePath || next.home, query),
+  };
+}
+
+async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
+  const opts = options && typeof options === "object" ? options : {};
+  const canEdit = canEditClinicWebsite(req, clinic);
+  const canSubmit = canSubmitClinicWebsite(req, clinic);
+  const canPublish = canPublishClinicWebsite(req, clinic);
+  const canRestore = canRestoreClinicWebsite(req, clinic);
+  const canView = canViewClinicWebsite(req, clinic);
+  const previewVersionId = previewVersionIdFromRequest(req, opts);
+  let previewVersion = opts.previewVersion || null;
+  let snapshot = opts.snapshot || null;
+  if (previewVersionId && !snapshot && (canView || canEdit || canPublish)) {
+    const instanceForPreview = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
+      organizationId: clinic.organizationId,
+      productCode: "activeclinic",
+    });
+    if (instanceForPreview) {
+      const loaded = await versionService.getWebsiteVersion(db, {
+        versionId: previewVersionId,
+        organizationId: clinic.organizationId,
+        instanceId: instanceForPreview.id,
+      });
+      if (loaded.ok) {
+        previewVersion = loaded.version;
+        snapshot = loaded.version.snapshot || {};
+      }
+    }
+  }
+  const isVersionPreview = Boolean(snapshot);
+  const draftModeQuery =
+    String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase() ===
+    "draft";
+  const editRequested =
+    !isVersionPreview &&
+    String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
+  const previewDraftMode = !isVersionPreview && canEdit && draftModeQuery && !editRequested;
+  const mode = isVersionPreview ? MODE.LIVE : requestedMode(req, canEdit);
+  const resolved = await resolveActiveClinicWebsite(db, {
+    clinic,
+    mode,
+    snapshot: snapshot || undefined,
+  });
+  let outClinic = resolved.ok ? resolved.clinic : clinic;
+  const instance = resolved.instance || null;
+  const unpublishedCountRaw = (resolved.resolved && resolved.resolved.unpublishedCount) || 0;
+  let unpublishedCount = unpublishedCountRaw;
+  let websiteWorkflowStatus = unpublishedCount > 0 ? "draft" : "live";
+  let websiteReviewNote = "";
+  let websiteSubmittedAtLabel = "";
+  if (instance) {
+    const listed = await submissionService.listWebsiteSubmissions(db, {
+      organizationId: clinic.organizationId,
+      instanceId: instance.id,
+      limit: 1,
+    });
+    const latest = listed.submissions && listed.submissions[0];
+    if (latest) {
+      if (latest.status === "submitted") websiteWorkflowStatus = "submitted";
+      else if (latest.status === "changes_requested") websiteWorkflowStatus = "changes_requested";
+      else if (latest.status === "approved" && unpublishedCount === 0) websiteWorkflowStatus = "published";
+      else if (unpublishedCount > 0) websiteWorkflowStatus = "draft";
+      if (latest.status === "changes_requested" && latest.reviewNote) {
+        websiteReviewNote = String(latest.reviewNote);
+      }
+      if (
+        latest.submittedAt &&
+        (latest.status === "submitted" || latest.status === "changes_requested")
+      ) {
+        const when = new Date(latest.submittedAt);
+        if (!Number.isNaN(when.getTime())) {
+          websiteSubmittedAtLabel = `${when.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+        }
+      }
+    }
+  }
+  let websiteLifecycleStatus = instance && instance.lifecycleStatus ? instance.lifecycleStatus : "";
+  let websitePublishPolicy = instance && instance.publishPolicy ? instance.publishPolicy : "";
+  let websiteEditLocked = Boolean(instance && instance.editLocked);
+  let websitePublishLocked = Boolean(instance && instance.publishLocked);
+  let websiteModerationNote = "";
+  if (instance) {
+    const note = await latestTenantVisibleNote(db, instance.id, clinic.organizationId);
+    if (note && note.notes) websiteModerationNote = String(note.notes);
+  }
+  if (!websiteReviewNote && websiteModerationNote) websiteReviewNote = websiteModerationNote;
+  const websiteEdit = !isVersionPreview && canEdit && editRequested && !websiteEditLocked;
+  const websiteFrameMode = websiteEdit && isWebsiteFrameRequest(req.query);
+  const linkQuery = clinicWebsiteLinkQuery({
+    websiteEdit,
+    previewDraftMode,
+    websiteFrameMode,
+    previewVersionId: isVersionPreview && previewVersion ? previewVersion.id : "",
+  });
+  outClinic = applyWebsiteLinkQuery(outClinic, linkQuery);
+  const clinicWebsiteNav = buildClinicWebsiteNav(outClinic, {
+    env: req && req.app && req.app.get && req.app.get("env") ? process.env : process.env,
+    linkQuery,
+  });
+  const restoreUrl =
+    isVersionPreview && previewVersion
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: outClinic.clinicKey,
+          suffix: `website/versions/${previewVersion.id}/restore`,
+        })
+      : "";
+  const pageKey = websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey);
+  const editorPages = websiteEditorPagesForClinic(outClinic && outClinic.clinicKey, pageKey);
+  const actionUrls = clinicWebsiteActionUrls(outClinic && outClinic.clinicKey, pageKey);
+  const brandingHref = actionUrls.websiteStylesUrl;
+  const hubHref = "/app/settings/website";
+  const canPublishNow = canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted";
+  const {
+    detectPublishSuccessFromQuery,
+    buildPostPublishState,
+    buildPublishWorkflowPaths,
+    ENTRY,
+  } = require("../../platform/website/publishWorkflow");
+  const successDetect = detectPublishSuccessFromQuery(req && req.query);
+  const workflowPaths = buildPublishWorkflowPaths({
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: outClinic && outClinic.clinicKey,
+    clinicKey: outClinic && outClinic.clinicKey,
+    canPublish: canPublishNow,
+    canEdit,
+    entry: ENTRY.WEBSITE_EDITOR,
+    pageKey,
+  });
+  const liveWebsitePath = buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: outClinic && outClinic.clinicKey,
+  });
+  const postPublish = successDetect.publishSuccess
+    ? buildPostPublishState({
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: outClinic && outClinic.clinicKey,
+        clinicKey: outClinic && outClinic.clinicKey,
+        paths: workflowPaths,
+        livePath: liveWebsitePath,
+      })
+    : null;
+  if (postPublish) {
+    unpublishedCount = 0;
+  }
+  const moreItems = [];
+  moreItems.push({
+    id: "settings",
+    label: "Website settings",
+    icon: "settings",
+    href: hubHref,
+    group: "general",
+  });
+  moreItems.push({
+    id: "branding",
+    label: "Branding",
+    icon: "palette",
+    href: brandingHref,
+    group: "general",
+  });
+  if (actionUrls.websiteThemesUrl) {
+    moreItems.push({
+      id: "theme",
+      label: "Choose Theme",
+      icon: "style",
+      href: actionUrls.websiteThemesUrl,
+      group: "general",
+    });
+  }
+  // ActiveClinic: one public website per clinic org — no multi-website switcher.
+  // /website/websites still lists the single authorized clinic site when opened directly.
+  moreItems.push({
+    id: "history",
+    label: "Version history",
+    icon: "history",
+    href: actionUrls.websiteHistoryUrl,
+    group: "general",
+  });
+  moreItems.push({
+    id: "pages",
+    label: "Pages",
+    icon: "layers",
+    href: "/app/settings/website/pages",
+    group: "product",
+  });
+  moreItems.push({
+    id: "sections",
+    label: "Sections",
+    icon: "view_agenda",
+    href: "/app/settings/website/sections",
+    group: "product",
+  });
+  moreItems.push({
+    id: "assets",
+    label: "Assets",
+    icon: "folder",
+    href: "/app/settings/website/media",
+    group: "product",
+  });
+  moreItems.push({
+    id: "seo",
+    label: "SEO",
+    icon: "search",
+    href: actionUrls.websiteSeoUrl,
+    group: "product",
+  });
+  if (canSubmit && !websitePublishLocked && websiteWorkflowStatus !== "submitted" && websitePublishPolicy !== "TENANT_PUBLISH") {
+    moreItems.push({
+      id: "submit",
+      label: websiteWorkflowStatus === "changes_requested" ? "Resubmit for approval" : "Submit for approval",
+      icon: "send",
+      href: actionUrls.websiteSubmitUrl,
+      method: "POST",
+      group: "product",
+    });
+  }
+  if (unpublishedCount > 0) {
+    moreItems.push({
+      id: "discard-draft",
+      label: "Discard draft changes",
+      icon: "delete",
+      action: "lifecycle",
+      lifecycle: "discard",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  if (canPublishNow && actionUrls.websiteUnpublishUrl) {
+    moreItems.push({
+      id: "unpublish",
+      label: "Unpublish website",
+      icon: "public_off",
+      action: "lifecycle",
+      lifecycle: "unpublish",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  const shellFacts = {
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    pageKey,
+    pages: editorPages,
+    moreItems,
+    brandingHref,
+    historyHref: actionUrls.websiteHistoryUrl,
+    hubHref,
+    managePagesHref: "/app/settings/website/pages",
+    draft: unpublishedCount > 0,
+    unpublishedCount,
+    websiteScopeKey: websiteScopeKeyFor(
+      PRODUCT_CODE.ACTIVECLINIC,
+      clinic.organizationId,
+      instance && instance.id
+    ),
+    websiteName:
+      String((clinic && (clinic.displayName || clinic.name)) || "").trim() ||
+      (outClinic && outClinic.clinicKey) ||
+      "Clinic website",
+    websiteScopeKind: "clinic",
+    changeWebsiteHref: null,
+    instanceId: instance && instance.id,
+    organizationId: clinic.organizationId,
+    canEdit,
+    canPublish: canPublishNow,
+    previewHref: actionUrls.websitePreviewUrl,
+    backToEditHref: actionUrls.websiteEditUrl,
+    publishPath: actionUrls.websitePublishUrl,
+    publishSuccess: Boolean(postPublish && postPublish.publishSuccess),
+    publishSuccessUrl: (postPublish && postPublish.publishSuccessUrl) || liveWebsitePath || null,
+    discardPath: actionUrls.websiteDiscardUrl,
+    unpublishedChangesUrl: actionUrls.websiteUnpublishedChangesUrl,
+    fieldHistoryUrl: actionUrls.websiteFieldHistoryUrl,
+    fieldRestoreUrl: actionUrls.websiteFieldRestoreUrl,
+    unpublishPath: canPublishNow ? actionUrls.websiteUnpublishUrl : null,
+    exitHref: actionUrls.websiteFinishEditUrl,
+    exitMethod: "POST",
+    exitAction: actionUrls.websiteFinishEditUrl,
+    saveUrl: actionUrls.websiteSaveUrl,
+    mediaUrl: actionUrls.websiteMediaUrl,
+    csrfField: CSRF_FIELD,
+    sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
+    themeUrl: actionUrls.websiteThemeUrl,
+    themesGalleryUrl: actionUrls.websiteThemesUrl,
+    addSectionUrl: null,
+    canAddSection: false,
+    addSectionEmptyHint: "",
+    addSectionMemberAction: null,
+    sectionManifest: websiteEdit
+      ? require("../website/activeClinicSectionActionService").buildManifest(
+          pageKey,
+          outClinic.cmsSections
+        )
+      : null,
+  };
+  if (websiteEdit) {
+    const existingTypes = (outClinic.cmsSections || []).map((s) => String(s.type || s.id || ""));
+    const addAvail = describeAddSectionAvailability(
+      PRODUCT_CODE.ACTIVECLINIC,
+      pageKey,
+      existingTypes
+    );
+    shellFacts.addSectionUrl = addAvail.canAddSection ? actionUrls.websiteAddSectionUrl : null;
+    shellFacts.canAddSection = addAvail.canAddSection;
+    shellFacts.addSectionEmptyHint = addAvail.emptyHint;
+    shellFacts.addSectionMemberAction = addAvail.memberAction;
+  }
+  const editorShell = websiteEdit
+    ? presentEditorShell({ ...shellFacts, editing: true })
+    : previewDraftMode
+      ? presentEditorShell({ ...shellFacts, previewMode: true, editing: false })
+      : null;
+
+  let websiteThemeAttrs = {};
+  try {
+    const themeState = await loadWebsiteThemeState(db, {
+      organizationId: clinic.organizationId,
+      productCode: PRODUCT_CODE.ACTIVECLINIC,
+      instance,
+      preferDraft: mode === MODE.DRAFT,
+      query: req && req.query,
+    });
+    if (themeState.ok && themeState.presentation) {
+      websiteThemeAttrs = presentThemeAttrs(themeState.presentation);
+      websiteThemeAttrs.websiteThemeDraftId = themeState.draftThemeId;
+      websiteThemeAttrs.websiteThemePublishedId = themeState.publishedThemeId;
+      websiteThemeAttrs.websiteThemePreviewOnly = themeState.previewOnly === true;
+    }
+  } catch {
+    /* theme presentation is optional chrome */
+  }
+
+  return {
+    clinic: outClinic,
+    instance,
+    clinicWebsiteNav,
+    websiteVersionPreview: isVersionPreview,
+    websitePreviewVersion: previewVersion,
+    websitePreviewRestoreUrl: restoreUrl,
+    websiteEdit,
+    websiteFrameMode,
+    websitePreviewDraftMode: previewDraftMode,
+    websiteCanEdit: canEdit,
+    websiteCanSubmit: canSubmit && !websitePublishLocked,
+    websiteCanPublish: canPublish && !websitePublishLocked,
+    websiteCanRestore: canRestore && !websitePublishLocked,
+    websiteMode: mode,
+    websiteUnpublishedCount: unpublishedCount,
+    websiteWorkflowStatus,
+    websiteReviewNote,
+    websiteSubmittedAtLabel,
+    websiteLifecycleStatus,
+    websiteLifecycleLabel: LIFECYCLE_LABELS[websiteLifecycleStatus] || "",
+    websitePublishPolicy,
+    websitePublishPolicyLabel: POLICY_LABELS[websitePublishPolicy] || "",
+    websiteEditLocked,
+    websitePublishLocked,
+    websiteModerationNote,
+    websiteEditQuery: "website_edit",
+    websiteActorId:
+      req.activeClinicAuth && req.activeClinicAuth.platformIdentity
+        ? req.activeClinicAuth.platformIdentity.id
+        : null,
+    csrfField: CSRF_FIELD,
+    websiteEditorPageKey: pageKey,
+    websiteEditorPages: editorPages,
+    editorShell,
+    ...actionUrls,
+    ...websiteThemeAttrs,
+  };
+}
+
+async function requireClinicWebsiteInstance(db, clinic) {
+  if (!clinic) return null;
+  return instanceRepo.findWebsiteInstanceByOrgProduct(db, {
+    organizationId: clinic.organizationId,
+    productCode: "activeclinic",
+  });
+}
+
+module.exports = {
+  grantedPermissions,
+  canViewClinicWebsite,
+  canEditClinicWebsite,
+  canSubmitClinicWebsite,
+  canPublishClinicWebsite,
+  canRestoreClinicWebsite,
+  canAccessClinicWebsiteAdmin,
+  attachActiveClinicWebsiteLocals,
+  requireClinicWebsiteInstance,
+};

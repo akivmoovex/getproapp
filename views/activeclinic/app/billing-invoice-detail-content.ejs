@@ -1,0 +1,128 @@
+<%
+  var invoice = (pageData && pageData.invoice) || {};
+  var lines = (pageData && pageData.lines) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var caps = (pageData && pageData.capabilities) || {};
+%>
+<section
+  class="ac-invoice-detail ac-billing-workspace--b2"
+  data-ac-page-section="invoice-detail"
+  data-ac-stitch="AC-B2-09"
+  data-ac-batch1="ACN22"
+  data-ac-stitch-desktop="<%= stitch.desktop || '29257b0d01c64fa4896a369efd3f6417' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '24632347e4ab4c89937b611457d94730' %>"
+  data-ac-stitch-batch1-desktop="<%= stitch.batch1Desktop || '25af03d4c3724841a33fb03415ec1b4d' %>"
+>
+  <article class="ac-panel">
+    <div class="ac-invoice-detail__head">
+      <h2 class="ac-dashboard__card-title">Invoice details</h2>
+      <%- include('../../platform/partials/gp-ops-status-badge', {
+        label: invoice.paymentStatusLabel || invoice.status,
+        tone: invoice.paymentTone || 'neutral'
+      }) %>
+    </div>
+    <dl class="ac-invoice-detail__summary">
+      <div><dt>Invoice number</dt><dd><strong><%= invoice.invoice_number %></strong></dd></div>
+      <div><dt>Patient</dt><dd><a href="/app/billing/patients/<%= invoice.patientNumber %>"><%= invoice.patientName %></a> · <%= invoice.patientNumber %></dd></div>
+      <div><dt>Invoice date</dt><dd><%= invoice.invoice_date %></dd></div>
+      <div><dt>Lifecycle status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
+      <div><dt>Total</dt><dd class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></dd></div>
+      <div><dt>Paid</dt><dd class="ac-money"><%= invoice.paidAmountFormatted %></dd></div>
+      <div><dt>Balance</dt><dd class="ac-money"><%= invoice.balanceFormatted %></dd></div>
+    </dl>
+    <% if (caps.canCollectPayment && invoice.status === 'posted' && (invoice.balanceMinor || 0) > 0) { %>
+    <p class="ac-invoice-detail__collect">
+      <a class="ac-btn ac-btn--primary" href="/app/cashier/payment?invoice=<%= invoice.id %>">Collect payment</a>
+    </p>
+    <% } %>
+  </article>
+
+  <article class="ac-panel ac-panel--table">
+    <h2 class="ac-dashboard__card-title ac-panel__heading">Line items</h2>
+    <% if (lines.length === 0) { %>
+      <p class="ac-muted">No line items.</p>
+    <% } else { %>
+      <div class="ac-table-wrap ac-invoice-desktop">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th data-col="amount">Unit price</th>
+            <th data-col="amount">Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% lines.forEach(function (line) { %>
+          <tr>
+            <td><%= line.line_number %></td>
+            <td><%= line.description %></td>
+            <td><%= line.quantity %></td>
+            <td class="ac-money"><%= line.unitAmountFormatted %></td>
+            <td class="ac-money"><%= line.lineTotalFormatted %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="ac-table__total-label"><strong>Subtotal</strong></td>
+            <td class="ac-money"><strong><%= invoice.subtotalFormatted %></strong></td>
+          </tr>
+          <% if (parseInt(invoice.tax_amount_minor) > 0) { %>
+          <tr>
+            <td colspan="4" class="ac-table__total-label">Tax</td>
+            <td class="ac-money"><%= invoice.taxAmountFormatted %></td>
+          </tr>
+          <% } %>
+          <% if (parseInt(invoice.adjustment_minor || 0) !== 0) { %>
+          <tr>
+            <td colspan="4" class="ac-table__total-label">Adjustment</td>
+            <td class="ac-money"><%= invoice.adjustmentFormatted %></td>
+          </tr>
+          <% } %>
+          <tr>
+            <td colspan="4" class="ac-table__total-label"><strong>Total</strong></td>
+            <td class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="ac-table__total-label">Paid</td>
+            <td class="ac-money"><%= invoice.paidAmountFormatted %></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="ac-table__total-label"><strong>Balance</strong></td>
+            <td class="ac-money"><strong><%= invoice.balanceFormatted %></strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <ul class="ac-card-list ac-invoice-mobile">
+        <% lines.forEach(function (line) { %>
+        <li class="ac-card">
+          <p class="ac-card__title"><%= line.description %></p>
+          <p class="ac-muted">Qty <%= line.quantity %> · <%= line.unitAmountFormatted %></p>
+          <p><strong><%= line.lineTotalFormatted %></strong></p>
+        </li>
+        <% }) %>
+        <% if (parseInt(invoice.adjustment_minor || 0) !== 0) { %>
+        <li class="ac-card">
+          <p class="ac-card__title">Adjustment</p>
+          <p class="ac-money"><%= invoice.adjustmentFormatted %></p>
+        </li>
+        <% } %>
+        <li class="ac-card">
+          <p class="ac-card__title">Total</p>
+          <p><strong class="ac-money ac-money--lg"><%= invoice.totalAmountFormatted %></strong></p>
+          <p class="ac-muted">Paid <%= invoice.paidAmountFormatted %> · Balance <%= invoice.balanceFormatted %></p>
+        </li>
+      </ul>
+    <% } %>
+  </article>
+
+  <% if (invoice.notes) { %>
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Notes</h2>
+    <p><%= invoice.notes %></p>
+  </article>
+  <% } %>
+</section>

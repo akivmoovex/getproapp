@@ -1,0 +1,58 @@
+<%#
+  Field History and Restore (Stitch Screen 4).
+  Opened from History beside the pencil. Restore never auto-publishes.
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+%>
+<aside
+  class="gp-cm-history"
+  data-website-field-history="1"
+  data-stitch-project="12538817760086591589"
+  data-stitch-screen="06f6fb0423eb47808b0227564ae48458"
+  data-website-field-history-url="<%= shell.fieldHistoryUrl || '' %>"
+  data-website-field-restore-url="<%= shell.fieldRestoreUrl || '' %>"
+  data-website-csrf-field="<%= shell.csrfField || '_csrf' %>"
+  data-website-csrf-token="<%= shell.csrfToken || '' %>"
+  data-website-can-edit="<%= shell.canEdit ? '1' : '0' %>"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="gp-cm-history-title"
+>
+  <div class="gp-cm-history__backdrop" data-website-history-backdrop="1"></div>
+  <div class="gp-cm-history__sheet">
+    <header class="gp-cm-history__header">
+      <div>
+        <span class="gp-cm-history__eyebrow">Revision History</span>
+        <h1 id="gp-cm-history-title" class="gp-cm-history__title" data-website-history-title="1">Field History</h1>
+      </div>
+      <button type="button" class="gp-cm-history__close" data-website-history-close="1" aria-label="Close field history">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-cm-history__reassure" data-website-history-reassure="1">
+      Select a version to compare. Restoring replaces your draft — it will <strong>not</strong> auto-publish to your live website until you choose to publish.
+    </p>
+    <div class="gp-cm-history__notice" data-website-history-notice="1">
+      Draft safe &amp; ready to compare. All changes are non-destructive.
+    </div>
+    <div class="gp-cm-history__compare" data-website-history-compare="1" hidden></div>
+    <div class="gp-cm-history__body" data-website-history-body="1">
+      <div class="gp-cm-history__loading" data-website-history-loading="1" hidden>Loading history…</div>
+      <div class="gp-cm-history__empty" data-website-history-empty="1" hidden></div>
+      <div class="gp-cm-history__choices" data-website-history-choices="1"></div>
+    </div>
+    <footer class="gp-cm-history__footer">
+      <button
+        type="button"
+        class="gp-cm-history__confirm"
+        data-website-history-confirm="1"
+        disabled
+      >
+        Restore This Version to Draft (Does Not Publish)
+      </button>
+      <p class="gp-cm-history__hint">Your live website remains untouched until you click &quot;Publish&quot;.</p>
+    </footer>
+  </div>
+</aside>

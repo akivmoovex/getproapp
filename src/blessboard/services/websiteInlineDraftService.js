@@ -4,7 +4,6 @@ const contentRepo = require("../repositories/publicContentRepository");
 const draftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const {
   resolveEditableField,
-  validateFieldValue,
   listEditableFieldsForPage,
 } = require("./websiteInlineEditableFields");
 const auditSvc = require("./websiteAuditService");
@@ -100,8 +99,9 @@ async function resolveContentPage(db, opts) {
  *   pageKey: string,
  *   sectionKey: string,
  *   fieldKey: string,
- *   newValue: string,
+ *   newValue: string|object|null,
  *   publicContact?: object|null,
+ *   grantedPermissions?: string[],
  * }} input
  */
 async function saveInlineFieldDraft(db, input) {
@@ -112,15 +112,32 @@ async function saveInlineFieldDraft(db, input) {
   if (sectionKey === "footer" && fieldKey === "tagline") {
     pageKey = "home";
   }
-  const field = resolveEditableField(pageKey, sectionKey, fieldKey);
-  if (!field) {
+  const {
+    assertEditableMutation,
+    PRODUCT_CODE,
+    ensureProductFieldsRegistered,
+    editableValuesEqual,
+    serializeOverlayDraftValue,
+  } = require("../../platform/website/editableFieldSchema");
+  ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
+  const asserted = assertEditableMutation({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey,
+    sectionKey,
+    fieldKey,
+    value: input.newValue,
+    grantedPermissions: input.grantedPermissions,
+  });
+  if (!asserted.ok) {
+    if (asserted.code === "forbidden") {
+      throw mapError("FORBIDDEN", "That field cannot be edited.", 403);
+    }
+    if (asserted.code === "validation_failed") {
+      throw mapError("VALIDATION", asserted.message || "Invalid value.", 400);
+    }
     throw mapError("INVALID_FIELD", "That field cannot be edited.", 400);
   }
-
-  const validated = validateFieldValue(field, input.newValue);
-  if (!validated.ok) {
-    throw mapError("VALIDATION", validated.error, 400);
-  }
+  const validated = { ok: true, value: asserted.value };
 
   try {
     const page = await resolveContentPage(db, {
@@ -150,7 +167,67 @@ async function saveInlineFieldDraft(db, input) {
     const baselinePrevious =
       existing && existing.previousValue != null ? existing.previousValue : previousValue;
 
-    if (String(validated.value) === String(baselinePrevious || "")) {
+    let engineSaved = null;
+    if (input.skipEngineWrite === true) {
+      engineSaved = {
+        ok: true,
+        content:
+          input.engineContent && typeof input.engineContent === "object"
+            ? input.engineContent
+            : null,
+      };
+    } else {
+      const {
+        saveFieldDraft,
+      } = require("../website/blessboardEngineContentService");
+      engineSaved = await saveFieldDraft(db, {
+        organizationId: input.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        pageKey,
+        sectionKey,
+        fieldKey,
+        value: validated.value,
+        actorIdentityId: input.editorUserId || null,
+        grantedPermissions: input.grantedPermissions,
+        expectedUpdatedAt: input.expectedUpdatedAt || null,
+      });
+    }
+    if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
+      if (
+        engineSaved.code === "validation_failed" ||
+        engineSaved.code === "invalid_url" ||
+        engineSaved.code === "invalid_media_url"
+      ) {
+        throw mapError(
+          "VALIDATION",
+          engineSaved.reason || "That image value is not valid.",
+          400
+        );
+      }
+      if (
+        engineSaved.code === "media_not_found" ||
+        engineSaved.code === "tenant_mismatch" ||
+        engineSaved.code === "forbidden"
+      ) {
+        throw mapError(
+          "FORBIDDEN",
+          "That media cannot be used for this website.",
+          403
+        );
+      }
+      throw mapError("SAVE_FAILED", "Could not save this change. Please try again.", 500);
+    }
+
+    const storedValue =
+      engineSaved &&
+      engineSaved.ok &&
+      engineSaved.content &&
+      engineSaved.content.draftValue != null
+        ? engineSaved.content.draftValue
+        : validated.value;
+
+    if (editableValuesEqual(storedValue, baselinePrevious || "")) {
       if (existing) {
         await draftRepo.discardDraft(db, { id: existing.id, churchId: input.churchId });
       }
@@ -158,8 +235,9 @@ async function saveInlineFieldDraft(db, input) {
         saved: true,
         published: false,
         draftCleared: Boolean(existing),
-        value: validated.value,
+        value: storedValue,
         previousValue: baselinePrevious,
+        engineStored: Boolean(engineSaved && engineSaved.ok),
       };
     }
 
@@ -170,8 +248,8 @@ async function saveInlineFieldDraft(db, input) {
       pageKey,
       sectionKey,
       fieldKey,
-      previousValue: baselinePrevious,
-      newValue: validated.value,
+      previousValue: serializeOverlayDraftValue(baselinePrevious),
+      newValue: serializeOverlayDraftValue(storedValue),
       editorUserId: input.editorUserId,
     });
 
@@ -188,19 +266,23 @@ async function saveInlineFieldDraft(db, input) {
         entityId: draft.id,
         result: "success",
         before: { fieldKey, value: baselinePrevious },
-        after: { fieldKey, value: draft.newValue },
+        after: { fieldKey, value: storedValue },
         metadata: { source: "inline_text_edit", published: false },
       });
     } catch {
       // Audit must not block draft save.
     }
 
+    // V2.04 Phase 5: no dual-write syncDraftToEngine. Platform content is SoT
+    // for engine drafts (editor routes / contentService). Overlay remains BB
+    // product projection until Phase 10 removal.
+
     return {
       saved: true,
       published: false,
       draftCleared: false,
       draftId: draft.id,
-      value: draft.newValue,
+      value: storedValue,
       previousValue: draft.previousValue,
       updatedAt: draft.updatedAt,
     };
@@ -232,15 +314,33 @@ async function saveInlineFieldDraft(db, input) {
  * @returns {Promise<Map<string, string>>}
  */
 async function loadDraftOverlayMap(db, opts) {
+  const {
+    loadFieldOverlayMap,
+  } = require("../website/blessboardEngineContentService");
+  const map = new Map();
+  try {
+    const engineMap = await loadFieldOverlayMap(db, {
+      organizationId: opts.organizationId || null,
+      churchId: opts.churchId,
+      branchId: opts.branchId === undefined ? null : opts.branchId,
+      pageKey: opts.pageKey || null,
+      mode: "draft",
+    });
+    for (const [key, value] of engineMap.entries()) {
+      map.set(key, value);
+    }
+  } catch {
+    // Compatibility overlay table still applies below.
+  }
   const drafts = await draftRepo.listDrafts(db, {
     churchId: opts.churchId,
     branchId: opts.branchId === undefined ? null : opts.branchId,
     pageKey: opts.pageKey || null,
     status: "draft",
   });
-  const map = new Map();
   for (const d of drafts) {
-    map.set(`${d.sectionKey}::${d.fieldKey}`, d.newValue);
+    const key = `${d.sectionKey}::${d.fieldKey}`;
+    if (!map.has(key)) map.set(key, d.newValue);
   }
   return map;
 }
@@ -262,6 +362,8 @@ function applyDraftsToSections(sections, overlayMap) {
     const eyebrow = overlayMap.get(`${key}::eyebrow`);
     const secondaryButtonText = overlayMap.get(`${key}::secondaryButtonText`);
     const secondaryButtonUrl = overlayMap.get(`${key}::secondaryButtonUrl`);
+    const image = overlayMap.get(`${key}::image`) || overlayMap.get(`${key}::mediaUrl`);
+    const imageAlt = overlayMap.get(`${key}::imageAlt`);
     if (
       heading === undefined &&
       bodyText === undefined &&
@@ -270,7 +372,9 @@ function applyDraftsToSections(sections, overlayMap) {
       tagline === undefined &&
       eyebrow === undefined &&
       secondaryButtonText === undefined &&
-      secondaryButtonUrl === undefined
+      secondaryButtonUrl === undefined &&
+      image === undefined &&
+      imageAlt === undefined
     ) {
       return s;
     }
@@ -283,6 +387,7 @@ function applyDraftsToSections(sections, overlayMap) {
     if (eyebrow !== undefined) layoutMetadata.eyebrow = eyebrow;
     if (secondaryButtonText !== undefined) layoutMetadata.secondaryButtonText = secondaryButtonText;
     if (secondaryButtonUrl !== undefined) layoutMetadata.secondaryButtonUrl = secondaryButtonUrl;
+    if (imageAlt !== undefined) layoutMetadata.altText = imageAlt;
     return {
       ...s,
       heading: heading !== undefined ? heading : s.heading,
@@ -292,6 +397,7 @@ function applyDraftsToSections(sections, overlayMap) {
           : tagline !== undefined && key === "footer"
             ? tagline
             : s.bodyText,
+      mediaUrl: image !== undefined ? image : s.mediaUrl,
       layoutMetadata,
     };
   });
@@ -305,14 +411,17 @@ function applyDraftsToSections(sections, overlayMap) {
  * @param {string} fallback
  */
 function displayWithDraft(overrides, sectionKey, fieldKey, fallback) {
-  if (!overrides) return fallback;
-  const key = `${sectionKey}::${fieldKey}`;
-  if (overrides instanceof Map) {
-    if (overrides.has(key)) return overrides.get(key);
-  } else if (Object.prototype.hasOwnProperty.call(overrides, key)) {
-    return overrides[key];
+  const { normalizePlainTextEntities } = require("../../platform/website/plainTextEntities");
+  let raw = fallback;
+  if (overrides) {
+    const key = `${sectionKey}::${fieldKey}`;
+    if (overrides instanceof Map) {
+      if (overrides.has(key)) raw = overrides.get(key);
+    } else if (Object.prototype.hasOwnProperty.call(overrides, key)) {
+      raw = overrides[key];
+    }
   }
-  return fallback;
+  return raw == null ? raw : normalizePlainTextEntities(raw);
 }
 
 /**

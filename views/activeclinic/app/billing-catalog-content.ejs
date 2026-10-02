@@ -1,0 +1,68 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var caps = (pageData && pageData.capabilities) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-charge-catalog" data-ac-page-section="charge-catalog" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <article class="ac-panel ac-panel--table">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'catalog-empty',
+          title: 'No catalog items yet',
+          description: 'Create charge items to begin billing patients for services and procedures.',
+          primaryAction: caps.canManageCatalog
+            ? { href: '/app/billing/catalog/new', label: 'Add charge item' }
+            : null
+        }
+      }) %>
+    <% } else { %>
+      <div class="ac-table-wrap ac-catalog-desktop">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th data-col="amount">Amount</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (item) { %>
+          <tr>
+            <td><code><%= item.code %></code></td>
+            <td><strong><%= item.name %></strong></td>
+            <td><%= item.category || '—' %></td>
+            <td class="ac-money"><%= item.amountFormatted %></td>
+            <td>
+              <% if (item.isActive) { %>
+                <span class="ac-status" data-status="active">Active</span>
+              <% } else { %>
+                <span class="ac-status" data-status="inactive">Inactive</span>
+              <% } %>
+            </td>
+            <td><a href="/app/billing/catalog/<%= item.id %>" class="ac-btn ac-btn--ghost ac-btn--sm">View</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      </div>
+      <ul class="ac-card-list ac-catalog-mobile">
+        <% items.forEach(function (item) { %>
+        <li class="ac-card">
+          <a class="ac-card__link" href="/app/billing/catalog/<%= item.id %>">
+            <p class="ac-card__title"><%= item.name %></p>
+            <p class="ac-muted"><code><%= item.code %></code> · <%= item.category || '—' %></p>
+            <p><strong class="ac-money"><%= item.amountFormatted %></strong>
+              <span class="ac-status" data-status="<%= item.isActive ? 'active' : 'inactive' %>"><%= item.isActive ? 'Active' : 'Inactive' %></span>
+            </p>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>

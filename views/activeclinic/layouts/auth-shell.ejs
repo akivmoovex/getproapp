@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title><%= pageTitle %> · ActiveClinic</title>
+  <%- include('../../platform/partials/head-fonts', { fontFamily: 'hanken-inter', iconFont: 'subset', fontAssetVersion: assetVersion }) %>
+  <%- include('../../platform/partials/head-platform-colors') %>
+  <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-auth.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/phone-field.css?v=<%= assetVersion %>"/>
+</head>
+<body
+  class="ac-auth-body"
+  data-product="activeclinic"
+  data-surface="public"
+  data-ac-product="activeclinic"
+  data-gp-product="activeclinic"
+  data-ac-shell="auth"
+  data-ac-page="<%= pageId %>"
+  data-ac-auth-layout="1"
+  data-ac-composition="<%= composition || 'split' %>"
+>
+  <a class="ac-auth-skip" href="#ac-auth-main">Skip to content</a>
+  <%- include('../partials/auth-signing-in') %>
+  <%- bodyHtml %>
+  <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
+  <script src="/activeclinic/ac-auth.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/phone-field.js?v=<%= assetVersion %>" defer></script>
+  <div id="ac-form-busy-live" class="ac-sr-only" aria-live="polite"></div>
+</body>
+</html>

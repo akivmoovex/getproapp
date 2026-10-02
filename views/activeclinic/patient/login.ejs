@@ -1,0 +1,43 @@
+<section class="acp-auth-card ac-patient-card ac-patient-card--auth" data-ac-page-section="patient-login">
+  <header class="acp-auth-card__header acp-auth-card__header--centered">
+    <div class="acp-auth-card__mark" aria-hidden="true"></div>
+    <p class="ac-public-eyebrow"><%= (clinic && clinic.publicName) ? clinic.publicName : 'Patient portal' %></p>
+    <h1>Patient portal sign in</h1>
+    <p class="acp-auth-card__lede">You are signing in to this clinic through ActiveClinic. Only sign in on a device you trust.</p>
+  </header>
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/login" data-ac-shell="patient" data-ac-loading="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <%- include('../partials/phone-field', {
+        id: 'identifier',
+        label: 'Phone or email',
+        required: true,
+        identifierMode: true,
+        identifierName: 'identifier',
+        defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        nationalValue: (typeof identifier !== 'undefined' && identifier) || '',
+        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+        phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+        placeholder: '97 123 4567 or email',
+        showLegacyHidden: false
+      }) %>
+    </div>
+    <div class="ac-patient-field">
+      <div class="ac-patient-field__label-row">
+        <label for="password">Password</label>
+        <a class="ac-patient-field__forgot" href="/clinics/<%= clinicKey %>/patient/forgot-password">Forgot password?</a>
+      </div>
+      <input type="password" id="password" name="password" autocomplete="current-password" required aria-required="true"/>
+    </div>
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Sign in</button>
+  </form>
+  <p class="ac-patient-links ac-patient-links--stack">
+    <a href="/clinics/<%= clinicKey %>/patient/register">Register for patient portal</a>
+    <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinicKey %>/my-booking">Look up guest booking</a>
+  </p>
+  <p class="acp-auth-card__powered">Powered by ActiveClinic</p>
+</section>

@@ -1,0 +1,57 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title">Import members</h1>
+          <p class="church-branch-page-hero__subtitle">Preview CSV imports safely. Duplicates are never auto-merged or deleted.</p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/branch/members">Back to directory</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Upload CSV</h2>
+        <p class="church-branch-panel__hint">Required columns: <code>full_name</code>, <code>email</code>, <code>phone</code>. Optional: <code>member_type</code> (<code>visitor</code> or <code>member</code>), demographics, <code>is_admin</code> (preview only — never creates admin accounts). Organisation/tenant ID columns are ignored.</p>
+        <form class="church-form" method="post" action="/branch/members/import/preview" enctype="multipart/form-data">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="csv_file">CSV file</label>
+            <input class="church-input" id="csv_file" name="csv_file" type="file" accept=".csv,text/csv" required/>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="batch_key">Batch key (optional, for idempotent re-submit)</label>
+            <input class="church-input" id="batch_key" name="batch_key" type="text" maxlength="80" placeholder="Leave blank to auto-generate"/>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Preview import</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent import batches</h2>
+        <% if (!(batches || []).length) { %>
+        <p class="church-branch-empty">No import batches yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>When</th><th>File</th><th>Rows</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% batches.forEach(function (b) { %>
+              <tr>
+                <td><%= new Date(b.created_at).toLocaleString('en-GB') %></td>
+                <td><%= b.original_filename || '—' %></td>
+                <td><%= b.row_count %></td>
+                <td><%= b.status %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= b.id %>"><%= b.status === 'previewed' ? 'Review' : 'Open' %></a>
+                  <% if (b.status === 'committed' || b.status === 'reversed') { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= b.id %>/summary">Summary</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

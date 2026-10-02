@@ -1,0 +1,76 @@
+<%#
+  Platform shared editable image hook for WE01 Universal Image Editor.
+  Locals: editEnabled, contentKey, image (src|mediaId|alt|placement object or string),
+          className?, variant? (logo|image), label?
+%>
+<%
+  var _enabled = typeof editEnabled !== 'undefined' && editEnabled;
+  var _key = typeof contentKey !== 'undefined' ? String(contentKey) : '';
+  var _img = typeof image !== 'undefined' ? image : null;
+  var _src = '';
+  var _alt = '';
+  var _mediaId = '';
+  var _placement = null;
+  if (typeof _img === 'string') {
+    _src = _img;
+  } else if (_img && typeof _img === 'object') {
+    _src = _img.src ? String(_img.src) : '';
+    _alt = _img.alt != null ? String(_img.alt) : '';
+    _mediaId = _img.mediaId || _img.media_id || '';
+    _placement = _img.placement || null;
+  }
+  var _class = typeof className !== 'undefined' && className ? String(className) : 'gp-website-pc__img';
+  var _variant = typeof variant !== 'undefined' ? String(variant) : (_key === 'home.logo' ? 'logo' : 'image');
+  var _label = typeof label !== 'undefined' && label ? String(label) : (_variant === 'logo' ? 'Edit logo' : 'Edit image');
+  var _slotSeparate = _variant === 'logo' || _key === 'seo.image' ? '0' : '1';
+  var _placementAttr = '';
+  var _style = '';
+  if (_placement && typeof _placement === 'object') {
+    var fit = String(_placement.fit || 'cover');
+    var px = Number(_placement.x); if (!isFinite(px)) px = 50;
+    var py = Number(_placement.y); if (!isFinite(py)) py = 50;
+    var pz = Number(_placement.zoom); if (!isFinite(pz)) pz = 1;
+    _style = [
+      'object-fit:' + fit,
+      'object-position:' + px + '% ' + py + '%',
+      '--gp-img-fit:' + fit,
+      '--gp-img-x:' + px + '%',
+      '--gp-img-y:' + py + '%',
+      '--gp-img-zoom:' + pz
+    ].join(';');
+    _class += ' gp-website-image--placed';
+    try {
+      _placementAttr = JSON.stringify(_placement).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    } catch (_e) {
+      _placementAttr = '';
+    }
+  }
+%>
+<% if (_enabled && _key) { %>
+<div
+  class="gp-website-editable gp-website-editable--image"
+  data-website-inline="1"
+  data-website-key="<%= _key %>"
+  data-website-type="image"
+  data-website-variant="<%= _variant === 'logo' ? 'logo' : 'image' %>"
+  data-website-label="<%= _label %>"
+  data-website-media-id="<%= _mediaId %>"
+  data-website-slot-separate="<%= _slotSeparate %>"
+  <% if (_placementAttr) { %>data-website-image-placement="<%= _placementAttr %>"<% } %>
+>
+  <div class="gp-website-editable__preview">
+    <% if (_src) { %>
+    <img class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" <% if (_style) { %>style="<%= _style %>"<% } %> data-website-image="1" />
+    <% } else { %>
+    <div class="gp-website-pc__img-placeholder" data-website-image="1" aria-hidden="true"></div>
+    <% } %>
+  </div>
+  <button type="button" class="gp-website-editable__pencil" data-website-start="1" aria-label="<%= _label %>">
+    <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+  </button>
+</div>
+<% } else if (_src) { %>
+<img class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" <% if (_style) { %>style="<%= _style %>"<% } %> />
+<% } else { %>
+<div class="gp-website-pc__img-placeholder" aria-hidden="true"></div>
+<% } %>

@@ -1,5 +1,11 @@
 "use strict";
 
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
+
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 50 — home service times provisioning, HQ editor, public render.
  */
@@ -51,7 +57,7 @@ const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const ADMIN_PASSWORD = "TestPassword99!";
 const HOST = "svc-times.blessboard.org";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
@@ -267,18 +273,16 @@ describe("blessboard home service times (Prompt 50)", () => {
 
   async function insertApplication(overrides = {}) {
     const key = uniq(overrides.prefix || "st");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
+    const phoneTail = nextZmNational(Date.now());
     return appRepo.createApplication(pool, {
       church_name: overrides.church_name || `ST Church ${key}`,
       country: "Kenya",
       city: "Nairobi",
       contact_name: overrides.contact_name || "Ada Admin",
       contact_email: overrides.contact_email || `${key}@example.org`,
-      contact_phone: `+2547${phoneTail}`,
-      contact_phone_normalized: `+2547${phoneTail}`,
-      selected_plan: overrides.selected_plan || "foundation",
+      contact_phone: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            selected_plan: overrides.selected_plan || "foundation",
       consent_terms: true,
       branch_name: "Main Campus",
       ...(overrides.extra || {}),
@@ -338,18 +342,16 @@ describe("blessboard home service times (Prompt 50)", () => {
   it("5: Network approve path provisions the same home content foundation", async () => {
     requireDb();
     const key = uniq("net");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
-    const appRow = await appRepo.createApplication(pool, {
+    const phoneTail = nextZmNational(Date.now());
+    const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Network ${key}`,
       country: "Kenya",
       city: "Nairobi",
       contact_name: "Net Admin",
       contact_email: `${key}@example.org`,
-      contact_phone: `+2547${phoneTail}`,
-      contact_phone_normalized: `+2547${phoneTail}`,
-      role_in_church: "Administrator",
+      contact_phone: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            role_in_church: "Administrator",
       selected_plan: "network",
       support_requested: true,
       follow_up_status: "validation_pending",
@@ -670,7 +672,7 @@ describe("blessboard home service times (Prompt 50)", () => {
     }
   });
 
-  it("23–24: mobile editor markup remains usable", async () => {
+  it("23–25: mobile editor markup remains usable and publish action survives loading-state disable", async () => {
     requireDb();
     const { res } = await authedGet("/hq/content/pages/home", users.hq);
     assert.equal(res.status, 200);
@@ -678,5 +680,19 @@ describe("blessboard home service times (Prompt 50)", () => {
     assert.match(res.text, /data-bb-service-times-add/);
     assert.doesNotMatch(res.text, /overflow-x:\s*scroll/);
     assert.match(res.text, /bb-hq-nav|data-bb-hq|bb-hq-shell/i);
+
+    // Dedicated website Service Times editor (save_draft / save_publish) preserves
+    // the clicked action before disabling submit controls. Content-admin /pages/home
+    // embeds a lighter editor without that dual-action submit path.
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const dedicatedEditor = fs.readFileSync(
+      path.join(__dirname, "..", "views", "blessboard", "v5", "website", "service-times-editor.ejs"),
+      "utf8"
+    );
+    assert.match(dedicatedEditor, /event\.submitter/);
+    assert.match(dedicatedEditor, /data-bb-service-times-action/);
+    assert.match(dedicatedEditor, /actionInput\.name = "action"/);
+    assert.match(dedicatedEditor, /value="save_publish"/);
   });
 });

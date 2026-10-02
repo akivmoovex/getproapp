@@ -1,0 +1,70 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <h1 class="church-hq-page-header__title">Scheduled broadcasts</h1>
+          <p class="church-hq-page-header__subtitle">Growth workflow: draft → preview → estimate → approval → scheduled delivery</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/hq/broadcasts/new">New broadcast</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Quiet-hour policy</h2>
+        <p class="church-branch-panel__hint">When enabled, scheduled email broadcasts due during quiet hours are deferred until the window ends (organisation timezone: <%= (quietHours && quietHours.timezone) || 'UTC' %>).</p>
+        <form method="post" action="/hq/scheduled-broadcasts/quiet-hours" class="church-form">
+          <%- include('../partials/csrf_field') %>
+          <label class="church-label">
+            <input type="checkbox" name="quiet_hours_enabled" value="1" <%= quietHours && quietHours.quiet_hours_enabled ? 'checked' : '' %>/>
+            Enable quiet hours
+          </label>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="quiet_hours_start">Start</label>
+              <input class="church-input" type="time" id="quiet_hours_start" name="quiet_hours_start" value="<%= (quietHours && quietHours.quiet_hours_start) || '21:00' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="quiet_hours_end">End</label>
+              <input class="church-input" type="time" id="quiet_hours_end" name="quiet_hours_end" value="<%= (quietHours && quietHours.quiet_hours_end) || '07:00' %>"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save quiet hours</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Scheduled &amp; in progress</h2>
+        <% if (!(broadcasts || []).length) { %>
+        <p class="church-branch-empty">No scheduled broadcasts. Create a broadcast with a future publish time, then confirm publish.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Status</th>
+                <th scope="col">Audience</th>
+                <th scope="col">Publish at</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% broadcasts.forEach(function (b) { %>
+              <tr>
+                <td class="church-hq-wrap"><%= b.title %></td>
+                <td><%= broadcastStatusLabel(b.status) %></td>
+                <td><%= broadcastAudienceLabel(b.audience) %></td>
+                <td><%= b.publish_at ? new Date(b.publish_at).toISOString() : '—' %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/scheduled-broadcasts/<%= b.id %>" aria-label="View scheduled broadcast <%= b.title %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>" aria-label="Open broadcast editor for <%= b.title %>">Broadcast</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

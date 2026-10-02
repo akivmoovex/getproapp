@@ -3,7 +3,9 @@
 /**
  * Apex marketing routes (Batch 2b + BB-MT-001 register-church POST).
  * Automatic Foundation + Growth trial provisioning (default on; emergency env switch)
- * via provisionRegisteredBlessBoardChurch. Network is support-contact only (no auto tenant).
+ * via submitChurchRegistration (shared platform.registration engine).
+ * Network is support-contact only (no auto tenant). Form credential fields
+ * still follow SELF_REGISTRATION_PROVISIONING_ENABLED / legacy alias.
  */
 
 const express = require("express");
@@ -16,7 +18,11 @@ const {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchReviewPage,
+  renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
+  renderAboutPage,
+  renderContactPage,
 } = require("./renderApexMarketing");
 const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
 const {
@@ -30,13 +36,38 @@ const {
 const {
   normalizeSelectedPlan,
   validatePlatformChurchRegistration,
+  validateChurchRegistrationChurchStep,
+  validateChurchRegistrationAdministratorStep,
   formFromBody,
-  isInstantProvisionPlan,
   NETWORK_PLAN_CODE,
+  planDisplayLabel,
+  CONSENT_FIELD,
 } = require("../services/platformChurchRegistrationValidation");
+const { readRegistrationConsentValue } = require("../../platform/registration/registrationConsent");
 const {
-  submitPlatformChurchRegistration,
-  submitInstantFreeChurchRegistration,
+  resolveRegistrationTransactionForGet,
+  clearRegistrationTransaction,
+  persistRegistrationPasswordFromBody,
+  mergeRegistrationBodyForValidation,
+} = require("../../platform/registration/registrationTransaction");
+const { PRODUCT } = require("../../platform/registration/constants");
+const {
+  registerPlatformLocationRoutes,
+} = require("../../platform/http/platformLocationRoutes");
+const {
+  readRegistrationDraft,
+  writeRegistrationDraft,
+  clearRegistrationDraft,
+  STEP_FIELD_ALLOWLIST: BB_DRAFT_STEP_ALLOWLIST,
+  PROTECTED_KEYS: BB_DRAFT_PROTECTED_KEYS,
+} = require("../services/churchRegistrationDraft");
+const { mergeDraftFields } = require("../../platform/registration/multiStepDraftMerge");
+const {
+  withRegistrationNavParam,
+  isRegistrationFreshStartRequest,
+} = require("../../platform/registration/registrationDraftLifecycle");
+const {
+  submitChurchRegistration,
   GENERIC_SAVE_ERROR,
   DUPLICATE_REVIEW_MESSAGE,
 } = require("../services/platformChurchRegistrationService");
@@ -45,18 +76,36 @@ const {
 } = require("../config/instantFreeProvisioningEnabled");
 const { establishBlessBoardSession } = require("../services/establishBlessBoardSession");
 const {
-  setV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
+  issueAuthenticatedSessionCookie,
+} = require("../../platform/session/sharedSessionSecurity");
 const { resolveHostname } = require("../../platform/host");
 const { logRegistrationTrace } = require("../services/registrationTraceLog");
 const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMapping");
 const {
   consumeVerificationToken,
 } = require("../services/registrationEmailVerificationService");
+const {
+  generatePublicRegistrationReference,
+} = require("../../platform/registration/registrationSuccessPresentation");
+const {
+  safeRegistrationPublicError,
+} = require("../../platform/registration/safeRegistrationPublicError");
+const appRepo = require("../repositories/platformChurchRegistrationRepository");
+const {
+  resolveBlessBoardRegistrationSuccessWebsite,
+} = require("../services/resolveRegistrationSuccessWebsite");
+const {
+  validatePlatformContactInquiry,
+  contactFormFromBody,
+} = require("../../church/platformInquiryValidation");
+const { submitPlatformInquiry } = require("../../services/church/platformInquiryService");
 
 const REGISTER_PATH = "/register-church";
+const CONTACT_PATH = "/contact";
+const REGISTER_SUCCESS_PATH = "/register-church/success";
 const ACCOUNT_PATH = "/account";
-const HQ_PATH = "/hq";
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+const HQ_PATH = postAuthDashboardPath("blessboard"); // V2.05 Task 1: BB → /hq
 const LOGIN_PATH = "/login";
 /** Approved public verify path from PHASE2_033 / message builder. */
 const EMAIL_VERIFY_PATH_PREFIX = "/register/email-verification";
@@ -166,6 +215,30 @@ function resolveEmailVerifyResultOutcome(req, res, env) {
 const CSRF_FORM_ERROR =
   "Invalid or missing security token. Reload the registration form and try again.";
 
+function resolveChurchRegisterWizardStep(raw) {
+  const step = String(raw || "church").trim().toLowerCase();
+  if (step === "administrator" || step === "admin") return "administrator";
+  if (step === "review") return "review";
+  return "church";
+}
+
+function inferChurchRegisterAction(action, formData) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value) return value;
+  const hasChurch = Boolean(formData.church_name && formData.city && formData.country);
+  const hasAdmin = Boolean(
+    formData.contact_name && formData.email && formData.role_in_church
+  );
+  const hasConsent = readRegistrationConsentValue(formData);
+  if (hasConsent && hasChurch && hasAdmin) return "confirm";
+  if (hasAdmin && hasChurch) return "next-admin";
+  return "next-church";
+}
+
+function mergeChurchRegistrationForm(draftForm, bodyForm) {
+  return { ...(draftForm || {}), ...(bodyForm || {}) };
+}
+
 /**
  * Prevent CDN/browser from caching HTML that embeds a one-time CSRF token.
  * @param {import('express').Response} res
@@ -211,14 +284,23 @@ function logCsrfDiag(req, env, outcome) {
 }
 
 function logSessionEstablishFailure(req, errStatus, extra) {
+  const detail = extra && typeof extra === "object" ? extra : {};
   logRegistrationTrace(
     req,
     {
       event: "church_registration_session",
       operation: "establish_session",
       outcome: "fail",
-      failureCategory: errStatus || "session_failed",
-      ...(extra && typeof extra === "object" ? extra : {}),
+      failureCategory: errStatus || detail.failureCode || "session_failed",
+      failureCode: detail.failureCode || null,
+      failureMessage:
+        detail.failureMessage != null
+          ? String(detail.failureMessage).replace(/[A-Za-z0-9_-]{40,}/g, "[redacted]").slice(0, 160)
+          : null,
+      pgCode: detail.pgCode || null,
+      constraint: detail.constraint || null,
+      applicationId: detail.applicationId || null,
+      organizationKey: detail.organizationKey || null,
     },
     { force: true, level: "error" }
   );
@@ -242,6 +324,13 @@ function rateLimitKey(req) {
   return digest;
 }
 
+function wizardStepFromAction(action) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value === "confirm") return "review";
+  if (value === "next-admin") return "administrator";
+  return "church";
+}
+
 /**
  * @param {{
  *   getPool: () => import('pg').Pool,
@@ -259,6 +348,7 @@ function rateLimitKey(req) {
 function createApexMarketingRouter(deps) {
   const router = express.Router();
   const getPool = deps.getPool;
+  registerPlatformLocationRoutes(router, { getPool });
   const isApexHost = deps.isApexHost;
   const issueToken = deps.issueCsrfToken || issueCsrfToken;
   const setCookie = deps.setCsrfCookie || setCsrfCookie;
@@ -270,16 +360,19 @@ function createApexMarketingRouter(deps) {
     typeof deps.consumeVerificationToken === "function"
       ? deps.consumeVerificationToken
       : consumeVerificationToken;
-  const dataEnvironment = String(env.PLATFORM_DATA_ENVIRONMENT || env.DATA_ENVIRONMENT || "testing")
+  const deploymentCode = String(env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-staging")
     .trim()
     .toLowerCase();
-  const deploymentCode = String(env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-v5")
-    .trim()
-    .toLowerCase();
+  // Derive from authoritative deployment profile / DEPLOYMENT_ENV — never fall
+  // back to testing when the runtime is moovex-platform-production.
+  const {
+    resolveRegistrationDataEnvironment,
+  } = require("../../church/orgDataEnvironment");
+  const dataEnvironment = resolveRegistrationDataEnvironment(env, { deploymentCode });
 
-  function issueAndSetCsrf(res) {
+  function issueAndSetCsrf(req, res) {
     const csrfToken = issueToken(env);
-    setCookie(res, csrfToken, { secure: isProduction });
+    setCookie(res, csrfToken, { secure: isProduction, env, req });
     return csrfToken;
   }
 
@@ -296,19 +389,42 @@ function createApexMarketingRouter(deps) {
     keyGenerator: rateLimitKey,
     handler: (req, res) => {
       setRegisterNoStoreHeaders(res);
-      const csrfToken = issueAndSetCsrf(res);
+      const csrfToken = issueAndSetCsrf(req, res);
+        return res.status(429).type("html").send(
+      renderRegisterChurchPage({
+        authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+        csrfToken,
+        csrfField: CSRF_FIELD,
+        req,
+        submitted: false,
+        formError: "Too many submissions from this network. Please wait a few minutes and try again.",
+        form: formFromBody(req.body || {}),
+        fieldError: null,
+        selectedPlan: normalizeSelectedPlan(req.body && req.body.selected_plan),
+        showCsrfRetry: false,
+        instantFreeEnabled: instantEnabled(),
+        env,
+      })
+    );
+    },
+  });
+
+  const contactFormLimiter = rateLimit({
+    windowMs: Number(env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS) || 15 * 60 * 1000,
+    limit: Number(env.GETPRO_PLATFORM_FORM_RATE_MAX) || 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: rateLimitKey,
+    handler: (req, res) => {
+      const csrfToken = issueAndSetCsrf(req, res);
       return res.status(429).type("html").send(
-        renderRegisterChurchPage({
+        renderContactPage({
           authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
           csrfToken,
           csrfField: CSRF_FIELD,
           submitted: false,
           formError: "Too many submissions from this network. Please wait a few minutes and try again.",
-          form: formFromBody(req.body || {}),
-          fieldError: null,
-          selectedPlan: normalizeSelectedPlan(req.body && req.body.selected_plan),
-          showCsrfRetry: false,
-          instantFreeEnabled: instantEnabled(),
+          form: contactFormFromBody(req.body || {}),
         })
       );
     },
@@ -326,7 +442,7 @@ function createApexMarketingRouter(deps) {
   function renderEmailVerifyRateLimited(req, res) {
     setRegisterNoStoreHeaders(res);
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     return res.status(429).type("html").send(
       renderEmailVerificationResultPage({
         authenticated,
@@ -366,7 +482,7 @@ function createApexMarketingRouter(deps) {
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
     const alwaysPassCsrf = Boolean(extra.alwaysPassCsrf);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     const passCsrf = authenticated || alwaysPassCsrf;
     if (extra.noStore) {
       setRegisterNoStoreHeaders(res);
@@ -384,38 +500,239 @@ function createApexMarketingRouter(deps) {
     );
   }
 
+  router.get("/about", (req, res) => withShell(req, res, renderAboutPage, { env }));
+  router.get(CONTACT_PATH, (req, res) =>
+    withShell(req, res, renderContactPage, {
+      alwaysPassCsrf: true,
+      submitted: String((req.query && req.query.submitted) || "") === "1",
+      formError: null,
+      form: {},
+      fieldError: null,
+    })
+  );
+
+  router.post(CONTACT_PATH, contactFormLimiter, async (req, res, next) => {
+    try {
+      if (!isApexHost(req)) {
+        return res.status(404).type("text").send("Not found");
+      }
+
+      const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
+      const body = req.body || {};
+
+      function renderContact(status, extras) {
+        const csrfToken = issueAndSetCsrf(req, res);
+        return res.status(status).type("html").send(
+          renderContactPage({
+            authenticated,
+            csrfToken,
+            csrfField: CSRF_FIELD,
+            submitted: false,
+            form: contactFormFromBody((extras && extras.form) || body),
+            formError: (extras && extras.formError) || null,
+            fieldError: (extras && extras.fieldError) || null,
+          })
+        );
+      }
+
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return renderContact(400, {
+          formError: "Your session expired. Please refresh and send your message again.",
+          form: body,
+        });
+      }
+
+      const validation = validatePlatformContactInquiry(body);
+      if (!validation.ok) {
+        return renderContact(400, {
+          formError: validation.error,
+          fieldError: validation.field || null,
+          form: body,
+        });
+      }
+
+      const result = await submitPlatformInquiry(req, validation);
+      if (!result.ok) {
+        return renderContact(503, {
+          formError: result.error || "We could not save your message right now. Please try again shortly.",
+          form: body,
+        });
+      }
+
+      return res.redirect(303, `${CONTACT_PATH}?submitted=1`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
-  router.get("/pricing", (req, res) => withShell(req, res, renderPricingPage));
-  router.get("/terms", (req, res) => withShell(req, res, renderTermsPage));
-  router.get("/privacy", (req, res) => withShell(req, res, renderPrivacyPage));
+  router.get("/pricing", (req, res) =>
+    withShell(req, res, renderPricingPage, { req })
+  );
+  router.get("/terms", (req, res) =>
+    withShell(req, res, renderTermsPage, { req })
+  );
+  router.get("/privacy", (req, res) =>
+    withShell(req, res, renderPrivacyPage, { req })
+  );
+
+  router.get(REGISTER_SUCCESS_PATH, async (req, res, next) => {
+    if (String((req.query && req.query.review) || "") === "1") {
+      return res.redirect(303, `${REGISTER_PATH}?review=1`);
+    }
+    try {
+      const ready = String((req.query && req.query.ready) || "") === "1";
+      const applicationReference = String((req.query && req.query.ref) || "").trim().slice(0, 64);
+      const sessionOrgId =
+        req.v5Session &&
+        req.v5Session.session &&
+        req.v5Session.session.organizationId != null
+          ? String(req.v5Session.session.organizationId)
+          : null;
+      const website = await resolveBlessBoardRegistrationSuccessWebsite(getPool(), {
+        reference: applicationReference,
+        ready,
+        sessionOrganizationId: sessionOrgId,
+        publicOrigin: `${req.protocol}://${req.get("host")}`,
+      });
+      return withShell(req, res, renderRegisterChurchSuccessPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        applicationReference,
+        ready,
+        website,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   router.get(REGISTER_PATH, (req, res) => {
     const selectedPlan = normalizeSelectedPlan(req.query && req.query.plan);
     const submitted = String((req.query && req.query.submitted) || "") === "1";
-    const workspaceReady = String((req.query && req.query.ready) || "") === "1";
-    const loginFallback = String((req.query && req.query.login) || "") === "1";
     const review = String((req.query && req.query.review) || "") === "1";
     const submittedPlan = submitted
       ? normalizeSelectedPlan(req.query && req.query.plan) || selectedPlan
       : null;
+
+    if (submitted || review) {
+      return withShell(req, res, renderRegisterChurchPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        req,
+        submitted,
+        submittedPlan,
+        networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
+        workspaceReady: false,
+        loginFallback: false,
+        review,
+        organizationKeyPreview: String((req.query && req.query.key) || "")
+          .trim()
+          .slice(0, 64),
+        formError: null,
+        form: formFromBody({}, { selectedPlanHint: selectedPlan }),
+        fieldError: null,
+        selectedPlan,
+        showCsrfRetry: false,
+        env,
+      });
+    }
+
+    const wizardStep = resolveChurchRegisterWizardStep(req.query.step);
+    if (isRegistrationFreshStartRequest(req)) {
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.BLESSBOARD,
+        clearDraft: clearRegistrationDraft,
+      });
+      const planQs = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan)}` : "";
+      return res.redirect(302, `${REGISTER_PATH}${planQs}`);
+    }
+
+    const draftResolution = resolveRegistrationTransactionForGet({
+      req,
+      res,
+      isProduction,
+      clearDraft: clearRegistrationDraft,
+      readDraft: readRegistrationDraft,
+      env,
+      productCode: PRODUCT.BLESSBOARD,
+    });
+
+    if (!draftResolution.restoreDraft) {
+      const planQs = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan)}` : "";
+      if (wizardStep !== "church" || req.query.step) {
+        return res.redirect(302, `${REGISTER_PATH}${planQs}`);
+      }
+    }
+
+    const draft = draftResolution.restoreDraft ? draftResolution.draft : null;
+    const defaults = { country: "ZM", selected_plan: selectedPlan || "" };
+    const form = formFromBody(
+      draftResolution.formData ? { ...defaults, ...draftResolution.formData } : defaults,
+      { selectedPlanHint: selectedPlan }
+    );
+
+    if (wizardStep === "review") {
+      if (!draft || !draft.formData) {
+        return res.redirect(302, `${REGISTER_PATH}?step=church`);
+      }
+      const churchCheck = validateChurchRegistrationChurchStep(draft.formData, {
+        selectedPlanHint: selectedPlan,
+        instantFreeEnabled: instantEnabled(),
+      });
+      const adminCheck = validateChurchRegistrationAdministratorStep(draft.formData, {
+        selectedPlanHint: selectedPlan,
+        instantFreeEnabled: instantEnabled(),
+        env,
+        // Passwords live in the vault cookie, not the draft — skip for GET hydrate/review.
+        skipPassword: true,
+      });
+      if (!churchCheck.ok || !adminCheck.ok) {
+        const step = !churchCheck.ok ? "church" : "administrator";
+        return res.redirect(302, `${REGISTER_PATH}?step=${step}`);
+      }
+      return withShell(req, res, renderRegisterChurchReviewPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        req,
+        wizardStep: "review",
+        form,
+        selectedPlan: form.selected_plan || selectedPlan,
+        organizationKeyPreview:
+          form.organization_key ||
+          (churchCheck.data && churchCheck.data.organization_key) ||
+          "",
+        formError: null,
+        fieldError: null,
+        showCsrfRetry: false,
+        instantFreeEnabled: instantEnabled(),
+        env,
+      });
+    }
+
+    if (wizardStep === "administrator" && (!draft || !draft.formData)) {
+      return res.redirect(302, `${REGISTER_PATH}?step=church`);
+    }
+
     return withShell(req, res, renderRegisterChurchPage, {
       alwaysPassCsrf: true,
       noStore: true,
-      submitted,
-      submittedPlan,
-      networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
-      workspaceReady,
-      loginFallback,
-      review,
-      organizationKeyPreview: String((req.query && req.query.key) || "")
+      req,
+      submitted: false,
+      review: false,
+      wizardStep,
+      organizationKeyPreview: String((req.query && req.query.key) || form.organization_key || "")
         .trim()
         .slice(0, 64),
       formError: null,
-      form: formFromBody({}, { selectedPlanHint: selectedPlan }),
+      form,
       fieldError: null,
-      selectedPlan,
+      selectedPlan: form.selected_plan || selectedPlan,
       showCsrfRetry: false,
+      instantFreeEnabled: instantEnabled(),
+      env,
     });
   });
 
@@ -432,6 +749,7 @@ function createApexMarketingRouter(deps) {
       const selectedPlanHint = normalizeSelectedPlan(req.query && req.query.plan);
       const body = req.body || {};
       const flagOn = instantEnabled();
+      const actionHint = String(body.action || "").trim().toLowerCase();
 
       logRegistrationTrace(req, {
         event: "church_registration_post",
@@ -439,25 +757,51 @@ function createApexMarketingRouter(deps) {
         outcome: "started",
         publicPlanCode: normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
         mode: flagOn ? "instant_enabled" : "enquiry_only",
+        workerPid: process.pid,
+        wizardStep: wizardStepFromAction(actionHint),
+        sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
       });
 
       function renderForm(status, extras) {
         // Always issue a fresh cookie+field pair after failed attempts so Back/retry works.
-        const csrfToken = issueAndSetCsrf(res);
-        return res.status(status).type("html").send(
-          renderRegisterChurchPage({
-            authenticated,
-            csrfToken,
-            csrfField: CSRF_FIELD,
-            submitted: false,
-            form: formFromBody(body, { selectedPlanHint }),
-            selectedPlan:
-              normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
-            showCsrfRetry: false,
-            instantFreeEnabled: flagOn,
-            ...extras,
-          })
-        );
+        const csrfToken = issueAndSetCsrf(req, res);
+        const wizardStep = (extras && extras.wizardStep) || "church";
+        const form = formFromBody((extras && extras.form) || body, { selectedPlanHint });
+        const rawError = extras && extras.formError;
+        const statusNum = Number(status);
+        const needsPublicError =
+          statusNum >= 400 || (typeof rawError === "string" && rawError.trim().length > 0);
+        const preserveCsrfCopy =
+          extras &&
+          extras.showCsrfRetry === true &&
+          typeof rawError === "string" &&
+          rawError.trim() === CSRF_FORM_ERROR;
+        const formError = needsPublicError
+          ? preserveCsrfCopy
+            ? CSRF_FORM_ERROR
+            : safeRegistrationPublicError(rawError, GENERIC_SAVE_ERROR)
+          : null;
+        const common = {
+          authenticated,
+          csrfToken,
+          csrfField: CSRF_FIELD,
+          req,
+          submitted: false,
+          review: false,
+          form,
+          selectedPlan:
+            normalizeSelectedPlan(form.selected_plan) || selectedPlanHint || null,
+          showCsrfRetry: false,
+          instantFreeEnabled: flagOn,
+          env,
+          wizardStep,
+          ...(extras || {}),
+          formError,
+        };
+        if (wizardStep === "review") {
+          return res.status(status).type("html").send(renderRegisterChurchReviewPage(common));
+        }
+        return res.status(status).type("html").send(renderRegisterChurchPage(common));
       }
 
       // Validate against the request cookie BEFORE rotating the CSRF cookie.
@@ -468,19 +812,161 @@ function createApexMarketingRouter(deps) {
           operation: "csrf_validate",
           outcome: "fail",
           failureCategory: "csrf_invalid",
+          csrfResult: "reject",
+          workerPid: process.pid,
+          wizardStep: wizardStepFromAction(actionHint),
+          sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
+          httpStatus: 403,
           durationMs: Date.now() - startedAt,
         });
         return renderForm(403, {
           formError: CSRF_FORM_ERROR,
           fieldError: null,
           showCsrfRetry: true,
+          wizardStep: wizardStepFromAction(actionHint),
         });
       }
       logCsrfDiag(req, env, "accept");
 
-      const validation = validatePlatformChurchRegistration(body, {
+      const draft = readRegistrationDraft(req, env);
+      logRegistrationTrace(req, {
+        event: "church_registration_validation",
+        operation: "csrf_validate",
+        outcome: "ok",
+        csrfResult: "accept",
+        workerPid: process.pid,
+        wizardStep: wizardStepFromAction(actionHint),
+        draftExists: Boolean(draft && draft.formData),
+        sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
+      });
+      const mergedBody = mergeRegistrationBodyForValidation(req, env, PRODUCT.BLESSBOARD, {
+        ...(draft && draft.formData ? draft.formData : {}),
+        ...body,
+      });
+      const mergedForm = formFromBody(mergedBody, { selectedPlanHint });
+      const action = inferChurchRegisterAction(body.action, mergedForm);
+
+      if (action === "next-church") {
+        const stepValidation = validateChurchRegistrationChurchStep(body, {
+          selectedPlanHint,
+          instantFreeEnabled: flagOn,
+        });
+        if (!stepValidation.ok) {
+          return renderForm(400, {
+            wizardStep: "church",
+            formError: stepValidation.error,
+            fieldError: stepValidation.field || null,
+            form: formFromBody(
+              mergeDraftFields({
+                prior: draft && draft.formData,
+                incoming: body,
+                options: {
+                  fieldAllowlist: BB_DRAFT_STEP_ALLOWLIST.church,
+                  protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+                },
+              }),
+              { selectedPlanHint }
+            ),
+          });
+        }
+        const nextForm = mergeDraftFields({
+          prior: draft && draft.formData,
+          incoming: formFromBody(body, { selectedPlanHint }),
+          options: {
+            fieldAllowlist: BB_DRAFT_STEP_ALLOWLIST.church,
+            protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+            serverOverrides: {
+              organization_key:
+                (stepValidation.data && stepValidation.data.organization_key) ||
+                (draft && draft.formData && draft.formData.organization_key) ||
+                "",
+              selected_plan:
+                normalizeSelectedPlan(body.selected_plan) ||
+                selectedPlanHint ||
+                (draft && draft.formData && draft.formData.selected_plan) ||
+                "",
+            },
+          },
+        });
+        writeRegistrationDraft(res, env, nextForm, {
+          isProduction,
+          currentStep: "administrator",
+          priorDraft: draft,
+        });
+        const planQ = nextForm.selected_plan
+          ? `&plan=${encodeURIComponent(nextForm.selected_plan)}`
+          : selectedPlanHint
+            ? `&plan=${encodeURIComponent(selectedPlanHint)}`
+            : "";
+        return res.redirect(
+          303,
+          withRegistrationNavParam(`${REGISTER_PATH}?step=administrator${planQ}`)
+        );
+      }
+
+      if (action === "next-admin") {
+        const stepValidation = validateChurchRegistrationAdministratorStep(mergedBody, {
+          selectedPlanHint,
+          instantFreeEnabled: flagOn,
+          env,
+        });
+        if (!stepValidation.ok) {
+          const adminFields = new Set([
+            "contact_name",
+            "email",
+            "phone",
+            "role_in_church",
+            "password",
+            "password_confirm",
+          ]);
+          return renderForm(400, {
+            wizardStep: adminFields.has(stepValidation.field) ? "administrator" : "church",
+            formError: stepValidation.error,
+            fieldError: stepValidation.field || null,
+            form: mergedForm,
+          });
+        }
+        const nextForm = mergeDraftFields({
+          prior: draft && draft.formData,
+          incoming: mergedForm,
+          options: {
+            fieldAllowlist: [
+              ...BB_DRAFT_STEP_ALLOWLIST.church,
+              ...BB_DRAFT_STEP_ALLOWLIST.administrator,
+            ],
+            protectedKeys: BB_DRAFT_PROTECTED_KEYS,
+            serverOverrides: {
+              organization_key:
+                (draft && draft.formData && draft.formData.organization_key) ||
+                mergedForm.organization_key ||
+                "",
+            },
+          },
+        });
+        writeRegistrationDraft(res, env, nextForm, {
+          isProduction,
+          currentStep: "review",
+          priorDraft: draft,
+        });
+        persistRegistrationPasswordFromBody(res, env, body, {
+          isProduction,
+          productCode: PRODUCT.BLESSBOARD,
+        });
+        const planQ = nextForm.selected_plan
+          ? `&plan=${encodeURIComponent(nextForm.selected_plan)}`
+          : selectedPlanHint
+            ? `&plan=${encodeURIComponent(selectedPlanHint)}`
+            : "";
+        return res.redirect(
+          303,
+          withRegistrationNavParam(`${REGISTER_PATH}?step=review${planQ}`)
+        );
+      }
+
+      const validation = validatePlatformChurchRegistration(mergedBody, {
         selectedPlanHint,
         instantFreeEnabled: flagOn,
+        env,
       });
       if (!validation.ok) {
         logRegistrationTrace(req, {
@@ -495,6 +981,16 @@ function createApexMarketingRouter(deps) {
         return renderForm(400, {
           formError: validation.error,
           fieldError: validation.field || null,
+          form: mergedForm,
+          wizardStep:
+            validation.field === CONSENT_FIELD ||
+            validation.field === "consent_contact"
+              ? "review"
+              : ["contact_name", "email", "phone", "role_in_church", "password", "password_confirm"].includes(
+                  validation.field
+                )
+                ? "administrator"
+                : "church",
         });
       }
 
@@ -507,45 +1003,97 @@ function createApexMarketingRouter(deps) {
         canonicalPlanKey: mapPublicPlanToDbPlanKey(publicPlanCode) || null,
       });
 
-      const wantsInstant =
-        flagOn &&
-        validation.data &&
-        validation.data.wants_instant_free &&
-        isInstantProvisionPlan(validation.data.selected_plan);
+      const result = await submitChurchRegistration(getPool(), req, validation, {
+        dataEnvironment,
+        deploymentCode,
+        provisionFn: provisionFn || undefined,
+        env,
+      });
 
-      if (!wantsInstant) {
-        const result = await submitPlatformChurchRegistration(getPool(), req, validation);
-        if (result.honeypot) {
-          issueAndSetCsrf(res);
+      if (result.honeypot) {
+        clearRegistrationTransaction(res, {
+          isProduction,
+          productCode: PRODUCT.BLESSBOARD,
+          clearDraft: clearRegistrationDraft,
+        });
+        issueAndSetCsrf(req, res);
+        logRegistrationTrace(req, {
+          event: "church_registration_redirect",
+          operation: "register_church_redirect",
+          outcome: "ok",
+          redirectPath: `${REGISTER_PATH}?submitted=1`,
+          failureCategory: "honeypot",
+          durationMs: Date.now() - startedAt,
+        });
+        return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+      }
+
+      if (!result.ok) {
+        if (result.review) {
+          issueAndSetCsrf(req, res);
           logRegistrationTrace(req, {
             event: "church_registration_redirect",
             operation: "register_church_redirect",
             outcome: "ok",
-            redirectPath: `${REGISTER_PATH}?submitted=1`,
-            failureCategory: "honeypot",
+            redirectPath: `${REGISTER_PATH}?review=1`,
+            failureCategory: "review_required",
+            reviewReason: result.reason || null,
+            reasonCodes: result.reasons || result.riskReasonCodes || [],
             durationMs: Date.now() - startedAt,
           });
-          return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+          return res.redirect(303, `${REGISTER_PATH}?review=1`);
         }
-        if (!result.ok) {
-          if (result.review) {
-            issueAndSetCsrf(res);
-            logRegistrationTrace(req, {
-              event: "church_registration_redirect",
-              operation: "register_church_redirect",
-              outcome: "ok",
-              redirectPath: `${REGISTER_PATH}?review=1`,
-              failureCategory: "review_required",
-              durationMs: Date.now() - startedAt,
-            });
-            return res.redirect(303, `${REGISTER_PATH}?review=1`);
-          }
-          return renderForm(result.httpStatus || 503, {
-            formError: result.error || GENERIC_SAVE_ERROR,
-            fieldError: result.field || null,
+        if (result.inProgress) {
+          return renderForm(200, {
+            formError: result.error || IN_PROGRESS_SAFE,
+            fieldError: null,
+            form: mergedForm,
+            wizardStep: "review",
           });
         }
-        issueAndSetCsrf(res);
+        if (result.field) {
+          const adminFields = new Set([
+            "contact_name",
+            "email",
+            "phone",
+            "role_in_church",
+            "password",
+            "password_confirm",
+          ]);
+          return renderForm(result.httpStatus || 400, {
+            formError: result.error,
+            fieldError: result.field,
+            form: mergedForm,
+            wizardStep: adminFields.has(result.field) ? "administrator" : "church",
+          });
+        }
+        const failStatus = result.httpStatus || 503;
+        logRegistrationTrace(req, {
+          event: "church_registration_application",
+          operation: "register_church_fail_response",
+          outcome: "fail",
+          failureCategory: result.code || "provisioning_failed",
+          applicationId: result.application && result.application.id,
+          publicRegistrationReference:
+            result.application && result.application.public_registration_reference,
+          duplicate: Boolean(result.duplicate || result.alreadyProvisioned),
+          alreadyProvisioned: Boolean(result.alreadyProvisioned),
+          httpStatus: failStatus,
+          wizardStep: "review",
+          workerPid: process.pid,
+          durationMs: Date.now() - startedAt,
+        });
+        return renderForm(failStatus, {
+          formError: result.error || GENERIC_SAVE_ERROR,
+          fieldError: result.field || null,
+          form: mergedForm,
+          wizardStep: "review",
+        });
+      }
+
+      const records = result.records || {};
+      if (!records.organizationId && !records.administratorUserId) {
+        issueAndSetCsrf(req, res);
         const planQ =
           result.networkSupportContact ||
           (validation.data && validation.data.selected_plan === NETWORK_PLAN_CODE)
@@ -563,57 +1111,26 @@ function createApexMarketingRouter(deps) {
         return res.redirect(303, redirectPath);
       }
 
-      const result = await submitInstantFreeChurchRegistration(getPool(), req, validation, {
-        dataEnvironment,
-        deploymentCode,
-        provisionFn: provisionFn || undefined,
-      });
-
-      if (result.honeypot) {
-        issueAndSetCsrf(res);
-        return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
-      }
-
-      if (!result.ok) {
-        if (result.review) {
-          issueAndSetCsrf(res);
-          return res.redirect(303, `${REGISTER_PATH}?review=1`);
-        }
-        if (result.inProgress) {
-          return renderForm(200, {
-            formError: result.error || IN_PROGRESS_SAFE,
-            fieldError: null,
-          });
-        }
-        if (result.field) {
-          return renderForm(result.httpStatus || 400, {
-            formError: result.error,
-            fieldError: result.field,
-          });
-        }
-        return renderForm(result.httpStatus || 503, {
-          formError: result.error || GENERIC_SAVE_ERROR,
-          fieldError: null,
-        });
-      }
-
       // Provisioning committed — establish session (never roll back the tenant).
-      // Issue a new opaque V5 session token (replaces any prior cookie value).
-      const records = result.records || {};
+      // Same canonical path as normal /login: requireOrganizationId scopes catalogue
+      // roles; church/branch come from preferCatalogueSessionRole (not forced IDs).
       const orgKey = records.organizationKey || validation.data.organization_key || "";
       let sessionOk = false;
       try {
         const sessionResult = await establishSession(getPool(), {
           userId: records.administratorUserId,
           deploymentCode,
-          organizationId: records.organizationId,
-          churchId: records.churchId,
-          branchId: records.branchId,
+          requireOrganizationId: records.organizationId || null,
           ip: clientIp(req),
           userAgent: (req.get && req.get("user-agent")) || null,
         });
         if (sessionResult.ok && sessionResult.rawToken) {
-          setV5SessionCookie(res, sessionResult.rawToken, { secure: isProduction, env });
+          await issueAuthenticatedSessionCookie(req, res, {
+            rawToken: sessionResult.rawToken,
+            env,
+            isProduction,
+            getPool,
+          });
           sessionOk = true;
           logRegistrationTrace(req, {
             event: "church_registration_session",
@@ -623,11 +1140,20 @@ function createApexMarketingRouter(deps) {
             organizationKey: orgKey || null,
             publicPlanCode,
             canonicalPlanKey: records.planKey || mapPublicPlanToDbPlanKey(publicPlanCode) || null,
+            preferredRoleKey: sessionResult.preferredRoleKey || null,
+            tenantOrganizationId:
+              (sessionResult.tenantContext && sessionResult.tenantContext.organizationId) ||
+              (sessionResult.session && sessionResult.session.organization_id) ||
+              null,
           });
         } else {
           logSessionEstablishFailure(req, sessionResult && sessionResult.status, {
             applicationId: records.applicationId || null,
             organizationKey: orgKey || null,
+            failureCode: (sessionResult && (sessionResult.failureCode || sessionResult.status)) || null,
+            failureMessage: (sessionResult && sessionResult.message) || null,
+            pgCode: (sessionResult && sessionResult.pgCode) || null,
+            constraint: (sessionResult && sessionResult.constraint) || null,
           });
         }
       } catch (sessionErr) {
@@ -637,45 +1163,89 @@ function createApexMarketingRouter(deps) {
           {
             applicationId: records.applicationId || null,
             organizationKey: orgKey || null,
+            failureCode: "exception",
+            failureMessage: sessionErr && sessionErr.message ? String(sessionErr.message).slice(0, 160) : null,
+            pgCode: sessionErr && sessionErr.code ? String(sessionErr.code).slice(0, 32) : null,
+            constraint:
+              sessionErr && sessionErr.constraint ? String(sessionErr.constraint).slice(0, 120) : null,
           }
         );
       }
 
-      issueAndSetCsrf(res);
+      issueAndSetCsrf(req, res);
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.BLESSBOARD,
+        clearDraft: clearRegistrationDraft,
+      });
 
-      if (sessionOk) {
-        // Session-scoped HQ on apex (path public /c/:key; no wildcard tenant host required).
-        logRegistrationTrace(req, {
-          event: "church_registration_redirect",
-          operation: "register_church_redirect",
-          outcome: "ok",
-          redirectPath: HQ_PATH,
-          applicationId: records.applicationId || null,
-          organizationKey: orgKey || null,
-          publicPlanCode,
-          canonicalPlanKey: records.planKey || null,
-          durationMs: Date.now() - startedAt,
-        });
-        return res.redirect(303, HQ_PATH);
+      const publicReference = generatePublicRegistrationReference("BB");
+      if (records.applicationId) {
+        try {
+          await appRepo.setPublicRegistrationReference(getPool(), records.applicationId, publicReference);
+        } catch (refErr) {
+          logRegistrationTrace(req, {
+            event: "church_registration_reference",
+            operation: "store_public_reference",
+            outcome: "fail",
+            applicationId: records.applicationId || null,
+            failureCategory: refErr && refErr.message ? String(refErr.message).slice(0, 80) : "error",
+          });
+        }
       }
 
-      const keyQ = orgKey ? `&key=${encodeURIComponent(orgKey)}` : "";
-      const loginRedirect = `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(HQ_PATH)}`;
+      // Auto-login already issued above; land on HQ dashboard (skip success/editor detour).
+      const redirectPath = HQ_PATH;
       logRegistrationTrace(req, {
         event: "church_registration_redirect",
         operation: "register_church_redirect",
         outcome: "ok",
-        failureCategory: "session_failed_post_commit",
-        redirectPath: `${REGISTER_PATH}?ready=1&login=1`,
+        redirectPath,
+        publicRegistrationReference: publicReference || null,
+        ...(sessionOk ? {} : { failureCategory: "session_failed_post_commit" }),
         applicationId: records.applicationId || null,
         organizationKey: orgKey || null,
         publicPlanCode,
+        canonicalPlanKey: records.planKey || null,
         durationMs: Date.now() - startedAt,
       });
-      return res.redirect(303, loginRedirect);
+      return res.redirect(303, redirectPath);
     } catch (err) {
       return next(err);
     }
+  });
+
+  // Legacy V4 finder paths → V5 /directory (and /c/:org for org bookmarks).
+  // Do not leave /churches as a 503 "unavailable" trap (prefix matched /church).
+  router.get(["/churches", "/churches/"], (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const q = directoryRepo.normalizeSearchQuery(req.query && req.query.q);
+    const target = q ? `/directory?q=${encodeURIComponent(q)}` : "/directory";
+    return res.redirect(302, target);
+  });
+
+  router.get("/churches/:slug/branches", (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const slug = String((req.params && req.params.slug) || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) return res.redirect(302, "/directory");
+    return res.redirect(302, `/c/${encodeURIComponent(slug)}`);
+  });
+
+  router.get("/churches/:slug", (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const slug = String((req.params && req.params.slug) || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) return res.redirect(302, "/directory");
+    return res.redirect(302, `/c/${encodeURIComponent(slug)}`);
   });
 
   router.get("/directory", async (req, res) => {
@@ -683,7 +1253,7 @@ function createApexMarketingRouter(deps) {
       return res.status(404).type("text").send("Not found");
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
 
     const q = directoryRepo.normalizeSearchQuery(req.query && req.query.q);
     const page = Number(req.query && req.query.page) || 1;
@@ -693,7 +1263,7 @@ function createApexMarketingRouter(deps) {
     try {
       const pool = getPool();
       if (pool) {
-        results = await directoryRepo.searchPublicOrganizations(pool, { q, page });
+        results = await directoryRepo.searchPublicOrganizations(pool, { q, page, env });
       } else {
         directoryUnavailable = true;
       }
@@ -729,7 +1299,7 @@ function createApexMarketingRouter(deps) {
     }
     setRegisterNoStoreHeaders(res);
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     const outcome = resolveEmailVerifyResultOutcome(req, res, env);
     return res.status(200).type("html").send(
       renderEmailVerificationResultPage({
@@ -795,6 +1365,7 @@ const IN_PROGRESS_SAFE =
 module.exports = {
   createApexMarketingRouter,
   REGISTER_PATH,
+  REGISTER_SUCCESS_PATH,
   ACCOUNT_PATH,
   HQ_PATH,
   LOGIN_PATH,
@@ -806,4 +1377,5 @@ module.exports = {
   resolveEmailVerifyResultOutcome,
   setEmailVerifyOutcomeFlashCookie,
   DUPLICATE_REVIEW_MESSAGE,
+  wizardStepFromAction,
 };

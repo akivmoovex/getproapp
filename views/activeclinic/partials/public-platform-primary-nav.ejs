@@ -1,0 +1,17 @@
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  function currentAttr(kind) {
+    var on = false;
+    if (kind === "clinics") on = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
+    else if (kind === "for-clinics") on = /for-clinics|public-solutions/.test(pid);
+    else if (kind === "for-patients") on = /for-patients/.test(pid);
+    else if (kind === "about") on = /public-about/.test(pid);
+    else if (kind === "contact") on = /public-contact/.test(pid);
+    return on ? ' aria-current="page"' : "";
+  }
+%>
+<a href="/clinics"<%- currentAttr("clinics") %>>Find a Clinic</a>
+<a href="/for-clinics"<%- currentAttr("for-clinics") %>>For Clinics</a>
+<a href="/for-patients"<%- currentAttr("for-patients") %>>For Patients</a>
+<a href="/about"<%- currentAttr("about") %>>About</a>
+<a href="/contact"<%- currentAttr("contact") %>>Contact</a>

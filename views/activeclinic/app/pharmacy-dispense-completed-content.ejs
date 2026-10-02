@@ -1,0 +1,42 @@
+<%
+  var completed = (pageData && pageData) || {};
+  var prescription = completed.prescription || {};
+  var items = completed.items || [];
+  var stitch = completed.stitch || {};
+%>
+<section class="ac-pharmacy-dispense-completed" data-ac-page-section="pharmacy-dispense-completed" data-ac-dispense-step="completed" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <nav class="ac-stepper ac-stepper--pharmacy" aria-label="Dispensing steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Review</li>
+      <li class="ac-stepper__item">Confirm</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Completed</li>
+    </ol>
+  </nav>
+
+  <div class="ac-panel ac-inline-state ac-inline-state--success">
+    <h2>Dispensing completed</h2>
+    <p>Prescription <strong><%= prescription.prescriptionNumber %></strong> is now <strong><%= prescription.statusLabel || prescription.status %></strong>.</p>
+    <p class="ac-muted">Patient: <%= prescription.patientDisplayName || '—' %></p>
+  </div>
+
+  <% if (items.length) { %>
+  <div class="ac-panel">
+    <h3>Dispensed items</h3>
+    <ul class="ac-summary-list">
+      <% items.forEach(function (item) { %>
+      <li>
+        <strong><%= item.medicationGenericName %></strong>
+        — <%= item.quantityDispensed %> / <%= item.quantityOrdered %> <%= item.medicationUnit || '' %>
+        · <%= item.status %>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <div class="ac-panel ac-form-actions">
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/labels" class="ac-btn ac-btn--secondary">Print labels</a>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/instructions" class="ac-btn ac-btn--secondary">Patient instructions</a>
+    <a href="/app/pharmacy/queue" class="ac-btn ac-btn--primary">Back to queue</a>
+  </div>
+</section>

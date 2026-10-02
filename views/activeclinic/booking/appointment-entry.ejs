@@ -1,0 +1,41 @@
+<section class="ac-public-section ac-stitch-page ac-stitch-page--r08" data-ac-page-section="booking-entry" data-ac-stitch-screen="R08">
+  <h1>Request an appointment</h1>
+  <p><%- include('../partials/website-editable-field', { contentKey: 'book.intro', fieldValue: (typeof clinic !== 'undefined' && clinic && clinic.bookIntro) || 'Submit a preferred time. The clinic will confirm — this is not an automatic confirmation.', fieldType: 'long_text' }) %></p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% const fd = formData || {}; %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-booking="consultation" data-ac-loading="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="patientFirstName">First name</label>
+    <input id="patientFirstName" name="patientFirstName" required value="<%= fd.patientFirstName || '' %>"/>
+    <label for="patientLastName">Last name</label>
+    <input id="patientLastName" name="patientLastName" required value="<%= fd.patientLastName || '' %>"/>
+    <%- include('../partials/phone-field', {
+      id: 'patientPhone',
+      label: 'Phone',
+      required: true,
+      defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+      selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+      nationalValue: (fd && (fd.phoneNational || fd.patientPhoneNational)) || '',
+      e164Value: (fd && fd.patientPhone) || '',
+      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+      phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+      countryFieldName: 'phone_country',
+      nationalFieldName: 'phone_national',
+      legacyFieldName: 'patientPhone',
+      showLegacyHidden: false
+    }) %>
+    <label for="patientEmail">Email (optional)</label>
+    <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
+    <label for="serviceKey">Service (optional key)</label>
+    <input id="serviceKey" name="serviceKey" value="<%= fd.serviceKey || (typeof preferredService === 'string' ? preferredService : '') %>"/>
+    <% if (typeof preferredDoctor === 'string' && preferredDoctor) { %>
+    <label for="preferredDoctorKey">Preferred doctor (optional key)</label>
+    <input id="preferredDoctorKey" name="preferredDoctorKey" value="<%= fd.preferredDoctorKey || preferredDoctor %>"/>
+    <% } %>
+    <label for="preferredStartsAt">Preferred date and time</label>
+    <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" value="<%= fd.preferredStartsAt || '' %>"/>
+    <label for="visitReason">Reason for visit (optional)</label>
+    <textarea id="visitReason" name="visitReason" maxlength="500"><%= fd.visitReason || '' %></textarea>
+    <button type="submit" class="ac-btn ac-btn--primary">Submit request</button>
+  </form>
+</section>

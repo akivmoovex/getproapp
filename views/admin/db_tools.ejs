@@ -105,7 +105,7 @@
           </p>
           <% var prev = typeof clearPreview !== 'undefined' ? clearPreview : null; %>
           <% if (prev && prev.batchCount != null) { %>
-          <div class="muted" style="font-size: 0.9rem; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--color-outline, #ccc); border-radius: var(--radius-medium, 8px); background: var(--color-surface-variant, rgba(0,0,0,0.04));">
+          <div class="muted" style="font-size: 0.9rem; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--color-outline); border-radius: var(--radius-medium, 8px); background: var(--color-surface-variant);">
             <p style="margin: 0 0 0.5rem 0;"><strong>Clear preview</strong> (registry only)</p>
             <p style="margin: 0 0 0.35rem 0;">Seed batches for this tenant: <strong><%= prev.batchCount %></strong>. Tracked rows: <strong><%= prev.totalTrackedRows != null ? prev.totalTrackedRows : 0 %></strong>.</p>
             <% if (prev.byTable && prev.byTable.length) { %>

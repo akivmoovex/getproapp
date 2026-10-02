@@ -1,0 +1,18 @@
+<%#
+  BlessBoard BBR08 registration success — shared view-model + BlessBoard panel.
+  Locals: registrationSuccess, authenticated, csrfToken
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section
+  class="bb-apex-register bb-apex-register--success"
+  data-bb-apex-page="register-church-success"
+  data-bb-register-outcome="<%= registrationSuccess && registrationSuccess.outcome ? registrationSuccess.outcome : 'ready' %>"
+  data-bb-bbr08="1"
+>
+  <div class="bb-apex-container bb-rs-wrap">
+    <%- include('./register-church-success-panel') %>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

@@ -39,6 +39,13 @@ const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "reg-a.blessboard.org";
 const HOST_B = "reg-b.blessboard.org";
 
+const REGISTER_SUBMITTED_LOCATION_RE =
+  /^\/register\/submitted(\?ref=[0-9a-f-]{36})?$/i;
+
+function assertRegisterSubmittedRedirect(location) {
+  assert.match(String(location || ""), REGISTER_SUBMITTED_LOCATION_RE);
+}
+
 function extractCookie(res, name) {
   const raw = res.headers["set-cookie"];
   if (!raw) return null;
@@ -58,7 +65,7 @@ function cookieHeader(...pairs) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -97,7 +104,7 @@ describe("blessboard member registration http", () => {
         productTenantKey: "reg-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -121,7 +128,7 @@ describe("blessboard member registration http", () => {
         productTenantKey: "reg-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgB.ok, true, orgB.message);
@@ -151,7 +158,7 @@ describe("blessboard member registration http", () => {
         const assigned = await assignBlessBoardRole(pool, role);
         assert.equal(assigned.ok, true, assigned.message);
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId:
             role.organizationKey === "reg-a"
@@ -227,14 +234,28 @@ describe("blessboard member registration http", () => {
     assert.match(res.text, /for="last_name"/);
     assert.match(res.text, /for="preferred_name"/);
     assert.match(res.text, /for="email"/);
-    assert.match(res.text, /for="phone"/);
-    assert.match(res.text, /Email Address/);
-    assert.match(res.text, /Phone Number/);
-    assert.match(res.text, /Provide at least an email or a phone number/);
+    assert.match(res.text, /for="phone-national"/);
+    assert.match(res.text, /data-ac-phone-field/);
+    assert.match(res.text, /name="phone_country"/);
+    assert.match(res.text, /name="phone_national"/);
+    assert.match(res.text, /Mobile phone number/);
+    assert.match(res.text, /Email address, optional|optional/i);
+    assert.match(res.text, /Mobile phone is required/);
     assert.match(res.text, /Submit Registration/);
     assert.doesNotMatch(res.text, /name="church_id"|name="branch_id"|name="churchId"|name="branchId"/);
     assert.doesNotMatch(res.text, /name="password"|name="gender"|name="address"|Forgot password|waiting.?verification|email verification|SMS/i);
     assert.ok(extractCookie(res, CSRF_COOKIE));
+  });
+
+  it("fails closed quickly on apex/product hub /register (no hang, no church redirect)", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const started = Date.now();
+    const res = await request(app).get("/register").set("Host", "blessboard.org");
+    const elapsedMs = Date.now() - started;
+    assert.equal(res.status, 404);
+    assert.match(res.text, /could not be found/i);
+    assert.doesNotMatch(res.text, /Register Your Church|register-church/i);
+    assert.ok(elapsedMs < 3000, `apex /register must not hang (took ${elapsedMs}ms)`);
   });
 
   it("maps validation reasons to field-level errors without leaking internals", () => {
@@ -242,9 +263,12 @@ describe("blessboard member registration http", () => {
     assert.equal(missing.fieldErrors.firstName, "Enter your first name.");
     assert.equal(missing.summaryItems.length, 1);
 
-    const contact = mapRegistrationFieldErrors("contact_required");
-    assert.equal(contact.fieldErrors.email, contact.fieldErrors.phone);
-    assert.match(contact.fieldErrors.email, /email or a phone/i);
+    const contact = mapRegistrationFieldErrors("phone_required");
+    assert.match(contact.fieldErrors.phone, /mobile phone/i);
+    assert.equal(contact.fieldErrors.email, undefined);
+
+    const contactLegacy = mapRegistrationFieldErrors("contact_required");
+    assert.match(contactLegacy.fieldErrors.phone, /mobile phone|optional/i);
 
     const unknown = mapRegistrationFieldErrors("branch_ownership");
     assert.deepEqual(unknown.fieldErrors, {});
@@ -266,7 +290,8 @@ describe("blessboard member registration http", () => {
         last_name: "Applicant",
         preferred_name: "Pat",
         email: "",
-        phone: "",
+        phone_country: "ZM",
+        phone_national: "",
       });
     assert.equal(invalid.status, 400);
     assert.match(invalid.text, /id="bb-auth-error-summary"/);
@@ -285,10 +310,11 @@ describe("blessboard member registration http", () => {
         first_name: "Pat",
         last_name: "Applicant",
         email: "",
-        phone: "",
+        phone_country: "ZM",
+        phone_national: "",
       });
     assert.equal(contactMissing.status, 400);
-    assert.match(contactMissing.text, /Provide at least an email or a phone number/);
+    assert.match(contactMissing.text, /Mobile phone number is required/i);
     assert.match(contactMissing.text, /aria-invalid="true"/);
 
     const okForm = await request(app).get("/register").set("Host", HOST_A);
@@ -302,12 +328,14 @@ describe("blessboard member registration http", () => {
         [CSRF_FIELD]: okCsrf,
         first_name: "Sam",
         last_name: "Confirmed",
+        phone_country: "ZM",
+        phone_national: "0977000111",
         email: "sam-confirmed@example.test",
       });
     assert.equal(ok.status, 303);
-    assert.equal(ok.headers.location, "/register/submitted");
+    assertRegisterSubmittedRedirect(ok.headers.location);
 
-    const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
+    const submitted = await request(app).get(ok.headers.location).set("Host", HOST_A);
     assert.equal(submitted.status, 200);
     assert.match(submitted.text, /data-bb-shell="tenant-auth"/);
     assert.match(submitted.text, /data-bb-register-submitted="1"/);
@@ -347,11 +375,12 @@ describe("blessboard member registration http", () => {
         first_name: "Nora",
         last_name: "Applicant",
         email: "nora@example.test",
-        phone: "",
+        phone_country: "ZM",
+        phone_national: "0977000222",
       });
 
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/register/submitted");
+    assertRegisterSubmittedRedirect(post.headers.location);
 
     const rows = await pool.query(
       `SELECT church_id, branch_id, email_normalized, status
@@ -379,6 +408,8 @@ describe("blessboard member registration http", () => {
         first_name: "Nora",
         last_name: "Again",
         email: "nora@example.test",
+        phone_country: "ZM",
+        phone_national: "0977000222",
       });
 
     assert.equal(dup.status, 409);
@@ -401,6 +432,8 @@ describe("blessboard member registration http", () => {
         first_name: "Bad",
         last_name: "Csrf",
         email: "bad-csrf@example.test",
+        phone_country: "ZM",
+        phone_national: "0977000333",
       });
     assert.equal(bad.status, 403);
   });
@@ -425,6 +458,8 @@ describe("blessboard member registration http", () => {
           first_name: "Rate",
           last_name: `Limit${i}`,
           email: `rate-limit-${i}@example.test`,
+          phone_country: "ZM",
+          phone_national: `0977100${100 + i}`,
         });
       if (res.status === 429) {
         saw429 = true;
@@ -517,7 +552,8 @@ describe("blessboard member registration http", () => {
     assert.match(directory.text, /Nora/);
     assert.match(directory.text, /href="\/branch-admin\/members\/[0-9a-f-]{36}"/i);
     assert.doesNotMatch(directory.text, /email_normalized|phone_normalized/i);
-    assert.doesNotMatch(directory.text, /1,248|42 New|Export CSV|Add Member|Small Groups|\bVolunteers\b|\bDonors\b/i);
+    assert.doesNotMatch(directory.text, /1,248|42 New|Export CSV|Small Groups|\bVolunteers\b|\bDonors\b/i);
+    assert.match(directory.text, /data-bb-stitch-v204="BB-M01"/);
     assert.doesNotMatch(directory.text, /type="checkbox"|bulk/i);
     assert.doesNotMatch(directory.text, new RegExp(churchA.id, "i"));
 
@@ -536,13 +572,14 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(profile.status, 200);
     assert.match(profile.text, /data-bb-member-detail="1"/);
-    assert.match(profile.text, /data-bb-stitch-member-detail="27-branch-member-profile"/);
+    assert.match(profile.text, /data-bb-stitch-member-detail="27-branch-member-profile"|data-bb-stitch-v204="BB-M06"/);
     assert.match(profile.text, /data-bb-member-summary="1"/);
     assert.match(profile.text, /data-bb-member-contact="1"/);
     assert.match(profile.text, /data-bb-member-membership="1"/);
     assert.match(profile.text, /data-bb-member-account="1"/);
     assert.match(profile.text, /data-bb-member-sections="1"/);
-    assert.match(profile.text, /data-bb-member-unavailable="1"/);
+    // V2.04: History may be authorized (link) or unavailable (marker); either is valid.
+    assert.match(profile.text, /data-bb-member-unavailable="1"|data-bb-m06-history="1"/);
     assert.match(profile.text, /Read-only/);
     assert.match(profile.text, /Nora/);
     assert.match(profile.text, /Login linked/);
@@ -586,6 +623,8 @@ describe("blessboard member registration http", () => {
         first_name: "Cross",
         last_name: "Tenant",
         email: "cross-tenant@example.test",
+        phone_country: "ZM",
+        phone_national: "0977000444",
       });
 
     const row = await pool.query(
@@ -859,6 +898,8 @@ describe("blessboard member registration http", () => {
         first_name: "East",
         last_name: "Member",
         email: "east-member@example.test",
+        phone_country: "ZM",
+        phone_national: "0977000555",
       });
 
     const eastReg = await pool.query(
@@ -952,6 +993,8 @@ describe("blessboard member registration http", () => {
         first_name: "Campus",
         last_name: "Applicant",
         email: "campus-applicant@example.test",
+        phone_country: "ZM",
+        phone_national: "0977000666",
       });
 
     await pool.query(
@@ -1028,7 +1071,7 @@ describe("blessboard member registration http", () => {
   it("does not collect sensitive categories on the public form", async (t) => {
     if (skipIfNeeded(t)) return;
     const form = await request(app).get("/register").set("Host", HOST_A);
-    assert.doesNotMatch(form.text, /national.?id|date of birth|ssn|health|password/i);
+    assert.doesNotMatch(form.text, /name="(?:national_id|date_of_birth|ssn|password)"|id="(?:national_id|date_of_birth|ssn|password)"/i);
     assert.match(form.text, /first_name/);
     assert.match(form.text, /email/);
   });

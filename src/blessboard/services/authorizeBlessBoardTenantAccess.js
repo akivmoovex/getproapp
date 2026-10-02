@@ -2,10 +2,14 @@
 
 /**
  * Authorize an authenticated BlessBoard user against a resolved tenant (UUID scopes).
- * No process.env reads. Fail closed on missing inputs / inactive principals.
+ * Catalogue role assignments only (V2.02) — no blessboard.user_roles / legacy role keys.
  */
 
 const repo = require("../repositories/blessBoardAuthorizationRepository");
+const {
+  isCatalogueHqRole,
+  isCatalogueBranchRole,
+} = require("./blessBoardCatalogueLogin");
 
 const STATUS = Object.freeze({
   AUTHORIZED: "authorized",
@@ -66,8 +70,8 @@ function deny(partial) {
 }
 
 /**
- * Evaluate role grants against UUID scopes (pure; no DB).
- * @param {Array<{ roleKey: string, organizationId: string, churchId: string | null, branchId: string | null }>} roles
+ * Evaluate catalogue role grants against UUID scopes (pure; no DB).
+ * @param {Array<{ roleKey: string, organizationId: string|null, churchId: string|null, branchId: string|null, scopeType?: string }>} roles
  * @param {{ organizationId: string, churchId: string, branchId: string | null }} target
  * @param {{ branchBelongsToChurch: boolean }} checks
  */
@@ -75,44 +79,78 @@ function evaluateRoleGrants(roles, target, checks) {
   const effective = [];
   for (const role of roles || []) {
     const key = String(role.roleKey || "");
-    if (key === "platform_admin") {
-      // Deployment-wide for active BlessBoard tenants; still requires resolved tenant.
+    if (key === "platform_administrator") {
       effective.push({
-        roleKey: "platform_admin",
+        roleKey: "platform_administrator",
         organizationId: role.organizationId || null,
         churchId: null,
         branchId: null,
       });
       continue;
     }
-    if (key === "church_hq_admin") {
-      if (uuidEqual(role.churchId, target.churchId) && uuidEqual(role.organizationId, target.organizationId)) {
+    if (isCatalogueHqRole(key)) {
+      const orgOk =
+        !role.organizationId || uuidEqual(role.organizationId, target.organizationId);
+      const churchOk =
+        !role.churchId || uuidEqual(role.churchId, target.churchId);
+      if (orgOk && churchOk) {
         if (target.branchId && !checks.branchBelongsToChurch) {
           continue;
         }
         effective.push({
-          roleKey: "church_hq_admin",
-          organizationId: role.organizationId,
-          churchId: role.churchId,
+          roleKey: key,
+          organizationId: role.organizationId || target.organizationId,
+          churchId: role.churchId || target.churchId,
           branchId: null,
         });
       }
       continue;
     }
-    if (key === "branch_admin") {
+    if (isCatalogueBranchRole(key) || key === "communications_officer") {
       if (
         target.branchId &&
+        role.branchId &&
         uuidEqual(role.branchId, target.branchId) &&
-        uuidEqual(role.churchId, target.churchId) &&
-        uuidEqual(role.organizationId, target.organizationId)
+        (!role.organizationId || uuidEqual(role.organizationId, target.organizationId)) &&
+        (!role.churchId || uuidEqual(role.churchId, target.churchId))
       ) {
         effective.push({
-          roleKey: "branch_admin",
-          organizationId: role.organizationId,
-          churchId: role.churchId,
+          roleKey: key,
+          organizationId: role.organizationId || target.organizationId,
+          churchId: role.churchId || target.churchId,
           branchId: role.branchId,
         });
       }
+      continue;
+    }
+    // Known catalogue staff roles at org/church/branch (website, finance, auditor, …).
+    const CATALOGUE_STAFF = new Set([
+      "website_editor",
+      "website_publisher",
+      "auditor",
+      "finance_director",
+      "finance_officer",
+      "finance_approver",
+      "communications_officer",
+      "role_administrator",
+      "ministry_leader",
+      "safeguarding_officer",
+      "minister",
+    ]);
+    if (!CATALOGUE_STAFF.has(key)) {
+      continue;
+    }
+    if (role.organizationId && uuidEqual(role.organizationId, target.organizationId)) {
+      if (role.churchId && !uuidEqual(role.churchId, target.churchId)) continue;
+      if (role.branchId) {
+        if (!target.branchId || !uuidEqual(role.branchId, target.branchId)) continue;
+      }
+      effective.push({
+        roleKey: key,
+        organizationId: role.organizationId,
+        churchId: role.churchId || target.churchId,
+        branchId: role.branchId || null,
+      });
     }
   }
   return effective;
@@ -237,8 +275,8 @@ async function authorizeBlessBoardTenantAccess(db, input) {
 
 module.exports = {
   STATUS,
-  uuidEqual,
-  extractTenantIds,
   evaluateRoleGrants,
   authorizeBlessBoardTenantAccess,
+  extractTenantIds,
+  uuidEqual,
 };

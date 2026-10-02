@@ -1,0 +1,83 @@
+<%
+  var activity = (pageData && pageData.activity) || {};
+  var patient = activity.patient || {};
+  var events = activity.events || [];
+  var actions = activity.actions || {};
+  var stitch = activity.stitch || {};
+  function fmtWhen(v) {
+    if (v == null || v === '') return '—';
+    return String(v).replace('T', ' ').slice(0, 16);
+  }
+%>
+<section
+  class="ac-batch1a ac-patient-activity"
+  data-ac-page-section="patient-activity"
+  data-ac-stitch="ACN-P04"
+  data-ac-stitch-desktop="<%= stitch.desktop ? '1' : '' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile ? '1' : '' %>"
+  data-ac-patient-number="<%= patient.patientNumber || '' %>"
+>
+  <header class="ac-patient-banner" data-ac-patient-banner="1">
+    <h2 class="ac-patient-banner__name"><%= patient.displayName || '—' %></h2>
+    <p class="ac-muted">
+      <span data-ac-activity-patient-number="1"><%= patient.patientNumber || '—' %></span>
+      · <span class="ac-status" data-status="<%= patient.status || '' %>"><%= patient.statusLabel || patient.status || '—' %></span>
+    </p>
+    <% if (actions.profileHref) { %>
+    <p class="ac-form-actions">
+      <a class="ac-btn ac-btn--secondary" href="<%= actions.profileHref %>" data-ac-activity-back="1">Back to profile</a>
+    </p>
+    <% } %>
+  </header>
+
+  <div class="ac-panel" data-ac-patient-activity-panel="1">
+    <h2 class="ac-dashboard__card-title">Patient activity</h2>
+    <p class="ac-muted">Standard application audit events for this patient (AC-PD-01). Not a cryptographic ledger.</p>
+
+    <% if (activity.empty || !events.length) { %>
+    <%- include('../partials/ac-inline-state', {
+      inlineState: {
+        stateKey: 'empty',
+        marker: 'patient-activity-empty',
+        title: 'No activity recorded',
+        description: 'Audit events for this patient will appear here after administrative or clinical actions.',
+        primaryAction: actions.profileHref
+          ? { href: actions.profileHref, label: 'Back to profile' }
+          : null,
+      }
+    }) %>
+    <% } else { %>
+    <div class="ac-table-wrap ac-patient-activity__desktop" data-ac-table="patient-activity">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Action</th>
+            <th scope="col">Outcome</th>
+            <th scope="col">Entity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% events.forEach(function (ev) { %>
+          <tr data-ac-activity-event="<%= ev.id %>">
+            <td><%= fmtWhen(ev.createdAt) %></td>
+            <td data-ac-activity-action="1"><%= ev.actionKey || '—' %></td>
+            <td><span class="ac-status" data-status="<%= ev.outcome || '' %>"><%= ev.outcome || '—' %></span></td>
+            <td><%= ev.entityType || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="ac-card-list ac-patient-activity__mobile" data-ac-activity-mobile="1" hidden>
+      <% events.forEach(function (ev) { %>
+      <li class="ac-card" data-ac-activity-event="<%= ev.id %>">
+        <h3 class="ac-card__title" data-ac-activity-action="1"><%= ev.actionKey || '—' %></h3>
+        <p class="ac-muted"><%= fmtWhen(ev.createdAt) %> · <%= ev.outcome || '—' %> · <%= ev.entityType || '—' %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+</section>

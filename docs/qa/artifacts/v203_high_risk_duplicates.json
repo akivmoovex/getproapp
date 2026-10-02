@@ -1,0 +1,78 @@
+[
+  {
+    "DUPLICATE_FILE": "src/routes/church/memberPortal.js",
+    "CANONICAL_FILE": "src/blessboard/http/memberPortalRoutes.js",
+    "ACTIVE_V10_IMPORTS": [],
+    "LEGACY_IMPORTS": [
+      "src/routes/church/index.js"
+    ],
+    "ALL_IMPORTERS": [
+      "src/routes/church/index.js"
+    ],
+    "DUP_IN_V10": false,
+    "DUP_LEGACY_ONLY": true,
+    "SAFE_TO_CONSOLIDATE": "NO"
+  },
+  {
+    "DUPLICATE_FILE": "src/routes/church/hqAdmin.js",
+    "CANONICAL_FILE": "src/blessboard/http/hqAdminRoutes.js",
+    "ACTIVE_V10_IMPORTS": [],
+    "LEGACY_IMPORTS": [
+      "src/routes/church/index.js"
+    ],
+    "ALL_IMPORTERS": [
+      "src/routes/church/index.js"
+    ],
+    "DUP_IN_V10": false,
+    "DUP_LEGACY_ONLY": true,
+    "SAFE_TO_CONSOLIDATE": "NO"
+  },
+  {
+    "DUPLICATE_FILE": "src/routes/church/branchAdminMembers.js",
+    "CANONICAL_FILE": "src/blessboard/http/branchAdminRoutes.js",
+    "ACTIVE_V10_IMPORTS": [],
+    "LEGACY_IMPORTS": [
+      "src/routes/church/branchAdmin.js"
+    ],
+    "ALL_IMPORTERS": [
+      "src/routes/church/branchAdmin.js"
+    ],
+    "DUP_IN_V10": false,
+    "DUP_LEGACY_ONLY": true,
+    "SAFE_TO_CONSOLIDATE": "NO"
+  },
+  {
+    "DUPLICATE_FILE": "src/routes/blessboardAdmin.js",
+    "CANONICAL_FILE": "src/platform/http/v5FoundationServer.js",
+    "ACTIVE_V10_IMPORTS": [],
+    "LEGACY_IMPORTS": [
+      "server.legacy.js"
+    ],
+    "ALL_IMPORTERS": [
+      "server.legacy.js"
+    ],
+    "DUP_IN_V10": false,
+    "DUP_LEGACY_ONLY": true,
+    "SAFE_TO_CONSOLIDATE": "NO"
+  },
+  {
+    "DUPLICATE_FILE": "src/activeclinic/services/formatMoney.js",
+    "CANONICAL_FILE": "src/platform/money/formatMoney.js",
+    "ACTIVE_V10_IMPORTS": [
+      "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "src/activeclinic/services/activeClinicDataJobAdapters.js",
+      "src/activeclinic/services/activeClinicPerformanceService.js"
+    ],
+    "LEGACY_IMPORTS": [],
+    "ALL_IMPORTERS": [
+      "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "src/activeclinic/services/activeClinicDataJobAdapters.js",
+      "src/activeclinic/services/activeClinicPerformanceService.js"
+    ],
+    "DUP_IN_V10": true,
+    "DUP_LEGACY_ONLY": false,
+    "SAFE_TO_CONSOLIDATE": "NO"
+  }
+]

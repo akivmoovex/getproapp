@@ -7,6 +7,7 @@
   var labels = statusLabels || {};
   var sources = sourceLabels || {};
   var titles = pageTitles || {};
+  var canRestoreWebsite = permissionNavFlags && permissionNavFlags.canRestoreWebsite;
   function statusLabel(s) { return labels[s] || s || '—'; }
   function sourceLabel(s) { return sources[s] || s || '—'; }
   function formatWhen(value) {
@@ -112,7 +113,9 @@
       </dl>
       <p class="bb-hq-phase3-cmp__actions">
         <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= a.id %>/preview">Preview Version A</a>
+        <% if (canRestoreWebsite) { %>
         <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= a.id %>/restore">Restore Version A</a>
+        <% } %>
       </p>
     </article>
     <article class="bb-hq-card">
@@ -127,7 +130,9 @@
       </dl>
       <p class="bb-hq-phase3-cmp__actions">
         <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= b.id %>/preview">Preview Version B</a>
+        <% if (canRestoreWebsite) { %>
         <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= b.id %>/restore">Restore Version B</a>
+        <% } %>
       </p>
     </article>
   </div>

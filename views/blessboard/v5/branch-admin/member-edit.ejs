@@ -1,0 +1,135 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var model = typeof profile !== 'undefined' && profile ? profile : {};
+  var m = model.member || {};
+  var values = typeof values !== 'undefined' && values ? values : {};
+  var fieldErrors = Array.isArray(fieldErrors) ? fieldErrors : [];
+  var errMap = {};
+  fieldErrors.forEach(function (e) { if (e && e.field) errMap[e.field] = e.message || 'Invalid'; });
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function v(key, fallback) {
+    if (values[key] != null && values[key] !== '') return values[key];
+    return fallback;
+  }
+%>
+
+<section class="bb-v204-m07" data-bb-stitch-v204="BB-M07" data-bb-screen="BB-M07" data-screen="BB15" data-bb-screen-desktop="BB15-D" data-bb-screen-mobile="BB15-M" data-bb-member-edit-form="1" aria-label="Edit Member">
+  <%- include('../partials/v204/page-header', {
+    title: 'Edit Member',
+    subtitle: 'Update profile details. Church ID and portal status are not edited here.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '">Profile</a> <span aria-hidden="true">›</span> <span>Edit</span>'
+  }) %>
+
+  <% if (fieldErrors.length) { %>
+  <div class="bb-ba-banner bb-ba-banner--danger" role="alert">
+    <% fieldErrors.forEach(function (e) { %><p><%= e.message || 'Please correct the highlighted fields.' %></p><% }) %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/branch-admin/members/<%= m.id %>/edit" class="bb-v204-m02__form" data-bb-m07-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+
+    <section class="bb-v204-m02__section">
+      <h2>Identity</h2>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field<%= errMap.first_name ? ' is-invalid' : '' %>">
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" type="text" required maxlength="100" value="<%= v('firstName', m.firstName || '') %>" />
+        </div>
+        <div class="bb-ba-field<%= errMap.last_name ? ' is-invalid' : '' %>">
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" type="text" required maxlength="100" value="<%= v('lastName', m.lastName || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="preferred_name">Preferred name</label>
+          <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= v('preferredName', m.preferredName || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="date_of_birth">Date of birth</label>
+          <input id="date_of_birth" name="date_of_birth" type="date" value="<%= v('dateOfBirth', m.dateOfBirth || '') %>" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section">
+      <h2>Contact</h2>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" maxlength="254" value="<%= v('email', m.emailDisplay || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" maxlength="40" value="<%= v('phone', m.phoneDisplay || '') %>" />
+        </div>
+        <div class="bb-ba-field bb-v204-m02__span">
+          <label for="address_line_1">Address</label>
+          <input id="address_line_1" name="address_line_1" type="text" maxlength="200" value="<%= v('addressLine1', m.addressLine1 || '') %>" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section">
+      <h2>Personal &amp; Family</h2>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field">
+          <label for="occupation">Occupation</label>
+          <input id="occupation" name="occupation" type="text" maxlength="120" value="<%= v('occupation', m.occupation || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="marital_status">Marital status</label>
+          <select id="marital_status" name="marital_status">
+            <option value="">—</option>
+            <% (model.maritalOptions || []).forEach(function (opt) { %>
+            <option value="<%= opt %>"<%= String(v('maritalStatus', m.maritalStatus || '')) === opt ? ' selected' : '' %>><%= opt %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-ba-field">
+          <label for="number_of_children">Number of children</label>
+          <input id="number_of_children" name="number_of_children" type="number" min="0" max="50" value="<%= v('numberOfChildren', m.numberOfChildren != null ? m.numberOfChildren : '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="next_of_kin_name">Next of kin</label>
+          <input id="next_of_kin_name" name="next_of_kin_name" type="text" maxlength="120" value="<%= v('nextOfKinName', m.nextOfKinName || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="next_of_kin_relationship">Relationship</label>
+          <input id="next_of_kin_relationship" name="next_of_kin_relationship" type="text" maxlength="80" value="<%= v('nextOfKinRelationship', m.nextOfKinRelationship || '') %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="next_of_kin_phone">Emergency phone</label>
+          <input id="next_of_kin_phone" name="next_of_kin_phone" type="tel" maxlength="40" value="<%= v('nextOfKinPhone', m.nextOfKinPhoneDisplay || '') %>" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-v204-m02__section" id="membership-status">
+      <h2>Membership status</h2>
+      <p class="bb-ba-hint">This does not change portal access.</p>
+      <div class="bb-v204-m02__grid">
+        <div class="bb-ba-field">
+          <label for="membership_status">Membership status</label>
+          <select id="membership_status" name="membership_status">
+            <% (model.membershipStatusOptions || []).forEach(function (opt) { %>
+            <option value="<%= opt %>"<%= String(v('membershipStatus', m.status || '')) === opt ? ' selected' : '' %>><%= opt %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-ba-field bb-v204-m02__span">
+          <label for="membership_reason">Reason for status change (optional unless deactivating)</label>
+          <textarea id="membership_reason" name="membership_reason" rows="2" maxlength="1000"><%= v('membershipReason', '') %></textarea>
+        </div>
+      </div>
+      <p class="bb-ba-hint">Church ID: <span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span> (read-only)</p>
+    </section>
+
+    <footer class="bb-v204-m02__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m07-save="1">Save Member</button>
+    </footer>
+  </form>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

@@ -1,0 +1,79 @@
+<%#
+  Shared website SEO editor (Wave 4B-2).
+  Locals: page (seoPageModel.buildSeoPageView)
+%>
+<section class="gp-we-seo" data-gp-website-seo="1" data-gp-we-screen="seo">
+  <header class="gp-we-seo__head">
+    <div>
+      <h1 class="gp-we-seo__title"><%= page.pageTitle %></h1>
+      <% if (page.siteLabel) { %>
+      <p class="gp-we-seo__site"><%= page.siteLabel %></p>
+      <% } %>
+    </div>
+    <% if (page.backHref) { %>
+    <a class="gp-we-history__back" href="<%= page.backHref %>"><%= page.backLabel %></a>
+    <% } %>
+  </header>
+
+  <p class="gp-we-seo__intro"><%= page.intro %></p>
+  <% if (page.scopeNote) { %>
+  <p class="gp-we-seo__scope"><%= page.scopeNote %></p>
+  <% } %>
+
+  <% if (page.notice) { %>
+  <p class="gp-we-seo__notice" role="status"><%= page.notice %></p>
+  <% } %>
+  <% if (page.error) { %>
+  <p class="gp-we-seo__error" role="alert"><%= page.error %></p>
+  <% } %>
+
+  <form class="gp-we-seo__form" method="post" action="<%= page.saveAction %>" data-gp-website-seo-form="1">
+    <input type="hidden" name="<%= page.csrfField %>" value="<%= page.csrfToken %>"/>
+    <% page.fields.forEach(function (field) { %>
+    <div class="gp-we-seo__field" data-gp-seo-field="<%= field.key %>">
+      <label class="gp-we-seo__label" for="gp-seo-<%= field.name %>">
+        <%= field.label %>
+        <% if (field.scope) { %><span class="gp-we-seo__scope-tag"><%= field.scope %></span><% } %>
+      </label>
+      <% if (field.type === 'textarea') { %>
+      <textarea
+        id="gp-seo-<%= field.name %>"
+        name="<%= field.name %>"
+        class="gp-we-seo__textarea"
+        rows="3"
+        maxlength="<%= field.maxLength %>"
+        data-gp-seo-advisory-max="<%= field.maxLength %>"
+      ><%= field.draftValue %></textarea>
+      <% } else if (field.type === 'select') { %>
+      <select id="gp-seo-<%= field.name %>" name="<%= field.name %>" class="gp-we-seo__input">
+        <% field.options.forEach(function (opt) { %>
+        <option value="<%= opt.value %>"<%= String(field.draftValue) === String(opt.value) ? ' selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+      <% } else { %>
+      <input
+        id="gp-seo-<%= field.name %>"
+        name="<%= field.name %>"
+        type="<%= field.type === 'url' ? 'url' : 'text' %>"
+        class="gp-we-seo__input"
+        maxlength="<%= field.maxLength || 500 %>"
+        value="<%= field.draftValue %>"
+        <% if (field.maxLength) { %>data-gp-seo-advisory-max="<%= field.maxLength %>"<% } %>
+      />
+      <% } %>
+      <% if (field.hint) { %>
+      <p class="gp-we-seo__hint"><%= field.hint %></p>
+      <% } %>
+      <% if (field.maxLength) { %>
+      <p class="gp-we-seo__counter" data-gp-seo-counter-for="gp-seo-<%= field.name %>"></p>
+      <% } %>
+    </div>
+    <% }) %>
+    <footer class="gp-we-seo__actions">
+      <button type="submit" class="gp-we-history__btn gp-we-history__btn--primary">Save draft</button>
+      <% if (page.backHref) { %>
+      <a class="gp-we-history__btn gp-we-history__btn--ghost" href="<%= page.backHref %>">Cancel</a>
+      <% } %>
+    </footer>
+  </form>
+</section>

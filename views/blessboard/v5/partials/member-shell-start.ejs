@@ -6,7 +6,9 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=24" />
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=v204-p2-1" />
+  <link rel="stylesheet" href="/blessboard/v5/member-portal-v204.css?v=v204-p2-1" />
+  <link rel="stylesheet" href="/platform/phone-field.css?v=bb-phone-1" />
 </head>
 <%
   var mpDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
@@ -28,6 +30,7 @@
 %>
 <body
   class="bb-mp-body"
+  data-product="blessboard"
   data-bb-shell="member"
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
@@ -43,7 +46,7 @@
         <a class="bb-mp-wordmark" href="/member">
           <img
             class="bb-mp-wordmark__mark"
-            src="/church/images/brand/blessboard-small-church-logo.png"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
             alt=""
             width="28"
             height="28"
@@ -100,7 +103,7 @@
           <a class="bb-mp-wordmark bb-mp-wordmark--compact" href="/member">
             <img
               class="bb-mp-wordmark__mark"
-              src="/church/images/brand/blessboard-small-church-logo.png"
+              src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
               alt=""
               width="24"
               height="24"

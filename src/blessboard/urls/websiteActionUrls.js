@@ -6,13 +6,20 @@
  * HQ / branch use session-scoped tenant admin surfaces.
  */
 
-const { normalizeOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   publicChurchHomePath,
   hqPreviewPagePath,
   hqContentPagePath,
   hqWebsitePath,
 } = require("./churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsitePreviewPath,
+  buildPublicWebsiteAdminPath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {string|null|undefined} organizationKey
@@ -21,7 +28,10 @@ const {
 function platformAdminOrgPath(organizationKey) {
   const norm = normalizeOrganizationKey(organizationKey);
   if (!norm.ok) return null;
-  return `/admin/organizations/${encodeURIComponent(norm.key)}`;
+  return buildPublicWebsiteAdminPath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+  });
 }
 
 /**
@@ -29,8 +39,13 @@ function platformAdminOrgPath(organizationKey) {
  * @returns {string|null}
  */
 function platformAdminWebsitePreviewPath(organizationKey) {
-  const base = platformAdminOrgPath(organizationKey);
-  return base ? `${base}/website-preview` : null;
+  const norm = normalizeOrganizationKey(organizationKey);
+  if (!norm.ok) return null;
+  return buildPublicWebsiteAdminPath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+    surface: "website-preview",
+  });
 }
 
 /**
@@ -51,14 +66,21 @@ function platformAdminWebsitePreviewPath(organizationKey) {
  *   publishWorkflowLabel: string|null,
  * }}
  */
+function normalizeWebsiteActionActor(actor) {
+  const key = String(actor || "").trim();
+  if (key === "platform_admin") return "platform_administrator";
+  if (key === "branch_admin") return "branch_administrator";
+  return key;
+}
+
 function resolveWebsiteActionUrls(input) {
-  const actor = String((input && input.actor) || "").trim();
+  const actor = normalizeWebsiteActionActor((input && input.actor) || "");
   const key = input && input.organizationKey;
   const publicPath = publicChurchHomePath(key);
   const orgPath = platformAdminOrgPath(key);
   const paPreview = platformAdminWebsitePreviewPath(key);
 
-  if (actor === "platform_admin") {
+  if (actor === "platform_administrator") {
     return {
       // Cross-tenant editing via /hq is unsupported without secure impersonation.
       serviceTimesUrl: null,
@@ -89,20 +111,39 @@ function resolveWebsiteActionUrls(input) {
     };
   }
 
-  if (actor === "branch_admin") {
+  if (actor === "branch_administrator") {
+    const branchKey = String((input && input.branchKey) || "").trim();
+    const scope = branchKey ? { kind: "branch", branchKey } : null;
+    const branchPublicPath = branchKey
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: key,
+          scope,
+        })
+      : publicPath;
     const visualEdit =
-      publicPath && publicPath !== "/"
-        ? `${publicPath}?website_edit=1`
-        : "/branch-admin/website";
+      buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: key,
+        scope,
+      }) || "/branch-admin/website";
+    const draftPreview =
+      buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: key,
+        scope,
+      }) || null;
     return {
       serviceTimesUrl: "/branch-admin/website/service-times",
       serviceTimesLabel: "Edit service times",
+      // Canonical Branch Admin entry redirects to the actor's branch public editor.
       editWebsiteUrl: "/branch-admin/website",
       editWebsiteLabel: "Edit website",
-      previewUrl: visualEdit,
-      previewLabel: "Open website editor",
-      publishedWebsiteUrl: publicPath,
-      publishedWebsiteLabel: publicPath ? "View published website" : null,
+      // Prefer draft preview (AC parity); fall back to visual editor entry.
+      previewUrl: draftPreview || visualEdit,
+      previewLabel: draftPreview ? "Preview" : "Open website editor",
+      publishedWebsiteUrl: branchPublicPath,
+      publishedWebsiteLabel: branchPublicPath ? "View published website" : null,
       publishWorkflowUrl: "/branch-admin/website/submit",
       publishWorkflowLabel: "Submit website update",
     };

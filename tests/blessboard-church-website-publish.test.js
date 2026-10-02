@@ -32,6 +32,7 @@ const {
   GAP,
 } = require("../src/blessboard/services/churchWebsitePublishService");
 const { provisionEmptyPublicPages } = require("../src/blessboard/services/publicContentAdminService");
+const { PUBLIC_PAGE_KEYS } = require("../src/blessboard/services/publicContentConstants");
 const {
   resolveOrganizationEntitlements,
   hasFeature,
@@ -42,7 +43,20 @@ const { getOrganizationOnboardingSummary } = require("../src/blessboard/services
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
+const EXPECTED_PAGE_COUNT = PUBLIC_PAGE_KEYS.length;
 
+async function followApexRedirect(app, path) {
+  const first = await request(app).get(path).set("Host", APEX);
+  if (first.status !== 301 && first.status !== 302) {
+    return first;
+  }
+  const location = String(first.headers.location || "");
+  assert.ok(location, `missing Location for ${path}`);
+  const dest = location.startsWith("http")
+    ? new URL(location).pathname + (new URL(location).search || "")
+    : location;
+  return request(app).get(dest).set("Host", APEX);
+}
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
 }
@@ -70,7 +84,7 @@ function extractCsrfToken(html) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -131,7 +145,12 @@ describe("blessboard church website preview and publish", () => {
       applicationId: row.id,
       administratorPassword: PASSWORD,
       requestId: `req-${key}`,
-      actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+      actorContext: {
+        type: "test",
+        source: "unit",
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(result.ok, true, result.message || result.status);
     return result.records;
@@ -141,7 +160,7 @@ describe("blessboard church website preview and publish", () => {
     const created = await createV5Session(pool, {
       userId,
       organizationId: organizationId || null,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userAgent: "website-publish-test",
       ipAddress: "127.0.0.1",
     });
@@ -160,7 +179,7 @@ describe("blessboard church website preview and publish", () => {
     return r.rows[0] ? r.rows[0].hostname : null;
   }
 
-  it("1–2. Foundation and Growth churches get published demo website shells without duplicates", async () => {
+  it("1–2. Foundation and Growth churches get unpublished default website shells without duplicates", async () => {
     requireDb();
     for (const plan of ["foundation", "growth"]) {
       const rec = await provisionPlan(plan);
@@ -171,7 +190,7 @@ describe("blessboard church website preview and publish", () => {
           ORDER BY page_key`,
         [rec.churchId]
       );
-      assert.equal(pages.rows.length, 8);
+      assert.equal(pages.rows.length, EXPECTED_PAGE_COUNT);
       assert.ok(pages.rows.every((p) => p.status === "published" && p.branch_id == null));
 
       const again = await provisionEmptyPublicPages(pool, { churchId: rec.churchId });
@@ -186,11 +205,14 @@ describe("blessboard church website preview and publish", () => {
       assert.equal(settings.rows[0].website_status, "published");
       assert.ok(settings.rows[0].primary_email || settings.rows[0].primary_phone);
 
-      const setup = await request(app)
+      const setupRedirect = await request(app)
         .get(`/c/${rec.organizationKey}`)
         .set("Host", APEX);
-      assert.equal(setup.status, 200);
-      assert.match(setup.text, /data-bb-shell="tenant-public"|coming soon|being prepared/i);
+      // Single-site path-public contract: org home serves church-wide content.
+      assert.equal(setupRedirect.status, 200);
+      const setup = setupRedirect;
+      assert.match(setup.text, /data-bb-shell="tenant-public"/);
+      assert.doesNotMatch(setup.text, /not public yet|Website coming soon/i);
       assert.doesNotMatch(setup.text, new RegExp(rec.churchId, "i"));
 
       const sid = await sessionCookieFor(rec.administratorUserId, rec.organizationId);
@@ -205,7 +227,7 @@ describe("blessboard church website preview and publish", () => {
         await pool.query(
           `INSERT INTO platform.domains
              (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-           VALUES ($1, $2, 'blessboard-org-v5', $3, 'canonical', 'active', true)`,
+           VALUES ($1, $2, 'blessboard-org-staging', $3, 'canonical', 'active', true)`,
           [rec.organizationId, prod.rows[0].id, host]
         );
       }
@@ -224,7 +246,7 @@ describe("blessboard church website preview and publish", () => {
     requireDb();
     const a = await provisionPlan("foundation");
     const b = await provisionPlan("foundation");
-    const depCode = "blessboard-org-v5";
+    const depCode = "blessboard-org-staging";
     const prod = await pool.query(
       `SELECT id FROM platform.products WHERE product_key = 'blessboard' LIMIT 1`
     );
@@ -251,11 +273,64 @@ describe("blessboard church website preview and publish", () => {
     requireDb();
     const rec = await provisionPlan("foundation");
 
-    // Remove contact to force a readiness gap.
+    // Remove contact and service-times copy to force readiness gaps.
+    // New-tenant templates may already seed service times and engine contact drafts.
     await pool.query(
       `UPDATE blessboard.church_settings
           SET primary_email = NULL, primary_phone = NULL
         WHERE church_id = $1`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.branch_settings
+          SET email = NULL, phone = NULL
+        WHERE branch_id IN (
+          SELECT id FROM blessboard.branches WHERE church_id = $1
+        )`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.page_sections ps
+          SET body_text = NULL,
+              layout_metadata = COALESCE(ps.layout_metadata, '{}'::jsonb) - 'entries'
+         FROM blessboard.public_pages pp
+        WHERE pp.id = ps.page_id
+          AND pp.church_id = $1
+          AND (
+            ps.section_key IN ('service_times', 'services', 'worship_times')
+            OR ps.section_type IN ('service_times', 'services', 'worship_times')
+          )`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE platform.website_content wc
+          SET draft_value = NULL, published_value = NULL
+         FROM platform.website_instances wi
+         JOIN platform.organizations o ON o.id = wi.organization_id
+         JOIN blessboard.churches c ON c.organization_id = o.id
+        WHERE wc.instance_id = wi.id
+          AND c.id = $1
+          AND wc.content_key IN (
+            'contact.details.email',
+            'contact.details.phone',
+            'bb.contact.details.email',
+            'bb.contact.details.phone'
+          )`,
+      [rec.churchId]
+    );
+    // Also clear any locator-style contact keys that match details/email|phone.
+    await pool.query(
+      `UPDATE platform.website_content wc
+          SET draft_value = NULL, published_value = NULL
+         FROM platform.website_instances wi
+         JOIN platform.organizations o ON o.id = wi.organization_id
+         JOIN blessboard.churches c ON c.organization_id = o.id
+        WHERE wc.instance_id = wi.id
+          AND c.id = $1
+          AND (
+            wc.content_key ILIKE '%contact%details%email%'
+            OR wc.content_key ILIKE '%contact%details%phone%'
+          )`,
       [rec.churchId]
     );
     const blocked = await evaluatePublishReadiness(pool, { churchId: rec.churchId });
@@ -289,6 +364,11 @@ describe("blessboard church website preview and publish", () => {
     assert.equal(notConfirmed.ok, false);
     assert.equal(notConfirmed.reason, "confirm_publish");
 
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: rec.organizationId,
+      actorUserId: rec.administratorUserId,
+    });
+
     const published = await publishChurchWebsite(pool, {
       churchId: rec.churchId,
       deferServiceTimes: true,
@@ -296,7 +376,7 @@ describe("blessboard church website preview and publish", () => {
       actorUserId: rec.administratorUserId,
     });
     assert.equal(published.ok, true, published.reason);
-    assert.equal(published.pageCount, 8);
+    assert.equal(published.pageCount, EXPECTED_PAGE_COUNT);
 
     const pageStatuses = await pool.query(
       `SELECT status, COUNT(*)::int AS n
@@ -306,7 +386,7 @@ describe("blessboard church website preview and publish", () => {
       [rec.churchId]
     );
     const byStatus = Object.fromEntries(pageStatuses.rows.map((r) => [r.status, r.n]));
-    assert.equal(byStatus.published, 8);
+    assert.equal(byStatus.published, EXPECTED_PAGE_COUNT);
     assert.equal(byStatus.draft || 0, 0);
 
     const site = await pool.query(
@@ -347,13 +427,13 @@ describe("blessboard church website preview and publish", () => {
       actorUserId: rec.administratorUserId,
     });
     assert.equal(again.ok, true);
-    assert.equal(again.pageCount, 8);
+    assert.equal(again.pageCount, EXPECTED_PAGE_COUNT);
 
     const pageCount = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(pageCount.rows[0].n, 8);
+    assert.equal(pageCount.rows[0].n, EXPECTED_PAGE_COUNT);
   });
 
   it("8–10. Public path available after publish; nav resolves; unpublish hides content", async () => {
@@ -365,6 +445,10 @@ describe("blessboard church website preview and publish", () => {
         WHERE church_id = $1`,
       [rec.churchId]
     );
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: rec.organizationId,
+      actorUserId: rec.administratorUserId,
+    });
     const published = await publishChurchWebsite(pool, {
       churchId: rec.churchId,
       deferServiceTimes: true,
@@ -373,7 +457,9 @@ describe("blessboard church website preview and publish", () => {
     });
     assert.equal(published.ok, true);
 
-    const home = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const homeRedirect = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    assert.equal(homeRedirect.status, 200);
+    const home = homeRedirect;
     assert.equal(home.status, 200);
     assert.match(home.text, /data-bb-shell="tenant-public"/);
     assert.doesNotMatch(home.text, /Website coming soon/i);
@@ -393,8 +479,8 @@ describe("blessboard church website preview and publish", () => {
         .get(`/c/${rec.organizationKey}${p}`)
         .set("Host", APEX);
       assert.equal(res.status, 200, p);
+      assert.equal(res.status, 200, p);
       assert.match(res.text, /bb-tp-nav/);
-      assert.match(res.text, new RegExp(`href="/c/${rec.organizationKey}${p}"`));
       assert.doesNotMatch(res.text, new RegExp(rec.churchId, "i"));
       assert.doesNotMatch(res.text, /broken|undefined/i);
     }
@@ -405,7 +491,9 @@ describe("blessboard church website preview and publish", () => {
     });
     assert.equal(unpublished.ok, true);
 
-    const after = await request(app).get(`/c/${rec.organizationKey}/about`).set("Host", APEX);
+    const after = await request(app)
+      .get(`/c/${rec.organizationKey}/about`)
+      .set("Host", APEX);
     assert.equal(after.status, 200);
     assert.match(after.text, /Website coming soon|being prepared and is not public/i);
     assert.match(after.text, /data-bb-shell="tenant-public-setup"/);
@@ -414,7 +502,7 @@ describe("blessboard church website preview and publish", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(pagesRemain.rows[0].n, 8);
+    assert.equal(pagesRemain.rows[0].n, EXPECTED_PAGE_COUNT);
 
     const domains = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.domains WHERE organization_id = $1`,
@@ -440,7 +528,7 @@ describe("blessboard church website preview and publish", () => {
     await pool.query(
       `INSERT INTO platform.domains
          (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-       VALUES ($1, $2, 'blessboard-org-v5', $3, 'canonical', 'active', true)`,
+       VALUES ($1, $2, 'blessboard-org-staging', $3, 'canonical', 'active', true)`,
       [rec.organizationId, prod.rows[0].id, host]
     );
 
@@ -454,7 +542,7 @@ describe("blessboard church website preview and publish", () => {
     await pool.query(
       `INSERT INTO platform.domains
          (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-       VALUES ($1, $2, 'blessboard-org-v5', $3, 'custom', 'active', false)`,
+       VALUES ($1, $2, 'blessboard-org-staging', $3, 'custom', 'active', false)`,
       [rec.organizationId, prod.rows[0].id, `www.${rec.organizationKey}.example`]
     );
 

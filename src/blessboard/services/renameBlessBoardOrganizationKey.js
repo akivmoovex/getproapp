@@ -13,7 +13,7 @@
  */
 
 const { checkDatabaseIdentity } = require("../../../db/scripts/lib/databaseIdentity");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 
 const STATUS = Object.freeze({

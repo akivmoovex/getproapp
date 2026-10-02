@@ -1,0 +1,30 @@
+<%#
+  Shared activity timeline list.
+  Locals: entries ([{at,title,summary,actorLabel,kind}]), emptyTitle
+%>
+<%
+  var _entries = Array.isArray(entries) ? entries : [];
+%>
+<ol class="gp-ops-timeline" data-gp-ops="timeline">
+  <% if (!_entries.length) { %>
+  <li class="gp-ops-timeline__empty">
+    <%- include('./gp-ops-empty-state', {
+      title: typeof emptyTitle !== 'undefined' ? emptyTitle : 'No activity yet',
+      body: typeof emptyBody !== 'undefined' ? emptyBody : ''
+    }) %>
+  </li>
+  <% } %>
+  <% _entries.forEach(function (e) { %>
+  <li class="gp-ops-timeline__item" data-kind="<%= e.kind || '' %>">
+    <div class="gp-ops-timeline__marker" aria-hidden="true"></div>
+    <div class="gp-ops-timeline__content">
+      <p class="gp-ops-timeline__title"><%= e.title %></p>
+      <% if (e.summary) { %><p class="gp-ops-timeline__summary"><%= e.summary %></p><% } %>
+      <p class="gp-ops-timeline__meta">
+        <% if (e.at) { %><time datetime="<%= e.at %>"><%= e.at %></time><% } %>
+        <% if (e.actorLabel) { %> · <%= e.actorLabel %><% } %>
+      </p>
+    </div>
+  </li>
+  <% }) %>
+</ol>

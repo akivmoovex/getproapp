@@ -5,10 +5,7 @@
  * All figures are derived from live table aggregates — no placeholders or fake numbers.
  */
 
-const {
-  authorizeBlessBoardTenantAccess,
-  STATUS: AUTHZ_STATUS,
-} = require("../../blessboard/services/authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -41,22 +38,24 @@ async function requireHq(client, input) {
   if (!input.tenant || !input.actorUserId) {
     return { ok: false, reason: "auth_required" };
   }
-  const authz = await authorizeBlessBoardTenantAccess(
+  // HQ operational reports require organisation-scoped view (not branch-only).
+  const orgView = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission: "organisation.view",
       branchId: null,
+      resourceContext: {
+        organizationId: input.tenant.organization.id,
+        churchId: input.tenant.church.id,
+        branchId: null,
+      },
     }
   );
-  if (!authz.ok) {
-    return { ok: false, reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED };
+  if (!orgView.ok || !orgView.allowed || orgView.mode !== "hq") {
+    return { ok: false, reason: "hq_required" };
   }
-  const roles = authz.context.effectiveRoles || [];
-  const allowed = roles.some(
-    (r) => r.roleKey === "church_hq_admin" || r.roleKey === "platform_admin"
-  );
-  if (!allowed) return { ok: false, reason: "hq_required" };
   return { ok: true };
 }
 

@@ -1,0 +1,124 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var document = catalogue.document || {};
+  var events = catalogue.events || [];
+  var canEdit = catalogue.canEdit === true;
+  var canFinalize = catalogue.canFinalize === true;
+  var stitch = catalogue.stitch || {};
+  var listHref = catalogue.listHref || '/app/clinical';
+  var finalizeAction = catalogue.finalizeAction || '#';
+  var flashOk = catalogue.flashOk === true;
+  var csrfName = (typeof csrfField !== 'undefined' && csrfField) || '_csrf';
+  var csrfValue = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<section
+  class="ac-clinical-docs-detail ac-ops-queue"
+  data-ac-page-section="clinical-document-detail"
+  data-ac-stitch="ACN18"
+  data-ac-stitch-desktop="<%= stitch.desktop || '9b5d55cc2e8445f5bf97ef98f00cf8d3' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ee65f85e2f484eb9b147dc06c97949ad' %>"
+  data-ac-doc-status="<%= document.status || '' %>"
+  data-ac-doc-readonly="<%= document.isFinal ? '1' : '0' %>"
+>
+  <% if (flashOk) { %>
+  <div class="ac-alert ac-alert--success" role="status">Document saved.</div>
+  <% } %>
+
+  <header class="ac-ops-queue__header ac-clinical-docs-detail__head">
+    <div>
+      <p class="ac-ops-queue__kicker"><%= document.documentTypeLabel || 'Clinical document' %></p>
+      <h2 class="ac-ops-queue__title"><%= document.title %></h2>
+      <p class="ac-muted">
+        <%= document.patientDisplayName || 'Patient' %>
+        <% if (document.patientNumber) { %> · <%= document.patientNumber %><% } %>
+      </p>
+    </div>
+    <span class="gp-ops-status gp-ops-status--<%= document.isFinal ? 'success' : 'warning' %>">
+      <%= document.statusLabel %>
+    </span>
+  </header>
+
+  <article class="ac-panel ac-clinical-docs-detail__card">
+    <dl class="ac-clinical-docs-detail__dl">
+      <div>
+        <dt>Type</dt>
+        <dd><%= document.documentTypeLabel %></dd>
+      </div>
+      <div>
+        <dt>Encounter</dt>
+        <dd><%= document.encounterNumber || '—' %></dd>
+      </div>
+      <div>
+        <dt>Document date</dt>
+        <dd><%= document.documentDate ? String(document.documentDate).slice(0, 10) : '—' %></dd>
+      </div>
+      <div>
+        <dt>Created by</dt>
+        <dd><%= document.createdByName || '—' %></dd>
+      </div>
+      <div>
+        <dt>Created</dt>
+        <dd><%= document.createdAt ? new Date(document.createdAt).toLocaleString() : '—' %></dd>
+      </div>
+      <% if (document.isFinal) { %>
+      <div>
+        <dt>Finalized by</dt>
+        <dd><%= document.finalizedByName || '—' %></dd>
+      </div>
+      <div>
+        <dt>Finalized</dt>
+        <dd><%= document.finalizedAt ? new Date(document.finalizedAt).toLocaleString() : '—' %></dd>
+      </div>
+      <% } %>
+    </dl>
+
+    <div class="ac-clinical-docs-detail__body" data-ac-doc-body="1">
+      <h3 class="ac-clinical-docs-detail__body-title">Content</h3>
+      <% if (document.bodyText) { %>
+      <pre class="ac-clinical-docs-detail__pre"><%= document.bodyText %></pre>
+      <% } else { %>
+      <p class="ac-muted">No content recorded.</p>
+      <% } %>
+    </div>
+  </article>
+
+  <section class="ac-panel ac-clinical-docs-detail__history" data-ac-doc-history="1">
+    <h3 class="ac-clinical-docs-detail__body-title">History</h3>
+    <% if (!events.length) { %>
+    <p class="ac-muted">No history events yet.</p>
+    <% } else { %>
+    <ol class="ac-clinical-docs-detail__timeline">
+      <% events.forEach(function (ev) { %>
+      <li>
+        <strong><%= ev.eventType %></strong>
+        · <%= ev.actorName || 'System' %>
+        · <%= ev.createdAt ? new Date(ev.createdAt).toLocaleString() : '' %>
+      </li>
+      <% }) %>
+    </ol>
+    <% } %>
+  </section>
+
+  <div class="ac-clinical-docs-detail__actions">
+    <a class="ac-btn ac-btn--ghost" href="<%= listHref %>">All documents</a>
+    <% if (canEdit) { %>
+    <a
+      class="ac-btn ac-btn--ghost"
+      href="<%= listHref %>/<%= encodeURIComponent(document.id) %>/edit"
+      data-ac-action="edit-draft"
+    >Edit Draft</a>
+    <% } %>
+    <% if (canFinalize) { %>
+    <form method="post" action="<%= finalizeAction %>" class="ac-clinical-docs-detail__finalize">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfValue %>" />
+      <button class="ac-btn ac-btn--primary" type="submit" data-ac-action="finalize">Finalize</button>
+    </form>
+    <% } %>
+  </div>
+
+  <% if (catalogue.binaryAttachmentsDeferred) { %>
+  <p class="ac-muted ac-clinical-docs__storage-note" data-ac-storage-gap="1">
+    No file attachments on this document. Binary PHI storage is deferred pending private authorized storage.
+  </p>
+  <% } %>
+</section>

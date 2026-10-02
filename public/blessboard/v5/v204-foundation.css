@@ -1,0 +1,269 @@
+/**
+ * BlessBoard V2.04 — Sanctuary Modern shared foundation (ops shells).
+ * Stitch: projects/12773983203917549893 design foundation.
+ *
+ * Scope: branch-admin / hq-admin / member / member-auth / platform-admin.
+ * Does not invent a new DS — maps existing gp-ops + BB shell classes to tokens.
+ * Apex marketing stays on Sacred Modernity (not selected here).
+ */
+
+[data-product="blessboard"][data-bb-shell="branch-admin"],
+[data-product="blessboard"][data-bb-shell="hq-admin"],
+[data-product="blessboard"][data-bb-shell="member"],
+[data-product="blessboard"][data-bb-shell="member-auth"],
+[data-product="blessboard"][data-bb-shell="platform-admin"] {
+  --gp-ops-canvas: var(--color-background);
+  --gp-ops-surface: var(--color-surface);
+  --gp-ops-border: var(--color-border-default);
+  --gp-ops-text: var(--color-text-primary);
+  --gp-ops-muted: var(--color-text-muted);
+  --gp-ops-primary: var(--color-brand-primary);
+  --gp-ops-primary-hover: var(--color-brand-primary-hover);
+  --gp-ops-radius: var(--bb-radius);
+  --gp-ops-radius-lg: var(--bb-radius-md);
+  --gp-ops-space-sm: var(--bb-space-2);
+  --gp-ops-space-md: var(--bb-space-3);
+  --gp-ops-space-lg: var(--bb-space-4);
+  --gp-ops-font: var(--bb-font-body);
+}
+
+/* —— Headings —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] h1,
+[data-product="blessboard"][data-bb-shell="hq-admin"] h1,
+[data-product="blessboard"][data-bb-shell="member"] h1,
+[data-product="blessboard"][data-bb-shell="member-auth"] h1,
+[data-product="blessboard"][data-bb-shell="platform-admin"] h1,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-page-header__title,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-page-header__title,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-page-header__title {
+  font-family: var(--bb-font-sans);
+  font-weight: var(--bb-font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--bb-color-ink);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] h2,
+[data-product="blessboard"][data-bb-shell="hq-admin"] h2,
+[data-product="blessboard"][data-bb-shell="member"] h2,
+[data-product="blessboard"][data-bb-shell="platform-admin"] h2 {
+  font-family: var(--bb-font-sans);
+  font-weight: var(--bb-font-weight-semibold);
+  letter-spacing: -0.01em;
+}
+
+/* —— Buttons (gp-ops + BB shell) —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-btn,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-btn,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-btn,
+[data-product="blessboard"][data-bb-shell="member-auth"] .gp-ops-btn,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-btn,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-btn,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-btn {
+  border-radius: var(--bb-radius);
+  min-height: var(--bb-control-h);
+  font-family: var(--bb-font-body);
+  font-weight: var(--bb-font-weight-semibold);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-btn--primary,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-btn--primary,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-btn--primary,
+[data-product="blessboard"][data-bb-shell="member-auth"] .bb-auth-btn--primary,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-btn--primary,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-btn--primary {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-primary-border);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-btn--primary:focus-visible,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-btn--primary:focus-visible,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-btn--primary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* —— Cards / panels —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-card,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-card,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-card,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-card,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--bb-radius-md);
+  box-shadow: var(--bb-shadow-sm);
+}
+
+/* —— Form fields —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-field__control,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-field__control,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-field__control,
+[data-product="blessboard"][data-bb-shell="member-auth"] input:not([type="checkbox"]):not([type="radio"]),
+[data-product="blessboard"][data-bb-shell="member-auth"] select,
+[data-product="blessboard"][data-bb-shell="member-auth"] textarea,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-input,
+[data-product="blessboard"][data-bb-shell="branch-admin"] input.bb-ba-field,
+[data-product="blessboard"][data-bb-shell="branch-admin"] select.bb-ba-field {
+  min-height: var(--bb-control-h);
+  border-radius: var(--bb-radius);
+  border-color: var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: var(--bb-font-body);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-field__control:focus,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-field__control:focus,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-field__control:focus {
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+  outline: none;
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-field__label,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-field__label,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-field__label {
+  font-family: var(--bb-font-body);
+  font-weight: var(--bb-font-weight-semibold);
+  font-size: var(--bb-text-label);
+  letter-spacing: 0.02em;
+  color: var(--bb-color-muted);
+}
+
+/* —— Status chips —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-status-badge,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-status-badge,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-status-badge {
+  height: 1.5rem;
+  border-radius: var(--bb-radius-pill);
+  font-family: var(--bb-font-body);
+  font-size: var(--bb-text-caption);
+  font-weight: var(--bb-font-weight-medium);
+  letter-spacing: 0.04em;
+}
+
+/* —— Church ID monospace badge —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-v204-m01__church-id,
+[data-product="blessboard"][data-bb-shell="branch-admin"] [data-bb-church-id],
+[data-product="blessboard"][data-bb-shell="member"] [data-bb-church-id],
+[data-product="blessboard"][data-bb-shell="member-auth"] .bb-auth-church-id {
+  font-family: var(--bb-font-mono);
+  font-size: var(--bb-text-label);
+  font-weight: var(--bb-font-weight-medium);
+  letter-spacing: 0.04em;
+  background: var(--bb-color-surface-dim);
+  color: var(--bb-color-navy, var(--bb-color-ink));
+  border: 1px solid var(--bb-color-border);
+  border-radius: var(--bb-radius);
+  padding: 0.125rem 0.5rem;
+}
+
+/* —— Tables —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-table thead th,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-table thead th {
+  background: var(--table-header-bg);
+  color: var(--table-header-text);
+  font-family: var(--bb-font-body);
+  font-size: var(--bb-text-caption);
+  font-weight: var(--bb-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--table-border);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-table tbody tr:hover,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-table tbody tr:hover {
+  background: var(--table-row-hover);
+}
+
+/* —— Warnings / banners —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-banner--warning,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-banner--warning {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-radius: var(--bb-radius-md);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-banner--info,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-banner--info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+  border-radius: var(--bb-radius-md);
+}
+
+/* —— Empty / success states —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-state,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-state,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-state {
+  border-radius: var(--bb-radius-md);
+  border-color: var(--bb-color-border);
+  background: var(--bb-color-surface);
+}
+
+/* —— Modals / dialogs —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-dialog,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-dialog,
+[data-product="blessboard"][data-bb-shell="member"] .gp-ops-dialog {
+  border-radius: var(--bb-radius-lg, var(--bb-radius-md));
+  box-shadow: var(--bb-shadow-lg);
+  border: 1px solid var(--modal-border);
+}
+
+/* —— Search / filters —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-search__input,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-search__input {
+  min-height: var(--bb-control-h);
+  border-radius: var(--bb-radius);
+  background: var(--bb-color-surface-dim);
+  border-color: var(--bb-color-border);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-filter-bar,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-filter-bar {
+  gap: var(--bb-space-2);
+}
+
+/* —— Ops nav rail uses navy tokens (when shells consume --nav-*) —— */
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-sidebar,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-sidebar,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-sidebar {
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  border-color: var(--nav-border);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-sidebar a,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-sidebar a,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-sidebar a {
+  color: var(--nav-text-muted);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-sidebar a:hover,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-sidebar a:hover,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-sidebar a:hover {
+  background: var(--nav-hover-bg);
+  color: var(--nav-hover-text);
+}
+
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-sidebar a[aria-current="page"],
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-sidebar a[aria-current="page"],
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-sidebar a[aria-current="page"],
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-sidebar a.is-active,
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-sidebar a.is-active,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-sidebar a.is-active {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+}
+
+/* —— Mobile bottom action affordance —— */
+@media (max-width: 767px) {
+  [data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-btn,
+  [data-product="blessboard"][data-bb-shell="hq-admin"] .gp-ops-btn,
+  [data-product="blessboard"][data-bb-shell="member"] .gp-ops-btn,
+  [data-product="blessboard"][data-bb-shell="member-auth"] .bb-auth-btn--primary {
+    min-height: var(--bb-touch-min);
+  }
+}

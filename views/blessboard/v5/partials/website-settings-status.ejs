@@ -1,0 +1,87 @@
+<%
+  var ux = (typeof websiteUx !== 'undefined' && websiteUx) ? websiteUx : (overview && overview.websiteUx) || {};
+  var actions = ux.actions || {};
+  var statusKey = ux.state || '';
+%>
+<section
+  class="bb-hq-panel"
+  data-bb-website-settings-ux="1"
+  data-bb-website-state="<%= statusKey %>"
+  aria-label="Website status"
+>
+  <h2 class="bb-hq-panel__title">Website status</h2>
+  <p data-bb-website-status-label="1"><strong><%= ux.statusLabel || 'Website not published yet' %></strong></p>
+  <% if (ux.statusHint) { %>
+  <p class="bb-hq-muted" data-bb-website-status-hint="1"><%= ux.statusHint %></p>
+  <% } %>
+  <dl class="bb-hq-dl">
+    <div>
+      <dt>Public URL</dt>
+      <dd data-bb-website-public-url="1">
+        <% if (ux.publicUrl || ux.publicPath) { %>
+          <% if (actions.viewLive) { %>
+          <a href="<%= actions.viewLive %>" rel="noopener"><code><%= ux.publicUrl || ux.publicPath %></code></a>
+          <% } else { %>
+          <code><%= ux.publicUrl || ux.publicPath %></code>
+          <span class="bb-hq-muted"> (not live yet)</span>
+          <% } %>
+        <% } else { %>
+        —
+        <% } %>
+      </dd>
+    </div>
+    <div>
+      <dt>Current published version</dt>
+      <dd data-bb-website-published-version="1"><%= ux.publishedVersionLabel || 'None yet' %></dd>
+    </div>
+    <div>
+      <dt>Unpublished changes</dt>
+      <dd data-bb-website-unpublished="<%= ux.unpublishedChanges ? '1' : '0' %>">
+        <%= ux.unpublishedChanges ? ('Yes' + (ux.unpublishedCount ? ' (' + ux.unpublishedCount + ')' : '')) : 'No' %>
+      </dd>
+    </div>
+    <div>
+      <dt>Last editor</dt>
+      <dd data-bb-website-last-editor="1"><%= ux.lastEditor || '—' %></dd>
+    </div>
+    <div>
+      <dt>Last publication date</dt>
+      <dd data-bb-website-last-published="1"><%= ux.lastPublishedLabel || 'Not published yet' %></dd>
+    </div>
+  </dl>
+  <p class="bb-hq-form__actions" data-bb-website-actions="1">
+    <% if (actions.viewLive) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">View live</a>
+    <% } %>
+    <% if (actions.preview) { %>
+    <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= actions.preview %>" data-bb-website-action="preview">Preview</a>
+    <% } %>
+    <% if (actions.editWebsite) { %>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= actions.editWebsite %>" data-bb-website-action="edit" data-bb-edit-website="1">Edit website</a>
+    <% } %>
+    <% if (actions.publishPath) { %>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= actions.publishPath %>" data-bb-website-action="publish">Publish</a>
+    <% } %>
+    <% if (actions.unpublishPath) { %>
+    <form method="post" action="<%= actions.unpublishPath %>" class="bb-hq-form" style="margin:0;display:inline;" onsubmit="return confirm('Unpublish this website? Visitors will no longer see it. Content is preserved.');">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary" data-bb-website-action="unpublish">Unpublish</button>
+    </form>
+    <% } %>
+    <% if (actions.settings) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= actions.settings %>" data-bb-website-action="settings">Website Settings</a>
+    <% } %>
+    <% if (actions.library) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= actions.library %>" data-bb-website-action="library">Content Library</a>
+    <% } %>
+    <% if (actions.history) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= actions.history %>" data-bb-website-action="history">Version history</a>
+    <% } %>
+    <% if (actions.retry) { %>
+    <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= actions.retry %>" data-bb-website-action="retry">Retry</a>
+    <% } %>
+    <% if (actions.contactPlatformAdmin) { %>
+    <span class="bb-hq-muted" data-bb-website-action="contact-platform-admin">Contact Platform Admin</span>
+    <% } %>
+  </p>
+</section>

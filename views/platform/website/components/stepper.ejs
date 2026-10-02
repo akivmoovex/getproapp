@@ -1,0 +1,24 @@
+<%#
+  Care journey / stepper — shared numbered steps.
+  Locals: model, editEnabled, edit, className
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var steps = Array.isArray(m.steps) ? m.steps : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--stepper<%= extraClass %>" data-gp-website-component="stepper">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <% if (m.lead) { %><p class="gp-website-pc__lead"><%= m.lead %></p><% } %>
+  <ol class="gp-website-pc__step-list">
+    <% steps.forEach(function (step, index) { %>
+    <li class="gp-website-pc__step">
+      <span class="gp-website-pc__step-index" aria-hidden="true"><%= index + 1 %></span>
+      <div class="gp-website-pc__step-body">
+        <h3 class="gp-website-pc__step-title"><%= step.title %></h3>
+        <% if (step.body) { %><p class="gp-website-pc__step-text"><%= step.body %></p><% } %>
+      </div>
+    </li>
+    <% }) %>
+  </ol>
+</section>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= pageTitle %> · ActiveClinic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= typeof assetVersion !== 'undefined' && assetVersion ? assetVersion : 's08-1' %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-app.css?v=<%= typeof assetVersion !== 'undefined' && assetVersion ? assetVersion : 's08-1' %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-urp.css?v=<%= typeof assetVersion !== 'undefined' && assetVersion ? assetVersion : 'urp-1' %>"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+</head>
+<body
+  class="ac-app-body ac-state-body"
+  data-ac-product="activeclinic"
+  data-ac-page="<%= pageId %>"
+  data-ac-state="<%= pageId %>"
+  data-ac-state-key="<%= typeof stateKey !== 'undefined' ? stateKey : pageId %>"
+  data-ac-visual="stitch-partial"
+>
+  <a class="ac-skip" href="#ac-state-main">Skip to content</a>
+  <main id="ac-state-main" class="ac-state-card" role="main">
+    <div class="ac-state-card__icon" aria-hidden="true">
+      <% if (pageId === 'session-expired') { %>⏱
+      <% } else if (pageId === 'not-found') { %>⌕
+      <% } else if (pageId === 'service-unavailable' || pageId === 'error' || pageId === 'offline') { %>⚠
+      <% } else if (pageId === 'context-unavailable' || pageId === 'facility-unavailable') { %>⌂
+      <% } else if (pageId === 'department-unavailable') { %>☰
+      <% } else { %>🔒<% } %>
+    </div>
+    <h1><%= heading %></h1>
+    <p><%= message %></p>
+    <% if (typeof supportReference !== 'undefined' && supportReference) { %>
+    <p class="ac-muted" data-ac-support-ref="1">Reference: <%= supportReference %></p>
+    <% } %>
+    <div class="ac-actions ac-actions--stack-mobile" style="justify-content:center">
+      <a class="ac-btn" href="<%= primaryHref %>"><%= primaryLabel %></a>
+      <% if (secondaryHref) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= secondaryHref %>"><%= secondaryLabel %></a>
+      <% } %>
+    </div>
+    <% if (showLogout) { %>
+    <form method="post" action="/logout" style="margin-top:1rem" data-ac-loading="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="ac-btn ac-btn--ghost" style="width:100%">Sign out</button>
+    </form>
+    <% } %>
+  </main>
+</body>
+</html>

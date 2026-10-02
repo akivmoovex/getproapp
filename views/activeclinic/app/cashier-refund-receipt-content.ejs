@@ -1,0 +1,33 @@
+<%
+  var receipt = (pageData && pageData.receipt) || {};
+  var original = receipt.originalPayment || {};
+  var patient = receipt.patient || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-cashier-refund-receipt" data-ac-page-section="cashier-refund-receipt" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <style>
+    @media print {
+      .ac-page-header, .ac-shell-nav, .ac-actions, .ac-btn { display: none !important; }
+    }
+  </style>
+  <article class="ac-panel ac-receipt">
+    <h2 class="ac-receipt__title">Refund receipt</h2>
+    <p class="ac-receipt__number"><strong>Refund <%= receipt.refundId %></strong></p>
+    <dl class="ac-dl">
+      <div><dt>Refund date</dt><dd><%= receipt.refundDate %></dd></div>
+      <div><dt>Refund amount</dt><dd class="ac-money"><strong><%= receipt.refundAmountFormatted %></strong></dd></div>
+      <div><dt>Status</dt><dd><%= receipt.status %></dd></div>
+      <div><dt>Reason</dt><dd><%= receipt.reason %></dd></div>
+      <div><dt>Original payment</dt><dd><%= original.paymentNumber %> · <%= receipt.originalAmountFormatted %></dd></div>
+      <div><dt>Payment method</dt><dd><%= original.paymentMethod %></dd></div>
+      <div><dt>Patient</dt><dd><%= patient.name %> · <%= patient.patientNumber %></dd></div>
+      <% if (receipt.refundPaymentNumber) { %>
+      <div><dt>Refund payment #</dt><dd><%= receipt.refundPaymentNumber %></dd></div>
+      <% } %>
+    </dl>
+    <div class="ac-actions" style="margin-top:1.5rem">
+      <button type="button" class="ac-btn" onclick="window.print()">Print</button>
+      <a href="/app/cashier" class="ac-btn ac-btn--ghost">Back to cashier</a>
+    </div>
+  </article>
+</section>

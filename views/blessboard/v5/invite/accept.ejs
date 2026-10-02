@@ -38,6 +38,11 @@
         <label for="password">Password</label>
         <input id="password" name="password" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
       </div>
+      <div class="bb-hq-field">
+        <label for="password_confirm">Confirm password</label>
+        <input id="password_confirm" name="password_confirm" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
+      </div>
+      <p class="bb-hq-lede" data-bb-password-rules="1">Use at least 10 characters. Passwords must match.</p>
       <% } %>
       <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
         <%= invitation.requiresPassword ? 'Set password & join' : 'Accept invitation' %>

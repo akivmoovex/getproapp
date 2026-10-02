@@ -200,7 +200,7 @@ test(
     const emptyDash = await agent.get("/leader/dashboard");
     assert.equal(emptyDash.status, 200);
     assert.match(emptyDash.text, /data-leader-shell="stitch-v4[789]"/);
-    assert.match(emptyDash.text, /church\.css\?v=4[789]/);
+    assert.match(emptyDash.text, /church\.css\?v=[^"'\s>]+[789]/);
     assert.match(emptyDash.text, /Youth Ministry/);
     assert.match(emptyDash.text, /Grace Mwansa/);
     assert.match(emptyDash.text, /data-leader-dashboard-stats/);

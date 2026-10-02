@@ -85,6 +85,7 @@
   --palette-tenant-teal: #007a4d;
   --palette-tenant-navy: #1e3a8a;
   --palette-tenant-violet: #7c3aed;
+  /* LEGACY_COMPATIBILITY: tenant palette samples — not used by V7 ActiveClinic/BlessBoard shells. */
   --palette-tenant-cyan: #0d9488;
 
   /* —— Legacy aliases (used across styles.css / views) —— */

@@ -1,0 +1,70 @@
+<%#
+  Platform shared editable text hook for WE01 (website-inline-edit.js).
+  Locals: editEnabled, contentKey, value, publishedValue?, fieldType?, label?,
+          tag?, className?, href?, maxLength?
+%>
+<%
+  var _enabled = typeof editEnabled !== 'undefined' && editEnabled;
+  var _key = typeof contentKey !== 'undefined' ? String(contentKey) : '';
+  var _value = typeof value !== 'undefined' && value != null ? String(value) : '';
+  var _published = typeof publishedValue !== 'undefined' && publishedValue != null ? String(publishedValue) : _value;
+  var _type = typeof fieldType !== 'undefined' ? String(fieldType) : 'short_text';
+  var _multiline = (_type === 'long_text' || _type === 'rich_text' || _type === 'textarea' || _type === 'paragraph');
+  var _tag = typeof tag !== 'undefined' && tag ? String(tag) : (_multiline ? 'p' : 'span');
+  var _class = typeof className !== 'undefined' && className ? String(className) : '';
+  var _href = typeof href !== 'undefined' && href ? String(href) : '';
+  var _label = typeof label !== 'undefined' && label ? String(label) : ('Edit ' + (_key.split('.').pop() || 'text'));
+  var _max = typeof maxLength !== 'undefined' && maxLength ? Number(maxLength) : (_multiline ? 4000 : 200);
+  var _empty = !_value || !String(_value).trim();
+  function _escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+  function _openTag(t, cls, extra) {
+    var c = cls ? ' class="' + cls + '"' : '';
+    return '<' + t + c + (extra || '') + ' data-website-value-text="1">';
+  }
+%>
+<% if (_enabled && _key) { %>
+<span
+  class="gp-website-editable"
+  data-website-inline="1"
+  data-website-key="<%- _escAttr(_key) %>"
+  data-website-type="<%= _multiline ? 'textarea' : 'text' %>"
+  data-website-value="<%- _escAttr(_value) %>"
+  data-website-published-value="<%- _escAttr(_published) %>"
+  data-website-label="<%- _escAttr(_label) %>"
+  data-website-max="<%= _max %>"
+  data-website-input-type="<%= _type === 'email' ? 'email' : (_type === 'phone' ? 'tel' : (_type === 'url' || _type === 'buttonUrl' ? 'url' : 'text')) %>"
+>
+  <span class="gp-website-editable__display<%= _empty ? ' is-empty' : '' %>" data-website-display="1"<% if (_empty) { %> data-empty-hint="Click to add text"<% } %>>
+    <% if (_tag === 'a') { %><a class="<%= _class %>" href="<%= _href || '#' %>" data-website-value-text="1"><%= _value %></a>
+    <% } else if (_tag === 'h1') { %><h1 class="<%= _class %>" data-website-value-text="1"><%= _value %></h1>
+    <% } else if (_tag === 'h2') { %><h2 class="<%= _class %>" data-website-value-text="1"><%= _value %></h2>
+    <% } else if (_tag === 'h3') { %><h3 class="<%= _class %>" data-website-value-text="1"><%= _value %></h3>
+    <% } else if (_tag === 'p') { %><p class="<%= _class %>" data-website-value-text="1"><%= _value %></p>
+    <% } else { %><span class="<%= _class %>" data-website-value-text="1"><%= _value %></span><% } %>
+    <button type="button" class="gp-website-editable__pencil" data-website-start="1" aria-label="<%- _escAttr(_label) %>">
+      <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+    </button>
+    <button type="button" class="gp-website-editable__history" data-website-field-history-open="1" aria-label="Field history" title="History">
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
+    </button>
+  </span>
+</span>
+<% } else if (_tag === 'a') { %>
+<a class="<%= _class %>" href="<%= _href || '#' %>"><%= _value %></a>
+<% } else if (_tag === 'h1') { %>
+<h1 class="<%= _class %>"><%= _value %></h1>
+<% } else if (_tag === 'h2') { %>
+<h2 class="<%= _class %>"><%= _value %></h2>
+<% } else if (_tag === 'h3') { %>
+<h3 class="<%= _class %>"><%= _value %></h3>
+<% } else if (_tag === 'p') { %>
+<p class="<%= _class %>"><%= _value %></p>
+<% } else { %>
+<span class="<%= _class %>"><%= _value %></span>
+<% } %>

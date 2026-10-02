@@ -1,0 +1,95 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var service = cms.service || {};
+  var mode = cms.mode === "edit" ? "edit" : "create";
+  var canEdit = mode === "create" || cms.canEdit === true;
+  var action = mode === "edit"
+    ? ("/app/settings/website/catalogue/services/" + encodeURIComponent(service.id || "") + "/edit")
+    : "/app/settings/website/catalogue/services/new";
+  var image = service.image || {};
+  var categoryValue = service.category || service.publicSummary || "";
+  var returnTo = cms.returnTo || "";
+%>
+<section
+  class="ac-mw"
+  data-ac-page-section="website-catalogue-service-form"
+  data-ac-mw-screen="catalogue-service-form"
+  data-ac-stitch-screen="C01"
+  data-ac-stitch-surface="C01-form"
+>
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2><%= mode === "edit" ? "Edit service" : "Add service" %></h2>
+      <p class="ac-mw-muted">This updates the shared clinic service catalogue used by booking and the public website.</p>
+    </div>
+  </div>
+  <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
+  <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-service-form="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
+    <label>
+      Public name
+      <input type="text" name="displayName" required maxlength="120" value="<%= service.name || "" %>" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <% if (mode === "create") { %>
+    <label>
+      Service key <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="serviceKey" maxlength="64" pattern="[a-z][a-z0-9_-]{0,63}" title="Lowercase letter first, then letters, numbers, hyphens, or underscores" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
+    </label>
+    <% } else { %>
+    <p class="ac-mw-muted">Service key: <code><%= service.serviceKey || "" %></code></p>
+    <% } %>
+    <label>
+      Category <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="category" maxlength="120" value="<%= categoryValue %>" placeholder="e.g. Consultation, Diagnostics" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <label>
+      Description
+      <textarea name="description" rows="3" maxlength="500" <%= canEdit ? "" : "readonly" %>><%= service.description || "" %></textarea>
+    </label>
+    <label>
+      Public summary <span class="ac-mw-muted">(optional — defaults to category)</span>
+      <textarea name="publicSummary" rows="2" maxlength="500" <%= canEdit ? "" : "readonly" %>><%= service.publicSummary || "" %></textarea>
+    </label>
+    <label>
+      Default duration (minutes)
+      <input type="number" name="defaultDurationMinutes" min="5" max="480" step="1" value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <p class="ac-mw-muted">Optional public prices are managed on the clinic website pricing page, not on each service record.</p>
+    <p class="ac-mw-form__legend">Image (optional)</p>
+    <%- include('../partials/website-cms-media-field', {
+      mediaField: {
+        idName: "imageMediaId",
+        srcName: "imageSrc",
+        altName: "imageAlt",
+        altLabel: "Image description",
+        mediaId: image.mediaId || "",
+        src: image.src || "",
+        alt: image.alt || "",
+        framingEnabled: true,
+        contentKey: "catalogue.service.image",
+        allowSeparateFraming: true
+      }
+    }) %>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="status" value="inactive" <%= service.inactive ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Disabled (hidden from website and not bookable as an active service)
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="publicWebsiteVisible" value="1" <%= service.publicWebsiteVisible || service.websiteVisible ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Show on public website
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="publicBookable" value="1" <%= service.bookable ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Available for online booking
+    </label>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="<%= returnTo || '/app/settings/website/catalogue?tab=services' %>">Cancel</a>
+      <% if (canEdit) { %>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary"><%= mode === "edit" ? "Save service" : "Add service" %></button>
+      <% } %>
+    </div>
+  </form>
+</section>
+<%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>

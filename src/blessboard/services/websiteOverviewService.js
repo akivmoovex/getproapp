@@ -25,6 +25,10 @@ const {
   hqPreviewPagePath,
   hqWebsitePublishReviewPath,
 } = require("../urls/churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  buildPublicWebsiteEditPath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -33,6 +37,15 @@ const STATUS = Object.freeze({
   NOT_FOUND: "not_found",
   FORBIDDEN: "forbidden",
 });
+
+function blessboardPublicEditPath(organizationKey, fallback) {
+  return (
+    buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey,
+    }) || fallback
+  );
+}
 
 const FRIENDLY_SUBMISSION_LABELS = Object.freeze({
   draft: "Draft",
@@ -156,7 +169,12 @@ function mapFoundationChecklist(summary) {
     const src = byKey.get(def.key);
     let state = CHECKLIST_STATE.not_started;
     if (src && src.completed) state = CHECKLIST_STATE.complete;
-    else if (src && !src.completed && summary && summary.status === "in_progress") {
+    else if (
+      src &&
+      !src.completed &&
+      summary &&
+      (summary.onboardingStatus === "in_progress" || summary.status === "in_progress")
+    ) {
       state = CHECKLIST_STATE.needs_attention;
     }
     return {
@@ -245,9 +263,11 @@ async function loadFoundationWebsiteOverview(db, opts) {
       stitchScreen: "Phase4 - Foundation Website Overview",
       title: "Church Website",
       subtitle: "Edit and publish your church website",
-      editPath: "/hq/content",
+      editPath: blessboardPublicEditPath(orgKey, "/hq/content"),
       previewPath: hqPreviewPagePath("home"),
       publicPath,
+      inlineEditPath: blessboardPublicEditPath(orgKey, "/hq/content"),
+      cmsPath: "/hq/content",
       organizationKey: orgKey,
       liveAvailable: hasPublished,
       websiteStatusLabel: friendlyStatus,
@@ -257,15 +277,15 @@ async function loadFoundationWebsiteOverview(db, opts) {
         : null,
       lastPublishedAt: currentPub && currentPub.publishedAt,
       lastPublishedByName: currentPub && currentPub.publishedByName,
+      publishedVersionNumber: currentPub && currentPub.versionNumber,
+      currentPub,
       themeKey: draftPages.themeKey || "default",
       hasUnpublishedChanges: hasDraft,
       publishReady,
       canPublish: publishReady && hasDraft,
       showFixDetails: !publishReady,
       publishReviewPath: hqWebsitePublishReviewPath(null),
-      fixDetailsPath: !publishReady
-        ? hqWebsitePublishReviewPath(null)
-        : hqWebsitePublishReviewPath(null),
+      fixDetailsPath: hqWebsitePublishReviewPath(null),
       checklist: mapFoundationChecklist(onboarding && onboarding.summary),
       undoLastPublish: {
         eligible: undoEligible,
@@ -444,11 +464,18 @@ async function loadGrowthWebsiteOverview(db, opts) {
       stitchScreen: "Phase4 - Growth Website Workflow Overview",
       title: "Website Overview",
       subtitle: "Manage website updates from your church and branches",
-      editPath: "/hq/content",
+      editPath: blessboardPublicEditPath(orgKey, "/hq/content"),
       previewPath: hqPreviewPagePath("home"),
       publicPath,
+      inlineEditPath: blessboardPublicEditPath(orgKey, "/hq/content"),
+      cmsPath: "/hq/content",
       liveAvailable: hasPublished,
       recentChangesPath: "/hq/website/recent-changes",
+      lastPublishedAt: recentPublications[0] && recentPublications[0].publishedAt,
+      lastPublishedByName: recentPublications[0] && recentPublications[0].publishedByName,
+      publishedVersionNumber:
+        (publications.items || [])[0] && (publications.items || [])[0].versionNumber,
+      hasUnpublishedChanges: hasHqDraft,
       restoredDraft: restoredDraft
         ? {
             id: restoredDraft.id,
@@ -584,10 +611,7 @@ async function loadBranchWebsiteOverview(db, opts) {
 
     const orgKey = opts.organizationKey || null;
     const publicPath = orgKey ? publicChurchHomePath(orgKey) : "/";
-    const visualEditPath =
-      publicPath && publicPath !== "/"
-        ? `${publicPath}?website_edit=1`
-        : "/branch-admin/content";
+    const visualEditPath = blessboardPublicEditPath(orgKey, "/branch-admin/content");
 
     let primaryState = "none";
     if (activeDraft && activeDraft.status === "changes_requested") primaryState = "changes_requested";

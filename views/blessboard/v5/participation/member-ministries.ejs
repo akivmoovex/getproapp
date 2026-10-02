@@ -37,21 +37,22 @@
   ];
 
   var flash =
-    saved === 'joined' ? 'Your ministry request was submitted.' :
+    saved === 'joined' ? 'Your request to join was submitted and is pending approval.' :
     saved === 'left' ? 'Your ministry membership was updated.' :
     '';
 %>
 
 <section
-  class="bb-mp-part bb-mp-ministries"
+  class="bb-mp-part bb-mp-ministries bb-v204-m24"
   data-bb-member-ministries="1"
-  data-bb-stitch-ministries="18-member-my-ministries"
+  data-bb-stitch-v204="BB-M24"
+  data-bb-stitch-ministries="BB-M24"
   data-bb-ministry-filter="<%= activeFilter %>"
 >
   <header class="bb-mp-page-head bb-mp-page-head--split">
     <div>
-      <h1 class="bb-mp-page-head__title">Ministries</h1>
-      <p class="bb-mp-lede">Manage your commitments or find ways to serve. Status reflects your live membership only.</p>
+      <h1 class="bb-mp-page-head__title">Ministries &amp; Departments</h1>
+      <p class="bb-mp-lede">Manage your commitments or find ways to serve. Status reflects your live membership only — joining starts a review request, never automatic membership.</p>
       <% if (activeCount || pendingCount) { %>
       <p class="bb-mp-ann__unread-summary" aria-live="polite" data-bb-ministry-counts="1">
         <% if (activeCount) { %><%= activeCount %> active<% } %>

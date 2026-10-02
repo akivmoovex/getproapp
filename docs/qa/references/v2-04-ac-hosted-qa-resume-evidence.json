@@ -1,0 +1,64 @@
+{
+  "frozenSha": "7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b",
+  "orgKey": "ac-hqa-v8-muq9wn7a9a3d",
+  "invite": {
+    "origin": "PASS",
+    "freshBrowser": "PASS",
+    "reuseRejected": "PASS"
+  },
+  "c01": {
+    "status": 200,
+    "stitch": true,
+    "mobileMarker": true,
+    "desktop": true,
+    "mobile": true,
+    "sticky": true,
+    "breadcrumb": true,
+    "banner": true,
+    "stats": true,
+    "table": true,
+    "add": true,
+    "chips": true,
+    "desktopResult": "PASS",
+    "mobileResult": "PASS",
+    "persist": "PASS"
+  },
+  "c02": {
+    "status": 200,
+    "stitch": true,
+    "mobileMarker": true,
+    "desktop": true,
+    "mobile": true,
+    "sticky": true,
+    "table": true,
+    "edit": true,
+    "desktopResult": "PASS",
+    "mobileResult": "PASS"
+  },
+  "e03": {
+    "status": 200,
+    "stitchEditor": true,
+    "upload": true,
+    "library": true,
+    "adjust": true,
+    "remove": true,
+    "result": "PASS"
+  },
+  "publicSmoke": "PASS",
+  "privacy": "PASS",
+  "footerOrgContact": "PRESENT_APPROVED_CLINIC_CONTACT",
+  "pricingPreserve": true,
+  "cleanPublicContactLinks": true,
+  "final": "V2_04_AC_HOSTED_QA_RESUMED",
+  "rbQa03": "PASS",
+  "rbQa05": "PASS",
+  "newDefects": 0,
+  "remainingBlockers": 3,
+  "browserVisual": {
+    "c01MobileCards": true,
+    "c01DesktopTableNoOverflow": true,
+    "c02StaffLookup": true,
+    "e03Controls": true,
+    "e03LibraryModal": true
+  }
+}

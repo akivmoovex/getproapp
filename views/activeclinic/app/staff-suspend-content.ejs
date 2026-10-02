@@ -1,0 +1,32 @@
+<%
+  var staff = (pageData && pageData.staff) || {};
+  var error = pageData && pageData.error;
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-staff-suspend" data-ac-page-section="staff-suspend" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="ac-panel ac-alert ac-alert--warning" role="alert">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Suspend staff account</h2>
+    <p>Suspending <strong><%= staff.displayName %></strong> revokes ActiveClinic access and signs out all of their active sessions.</p>
+  </div>
+
+  <article class="ac-panel">
+    <dl class="ac-dl">
+      <div><dt>Staff</dt><dd><%= staff.displayName %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= staff.status %>"><%= staff.statusLabel || staff.status %></span></dd></div>
+      <% if (staff.jobTitle) { %>
+      <div><dt>Job title</dt><dd><%= staff.jobTitle %></dd></div>
+      <% } %>
+    </dl>
+
+    <form method="post" action="/app/staff/<%= staff.id %>/suspend" class="ac-form-actions" data-ac-loading="1">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <button type="submit" class="ac-btn ac-btn--danger">Confirm suspend</button>
+      <a href="/app/staff/<%= staff.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </form>
+  </article>
+</section>

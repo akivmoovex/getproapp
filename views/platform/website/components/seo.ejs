@@ -1,0 +1,24 @@
+<%#
+  SEO meta fragment from presentation SEO DTO. No product business logic.
+  Locals: model
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var title = m.title || '';
+  var description = m.description || '';
+  var canonical = m.canonicalUrl || '';
+  var robots = m.robots || 'index';
+  var imageSrc = '';
+  if (typeof m.image === 'string') imageSrc = m.image;
+  else if (m.image && m.image.src) imageSrc = String(m.image.src);
+%>
+<!-- gp-website-pc seo -->
+<% if (title) { %><title><%= title %></title>
+<meta property="og:title" content="<%= title %>" /><% } %>
+<% if (description) { %><meta name="description" content="<%= description %>" />
+<meta property="og:description" content="<%= description %>" /><% } %>
+<% if (canonical) { %><link rel="canonical" href="<%= canonical %>" />
+<meta property="og:url" content="<%= canonical %>" /><% } %>
+<meta name="robots" content="<%= robots === 'noindex' ? 'noindex, nofollow' : 'index, follow' %>" />
+<% if (imageSrc) { %><meta property="og:image" content="<%= imageSrc %>" /><% } %>
+<meta name="gp-website-sitemap-include" content="<%= m.sitemapInclude === false ? '0' : '1' %>" />

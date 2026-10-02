@@ -17,6 +17,15 @@ const {
   sendPasswordResetEmail,
   DELIVERY_CODE,
 } = require("./passwordResetEmailDelivery");
+const {
+  validatePasswordPair,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
+const {
+  revokeSessionsByBlessBoardUser,
+} = require("../../platform/session/revokeV5Session");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const PURPOSE = "password_reset";
 const TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -39,7 +48,7 @@ const STATUS = Object.freeze({
 });
 
 const NEUTRAL_MESSAGE =
-  "If an eligible account exists for that email, we have sent password reset instructions.";
+  "If an eligible account exists for that phone or email, we have sent password reset instructions when email delivery is available.";
 
 function generateRawToken() {
   const rawToken = crypto.randomBytes(32).toString("base64url");
@@ -52,12 +61,21 @@ function hashIp(ip) {
   return crypto.createHash("sha256").update(`bb-reset-ip:${raw}`).digest("hex");
 }
 
-function validatePassword(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
-    return { ok: false, reason: "password" };
+function validatePassword(password, confirmPassword) {
+  if (arguments.length < 2) {
+    const pair = validatePasswordPair(password, password);
+    if (!pair.ok) return { ok: false, reason: "password" };
+    return { ok: true, value: pair.value };
   }
-  return { ok: true, value };
+  const pair = validatePasswordPair(password, confirmPassword);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      reason: pair.field === "password_confirm" ? "confirm" : "password",
+      code: pair.code,
+    };
+  }
+  return { ok: true, value: pair.value };
 }
 
 async function withClient(db, fn) {
@@ -190,8 +208,13 @@ async function requestPasswordReset(db, input, deps = {}) {
             publicBaseUrl,
             resetUrl,
             expiresAt,
+            env,
           },
-          { adapter: deps.emailAdapter }
+          {
+            adapter: deps.emailAdapter,
+            fetchImpl: deps.fetchImpl,
+            log: deps.log,
+          }
         );
 
         await recordBlessBoardAudit(db, {
@@ -241,39 +264,195 @@ async function requestPasswordReset(db, input, deps = {}) {
 }
 
 /**
- * Platform Admin initiates reset for a known user (still email-based).
+ * Platform Admin initiates reset for a known user by id (email optional).
+ * Creates a one-time token; delivers by email when available. Phone-only users
+ * succeed with a safe non-email status — never fails merely because email is absent.
+ * Never returns the raw token or reset URL to callers (sharing stays out-of-band).
  */
 async function platformAdminRequestPasswordReset(db, input, deps = {}) {
   const src = input && typeof input === "object" ? input : {};
   if (!src.actorUserId) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "actor" };
   }
-  const email = normalizeEmail(src.email);
-  if (!email) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "email" };
+
+  const env = src.env || process.env;
+  const publicBaseUrl =
+    src.publicBaseUrl != null && String(src.publicBaseUrl).trim()
+      ? String(src.publicBaseUrl).trim()
+      : getApexOrigin(env);
+  const ipHash = hashIp(src.requestIp);
+
+  let user = null;
+  if (src.userId) {
+    user = await authRepo.findUserById(db, String(src.userId).trim());
+  } else {
+    const email = normalizeEmail(src.email);
+    if (!email) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: "email" };
+    }
+    user = await authRepo.findUserByEmail(db, email);
   }
-  const user = await authRepo.findUserByEmail(db, email);
+
   if (!user) {
-    // Non-disclosing for cross-product / missing targets.
     return { ok: false, status: STATUS.FORBIDDEN, reason: "target" };
   }
   if (String(user.status) !== "active" || !user.password_hash) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "target_state" };
   }
-  return requestPasswordReset(
-    db,
-    {
-      email,
-      actorUserId: src.actorUserId,
-      organizationId: src.organizationId || null,
-      churchId: src.churchId || null,
-      requestIp: src.requestIp,
-      env: src.env,
-      publicBaseUrl: src.publicBaseUrl,
-      source: "platform_admin",
-    },
-    deps
-  );
+
+  const email = normalizeEmail(user.email_normalized || user.email_display || src.email);
+  const phone = user.phone_normalized ? String(user.phone_normalized) : null;
+
+  try {
+    return await withClient(db, async (client) => {
+      if (typeof client.query === "function") await client.query("BEGIN");
+      try {
+        if (ipHash) {
+          const ipLimit = await tokenRepo.consumeRateLimitSlot(client, {
+            scopeKind: "ip",
+            scopeKey: ipHash,
+            windowMs: RATE_WINDOW_MS,
+            maxAttempts: RATE_MAX_IP,
+          });
+          if (ipLimit.limited) {
+            if (typeof client.query === "function") await client.query("COMMIT");
+            return {
+              ok: true,
+              status: STATUS.OK,
+              sent: false,
+              rateLimited: true,
+              deliveryChannel: email ? "email" : phone ? "phone" : "none",
+              deliveryStatus: "rate_limited",
+            };
+          }
+        }
+
+        const rateScope = email
+          ? crypto.createHash("sha256").update(`bb-reset-email:${email}`).digest("hex")
+          : crypto
+              .createHash("sha256")
+              .update(`bb-reset-user:${String(user.id)}`)
+              .digest("hex");
+        const emailLimit = await tokenRepo.consumeRateLimitSlot(client, {
+          scopeKind: "email",
+          scopeKey: rateScope,
+          windowMs: RATE_WINDOW_MS,
+          maxAttempts: RATE_MAX_EMAIL,
+        });
+        if (emailLimit.limited) {
+          if (typeof client.query === "function") await client.query("COMMIT");
+          return {
+            ok: true,
+            status: STATUS.OK,
+            sent: false,
+            rateLimited: true,
+            deliveryChannel: email ? "email" : phone ? "phone" : "none",
+            deliveryStatus: "rate_limited",
+          };
+        }
+
+        await tokenRepo.consumeActiveTokensForUserPurpose(client, {
+          userId: String(user.id),
+          purpose: PURPOSE,
+        });
+
+        const { rawToken, tokenHash } = generateRawToken();
+        const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
+        const token = await tokenRepo.insertActionToken(client, {
+          userId: String(user.id),
+          purpose: PURPOSE,
+          tokenHash,
+          expiresAt,
+          createdByUserId: src.actorUserId || null,
+          organizationId: src.organizationId || null,
+          churchId: src.churchId || null,
+          requestIpHash: ipHash,
+          metadataJson: {
+            source: "platform_admin",
+            has_email: Boolean(email),
+            has_phone: Boolean(phone),
+          },
+        });
+
+        if (typeof client.query === "function") await client.query("COMMIT");
+
+        const resetUrl = `${String(publicBaseUrl).replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
+        let deliveryChannel = "none";
+        let deliveryStatus = "recorded";
+        let sent = false;
+        let deliveryCode = null;
+
+        if (email) {
+          deliveryChannel = "email";
+          const delivery = await sendPasswordResetEmail(
+            {
+              recipientEmail: email,
+              publicBaseUrl,
+              resetUrl,
+              expiresAt,
+              env,
+            },
+            {
+              adapter: deps.emailAdapter,
+              fetchImpl: deps.fetchImpl,
+              log: deps.log,
+            }
+          );
+          sent = Boolean(delivery.ok);
+          deliveryCode = delivery.code;
+          deliveryStatus = delivery.ok ? "sent" : "email_unavailable";
+        } else if (phone) {
+          deliveryChannel = "phone";
+          // Paid SMS is optional; do not claim delivery. Token exists for authorized sharing.
+          deliveryStatus = "sms_unavailable_link_created";
+          sent = false;
+          deliveryCode = "sms_provider_unavailable";
+        } else {
+          deliveryStatus = "no_delivery_channel";
+        }
+
+        await recordBlessBoardAudit(db, {
+          organizationId: src.organizationId || null,
+          churchId: src.churchId || null,
+          actorUserId: src.actorUserId || null,
+          actionKey: "user.password_reset_requested",
+          entityType: "user",
+          entityId: String(user.id),
+          outcome: "success",
+          metadata: {
+            delivery_code: deliveryCode,
+            delivery_channel: deliveryChannel,
+            delivery_status: deliveryStatus,
+            token_id: token && token.id,
+            source: "platform_admin",
+            actor_type: "platform_admin",
+          },
+        }).catch(() => null);
+
+        return {
+          ok: true,
+          status: STATUS.OK,
+          sent,
+          rateLimited: false,
+          deliveryChannel,
+          deliveryStatus,
+          deliveryCode,
+          _testTokenId: token && token.id,
+        };
+      } catch (err) {
+        if (typeof client.query === "function") {
+          try {
+            await client.query("ROLLBACK");
+          } catch {
+            /* ignore */
+          }
+        }
+        throw err;
+      }
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "reset_failed" };
+  }
 }
 
 /**
@@ -285,12 +464,14 @@ async function completePasswordReset(db, input) {
   if (!rawToken || rawToken.length < 20) {
     return { ok: false, status: STATUS.INVALID_TOKEN };
   }
-  const passwordCheck = validatePassword(src.password);
+  const passwordCheck = validatePassword(src.password, src.passwordConfirm);
   if (!passwordCheck.ok) {
-    return { ok: false, status: STATUS.WEAK_PASSWORD, reason: "password" };
-  }
-  if (String(src.passwordConfirm != null ? src.passwordConfirm : "") !== passwordCheck.value) {
-    return { ok: false, status: STATUS.MISMATCH, reason: "confirm" };
+    return {
+      ok: false,
+      status:
+        passwordCheck.reason === "confirm" ? STATUS.MISMATCH : STATUS.WEAK_PASSWORD,
+      reason: passwordCheck.reason,
+    };
   }
 
   const tokenHash = hashSessionToken(rawToken);
@@ -321,20 +502,25 @@ async function completePasswordReset(db, input) {
 
         const passwordHash = await bcrypt.hash(passwordCheck.value, BCRYPT_ROUNDS);
         await authRepo.updateUserPasswordHash(client, String(user.id), passwordHash);
+        await authRepo.clearPasswordRecoveryFlags(client, String(user.id));
         await tokenRepo.markConsumed(client, token.id);
         await tokenRepo.consumeActiveTokensForUserPurpose(client, {
           userId: String(user.id),
           purpose: PURPOSE,
         });
 
-        // Invalidate deployment sessions for this user.
-        await client.query(
-          `UPDATE platform.deployment_sessions
-              SET revoked_at = now()
-            WHERE user_id = $1
-              AND revoked_at IS NULL`,
-          [String(user.id)]
-        );
+        // Invalidate sessions for this user in the current deployment only
+        // (V8 must not revoke concurrent V7 testing sessions).
+        const explicitCode = String(src.deploymentCode || "").trim().toLowerCase();
+        const deployment = explicitCode
+          ? { ok: true, code: explicitCode }
+          : getPlatformDeploymentCode(src.env || process.env);
+        if (deployment.ok && deployment.code) {
+          await revokeSessionsByBlessBoardUser(client, {
+            userId: String(user.id),
+            deploymentCode: deployment.code,
+          });
+        }
 
         if (typeof client.query === "function") await client.query("COMMIT");
 
@@ -394,6 +580,8 @@ module.exports = {
   TTL_MS,
   NEUTRAL_MESSAGE,
   DELIVERY_CODE,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   requestPasswordReset,
   platformAdminRequestPasswordReset,
   completePasswordReset,

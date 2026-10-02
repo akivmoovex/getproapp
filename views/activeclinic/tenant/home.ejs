@@ -1,0 +1,93 @@
+<%#
+  AC-MW-R01 Clinic Homepage — Stitch Batch 2.
+  Composition from shared platform presentation components + real AC domain data.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const paths = stitch && stitch.paths ? stitch.paths : {};
+  const editingHome = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const homeSections = (Array.isArray(clinic.cmsSections) ? clinic.cmsSections : []).filter(function (s) {
+    return s && (s.page_id === 'tpl_home' || !s.page_id);
+  });
+  function homeSectionVisible(type) {
+    if (!homeSections.length) return true;
+    const aliases = { introduction: 'text' };
+    const lookup = aliases[type] || type;
+    const found = homeSections.find(function (s) {
+      return s.type === lookup || s.type === type;
+    });
+    if (!found) return type === 'hero' || type === 'promo' || type === 'faq';
+    return found.visible !== false;
+  }
+%>
+<article class="ac-stitch-page ac-stitch-page--r01" data-ac-page-section="tenant-home" data-ac-stitch-screen="R01">
+  <% if (homeSectionVisible('hero') || editingHome) { %>
+  <div class="ac-stitch-section ac-stitch-section--hero" data-ac-home-section="hero">
+    <%- html.hero || '' %>
+  </div>
+  <% } %>
+
+  <% if (html.trust) { %>
+  <section class="ac-stitch-section ac-stitch-section--trust" data-ac-home-section="trust" aria-label="Clinic quick information">
+    <%- html.trust %>
+  </section>
+  <% } %>
+
+  <% if ((homeSectionVisible('services') || editingHome) && (html.servicesHeading || html.services)) { %>
+  <section class="ac-stitch-section ac-stitch-section--services" data-ac-home-section="services">
+    <%- html.servicesHeading || '' %>
+    <%- html.services || '' %>
+  </section>
+  <% } %>
+
+  <% if ((homeSectionVisible('text') || homeSectionVisible('introduction') || editingHome) && html.about) { %>
+  <section class="ac-stitch-section ac-stitch-section--about" data-ac-home-section="introduction">
+    <%- html.about %>
+  </section>
+  <% } %>
+
+  <% if ((homeSectionVisible('doctors') || editingHome) && (html.doctorsHeading || html.doctors)) { %>
+  <section class="ac-stitch-section ac-stitch-section--doctors" data-ac-home-section="doctors">
+    <%- html.doctorsHeading || '' %>
+    <%- html.doctors || '' %>
+  </section>
+  <% } %>
+
+  <% if (html.conversion) { %>
+  <section class="ac-stitch-section ac-stitch-section--conversion" data-ac-home-section="conversion">
+    <%- html.conversion %>
+  </section>
+  <% } %>
+
+  <% if ((homeSectionVisible('hours') || homeSectionVisible('contact') || editingHome) && (html.visitHeading || html.contact || html.location || html.hours)) { %>
+  <section class="ac-stitch-section ac-stitch-section--visit" data-ac-home-section="contact" aria-label="Contact and location">
+    <%- html.visitHeading || '' %>
+    <%- html.location || '' %>
+    <%- html.hours || '' %>
+    <%- html.contact || '' %>
+  </section>
+  <% } %>
+
+  <% if (html.promo && (clinic.showPromo || editingHome)) { %>
+  <section class="ac-stitch-section ac-stitch-section--promo" data-ac-home-section="promo">
+    <%- html.promo %>
+  </section>
+  <% } %>
+
+  <% if (html.faq && (clinic.showFaq || editingHome)) { %>
+  <section class="ac-stitch-section ac-stitch-section--faq" data-ac-home-section="faq" aria-label="Frequently asked questions">
+    <%- html.faq %>
+    <% if (editingHome) { %>
+    <%- include('../partials/website-collection-editor', {
+      collectionKey: 'home.faq',
+      collectionItems: Array.isArray(clinic.faq) ? clinic.faq : [],
+      questionLabel: 'Question',
+      answerLabel: 'Answer',
+    }) %>
+    <% } %>
+  </section>
+  <% } %>
+
+  <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_home', librarySkipTypes: ['faq'] }) %>
+</article>

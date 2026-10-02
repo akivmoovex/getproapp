@@ -24,10 +24,15 @@ const {
   validateCsrf,
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
+const { STATUS } = require("../services/memberRegistrationService");
 const {
-  submitMemberRegistration,
-  STATUS,
-} = require("../services/memberRegistrationService");
+  submitMembershipApplication,
+} = require("../services/membershipWorkflowService");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
+const memberIdentityRepo = require("../repositories/memberIdentityRepository");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -45,8 +50,9 @@ const FIELD_ERROR_MESSAGES = Object.freeze({
   preferred_name_html: "Preferred name cannot include HTML characters.",
   preferred_name_len: "Preferred name is too long.",
   email: "Enter a valid email address.",
-  phone: "Enter a valid phone number.",
-  contact_required: "Provide at least an email or a phone number.",
+  phone: "Enter a valid mobile phone number.",
+  phone_required: "Mobile phone number is required.",
+  contact_required: "Mobile phone number is required. Email is optional.",
 });
 
 /**
@@ -64,9 +70,11 @@ function mapRegistrationFieldErrors(reason) {
     return { fieldErrors, summaryItems };
   }
 
-  if (key === "contact_required") {
-    const msg = FIELD_ERROR_MESSAGES.contact_required;
-    fieldErrors.email = msg;
+  if (key === "contact_required" || key === "phone_required") {
+    const msg =
+      key === "phone_required"
+        ? FIELD_ERROR_MESSAGES.phone_required
+        : FIELD_ERROR_MESSAGES.contact_required;
     fieldErrors.phone = msg;
     summaryItems.push(msg);
     return { fieldErrors, summaryItems };
@@ -79,6 +87,7 @@ function mapRegistrationFieldErrors(reason) {
     "preferred_name",
     "email",
     "phone",
+    "phone_required",
   ]);
   if (!knownFields.has(fieldKey) && !FIELD_ERROR_MESSAGES[key]) {
     return { fieldErrors, summaryItems };
@@ -106,12 +115,41 @@ function mapRegistrationFieldErrors(reason) {
  */
 function submittedFromBody(body) {
   const raw = body || {};
+  const interests = [];
+  const interestRaw = raw.interests;
+  if (Array.isArray(interestRaw)) {
+    for (const item of interestRaw) interests.push(String(item || ""));
+  } else if (interestRaw) {
+    interests.push(String(interestRaw));
+  }
   return {
     firstName: String(raw.first_name || ""),
     lastName: String(raw.last_name || ""),
     preferredName: String(raw.preferred_name || ""),
     email: String(raw.email || ""),
     phone: String(raw.phone || ""),
+    phone_country: String(raw.phone_country || raw.phoneCountry || ""),
+    phone_national: String(raw.phone_national || raw.phoneNational || ""),
+    faithBackground: String(raw.faith_background || ""),
+    baptismStatus: String(raw.baptism_status || ""),
+    previousChurch: String(raw.previous_church || ""),
+    interests,
+    ministryInterest: String(raw.ministry_interest || ""),
+    availability: String(raw.availability || ""),
+    consentContact: Boolean(raw.consent_contact),
+  };
+}
+
+function applicationFromBody(body) {
+  const submitted = submittedFromBody(body);
+  return {
+    faithBackground: submitted.faithBackground || undefined,
+    baptismStatus: submitted.baptismStatus || undefined,
+    previousChurch: submitted.previousChurch || undefined,
+    interests: submitted.interests.length ? submitted.interests : undefined,
+    ministryInterest: submitted.ministryInterest || undefined,
+    availability: submitted.availability || undefined,
+    consentContact: submitted.consentContact || undefined,
   };
 }
 
@@ -171,6 +209,15 @@ function createTenantRegistrationRouter(deps) {
    */
   function resolveHostScope(req, res) {
     if (isApexHost(req)) {
+      // Product / QA hub hosts are apex — member /register is tenant-hostname only.
+      // Returning null without a response previously hung until the proxy timed out
+      // (seen on blessboard.neuniversity.org/register while /register-church stayed 200).
+      // Do not redirect to /register-church: that is church-organization signup, not
+      // member registration.
+      res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
       return null;
     }
     const mode = getTenantRoutingMode();
@@ -242,7 +289,19 @@ function createTenantRegistrationRouter(deps) {
 
   function formLocals(req, res, scope, extra) {
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    const submitted = (extra && extra.submitted) || null;
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      selectedCountry: submitted && submitted.phone_country,
+      nationalValue: submitted && submitted.phone_national,
+      e164Value:
+        submitted && submitted.phone_national
+          ? null
+          : submitted && submitted.phone
+            ? submitted.phone
+            : null,
+    });
     return {
       publicName: scope.publicName,
       branchName: scope.branchName,
@@ -253,18 +312,36 @@ function createTenantRegistrationRouter(deps) {
       fieldErrors: {},
       errorSummaryItems: [],
       submitted: null,
+      loadPhoneField: true,
+      ...phoneLocals,
       ...(extra || {}),
     };
   }
 
   router.get("/register", (req, res, next) => {
     Promise.resolve()
-      .then(() => {
+      .then(async () => {
         const scope = resolveHostScope(req, res);
         if (!scope) return;
+        let intakeForm = null;
+        try {
+          intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+          });
+        } catch {
+          intakeForm = null;
+        }
         const html = renderRegistrationView(
           "public/register.ejs",
-          formLocals(req, res, scope, { error: null, submitted: null })
+          formLocals(req, res, scope, {
+            error: null,
+            submitted: null,
+            intakeForm,
+            enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+            enableParticipationInterests:
+              !intakeForm || intakeForm.enableParticipationInterests,
+          })
         );
         return res.status(200).type("html").send(html);
       })
@@ -276,9 +353,16 @@ function createTenantRegistrationRouter(deps) {
       .then(() => {
         const scope = resolveHostScope(req, res);
         if (!scope) return;
+        const rawRef = String((req.query && req.query.ref) || "").trim();
+        const registrationReference =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            rawRef
+          )
+            ? rawRef
+            : null;
         const html = renderRegistrationView(
           "public/register-submitted.ejs",
-          formLocals(req, res, scope, {})
+          formLocals(req, res, scope, { registrationReference })
         );
         return res.status(200).type("html").send(html);
       })
@@ -300,6 +384,15 @@ function createTenantRegistrationRouter(deps) {
             churchId: scope.churchId,
             branchId: scope.branchId,
           });
+          let intakeForm = null;
+          try {
+            intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+              churchId: scope.churchId,
+              branchId: scope.branchId,
+            });
+          } catch {
+            intakeForm = null;
+          }
           const html = renderRegistrationView(
             "public/register.ejs",
             formLocals(req, res, scope, {
@@ -307,20 +400,43 @@ function createTenantRegistrationRouter(deps) {
               fieldErrors: {},
               errorSummaryItems: [GENERIC_ERROR_MESSAGE],
               submitted: submittedFromBody(body),
+              intakeForm,
+              enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+              enableParticipationInterests:
+                !intakeForm || intakeForm.enableParticipationInterests,
             })
           );
           return res.status(403).type("html").send(html);
         }
 
         // Ignore any client-supplied church/branch identifiers.
-        const result = await submitMemberRegistration(getPool(), {
+        const phoneResolved = resolveBlessBoardFormPhone(body, {
+          required: true,
+          env,
+          allowLegacyPhone: false,
+        });
+        let intakeForm = null;
+        try {
+          intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+          });
+        } catch {
+          intakeForm = null;
+        }
+        const result = await submitMembershipApplication(getPool(), {
           churchId: scope.churchId,
           branchId: scope.branchId,
           firstName: body.first_name,
           lastName: body.last_name,
           preferredName: body.preferred_name,
           email: body.email,
-          phone: body.phone,
+          phone: phoneResolved.e164 || "",
+          phoneCountry: phoneResolved.fields.phoneCountry,
+          phoneNational: phoneResolved.fields.phoneNational,
+          country: phoneResolved.fields.phoneCountry || "ZM",
+          intakeFormId: intakeForm ? intakeForm.id : null,
+          application: applicationFromBody(body),
         });
 
         if (result.ok) {
@@ -332,7 +448,12 @@ function createTenantRegistrationRouter(deps) {
             registrationId: result.registration && result.registration.id,
             existingMember: Boolean(result.existingMemberId),
           });
-          return res.redirect(303, "/register/submitted");
+          return res.redirect(
+            303,
+            `/register/submitted?ref=${encodeURIComponent(
+              (result.registration && result.registration.id) || ""
+            )}`
+          );
         }
 
         const duplicate =
@@ -365,6 +486,10 @@ function createTenantRegistrationRouter(deps) {
               ? mapped.summaryItems
               : [errorMessage],
             submitted: submittedFromBody(body),
+            intakeForm,
+            enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+            enableParticipationInterests:
+              !intakeForm || intakeForm.enableParticipationInterests,
           })
         );
         return res.status(duplicate ? 409 : 400).type("html").send(html);

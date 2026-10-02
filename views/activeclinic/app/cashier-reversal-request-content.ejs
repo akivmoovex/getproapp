@@ -1,0 +1,35 @@
+<%
+  var payment = (pageData && pageData.payment) || {};
+  var error = pageData && pageData.error;
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-reversal-request" data-ac-page-section="reversal-request" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <%- include('../partials/ac-form-error', { error: error }) %>
+
+  <nav class="ac-stepper" aria-label="Reversal steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Request</li>
+      <li class="ac-stepper__item">Review</li>
+    </ol>
+  </nav>
+
+  <article class="ac-panel">
+    <p class="ac-muted">Payment <strong><%= payment.paymentNumber %></strong> · <%= payment.patientName %> · <%= payment.amountFormatted %></p>
+    <p class="ac-help">Reversals void the original payment record after supervisor approval.</p>
+  </article>
+
+  <form method="post" action="/app/cashier/reversals/request" class="ac-panel" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
+    <input type="hidden" name="payment_id" value="<%= payment.id %>" />
+
+    <div class="ac-field">
+      <label class="ac-label" for="reason">Reversal reason *</label>
+      <textarea class="ac-textarea" id="reason" name="reason" rows="3" required maxlength="500"></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Submit reversal request</button>
+      <a href="/app/cashier/session" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>

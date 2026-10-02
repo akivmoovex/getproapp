@@ -1,10 +1,19 @@
 <%- include('../partials/platform-admin-shell-start') %>
 <%
-  var dep = currentDeployment || null;
-  var orgReserved = organizationReserved || [];
-  var hostReservedList = hostReserved || [];
-  var pattern = hostnamePattern || '{organization}.blessboard.org';
-  var deployCode = currentDeploymentCode || (dep && dep.deploymentCode) || '';
+  var s = settings || {};
+  var general = s.general || {};
+  var orgDefaults = s.organisationDefaults || {};
+  var identityAuth = s.identityAuth || {};
+  var communications = s.communications || {};
+  var security = s.security || {};
+  var rolesAndAccess = s.rolesAndAccess || {};
+  var health = s.systemHealth || {};
+  var architecture = s.architecture || {};
+  var links = s.links || {};
+  var orgReserved = orgDefaults.organizationReserved || [];
+  var hostReservedList = orgDefaults.hostReserved || [];
+  var modelSteps = architecture.model || [];
+  var modelRules = architecture.rules || [];
 %>
 
 <section
@@ -23,69 +32,172 @@
       <p class="bb-pa-settings__eyebrow">Global settings</p>
       <h1 class="bb-pa-page-head__title">Platform Settings</h1>
       <p class="bb-pa-lede">
-        Read-only hostname patterns and reserved labels used by provisioning.
-        DNS automation, certificate automation, branding saves, MFA policy, and failover are not available in this shell.
+        Read-only platform configuration summaries. Organisation provisioning follows the tenant model below —
+        organisations are tenants on a shared deployment, not one deployment each.
       </p>
     </div>
     <div class="bb-pa-page-head__actions">
-      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/deployments" data-bb-pa-settings-deploy-link="1">
+      <a class="bb-pa-btn" href="<%= links.organizationsNew || '/admin/organizations/new' %>" data-bb-pa-settings-org-new="1">
+        <span class="material-symbols-outlined" aria-hidden="true">domain_add</span>
+        Provision organisation
+      </a>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= links.deployments || '/admin/system/deployments' %>" data-bb-pa-settings-deploy-link="1">
         <span class="material-symbols-outlined" aria-hidden="true">dns</span>
         Deployments
       </a>
     </div>
   </header>
 
-  <p class="bb-pa-settings__notice" role="note" data-bb-pa-settings-notice="1">
-    Tenant hostnames are registered in <code class="bb-pa-key">platform.domains</code> and resolved by the hostname service.
-    This page does not create, verify, or delete DNS records.
+  <p class="bb-pa-settings__notice" role="note" data-bb-pa-settings-notice="1" data-bb-pa-settings-architecture="1">
+    <strong>Provisioning model:</strong>
+    <%= (modelSteps || []).join(' → ') || 'Platform deployment → Organisation tenant → Church → HQ and branches' %>.
+    Branches are scopes inside the organisation tenant, not separate deployments. One deployment may serve many organisations.
   </p>
+  <% if (modelRules.length) { %>
+  <ul class="bb-pa-hint-list" data-bb-pa-settings-architecture-rules="1">
+    <% modelRules.forEach(function (rule) { %>
+    <li><%= rule %></li>
+    <% }) %>
+  </ul>
+  <% } %>
 
   <div class="bb-pa-settings-grid" data-bb-pa-settings-grid="1">
-    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-deploy-heading" data-bb-pa-settings-deployment="1">
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-general-heading" data-bb-pa-settings-general="1">
       <div class="bb-pa-panel__head">
-        <h2 id="pa-settings-deploy-heading" class="bb-pa-section-title">Current deployment</h2>
+        <h2 id="pa-settings-general-heading" class="bb-pa-section-title">General</h2>
         <span class="bb-pa-org-detail__ro">Read-only</span>
       </div>
       <dl class="bb-pa-dl bb-pa-dl--grid">
-        <div>
-          <dt>Deployment code</dt>
-          <dd><code class="bb-pa-key"><%= deployCode || '—' %></code></dd>
-        </div>
-        <div>
-          <dt>Canonical domain</dt>
-          <dd data-bb-pa-settings-canonical="1"><%= dep && dep.canonicalDomain ? dep.canonicalDomain : '—' %></dd>
-        </div>
-        <div>
-          <dt>Environment</dt>
-          <dd><%= dep && dep.environmentCode ? dep.environmentCode : '—' %></dd>
-        </div>
-        <div>
-          <dt>Release</dt>
-          <dd><%= dep && dep.releaseVersion ? dep.releaseVersion : '—' %></dd>
-        </div>
+        <div><dt>Platform name</dt><dd><%= general.platformName || 'BlessBoard' %></dd></div>
+        <div><dt>Support contact</dt><dd><%= general.supportContact || '—' %></dd></div>
+        <div><dt>Default country</dt><dd><%= general.defaultCountry || '—' %></dd></div>
+        <div><dt>Default timezone</dt><dd><%= general.defaultTimezone || '—' %></dd></div>
+        <div><dt>Default phone country code</dt><dd><%= general.defaultPhoneCountryCode || '—' %></dd></div>
+        <div><dt>Default language</dt><dd><%= general.defaultLanguage || '—' %></dd></div>
       </dl>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-org-defaults-heading" data-bb-pa-settings-org-defaults="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-org-defaults-heading" class="bb-pa-section-title">Organisation defaults</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>Default plan</dt><dd><%= orgDefaults.defaultPlanDisplay || orgDefaults.defaultPlanKey || '—' %></dd></div>
+        <div><dt>Branch allowance</dt><dd><%= orgDefaults.branchAllowance || '—' %></dd></div>
+        <div><dt>Member limit</dt><dd><%= orgDefaults.memberLimit || '—' %></dd></div>
+        <div><dt>Administrator limit</dt><dd><%= orgDefaults.administratorLimit || '—' %></dd></div>
+        <div><dt>Storage allowance</dt><dd><%= orgDefaults.storageAllowance || '—' %></dd></div>
+        <div><dt>Website default state</dt><dd><%= orgDefaults.websiteDefaultState || '—' %></dd></div>
+        <div><dt>Registration approval policy</dt><dd><%= orgDefaults.registrationApprovalPolicy || '—' %></dd></div>
+      </dl>
+      <div class="bb-pa-pattern" data-bb-pa-dns-patterns="1" data-bb-pa-hostname-pattern="1">
+        <span class="bb-pa-pattern__label">Default organisation hostname pattern</span>
+        <code class="bb-pa-pattern__code"><%= orgDefaults.hostnamePattern || '{organization}.blessboard.org' %></code>
+      </div>
       <p class="bb-pa-hint">
-        <a class="bb-pa-link" href="/admin/deployments">View full deployment registry</a>
+        Hostnames register organisations on this deployment. They do not create a new deployment.
+        <a class="bb-pa-link" href="<%= links.organizationsNew || '/admin/organizations/new' %>">Open organisation provisioning</a>
+        ·
+        <a class="bb-pa-link" href="<%= links.plans || '/admin/plans' %>">View plans</a>
       </p>
     </section>
 
-    <section
-      class="bb-pa-panel bb-pa-settings-panel"
-      aria-labelledby="pa-settings-dns-heading"
-      data-bb-pa-dns-patterns="1"
-    >
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-identity-heading" data-bb-pa-settings-identity="1">
       <div class="bb-pa-panel__head">
-        <h2 id="pa-settings-dns-heading" class="bb-pa-section-title">Subdomain &amp; DNS patterns</h2>
-        <span class="bb-pa-chip bb-pa-chip--ok" data-bb-pa-dns-status="active">Active</span>
+        <h2 id="pa-settings-identity-heading" class="bb-pa-section-title">Identity and authentication</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
       </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>Phone-first login</dt><dd><%= identityAuth.phoneFirstLogin || '—' %></dd></div>
+        <div><dt>Email fallback</dt><dd><%= identityAuth.emailFallback || '—' %></dd></div>
+        <div><dt>OTP provider</dt><dd><%= identityAuth.otpProvider || '—' %> · <%= identityAuth.otpProviderStatus || '' %></dd></div>
+        <div><dt>Password policy</dt><dd><%= identityAuth.passwordPolicy || '—' %></dd></div>
+        <div><dt>Session duration</dt><dd><%= identityAuth.sessionDuration || '—' %></dd></div>
+        <div><dt>Support-mode duration</dt><dd><%= identityAuth.supportModeDuration || '—' %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-comms-heading" data-bb-pa-settings-comms="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-comms-heading" class="bb-pa-section-title">Communications</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>SMS provider status</dt><dd data-bb-pa-provider="sms"><%= communications.sms || '—' %></dd></div>
+        <div><dt>WhatsApp status</dt><dd data-bb-pa-provider="whatsapp"><%= communications.whatsapp || '—' %></dd></div>
+        <div><dt>Email provider status</dt><dd data-bb-pa-provider="email"><%= communications.email || '—' %></dd></div>
+        <div><dt>Manual WhatsApp sharing</dt><dd><%= communications.manualWhatsAppSharing || '—' %></dd></div>
+        <div><dt>Invitation expiry</dt><dd><%= communications.invitationExpiry || '—' %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-security-heading" data-bb-pa-settings-security="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-security-heading" class="bb-pa-section-title">Security</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>Platform Admin access</dt><dd><%= security.platformAdminAccess || '—' %></dd></div>
+        <div><dt>Support-mode restrictions</dt><dd><%= security.supportModeRestrictions || '—' %></dd></div>
+        <div><dt>Audit status</dt><dd><%= security.auditStatus || '—' %></dd></div>
+        <div><dt>Confidential exclusions</dt><dd><%= security.confidentialExclusions || '—' %></dd></div>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-roles-heading" data-bb-pa-settings-roles="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-roles-heading" class="bb-pa-section-title">Roles and access</h2>
+        <span class="bb-pa-org-detail__ro">Read-only summary</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>Active roles</dt><dd><%= rolesAndAccess.roleCount != null ? rolesAndAccess.roleCount : '—' %></dd></div>
+        <div><dt>Active permissions</dt><dd><%= rolesAndAccess.permissionCount != null ? rolesAndAccess.permissionCount : '—' %></dd></div>
+        <div><dt>Sensitive assignments</dt><dd><%= rolesAndAccess.sensitiveAssignmentCount != null ? rolesAndAccess.sensitiveAssignmentCount : '—' %></dd></div>
+        <div>
+          <dt>Access health warnings</dt>
+          <dd>
+            <%= rolesAndAccess.accessHealthWarnings != null ? rolesAndAccess.accessHealthWarnings : '—' %>
+            <% if (rolesAndAccess.accessHealthWarnings > 0) { %>
+            <span class="bb-pa-status bb-pa-status--warning">Attention needed</span>
+            <% } %>
+          </dd>
+        </div>
+      </dl>
       <p class="bb-pa-hint">
-        Default provisioning pattern for organization hostnames on this deployment’s canonical domain.
-        Custom-domain entitlement and org-scoped host lists stay on organization detail.
+        <a class="bb-pa-link" href="<%= rolesAndAccess.rolesHref || '/admin/roles' %>">View roles catalogue</a>
+        ·
+        <a class="bb-pa-link" href="<%= rolesAndAccess.accessHealthHref || '/admin/access-health' %>">Access health checks</a>
       </p>
-      <div class="bb-pa-pattern" data-bb-pa-hostname-pattern="1">
-        <span class="bb-pa-pattern__label">Default pattern</span>
-        <code class="bb-pa-pattern__code"><%= pattern %></code>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-health-heading" data-bb-pa-settings-health="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-health-heading" class="bb-pa-section-title">System health</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
       </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div><dt>Environment</dt><dd data-bb-pa-settings-env="1"><%= health.environment || '—' %></dd></div>
+        <div><dt>Database identity</dt><dd><code class="bb-pa-key"><%= health.identityKey || '—' %></code> · <%= health.identityEnvironment || '—' %></dd></div>
+        <div><dt>Deployment profile</dt><dd><code class="bb-pa-key"><%= health.deploymentCode || '—' %></code> · <%= health.deploymentProfile || '—' %></dd></div>
+        <div><dt>Canonical domain</dt><dd data-bb-pa-settings-canonical="1"><%= health.canonicalDomain || '—' %></dd></div>
+        <div><dt>Migration status</dt><dd><%= health.migrationCount != null ? (health.migrationCount + ' applied') : '—' %><% if (health.latestMigration) { %> · latest <code class="bb-pa-key"><%= health.latestMigration %></code><% } %></dd></div>
+        <div><dt>Background jobs</dt><dd><%= health.backgroundJobs || '—' %></dd></div>
+        <div>
+          <dt>Provider health</dt>
+          <dd data-bb-pa-settings-provider-health="1">
+            OTP <%= (health.providerHealth && health.providerHealth.otp) || '—' %>
+            · SMS <%= (health.providerHealth && health.providerHealth.sms) || '—' %>
+            · Email <%= (health.providerHealth && health.providerHealth.email) || '—' %>
+            · WhatsApp <%= (health.providerHealth && health.providerHealth.whatsapp) || '—' %>
+          </dd>
+        </div>
+      </dl>
+      <p class="bb-pa-hint">
+        <a class="bb-pa-link" href="<%= links.deployments || '/admin/system/deployments' %>">Deployment registry</a>
+        ·
+        <a class="bb-pa-link" href="<%= links.domains || '/admin/domains' %>">Domains and links</a>
+      </p>
     </section>
   </div>
 
@@ -95,7 +207,7 @@
       <span class="bb-pa-org-detail__ro">Read-only · provisioning guards</span>
     </div>
     <p class="bb-pa-hint">
-      Labels blocked during CLI provisioning. Keywords cannot be added or removed from this UI.
+      Labels blocked during organisation and hostname provisioning. Keywords cannot be edited from this UI.
     </p>
 
     <h3 class="bb-pa-subsection-title" id="pa-settings-reserved-org">Organization keys</h3>
@@ -126,34 +238,34 @@
     aria-labelledby="pa-settings-unavailable-heading"
     data-bb-pa-settings-unavailable="1"
   >
-    <h2 id="pa-settings-unavailable-heading" class="bb-pa-section-title">Not available in this shell</h2>
+    <h2 id="pa-settings-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
     <ul class="bb-pa-settings-unavailable__list">
-      <li data-bb-pa-unavailable="branding">
-        <span class="material-symbols-outlined" aria-hidden="true">palette</span>
+      <li data-bb-pa-unavailable="org-create-form">
+        <span class="material-symbols-outlined" aria-hidden="true">domain_add</span>
         <div>
-          <strong>Global branding</strong>
-          <p>Logo upload, brand color tokens, and login accent editors are not implemented.</p>
+          <strong>Organisation creation form</strong>
+          <p>Use <a class="bb-pa-link" href="<%= links.organizationsNew || '/admin/organizations/new' %>">/admin/organizations/new</a>. Creating an organisation does not create a deployment.</p>
         </div>
       </li>
-      <li data-bb-pa-unavailable="security">
-        <span class="material-symbols-outlined" aria-hidden="true">security</span>
+      <li data-bb-pa-unavailable="deploy-create-form">
+        <span class="material-symbols-outlined" aria-hidden="true">dns</span>
         <div>
-          <strong>Security &amp; access control</strong>
-          <p>MFA enforcement, IP allowlists, session timeout, and credential-policy editors are not implemented.</p>
-        </div>
-      </li>
-      <li data-bb-pa-unavailable="failover">
-        <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
-        <div>
-          <strong>Backup &amp; cutover</strong>
-          <p>Cutover controls, vault meters, and log downloads are not available.</p>
+          <strong>Deployment creation</strong>
+          <p>Deployments are infrastructure records. Organisation tenants are provisioned separately.</p>
         </div>
       </li>
       <li data-bb-pa-unavailable="dns-automation">
-        <span class="material-symbols-outlined" aria-hidden="true">dns</span>
+        <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
         <div>
           <strong>DNS &amp; certificate automation</strong>
           <p>Record creation, verification workflows, and certificate issuance are not available here.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="branding">
+        <span class="material-symbols-outlined" aria-hidden="true">palette</span>
+        <div>
+          <strong>Global branding editors</strong>
+          <p>Logo upload and brand token editors are not implemented on this page.</p>
         </div>
       </li>
     </ul>

@@ -1,0 +1,14 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-staff-invite" data-ac-page-section="staff-invite" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Invite staff member</h2>
+    <p class="ac-muted">Create a staff profile and issue an activation link. Automated email/SMS delivery is not configured — share the link manually after invite.</p>
+    <div class="ac-form-actions">
+      <a class="ac-btn" href="/app/staff/new?invite=1">Continue to invite form</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/staff">Back to staff directory</a>
+    </div>
+  </div>
+</section>

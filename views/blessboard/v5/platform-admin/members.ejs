@@ -1,0 +1,168 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = members || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  var f = filters || {};
+  var statuses = memberStatuses || [];
+  var scope = organizationScope || null;
+  var basePath = scope
+    ? ('/admin/organizations/' + encodeURIComponent(scope.key) + '/members')
+    : '/admin/members';
+  var hasFilter = Boolean(
+    f.q || f.status || f.organizationKey || f.organizationId ||
+    f.churchId || f.branchId || f.memberNumber
+  );
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'suspended' || key === 'archived') return 'bb-pa-chip--danger';
+    if (key === 'pending') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function filterQueryParts() {
+    var parts = ['limit=' + encodeURIComponent(limit)];
+    if (f.q) parts.push('q=' + encodeURIComponent(f.q));
+    if (f.status) parts.push('status=' + encodeURIComponent(f.status));
+    if (!scope && f.organizationKey) parts.push('organizationKey=' + encodeURIComponent(f.organizationKey));
+    if (f.churchId) parts.push('churchId=' + encodeURIComponent(f.churchId));
+    if (f.branchId) parts.push('branchId=' + encodeURIComponent(f.branchId));
+    if (f.memberNumber) parts.push('memberNumber=' + encodeURIComponent(f.memberNumber));
+    return parts;
+  }
+  function queryPage(p) {
+    return basePath + '?' + filterQueryParts().concat(['page=' + encodeURIComponent(p)]).join('&');
+  }
+  function clearHref() {
+    return basePath + '?limit=' + encodeURIComponent(limit);
+  }
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-members="1" aria-label="Member directory">
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-orgs__eyebrow">Platform directory</p>
+      <h1 class="bb-pa-page-head__title"><%= pageTitle || 'Members' %></h1>
+      <p class="bb-pa-lede">
+        Cross-organisation member discovery with safe identity fields only.
+        Giving history, pastoral cases, welfare, and safeguarding data are excluded.
+      </p>
+      <% if (scope) { %>
+      <p class="bb-pa-muted">
+        Scoped to
+        <a class="bb-pa-link" href="/admin/organizations/<%= scope.key %>"><%= scope.displayName || scope.key %></a>
+        · <a class="bb-pa-link" href="/admin/members">All organisations</a>
+      </p>
+      <% } %>
+    </div>
+    <p class="bb-pa-page-head__actions">
+      <span class="bb-pa-orgs__total" data-bb-count="members-total"><%= totalCount %></span>
+      <span class="bb-pa-orgs__total-label">members</span>
+    </p>
+  </header>
+
+  <form class="bb-pa-org-filter" method="get" action="<%= basePath %>" role="search" data-bb-pa-members-filter="1">
+    <div class="bb-pa-field">
+      <label for="q">Name, email, or phone</label>
+      <input id="q" name="q" type="search" value="<%= f.q || '' %>" maxlength="100" autocomplete="off" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="memberNumber">Member number (id)</label>
+      <input id="memberNumber" name="memberNumber" type="text" value="<%= f.memberNumber || '' %>" maxlength="64" autocomplete="off" />
+    </div>
+    <% if (!scope) { %>
+    <div class="bb-pa-field">
+      <label for="organizationKey">Organisation key</label>
+      <input id="organizationKey" name="organizationKey" type="text" value="<%= f.organizationKey || '' %>" maxlength="64" autocomplete="off" />
+    </div>
+    <% } %>
+    <div class="bb-pa-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">Any</option>
+        <% statuses.forEach(function (s) { %>
+        <option value="<%= s %>"<%= f.status === s ? ' selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="branchId">Branch id</label>
+      <input id="branchId" name="branchId" type="text" value="<%= f.branchId || '' %>" maxlength="36" autocomplete="off" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Page size</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>"<%= Number(limit) === n ? ' selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-org-filter__actions">
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Search</button>
+      <% if (hasFilter) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-pa-orgs-empty" role="status" data-bb-empty="members">
+    <%- include('../partials/empty-state', {
+      title: hasFilter ? 'No matching members' : 'No members yet',
+      body: hasFilter ? 'Try different filters or clear the search.' : 'Registered church members appear here once provisioned.',
+      icon: 'badge',
+      actionHref: hasFilter ? clearHref() : '/admin',
+      actionLabel: hasFilter ? 'Clear filter' : 'Back to dashboard'
+    }) %>
+  </div>
+  <% } else { %>
+  <p class="bb-pa-muted" data-bb-pa-members-range="1">
+    Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %>
+  </p>
+  <div class="bb-pa-table-wrap" role="region" aria-label="Members table" tabindex="0">
+    <table class="bb-pa-table" data-bb-table="members">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Member number</th>
+          <th scope="col">Organisation</th>
+          <th scope="col">Church</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Status</th>
+          <th scope="col">Account</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (m) { %>
+        <tr data-bb-member-id="<%= m.memberId %>">
+          <td>
+            <a class="bb-pa-orgs__name-link" href="/admin/members/<%= m.memberId %>">
+              <strong><%= m.displayName || '—' %></strong>
+            </a>
+          </td>
+          <td><code class="bb-pa-key"><%= m.memberNumber %></code></td>
+          <td>
+            <% if (m.organizationKey) { %>
+            <a class="bb-pa-link" href="/admin/organizations/<%= m.organizationKey %>"><%= m.organizationName || m.organizationKey %></a>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= m.churchName || m.churchKey || '—' %></td>
+          <td><%= m.branchName || m.branchKey || '—' %></td>
+          <td><span class="bb-pa-chip <%= statusChip(m.status) %>"><%= m.status || '—' %></span></td>
+          <td><%= m.accountLinked ? 'Linked' : 'Unlinked' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (totalPages > 1) { %>
+  <nav class="bb-pa-pager" aria-label="Members pagination">
+    <% if (page > 1) { %><a class="bb-pa-link" href="<%= queryPage(page - 1) %>">Previous</a><% } %>
+    <span class="bb-pa-muted">Page <%= page %> of <%= totalPages %></span>
+    <% if (page < totalPages) { %><a class="bb-pa-link" href="<%= queryPage(page + 1) %>">Next</a><% } %>
+  </nav>
+  <% } %>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -1,0 +1,118 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title church-show-mobile-only">Basic reports</h1>
+          <p class="church-branch-page-hero__subtitle">Foundation KPIs for <%= churchName %> — documented definitions</p>
+        </div>
+        <div class="church-branch-actions church-show-desktop-only">
+          <a class="church-btn church-btn--ghost" href="/branch/reports">Monthly reports</a>
+          <% if (canExportReports) { %>
+          <a class="church-btn church-btn--outline" href="/branch/reports/basic/export.csv?<%= filterQueryString(report.filters) %>">Export CSV</a>
+          <a class="church-btn church-btn--outline" href="/branch/reports/basic/export.pdf?<%= filterQueryString(report.filters) %>">Export PDF</a>
+          <% } %>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (!canExportReports) { %>
+      <div class="church-alert church-alert--warning" role="note">Export is disabled for your account. Contact an administrator for export permission.</div>
+      <% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Date filters</h2>
+        <form method="get" action="/branch/reports/basic" class="church-form">
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="date_from">From</label>
+              <input class="church-input" type="date" id="date_from" name="date_from" value="<%= report.filters.dateFrom %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="date_to">To</label>
+              <input class="church-input" type="date" id="date_to" name="date_to" value="<%= report.filters.dateTo %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="service">Service type</label>
+              <input class="church-input" type="text" id="service" name="service" value="<%= report.filters.serviceType || '' %>" placeholder="Optional"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Apply filters</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Summary metrics</h2>
+        <p class="church-branch-panel__hint">Totals reconcile with underlying branch records. Drill down to verify.</p>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table" aria-describedby="basic-report-kpi-summary">
+            <caption id="basic-report-kpi-summary" class="visually-hidden">Foundation basic report KPI summary for <%= report.filters.dateFrom %> to <%= report.filters.dateTo %></caption>
+            <thead>
+              <tr>
+                <th scope="col">Metric</th>
+                <th scope="col">Value</th>
+                <th scope="col">Definition</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% report.kpiOrder.forEach(function (kpiId) { %>
+              <% if (kpiId === 'giving_totals' && !canViewFinance) { %>
+              <tr>
+                <th scope="row"><%= report.kpiDefinitions.giving_totals.label %></th>
+                <td colspan="3" class="church-muted">Requires finance permission</td>
+              </tr>
+              <% } else { %>
+              <% var def = report.kpiDefinitions[kpiId]; var val = report.kpis[kpiId]; %>
+              <tr>
+                <th scope="row"><%= def.label %></th>
+                <td><strong><%= kpiId === 'giving_totals' ? formatMoney(val) : val %></strong></td>
+                <td class="church-muted church-branch-table__def"><%= def.definition %></td>
+                <td>
+                  <% if (def.drillDown) { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/reports/basic/drill-down/<%= kpiId %>?<%= filterQueryString(report.filters) %>">Drill down</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% } %>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="church-branch-panel" aria-labelledby="attendance-trend-heading">
+        <h2 id="attendance-trend-heading" class="church-branch-panel__title">Monthly attendance trend</h2>
+        <p class="church-branch-panel__hint">Accessible table view of attendance and visitors by month (chart alternative).</p>
+        <% if ((report.attendanceTrend || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted attendance in this date range.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Attendance total</th>
+                <th scope="col">Visitors total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% report.attendanceTrend.forEach(function (row) { %>
+              <tr>
+                <th scope="row"><%= row.period_label %></th>
+                <td><%= row.attendance_total %></td>
+                <td><%= row.visitors_total %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <div class="church-show-mobile-only church-branch-mobile-export">
+        <a class="church-btn church-btn--ghost church-btn--block" href="/branch/reports">Monthly reports</a>
+        <% if (canExportReports) { %>
+        <a class="church-btn church-btn--outline church-btn--block" href="/branch/reports/basic/export.csv?<%= filterQueryString(report.filters) %>">Export CSV</a>
+        <% } %>
+      </div>
+<%- include('../partials/branch_admin_shell_end') %>

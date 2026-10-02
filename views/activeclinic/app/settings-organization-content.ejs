@@ -1,0 +1,124 @@
+<%
+  var profile = (pageData && pageData.profile) || {};
+  var identity = profile.identity || {};
+  var locale = profile.locale || {};
+  var status = profile.status || {};
+  var facilities = profile.facilities || {};
+  var setup = profile.setup || null;
+  var metadata = profile.metadata || {};
+  var actions = profile.actions || {};
+  var primary = facilities.primary || null;
+%>
+<section class="ac-settings-org" data-ac-page-section="settings-organization" data-ac-visual="stitch-gap">
+  <% if (setup) { %>
+  <div class="ac-panel" data-ac-setup-state="<%= setup.complete ? 'complete' : 'incomplete' %>">
+    <% if (setup.complete) { %>
+    <span class="ac-badge ac-badge--success">Profile complete</span>
+    <% } else { %>
+    <span class="ac-badge ac-badge--warning">Setup incomplete</span>
+    <% } %>
+    <span class="ac-muted"><%= setup.label %></span>
+  </div>
+  <% } %>
+
+  <div class="ac-panel" data-ac-org-identity="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Identity</h2>
+    <dl class="ac-dl">
+      <div><dt>Public name</dt><dd><%= identity.publicName || '—' %></dd></div>
+      <div><dt>Legal name</dt><dd><%= identity.legalName || '—' %></dd></div>
+      <div><dt>Organization type</dt><dd><%= identity.organizationTypeLabel || '—' %></dd></div>
+      <div><dt>Registration number</dt><dd><%= identity.registrationNumber || 'Not provided' %></dd></div>
+    </dl>
+  </div>
+
+  <div class="ac-panel" data-ac-org-locale="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Location and locale</h2>
+    <dl class="ac-dl">
+      <div><dt>Country</dt><dd><%= locale.countryCode || '—' %></dd></div>
+      <div><dt>Timezone</dt><dd><%= locale.timezone || '—' %></dd></div>
+      <% if (locale.timezoneNote) { %>
+      <div><dt class="ac-sr-only">Timezone note</dt><dd class="ac-muted"><%= locale.timezoneNote %></dd></div>
+      <% } %>
+      <div><dt>Primary facility location</dt><dd><%= locale.primaryLocation || 'Not available' %></dd></div>
+    </dl>
+  </div>
+
+  <div class="ac-panel" data-ac-org-status="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Status</h2>
+    <p class="ac-muted">These statuses are separate and cannot be changed from this profile form.</p>
+    <dl class="ac-dl">
+      <div>
+        <dt>Healthcare organization</dt>
+        <dd>
+          <span class="ac-badge"><%= status.healthcareOrganizationLabel %></span>
+          <span class="ac-sr-only"><%= status.healthcareOrganizationStatus %></span>
+        </dd>
+      </div>
+      <div>
+        <dt>ActiveClinic product enrolment</dt>
+        <dd><span class="ac-badge"><%= status.productEnrolmentLabel %></span></dd>
+      </div>
+      <% if (status.platformOrganizationLabel) { %>
+      <div>
+        <dt>Platform organization</dt>
+        <dd><span class="ac-badge"><%= status.platformOrganizationLabel %></span></dd>
+      </div>
+      <% } %>
+    </dl>
+  </div>
+
+  <div class="ac-panel" data-ac-org-facilities="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Facilities</h2>
+    <% if (primary && primary.operational) { %>
+    <p>
+      Primary:
+      <% if (facilities.manageHref) { %>
+      <a href="<%= primary.href %>"><%= primary.displayName %></a>
+      <% } else { %>
+      <%= primary.displayName %>
+      <% } %>
+      <span class="ac-muted">
+        · <%= primary.facilityTypeLabel %>
+        <% if (primary.locationSummary) { %> · <%= primary.locationSummary %><% } %>
+        · <%= primary.status %>
+      </span>
+    </p>
+    <% } else if (primary) { %>
+    <p class="ac-muted" data-ac-primary-incomplete="1">
+      Primary facility “<%= primary.displayName %>” is not operational (<%= primary.status %>).
+    </p>
+    <% } else { %>
+    <p class="ac-muted" data-ac-primary-missing="1">No primary facility is configured.</p>
+    <% if (facilities.configureHref) { %>
+    <p><a class="ac-btn" href="<%= facilities.configureHref %>">Configure facilities</a></p>
+    <% } %>
+    <% } %>
+    <p class="ac-muted"><%= facilities.activeCount || 0 %> active facilities</p>
+    <% if (facilities.manageHref) { %>
+    <p><a href="<%= facilities.manageHref %>">Open facilities</a></p>
+    <% } %>
+  </div>
+
+  <% if (metadata.updatedAt || metadata.createdAt) { %>
+  <div class="ac-panel" data-ac-org-metadata="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Administrative metadata</h2>
+    <dl class="ac-dl">
+      <% if (metadata.createdAt) { %>
+      <div><dt>Created</dt><dd><%= new Date(metadata.createdAt).toLocaleString() %></dd></div>
+      <% } %>
+      <% if (metadata.updatedAt) { %>
+      <div><dt>Last updated</dt><dd><%= new Date(metadata.updatedAt).toLocaleString() %></dd></div>
+      <% } %>
+    </dl>
+  </div>
+  <% } %>
+
+  <% if (actions.canEdit) { %>
+  <div class="ac-actions-row">
+    <a class="ac-btn" href="<%= actions.editHref %>">Edit organization profile</a>
+    <a class="ac-btn ac-btn--ghost" href="/app/settings">Back to settings</a>
+  </div>
+  <% } else { %>
+  <p><a class="ac-btn ac-btn--ghost" href="/app/settings">Back to settings</a></p>
+  <% } %>
+</section>

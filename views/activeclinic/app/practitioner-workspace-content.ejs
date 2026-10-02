@@ -1,0 +1,199 @@
+<%
+  var workspace = (pageData && pageData.workspace) || {};
+  var p = workspace.practitioner || {};
+  var weekly = workspace.weekly || [];
+  var weeklyByDay = {};
+  weekly.forEach(function (slot) {
+    weeklyByDay[String(slot.dayOfWeek)] = slot;
+  });
+  var blocks = workspace.blocks || [];
+  var dayLabels = workspace.dayLabels || ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var canEdit = workspace.canEdit === true;
+  var rbacGuardrail = workspace.rbacGuardrail || '';
+  var specialtiesText = Array.isArray(p.specialties) ? p.specialties.join(', ') : '';
+%>
+<section
+  class="ac-batch1a ac-practitioner-workspace"
+  data-ac-page-section="practitioner-workspace"
+  data-ac-stitch="ACN05"
+  data-ac-visual="stitch-acn05"
+>
+  <% if (rbacGuardrail) { %>
+  <p class="ac-batch1a__guardrail" data-ac-rbac-guardrail="1" role="note"><%= rbacGuardrail %></p>
+  <% } %>
+
+  <header class="ac-batch1a__profile-head">
+    <div>
+      <h2 class="ac-batch1a__profile-name"><%= p.displayName %></h2>
+      <p class="ac-muted"><%= p.jobTitle || 'Practitioner' %></p>
+      <% if (p.publicBookable) { %>
+      <span class="ac-badge ac-badge--active">Publicly bookable</span>
+      <% } else { %>
+      <span class="ac-badge">Internal profile</span>
+      <% } %>
+    </div>
+    <a class="ac-btn ac-btn--ghost" href="/app/practitioners">Back to directory</a>
+  </header>
+
+  <form class="ac-form ac-batch1a__form" method="post" action="/app/practitioners/<%= encodeURIComponent(p.id) %>" data-ac-practitioner-form="1">
+    <%- include('../partials/ac-csrf-field') %>
+
+    <article class="ac-panel ac-batch1a__section" id="profile">
+      <h2 class="ac-batch1a__section-title">Profile &amp; credentials</h2>
+      <div class="ac-form-grid">
+        <div class="ac-field">
+          <label class="ac-label" for="prac_first">First name</label>
+          <input class="ac-input" id="prac_first" name="firstName" type="text" value="<%= p.firstName || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_last">Last name</label>
+          <input class="ac-input" id="prac_last" name="lastName" type="text" value="<%= p.lastName || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_display">Display name</label>
+          <input class="ac-input" id="prac_display" name="displayName" type="text" value="<%= p.displayName || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_title">Job title</label>
+          <input class="ac-input" id="prac_title" name="jobTitle" type="text" value="<%= p.jobTitle || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_credentials">Credentials / licensure</label>
+          <input class="ac-input" id="prac_credentials" name="credentialsText" type="text" maxlength="500" value="<%= p.credentialsText || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_license">License number</label>
+          <input class="ac-input" id="prac_license" name="licenseNumber" type="text" maxlength="80" value="<%= p.licenseNumber || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field ac-field--full">
+          <label class="ac-label" for="prac_specialties">Specialties</label>
+          <input class="ac-input" id="prac_specialties" name="specialtiesText" type="text" value="<%= specialtiesText %>" placeholder="Comma-separated" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_phone">Phone</label>
+          <input class="ac-input" id="prac_phone" name="phone" type="text" value="<%= p.phoneDisplay || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="prac_email">Email</label>
+          <input class="ac-input" id="prac_email" name="email" type="email" value="<%= p.emailDisplay || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field ac-field--full">
+          <label class="ac-label" for="prac_bio">Public bio</label>
+          <textarea class="ac-input" id="prac_bio" name="publicBio" rows="3" <%= canEdit ? '' : 'readonly' %>><%= p.publicBio || '' %></textarea>
+        </div>
+        <div class="ac-field ac-field--checks">
+          <label class="ac-check">
+            <input type="checkbox" name="publicBookable" value="1" <%= p.publicBookable ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+            Enable patient self-scheduling on public booking portal
+          </label>
+          <label class="ac-check">
+            <input type="checkbox" name="publicProfileEnabled" value="1" <%= p.publicProfileEnabled ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+            Show public practitioner profile
+          </label>
+        </div>
+      </div>
+    </article>
+
+    <article class="ac-panel ac-batch1a__section" id="schedule">
+      <h2 class="ac-batch1a__section-title">Weekly working schedule</h2>
+      <div class="ac-table-wrap">
+        <table class="ac-table ac-batch1a__schedule">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Working</th>
+              <th scope="col">Starts</th>
+              <th scope="col">Ends</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% dayLabels.forEach(function (label, day) {
+              var slot = weeklyByDay[String(day)];
+              var enabled = Boolean(slot);
+            %>
+            <tr>
+              <td><%= label %></td>
+              <td>
+                <label class="ac-check">
+                  <input type="checkbox" name="day_<%= day %>_enabled" value="1" <%= enabled ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+                  On
+                </label>
+              </td>
+              <td>
+                <input class="ac-input" type="time" name="day_<%= day %>_start" value="<%= slot ? slot.startsAtLocal : '08:00' %>" <%= canEdit ? '' : 'readonly' %>/>
+              </td>
+              <td>
+                <input class="ac-input" type="time" name="day_<%= day %>_end" value="<%= slot ? slot.endsAtLocal : '17:00' %>" <%= canEdit ? '' : 'readonly' %>/>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="ac-panel ac-batch1a__section" id="leave-add">
+      <h2 class="ac-batch1a__section-title">Add leave / blocked period</h2>
+      <% if (canEdit) { %>
+      <div class="ac-form-grid">
+        <div class="ac-field">
+          <label class="ac-label" for="block_start">Block starts</label>
+          <input class="ac-input" id="block_start" name="blockStartsAt" type="datetime-local"/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="block_end">Block ends</label>
+          <input class="ac-input" id="block_end" name="blockEndsAt" type="datetime-local"/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="block_kind">Kind</label>
+          <select class="ac-select" id="block_kind" name="blockKind">
+            <option value="leave">Leave</option>
+            <option value="blocked">Blocked</option>
+            <option value="training">Training</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="block_reason">Reason</label>
+          <input class="ac-input" id="block_reason" name="blockReason" type="text" maxlength="300"/>
+        </div>
+      </div>
+      <% } else { %>
+      <p class="ac-muted">You do not have permission to edit availability.</p>
+      <% } %>
+    </article>
+
+    <div class="ac-form-actions">
+      <a class="ac-btn ac-btn--ghost" href="/app/practitioners">Cancel</a>
+      <% if (canEdit) { %>
+      <button type="submit" class="ac-btn">Save profile &amp; availability</button>
+      <% } %>
+    </div>
+  </form>
+
+  <article class="ac-panel ac-batch1a__section" id="leave">
+    <h2 class="ac-batch1a__section-title">Leave &amp; blocked availability</h2>
+    <% if (!blocks.length) { %>
+    <p class="ac-muted">No leave or blocked periods recorded.</p>
+    <% } else { %>
+    <ul class="ac-batch1a__blocks">
+      <% blocks.forEach(function (b) { %>
+      <li class="ac-batch1a__block" data-ac-block="<%= b.id %>">
+        <div>
+          <strong><%= b.blockKind %></strong>
+          <% if (b.reason) { %> — <%= b.reason %><% } %>
+          <div class="ac-muted"><%= b.startsAt %> → <%= b.endsAt %></div>
+          <span class="ac-badge <%= b.status === 'active' ? 'ac-badge--warning' : 'ac-badge--inactive' %>"><%= b.status %></span>
+        </div>
+        <% if (canEdit && b.status === 'active') { %>
+        <form method="post" action="/app/practitioners/<%= encodeURIComponent(p.id) %>/blocks/<%= encodeURIComponent(b.id) %>/cancel">
+          <%- include('../partials/ac-csrf-field') %>
+          <button type="submit" class="ac-btn ac-btn--ghost">Cancel block</button>
+        </form>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </article>
+</section>

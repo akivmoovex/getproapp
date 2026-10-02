@@ -1,0 +1,48 @@
+<%
+  var rx = prescription || {};
+  var items = Array.isArray(rx.items) ? rx.items : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--prescription-detail"
+  data-ac-page-section="patient-prescription-detail"
+  data-ac-batch3="AC-P10"
+  data-ac-stitch="<%= stitch.desktop || 'ac-p10' %>"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/prescriptions">← Back to prescriptions</a>
+  </p>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Prescription</p>
+    <h1 data-ac-prescription-number="1"><%= escapeHtml(rx.prescriptionNumber || '') %></h1>
+    <p class="ac-muted"><%= escapeHtml(rx.statusLabel || rx.status || '') %> · <%= escapeHtml(rx.facilityDisplayName || '') %></p>
+  </header>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Details</h2>
+    <dl class="ac-patient-detail acp-portal-leaf__detail">
+      <div><dt>Prescriber</dt><dd><%= escapeHtml(rx.prescriberName || '—') %></dd></div>
+      <div><dt>Issued</dt><dd><%= escapeHtml(rx.createdAt ? String(rx.createdAt).replace('T',' ').slice(0,16) : '—') %></dd></div>
+    </dl>
+  </section>
+
+  <section class="acp-portal-leaf__panel">
+    <h2>Medications</h2>
+    <% if (!items.length) { %>
+    <p class="ac-muted" data-ac-empty="prescription-items">No medication lines on this prescription.</p>
+    <% } else { %>
+    <ul class="ac-simple-list" data-ac-prescription-items="1">
+      <% items.forEach(function (it) { %>
+      <li>
+        <strong><%= escapeHtml(it.medicationName) %></strong>
+        <% if (it.strength) { %> <span class="ac-muted"><%= escapeHtml(it.strength) %></span><% } %>
+        <span> · qty <%= Number(it.quantityOrdered || 0) %></span>
+        <% if (it.dosageInstructions) { %><p class="ac-muted"><%= escapeHtml(it.dosageInstructions) %></p><% } %>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <p class="ac-muted" data-ac-rx-readonly="1">Read-only — prescribing and pharmacy controls are not available in the patient portal.</p>
+</section>

@@ -1,0 +1,86 @@
+<%#
+  Shared website styles editor (Wave 4B-2).
+  Locals: page (stylesPageModel.buildStylesPageView)
+%>
+<section class="gp-we-styles" data-gp-website-styles="1" data-gp-we-screen="styles">
+  <header class="gp-we-styles__head">
+    <div>
+      <h1 class="gp-we-styles__title"><%= page.pageTitle %></h1>
+      <% if (page.siteLabel) { %>
+      <p class="gp-we-styles__site"><%= page.siteLabel %></p>
+      <% } %>
+    </div>
+    <% if (page.backHref) { %>
+    <a class="gp-we-history__back" href="<%= page.backHref %>"><%= page.backLabel %></a>
+    <% } %>
+  </header>
+
+  <p class="gp-we-styles__intro"><%= page.intro %></p>
+
+  <% if (page.notice) { %>
+  <p class="gp-we-styles__notice" role="status"><%= page.notice %></p>
+  <% } %>
+  <% if (page.error) { %>
+  <p class="gp-we-styles__error" role="alert"><%= page.error %></p>
+  <% } %>
+
+  <form class="gp-we-styles__form" method="post" action="<%= page.saveAction %>" data-gp-website-styles-form="1">
+    <input type="hidden" name="<%= page.csrfField %>" value="<%= page.csrfToken %>"/>
+    <% page.fields.forEach(function (field) { %>
+    <div class="gp-we-styles__field" data-gp-styles-field="<%= field.key %>">
+      <label class="gp-we-styles__label" for="gp-styles-<%= field.name %>"><%= field.label %></label>
+      <% if (field.type === 'color') { %>
+      <div class="gp-we-styles__color-row">
+        <input
+          id="gp-styles-<%= field.name %>"
+          name="<%= field.name %>"
+          type="color"
+          value="<%= field.draftValue || field.publishedValue || field.placeholder %>"
+          data-gp-styles-color="1"
+        />
+        <input
+          class="gp-we-styles__hex"
+          type="text"
+          name="<%= field.name %>Text"
+          maxlength="7"
+          placeholder="<%= field.placeholder %>"
+          value="<%= field.draftValue || field.publishedValue || '' %>"
+          data-gp-styles-color-text="1"
+          aria-label="<%= field.label %> hex value"
+        />
+      </div>
+      <% } else if (field.type === 'image') { %>
+      <input
+        id="gp-styles-<%= field.name %>"
+        name="<%= field.name %>"
+        type="url"
+        class="gp-we-styles__input"
+        maxlength="500"
+        placeholder="https://"
+        value="<%= field.draftValue.src || '' %>"
+      />
+      <input
+        type="text"
+        name="<%= field.name %>Alt"
+        class="gp-we-styles__input"
+        maxlength="240"
+        placeholder="Alt text"
+        value="<%= field.draftValue.alt || '' %>"
+      />
+      <% if (page.mediaLibraryHref) { %>
+      <p class="gp-we-styles__hint"><a href="<%= page.mediaLibraryHref %>?select=1">Choose from Media Library</a></p>
+      <% } %>
+      <% } %>
+      <% if (field.hint) { %>
+      <p class="gp-we-styles__hint"><%= field.hint %></p>
+      <% } %>
+    </div>
+    <% }) %>
+    <footer class="gp-we-styles__actions">
+      <button type="submit" class="gp-we-history__btn gp-we-history__btn--primary">Save draft</button>
+      <% if (page.backHref) { %>
+      <a class="gp-we-history__btn gp-we-history__btn--ghost" href="<%= page.backHref %>">Cancel</a>
+      <% } %>
+    </footer>
+  </form>
+</section>

@@ -40,7 +40,7 @@ function isGetproTestDbIntent() {
  * Single source for the Postgres connection string (never log the return value).
  * With test intent (NODE_ENV=test or GETPRO_TEST_DB=1): TEST_DATABASE_URL only (empty if unset — PG tests skip).
  * BlessBoard.org V5 testing (DEPLOYMENT_ENV=testing + canonical blessboard.org): DATABASE_URL only.
- * V5 foundation mode (PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5 + DEPLOYMENT_ENV=testing): DATABASE_URL only.
+ * V5 foundation mode (PLATFORM_DEPLOYMENT_CODE=blessboard-org-staging + DEPLOYMENT_ENV=testing): DATABASE_URL only.
  * Otherwise: DATABASE_URL, then GETPRO_DATABASE_URL.
  * @returns {string}
  */

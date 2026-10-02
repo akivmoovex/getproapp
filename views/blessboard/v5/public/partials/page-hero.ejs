@@ -9,6 +9,9 @@
   var _heading = typeof heroHeading !== 'undefined' ? heroHeading : '';
   var _body = typeof heroBody !== 'undefined' ? heroBody : '';
   var _media = typeof heroMedia !== 'undefined' ? heroMedia : null;
+  if (_media && typeof presentImageSrc === 'function') {
+    _media = presentImageSrc(_media) || null;
+  }
   var _eyebrow = typeof heroEyebrow !== 'undefined' ? heroEyebrow : '';
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
   var _canInline = Boolean(_wa && _wa.editingMode && typeof editPageKey !== 'undefined' && editPageKey && typeof editSectionKey !== 'undefined' && editSectionKey);
@@ -45,8 +48,22 @@
       _accentPhrase = _words.slice(-2).join(' ');
     }
   }
+  var _mediaAlt = typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '';
+  if (_meta.altText) _mediaAlt = _meta.altText;
+  if (_meta.templateExample) {
+    _mediaAlt = 'Template photo, not a photo of this congregation';
+  }
+  var _placement = _meta.imagePlacement || null;
+  var _ps =
+    typeof presentImagePlacementStyle === 'function'
+      ? presentImagePlacementStyle(_placement)
+      : { className: '', style: '' };
   var _showPrimary = Boolean(_primaryLabel || (_canInline && typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary));
   var _showSecondary = Boolean(_secondaryLabel || (_canInline && typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary));
+  var _videoUrl = (_meta && _meta.videoUrl) ? String(_meta.videoUrl) : '';
+  var _videoEmbed = (typeof presentVideoEmbed === 'function' && _videoUrl)
+    ? presentVideoEmbed(_videoUrl, { title: (_meta && _meta.videoTitle) || _heading || 'Video' })
+    : null;
 %>
 <header class="bb-tp-page-hero<%= typeof heroClass !== 'undefined' && heroClass ? ' ' + heroClass : '' %>" data-bb-page-hero="1">
   <div class="bb-tp-page-hero__inner">
@@ -176,39 +193,78 @@
       </div>
       <% } %>
     </div>
-    <% if (_media || _canInline) { %>
-    <div class="bb-tp-page-hero__visual">
-      <% if (_media) { %>
-      <img
-        class="bb-tp-page-hero__img"
-        src="<%= _media %>"
-        alt="<%= typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '' %>"
-        width="960"
-        height="720"
-        loading="eager"
-        decoding="async"
-      />
-      <% } else { %>
-      <div class="bb-tp-page-hero__fallback"></div>
-      <% } %>
+    <% if (_videoEmbed && _videoEmbed.embedUrl) { %>
+    <div class="bb-tp-page-hero__visual bb-tp-page-hero__visual--video" data-gp-video-embed="1" data-gp-video-embed-editor="VideoEmbedEditor">
+      <div class="bb-tp-page-hero__video-frame">
+        <iframe
+          class="bb-tp-page-hero__video-iframe"
+          src="<%= _videoEmbed.embedUrl %>"
+          title="<%= _videoEmbed.title || 'Video' %>"
+          loading="lazy"
+          allow="<%= _videoEmbed.allow %>"
+          referrerpolicy="<%= _videoEmbed.referrerPolicy %>"
+          allowfullscreen
+        ></iframe>
+      </div>
       <% if (_canInline) { %>
       <div class="bb-tp-edit-media-wrap">
         <%- include('../../partials/structured-edit-trigger', {
           editKind: 'image',
           editEntityKey: _pageKey + '-' + _sectionKey + '-image',
           editSectionKey: _sectionKey,
-          editLabel: 'Edit section image',
+          editLabel: 'Use photograph (clears YouTube for this section)',
           editPayload: {
             imageUrl: _media || '',
-            altText: typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '',
-            focal: 'center'
+            altText: _mediaAlt || '',
+            videoUrl: ''
           }
         }) %>
         <%- include('../../partials/structured-edit-trigger', {
           editKind: 'video',
           editEntityKey: _pageKey + '-' + _sectionKey + '-video',
           editSectionKey: _sectionKey,
-          editLabel: 'Edit section video',
+          editLabel: 'Edit YouTube video',
+          editPayload: {
+            videoUrl: _videoUrl || '',
+            title: (_meta && _meta.videoTitle) || '',
+            thumbnailUrl: _media || ''
+          }
+        }) %>
+      </div>
+      <% } %>
+    </div>
+    <% } else if (_media || _canInline) { %>
+    <div class="bb-tp-page-hero__visual">
+      <% if (_canInline) { %>
+      <%- include('../../partials/editable-image', {
+        editPageKey: _pageKey,
+        editSectionKey: _sectionKey,
+        editFieldKey: 'image',
+        contentKey: _pageKey + '.' + _sectionKey + '.image',
+        imageSrc: _media,
+        imageAlt: _mediaAlt,
+        imageClass: 'bb-tp-page-hero__img' + (_ps.className ? ' ' + _ps.className : ''),
+        imageWidth: 960,
+        imageHeight: 720,
+        imagePlacement: _placement
+      }) %>
+      <div class="bb-tp-edit-media-wrap">
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-image',
+          editSectionKey: _sectionKey,
+          editLabel: 'Use photograph (clears YouTube for this section)',
+          editPayload: {
+            imageUrl: _media || '',
+            altText: _mediaAlt || '',
+            videoUrl: ''
+          }
+        }) %>
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'video',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-video',
+          editSectionKey: _sectionKey,
+          editLabel: 'Use YouTube video',
           editPayload: {
             videoUrl: (_meta && _meta.videoUrl) || '',
             title: (_meta && _meta.videoTitle) || '',
@@ -216,6 +272,19 @@
           }
         }) %>
       </div>
+      <% } else if (_media) { %>
+      <img
+        class="bb-tp-page-hero__img<%= _ps.className ? ' ' + _ps.className : '' %>"
+        src="<%= _media %>"
+        alt="<%= _mediaAlt %>"
+        width="960"
+        height="720"
+        loading="eager"
+        decoding="async"
+        <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
+      />
+      <% } else { %>
+      <div class="bb-tp-page-hero__fallback"></div>
       <% } %>
     </div>
     <% } else { %>

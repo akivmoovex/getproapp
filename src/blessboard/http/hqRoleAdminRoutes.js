@@ -7,8 +7,8 @@
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -94,10 +94,7 @@ function createHqRoleAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireHqAccess = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHqAccess = createRequireBlessBoardPermission("roles.view", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -247,6 +244,7 @@ function createHqRoleAdminRouter(deps) {
     if (errorCode === "inactive") error = "That user account is inactive or suspended.";
     if (errorCode === "limit") error = "Staff account limit reached for this organization. Upgrade to invite another administrator.";
     if (errorCode === "invalid") error = "Check the email, role, and branch selections.";
+    if (errorCode === "branch") error = "Select a branch when assigning a branch admin.";
     if (errorCode === "already") error = "That user already has this role.";
     return renderRolesPage(req, res, scope, { notice, error });
   });
@@ -284,6 +282,8 @@ function createHqRoleAdminRouter(deps) {
         error = "That user already has this role.";
       } else if (result.reason === "role_escalation" || result.status === INVITE_STATUS.FORBIDDEN) {
         error = "That role cannot be invited from your account.";
+      } else if (result.reason === "branch_required") {
+        error = "Select a branch when inviting a branch admin.";
       } else if (result.status === INVITE_STATUS.NOT_FOUND) {
         error = "Branch was not found or is inactive.";
       }
@@ -358,6 +358,7 @@ function createHqRoleAdminRouter(deps) {
       else if (result.reason === "self_escalation") error = "self";
       else if (result.reason === "user_inactive") error = "inactive";
       else if (result.status === STATUS.LIMIT_EXCEEDED) error = "limit";
+      else if (result.reason === "branch_required") error = "branch";
       else if (result.status === STATUS.NOT_FOUND) error = "not_found";
       else if (result.status === STATUS.FORBIDDEN) error = "forbidden";
       return res.redirect(303, `/hq/roles?error=${error}`);
@@ -385,6 +386,7 @@ function createHqRoleAdminRouter(deps) {
       let error = "invalid";
       if (result.status === STATUS.CONFIRMATION_REQUIRED) error = "confirm";
       else if (result.reason === "self_escalation") error = "self";
+      else if (result.reason === "last_hq_admin") error = "last_hq_admin";
       else if (result.reason === "cross_church") error = "forbidden";
       else if (result.status === STATUS.NOT_FOUND) error = "not_found";
       else if (result.status === STATUS.FORBIDDEN) error = "forbidden";

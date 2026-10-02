@@ -1,0 +1,106 @@
+<section class="ac-public-section acp-page acp-onboarding" data-ac-page-section="register-clinic-status">
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">Clinic onboarding</p>
+    <h1>Registration status</h1>
+    <p class="ac-public-lede">Enter your registration reference and the email or phone used when you registered. We will not show another clinic’s record.</p>
+  </header>
+
+  <% const state = typeof lookupState === 'string' ? lookupState : 'form'; %>
+  <% const fd = formData || {}; %>
+  <% const verr = validationErrors || {}; %>
+  <% const status = typeof projection !== 'undefined' && projection ? projection : null; %>
+
+  <% if (state !== 'result') { %>
+  <div class="acp-lookup-card ac-status-lookup">
+    <ul class="acp-privacy-rules">
+      <li>Application number alone is not enough.</li>
+      <li>Use the same email or phone you submitted.</li>
+      <li>Internal review notes are never shown here.</li>
+    </ul>
+
+    <% if (typeof error === 'string' && error) { %>
+    <div class="ac-public-error" role="alert" data-ac-status-lookup-error="1"><%= error %></div>
+    <% } %>
+
+    <form method="post" action="/register-clinic/status" class="ac-public-form" data-ac-status-lookup-form="1" novalidate>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <div class="ac-form-field<%= verr.applicationNumber ? ' ac-form-field--error' : '' %>">
+        <label for="applicationNumber">Application number <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+        <input id="applicationNumber" name="applicationNumber" required aria-required="true" autocomplete="off" maxlength="64" value="<%= fd.applicationNumber || '' %>" aria-invalid="<%= verr.applicationNumber ? 'true' : 'false' %>"/>
+        <% if (verr.applicationNumber) { %><p class="ac-form-field__error"><%= verr.applicationNumber %></p><% } %>
+      </div>
+      <div class="ac-form-field<%= verr.contactEmail ? ' ac-form-field--error' : '' %>">
+        <label for="contactEmail">Email from the application</label>
+        <input id="contactEmail" name="contactEmail" type="email" autocomplete="email" value="<%= fd.contactEmail || '' %>"/>
+      </div>
+      <div class="ac-form-field<%= verr.contactPhone || verr.contact ? ' ac-form-field--error' : '' %>">
+        <%- include('../partials/phone-field', {
+          id: 'contactPhone',
+          label: 'Phone from the application',
+          required: false,
+          defaultCountry: typeof defaultPhoneCountry !== 'undefined' ? defaultPhoneCountry : 'ZM',
+          selectedCountry: (fd.phoneCountry || defaultPhoneCountry || 'ZM'),
+          nationalValue: fd.phoneNational || '',
+          e164Value: fd.contactPhone || '',
+          countries: typeof phoneCountries !== 'undefined' ? phoneCountries : [],
+          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+          countryFieldName: 'phone_country',
+          nationalFieldName: 'phone_national',
+          legacyFieldName: 'contactPhone',
+          showLegacyHidden: false,
+          error: verr.contactPhone || verr.contact || null,
+          placeholder: '97 123 4567'
+        }) %>
+        <% if (verr.contact) { %><p class="ac-form-field__error"><%= verr.contact %></p><% } %>
+      </div>
+      <button type="submit" class="ac-btn ac-btn--primary">Check status</button>
+    </form>
+    <p class="ac-public-note">Need to register? <a href="/register-clinic">Register your clinic</a></p>
+  </div>
+  <% } %>
+
+  <% if (state === 'result' && status) { %>
+  <article class="ac-success-panel ac-status-card" data-ac-status-result="1" data-ac-public-status="<%= status.publicState %>"<% if (status.showLogin) { %> data-ac-show-login="1"<% } %>>
+    <p class="ac-status-card__kicker">Application <code data-ac-application-ref="<%= status.applicationNumber %>"><%= status.applicationNumber %></code></p>
+    <h2 class="ac-status-card__label"><%= status.label %></h2>
+    <dl class="ac-review-summary">
+      <div><dt>Clinic</dt><dd data-ac-status-clinic="1"><%= status.clinicName %></dd></div>
+      <div><dt>Submitted</dt><dd data-ac-status-submitted="1"><%= status.submittedAt || '—' %></dd></div>
+      <div><dt>Status</dt><dd><%= status.label %></dd></div>
+    </dl>
+    <p data-ac-status-explanation="1"><%= status.explanation %></p>
+    <p class="ac-public-note" data-ac-status-next="1"><%= status.nextAction %></p>
+
+    <% if (status.informationRequest) { %>
+    <div class="ac-public-note ac-status-request" data-ac-info-request="1">
+      <h3 class="ac-success-panel__subtitle">Information requested</h3>
+      <% if (status.informationRequest.requestedAt) { %>
+      <p class="ac-form-hint">Requested <%= status.informationRequest.requestedAt.slice(0, 10) %></p>
+      <% } %>
+      <p data-ac-info-request-body="1"><%= status.informationRequest.body %></p>
+      <% const mailState = status.informationRequest.emailDelivery || (status.informationRequest.emailSent ? 'sent' : 'sending_unavailable'); %>
+      <% if (mailState === 'sent') { %>
+      <p class="ac-form-hint">An email was recorded as sent to the address on the application. No SMS was sent from ActiveClinic.</p>
+      <% } else if (mailState === 'queued') { %>
+      <p class="ac-form-hint">An email was accepted for processing to the address on the application. Delivery is not confirmed. No SMS was sent from ActiveClinic.</p>
+      <% } else if (mailState === 'failed') { %>
+      <p class="ac-form-hint">Email delivery failed. Please contact the review team using your existing support channel and quote your application number. No SMS was sent from ActiveClinic.</p>
+      <% } else { %>
+      <p class="ac-form-hint">No email or SMS was sent from ActiveClinic. Please contact the review team using your existing support channel and quote your application number.</p>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% if (status.rejectionMessage) { %>
+    <p class="ac-public-note" data-ac-status-rejection="1"><%= status.rejectionMessage %></p>
+    <% } %>
+
+    <p class="ac-public-actions">
+      <% if (status.showLogin) { %>
+      <a class="ac-btn ac-btn--primary" href="/login" data-ac-status-login="1">Sign in</a>
+      <% } %>
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic/status">Check another registration</a>
+    </p>
+  </article>
+  <% } %>
+</section>

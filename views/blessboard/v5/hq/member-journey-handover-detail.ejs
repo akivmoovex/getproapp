@@ -1,0 +1,145 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var h = typeof handover !== 'undefined' ? handover : null;
+  var evs = typeof events !== 'undefined' && events ? events : [];
+  var mayEdit = typeof mayEditCore !== 'undefined' ? mayEditCore : false;
+  var canT = typeof canTransition === 'function' ? canTransition : function () { return false; };
+  var status = h ? h.status : '';
+%>
+<section class="bb-hq-page" data-bb-member-journey-handover-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey/handovers">Handovers</a>
+      <span aria-hidden="true">›</span>
+      <span>Detail</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Handover</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (!h) { %>
+    <p>Handover not found.</p>
+  <% } else { %>
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Summary</h2>
+      <ul class="bb-hq-list">
+        <li><strong><%= h.fromStage %></strong> → <strong><%= h.toStage %></strong></li>
+        <li>Status: <span class="bb-hq-chip bb-hq-chip--muted"><%= h.status %></span></li>
+        <% if (h.journeyContactId) { %>
+          <li>Contact: <a href="/hq/member-journey/contacts/<%= h.journeyContactId %>"><%= h.journeyContactId %></a></li>
+        <% } %>
+        <% if (h.memberId) { %><li>Member: <%= h.memberId %></li><% } %>
+        <% if (h.notesSummary) { %><li>Notes: <%= h.notesSummary %></li><% } %>
+        <% if (h.returnReason) { %><li>Return reason: <%= h.returnReason %></li><% } %>
+        <% if (h.assignedUserId) { %><li>Assigned user: <%= h.assignedUserId %></li><% } %>
+      </ul>
+    </section>
+
+    <% if (mayEdit) { %>
+      <section class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Edit notes</h2>
+        <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" class="bb-hq-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="action" value="update_core"/>
+          <label>Notes summary <input name="notesSummary" maxlength="500" value="<%= h.notesSummary || '' %>"/></label>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Save notes</button>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Actions</h2>
+      <div class="bb-hq-form">
+        <% if (canT(status, 'submitted')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="submit"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Submit</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'accepted')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="accept"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Accept</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'returned')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" class="bb-hq-form" style="margin-top:0.75rem">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="return"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <label>Return reason <input name="returnReason" required maxlength="500"/></label>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Return</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'assigned')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" class="bb-hq-form" style="margin-top:0.75rem">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="assign"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <label>Assigned user id <input name="assignedUserId" maxlength="36" placeholder="UUID (optional)"/></label>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Assign</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'completed')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="complete"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Complete</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'escalated')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="escalate"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Escalate</button>
+          </form>
+        <% } %>
+        <% if (canT(status, 'closed')) { %>
+          <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <input type="hidden" name="action" value="close"/>
+            <input type="hidden" name="expectedStatus" value="<%= status %>"/>
+            <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Close</button>
+          </form>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Events</h2>
+      <% if (!evs.length) { %>
+        <p>No events yet.</p>
+      <% } else { %>
+        <ul class="bb-hq-list">
+          <% evs.forEach(function (e) { %>
+            <li>
+              <%= e.eventKey %>
+              <% if (e.previousStatus || e.newStatus) { %>
+                · <%= e.previousStatus || '—' %> → <%= e.newStatus || '—' %>
+              <% } %>
+              <% if (e.reason) { %> · <%= e.reason %><% } %>
+              · <%= e.createdAt %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% } %>
+</section>
+<%- include('../partials/hq-shell-end') %>

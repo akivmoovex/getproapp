@@ -105,6 +105,7 @@ function buildOrganizationCard(row) {
     is_single_branch: isSingleBranch,
     branch_slug: isSingleBranch ? row.preview_branch_slug || null : null,
     branch_name: isSingleBranch ? row.preview_branch_name || null : null,
+    preview_branch_slug: row.preview_branch_slug || null,
     city,
     country,
     location_line: formatLocationLine({

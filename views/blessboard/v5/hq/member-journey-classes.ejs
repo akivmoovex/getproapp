@@ -1,0 +1,82 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var programRows = typeof programs !== 'undefined' && programs ? programs : [];
+  var cohortRows = typeof cohorts !== 'undefined' && cohorts ? cohorts : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-classes="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <span>Classes</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Classes</h1>
+    <p class="bb-hq-page-head__lede">Programs and cohorts for this branch.</p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <p><a href="/hq/classes/programs">Manage programs</a></p>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Programs</h2>
+    <% if (!programRows.length) { %>
+      <p>No programs yet. <a href="/hq/classes/programs">Create one</a>.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% programRows.forEach(function (p) { %>
+          <li><%= p.displayName %> (<%= p.programKey %>) · <%= p.programType %> · <%= p.status %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create cohort</h2>
+    <% if (!programRows.length) { %>
+      <p>Create a program first.</p>
+    <% } else { %>
+      <form method="post" action="/hq/classes/cohorts" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Program
+          <select name="programId" required>
+            <% programRows.forEach(function (p) { %>
+              <option value="<%= p.id %>"><%= p.displayName %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Key <input name="cohortKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+        <label>Name <input name="displayName" required maxlength="200"/></label>
+        <label>Teacher user id <input name="teacherUserId" maxlength="36"/></label>
+        <label>Starts on <input name="startsOn" type="date"/></label>
+        <label>Ends on <input name="endsOn" type="date"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create cohort</button>
+      </form>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Cohorts</h2>
+    <% if (!cohortRows.length) { %>
+      <p>No cohorts yet.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% cohortRows.forEach(function (c) { %>
+          <li>
+            <a href="/hq/classes/cohorts/<%= c.id %>"><%= c.displayName %></a>
+            · <%= c.programName %> · <%= c.status %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+  <p><a href="/hq/member-journey">Back to member journey</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

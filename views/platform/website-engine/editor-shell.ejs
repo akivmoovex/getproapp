@@ -1,0 +1,45 @@
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var pages = Array.isArray(shell.pages) ? shell.pages : [];
+  var currentPage = shell.pageKey || 'home';
+  var productCode = shell.productCode || '';
+%>
+<nav
+  class="gp-website-engine-shell"
+  data-website-engine-shell="1"
+  data-product="<%= productCode %>"
+  data-page-key="<%= currentPage %>"
+  data-draft="<%= shell.draft ? '1' : '0' %>"
+  aria-label="Website editor"
+>
+  <div class="gp-website-engine-shell__pages" data-website-engine-pages="1">
+    <label class="gp-website-engine-shell__label" for="gp-website-engine-page">Page</label>
+    <% if (pages.length) { %>
+    <select id="gp-website-engine-page" data-website-engine-page-select="1">
+      <% pages.forEach(function (page) { %>
+      <option value="<%= page.key %>"<%= page.key === currentPage ? ' selected' : '' %>><%= page.label || page.key %></option>
+      <% }); %>
+    </select>
+    <% } else { %>
+    <span data-website-engine-page-current="1"><%= currentPage %></span>
+    <% } %>
+  </div>
+  <p class="gp-website-engine-shell__draft" data-website-engine-draft="1"><%= shell.draftLabel || '' %></p>
+  <div class="gp-website-engine-shell__actions" data-website-engine-toolbar="1">
+    <% if (shell.canEdit) { %>
+    <span class="gp-website-engine-shell__save" data-website-engine-save="1"><%= shell.saveLabel || 'Save draft' %></span>
+    <% } %>
+    <% if (shell.previewHref) { %>
+    <a class="gp-website-engine-shell__link" href="<%= shell.previewHref %>" data-website-engine-preview="1"><%= shell.previewLabel || 'Preview' %></a>
+    <% } %>
+    <% if (shell.historyHref) { %>
+    <a class="gp-website-engine-shell__link" href="<%= shell.historyHref %>" data-website-engine-history="1">Version history</a>
+    <% } %>
+    <% if (shell.canPublish && (shell.publishHref || shell.publishPath)) { %>
+    <a class="gp-website-engine-shell__link gp-website-engine-shell__link--primary" href="<%= shell.publishHref || shell.publishPath %>" data-website-engine-publish="1"><%= shell.publishLabel || 'Publish' %></a>
+    <% } %>
+    <% if (shell.hubHref) { %>
+    <a class="gp-website-engine-shell__link" href="<%= shell.hubHref %>" data-website-engine-hub="1">Website management</a>
+    <% } %>
+  </div>
+</nav>

@@ -1,0 +1,69 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof cases !== 'undefined' && cases ? cases : [];
+%>
+<section class="bb-hq-page" data-bb-pastoral-cases="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/pastoral-care">Pastoral care</a>
+      <span aria-hidden="true">›</span>
+      <span>Cases</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Pastoral cases</h1>
+    <p class="bb-hq-page-head__lede">Metadata only. Confidential note bodies are not shown on this list.</p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create referral</h2>
+    <form method="post" action="/hq/pastoral-care/cases" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="isReferral" value="1"/>
+      <label>Case key <input name="caseKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+      <label>Title <input name="title" required maxlength="200"/></label>
+      <label>Category
+        <select name="category">
+          <option value="referral">Referral</option>
+          <option value="general">General</option>
+          <option value="absence">Absence</option>
+          <option value="restoration">Restoration</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label>Confidentiality
+        <select name="confidentialityLevel">
+          <option value="general_care">General care</option>
+          <option value="restricted_care">Restricted care</option>
+        </select>
+      </label>
+      <button type="submit">Create referral</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Assigned / related cases</h2>
+    <% if (!rows.length) { %>
+      <p class="bb-hq-lede">No cases in your assignment scope.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (c) { %>
+          <li>
+            <a href="/hq/pastoral-care/cases/<%= c.id %>"><%= c.caseKey %></a>
+            — <%= c.title %>
+            <span class="bb-hq-badge"><%= c.status %></span>
+            <span class="bb-hq-badge bb-hq-badge--warn"><%= c.confidentialityLevel %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

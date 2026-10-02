@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-08-12T12:30:00.000Z",
+  "phase": 17,
+  "verdict": "READY_WITH_NON_BLOCKING_GAPS",
+  "manifest": "docs/activeclinic/ACTIVECLINIC_V7_TESTING_DEPLOY_MANIFEST.md",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "origin_v7_sha": "f96c3732831bc3b782db3429965d7abe1af09443",
+    "commits_ahead_of_origin": 34,
+    "dirty_tree": true,
+    "dirty_file_count": 211,
+    "blessboard_in_dirty_tree": 0,
+    "deployment_env": "testing",
+    "platform_deployment_code": "activeclinic-org-v6",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false
+  },
+  "implementation": {
+    "missing": 0,
+    "partial": 0,
+    "product_decisions": 9,
+    "full": 361,
+    "duplicates": 8,
+    "n_a": 10,
+    "ambiguous": 0
+  },
+  "visual": {
+    "p0_definition": ["P01", "P02", "P07", "P24", "P25", "P26", "P27"],
+    "p1_definition": ["P03", "P04", "P05", "P06", "P13", "P23"],
+    "all": { "<80": 0, "80-89": 15, "90-94": 253, ">=95": 0, "unscored": 93 },
+    "p0": { "<80": 0, "80-89": 0, "90-94": 134, ">=95": 0, "unscored": 63 },
+    "p1": { "<80": 0, "80-89": 0, "90-94": 78, ">=95": 0, "unscored": 26 }
+  },
+  "functional": {
+    "latest_sweep": "phase15",
+    "pass": 475,
+    "fail": 0,
+    "skip": 0,
+    "new_regressions": 0,
+    "p0_bugs": 0
+  },
+  "security": {
+    "authorization_bypass": 0,
+    "tenant": "ok",
+    "facility": "ok",
+    "department": "ok",
+    "rbac": "ok",
+    "csrf": "ok",
+    "finance": "ok",
+    "pharmacy": "ok"
+  },
+  "mobile": { "p0_blockers": 0 },
+  "accessibility": { "high_blockers": 0 },
+  "browser": {
+    "priority_500s": 0,
+    "broken_links": 0,
+    "unexplained_critical_js": 0,
+    "live_chromium": false
+  },
+  "migrations_since_origin_v7": [
+    {
+      "order": 1,
+      "module": "activeclinic",
+      "file": "db/migrations/activeclinic/025_phase4_pharmacy_billing_gaps.sql",
+      "introduced_in": "0bc41783",
+      "apply_to_production": false
+    }
+  ],
+  "dependencies": {
+    "new_npm_packages": 0,
+    "package_json_dirty": false,
+    "origin_range_package_json": "blessboard npm scripts only (2ee3c665)"
+  },
+  "git_dirty": {
+    "activeclinic_intended": 176,
+    "mapping_evidence": 35,
+    "unrelated": 0,
+    "mixed": 0
+  },
+  "rollback_sha": "f96c3732831bc3b782db3429965d7abe1af09443",
+  "blessboard_in_unpushed_commits": {
+    "commit": "2ee3c665",
+    "exclude_from_new_overnight_commit": true,
+    "do_not_run_seed_on_ac_testing": true
+  }
+}

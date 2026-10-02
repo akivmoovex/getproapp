@@ -1,0 +1,73 @@
+<main id="ac-auth-main" class="ac-auth-main ac-auth-main--selector" data-ac-auth-main="1">
+  <%- include('../partials/auth-mf-topbar') %>
+  <div
+    class="ac-auth-selector"
+    data-ac-visual="mf02-selector"
+    data-ac-auth-screen="clinic-selector"
+    data-ac-mf-family="MF02"
+    data-ac-selector-state="<%= selectorState || (organizations && organizations.length ? 'ready' : 'expired') %>"
+  >
+    <header class="ac-auth-selector__header">
+      <h1 class="ac-auth-selector__title">Select Your Clinic</h1>
+      <p class="ac-auth-selector__lede">You have access to multiple clinic workspaces. Please select one to continue.</p>
+    </header>
+    <% if (error) { %>
+      <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1"><%= error %></div>
+    <% } %>
+    <% if (!organizations || organizations.length === 0) { %>
+      <p class="ac-auth-alert ac-auth-alert--warning" role="status">No eligible clinics are available for this sign-in.</p>
+      <p class="ac-auth-hint"><a class="ac-auth-link" href="/login">Back to sign in</a></p>
+    <% } else { %>
+      <div class="ac-auth-selector__search" data-ac-clinic-search-wrap="1">
+        <label class="ac-auth-sr-only" for="ac-clinic-search">Search clinics</label>
+        <input
+          id="ac-clinic-search"
+          class="ac-auth-input"
+          type="search"
+          autocomplete="off"
+          placeholder="Search clinics by name or location..."
+          data-ac-clinic-filter="1"
+        />
+      </div>
+      <form method="post" action="/login/select-organization" data-ac-loading="1" data-ac-org-select="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <ul class="ac-auth-clinic-grid">
+          <% organizations.forEach(function (o) { %>
+            <li
+              class="ac-auth-clinic-card-wrap"
+              data-ac-clinic-card="1"
+              data-ac-clinic-label="<%= (o.healthcareOrganizationName || o.displayName || '').toLowerCase() %> <%= (o.locationLabel || '').toLowerCase() %> <%= (o.roleLabel || '').toLowerCase() %>"
+            >
+              <button
+                type="submit"
+                class="ac-auth-clinic-card"
+                name="organization_id"
+                value="<%= o.organizationId %>"
+                aria-label="Enter <%= o.healthcareOrganizationName || o.displayName %>"
+              >
+                <span class="ac-auth-clinic-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M3 21V8l9-5 9 5v13"/>
+                    <path d="M9 21v-6h6v6"/>
+                  </svg>
+                </span>
+                <span class="ac-auth-clinic-card__body">
+                  <span class="ac-auth-clinic-card__name"><%= o.healthcareOrganizationName || o.displayName %></span>
+                  <% if (o.locationLabel) { %>
+                    <span class="ac-auth-clinic-card__meta"><%= o.locationLabel %></span>
+                  <% } %>
+                  <% if (o.roleLabel || o.staffDisplayName) { %>
+                    <span class="ac-auth-clinic-card__role"><%= o.roleLabel || o.staffDisplayName %></span>
+                  <% } %>
+                </span>
+                <span class="ac-auth-clinic-card__chevron" aria-hidden="true">›</span>
+              </button>
+            </li>
+          <% }) %>
+        </ul>
+        <p class="ac-auth-hint" data-ac-clinic-empty hidden>No clinics match that search.</p>
+      </form>
+    <% } %>
+  </div>
+  <%- include('../partials/auth-mf-footer') %>
+</main>

@@ -7,13 +7,27 @@
 const draftRepo = require("../repositories/websiteStructuredDraftRepository");
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const contentRepo = require("../repositories/publicContentRepository");
+const mediaAssetsRepo = require("../media/mediaAssetsRepository");
 const {
   DRAFT_KINDS,
   validateStructuredPayload,
   mapError,
   listDemoImages,
+  collectStructuredImageUrls,
+  parseStructuredMediaAssetId,
+  parseWebsiteEngineMediaId,
 } = require("./websiteStructuredDraftValidation");
 const auditSvc = require("./websiteAuditService");
+const mediaService = require("../../platform/website/mediaService");
+const {
+  presentRuntimeImageSrc,
+  presentImageTree,
+} = require("../../platform/media/cdnMediaPresentation");
+
+function presentDraftImageUrl(value) {
+  if (value == null || value === "") return value;
+  return presentRuntimeImageSrc(value, process.env) || null;
+}
 
 const ENTITY_FINDERS = Object.freeze({
   leader: contentRepo.findLeaderById,
@@ -52,6 +66,47 @@ async function assertEntityKeysInChurch(db, input) {
   }
 }
 
+async function assertMediaAssetsInChurch(db, input) {
+  const { presentCdnUrl } = require("../../platform/media/cdnMediaPresentation");
+  const urls = collectStructuredImageUrls(input.payload);
+  const payload = input.payload && typeof input.payload === "object" ? input.payload : null;
+  const imageKeys = ["imageUrl", "thumbnailUrl", "qrImageUrl", "mediaUrl", "coverImage"];
+  for (const url of urls) {
+    const id = parseStructuredMediaAssetId(url);
+    if (id) {
+      const asset = await mediaAssetsRepo.findMediaAssetById(db, id);
+      if (!asset || asset.status !== "active" || String(asset.churchId) !== String(input.churchId)) {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      continue;
+    }
+    const engineMediaId = parseWebsiteEngineMediaId(url);
+    if (engineMediaId) {
+      const organizationId = String(input.organizationId || "").trim();
+      if (!organizationId) {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      const loaded = await mediaService.getWebsiteMedia(db, {
+        mediaId: engineMediaId,
+        organizationId,
+      });
+      if (!loaded.ok || !loaded.media || loaded.media.status !== "active") {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      // Persist absolute CDN URL when the object lives on Hostinger — never leave
+      // app-mediated /c/.../website/media/:id paths in published structured content.
+      if (payload && mediaService.isCdnObjectStorageKey(loaded.media.storageKey)) {
+        const cdnSrc = presentCdnUrl(loaded.media.storageKey, process.env);
+        if (cdnSrc && /^https:\/\//i.test(cdnSrc)) {
+          for (const key of imageKeys) {
+            if (payload[key] === url) payload[key] = cdnSrc;
+          }
+        }
+      }
+    }
+  }
+}
+
 /**
  * @param {import('pg').Pool} db
  * @param {{
@@ -80,7 +135,7 @@ async function saveStructuredDraft(db, input) {
   }
   // Never accept client church/org overrides (caller must set from session).
   const op = String(input.op || "upsert").trim();
-  if (!["upsert", "remove", "reorder"].includes(op)) {
+  if (!["upsert", "remove", "reorder", "visibility", "restore_default", "add_section", "update_section"].includes(op)) {
     throw mapError("INVALID_OP", "Unsupported edit action.", 400);
   }
 
@@ -95,6 +150,11 @@ async function saveStructuredDraft(db, input) {
     churchId: input.churchId,
     payload: validated.payload,
     op,
+  });
+  await assertMediaAssetsInChurch(db, {
+    churchId: input.churchId,
+    organizationId: input.organizationId,
+    payload: validated.payload,
   });
 
   const draft = await draftRepo.upsertStructuredDraft(db, {
@@ -111,6 +171,27 @@ async function saveStructuredDraft(db, input) {
     editorUserId: input.editorUserId,
   });
 
+  let softFillSiblings = null;
+  if (op === "upsert") {
+    try {
+      const {
+        ensureSoftFillSiblingDrafts,
+      } = require("./websiteSoftFillCollectionService");
+      softFillSiblings = await ensureSoftFillSiblingDrafts(db, {
+        organizationId: input.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        editorUserId: input.editorUserId,
+        draftKind: kind,
+        entityKey,
+        pageKey: input.pageKey || null,
+        publicName: input.publicName || null,
+      });
+    } catch {
+      softFillSiblings = { seeded: 0, skipped: "seed_error" };
+    }
+  }
+
   try {
     await auditSvc.recordWebsiteAuditEvent(db, {
       organizationId: input.organizationId,
@@ -125,11 +206,22 @@ async function saveStructuredDraft(db, input) {
       result: "success",
       before: input.previousPayload || {},
       after: validated.payload,
-      metadata: { source: "structured_editor", op, published: false, entityKey },
+      metadata: {
+        source: "structured_editor",
+        op,
+        published: false,
+        entityKey,
+        softFillSiblingsSeeded:
+          softFillSiblings && softFillSiblings.seeded != null ? softFillSiblings.seeded : 0,
+      },
     });
   } catch {
     // non-blocking
   }
+
+  let engineSynced = false;
+  // V2.04 Phase 5: no dual-write syncDraftToEngine. Platform contentService is
+  // the draft/publish SoT; structured overlay is product UX until Phase 10.
 
   return {
     saved: true,
@@ -140,6 +232,8 @@ async function saveStructuredDraft(db, input) {
     op,
     payload: draft.payload,
     updatedAt: draft.updatedAt,
+    softFillSiblings,
+    engineSynced,
   };
 }
 
@@ -163,7 +257,21 @@ async function countAllWebsiteDrafts(db, opts) {
     fieldDraftRepo.countDrafts(db, opts),
     draftRepo.countStructuredDrafts(db, opts),
   ]);
-  return fieldCount + structuredCount;
+  let engineCount = 0;
+  if (opts && opts.organizationId) {
+    try {
+      const {
+        countUnpublishedEngineFields,
+      } = require("../website/blessboardEngineContentService");
+      engineCount = await countUnpublishedEngineFields(db, {
+        organizationId: opts.organizationId,
+        branchId: opts.branchId || null,
+      });
+    } catch {
+      engineCount = 0;
+    }
+  }
+  return Math.max(fieldCount + structuredCount, engineCount);
 }
 
 /**
@@ -184,9 +292,88 @@ function applyStructuredDraftsToModel(model, drafts) {
     sermon: [],
     giving_method: [],
     social_link: [],
+    page_section: [],
   };
   for (const d of drafts) {
     if (byKind[d.draftKind]) byKind[d.draftKind].push(d);
+  }
+
+  // Draft section order / visibility / restore / add / remove
+  const removedSectionKeys = new Set();
+  for (const d of byKind.page_section) {
+    if (!d.pageKey || d.pageKey !== model.pageKey) continue;
+    if (d.op === "reorder" && Array.isArray(d.payload && d.payload.order)) {
+      const order = d.payload.order.map(String);
+      const rank = (section) => {
+        const idx = order.indexOf(String(section && section.sectionKey));
+        return idx < 0 ? Number.MAX_SAFE_INTEGER : idx;
+      };
+      model.sections = (model.sections || [])
+        .slice()
+        .sort((a, b) => rank(a) - rank(b))
+        .map((s, idx) => ({ ...s, sortOrder: (idx + 1) * 10 }));
+      continue;
+    }
+    if (d.op === "visibility" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      const hidden = d.payload.hidden === true;
+      model.sections = (model.sections || []).map((s) => {
+        if (String(s.sectionKey) !== sk) return s;
+        return {
+          ...s,
+          _draftHidden: hidden,
+          status: hidden ? "archived" : s.status === "archived" ? "published" : s.status,
+        };
+      });
+      continue;
+    }
+    if (d.op === "add_section" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      if (!sk || removedSectionKeys.has(sk)) continue;
+      const exists = (model.sections || []).some((s) => String(s.sectionKey) === sk);
+      if (exists) continue;
+      model.sections = [
+        ...(model.sections || []),
+        {
+          sectionKey: sk,
+          sectionType: String(d.payload.sectionType || "plain_text"),
+          heading: d.payload.heading || "",
+          bodyText: d.payload.bodyText || "",
+          mediaUrl: d.payload.mediaUrl || null,
+          sortOrder: Number(d.payload.sortOrder) || (model.sections || []).length * 10 + 10,
+          status: "draft",
+          _isDraftNew: true,
+          layoutMetadata: d.payload.layout ? { layout: d.payload.layout } : {},
+        },
+      ];
+      continue;
+    }
+    if (d.op === "update_section" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      if (!sk || removedSectionKeys.has(sk)) continue;
+      model.sections = (model.sections || []).map((s) => {
+        if (String(s.sectionKey) !== sk) return s;
+        return {
+          ...s,
+          heading: d.payload.heading !== undefined ? d.payload.heading || "" : s.heading,
+          bodyText: d.payload.bodyText !== undefined ? d.payload.bodyText || "" : s.bodyText,
+          mediaUrl: d.payload.mediaUrl !== undefined ? d.payload.mediaUrl : s.mediaUrl,
+          _draftUpdated: true,
+        };
+      });
+      continue;
+    }
+    if (d.op === "remove") {
+      const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+      if (!sk) continue;
+      removedSectionKeys.add(sk);
+      model.sections = (model.sections || []).filter((s) => String(s.sectionKey) !== sk);
+    }
+  }
+  if (removedSectionKeys.size) {
+    model.sections = (model.sections || []).filter(
+      (s) => !removedSectionKeys.has(String(s.sectionKey || ""))
+    );
   }
 
   // Section media (image/video)
@@ -212,8 +399,22 @@ function applyStructuredDraftsToModel(model, drafts) {
       });
       continue;
     }
-    const mediaUrl =
-      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null;
+    // Bug 22: draft overlay and publish apply share resolveSectionMediaFromDraft.
+    const { resolveSectionMediaFromDraft } = require("../website/sectionMediaDraftFields");
+    const existingSection = (model.sections || []).find((s) => String(s.sectionKey) === sectionKey);
+    const resolved =
+      d.draftKind === "image" || d.draftKind === "video"
+        ? resolveSectionMediaFromDraft({
+            draftKind: d.draftKind,
+            payload,
+            existingMediaUrl: existingSection && existingSection.mediaUrl,
+            existingLayout: existingSection && existingSection.layoutMetadata,
+          })
+        : {
+            mediaUrl: presentDraftImageUrl(payload.imageUrl || payload.thumbnailUrl || null),
+            layoutPatch: {},
+          };
+    const mediaUrl = presentDraftImageUrl(resolved.mediaUrl);
     let matched = false;
     model.sections = (model.sections || []).map((s) => {
       if (String(s.sectionKey) !== sectionKey) return s;
@@ -223,9 +424,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         mediaUrl: mediaUrl || s.mediaUrl,
         layoutMetadata: {
           ...(s.layoutMetadata || {}),
-          ...(d.draftKind === "image"
-            ? { altText: payload.altText, focal: payload.focal, fit: payload.fit }
-            : { videoUrl: payload.videoUrl, videoTitle: payload.title }),
+          ...resolved.layoutPatch,
         },
       };
     });
@@ -240,10 +439,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           mediaUrl,
           sortOrder: 50,
           status: "draft",
-          layoutMetadata:
-            d.draftKind === "image"
-              ? { altText: payload.altText, focal: payload.focal, fit: payload.fit }
-              : { videoUrl: payload.videoUrl, videoTitle: payload.title },
+          layoutMetadata: { ...resolved.layoutPatch },
         },
       ];
     }
@@ -255,6 +451,9 @@ function applyStructuredDraftsToModel(model, drafts) {
       }
       if (model.pageKey === "about" && model.aboutDemoFallback) {
         model.aboutDemoFallback = { ...model.aboutDemoFallback, heroMediaUrl: mediaUrl };
+      }
+      if (model.pageKey === "contact" && model.contactDemoFallback) {
+        model.contactDemoFallback = { ...model.contactDemoFallback, heroMediaUrl: mediaUrl };
       }
       if (model.pageKey === "giving" && model.givingDemoFallback) {
         model.givingDemoFallback = { ...model.givingDemoFallback, introMediaUrl: mediaUrl };
@@ -270,15 +469,40 @@ function applyStructuredDraftsToModel(model, drafts) {
       };
     }
     if (model.pageKey === "about" && /^gallery_\d+$/.test(sectionKey) && mediaUrl && model.aboutDemoFallback) {
-      const idx = Number(String(sectionKey).replace("gallery_", "")) - 1;
-      if (idx >= 0) {
+      const {
+        aboutGallerySlotIndex,
+        ABOUT_GALLERY_SLOT_COUNT,
+      } = require("../website/aboutSectionImageKeys");
+      const idx = aboutGallerySlotIndex(sectionKey);
+      if (idx >= 0 && idx < ABOUT_GALLERY_SLOT_COUNT) {
         const gallery = Array.isArray(model.aboutDemoFallback.gallery)
-          ? model.aboutDemoFallback.gallery.slice()
+          ? model.aboutDemoFallback.gallery.slice(0, ABOUT_GALLERY_SLOT_COUNT)
           : [];
-        while (gallery.length <= idx) gallery.push("");
+        while (gallery.length < ABOUT_GALLERY_SLOT_COUNT) gallery.push("");
         gallery[idx] = mediaUrl;
-        model.aboutDemoFallback = { ...model.aboutDemoFallback, gallery };
+        model.aboutDemoFallback = {
+          ...model.aboutDemoFallback,
+          gallery: gallery.slice(0, ABOUT_GALLERY_SLOT_COUNT),
+        };
       }
+    }
+    if (model.pageKey === "about" && mediaUrl && model.aboutDemoFallback) {
+      const {
+        isLifeTogetherSectionKey,
+      } = require("../website/aboutSectionImageKeys");
+      if (isLifeTogetherSectionKey(sectionKey)) {
+        const life = model.aboutDemoFallback.lifeTogether || {};
+        model.aboutDemoFallback = {
+          ...model.aboutDemoFallback,
+          lifeTogether: { ...life, sectionKey, mediaUrl },
+        };
+      }
+    }
+    if (model.pageKey === "about" && sectionKey === "visitor_cta" && mediaUrl && model.aboutDemoFallback) {
+      model.aboutDemoFallback = {
+        ...model.aboutDemoFallback,
+        visitorCtaMediaUrl: mediaUrl,
+      };
     }
   }
 
@@ -293,16 +517,18 @@ function applyStructuredDraftsToModel(model, drafts) {
     }
   }
 
-  // Entity collections
+  // Entity collections — per-member upsert/remove only. Never replace the whole list
+  // from a single-member draft (soft-fill siblings must survive editing one pastor).
   function applyCollection(list, kindDrafts, mapPayload) {
     let items = Array.isArray(list) ? list.slice() : [];
+    const baselineCount = items.length;
     for (const d of kindDrafts) {
       const key = String(d.entityKey);
       if (d.op === "remove") {
         items = items.filter((it) => String(it.id || it._draftKey) !== key);
         continue;
       }
-      if (d.op === "reorder" && Array.isArray(d.payload.order)) {
+      if (d.op === "reorder" && Array.isArray(d.payload && d.payload.order)) {
         const order = d.payload.order.map(String);
         items.sort((a, b) => {
           const ai = order.indexOf(String(a.id || a._draftKey));
@@ -319,8 +545,40 @@ function applyStructuredDraftsToModel(model, drafts) {
         continue;
       }
       const idx = items.findIndex((it) => String(it.id || it._draftKey) === key);
-      if (idx >= 0) items[idx] = { ...items[idx], ...mapped, id: items[idx].id || key };
-      else items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+      if (idx >= 0) {
+        items[idx] = {
+          ...items[idx],
+          ...mapped,
+          id: items[idx].id || key,
+          _draftKey: items[idx]._draftKey || key,
+        };
+      } else {
+        items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+      }
+    }
+    // Defensive: a lone upsert must never shrink a soft-fill/base collection.
+    const onlyUpserts = kindDrafts.every(
+      (d) => d.op !== "remove" && !(d.payload && d.payload.visible === false)
+    );
+    if (onlyUpserts && baselineCount > 0 && items.length < baselineCount) {
+      items = Array.isArray(list) ? list.slice() : items;
+      for (const d of kindDrafts) {
+        if (d.op === "remove") continue;
+        const key = String(d.entityKey);
+        const mapped = mapPayload(d.payload || {}, key);
+        if (mapped.visible === false) continue;
+        const idx = items.findIndex((it) => String(it.id || it._draftKey) === key);
+        if (idx >= 0) {
+          items[idx] = {
+            ...items[idx],
+            ...mapped,
+            id: items[idx].id || key,
+            _draftKey: items[idx]._draftKey || key,
+          };
+        } else {
+          items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+        }
+      }
     }
     return items;
   }
@@ -332,7 +590,8 @@ function applyStructuredDraftsToModel(model, drafts) {
         displayName: p.displayName,
         roleTitle: p.roleTitle,
         biography: p.biography,
-        imageUrl: p.imageUrl,
+        imageUrl: presentDraftImageUrl(p.imageUrl),
+        imagePlacement: p.placement || p.imagePlacement || null,
         sortOrder: p.sortOrder || 0,
         status: p.status,
         seniorLeader: p.seniorLeader,
@@ -349,7 +608,8 @@ function applyStructuredDraftsToModel(model, drafts) {
           displayName: p.displayName,
           roleTitle: p.roleTitle,
           biography: p.biography,
-          imageUrl: p.imageUrl,
+          imageUrl: presentDraftImageUrl(p.imageUrl),
+          imagePlacement: p.placement || p.imagePlacement || null,
           sortOrder: p.sortOrder || 0,
         })),
       };
@@ -365,7 +625,8 @@ function applyStructuredDraftsToModel(model, drafts) {
         description: p.description,
         meetingDay: p.meetingDay,
         contactEmail: p.contactEmail,
-        imageUrl: p.imageUrl,
+        imageUrl: presentDraftImageUrl(p.imageUrl),
+        imagePlacement: p.placement || p.imagePlacement || null,
         sortOrder: p.sortOrder || 0,
         featured: p.featured,
         visible: p.visible !== false,
@@ -381,7 +642,8 @@ function applyStructuredDraftsToModel(model, drafts) {
           id: key,
           name: p.name,
           summary: p.summary,
-          imageUrl: p.imageUrl,
+          imageUrl: presentDraftImageUrl(p.imageUrl),
+          imagePlacement: p.placement || p.imagePlacement || null,
         })),
       };
     }
@@ -397,7 +659,8 @@ function applyStructuredDraftsToModel(model, drafts) {
       timezone: p.timezone,
       location: p.location,
       registrationUrl: p.registrationUrl,
-      imageUrl: p.imageUrl,
+      imageUrl: presentDraftImageUrl(p.imageUrl),
+      imagePlacement: p.placement || p.imagePlacement || null,
       featured: p.featured,
       visible: p.visible !== false,
       organizer: p.organizer,
@@ -427,9 +690,10 @@ function applyStructuredDraftsToModel(model, drafts) {
       preachedAt: p.preachedAt,
       summary: p.summary,
       scripture: p.scripture,
-      mediaUrl: p.mediaUrl,
+      mediaUrl: presentDraftImageUrl(p.mediaUrl),
       resourceUrl: p.resourceUrl,
-      imageUrl: p.imageUrl,
+      imageUrl: presentDraftImageUrl(p.imageUrl),
+      imagePlacement: p.placement || p.imagePlacement || null,
       featured: p.featured,
       visible: p.visible !== false,
       series: p.series,
@@ -482,7 +746,7 @@ function applyStructuredDraftsToModel(model, drafts) {
     })).filter((link) => link && link.href);
   }
 
-  return model;
+  return presentImageTree(model, process.env);
 }
 
 module.exports = {

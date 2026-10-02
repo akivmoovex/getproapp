@@ -10,6 +10,11 @@ const path = require("path");
 const express = require("express");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const { resolveLoginIdentifierFromBody } = require("../auth/resolveLoginIdentifier");
+const {
+  buildLoginModeHrefs,
+  resolveLoginModeQuery,
+} = require("../auth/loginModeQuery");
 
 const { getPgPool } = require("../../db/pg");
 const { resolveHostname } = require("../host");
@@ -20,6 +25,11 @@ const {
 const {
   createV5PrivateNoStoreMiddleware,
 } = require("./v5PrivateNoStore");
+const {
+  issueAuthenticatedSessionCookie,
+  logoutAuthenticatedBrowserSession,
+  createAuthenticatedResponseNoStoreMiddleware,
+} = require("../session/sharedSessionSecurity");
 const { createV5AuthLogger } = require("./v5AuthObservability");
 const { createLoadPlatformHostContext } = require("./loadPlatformHostContext");
 const {
@@ -28,6 +38,18 @@ const {
 const {
   createBlessBoardTenantRoutingDecision,
 } = require("../../blessboard/http/loadBlessBoardTenantRouting");
+const {
+  createLoadSessionScopedTenantContext,
+} = require("../../blessboard/http/loadSessionScopedTenantContext");
+const {
+  createLoadPlatformSupportContext,
+} = require("./loadPlatformSupportContext");
+const {
+  createApplySupportContextTenant,
+} = require("./applySupportContextTenant");
+const {
+  createRequirePlatformSupportContext,
+} = require("./requirePlatformSupportContext");
 const {
   createLoadBlessBoardAuthorizationContext,
 } = require("../../blessboard/http/loadBlessBoardAuthorizationContext");
@@ -39,14 +61,27 @@ const { createBranchAdminRouter } = require("../../blessboard/http/branchAdminRo
 const { createBranchRegistrationAdminRouter } = require("../../blessboard/http/branchRegistrationAdminRoutes");
 const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersAdminRoutes");
 const { createHqRoleAdminRouter } = require("../../blessboard/http/hqRoleAdminRoutes");
+const { createHqStaffAccessRouter } = require("../../blessboard/http/hqStaffAccessRoutes");
 const { createInviteAcceptRouter } = require("../../blessboard/http/inviteAcceptRoutes");
 const { createPasswordResetRouter } = require("../../blessboard/http/passwordResetRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
+const {
+  createMemberJourneyAdminRouter,
+} = require("../../blessboard/http/memberJourneyAdminRoutes");
+const {
+  createPastoralWelfareAdminRouter,
+} = require("../../blessboard/http/pastoralWelfareAdminRoutes");
 const { createContentAdminRouter } = require("../../blessboard/http/contentAdminRoutes");
 const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRoutes");
 const { createMediaUploadService } = require("../../blessboard/media/mediaUploadService");
 const { createTenantRegistrationRouter } = require("../../blessboard/http/tenantRegistrationRoutes");
 const { createMemberPortalRouter } = require("../../blessboard/http/memberPortalRoutes");
+const {
+  createMemberPortalAuthRouter,
+} = require("../../blessboard/http/memberPortalAuthRoutes");
+const {
+  createPathMemberTenantMiddleware,
+} = require("../../blessboard/http/pathMemberTenantMiddleware");
 const { createAnnouncementAdminRouter } = require("../../blessboard/http/announcementAdminRoutes");
 const { createAnnouncementMemberRouter } = require("../../blessboard/http/announcementMemberRoutes");
 const { createBroadcastAdminRouter } = require("../../blessboard/http/broadcastAdminRoutes");
@@ -54,12 +89,29 @@ const { createMemberNotificationRouter } = require("../../blessboard/http/member
 const { createParticipationMemberRouter } = require("../../blessboard/http/participationMemberRoutes");
 const { createParticipationAdminRouter } = require("../../blessboard/http/participationAdminRoutes");
 const { createAttendanceAdminRouter } = require("../../blessboard/http/attendanceAdminRoutes");
+const {
+  createAttendanceSessionAdminRouter,
+} = require("../../blessboard/http/attendanceSessionAdminRoutes");
+const {
+  createJoinRequestAdminRouter,
+} = require("../../blessboard/http/joinRequestAdminRoutes");
+const {
+  createAttendanceCheckInAdminRouter,
+} = require("../../blessboard/http/attendanceCheckInAdminRoutes");
+const {
+  createAttendanceCorrectionAdminRouter,
+} = require("../../blessboard/http/attendanceCorrectionAdminRoutes");
 const { createGivingAdminRouter } = require("../../blessboard/http/givingAdminRoutes");
 const { createFormsRequestsAdminRouter } = require("../../blessboard/http/formsRequestsAdminRoutes");
 const { createFormsRequestsMemberRouter } = require("../../blessboard/http/formsRequestsMemberRoutes");
 const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes");
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
 const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
+const {
+  createBlessBoardPathWebsiteEditorRouter,
+  createBlessBoardPathBranchWebsiteEditorRouter,
+  createBlessBoardTenantWebsiteEditorRouter,
+} = require("../../blessboard/http/blessboardWebsiteEditorRoutes");
 const {
   createVanityChurchPublicRouter,
 } = require("../../blessboard/http/vanityChurchPublicRoutes");
@@ -88,9 +140,6 @@ const {
 const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
-const {
-  createLoadSessionScopedTenantContext,
-} = require("../../blessboard/http/loadSessionScopedTenantContext");
 const {
   getPlatformHostContextMode,
   MODE_DIAGNOSTIC,
@@ -125,12 +174,6 @@ const {
   validateCsrf,
   setCsrfCookie,
 } = require("./v5Csrf");
-const {
-  setV5SessionCookie,
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../session/v5SessionCookie");
-const { revokeV5Session } = require("../session/revokeV5Session");
 const { authenticateBlessBoardUser } = require("../../blessboard/services/authenticateBlessBoardUser");
 const {
   listActiveRolesForUser,
@@ -153,6 +196,7 @@ const {
   tenantFromTransfer,
   STATUS: TRANSFER_STATUS,
 } = require("../services/authTransferService");
+const { PRODUCT, resolvePostLoginPath } = require("../onboarding");
 const { sha256Hex } = require("../session/sessionToken");
 
 const UNAVAILABLE_STATUS = 503;
@@ -169,12 +213,11 @@ const APEX_HOSTS = new Set(["blessboard.org", "www.blessboard.org"]);
 function resolveApexHosts(env) {
   try {
     const { getBlessBoardApexDomainSet } = require("../../church/blessBoardEnv");
-    const fromProfile = getBlessBoardApexDomainSet();
+    const fromProfile = getBlessBoardApexDomainSet(env);
     if (fromProfile && fromProfile.size) return fromProfile;
   } catch {
     /* fall through */
   }
-  void env;
   return new Set(APEX_HOSTS);
 }
 
@@ -188,7 +231,7 @@ function resolveCanonicalApexHost(env) {
     const fromProfile = getAuthoritativeDomainConfig(env);
     if (fromProfile && fromProfile.canonicalDomain) return fromProfile.canonicalDomain;
     const { getBlessBoardCanonicalDomain } = require("../../church/blessBoardEnv");
-    return getBlessBoardCanonicalDomain();
+    return getBlessBoardCanonicalDomain(env);
   } catch {
     return "blessboard.org";
   }
@@ -241,7 +284,8 @@ function isUnavailableAppPath(p) {
   ) {
     return true;
   }
-  if (pathOnly.startsWith("/church")) return true;
+  // Legacy /church/* only — do not treat /churches (V5 → /directory) as unavailable.
+  if (pathOnly === "/church" || pathOnly.startsWith("/church/")) return true;
   return false;
 }
 
@@ -267,10 +311,6 @@ function parseCookies(req) {
 
 /**
  * @param {import('express').Request} req
- * @param {{ apexHosts?: Set<string> }} [opts]
- */
-/**
- * @param {import('express').Request} req
  * @param {{ apexHosts?: Set<string>, env?: NodeJS.ProcessEnv }} [opts]
  */
 function isApexHost(req, opts) {
@@ -292,13 +332,14 @@ function isApexHost(req, opts) {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function foundationWwwToApexRedirect(req, res, next) {
+function foundationWwwToApexRedirect(req, res, next, env) {
   const host = String(resolveHostname(req) || "")
     .trim()
     .toLowerCase()
     .split(":")[0];
-  const canonical = resolveCanonicalApexHost(process.env);
+  const canonical = resolveCanonicalApexHost(env || process.env);
   const wwwCanonical = `www.${canonical}`;
   if (host !== wwwCanonical) {
     return next();
@@ -325,9 +366,35 @@ function clientIp(req) {
  * }} [options]
  */
 function createV5FoundationApp(options) {
+  require("../../startup/ensureProductPlatformContracts").ensureProductPlatformContracts();
+  const {
+    registerBlessBoardWebsiteTemplate,
+  } = require("../../blessboard/website/blessboardChurchTemplate");
+  registerBlessBoardWebsiteTemplate();
   const opts = options || {};
   const getPool = typeof opts.getPool === "function" ? opts.getPool : getPgPool;
   const env = opts.env || process.env;
+  if (!opts.allowPlatformRuntimeChild) {
+    const {
+      resolveRuntimeProductCode,
+    } = require("./productRouteBootstrap");
+    const productCode = resolveRuntimeProductCode(env);
+    if (productCode && productCode !== "blessboard") {
+      throw new Error(
+        `createV5FoundationApp requires productCode=blessboard (got ${JSON.stringify(productCode)})`
+      );
+    }
+  }
+  try {
+    const {
+      hydrateRegistrationCountryAvailability,
+    } = require("../registration/registrationCountrySelection");
+    Promise.resolve()
+      .then(() => hydrateRegistrationCountryAvailability(getPool()))
+      .catch(() => {});
+  } catch (_err) {
+    /* optional at boot */
+  }
   const tenantRoutingMode = getBlessBoardTenantRoutingMode(env);
   const hostContextMode = getPlatformHostContextMode(env);
   // Shadow/authoritative always need platform + catalogue resolution.
@@ -354,7 +421,7 @@ function createV5FoundationApp(options) {
   app.use(createV5PrivateNoStoreMiddleware());
 
   // www → apex before any Set-Cookie (host-only CSRF / session cookies).
-  app.use(foundationWwwToApexRedirect);
+  app.use((req, res, next) => foundationWwwToApexRedirect(req, res, next, env));
 
   // Global write freeze (migrate/cutover). Host-agnostic; GET/HEAD/OPTIONS + logout POSTs pass.
   app.use(
@@ -390,6 +457,9 @@ function createV5FoundationApp(options) {
     })
   );
 
+  const { mountHostingerMediaStatic } = require("./mountHostingerMediaStatic");
+  mountHostingerMediaStatic(app, env);
+
   // 1–2. Platform host + BlessBoard catalogue (diagnostic and/or tenant routing)
   if (enableHostResolution) {
     const platformDeploymentIdentity = getPlatformDeploymentCode(env);
@@ -421,12 +491,41 @@ function createV5FoundationApp(options) {
       getPool,
       getDeploymentCode: () => getPlatformDeploymentCode(env),
       log: typeof opts.log === "function" ? opts.log : undefined,
+      env,
     })
   );
+  app.use(createAuthenticatedResponseNoStoreMiddleware());
 
   // 4b. Apex session-scoped tenant (HQ website lifecycle without wildcard hosts)
   app.use(
     createLoadSessionScopedTenantContext({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+    })
+  );
+
+  // 4c. Platform Admin support context (does not replace V5 session)
+  app.use(
+    createLoadPlatformSupportContext({
+      getPool,
+      env,
+      isProduction,
+    })
+  );
+  app.use(
+    createApplySupportContextTenant({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+    })
+  );
+
+  // 4d. Release Notes Center on BlessBoard apex (public + platform_admin session upgrade)
+  const {
+    createReleaseNotesMiddleware,
+  } = require("../release-notes/attachReleaseNotesRoutes");
+  app.use(
+    createReleaseNotesMiddleware({
+      env,
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
     })
@@ -439,6 +538,13 @@ function createV5FoundationApp(options) {
     })
   );
 
+  // 5b. Platform Admin must use audited support mode for HQ / branch portals
+  const requirePlatformSupportContext = createRequirePlatformSupportContext({
+    getPool,
+  });
+  app.use("/hq", requirePlatformSupportContext);
+  app.use("/branch-admin", requirePlatformSupportContext);
+
   const requireTenantAccess = createRequireBlessBoardTenantRole({ getPool });
   const mediaService =
     opts.mediaService ||
@@ -450,15 +556,16 @@ function createV5FoundationApp(options) {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-      const email = String((req.body && req.body.email) || "")
-        .trim()
-        .toLowerCase();
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const id = String(resolved.identifier || "").trim().toLowerCase();
       const ip = clientIp(req);
-      return sha256Hex(`${email}|${ip}`);
+      return sha256Hex(`${id}|${ip}`);
     },
     handler: (req, res) => {
       const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const loginMode = resolved.mode === "phone" ? "phone" : "email";
       return res
         .status(429)
         .type("html")
@@ -466,6 +573,12 @@ function createV5FoundationApp(options) {
           renderLoginPage({
             csrfToken,
             error: "Too many sign-in attempts. Please wait a few minutes and try again.",
+            loginMode,
+            ...buildLoginModeHrefs({ mode: loginMode }),
+            loginEmail: req.body && req.body.login_email,
+            emailValue: resolved.mode === "email" ? resolved.identifier : "",
+            phoneCountry: req.body && req.body.phone_country,
+            phoneNational: req.body && req.body.phone_national,
           })
         );
     },
@@ -498,7 +611,7 @@ function createV5FoundationApp(options) {
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=13"/></head>
+<link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=14"/></head>
 <body class="bb-auth-body" data-bb-page="register-rate-limited">
 <main class="bb-auth-main__body">
 <div class="bb-auth-card" role="alert">
@@ -511,7 +624,8 @@ function createV5FoundationApp(options) {
     },
   });
 
-  // Health is independent of tenant DB state and of write maintenance (GET only).
+  // Health is independent of tenant DB state and of write maintenance (GET only),
+  // except hosted V7 schema incompatibility which must fail readiness.
   app.get("/healthz", (req, res) => {
     const writeMaintenance = isWriteMaintenanceEnabled(env);
     let environment = null;
@@ -522,12 +636,23 @@ function createV5FoundationApp(options) {
     } catch {
       environment = null;
     }
+    const {
+      schemaCompatibilityHealthz,
+    } = require("../schema/v7RuntimeSchemaCompatibility");
+    const schemaHealth = schemaCompatibilityHealthz(
+      opts.schemaCompatibility || (opts.boot && opts.boot.schemaCompatibility) || null
+    );
     const body = {
-      ok: true,
+      ok: schemaHealth.status === 200,
       mode: "v5-foundation",
       environment,
       writeMaintenance,
+      schemaCompatible: schemaHealth.schemaCompatible,
+      schemaCompatibility: schemaHealth.schemaCompatibility,
     };
+    if (schemaHealth.status !== 200) {
+      return res.status(schemaHealth.status).json(body);
+    }
     if (env.DEBUG_HOST === "1") {
       return res.json({
         ...body,
@@ -588,6 +713,20 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+    })
+  );
+  app.use(
+    createMemberJourneyAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createPastoralWelfareAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
     })
   );
   app.use(
@@ -655,9 +794,37 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createMemberPortalAuthRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
     createMemberPortalRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  // Path-scoped member portal for apex hosts where product host === churchHostDomain
+  // (V8 testing). Enables /c/:organizationKey/member/* without tenant DNS.
+  app.use(
+    "/c/:organizationKey",
+    createPathMemberTenantMiddleware({ getPool }),
+    createMemberPortalAuthRouter({
+      getPool,
+      isApexHost: () => false,
+      env,
+    })
+  );
+  app.use(
+    "/c/:organizationKey",
+    createPathMemberTenantMiddleware({ getPool }),
+    createMemberPortalRouter({
+      getPool,
+      isApexHost: () => false,
       env,
       sendUnavailable,
     })
@@ -759,6 +926,44 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createAttendanceSessionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createJoinRequestAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      resolveManagedResourceIds: async (scope) => {
+        const {
+          resolveManagedJoinResourceIds,
+        } = require("../../blessboard/services/joinRequest/resolveManagedJoinResourceIds");
+        return resolveManagedJoinResourceIds(getPool(), scope);
+      },
+    })
+  );
+  app.use(
+    createAttendanceCheckInAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createAttendanceCorrectionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
     createGivingAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
@@ -792,6 +997,99 @@ function createV5FoundationApp(options) {
       env,
       sendUnavailable,
       variant: "branch",
+    })
+  );
+  const {
+    registerBlessBoardSharedFormRoutes,
+  } = require("../../blessboard/http/registerBlessBoardSharedFormRoutes");
+  registerBlessBoardSharedFormRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "hq",
+  });
+  registerBlessBoardSharedFormRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "branch",
+  });
+  const {
+    registerBlessBoardSharedAnnouncementRoutes,
+  } = require("../../blessboard/http/registerBlessBoardSharedAnnouncementRoutes");
+  registerBlessBoardSharedAnnouncementRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "hq",
+  });
+  registerBlessBoardSharedAnnouncementRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "branch",
+  });
+  const {
+    registerBlessBoardDataJobAdapters,
+  } = require("../../blessboard/services/blessboardDataJobAdapters");
+  registerBlessBoardDataJobAdapters();
+  const {
+    createMembershipWorkflowAdminRouter,
+  } = require("../../blessboard/http/membershipWorkflowAdminRoutes");
+  app.use(
+    createMembershipWorkflowAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "hq",
+    })
+  );
+  app.use(
+    createMembershipWorkflowAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "branch",
+    })
+  );
+  const {
+    createActivityRegistrationAdminRouter,
+    createActivityRegistrationPublicRouter,
+  } = require("../../blessboard/http/activityRegistrationRoutes");
+  app.use(
+    createActivityRegistrationAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "hq",
+    })
+  );
+  app.use(
+    createActivityRegistrationAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "branch",
+    })
+  );
+  app.use(
+    createActivityRegistrationPublicRouter({
+      getPool,
+      env,
+    })
+  );
+  const {
+    createAnnouncementPublicRouter,
+  } = require("../../blessboard/http/announcementPublicRoutes");
+  app.use(
+    createAnnouncementPublicRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      getTenantRoutingMode: () => getBlessBoardTenantRoutingMode(env),
     })
   );
   app.use(
@@ -824,6 +1122,13 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+    })
+  );
+  app.use(
+    createHqStaffAccessRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
     })
   );
   app.use(
@@ -882,7 +1187,28 @@ function createV5FoundationApp(options) {
     })
   );
 
-  // 8d. Tenant public website (authoritative mode; published content only)
+  // 8d. Shared website editor actions (drafts / media / preview / publish)
+  // Mounted before public GET pages so POST /website/* and /c/:key/website/* resolve here.
+  app.use(
+    createBlessBoardTenantWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+  app.use(
+    createBlessBoardPathWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+  app.use(
+    createBlessBoardPathBranchWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+
+  // 8d1. Tenant public website (authoritative mode; published content only)
   app.use(
     createTenantPublicRouter({
       getPool,
@@ -897,6 +1223,7 @@ function createV5FoundationApp(options) {
     createPathPublicRouter({
       getPool,
       getEnv: () => env,
+      registrationLimiter,
     })
   );
 
@@ -972,7 +1299,9 @@ function createV5FoundationApp(options) {
         }
       }
       const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      const loginMode = resolveLoginModeQuery(req.query && req.query.mode);
+      const modeHrefs = buildLoginModeHrefs(req.query);
       authLog.logAuthEvent(req, "apex_login_rendered", {
         outcome: "ok",
         cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
@@ -982,6 +1311,9 @@ function createV5FoundationApp(options) {
           csrfToken,
           hostKind: "apex",
           transferHostname,
+          loginMode,
+          ...modeHrefs,
+          env,
           loggedOut: String((req.query && req.query.logged_out) || "") === "1",
           passwordReset: String((req.query && req.query.reset) || "") === "1",
         })
@@ -1048,7 +1380,7 @@ function createV5FoundationApp(options) {
         failureCategory: "csrf",
         cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
       });
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(403)
         .type("html")
@@ -1062,7 +1394,7 @@ function createV5FoundationApp(options) {
 
     const deployment = getPlatformDeploymentCode(env);
     if (!deployment.ok || !deployment.code) {
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(503)
         .type("html")
@@ -1078,7 +1410,7 @@ function createV5FoundationApp(options) {
           deploymentCode: deployment.code,
         });
         if (!loaded.ok || !loaded.transfer || loaded.transfer.userId) {
-          setCsrfCookie(res, csrfToken, { secure: isProduction });
+          setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
           const consumed =
             loaded &&
             (loaded.status === TRANSFER_STATUS.CONSUMED ||
@@ -1095,7 +1427,7 @@ function createV5FoundationApp(options) {
         pendingTransfer = loaded.transfer;
         loginPageOpts.transferHostname = pendingTransfer.requestedHostname;
       } catch {
-        setCsrfCookie(res, csrfToken, { secure: isProduction });
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
         return res
           .status(503)
           .type("html")
@@ -1104,17 +1436,36 @@ function createV5FoundationApp(options) {
     }
 
     try {
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      if (resolved.mode === "phone" && resolved.phoneOk === false) {
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+        return res.status(400).type("html").send(
+          renderLoginPage({
+            ...loginPageOpts,
+            env,
+            error: resolved.phoneError || "Enter a valid phone number.",
+            loginMode: "phone",
+            ...buildLoginModeHrefs({ mode: "phone" }),
+            loginEmail: req.body && req.body.login_email,
+            emailValue: "",
+            phoneCountry: req.body && req.body.phone_country,
+            phoneNational: req.body && req.body.phone_national,
+          })
+        );
+      }
       const result = await authenticateBlessBoardUser(getPool(), {
-        email: req.body && req.body.email,
+        identifier: resolved.identifier,
+        email: resolved.identifier,
         password: req.body && req.body.password,
         deploymentCode: deployment.code,
+        country: resolved.country || undefined,
         requireOrganizationId: pendingTransfer ? pendingTransfer.organizationId : null,
         ip: clientIp(req),
         userAgent: req.get("user-agent") || null,
       });
 
       if (!result.ok) {
-        setCsrfCookie(res, csrfToken, { secure: isProduction });
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
         const failureCategory =
           result.status === "no_active_role"
             ? "no_active_role"
@@ -1138,16 +1489,34 @@ function createV5FoundationApp(options) {
         const message =
           result.status === "no_active_role"
             ? "Sign-in is not available for this account."
-            : "Invalid email or password.";
-        return res.status(401).type("html").send(renderLoginPage({ ...loginPageOpts, error: message }));
+            : "Invalid email, phone number, or password.";
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
+        return res.status(401).type("html").send(
+          renderLoginPage({
+            ...loginPageOpts,
+            env,
+            error: message,
+            loginMode,
+            ...buildLoginModeHrefs({ mode: loginMode }),
+            loginEmail: req.body && req.body.login_email,
+            emailValue: resolved.identifier,
+            phoneCountry: req.body && req.body.phone_country,
+            phoneNational: req.body && req.body.phone_national,
+          })
+        );
       }
 
       authLog.logAuthEvent(req, "apex_login_roles_loaded", {
         outcome: "ok",
         roleKeys: result.roles,
       });
-      setV5SessionCookie(res, result.rawToken, { secure: isProduction, env });
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: result.rawToken,
+        env,
+        isProduction,
+        getPool,
+      });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       authLog.logAuthEvent(req, "apex_login_session_created", {
         outcome: "ok",
         setCookieIssued: true,
@@ -1206,7 +1575,7 @@ function createV5FoundationApp(options) {
       });
       return res.redirect(303, callbackUrl);
     } catch {
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(503)
         .type("html")
@@ -1258,7 +1627,12 @@ function createV5FoundationApp(options) {
         }
         return sendAuthError(req, res, status, message);
       }
-      setV5SessionCookie(res, redeemed.rawSessionToken, { secure: isProduction, env });
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: redeemed.rawSessionToken,
+        env,
+        isProduction,
+        getPool,
+      });
       const {
         resolveTenantPortalAccess,
       } = require("../../blessboard/services/resolveTenantPortalAccess");
@@ -1290,6 +1664,23 @@ function createV5FoundationApp(options) {
       if (!dest) {
         dest = safeTenantNextPath(redeemed.returnPath) || defaultTenantPostLoginPath([]);
       }
+      if (dest === "/hq" || dest === "/hq/onboarding") {
+        try {
+          const onboardingDest = await resolvePostLoginPath(getPool(), {
+            productCode: PRODUCT.BLESSBOARD,
+            organizationId: tenant.organization.id,
+            actor: {
+              userId: redeemed.transfer && redeemed.transfer.userId,
+              roles: dest === "/hq" || dest === "/hq/onboarding" ? ["church_hq_admin"] : [],
+            },
+            requestedPath: dest,
+            deploymentCode: deployment.code,
+          });
+          if (onboardingDest && onboardingDest.path) dest = onboardingDest.path;
+        } catch {
+          /* keep dest */
+        }
+      }
       return res.redirect(303, dest);
     } catch {
       return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
@@ -1306,21 +1697,13 @@ function createV5FoundationApp(options) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+    });
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.redirect(303, "/login");
   });
 
@@ -1360,7 +1743,7 @@ function createV5FoundationApp(options) {
       portalOptions = [];
     }
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.status(200).type("html").send(
       renderAccountPage({
         displayName: session.user.displayName,
@@ -1383,7 +1766,7 @@ function createV5FoundationApp(options) {
   app.get("/", (req, res) => {
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
 
     if (isApexHost(req, opts)) {
       return res.status(200).type("html").send(
@@ -1549,6 +1932,53 @@ async function verifyFoundationPool(pool) {
 async function startV5FoundationServer(opts) {
   void opts;
   const {
+    resolveProductBootstrapTarget,
+  } = require("./productBootstrap");
+  const bootTarget = resolveProductBootstrapTarget();
+  if (!bootTarget.ok) {
+    // eslint-disable-next-line no-console
+    console.error(`[platform] FATAL: ${bootTarget.message}`);
+    process.exit(1);
+    return;
+  }
+  if (bootTarget.target === "legacy-redirect") {
+    const {
+      startLegacyDomainRedirectServer,
+    } = require("./legacyDomainRedirectServer");
+    return startLegacyDomainRedirectServer(opts);
+  }
+  if (bootTarget.target === "moovex-platform-runtime") {
+    const {
+      startMoovexPlatformRuntimeServer,
+    } = require("./moovexPlatformRuntimeServer");
+    return startMoovexPlatformRuntimeServer(opts);
+  }
+  if (bootTarget.target === "activeclinic") {
+    const {
+      startActiveClinicFoundationServer,
+    } = require("../../activeclinic/http/activeClinicFoundationServer");
+    return startActiveClinicFoundationServer(opts);
+  }
+  if (bootTarget.target === "getpro") {
+    const {
+      startGetProFoundationServer,
+    } = require("../../getpro/http/getproFoundationServer");
+    return startGetProFoundationServer(opts);
+  }
+  if (bootTarget.target === "ngo") {
+    const {
+      startNgoFoundationServer,
+    } = require("../../ngo/http/ngoFoundationServer");
+    return startNgoFoundationServer(opts);
+  }
+  if (bootTarget.target === "moovex-corporate") {
+    const {
+      startMoovexCorporateServer,
+    } = require("./moovexCorporateServer");
+    return startMoovexCorporateServer(opts);
+  }
+
+  const {
     assertV5SessionSecretPolicyOrExit,
     summarizeV5DatabaseEnv,
     parseBlessBoardJobsEnabled,
@@ -1601,8 +2031,21 @@ async function startV5FoundationServer(opts) {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");
   await assertPlatformDatabaseIdentityOrExit(pool);
+  const {
+    assertV7RuntimeSchemaCompatibilityOrExit,
+  } = require("../schema/v7RuntimeSchemaCompatibility");
+  const schemaCompatibility = await assertV7RuntimeSchemaCompatibilityOrExit(pool, {
+    env: process.env,
+  });
 
-  const app = createV5FoundationApp({ getPool: () => pool, env: process.env });
+  // BlessBoard product routes remain registered inside createV5FoundationApp
+  // (registerBlessBoardRoutes is the documented boundary; extraction deferred).
+
+  const app = createV5FoundationApp({
+    getPool: () => pool,
+    env: process.env,
+    schemaCompatibility,
+  });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   const { resolveListenHost } = require("../config/deploymentProfiles");
   const host = resolveListenHost(process.env);

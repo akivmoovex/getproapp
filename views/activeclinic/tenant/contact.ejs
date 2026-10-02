@@ -1,0 +1,98 @@
+<%#
+  AC-MW-R07 Contact — Stitch Batch 3 + V2.04 R07 parity pack.
+  Canonical facility/contact facts via shared contact/location/hours; existing inquiry form.
+  Do not duplicate phone/email/address into website JSON (overlay is fallback-only in edit mode).
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const fd = formData || {};
+  const verr = (typeof validationErrors === 'object' && validationErrors) ? validationErrors : {};
+  const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : '';
+  const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : '';
+  const formHeading = clinic.contactFormHeading || (clinic.websiteContent && clinic.websiteContent['contact.form_heading']) || 'Send a Direct Message';
+  const pages = (clinic && clinic.publicPagePaths) || {};
+  const bookHref = pages.book || (clinic && clinic.clinicKey ? ('/clinics/' + clinic.clinicKey + '/book') : '/book');
+%>
+<section class="ac-stitch-page ac-stitch-page--r07 ac-public-section acp-page" data-ac-page-section="tenant-contact" data-ac-stitch-screen="R07" data-ac-stitch-parity="r07">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <aside class="ac-stitch-urgent-notice" data-ac-contact-urgent="1" role="note">
+    <strong>Urgent Medical Notice</strong>
+    <p>If you are experiencing a life-threatening emergency, call your local emergency number immediately. Do not use this form for urgent clinical care.</p>
+  </aside>
+
+  <div class="acp-contact-layout ac-stitch-contact-layout">
+    <div class="acp-contact-layout__main">
+      <div class="ac-stitch-section ac-stitch-section--form" data-ac-contact-form-panel="1">
+        <h2 class="ac-stitch-form-heading"><%- include('../partials/website-editable-field', { contentKey: 'contact.form_heading', fieldValue: formHeading, fieldType: 'short_text' }) %></h2>
+        <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+        <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form acp-contact-form" data-ac-loading="1" data-ac-contact-form="1">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <div class="acp-field<%= verr.senderName ? ' acp-field--error' : '' %>">
+            <label for="senderName">Full name</label>
+            <input id="senderName" name="senderName" required autocomplete="name" value="<%= fd.senderName || '' %>" aria-invalid="<%= verr.senderName ? 'true' : 'false' %>"/>
+            <% if (verr.senderName) { %><p class="ac-form-field__error"><%= verr.senderName %></p><% } %>
+          </div>
+          <div class="acp-field<%= verr.senderEmail ? ' acp-field--error' : '' %>">
+            <label for="senderEmail">Email address</label>
+            <input id="senderEmail" name="senderEmail" type="email" required autocomplete="email" value="<%= fd.senderEmail || '' %>" aria-invalid="<%= verr.senderEmail ? 'true' : 'false' %>"/>
+            <% if (verr.senderEmail) { %><p class="ac-form-field__error"><%= verr.senderEmail %></p><% } %>
+          </div>
+          <%- include('../partials/phone-field', {
+            id: 'senderPhone',
+            label: 'Phone number',
+            required: false,
+            defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || (clinic && clinic.countryCode) || 'ZM',
+            selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || (clinic && clinic.countryCode) || 'ZM',
+            nationalValue: (fd && fd.phoneNational) || '',
+            e164Value: (fd && fd.senderPhone) || '',
+            countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+            phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+            countryFieldName: 'phone_country',
+            nationalFieldName: 'phone_national',
+            legacyFieldName: 'senderPhone',
+            showLegacyHidden: false
+          }) %>
+          <div class="acp-field<%= verr.message ? ' acp-field--error' : '' %>">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required maxlength="4000" aria-invalid="<%= verr.message ? 'true' : 'false' %>"><%= fd.message || '' %></textarea>
+            <% if (verr.message) { %><p class="ac-form-field__error"><%= verr.message %></p><% } %>
+          </div>
+          <button type="submit" class="ac-btn ac-btn--primary">Send message</button>
+        </form>
+        <p class="ac-public-note" data-ac-contact-honesty="1">Submitting stores your inquiry for the clinic. This form does not send SMS or email confirmation and is not for emergencies.</p>
+        <p class="ac-stitch-legal-note" data-ac-contact-legal="1">By sending a message you agree that the clinic may use the contact details you provide to respond. See the clinic privacy notice for how personal information is handled.</p>
+      </div>
+    </div>
+    <aside class="acp-contact-aside ac-stitch-section ac-stitch-section--contact-aside">
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'contact.aside_heading', fieldValue: clinic.contactAsideHeading || 'Clinic Direct Contact', fieldType: 'short_text' }) %></h2>
+      <%- html.contact || '' %>
+      <%- html.location || '' %>
+      <%- html.hours || '' %>
+      <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+      <div class="ac-website-overlay-edit" data-ac-website-overlay="contact">
+        <h3>Website contact overlay</h3>
+        <p class="ac-website-overlay-note">Used on the public site when operations phone or email is not published. Saving here does not change clinic operations records, and does not publish. Facility address remains authoritative.</p>
+        <ul class="ac-public-list">
+          <li>Phone: <%- include('../partials/website-editable-field', { contentKey: 'contact.phone', fieldValue: overlayPhone, fieldType: 'phone' }) %></li>
+          <li>Email: <%- include('../partials/website-editable-field', { contentKey: 'contact.email', fieldValue: overlayEmail, fieldType: 'email' }) %></li>
+        </ul>
+        <%- include('../partials/website-operational-affordance', { href: '/app/settings/organization', label: 'Manage clinic contact details', manageKind: 'contact' }) %>
+      </div>
+      <% } %>
+      <% if (html.cta) { %>
+      <div class="ac-stitch-section ac-stitch-section--cta">
+        <%- html.cta %>
+      </div>
+      <% } else { %>
+      <div class="ac-stitch-section ac-stitch-section--cta" data-ac-contact-book-cta="1">
+        <h3>Need an immediate appointment?</h3>
+        <p><a class="ac-btn ac-btn--secondary" href="<%= bookHref %>">Book Appointment</a></p>
+      </div>
+      <% } %>
+    </aside>
+  </div>
+</section>

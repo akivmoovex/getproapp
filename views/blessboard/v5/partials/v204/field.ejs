@@ -1,0 +1,14 @@
+<%#
+  BB V2.04 field/error → platform gp-ops-field.
+%>
+<%- include('../../../../platform/partials/gp-ops-field', {
+  name: typeof name !== 'undefined' ? name : undefined,
+  label: typeof label !== 'undefined' ? label : undefined,
+  hint: typeof hint !== 'undefined' ? hint : undefined,
+  error: typeof error !== 'undefined' ? error : undefined,
+  required: typeof required !== 'undefined' ? required : undefined,
+  invalid: typeof invalid !== 'undefined' ? invalid : undefined,
+  controlHtml: typeof controlHtml !== 'undefined' ? controlHtml : undefined,
+  className: typeof className !== 'undefined' ? className : undefined,
+  id: typeof id !== 'undefined' ? id : undefined
+}) %>

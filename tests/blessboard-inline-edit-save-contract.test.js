@@ -49,7 +49,7 @@ function cookieHeader(...pairs) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -96,7 +96,7 @@ describe("branch admin inline edit save contract", () => {
         productTenantKey: ORG_KEY,
         hostname: HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(org.ok, true, org.message);
@@ -145,7 +145,7 @@ describe("branch admin inline edit save contract", () => {
           assert.equal((await assignBlessBoardRole(pool, role)).ok, true);
         }
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId,
         });
@@ -197,26 +197,25 @@ describe("branch admin inline edit save contract", () => {
 
   it("client save contract matches POST JSON inline-field endpoint", () => {
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
     assert.match(js, /method:\s*"POST"/);
     assert.match(js, /Content-Type":\s*"application\/json"/);
     assert.match(js, /credentials:\s*"same-origin"/);
     assert.match(js, /X-CSRF-Token/);
-    assert.match(js, /pageKey:/);
-    assert.match(js, /sectionKey:/);
-    assert.match(js, /fieldKey:/);
+    // V2.04: shared WE01 posts contentKey (not BB legacy pageKey/sectionKey/fieldKey).
+    assert.match(js, /contentKey:/);
     assert.match(js, /value:/);
-    assert.match(js, /parseSaveResponse/);
-    assert.match(js, /not_authenticated/);
+    assert.match(js, /Saved to draft/);
+    assert.match(js, /published === true/);
   });
 
   it("CSRF token rendered on public editor saves against branch endpoint", async () => {
     if (skipIfNeeded()) return;
 
     const page = await request(app)
-      .get(`/c/${ORG_KEY}?website_edit=1`)
+      .get(`/c/${ORG_KEY}?website_edit=1`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branch.rawToken}`))
       .expect(200);
@@ -261,12 +260,12 @@ describe("branch admin inline edit save contract", () => {
     });
     assert.ok(drafts.some((d) => d.newValue === "Draft From Page CSRF"));
 
-    const publicRes = await request(app).get(`/c/${ORG_KEY}`).set("Host", APEX).expect(200);
+    const publicRes = await request(app).get(`/c/${ORG_KEY}`).redirects(5).set("Host", APEX).expect(200);
     assert.match(publicRes.text, /Published Hero/);
     assert.doesNotMatch(publicRes.text, /Draft From Page CSRF/);
 
     const editReload = await request(app)
-      .get(`/c/${ORG_KEY}?website_edit=1`)
+      .get(`/c/${ORG_KEY}?website_edit=1`).redirects(5)
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branch.rawToken}`))
       .expect(200);

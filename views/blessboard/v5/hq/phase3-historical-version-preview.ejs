@@ -5,6 +5,7 @@
   var titles = pageTitles || {};
   var labels = statusLabels || {};
   var sources = sourceLabels || {};
+  var canRestoreWebsite = permissionNavFlags && permissionNavFlags.canRestoreWebsite;
   function statusLabel(s) { return labels[s] || s || '—'; }
   function sourceLabel(s) { return sources[s] || s || '—'; }
   function formatWhen(value) {
@@ -40,7 +41,7 @@
     </div>
     <p class="bb-hq-page-head__actions">
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Back</a>
-      <% if (v) { %>
+      <% if (v && canRestoreWebsite) { %>
       <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website/version-history/<%= v.id %>/restore">Restore this version</a>
       <% } %>
     </p>

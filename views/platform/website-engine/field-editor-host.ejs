@@ -1,0 +1,66 @@
+<%#
+  Wave 2 — shared text / image / logo field editor (Stitch EDIT-02/03/04).
+  One dialog on desktop, bottom sheet on mobile. Body content is built by website-inline-edit.js.
+%>
+<div
+  class="gp-website-field-editor"
+  data-website-field-editor="1"
+  data-stitch-edit="WE01-02"
+  hidden
+>
+  <div
+    class="gp-website-field-editor__overlay"
+    data-website-field-editor-overlay="1"
+    data-website-field-editor-dismiss="1"
+    hidden
+  ></div>
+  <div
+    class="gp-website-field-editor__panel"
+    data-website-field-editor-panel="1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-field-editor-title"
+    hidden
+  >
+    <div class="gp-website-field-editor__grab" aria-hidden="true"></div>
+    <header class="gp-website-field-editor__head">
+      <h2 class="gp-website-field-editor__title" id="gp-website-field-editor-title" data-website-field-editor-title="1">
+        Edit field
+      </h2>
+      <button
+        type="button"
+        class="gp-website-field-editor__close"
+        data-website-field-editor-dismiss="1"
+        aria-label="Close editor"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="gp-website-field-editor__body" data-website-field-editor-body="1"></div>
+    <p
+      class="gp-website-field-editor__status"
+      data-website-field-editor-status="1"
+      data-website-status-msg="1"
+      role="status"
+      aria-live="polite"
+    ></p>
+    <footer class="gp-website-field-editor__foot">
+      <button
+        type="button"
+        class="gp-website-field-editor__btn gp-website-field-editor__btn--ghost"
+        data-website-field-editor-cancel="1"
+        data-website-cancel="1"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="gp-website-field-editor__btn gp-website-field-editor__btn--primary"
+        data-website-field-editor-save="1"
+        data-website-save="1"
+      >
+        Save draft
+      </button>
+    </footer>
+  </div>
+</div>

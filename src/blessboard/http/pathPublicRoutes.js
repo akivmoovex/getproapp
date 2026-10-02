@@ -9,28 +9,45 @@ const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage } = require("./renderTenantLandingPage");
 const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
-const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   legacyOrganizationKeyRedirectTarget,
   legacyBranchKeyRedirectTarget,
 } = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
-const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
+const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
+const {
+  attachWebsiteAdminChrome,
+  resolveAuthorizedPublicPreview,
+} = require("./attachWebsiteAdminChrome");
 const {
   resolveWebsiteMode,
   WEBSITE_MODE,
   STATUS: WEBSITE_MODE_STATUS,
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
-const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  sendCanonicalPublicWebsiteRedirect,
+  canonicalPublicWebsiteRedirect,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
+  legacyBranchPublicRedirectTarget,
+  legacyChurchWidePageRedirectTarget,
+  orgHomeRedirectTarget,
+} = require("./pathPublicBranchRouting");
 const {
   redirectSingleSiteBranchToChurchWide,
 } = require("./singleSiteBranchPublicRedirect");
+const {
+  createPathPublicChurchActionRouter,
+} = require("./pathPublicChurchActionRoutes");
 
 /**
  * @param {{
  *   getPool: () => { query: Function, connect?: Function },
  *   getEnv?: () => NodeJS.ProcessEnv,
+ *   registrationLimiter?: Function,
  * }} deps
  */
 function createPathPublicRouter(deps) {
@@ -51,13 +68,13 @@ function createPathPublicRouter(deps) {
 
     const legacyTarget = legacyOrganizationKeyRedirectTarget(rawKey);
     if (legacyTarget) {
-      const rest = String(req.originalUrl || req.url || "")
-        .split("?")[0]
-        .replace(/^\/c\/[^/]+/i, "");
-      const queryIdx = String(req.originalUrl || "").indexOf("?");
-      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
-      const destination = `${publicChurchHomePath(legacyTarget)}${rest || ""}${query}`;
-      res.redirect(301, destination);
+      const dest =
+        canonicalPublicWebsiteRedirect(
+          PRODUCT_CODE.BLESSBOARD,
+          req.originalUrl || req.url || "",
+          { remapOrganizationKey: () => legacyTarget }
+        ) || publicChurchHomePath(legacyTarget);
+      res.redirect(301, dest);
       return null;
     }
 
@@ -164,6 +181,12 @@ function createPathPublicRouter(deps) {
 
     let model;
     try {
+      const authorizedPreview = await resolveAuthorizedPublicPreview(
+        getPool(),
+        req,
+        tenant,
+        selectedBranch && selectedBranch.id
+      );
       model = await loadTenantPublicPageModel(getPool(), {
         tenant,
         pageKey,
@@ -171,6 +194,7 @@ function createPathPublicRouter(deps) {
         pathPrefix,
         selectedBranch: selectedBranch || null,
         routingMode: routingMode || "path",
+        preview: authorizedPreview,
       });
     } catch {
       return res
@@ -253,33 +277,191 @@ function createPathPublicRouter(deps) {
     return res.status(200).type("html").send(html);
   }
 
-  async function handlePathPublic(req, res) {
+  async function resolvePrimaryBranchKey(churchId) {
+    try {
+      const websiteMode = await resolveWebsiteMode(getPool(), { churchId });
+      if (!websiteMode.ok) return null;
+      const primary =
+        websiteMode.primaryActiveBranch ||
+        (websiteMode.activeBranches && websiteMode.activeBranches[0]);
+      return primary && primary.key ? primary.key : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleLegacyBranchPublicRedirect(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+        remapBranchKey: (organizationKey, branchKey) =>
+          legacyBranchKeyRedirectTarget(organizationKey, branchKey) || branchKey,
+      })
+    ) {
+      return;
+    }
+    const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+    if (!resolved) return;
     const suffix = String(req.params[0] || "");
     const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
-    const normalizedPath =
-      pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
+    const dest = legacyBranchPublicRedirectTarget(
+      req,
+      resolved.organizationKey,
+      req.params.branchKey,
+      pathOnly
+    );
+    if (!dest) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+    return res.redirect(301, dest);
+  }
 
-    if (!isTenantPublicPagePath(normalizedPath)) {
+  async function renderPathChurchWidePublic(req, res, resolved, pageKey) {
+    const pathPrefix = publicChurchHomePath(resolved.organizationKey);
+    if (!pathPrefix) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+    return renderPublicModel(req, res, {
+      tenant: resolved.tenant,
+      pageKey: pageKey || "home",
+      pathPrefix,
+      selectedBranch: null,
+      routingMode: "path",
+    });
+  }
+
+  async function handleOrgHomeRedirect(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+      })
+    ) {
+      return;
+    }
+    const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+    if (!resolved) return;
+
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+    }
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
+        return res
+          .status(503)
+          .type("html")
+          .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      }
       return res
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
 
+    if (websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+      return renderPathChurchWidePublic(req, res, resolved, "home");
+    }
+
+    const primaryBranchKey = await resolvePrimaryBranchKey(resolved.tenant.church.id);
+    const dest = orgHomeRedirectTarget(req, resolved.organizationKey, primaryBranchKey);
+    if (!dest) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+    return res.redirect(301, dest);
+  }
+
+  async function handleLegacyChurchWideRedirect(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+      })
+    ) {
+      return;
+    }
+    const suffix = String(req.params[0] || "");
+    const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
+    const normalizedPath =
+      pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
+    if (!isTenantPublicPagePath(normalizedPath)) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
     const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
     if (!resolved) return;
-
     const pageKey = pageKeyFromPath(normalizedPath);
-    return renderPublicModel(req, res, {
-      tenant: resolved.tenant,
+
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+    }
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
+        return res
+          .status(503)
+          .type("html")
+          .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      }
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    if (websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+      return renderPathChurchWidePublic(req, res, resolved, pageKey);
+    }
+
+    const primaryBranchKey = await resolvePrimaryBranchKey(resolved.tenant.church.id);
+    const dest = legacyChurchWidePageRedirectTarget(
+      req,
+      resolved.organizationKey,
       pageKey,
-      pathPrefix: `/c/${resolved.organizationKey}`,
-      selectedBranch: null,
-      routingMode: "path",
-    });
+      primaryBranchKey
+    );
+    if (!dest) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+    return res.redirect(301, dest);
   }
 
   async function handlePathBranchPublic(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+        remapBranchKey: (organizationKey, branchKey) =>
+          legacyBranchKeyRedirectTarget(organizationKey, branchKey) || branchKey,
+      })
+    ) {
+      return;
+    }
     const suffix = String(req.params[0] || "");
     const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
     const normalizedPath =
@@ -304,14 +486,16 @@ function createPathPublicRouter(deps) {
       branchKeyRaw
     );
     if (legacyBranchTarget) {
-      const rest = normalizedPath === "/" ? "" : normalizedPath;
-      const queryIdx = String(req.originalUrl || "").indexOf("?");
-      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
-      const destination = `${publicBranchHomePath(
-        resolved.organizationKey,
-        legacyBranchTarget
-      )}${rest}${query}`;
-      return res.redirect(301, destination);
+      const dest =
+        canonicalPublicWebsiteRedirect(
+          PRODUCT_CODE.BLESSBOARD,
+          req.originalUrl || req.url || "",
+          {
+            remapOrganizationKey: () => resolved.organizationKey,
+            remapBranchKey: () => legacyBranchTarget,
+          }
+        ) || publicBranchHomePath(resolved.organizationKey, legacyBranchTarget);
+      return res.redirect(301, dest);
     }
 
     const branchKey = normalizeBranchKey(req.params.branchKey);
@@ -349,14 +533,23 @@ function createPathPublicRouter(deps) {
     }
 
     const activeBranch = (websiteMode.activeBranches || []).find((b) => b.key === branchKey);
-    // Unknown / inactive / cross-org keys are never in this church's active list → 404.
     if (!activeBranch) {
+      const { isLegacyPublicPageSegment } = require("./pathPublicBranchRouting");
+      if (isLegacyPublicPageSegment(branchKey)) {
+        const primaryBranchKey = await resolvePrimaryBranchKey(resolved.tenant.church.id);
+        const dest = legacyChurchWidePageRedirectTarget(
+          req,
+          resolved.organizationKey,
+          branchKey,
+          primaryBranchKey
+        );
+        if (dest) return res.redirect(301, dest);
+      }
       return res
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
-
     if (
       websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
       !websiteMode.requestedBranchMayHaveIndependentPublicWebsite
@@ -367,55 +560,56 @@ function createPathPublicRouter(deps) {
         pageKey,
       });
       if (redirected) return res;
-      return res
-        .status(404)
-        .type("html")
-        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+      return renderPathChurchWidePublic(req, res, resolved, pageKey);
     }
 
     const pathPrefix = publicBranchHomePath(
       resolved.organizationKey,
       activeBranch.key
     );
+    // Primary / HQ public URLs serve church-wide CMS (contentBranchId null), matching
+    // editor HQ draft scope. Non-primary branches keep independent branch CMS.
+    const primary = websiteMode.primaryActiveBranch;
+    const contentSelectedBranch =
+      primary && String(activeBranch.id) === String(primary.id)
+        ? null
+        : {
+            id: activeBranch.id,
+            key: activeBranch.key,
+            displayName: activeBranch.displayName,
+            branchType: activeBranch.branchType,
+            isPrimary: activeBranch.isPrimary,
+          };
     return renderPublicModel(req, res, {
       tenant: resolved.tenant,
       pageKey,
       pathPrefix,
-      selectedBranch: activeBranch,
+      selectedBranch: contentSelectedBranch,
       routingMode: "path",
     });
   }
 
-  // Branch mini websites first (more specific than church-wide suffixes).
-  for (const suffix of PAGE_SUFFIXES) {
-    const routePath = suffix
-      ? `/c/:organizationKey/branches/:branchKey${suffix}`
-      : "/c/:organizationKey/branches/:branchKey";
-    router.get(routePath, (req, res, next) => {
-      if (suffix) {
-        req.params[0] = suffix.replace(/^\//, "");
-      } else {
-        req.params[0] = "";
-      }
-      Promise.resolve(handlePathBranchPublic(req, res)).catch(next);
-    });
-  }
+  // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
+  router.use(
+    createPathPublicChurchActionRouter({
+      getPool,
+      resolvePathTenant,
+      env: getEnv(),
+      registrationLimiter: deps.registrationLimiter,
+    })
+  );
 
-  for (const suffix of PAGE_SUFFIXES) {
-    const routePath = suffix ? `/c/:organizationKey${suffix}` : "/c/:organizationKey";
-    router.get(routePath, (req, res, next) => {
-      if (suffix) {
-        req.params[0] = suffix.replace(/^\//, "");
-      } else {
-        req.params[0] = "";
-      }
-      Promise.resolve(handlePathPublic(req, res)).catch(next);
-    });
-  }
-
+  // Org-level discovery (must register before /:branchKey catch-all).
   router.get("/c/:organizationKey/sitemap.xml", (req, res, next) => {
     Promise.resolve(
       (async () => {
+        if (
+          sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+            remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+          })
+        ) {
+          return;
+        }
         const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
         if (!resolved) return;
 
@@ -446,18 +640,100 @@ function createPathPublicRouter(deps) {
           buildTenantPublicDiscoveryUrls,
           buildTenantPublicSitemapXml,
         } = require("./tenantPublicDiscovery");
+        const {
+          resolveSitemapExcludedBranchKeys,
+        } = require("../services/resolveSitemapExclusions");
+        const excludeBranchKeys = await resolveSitemapExcludedBranchKeys(getPool(), {
+          churchId: resolved.tenant.church.id,
+          activeBranches: websiteMode.activeBranches || [],
+        });
+
         const urls = buildTenantPublicDiscoveryUrls({
           hostname,
           routingMode: "path",
           organizationKey: resolved.organizationKey,
           websiteMode: websiteMode.websiteMode,
           activeBranches: websiteMode.activeBranches || [],
+          excludeBranchKeys,
         });
         res.setHeader("Content-Type", "application/xml; charset=utf-8");
         return res.status(200).send(buildTenantPublicSitemapXml(urls));
       })()
     ).catch(next);
   });
+
+  router.get("/c/:organizationKey/robots.txt", (req, res, next) => {
+    Promise.resolve(
+      (async () => {
+        if (
+          sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+            remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+          })
+        ) {
+          return;
+        }
+        const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+        if (!resolved) return;
+
+        const hostname = resolveHostname(req) || String(req.hostname || "");
+        const { buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+        const base = `/c/${encodeURIComponent(resolved.organizationKey)}`;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        return res.status(200).send(
+          buildRobotsTxt({
+            allow: true,
+            sitemapUrl: hostname ? `https://${hostname}${base}/sitemap.xml` : null,
+          })
+        );
+      })()
+    ).catch(next);
+  });
+
+  // Legacy /c/:org/branches/:branch → canonical /c/:org/:branch (301).
+  for (const suffix of PAGE_SUFFIXES) {
+    const routePath = suffix
+      ? `/c/:organizationKey/branches/:branchKey${suffix}`
+      : "/c/:organizationKey/branches/:branchKey";
+    router.get(routePath, (req, res, next) => {
+      if (suffix) {
+        req.params[0] = suffix.replace(/^\//, "");
+      } else {
+        req.params[0] = "";
+      }
+      Promise.resolve(handleLegacyBranchPublicRedirect(req, res)).catch(next);
+    });
+  }
+
+  // Legacy church-wide pages → primary branch (301). Register before /:branchKey catch-all.
+  for (const suffix of PAGE_SUFFIXES) {
+    if (!suffix) continue;
+    const routePath = `/c/:organizationKey${suffix}`;
+    router.get(routePath, (req, res, next) => {
+      req.params[0] = suffix.replace(/^\//, "");
+      Promise.resolve(handleLegacyChurchWideRedirect(req, res)).catch(next);
+    });
+  }
+
+  // Org home → primary branch home (301).
+  router.get("/c/:organizationKey", (req, res, next) => {
+    req.params[0] = "";
+    Promise.resolve(handleOrgHomeRedirect(req, res)).catch(next);
+  });
+
+  // Canonical flat branch mini-sites: /c/:org/:branchKey(/page)?
+  for (const suffix of PAGE_SUFFIXES) {
+    const routePath = suffix
+      ? `/c/:organizationKey/:branchKey${suffix}`
+      : "/c/:organizationKey/:branchKey";
+    router.get(routePath, (req, res, next) => {
+      if (suffix) {
+        req.params[0] = suffix.replace(/^\//, "");
+      } else {
+        req.params[0] = "";
+      }
+      Promise.resolve(handlePathBranchPublic(req, res)).catch(next);
+    });
+  }
 
   return router;
 }

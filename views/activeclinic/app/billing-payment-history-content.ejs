@@ -1,0 +1,53 @@
+<%
+  var payments = (pageData && pageData.payments) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-payment-history" data-ac-page-section="payment-history" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel ac-panel--table">
+    <% if (payments.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'payment-history-empty',
+          title: 'No payments recorded yet',
+          description: 'Collected payments for this facility will appear here.'
+        }
+      }) %>
+    <% } else { %>
+      <div class="ac-table-wrap ac-desktop-table">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Payment #</th>
+              <th>Patient</th>
+              <th>Method</th>
+              <th data-col="amount">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% payments.forEach(function (p) { %>
+            <tr>
+              <td><%= p.paymentDate %></td>
+              <td><%= p.paymentNumber %></td>
+              <td><%= p.patientName %> · <%= p.patientNumber %></td>
+              <td><%= p.paymentMethod %></td>
+              <td class="ac-money"><%= p.amountFormatted %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="payment-history">
+        <% payments.forEach(function (p) { %>
+        <li class="ac-card ac-mobile-record-card">
+          <p class="ac-card__title"><%= p.paymentNumber %></p>
+          <p class="ac-muted"><%= p.patientName %> · <%= p.patientNumber %></p>
+          <p><strong class="ac-money"><%= p.amountFormatted %></strong> · <%= p.paymentMethod %></p>
+          <p class="ac-muted"><%= p.paymentDate %></p>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>

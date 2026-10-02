@@ -5,19 +5,15 @@
  * Does not invent unsupported wildcard hosts.
  */
 
-const { normalizeOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
-
-const PUBLIC_PAGE_KEYS = Object.freeze([
-  "home",
-  "about",
-  "leadership",
-  "ministries",
-  "events",
-  "sermons",
-  "contact",
-  "giving",
-]);
+const { PUBLIC_PAGE_KEYS } = require("../services/publicContentConstants");
+const {
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteSettingsPath,
+  buildPublicWebsitePublishPath,
+  PRODUCT_CODE,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {unknown} organizationKey
@@ -29,7 +25,10 @@ function publicChurchHomePath(organizationKey) {
     .toLowerCase();
   const norm = normalizeOrganizationKey(key);
   if (!norm.ok) return null;
-  return `/c/${norm.key}`;
+  return buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+  });
 }
 
 /**
@@ -45,20 +44,32 @@ function publicChurchPagePath(organizationKey, pageKey) {
     .toLowerCase();
   if (!key || key === "home") return home;
   if (!PUBLIC_PAGE_KEYS.includes(key)) return null;
-  return `${home}/${key}`;
+  const norm = normalizeOrganizationKey(String(organizationKey || "").trim().toLowerCase());
+  if (!norm.ok) return null;
+  return buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+    pageKey: key,
+  });
 }
 
 /**
- * Path-public branch mini website home: /c/:organizationKey/branches/:branchKey
+ * Path-public branch mini website home: /c/:organizationKey/:branchKey
  * @param {unknown} organizationKey
  * @param {unknown} branchKey
  * @returns {string | null}
  */
 function publicBranchHomePath(organizationKey, branchKey) {
-  const home = publicChurchHomePath(organizationKey);
+  const norm = normalizeOrganizationKey(
+    String(organizationKey == null ? "" : organizationKey).trim().toLowerCase()
+  );
   const bKey = normalizeBranchKey(branchKey);
-  if (!home || !bKey) return null;
-  return `${home}/branches/${bKey}`;
+  if (!norm.ok || !bKey) return null;
+  return buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+    scope: { kind: "branch", branchKey: bKey },
+  });
 }
 
 /**
@@ -75,7 +86,17 @@ function publicBranchPagePath(organizationKey, branchKey, pageKey) {
     .toLowerCase();
   if (!key || key === "home") return home;
   if (!PUBLIC_PAGE_KEYS.includes(key)) return null;
-  return `${home}/${key}`;
+  const norm = normalizeOrganizationKey(
+    String(organizationKey == null ? "" : organizationKey).trim().toLowerCase()
+  );
+  const bKey = normalizeBranchKey(branchKey);
+  if (!norm.ok || !bKey) return null;
+  return buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+    pageKey: key,
+    scope: { kind: "branch", branchKey: bKey },
+  });
 }
 
 /**
@@ -160,7 +181,9 @@ function hqPreviewPagePath(pageKey) {
 }
 
 function hqWebsitePath() {
-  return "/hq/website";
+  return (
+    buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.BLESSBOARD }) || "/hq/website"
+  );
 }
 
 function hqDashboardPath() {
@@ -184,8 +207,13 @@ function hqWebsiteBranchBasePath(branchKey) {
  * @returns {string}
  */
 function hqWebsitePublishReviewPath(branchKey) {
-  const base = hqWebsiteBranchBasePath(branchKey);
-  return base ? `${base}/publish/review` : "/hq/website/publish/review";
+  const bKey = normalizeBranchKey(branchKey);
+  return (
+    buildPublicWebsitePublishPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      scope: bKey ? { kind: "branch", branchKey: bKey } : null,
+    }) || "/hq/website/publish/review"
+  );
 }
 
 /**
@@ -237,6 +265,7 @@ function hqBranchContentPagePath(branchKey, pageKey) {
 }
 
 module.exports = {
+  PUBLIC_PAGE_KEYS,
   publicChurchHomePath,
   publicChurchPagePath,
   publicBranchHomePath,

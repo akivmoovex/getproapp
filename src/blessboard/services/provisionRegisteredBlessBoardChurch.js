@@ -25,12 +25,16 @@ const churchProvision = require("./provisionBlessBoardChurch");
 const userCreate = require("./createBlessBoardUser");
 const roleAssign = require("./assignBlessBoardRole");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
+const { ACTION: LIFECYCLE_ACTION, recordLifecycleAudit } = require("../../platform/registration/lifecycleAudit");
 const { logRegistrationTrace } = require("./registrationTraceLog");
 const {
-  normalizeOrganizationKey,
-  resolveBaseOrganizationKey,
-  withOrganizationKeySuffix,
-} = require("./organizationKey");
+  allocateUniqueOrganizationKey,
+  assertOrganizationKeyAvailable,
+} = require("../../platform/organization/allocateUniqueOrganizationKey");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { generateInviteToken, INVITE_TTL_MS } = require("./inviteBlessBoardStaff");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
@@ -42,8 +46,17 @@ const {
 } = require("./normalizeChurchIdentity");
 const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
 const {
+  ACTION: ADMIN_IDENTITY_ACTION,
+  resolveBlessBoardRegistrationAdministrator,
+  extractPgDiagnostics,
+} = require("./resolveBlessBoardRegistrationAdministrator");
+const {
   growthTrialEndsAtIso,
 } = require("../../platform/time/addGrowthTrialDurationUtc");
+const {
+  inspectOrganizationProvisioningCompleteness,
+} = require("../../platform/registration/provisioningRecovery");
+const { mapBlessBoardInternalStage } = require("../../platform/registration/provisioningStages");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -55,6 +68,7 @@ const STATUS = Object.freeze({
   PROVISIONING_IN_PROGRESS: "provisioning_in_progress",
   RETRY_NOT_ALLOWED: "retry_not_allowed",
   DUPLICATE_EMAIL_REVIEW: "duplicate_email_review",
+  EXISTING_ACCOUNT: "existing_account",
   IDENTITY_CONFLICT: "identity_conflict",
   DUPLICATE_CHURCH_NAME: "duplicate_church_name",
   SLUG_UNAVAILABLE: "slug_unavailable",
@@ -62,6 +76,8 @@ const STATUS = Object.freeze({
   PLAN_CONFIGURATION_ERROR: "plan_configuration_error",
   DATABASE_CONFLICT: "database_conflict",
   DATABASE_UNAVAILABLE: "database_unavailable",
+  DEPLOYMENT_NOT_FOUND: "deployment_not_found",
+  ADMINISTRATOR_NOT_FOUND: "administrator_not_found",
   PROVISIONING_FAILED: "provisioning_failed",
   INTERNAL_ERROR: "internal_error",
 });
@@ -102,6 +118,12 @@ const ERROR_META = Object.freeze({
     severity: "info",
     publicMessage: "This registration needs review before it can continue.",
   },
+  [STATUS.EXISTING_ACCOUNT]: {
+    retryable: false,
+    severity: "info",
+    publicMessage:
+      "An account with this email already exists. Sign in to continue to your church workspace.",
+  },
   [STATUS.DUPLICATE_CHURCH_NAME]: {
     retryable: false,
     severity: "warn",
@@ -111,7 +133,7 @@ const ERROR_META = Object.freeze({
     retryable: false,
     severity: "warn",
     publicMessage:
-      "The administrator email is already linked to an account that cannot safely own this church.",
+      "The administrator email and phone belong to different existing accounts. Use matching contact details, or contact BlessBoard support.",
   },
   [STATUS.SLUG_UNAVAILABLE]: {
     retryable: true,
@@ -132,6 +154,17 @@ const ERROR_META = Object.freeze({
     retryable: true,
     severity: "warn",
     publicMessage: "A conflicting record prevented provisioning.",
+  },
+  [STATUS.ADMINISTRATOR_NOT_FOUND]: {
+    retryable: false,
+    severity: "error",
+    publicMessage:
+      "We could not finish creating your church workspace right now. Please try again shortly.",
+  },
+  [STATUS.DEPLOYMENT_NOT_FOUND]: {
+    retryable: true,
+    severity: "error",
+    publicMessage: "We could not finish creating your church workspace right now. Please try again shortly.",
   },
   [STATUS.DATABASE_UNAVAILABLE]: {
     retryable: true,
@@ -160,8 +193,9 @@ const PLAN_KEY_GROWTH = "growth";
 const PROVISIONABLE_PLAN_KEYS = Object.freeze([PLAN_KEY_FREE, PLAN_KEY_GROWTH]);
 /** @deprecated Use PLAN_KEY_FREE — retained for callers that imported PLAN_KEY historically via mapPlanLabel. */
 const PLAN_KEY = PLAN_KEY_FREE;
-const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
+const DEFAULT_DEPLOYMENT = "blessboard-org-staging";
 const HQ_BRANCH_KEY = "hq";
+const { resolveBaseBranchKey } = require("./branchKey");
 
 class OrchestratorError extends Error {
   /**
@@ -174,6 +208,14 @@ class OrchestratorError extends Error {
     this.name = "OrchestratorError";
     this.status = status;
     this.extra = extra || {};
+    if (extra && extra.diagnostics && typeof extra.diagnostics === "object") {
+      this.diagnostics = extra.diagnostics;
+    }
+    if (extra && extra.cause && typeof extra.cause === "object") {
+      this.cause = extra.cause;
+      const pg = extractPgDiagnostics(extra.cause);
+      this.diagnostics = { ...(this.diagnostics || {}), ...pg };
+    }
   }
 }
 
@@ -313,67 +355,6 @@ function buildSubscriptionAssignment(planKey, provisionedAt) {
 
 /**
  * @param {{ query: Function }} client
- * @param {string} organizationKey
- */
-async function assertOrganizationKeyAvailable(client, organizationKey) {
-  const r = await client.query(
-    `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-    [organizationKey]
-  );
-  if (r.rows[0]) {
-    throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
-  }
-}
-
-/**
- * Allocate a unique organization_key inside the provisioning transaction.
- * Prefer an exact operator-supplied key when available; otherwise slugify the
- * church name and resolve collisions with -2, -3, … suffixes.
- *
- * @param {{ query: Function }} client
- * @param {{ preferredKey?: string|null, churchName?: string|null, exactPreferred?: boolean }} input
- * @returns {Promise<string>}
- */
-async function allocateUniqueOrganizationKey(client, input) {
-  const preferred = String((input && input.preferredKey) || "").trim();
-  const churchName = String((input && input.churchName) || "").trim();
-  const exactPreferred = Boolean(input && input.exactPreferred && preferred);
-
-  if (exactPreferred) {
-    const keyNorm = normalizeOrganizationKey(preferred);
-    if (!keyNorm.ok) {
-      throw new OrchestratorError(
-        keyNorm.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
-        keyNorm.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
-      );
-    }
-    await assertOrganizationKeyAvailable(client, keyNorm.key);
-    return keyNorm.key;
-  }
-
-  const base = resolveBaseOrganizationKey(preferred || churchName);
-  if (!base.ok) {
-    throw new OrchestratorError(
-      base.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
-      base.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
-    );
-  }
-
-  for (let n = 1; n <= 200; n += 1) {
-    const candidateRaw = withOrganizationKeySuffix(base.key, n);
-    const candidate = normalizeOrganizationKey(candidateRaw);
-    if (!candidate.ok) continue;
-    const r = await client.query(
-      `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-      [candidate.key]
-    );
-    if (!r.rows[0]) return candidate.key;
-  }
-  throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
-}
-
-/**
- * @param {{ query: Function }} client
  * @param {string} churchId
  */
 async function ensureMinimalDraftPages(client, churchId) {
@@ -408,10 +389,20 @@ async function ensureDraftChurchSettings(client, fields) {
     (existing.primaryPhone && String(existing.primaryPhone).trim()) ||
     (fields.primaryPhone ? String(fields.primaryPhone).trim() : "") ||
     null;
+  const timezone =
+    (existing.defaultTimezone && String(existing.defaultTimezone).trim()) ||
+    (fields.defaultTimezone ? String(fields.defaultTimezone).trim() : "") ||
+    "Africa/Lusaka";
+  const country =
+    (existing.defaultCountryCode && String(existing.defaultCountryCode).trim()) ||
+    (fields.defaultCountryCode ? String(fields.defaultCountryCode).trim() : "") ||
+    null;
   if (
     email === existing.primaryEmail &&
     phone === existing.primaryPhone &&
-    existing.publicName
+    existing.publicName &&
+    timezone === existing.defaultTimezone &&
+    country === existing.defaultCountryCode
   ) {
     return;
   }
@@ -420,8 +411,8 @@ async function ensureDraftChurchSettings(client, fields) {
     denomination: existing.denomination,
     primaryEmail: email,
     primaryPhone: phone,
-    defaultTimezone: existing.defaultTimezone,
-    defaultCountryCode: existing.defaultCountryCode,
+    defaultTimezone: timezone,
+    defaultCountryCode: country,
     websiteStatus: existing.websiteStatus || "draft",
   });
 }
@@ -457,20 +448,48 @@ function extractProvisionErrorDiagnostics(err) {
   if (!err || typeof err !== "object") {
     return {
       errorName: null,
+      underlyingErrorClass: null,
       postgresCode: null,
       constraint: null,
       table: null,
       schema: null,
+      identityResolution: null,
+      emailMatched: null,
+      phoneMatched: null,
+      roleStatus: null,
     };
   }
+  const fromSelf = extractPgDiagnostics(err);
+  const fromCause = err.cause ? extractPgDiagnostics(err.cause) : {};
+  const nested =
+    err.diagnostics && typeof err.diagnostics === "object" ? err.diagnostics : {};
+  const extraDiag =
+    err.extra && err.extra.diagnostics && typeof err.extra.diagnostics === "object"
+      ? err.extra.diagnostics
+      : {};
+  const merged = { ...fromCause, ...fromSelf, ...extraDiag, ...nested };
   const pgCode =
-    err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code)) ? String(err.code) : null;
+    merged.postgresCode ||
+    (err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code)) ? String(err.code) : null);
   return {
     errorName: err.name != null ? String(err.name).slice(0, 80) : null,
+    underlyingErrorClass:
+      merged.underlyingErrorClass != null
+        ? String(merged.underlyingErrorClass).slice(0, 80)
+        : err.cause && err.cause.name
+          ? String(err.cause.name).slice(0, 80)
+          : null,
     postgresCode: pgCode,
-    constraint: err.constraint != null ? String(err.constraint).slice(0, 120) : null,
-    table: err.table != null ? String(err.table).slice(0, 120) : null,
-    schema: err.schema != null ? String(err.schema).slice(0, 64) : null,
+    constraint: merged.constraint != null ? String(merged.constraint).slice(0, 120) : null,
+    table: merged.table != null ? String(merged.table).slice(0, 120) : null,
+    schema: merged.schema != null ? String(merged.schema).slice(0, 64) : null,
+    identityResolution:
+      merged.identityResolution != null ? String(merged.identityResolution).slice(0, 80) : null,
+    emailMatched:
+      typeof merged.emailMatched === "boolean" ? merged.emailMatched : null,
+    phoneMatched:
+      typeof merged.phoneMatched === "boolean" ? merged.phoneMatched : null,
+    roleStatus: merged.roleStatus != null ? String(merged.roleStatus).slice(0, 80) : null,
   };
 }
 
@@ -493,6 +512,104 @@ function classifyExistingAdministratorIdentity(user) {
     status,
     reason: "identity_conflict",
   };
+}
+
+/**
+ * Prefer stable principal id for role assignment (phone-reuse may carry a different contact email).
+ * @param {{
+ *   application: object,
+ *   existingUser?: object|null,
+ *   administratorUserId?: string|null,
+ *   organizationKey: string,
+ *   roleKey: string,
+ *   churchKey: string,
+ *   branchKey?: string|null,
+ * }} opts
+ */
+function buildAdministratorRoleAssignInput(opts) {
+  const application = opts.application || {};
+  const existingUser = opts.existingUser || null;
+  const userId =
+    (opts.administratorUserId && String(opts.administratorUserId).trim()) ||
+    (existingUser && existingUser.id ? String(existingUser.id) : null) ||
+    null;
+  // Canonical principal id is the identity key. Email is contact/input only —
+  // never fall back to unmatched registration contact_email when userId is known.
+  const canonicalEmail =
+    (existingUser &&
+      (existingUser.email_normalized || existingUser.email_display || existingUser.email)) ||
+    null;
+  const email = userId
+    ? canonicalEmail
+    : canonicalEmail || application.contact_email || null;
+  const input = {
+    organizationKey: opts.organizationKey,
+    roleKey: opts.roleKey,
+    churchKey: opts.churchKey,
+  };
+  if (opts.branchKey) input.branchKey = opts.branchKey;
+  if (userId) input.userId = userId;
+  if (email) input.email = email;
+  return input;
+}
+
+/**
+ * Map role-assign failure to orchestrator status. user_not_found must not become
+ * database_conflict unless structured PG conflict metadata is present.
+ * @param {object} roleResult
+ * @returns {string}
+ */
+function mapRoleAssignmentFailureStatus(roleResult) {
+  const roleStatus = roleResult && roleResult.status ? String(roleResult.status) : "";
+  const diag =
+    roleResult && roleResult.diagnostics && typeof roleResult.diagnostics === "object"
+      ? roleResult.diagnostics
+      : {};
+  const pgCode = diag.postgresCode != null ? String(diag.postgresCode) : "";
+  if (pgCode === "23505" || (pgCode && /^23/.test(pgCode))) {
+    return STATUS.DATABASE_CONFLICT;
+  }
+  if (roleStatus === "user_not_found") {
+    return STATUS.ADMINISTRATOR_NOT_FOUND;
+  }
+  if (
+    roleStatus === "organization_not_found" ||
+    roleStatus === "church_not_found" ||
+    roleStatus === "branch_not_found" ||
+    roleStatus === "invalid_scope" ||
+    roleStatus === "invalid_input" ||
+    String(roleStatus).startsWith("invalid_input")
+  ) {
+    return STATUS.INTERNAL_ERROR;
+  }
+  if (roleStatus === "role_conflict") {
+    return STATUS.PROVISIONING_FAILED;
+  }
+  // Default: provisioning failure — not a DB unique conflict.
+  return STATUS.PROVISIONING_FAILED;
+}
+
+/**
+ * @param {object} roleResult
+ * @param {object} identityResolutionDiagnostics
+ */
+function throwRoleAssignmentFailure(roleResult, identityResolutionDiagnostics) {
+  const roleDiag =
+    roleResult && roleResult.diagnostics && typeof roleResult.diagnostics === "object"
+      ? roleResult.diagnostics
+      : {};
+  throw new OrchestratorError(
+    mapRoleAssignmentFailureStatus(roleResult),
+    (roleResult && (roleResult.message || roleResult.status)) || "role_assignment_failed",
+    {
+      diagnostics: {
+        ...identityResolutionDiagnostics,
+        roleStatus: (roleResult && roleResult.status) || null,
+        ...roleDiag,
+      },
+      cause: roleResult && roleResult.cause ? roleResult.cause : undefined,
+    }
+  );
 }
 
 /**
@@ -546,16 +663,37 @@ async function writeSuccessAudits(client, opts) {
       category: "registration",
       entity_key: opts.organizationKey,
       product_key: PRODUCT_KEY,
+      product_code: PRODUCT_KEY,
       plan_key: opts.planKey || PLAN_KEY_FREE,
       request_id: opts.requestId ? String(opts.requestId).slice(0, 120) : undefined,
       actor_type: opts.actorType ? String(opts.actorType).slice(0, 64) : "system",
       source: opts.source ? String(opts.source).slice(0, 64) : "orchestrator",
       status: "ok",
+      application_id: opts.applicationId || undefined,
     },
   };
   await recordAuditEventSafe(client, {
     ...base,
-    actionKey: "registration.provisioning_completed",
+    actionKey: LIFECYCLE_ACTION.APPROVED,
+    entityType: "registration_application",
+    entityId: opts.applicationId || opts.organizationId,
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.ADMIN_ROLE_ASSIGNED,
+    entityType: "user_role_assignment",
+    entityId: opts.administratorUserId || opts.invitationId || opts.organizationId,
+    metadata: { ...base.metadata, entity_key: "church_hq_admin" },
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.WEBSITE_INITIALIZED,
+    entityType: "website_instance",
+    entityId: opts.organizationId,
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.PROVISIONING_COMPLETED,
     entityType: "organization",
     entityId: opts.organizationId,
   });
@@ -614,6 +752,7 @@ async function loadProvisionedRecords(client, application) {
  *   manageTransaction?: boolean,
  *   networkOrganizationShell?: boolean,
  *   administratorViaInvitation?: boolean,
+ *   allowMultiOrgIdentityReuse?: boolean,
  * }} [options]
  */
 async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
@@ -630,10 +769,17 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   const allowRetry = Boolean(options && options.allowRetry);
   const networkOrganizationShell = Boolean(options && options.networkOrganizationShell);
   const administratorViaInvitation = Boolean(options && options.administratorViaInvitation);
-  const dataEnvironment = String(actorContext.dataEnvironment || "testing")
+  const allowMultiOrgIdentityReuse = Boolean(options && options.allowMultiOrgIdentityReuse);
+  const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
     .trim()
     .toLowerCase();
-  const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
+  const dataEnvironment = String(
+    actorContext.dataEnvironment ||
+      require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(
+        actorContext.env,
+        { deploymentCode }
+      )
+  )
     .trim()
     .toLowerCase();
   const invitingActorUserId =
@@ -688,31 +834,27 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         application.organization_id
       ) {
         provisioningStage = "already_provisioned";
-        const records = await loadProvisionedRecords(client, application);
-        return { alreadyProvisioned: true, records };
+        const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+          productCode: "blessboard",
+          organizationId: application.organization_id,
+          application,
+        });
+        if (completeness.complete) {
+          const records = await loadProvisionedRecords(client, application);
+          return { alreadyProvisioned: true, records };
+        }
       }
 
       if (application.provisioning_status === "provisioning") {
         throw new OrchestratorError(STATUS.PROVISIONING_IN_PROGRESS, "provisioning_in_progress");
       }
 
-      // Admin invitation approval may proceed from duplicate_review after explicit approve.
-      // Self-service password provisioning still holds duplicate_review for operator review.
-      if (application.application_status === "duplicate_review" && !administratorViaInvitation) {
+      // review_required holds self-service provisioning until operator / invitation approve.
+      if (application.application_status === "review_required" && !administratorViaInvitation) {
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
 
-      if (
-        application.application_status === "rejected" ||
-        application.application_status === "cancelled"
-      ) {
-        throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
-      }
-
-      if (
-        application.application_status === "closed" &&
-        application.provisioning_status !== "provisioned"
-      ) {
+      if (application.application_status === "rejected") {
         throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
       }
 
@@ -721,13 +863,13 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       const eligibleStatuses = administratorViaInvitation
-        ? ["submitted", "duplicate_review"]
-        : ["submitted"];
+        ? ["submitted", "review_required", "provisioning"]
+        : ["submitted", "provisioning"];
       if (
         !eligibleStatuses.includes(String(application.application_status || "")) &&
         !(application.provisioning_status === "provisioning_failed" && allowRetry)
       ) {
-        // Allow submitted (+ duplicate_review for admin invitation) + failed-with-retry.
+        // Allow submitted (+ review_required for admin invitation) + failed-with-retry.
         if (application.provisioning_status !== "not_started") {
           throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
         }
@@ -752,28 +894,169 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const preferredKey = requestedOrganizationKey
         ? String(requestedOrganizationKey).trim()
         : "";
-      const organizationKey = await allocateUniqueOrganizationKey(client, {
-        preferredKey: preferredKey || null,
-        churchName: application.church_name,
-        // Operator-supplied keys must be exact; auto church-name keys collide with -2/-3.
-        exactPreferred: Boolean(preferredKey),
-      });
+      let organizationKey = null;
+      if (application.organization_id) {
+        const existingOrg = await client.query(
+          `SELECT organization_key FROM platform.organizations WHERE id = $1 LIMIT 1`,
+          [application.organization_id]
+        );
+        if (existingOrg.rows[0] && existingOrg.rows[0].organization_key) {
+          organizationKey = existingOrg.rows[0].organization_key;
+        }
+      }
+      if (!organizationKey) {
+        try {
+          organizationKey = await allocateUniqueOrganizationKey(client, {
+            preferredKey: preferredKey || null,
+            churchName: application.church_name,
+            exactPreferred:
+              Boolean(preferredKey) &&
+              String((actorContext && actorContext.type) || "") !== "public_self_registration",
+          });
+        } catch (keyErr) {
+          if (keyErr && keyErr.code === "slug_unavailable") {
+            throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
+          }
+          throw keyErr;
+        }
+      }
 
       provisioningStage = "resolve_administrator_identity";
       const emailNormalized = normalizeEmail(application.contact_email);
-      if (!emailNormalized) {
+      if (!emailNormalized && !administratorViaInvitation) {
         throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorEmail");
       }
-      const existingUser = await authRepo.findUserByEmail(client, emailNormalized);
-      if (existingUser && !administratorViaInvitation) {
-        duplicateReview = true;
-        throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
-      }
-      if (existingUser && administratorViaInvitation) {
-        const identity = classifyExistingAdministratorIdentity(existingUser);
-        if (!identity.ok) {
-          throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict");
+      if (!emailNormalized && administratorViaInvitation) {
+        // Invitation may be phone-first; email still preferred for role assignment helpers.
+        if (!application.contact_phone_normalized) {
+          throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorContact");
         }
+      }
+      const resumeExistingOrg = Boolean(application.organization_id);
+      let reuseExistingUserForNewOrg = false;
+      let existingUser = null;
+      let identityResolutionDiagnostics = {
+        identityResolution: null,
+        emailMatched: false,
+        phoneMatched: false,
+      };
+
+      const resolvedAdmin = await resolveBlessBoardRegistrationAdministrator(client, {
+        email: emailNormalized || application.contact_email,
+        phoneNormalized: application.contact_phone_normalized || null,
+        churchName: application.church_name,
+        country: application.country,
+        organizationKey,
+        applicationOrganizationId: application.organization_id,
+        administratorPassword: administratorViaInvitation ? null : administratorPassword,
+        administratorViaInvitation,
+        allowMultiOrgIdentityReuse,
+      });
+      identityResolutionDiagnostics = {
+        ...(resolvedAdmin.diagnostics || {}),
+        emailMatched: Boolean(resolvedAdmin.emailMatched),
+        phoneMatched: Boolean(resolvedAdmin.phoneMatched),
+      };
+      existingUser = resolvedAdmin.user || null;
+
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_SUSPENDED) {
+        if (administratorViaInvitation) {
+          throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict", {
+            diagnostics: identityResolutionDiagnostics,
+          });
+        }
+        duplicateReview = true;
+        throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT) {
+        throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT) {
+        throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.ALREADY_PROVISIONED) {
+        const orgId =
+          resolvedAdmin.organizationId ||
+          application.organization_id ||
+          null;
+        if (orgId) {
+          if (!application.organization_id || String(application.organization_id) !== String(orgId)) {
+            await appRepo.updateApplicationProvisioningState(client, applicationId, {
+              organizationId: orgId,
+            });
+            application.organization_id = orgId;
+          }
+          // Inspect against the existing tenant, not this application's not_started status.
+          const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+            productCode: "blessboard",
+            organizationId: orgId,
+            application: {
+              ...application,
+              organization_id: orgId,
+              provisioning_status: "provisioned",
+            },
+          });
+          const stages = completeness.stages || {};
+          const tenantReady =
+            completeness.complete ||
+            Boolean(
+              stages.organization &&
+                stages.administrator &&
+                stages.role_assignment &&
+                stages.facility_hq
+            );
+          if (tenantReady) {
+            if (application.provisioning_status !== "provisioned") {
+              if (application.provisioning_status === "provisioning_failed" && allowRetry) {
+                await recordLifecycleAudit(client, {
+                  deploymentCode,
+                  organizationId: orgId,
+                  applicationId,
+                  entityId: applicationId,
+                  productCode: PRODUCT_KEY,
+                  actorType: actorContext.type || "system",
+                  source: actorContext.source || "orchestrator",
+                  actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+                  entityKey: organizationKey,
+                  actionKey: LIFECYCLE_ACTION.PROVISIONING_RETRY,
+                  retry: true,
+                  provisioningStatus: "provisioning",
+                });
+              }
+              await appRepo.updateApplicationProvisioningState(client, applicationId, {
+                applicationStatus: "active",
+                provisioningStatus: "provisioned",
+                organizationId: orgId,
+                provisionedAt: new Date().toISOString(),
+                clearFailureMetadata: true,
+
+              });
+              application.provisioning_status = "provisioned";
+              application.application_status = "active";
+              application.organization_id = orgId;
+            }
+            const records = await loadProvisionedRecords(client, application);
+            if (resolvedAdmin.userId && !records.administratorUserId) {
+              records.administratorUserId = resolvedAdmin.userId;
+            }
+            return { alreadyProvisioned: true, records };
+          }
+          // Incomplete same-church tenant: resume and attach roles to the existing identity.
+          reuseExistingUserForNewOrg = true;
+        } else {
+          throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account", {
+            diagnostics: identityResolutionDiagnostics,
+          });
+        }
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REUSE) {
+        reuseExistingUserForNewOrg = true;
       }
 
       const provisionedAt =
@@ -833,21 +1116,79 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         { manageTransaction: false }
       );
       if (!tenant.ok) {
+        const tenantStatus = String(tenant.status || "");
         throw new OrchestratorError(
-          tenant.status === "organization_conflict" ? STATUS.SLUG_UNAVAILABLE : STATUS.DATABASE_CONFLICT,
+          tenantStatus === "organization_conflict"
+            ? STATUS.SLUG_UNAVAILABLE
+            : tenantStatus === "deployment_not_found"
+              ? STATUS.DEPLOYMENT_NOT_FOUND
+              : tenantStatus === "inactive_deployment"
+                ? STATUS.DEPLOYMENT_NOT_FOUND
+                : STATUS.DATABASE_CONFLICT,
           tenant.message || tenant.status
         );
       }
       provisioningStage = "organization_created";
+      {
+        const createdOrgId = tenant.records && tenant.records.organization && tenant.records.organization.id;
+        if (createdOrgId) {
+          const lifecycleBase = {
+            deploymentCode,
+            organizationId: createdOrgId,
+            applicationId,
+            entityId: applicationId,
+            productCode: PRODUCT_KEY,
+            actorType: actorContext.type || "system",
+            source: actorContext.source || "orchestrator",
+            actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+            entityKey: organizationKey,
+          };
+          if (resumeExistingOrg) {
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_RETRY,
+              retry: true,
+              provisioningStatus: "provisioning",
+            });
+          } else {
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.ORGANIZATION_CREATED,
+              entityType: "organization",
+              entityId: createdOrgId,
+            });
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_STARTED,
+              provisioningStatus: "provisioning",
+            });
+          }
+        }
+      }
       provisioningStage = "organization_key_created";
 
-      const hqNamePrepared = prepareBranchDisplayName(
-        application.branch_name || "Headquarters",
-        { field: "branch_name", required: true, emptyMessage: "Please enter a branch name." }
-      );
-      const hqBranchDisplayName = hqNamePrepared.ok
-        ? hqNamePrepared.display
-        : "Headquarters";
+      const hqNamePrepared = prepareBranchDisplayName(application.branch_name, {
+        field: "branch_name",
+        required: true,
+        emptyMessage: "Please enter a branch name.",
+      });
+      if (!hqNamePrepared.ok) {
+        throw new OrchestratorError(
+          STATUS.INVALID_INPUT,
+          hqNamePrepared.message || "Please enter a branch name."
+        );
+      }
+      const hqBranchDisplayName = hqNamePrepared.display;
+      const branchKeyResult = resolveBaseBranchKey(hqBranchDisplayName);
+      if (!branchKeyResult.ok) {
+        throw new OrchestratorError(
+          STATUS.INVALID_INPUT,
+          branchKeyResult.reason === "reserved_key"
+            ? "That branch URL is reserved. Please choose a different branch name."
+            : "Please enter a branch name we can use for your website URL."
+        );
+      }
+      const registrationBranchKey = branchKeyResult.key;
 
       provisioningStage = "provision_church_branch";
       const church = await churchProvision.provisionBlessBoardChurch(
@@ -858,9 +1199,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           displayName,
           legalName: null,
           dataEnvironment,
-          hqBranchKey: HQ_BRANCH_KEY,
+          hqBranchKey: registrationBranchKey,
           hqBranchDisplayName,
-          timezone: null,
+          timezone: "Africa/Lusaka",
           countryCode,
           nameUniquenessKey,
         },
@@ -891,11 +1232,13 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         let adminUser = existingUser;
         if (!adminUser) {
           adminUser = await authRepo.insertUser(client, {
-            emailNormalized,
-            emailDisplay: String(application.contact_email || emailNormalized).slice(0, 254),
+            emailNormalized: emailNormalized || null,
+            emailDisplay: String(application.contact_email || emailNormalized || "").slice(0, 254) || null,
             passwordHash: null,
             status: "invited",
             displayName: adminDisplayName.slice(0, 200),
+            phoneNormalized: application.contact_phone_normalized || null,
+            phoneDisplay: application.contact_phone || null,
           });
         } else {
           administratorLinkedExisting = true;
@@ -903,7 +1246,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           // Never reset or overwrite an existing password hash.
         }
         if (!adminUser || !adminUser.id) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "administrator_prepare_failed");
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "administrator_prepare_failed", {
+            diagnostics: identityResolutionDiagnostics,
+          });
         }
         administratorUserId = String(adminUser.id);
 
@@ -916,31 +1261,35 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           provisioningStage = "assign_administrator_roles";
           const hqRole = await roleAssign.assignBlessBoardRole(
             client,
-            {
-              email: application.contact_email,
+            buildAdministratorRoleAssignInput({
+              application,
+              existingUser: adminUser,
+              administratorUserId,
               organizationKey,
               roleKey: "church_hq_admin",
               churchKey: organizationKey,
-            },
+            }),
             { manageTransaction: false }
           );
           if (!hqRole.ok) {
-            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+            throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
           }
 
           const branchRole = await roleAssign.assignBlessBoardRole(
             client,
-            {
-              email: application.contact_email,
+            buildAdministratorRoleAssignInput({
+              application,
+              existingUser: adminUser,
+              administratorUserId,
               organizationKey,
               roleKey: "branch_admin",
               churchKey: organizationKey,
-              branchKey: HQ_BRANCH_KEY,
-            },
+              branchKey: registrationBranchKey,
+            }),
             { manageTransaction: false }
           );
           if (!branchRole.ok) {
-            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+            throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
           }
         }
 
@@ -991,6 +1340,44 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             reason_code: administratorLinkedExisting ? "existing_user_linked" : "invited_user_created",
           },
         });
+      } else if (existingUser && (resumeExistingOrg || reuseExistingUserForNewOrg)) {
+        provisioningStage = "create_administrator_user";
+        administratorUserId = String(existingUser.id);
+        administratorLinkedExisting = true;
+        administratorWasActive = String(existingUser.status) === "active";
+        provisioningStage = "assign_administrator_roles";
+        const hqRole = await roleAssign.assignBlessBoardRole(
+          client,
+          buildAdministratorRoleAssignInput({
+            application,
+            existingUser,
+            administratorUserId,
+            organizationKey,
+            roleKey: "church_hq_admin",
+            churchKey: organizationKey,
+          }),
+          { manageTransaction: false }
+        );
+        if (!hqRole.ok) {
+          throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
+        }
+
+        const branchRole = await roleAssign.assignBlessBoardRole(
+          client,
+          buildAdministratorRoleAssignInput({
+            application,
+            existingUser,
+            administratorUserId,
+            organizationKey,
+            roleKey: "branch_admin",
+            churchKey: organizationKey,
+            branchKey: registrationBranchKey,
+          }),
+          { manageTransaction: false }
+        );
+        if (!branchRole.ok) {
+          throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
+        }
       } else {
         provisioningStage = "create_administrator_user";
         const user = await userCreate.createBlessBoardUser(
@@ -999,45 +1386,120 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             email: application.contact_email,
             displayName: adminDisplayName,
             passwordHash,
+            passwordForVerify: administratorPassword,
+            phoneNormalized: application.contact_phone_normalized || null,
+            phoneDisplay: application.contact_phone || null,
           },
           { manageTransaction: false }
         );
         if (!user.ok) {
-          throw new OrchestratorError(
-            user.status === "identity_conflict" ? STATUS.DUPLICATE_EMAIL_REVIEW : STATUS.DATABASE_CONFLICT,
-            user.message || user.status
-          );
+          const createDiag = {
+            ...identityResolutionDiagnostics,
+            ...(user.diagnostics || {}),
+          };
+          // Recoverable: identity appeared between resolve and insert — reuse when safe.
+          if (
+            user.status === "identity_conflict" ||
+            user.status === "transaction_error"
+          ) {
+            const recovered = await resolveBlessBoardRegistrationAdministrator(client, {
+              email: emailNormalized,
+              phoneNormalized: application.contact_phone_normalized || null,
+              churchName: application.church_name,
+              country: application.country,
+              organizationKey,
+              applicationOrganizationId: application.organization_id,
+              administratorPassword,
+              administratorViaInvitation: false,
+              allowMultiOrgIdentityReuse,
+            });
+            if (
+              recovered.ok &&
+              recovered.action === ADMIN_IDENTITY_ACTION.REUSE &&
+              recovered.userId
+            ) {
+              administratorUserId = String(recovered.userId);
+              administratorLinkedExisting = true;
+              administratorWasActive =
+                recovered.user && String(recovered.user.status) === "active";
+              identityResolutionDiagnostics = {
+                ...createDiag,
+                ...(recovered.diagnostics || {}),
+                identityResolution: "reuse_after_create_conflict",
+              };
+            } else if (
+              recovered.ok &&
+              recovered.action === ADMIN_IDENTITY_ACTION.ALREADY_PROVISIONED &&
+              recovered.organizationId
+            ) {
+              application.organization_id = recovered.organizationId;
+              const records = await loadProvisionedRecords(client, {
+                ...application,
+                organization_id: recovered.organizationId,
+                provisioning_status: "provisioned",
+              });
+              return { alreadyProvisioned: true, records };
+            } else {
+              throw new OrchestratorError(
+                recovered.action === ADMIN_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT
+                  ? STATUS.IDENTITY_CONFLICT
+                  : user.status === "identity_conflict"
+                    ? STATUS.EXISTING_ACCOUNT
+                    : STATUS.DATABASE_CONFLICT,
+                recovered.reason || user.message || user.status,
+                {
+                  diagnostics: {
+                    ...createDiag,
+                    ...(recovered.diagnostics || {}),
+                  },
+                }
+              );
+            }
+          } else {
+            throw new OrchestratorError(
+              STATUS.DATABASE_CONFLICT,
+              user.message || user.status,
+              { diagnostics: createDiag }
+            );
+          }
+        } else {
+          administratorUserId = String(user.user.id);
+          if (user.status === "already_exists") {
+            administratorLinkedExisting = true;
+            administratorWasActive = true;
+          }
         }
-        administratorUserId = String(user.user.id);
 
         provisioningStage = "assign_administrator_roles";
         const hqRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email,
+          buildAdministratorRoleAssignInput({
+            application,
+            administratorUserId,
             organizationKey,
             roleKey: "church_hq_admin",
             churchKey: organizationKey,
-          },
+          }),
           { manageTransaction: false }
         );
         if (!hqRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+          throwRoleAssignmentFailure(hqRole, identityResolutionDiagnostics);
         }
 
         const branchRole = await roleAssign.assignBlessBoardRole(
           client,
-          {
-            email: application.contact_email,
+          buildAdministratorRoleAssignInput({
+            application,
+            administratorUserId,
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
-            branchKey: HQ_BRANCH_KEY,
-          },
+            branchKey: registrationBranchKey,
+          }),
           { manageTransaction: false }
         );
         if (!branchRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+          throwRoleAssignmentFailure(branchRole, identityResolutionDiagnostics);
         }
       }
 
@@ -1052,6 +1514,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         publicName: displayName,
         primaryEmail: application.contact_email,
         primaryPhone: application.contact_phone,
+        defaultTimezone: "Africa/Lusaka",
+        defaultCountryCode: countryCode,
       });
       provisioningStage = "default_pages_seeded";
 
@@ -1061,7 +1525,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         applicationId,
       });
 
-      provisioningStage = "website_published";
+      provisioningStage = "website_initialized";
       const {
         publishInitialFoundationWebsite,
       } = require("./churchWebsitePublishService");
@@ -1070,9 +1534,14 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         organizationId,
         organizationKey,
         publicName: displayName,
+        primaryEmail: application.contact_email || null,
+        primaryPhone: application.contact_phone || null,
+        city: application.city || null,
+        address: application.city || null,
         actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
         env: actorContext.env || process.env,
         source: "registration_provision",
+        publish: true,
       });
       if (!initialPublish || !initialPublish.ok) {
         throw new OrchestratorError(
@@ -1081,18 +1550,22 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       provisioningStage = "public_route_verified";
-      if (!initialPublish.publicPath || initialPublish.publicPath !== `/c/${organizationKey}`) {
+      const expectedPublicPath = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey,
+      });
+      if (!initialPublish.publicPath || initialPublish.publicPath !== expectedPublicPath) {
         throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "public_route_unverified");
       }
 
       provisioningStage = "close_application";
       const closed = await appRepo.updateApplicationProvisioningState(client, applicationId, {
-        applicationStatus: "closed",
+        applicationStatus: "active",
         provisioningStatus: "provisioned",
         organizationId,
         provisionedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
-        // Compatibility: keep dormant list/count helpers coherent until legacy status is dropped.
+        // Legacy status column CHECK: pending | contacted | closed.
         legacyStatus: "closed",
       });
 
@@ -1108,6 +1581,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         actorType: actorContext.type || "system",
         source: actorContext.source || "orchestrator",
         planKey,
+        applicationId,
+        administratorUserId,
+        invitationId,
       });
 
       provisioningStage = "committed";
@@ -1173,7 +1649,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
     if (err && err.status === STATUS.DUPLICATE_EMAIL_REVIEW && duplicateReview) {
       // Duplicate review was committed inside the outer TX before throw — TX rolls back!
-      // Must persist duplicate_review AFTER rollback.
+      // Must persist review_required AFTER rollback.
       logRegistrationTrace(
         null,
         {
@@ -1192,7 +1668,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       );
       try {
         await persistApplicationOutcome(db, applicationId, {
-          applicationStatus: "duplicate_review",
+          applicationStatus: "review_required",
           provisioningStatus: "not_started",
           clearFailureMetadata: true,
         });
@@ -1216,6 +1692,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         err.status === STATUS.PLAN_CONFIGURATION_ERROR ||
         err.status === STATUS.INVALID_INPUT ||
         err.status === STATUS.DUPLICATE_EMAIL_REVIEW ||
+        err.status === STATUS.EXISTING_ACCOUNT ||
+        err.status === STATUS.DUPLICATE_CHURCH_NAME ||
         err.status === STATUS.IDENTITY_CONFLICT
       ) {
         // No tenant writes expected (or admin identity conflict before tenant writes);
@@ -1236,7 +1714,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           },
           { force: true }
         );
-        return fail(err.status, err.message);
+        return fail(err.status, err.message, {
+          provisioningStage,
+          failedStage: provisioningStage,
+          rootStatus: err.status,
+        });
       }
 
       logRegistrationTrace(
@@ -1263,7 +1745,37 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           provisioningFailedAt: new Date().toISOString(),
           provisioningErrorCode: String(failureCode).slice(0, 120),
           provisioningErrorDetail: failureDetail.slice(0, 2000),
+          lastProvisionStage: mapBlessBoardInternalStage(provisioningStage),
         });
+        try {
+          const failedApp = await appRepo.findApplicationById(db, applicationId);
+          if (failedApp && failedApp.organization_id) {
+            await recordLifecycleAudit(db, {
+              deploymentCode,
+              organizationId: failedApp.organization_id,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_FAILED,
+              outcome: "failure",
+              applicationId,
+              entityId: applicationId,
+              productCode: PRODUCT_KEY,
+              actorType: (actorContext && actorContext.type) || "system",
+              source: (actorContext && actorContext.source) || "orchestrator",
+              actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+              failedStage: mapBlessBoardInternalStage(provisioningStage),
+              reasonCode: String(failureCode).slice(0, 120),
+              provisioningStatus: "provisioning_failed",
+            });
+          }
+          await appRepo.updateApplicationRiskReviewState(db, applicationId, {
+            reviewEvent: {
+              at: new Date().toISOString(),
+              action: "provisioning_failed",
+              reason_codes: [String(failureCode).slice(0, 40)],
+            },
+          });
+        } catch {
+          /* best-effort failure trail */
+        }
       } catch (persistErr) {
         logRegistrationTrace(
           null,
@@ -1283,20 +1795,26 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       return fail(
-        failureCode === STATUS.DUPLICATE_EMAIL_REVIEW || failureCode === STATUS.IDENTITY_CONFLICT
+        failureCode === STATUS.DUPLICATE_EMAIL_REVIEW ||
+          failureCode === STATUS.EXISTING_ACCOUNT ||
+          failureCode === STATUS.IDENTITY_CONFLICT ||
+          failureCode === STATUS.DEPLOYMENT_NOT_FOUND
           ? failureCode
           : STATUS.PROVISIONING_FAILED,
         failureDetail,
         {
           rootStatus: failureCode,
           provisioningStage,
+          failedStage: provisioningStage,
         }
       );
     }
 
     failureDetail = sanitizeErrorDetail(err && err.message);
     const pgCode = diagnostics.postgresCode;
-    const schemaMismatch = pgCode === "42703" || pgCode === "42P01";
+    // DBCL08 D5: registration schema proven on fresh/QA/production — do not soft-map
+    // 42703 column-lag to DATABASE_CONFLICT. Keep 42P01 (undefined_table) only.
+    const schemaMismatch = pgCode === "42P01";
     failureCode = schemaMismatch ? STATUS.DATABASE_CONFLICT : STATUS.INTERNAL_ERROR;
     logRegistrationTrace(
       null,
@@ -1321,6 +1839,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisioningFailedAt: new Date().toISOString(),
         provisioningErrorCode: String(failureCode).slice(0, 120),
         provisioningErrorDetail: failureDetail.slice(0, 2000),
+        lastProvisionStage: mapBlessBoardInternalStage(provisioningStage),
       });
     } catch (persistErr) {
       logRegistrationTrace(
@@ -1381,6 +1900,8 @@ module.exports = {
   validatePlanCatalogueForProvision,
   buildSubscriptionAssignment,
   classifyExistingAdministratorIdentity,
+  buildAdministratorRoleAssignInput,
+  mapRoleAssignmentFailureStatus,
   extractProvisionErrorDiagnostics,
   allocateUniqueOrganizationKey,
   assertOrganizationKeyAvailable,

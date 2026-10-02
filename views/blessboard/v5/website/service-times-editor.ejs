@@ -267,14 +267,43 @@
   }
 
   if (form) {
-    form.addEventListener("submit", function () {
-      if (saving) return false;
+    var requestedAction = "save_draft";
+    Array.prototype.forEach.call(form.querySelectorAll("[data-bb-service-times-save]"), function (btn) {
+      btn.addEventListener("click", function () {
+        requestedAction = String(btn.value || "save_draft");
+      });
+    });
+    form.addEventListener("submit", function (event) {
+      if (saving) {
+        event.preventDefault();
+        return false;
+      }
       saving = true;
       syncSortOrders();
+
+      // Disabled submit buttons are omitted from form serialization. Preserve
+      // the clicked action before disabling controls so Save and publish does
+      // not silently fall back to save_draft on the server.
+      var submitter = event.submitter;
+      var actionValue =
+        submitter && submitter.name === "action" && submitter.value
+          ? String(submitter.value)
+          : requestedAction;
+      var actionInput = form.querySelector("[data-bb-service-times-action]");
+      if (!actionInput) {
+        actionInput = document.createElement("input");
+        actionInput.type = "hidden";
+        actionInput.name = "action";
+        actionInput.setAttribute("data-bb-service-times-action", "1");
+        form.appendChild(actionInput);
+      }
+      actionInput.value = actionValue || "save_draft";
+
       Array.prototype.forEach.call(form.querySelectorAll("[data-bb-service-times-save]"), function (btn) {
         btn.disabled = true;
         btn.setAttribute("aria-busy", "true");
       });
+      return true;
     });
   }
 

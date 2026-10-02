@@ -14,7 +14,7 @@ const {
   THIRD_PARTY_COSTS_NOTE,
 } = require("../../church/platformPricingContent");
 const { PLATFORM_FAQ_ITEMS } = require("../../church/platformFaqContent");
-const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+const { publicBranchHomePath } = require("../urls/churchUrlHelper");
 
 const SAFE_FAQ_IDS = new Set([
   "what-is-blessboard",
@@ -51,7 +51,11 @@ function buildApexPricingFaq() {
 
 function mapDirectoryVisitUrl(item) {
   if (!item || !item.slug) return null;
-  return publicChurchHomePath(item.slug);
+  const branchKey = item.preview_branch_slug || item.branch_slug;
+  if (branchKey) {
+    return publicBranchHomePath(item.slug, branchKey);
+  }
+  return publicBranchHomePath(item.slug, "hq");
 }
 
 function mapDirectoryItems(items) {

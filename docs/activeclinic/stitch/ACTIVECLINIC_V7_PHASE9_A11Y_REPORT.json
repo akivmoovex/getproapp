@@ -1,0 +1,173 @@
+{
+  "generated_at": "2026-08-12T11:20:00.000Z",
+  "verdict": "PHASE9_COMPLETE_HIGH_BLOCKERS_ZERO",
+  "target": "WCAG 2.2 AA where practical",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false
+  },
+  "asset_version": "v7-parity-13",
+  "high_severity_accessibility_blockers": {
+    "before": 8,
+    "after": 0,
+    "required": 0
+  },
+  "counts": {
+    "high_before": 8,
+    "high_fixed": 8,
+    "medium_fixed": 8,
+    "low_noted": 3,
+    "remaining_non_blocking": 5
+  },
+  "issues_before": {
+    "high": [
+      {
+        "id": "H1",
+        "area": "PhoneField",
+        "detail": "Country picker lacked dialog semantics, Tab trap, required/error association; options used outline:none."
+      },
+      {
+        "id": "H2",
+        "area": "Forms",
+        "detail": "Clinic registration and booking patient validation errors were not associated with controls."
+      },
+      {
+        "id": "H3",
+        "area": "Contrast",
+        "detail": "Public --acp-muted #6e797a and app --ac-text-subtle #94a3b8 failed AA on white."
+      },
+      {
+        "id": "H4",
+        "area": "Booking",
+        "detail": "Compact stepper used aria-hidden while visible on mobile."
+      },
+      {
+        "id": "H5",
+        "area": "Diagnostics",
+        "detail": "Orphan labels on static text; lab result components lacked for/id."
+      },
+      {
+        "id": "H6",
+        "area": "Nav",
+        "detail": "Platform aria-current was HTML-escaped; clinics regex matched register."
+      },
+      {
+        "id": "H7",
+        "area": "Focus",
+        "detail": "Public nav and directory filter drawers had no Tab trap."
+      },
+      {
+        "id": "H8",
+        "area": "Auth",
+        "detail": "Duplicate data-ac-loading submit handler could preventDefault and block submit."
+      }
+    ],
+    "medium": [
+      "Tenant header lacked aria-current",
+      "Many POST forms lacked loading announcement",
+      "Auth skip said Skip to sign-in form",
+      "Table headers often lacked scope",
+      "Patient required fields lacked aria-required",
+      "Directory location filters not in a fieldset",
+      "Inconsistent :focus-visible on form controls",
+      "Steppers and bottom nav did not mark current item"
+    ]
+  },
+  "fixed": [
+    "PhoneField dialog/listbox, trap, required/error/hint association, focus-visible",
+    "Registration and booking patient aria-describedby errors",
+    "Muted token contrast AA",
+    "Booking stepper announced; aria-current=step",
+    "Diagnostics labels",
+    "Unescaped platform/tenant aria-current=page",
+    "Public drawer and filter Tab trap + return focus",
+    "Single ac-a11y.js loading handler + live regions",
+    "data-ac-loading on priority pharmacy/billing/appointment/booking/patient POSTs",
+    "Auth skip: Skip to content",
+    "Table header scope via ac-a11y.js",
+    "Directory location fieldset"
+  ],
+  "remaining": [
+    "No automated keyboard/AT driver in repo tooling — contracts are HTML/CSS plus HTTP smoke",
+    "Some inline one-click approve/reject POSTs omit data-ac-loading",
+    "Secondary report/detail tables may still scroll horizontally (Phase 8)",
+    "Status chip contrast on non-white surfaces needs live browser check (Phase 10)",
+    "Account menus use native details, not a custom modal trap"
+  ],
+  "routes_affected": [
+    "/",
+    "/about",
+    "/solutions",
+    "/clinics",
+    "/register-clinic",
+    "/clinics/:key",
+    "/clinics/:key/book*",
+    "/clinics/:key/my-booking*",
+    "/clinics/:key/patient*",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/activate",
+    "/account/change-password",
+    "/app",
+    "/app/appointments*",
+    "/app/pharmacy*",
+    "/app/billing*",
+    "/app/patients*",
+    "/app/diagnostics*"
+  ],
+  "files_changed_phase9": [
+    "public/activeclinic/ac-a11y.js",
+    "public/activeclinic/ac-phone-field.js",
+    "public/activeclinic/ac-phone-field.css",
+    "public/activeclinic/ac-public.js",
+    "public/activeclinic/ac-auth.js",
+    "public/activeclinic/ac-tokens.css",
+    "public/activeclinic/ac-app.css",
+    "public/activeclinic/ac-auth.css",
+    "public/activeclinic/ac-patient.css",
+    "public/activeclinic/ac-public.css",
+    "views/activeclinic/layouts/public-shell.ejs",
+    "views/activeclinic/layouts/patient-shell.ejs",
+    "views/activeclinic/layouts/auth-shell.ejs",
+    "views/activeclinic/layouts/app-shell.ejs",
+    "views/activeclinic/partials/phone-field.ejs",
+    "views/activeclinic/partials/country-picker.ejs",
+    "views/activeclinic/partials/public-platform-header.ejs",
+    "views/activeclinic/partials/public-tenant-header.ejs",
+    "views/activeclinic/partials/public-directory-filters.ejs",
+    "views/activeclinic/partials/booking-wizard-progress.ejs",
+    "views/activeclinic/partials/ac-mobile-bottom-nav.ejs",
+    "views/activeclinic/partials/ac-mobile-bottom-nav-platform.ejs",
+    "views/activeclinic/public/register-clinic.ejs",
+    "views/activeclinic/booking/*.ejs",
+    "views/activeclinic/patient/*.ejs",
+    "views/activeclinic/tenant/contact.ejs",
+    "views/activeclinic/app/appointment-*.ejs",
+    "views/activeclinic/app/pharmacy-*.ejs",
+    "views/activeclinic/app/billing-*.ejs",
+    "views/activeclinic/app/diagnostics-*.ejs",
+    "src/activeclinic/http/renderActiveClinicPublic.js",
+    "src/activeclinic/http/renderActiveClinicPatient.js",
+    "src/activeclinic/http/renderActiveClinicAuth.js",
+    "src/activeclinic/services/buildActiveClinicShellViewModel.js",
+    "tests/activeclinic-phase9-a11y.test.js"
+  ],
+  "tests": {
+    "added": "tests/activeclinic-phase9-a11y.test.js",
+    "cases": 8,
+    "passed": [
+      "tests/activeclinic-phase9-a11y.test.js",
+      "tests/activeclinic-phase8-mobile.test.js",
+      "tests/activeclinic-public-website.test.js",
+      "tests/activeclinic-public-booking.test.js",
+      "tests/activeclinic-patient-portal.test.js"
+    ]
+  },
+  "next": "PHASE 10 — cross-browser/browser-console hardening"
+}

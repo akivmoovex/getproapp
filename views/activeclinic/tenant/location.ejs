@@ -1,0 +1,114 @@
+<%#
+  AC-MW-R09 Facilities & Clinic Info — Stitch Batch 4.
+  Canonical facility records stay authoritative; shared presentation for chrome.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : [];
+  const locationEditing = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const directionsNote = (clinic.locationDirectionsNote || clinic.locationAddressOverlay || '').trim();
+%>
+<section class="ac-stitch-page ac-stitch-page--r09 ac-public-section acp-page" data-ac-page-section="tenant-location" data-ac-stitch-screen="R09">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <% if (!facilityList.length) { %>
+  <div class="ac-public-empty acp-empty-state" data-ac-location-state="empty">
+    <%- html.empty || '' %>
+    <% if (!locationEditing) { %>
+    <% if (directionsNote) { %>
+    <div class="ac-location-note" data-ac-location-note="1">
+      <h2 class="ac-location-note__label">Directions</h2>
+      <p class="ac-location-note__body"><%= directionsNote %></p>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+  <% } else { %>
+  <ul class="ac-location-list acp-location-grid" data-ac-facilities-canonical="1">
+    <% facilityList.forEach(function(f) { %>
+    <li class="ac-location-card acp-location-card" data-ac-facility="<%= f.facilityKey %>">
+      <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
+      <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
+      <% if (addressParts.length) { %>
+      <p class="ac-location-address" data-ac-facility-address="1"><%= addressParts.join(', ') %></p>
+      <% } else { %>
+      <p class="ac-public-muted" data-ac-facility-address-missing="1">Address not configured.</p>
+      <% } %>
+      <% if (f.phoneDisplay) { %><p>Phone: <%= f.phoneDisplay %></p><% } %>
+      <% if (f.emailDisplay) { %><p>Email: <%= f.emailDisplay %></p><% } %>
+      <% const hasFacilityHours = f.publicHours && typeof f.publicHours === 'object' && Object.keys(f.publicHours).length; %>
+      <% if (hasFacilityHours) { %>
+      <div class="ac-location-hours">
+        <h3>Hours</h3>
+        <dl class="ac-hours-list">
+          <% Object.keys(f.publicHours).forEach(function(day) { %>
+          <dt><%= day %></dt>
+          <dd><%= f.publicHours[day] %></dd>
+          <% }) %>
+        </dl>
+      </div>
+      <% } else if (clinic.locationHoursOverlay && !locationEditing) { %>
+      <div class="ac-location-hours ac-location-hours--template" data-ac-template-placeholder="1">
+        <p class="ac-template-placeholder">Example hours — not published operating times for this facility.</p>
+        <h3>Hours</h3>
+        <div class="ac-location-hours-overlay"><%= clinic.locationHoursOverlay %></div>
+      </div>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% if (!locationEditing && directionsNote) { %>
+  <div class="ac-location-note" data-ac-location-note="1">
+    <h2 class="ac-location-note__label">Directions</h2>
+    <p class="ac-location-note__body"><%= directionsNote %></p>
+  </div>
+  <% } %>
+  <% } %>
+
+  <% if (html.facilities) { %>
+  <div class="ac-stitch-section ac-stitch-section--facilities-summary">
+    <%- html.facilities %>
+  </div>
+  <% } %>
+
+  <div class="ac-stitch-section ac-stitch-section--visit" aria-label="Location contact and hours">
+    <%- html.location || '' %>
+    <%- html.hours || '' %>
+    <%- html.contact || '' %>
+  </div>
+
+  <% if (html.gallery) { %>
+  <div class="ac-stitch-section ac-stitch-section--gallery">
+    <%- html.gallery %>
+  </div>
+  <% } %>
+
+  <% if (html.services) { %>
+  <div class="ac-stitch-section ac-stitch-section--services">
+    <%- html.services %>
+  </div>
+  <% } %>
+
+  <% if (locationEditing) { %>
+  <div class="ac-website-overlay-edit" data-ac-website-overlay="location">
+    <h2>Landmark / Directions</h2>
+    <p class="ac-website-overlay-note">Optional public location note (landmark or directions). Facility address from Operations stays authoritative and is always shown when published. This field does not replace or hide the facility address. Saving here does not change operations records, and does not publish.</p>
+    <p class="ac-location-note__body"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldLabel: 'Landmark / Directions', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p>
+    <h3>Hours note</h3>
+    <p class="ac-website-overlay-note">Shown only when a facility has no published hours.</p>
+    <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldLabel: 'Hours note', fieldValue: clinic.locationHoursOverlay || '', fieldType: 'long_text' }) %></div>
+    <%- include('../partials/website-operational-affordance', { href: '/app/facilities', label: 'Manage facility address &amp; hours', manageKind: 'location' }) %>
+  </div>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+
+  <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_location', librarySkipTypes: [] }) %>
+</section>

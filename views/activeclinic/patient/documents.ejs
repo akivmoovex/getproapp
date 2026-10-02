@@ -1,0 +1,79 @@
+<%
+  var rows = Array.isArray(results) ? results : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--documents"
+  data-ac-page-section="patient-documents"
+  data-ac-batch3="AC-P12"
+  data-ac-stitch="<%= stitch.desktop || 'ac-p12' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ac-p12-m' %>"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Care records</p>
+    <h1>Documents &amp; results</h1>
+    <p class="acp-auth-card__lede">
+      Only results your clinic has explicitly released appear here.
+      Unreleased laboratory or imaging work is never shown. DICOM/PACS viewers are not available.
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <aside class="acp-portal-leaf__note" data-ac-docs-scope="1">
+    <p class="ac-muted">
+      Released diagnostic results (laboratory and radiology) are listed below.
+      Narrative visit summaries are under Visit Summaries. Staff clinical document drafts remain clinic-only.
+    </p>
+  </aside>
+
+  <% if (!rows.length) { %>
+  <div class="ac-patient-empty-state" data-ac-empty="documents">
+    <p class="acp-portal-leaf__empty-title">No released results yet</p>
+    <p class="ac-patient-empty">When the clinic releases a result to you, it will appear here.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-documents-desktop="1">
+    <table class="ac-patient-table">
+      <thead>
+        <tr>
+          <th scope="col">Result</th>
+          <th scope="col">Type</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Released</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (r) { %>
+        <tr data-ac-result-id="<%= r.id %>" data-ac-result-modality="<%= r.modality %>">
+          <td>
+            <a
+              href="/clinics/<%= clinicKey %>/patient/documents/<%= encodeURIComponent(r.modality) %>/<%= encodeURIComponent(r.id) %>"
+              data-ac-result-link="1"
+            ><%= escapeHtml(r.title || r.requestNumber) %></a>
+          </td>
+          <td><%= escapeHtml(r.modality) %></td>
+          <td><%= escapeHtml(r.facilityDisplayName || '') %></td>
+          <td><%= escapeHtml(r.releasedAt ? String(r.releasedAt).replace('T',' ').slice(0,16) : '') %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-patients-mobile" data-ac-documents-mobile="1">
+    <% rows.forEach(function (r) { %>
+    <li class="ac-card acp-portal-leaf__card" data-ac-result-id="<%= r.id %>">
+      <p class="ac-card__title">
+        <a
+          href="/clinics/<%= clinicKey %>/patient/documents/<%= encodeURIComponent(r.modality) %>/<%= encodeURIComponent(r.id) %>"
+          data-ac-result-link="1"
+        ><%= escapeHtml(r.title || r.requestNumber) %></a>
+      </p>
+      <p class="ac-muted"><%= escapeHtml(r.modality) %> · <%= escapeHtml(r.facilityDisplayName || '') %></p>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>

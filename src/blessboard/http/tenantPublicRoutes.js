@@ -25,7 +25,10 @@ const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage, renderFoundationHome } = require("./renderTenantLandingPage");
 const { resolveHostname } = require("../../platform/host");
-const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
+const {
+  attachWebsiteAdminChrome,
+  resolveAuthorizedPublicPreview,
+} = require("./attachWebsiteAdminChrome");
 const {
   resolveWebsiteMode,
   WEBSITE_MODE,
@@ -120,6 +123,12 @@ function createTenantPublicRouter(deps) {
 
     let model;
     try {
+      const authorizedPreview = await resolveAuthorizedPublicPreview(
+        getPool(),
+        req,
+        tenant,
+        selectedBranch && selectedBranch.id
+      );
       model = await loadTenantPublicPageModel(getPool(), {
         tenant,
         pageKey,
@@ -127,6 +136,7 @@ function createTenantPublicRouter(deps) {
         pathPrefix: pathPrefix || "",
         selectedBranch: selectedBranch || null,
         routingMode: "tenant",
+        preview: authorizedPreview,
       });
     } catch {
       return res
@@ -307,10 +317,21 @@ function createTenantPublicRouter(deps) {
     }
 
     const pathPrefix = tenantBranchHomePath(activeBranch.key);
+    const primary = websiteMode.primaryActiveBranch;
+    const contentSelectedBranch =
+      primary && String(activeBranch.id) === String(primary.id)
+        ? null
+        : {
+            id: activeBranch.id,
+            key: activeBranch.key,
+            displayName: activeBranch.displayName,
+            branchType: activeBranch.branchType,
+            isPrimary: activeBranch.isPrimary,
+          };
     return renderTenantModel(req, res, {
       pageKey: parsed.pageKey,
       pathPrefix,
-      selectedBranch: activeBranch,
+      selectedBranch: contentSelectedBranch,
     });
   }
 
@@ -336,6 +357,7 @@ function createTenantPublicRouter(deps) {
     "/ministries",
     "/events",
     "/sermons",
+    "/announcements",
     "/contact",
     "/giving",
   ];
@@ -389,6 +411,14 @@ function createTenantPublicRouter(deps) {
       buildTenantPublicDiscoveryUrls,
       buildTenantPublicSitemapXml,
     } = require("./tenantPublicDiscovery");
+    const {
+      resolveSitemapExcludedBranchKeys,
+    } = require("../services/resolveSitemapExclusions");
+    const excludeBranchKeys = await resolveSitemapExcludedBranchKeys(getPool(), {
+      churchId: tenant.church.id,
+      activeBranches: websiteMode.activeBranches || [],
+    });
+
     const urls = buildTenantPublicDiscoveryUrls({
       hostname,
       routingMode: "tenant",
@@ -398,13 +428,38 @@ function createTenantPublicRouter(deps) {
           : null,
       websiteMode: websiteMode.websiteMode,
       activeBranches: websiteMode.activeBranches || [],
+      excludeBranchKeys,
     });
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
     return res.status(200).send(buildTenantPublicSitemapXml(urls));
   }
 
+  async function handleTenantRobots(req, res) {
+    const gate = foundationOrNull(req, res, "/robots.txt");
+    if (gate !== "ready") return gate;
+
+    const hostname = resolveHostname(req) || String(req.hostname || "");
+    const { buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    return res.status(200).send(
+      buildRobotsTxt({
+        allow: true,
+        sitemapUrl: hostname ? `https://${hostname}/sitemap.xml` : null,
+      })
+    );
+  }
+
   router.get("/sitemap.xml", (req, res, next) => {
     Promise.resolve(handleTenantSitemap(req, res))
+      .then((handled) => {
+        if (handled === null) return next();
+        return undefined;
+      })
+      .catch(next);
+  });
+
+  router.get("/robots.txt", (req, res, next) => {
+    Promise.resolve(handleTenantRobots(req, res))
       .then((handled) => {
         if (handled === null) return next();
         return undefined;

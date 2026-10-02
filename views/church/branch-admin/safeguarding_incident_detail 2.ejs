@@ -1,0 +1,24 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/safeguarding">&larr; Safeguarding</a>
+          <h1 class="church-branch-topbar__title">Safeguarding incident</h1>
+          <p class="church-branch-topbar__subtitle">Recorded <%= new Date(incident.created_at).toLocaleString('en-GB') %></p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Status</dt><dd><%= incident.status %></dd></div>
+          <div><dt>Member</dt><dd><%= incident.member_name || '—' %></dd></div>
+          <div><dt>Reported by</dt><dd><%= incident.reported_by_name || '—' %></dd></div>
+        </dl>
+        <div class="church-branch-review-note">
+          <strong>Summary</strong>
+          <p><%= incident.summary %></p>
+        </div>
+        <p class="church-branch-hint">This incident is stored separately from pastoral care cases.</p>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

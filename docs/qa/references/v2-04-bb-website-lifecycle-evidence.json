@@ -1,0 +1,148 @@
+{
+  "product": "BB",
+  "tip": "7dbe945d6c93",
+  "org": "bb-v8qa-muq9wn7a9a3d",
+  "steps": {
+    "dayOptions": [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "1",
+      "0",
+      "draft",
+      "published",
+      "archived",
+      "draft",
+      "published",
+      "archived"
+    ],
+    "serviceTimes": {
+      "status": 400,
+      "snip": "Website content · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard Dashboard apartment Branches how_to_reg Registrations badge Members route Member journey group Users security Legacy permissions settings Settings"
+    },
+    "serviceTimesBranch": {
+      "status": 400,
+      "snip": "Service times · V8 QA Church muq9wn7a9a3d Skip to content BlessBoard UNKNOWN testing V8 QA Church muq9wn7a9a3d Headquarters domain organisation administrator dashboard Dashboard apartment Branches how_to_reg Registrations badge Members route Member journey group Users security Legacy permissions set"
+    },
+    "draftSave": {
+      "status": 200,
+      "ok": true
+    },
+    "contactEmail": {
+      "status": 200,
+      "ok": true
+    },
+    "contactPhone": {
+      "status": 200,
+      "ok": true
+    },
+    "contactAddress": {
+      "status": 200,
+      "ok": true
+    },
+    "preview": {
+      "status": 200,
+      "hasStamp": true
+    },
+    "review": {
+      "text": [
+        "ready for review",
+        "Missing contact details — Required contact details are missing · Section: details · Fie",
+        "contact Fix Missing service times — Service times are missing · Pag",
+        "Incomplete website details — Website information is incomplete · Field: details Fix Organi",
+        "Contact details are available Needs Attention error Organization is",
+        "Ready check_circle You have permission to pub",
+        "Ready check_circle Required image references ",
+        "Ready check_circle Website preview reviewed R",
+        "Ready check_circle Mobile preview reviewed Re",
+        "Ready check_circle Included branch changes ar",
+        "Ready User Confirmation I have reviewed the w"
+      ]
+    },
+    "reviewSlice": "Readiness Checklist Missing contact details — Required contact details are missing · Section: details · Field: contact Fix Missing service times — Service times are missing · Page: Home · Section: home · Field: service_times Fix Incomplete website details — Website information is incomplete · Field: details Fix Organization not active — Tenant is active · Field: status Fix error Required website information is complete Needs Attention error Contact details are available Needs Attention error Org",
+    "publish": {
+      "status": 303,
+      "loc": "/hq/website/publish/review?error=not_ready&requestId=4049d9196474cfa341293f9c",
+      "body": "See Other. Redirecting to /hq/website/publish/review?error=not_ready&requestId=4049d9196474cfa341293f9c"
+    },
+    "public": {
+      "status": 200,
+      "comingSoon": true,
+      "hasStamp": false,
+      "snip": "V8 QA Church muq9wn7a9a3d · Coming soon V8 QA Church muq9wn7a9a3d Website coming soon This website is being prepared and is not public yet. BlessBoard"
+    },
+    "history": {
+      "status": 200,
+      "text": "Version history Version history V8 QA Church muq9wn7a9a3d Back to editor Public visitors see the current published version only. Restore copies a historical version into a new draft. The live website does not change until you publish. Draft Working draft Unpublished working copy · 12 unpublished changes No published versions yet. Publish the website to create version 1. Restore as new draft? close This copies the selected version into your draft. The live published website stays unchanged until "
+    },
+    "versions": {
+      "versionIds": [],
+      "restoreActions": []
+    },
+    "unpublish": {
+      "status": 303,
+      "loc": "/hq/website?notice=unpublished"
+    },
+    "publicAfterUnpublish": {
+      "comingSoon": true,
+      "hasStamp": false,
+      "snip": "V8 QA Church muq9wn7a9a3d · Coming soon V8 QA Church muq9wn7a9a3d Website coming soon This website is being prepared and is not public yet. BlessBoard"
+    },
+    "reviewRepub": "Readiness Checklist Missing contact details — Required contact details are missing · Section: details · Field: contact Fix Missing service times — Service times are missing · Page: Home · Section: home · Field: service_times Fix Incomplete website details — Website information is incomplete · Field: details Fix Organization not active — Tenant is active · Field: status Fix error Required website i",
+    "republish": {
+      "status": 303,
+      "loc": "/hq/website/publish/review?error=not_ready&requestId=f87a3e7d43c20ebf596533e8"
+    },
+    "publicAfterRepublish": {
+      "comingSoon": true,
+      "hasStamp": false,
+      "snip": "V8 QA Church muq9wn7a9a3d · Coming soon V8 QA Church muq9wn7a9a3d Website coming soon This website is being prepared and is not public yet. BlessBoard"
+    },
+    "historyFinal": {
+      "text": "Version history Version history V8 QA Church muq9wn7a9a3d Back to editor Public visitors see the current published version only. Restore copies a historical version into a new draft. The live website does not change until you publish. Draft Working draft Unpublished working copy · 12 unpublished changes No published versions yet. Publish the website to create version 1. Restore as new draft? close This copies the selected version into your draft. The live published website stays unchanged until "
+    },
+    "trueStaleEngine": {
+      "staleBase": {
+        "status": 200,
+        "ok": true,
+        "expectedUpdatedAt": "2026-10-02T01:39:15.217Z",
+        "contentKeys": [
+          "id",
+          "organizationId",
+          "instanceId",
+          "contentKey",
+          "contentType",
+          "draftValue",
+          "publishedValue",
+          "visibility",
+          "sortOrder",
+          "updatedByIdentityId",
+          "updatedAt"
+        ]
+      },
+      "staleB": {
+        "status": 200,
+        "ok": true,
+        "code": "saved_to_draft",
+        "updatedAt": "2026-10-02T01:39:15.526Z"
+      },
+      "staleA": {
+        "status": 409,
+        "ok": false,
+        "code": "conflict",
+        "reason": "stale_draft_revision",
+        "body": "{\"ok\":false,\"code\":\"conflict\",\"reason\":\"stale_draft_revision\",\"requestId\":\"7b2c236e8a5dd56d9a638315\",\"correlationId\":\"7b2c236e8a5dd56d9a638315\"}"
+      },
+      "staleContent": {
+        "hasBase": false,
+        "hasNewer": true,
+        "hasStale": false
+      },
+      "classicInlineStaleNote": "Prior run: inline-field dual-session both HTTP 200; stale value won (silent overwrite) without expectedUpdatedAt support."
+    }
+  }
+}

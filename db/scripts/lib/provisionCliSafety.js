@@ -8,8 +8,19 @@
 const { envStringIsSet, requireDatabaseUrl, parseDatabaseName } = require("./databaseUrl");
 const { sanitizeHostFingerprint } = require("./hostFingerprint");
 const { checkDatabaseIdentity, validateIdentityKey } = require("./databaseIdentity");
+const { buildFoundationPoolConfig } = require("./foundationPool");
+const { Pool } = require("pg");
 
 const FORBIDDEN_PUBLIC_TABLES = Object.freeze(["tenants", "session"]);
+
+/**
+ * Pool for ops CLIs against hosted Supabase (TLS / GETPRO_PG_SSL aware).
+ * @param {string} connectionString
+ * @param {{ max?: number }} [opts]
+ */
+function createProvisionPool(connectionString, opts = {}) {
+  return new Pool(buildFoundationPoolConfig(connectionString, { max: opts.max != null ? opts.max : 2 }));
+}
 
 /**
  * Parse write mode. Dry-run is the default; writes require --confirm.
@@ -307,6 +318,7 @@ module.exports = {
   parseWriteMode,
   rejectGetproDatabaseUrlFallback,
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   assertDeploymentTarget,

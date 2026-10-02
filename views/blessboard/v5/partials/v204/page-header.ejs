@@ -1,0 +1,13 @@
+<%#
+  BB V2.04 wrapper: page header → platform gp-ops-page-header.
+  Locals forwarded: title, subtitle, eyebrow, badgeHtml, actionsHtml, breadcrumbsHtml, className
+%>
+<%- include('../../../../platform/partials/gp-ops-page-header', {
+  title: typeof title !== 'undefined' ? title : '',
+  subtitle: typeof subtitle !== 'undefined' ? subtitle : undefined,
+  eyebrow: typeof eyebrow !== 'undefined' ? eyebrow : undefined,
+  badgeHtml: typeof badgeHtml !== 'undefined' ? badgeHtml : undefined,
+  actionsHtml: typeof actionsHtml !== 'undefined' ? actionsHtml : undefined,
+  breadcrumbsHtml: typeof breadcrumbsHtml !== 'undefined' ? breadcrumbsHtml : undefined,
+  className: typeof className !== 'undefined' ? className : undefined
+}) %>

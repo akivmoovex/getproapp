@@ -1,0 +1,58 @@
+{
+  "create": {
+    "status": 400,
+    "url": "https://blessboard.neuniversity.org/branch-admin/members/new",
+    "title": "Register New Member \u00b7 V8 QA Church muq9wn7a9a3d",
+    "main": "data-bb-page-area=\"1\"> Members \u203a Register New Member Register New Member Enroll an individual into V8 QA Church muq9wn7a9a3d\u2019s tenant membership directory. Church Membership Creation Policy Only authorized church staff may create membership. Church ID is unique within this church and is not editable by the member. Creating membership does not activate portal access. error Please correct the highlighted fields branch_id: Assigned branch is required. marital_status: Select a marital status. next_of_kin_name: Emergency contact name is required. next_of_kin_relationship: Select an emergency relationship. 1. Identity Section As registered on national or government identification documents. Full Name (Legal Name) * Preferred Name (Optional) Gender (optional) Select Female Male Other Prefer not t",
+    "text_errs": [
+      "error\"\n  id=\"bb-ds-form-errors\"\n  role=\"alert\"\n  tabindex=\"-1\"\n  aria-live=\"assertive",
+      "errors\"\n>\n  \n\n\n\n",
+      "error",
+      "required",
+      "required",
+      "required maxlength=\"120\" value=\"RC Member 909189\" placeholder=\"e",
+      "required value=\"1990-01-15\" />\n          ",
+      "required\" aria-hidden=\"true\">*",
+      "required",
+      "required\n        \n        aria-required=\"true\"\n        \n        \n        data-ac-phone-n"
+    ]
+  },
+  "created_ids": {
+    "member_id": null,
+    "member_number": "Preview"
+  },
+  "bb_get_/hq/website/version-history/3a970d22-379e-42a0-b35f-397f9f50a54d/restore": {
+    "status": 400,
+    "title": "Website versions \u00b7 BlessBoard",
+    "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <meta name=\"robots\" content=\"noindex,nofollow\" /> <title>Website versions \u00b7 BlessBoard</title> <link rel=\"stylesheet\" href=\"/blessboard/v5/hq-admin.css?v=59\" /> </h"
+  },
+  "bb_get_/hq/website/version-history/3a970d22-379e-42a0-b35f-397f9f50a54d/preview": {
+    "status": 200,
+    "title": "Historical Version Preview \u00b7 V8 QA Church muq9wn7a9a3d",
+    "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Historical Version Preview \u00b7 V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noindex, nofollow\" /> <link rel=\"stylesheet\" href=\"/platform/them"
+  },
+  "bb_get_/c/bb-v8qa-muq9wn7a9a3d/website/versions/3a970d22-379e-42a0-b35f-397f9f50a54d/restore": {
+    "status": 503,
+    "title": "Unavailable",
+    "snip": "<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"utf-8\"/><title>Unavailable</title></head> <body><p>This page is not yet available in BlessBoard V5.</p></body></html>"
+  },
+  "bb_post_/hq/website/version-history/3a970d22-379e-42a0-b35f-397f9f50a54d/restore": {
+    "status": 403,
+    "url": "https://blessboard.neuniversity.org/hq/website/version-history/3a970d22-379e-42a0-b35f-397f9f50a54d/restore",
+    "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <meta name=\"robots\" content=\"noindex,nofollow\" /> <title>Website versions \u00b7 BlessBoard</title> <link rel=\"stylesheet\" href=\"/blessboard/v5/hq-admin.css?v=59\" /> </h"
+  },
+  "bb_post_/c/bb-v8qa-muq9wn7a9a3d/website/versions/3a970d22-379e-42a0-b35f-397f9f50a54d/restore": {
+    "status": 403,
+    "url": "https://blessboard.neuniversity.org/c/bb-v8qa-muq9wn7a9a3d/website/versions/3a970d22-379e-42a0-b35f-397f9f50a54d/restore",
+    "snip": "Invalid CSRF token"
+  },
+  "reviewer": {
+    "status": 200,
+    "url": "https://blessboard.neuniversity.org/hq",
+    "title": "Church HQ \u00b7 V8 QA Church muq9wn7a9a3d"
+  },
+  "reviewer_members": {
+    "status": 200,
+    "unavailable": false
+  }
+}

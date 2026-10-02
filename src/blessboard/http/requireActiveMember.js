@@ -27,7 +27,7 @@ function createRequireActiveMember(deps) {
     if (!sessionOk) {
       const wantsHtml = String(req.get("accept") || "").includes("text/html");
       if (wantsHtml) {
-        return res.redirect(303, "/login?next=/member");
+        return res.redirect(303, "/member/login");
       }
       return res.status(401).type("text").send("Sign-in is required.");
     }
@@ -48,9 +48,19 @@ function createRequireActiveMember(deps) {
       if (access.status === STATUS.UNAUTHENTICATED || access.status === STATUS.INACTIVE_USER) {
         const wantsHtml = String(req.get("accept") || "").includes("text/html");
         if (wantsHtml) {
-          return res.redirect(303, "/login?next=/member");
+          return res.redirect(303, "/member/login");
         }
         return res.status(401).type("text").send("Sign-in is required.");
+      }
+      if (access.status === STATUS.PORTAL_BLOCKED) {
+        const wantsHtml = String(req.get("accept") || "").includes("text/html");
+        if (wantsHtml) {
+          return res.redirect(303, "/member/login");
+        }
+        return res
+          .status(403)
+          .type("text")
+          .send("Your portal access is blocked. Contact your church administration.");
       }
       if (access.status === STATUS.LOOKUP_ERROR) {
         return res.status(503).type("text").send("Member portal is temporarily unavailable.");

@@ -83,7 +83,7 @@
           <div class="bb-tp-footer__brand-lockup">
             <img
               class="bb-tp-footer__mark"
-              src="/church/images/brand/blessboard-small-church-logo.png"
+              src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
               alt=""
               width="28"
               height="28"
@@ -190,6 +190,12 @@
             <% } %>
           </div>
           <% if (footerServices.length) { %>
+          <% var _templateTimes = footerServices.some(function (entry) {
+            return entry && (entry.templateExample || (entry.note && /template example/i.test(String(entry.note))));
+          }); %>
+          <% if (_templateTimes) { %>
+          <p class="bb-tp-footer__muted" data-bb-template-example="service-times">Example gathering times — not this church’s published schedule.</p>
+          <% } %>
           <ul class="bb-tp-footer__list bb-tp-footer__list--services">
             <% footerServices.forEach(function (entry) { %>
             <li>
@@ -221,15 +227,27 @@
     </div>
   </footer>
 
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit && (websiteAdmin.editingMode || websiteAdmin.previewDraftMode)) { %>
+  <%- include('../../../platform/website-engine/editor-overlays', { editorShell: websiteAdmin.editorShell || {} }) %>
+  <% } %>
+
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-public.js?v=10" defer></script>
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
+  <script src="/platform/website-lifecycle.js?v=v2-sp-vis-1" defer></script>
+  <script src="/platform/website-editor-mobile.js?v=v7-website-17" defer></script>
+  <% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
   <%- include('./structured-editor-host') %>
-  <%- include('./unsaved-changes-dialog') %>
   <script src="/blessboard/v5/website-unsaved-guard.js?v=2" defer></script>
-  <script src="/blessboard/v5/website-inline-edit.js?v=5" defer></script>
-  <script src="/blessboard/v5/website-structured-edit.js?v=5" defer></script>
+  <script src="/platform/website-inline-edit.js?v=v204-media-1" defer></script>
+  <script src="/platform/website-change-manager-ui.js?v=v2-sp-vis-1" defer></script>
+  <script src="/platform/website-section-actions.js?v=v7-website-17" defer></script>
+  <script src="/platform/website-add-section.js?v=v2-spt7-picker-1" defer></script>
+  <script src="/blessboard/v5/website-structured-edit.js?v=v204-media-1" defer></script>
   <script src="/blessboard/v5/website-features-panel.js?v=1" defer></script>
+  <% } else if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode) { %>
+  <% /* lifecycle.js loaded above for all canEdit sessions */ %>
   <% } %>
 </body>
 </html>

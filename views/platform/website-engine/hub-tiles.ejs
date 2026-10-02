@@ -1,0 +1,31 @@
+<%
+  var tiles = typeof hubTiles !== 'undefined' && hubTiles ? hubTiles : {};
+  var paths = tiles.paths || {};
+  var copy = tiles.copy || {};
+%>
+<div class="gp-website-engine-hub" data-website-engine-hub-tiles="1">
+  <% if (paths.pages) { %>
+  <a class="gp-website-engine-hub__tile" href="<%= paths.pages %>" data-website-engine-tile="pages">
+    <h3><%= copy.pagesTitle || 'Pages' %></h3>
+    <p><%= copy.pagesBody || 'Add, hide, or update public pages.' %></p>
+  </a>
+  <% } %>
+  <% if (paths.settings) { %>
+  <a class="gp-website-engine-hub__tile" href="<%= paths.settings %>" data-website-engine-tile="settings" data-bb-website-action="settings">
+    <h3><%= copy.settingsTitle || 'Website Settings' %></h3>
+    <p><%= copy.settingsBody || 'Branding, contact, header, footer, and SEO.' %></p>
+  </a>
+  <% } %>
+  <% if (paths.library) { %>
+  <a class="gp-website-engine-hub__tile" href="<%= paths.library %>" data-website-engine-tile="library" data-bb-website-action="library">
+    <h3><%= copy.libraryTitle || 'Content Library' %></h3>
+    <p><%= copy.libraryBody || 'Reuse photos and website content.' %></p>
+  </a>
+  <% } %>
+  <% if (paths.history) { %>
+  <a class="gp-website-engine-hub__tile" href="<%= paths.history %>" data-website-engine-tile="history">
+    <h3><%= copy.historyTitle || 'Version History' %></h3>
+    <p><%= copy.historyBody || 'Preview past versions and restore one as a new draft.' %></p>
+  </a>
+  <% } %>
+</div>

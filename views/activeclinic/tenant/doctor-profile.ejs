@@ -1,0 +1,38 @@
+<%#
+  AC-MW-R05 Doctor Profile — Stitch Batch 3.
+  Existing doctor data via PersonPresentation → person_card. No invented credentials.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const editingDoctorProfile = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const profileEditHref = profile && (profile.editHref || (profile.id ? ('/app/settings/website/catalogue/doctors/' + encodeURIComponent(profile.id) + '/edit') : ''));
+%>
+<article class="ac-stitch-page ac-stitch-page--r05 ac-public-section ac-doctor-profile" data-ac-page-section="tenant-doctor-profile" data-ac-stitch-screen="R05">
+  <% if (clinic && clinic.isDemonstrationClinic) { %>
+  <p class="ac-public-banner" data-ac-sample-profile="1">Sample profile for demonstration only</p>
+  <% } %>
+
+  <% if (html.person) { %>
+  <div class="ac-stitch-section ac-stitch-section--person-detail" data-ac-doctor-key="<%= profile && profile.staffKey ? profile.staffKey : '' %>">
+    <%- html.person %>
+  </div>
+  <% } %>
+
+  <% if (editingDoctorProfile && profileEditHref) { %>
+  <p class="ac-doctor-profile__editor" data-ac-edit-doctor-wrap="1">
+    <a
+      class="ac-btn ac-btn--secondary ac-btn--pill"
+      href="<%= profileEditHref %>?returnTo=<%= encodeURIComponent('/clinics/' + clinic.clinicKey + '/doctors/' + profile.staffKey + '?website_edit=1&website_mode=draft') %>"
+      data-ac-edit-doctor="1"
+    >Edit doctor profile</a>
+    <span class="ac-doctor-profile__editor-note">Upload or replace the public photograph with Upload from computer or Choose from Content Library. Changes stay in draft until you publish the website.</span>
+  </p>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+</article>

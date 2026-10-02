@@ -7,14 +7,16 @@
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
+    if (key === 'scheduled') return 'Scheduled';
     if (key === 'published') return 'Published';
+    if (key === 'expired') return 'Expired';
     if (key === 'archived') return 'Archived';
     return s || '—';
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'published') return 'bb-ba-chip--ok';
-    if (key === 'draft') return 'bb-ba-chip--pending';
+    if (key === 'scheduled' || key === 'draft') return 'bb-ba-chip--pending';
     return 'bb-ba-chip--muted';
   }
   function audienceLabel(list) {
@@ -22,6 +24,7 @@
     return list.map(function (k) {
       if (k === 'members') return 'Members';
       if (k === 'admins') return 'Admins';
+      if (k === 'public') return 'Website';
       return k;
     }).join(', ');
   }
@@ -34,11 +37,12 @@
     });
   }
   var canEdit = item.status !== 'archived';
-  var canPublish = item.status === 'draft';
+  var canPublish = item.status === 'draft' || item.status === 'scheduled';
   var canArchive = item.status !== 'archived';
+  var history = typeof publicationHistory !== 'undefined' && publicationHistory ? publicationHistory : [];
 %>
 
-<section class="bb-ann-admin bb-ann-detail" data-bb-announcement-admin-detail="1" data-bb-announcement-status="<%= item.status %>">
+<section class="bb-ann-admin bb-ann-detail" data-bb-announcement-admin-detail="1" data-bb-announcement-status="<%= item.status %>" data-bb-stitch="BB19">
   <%- include('./_testing-platform-admin-banner') %>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
@@ -56,9 +60,10 @@
     </div>
   </header>
 
-  <% if (saved === '1' || saved === 'published' || saved === 'archived' || saved === 'already') { %>
+  <% if (saved === '1' || saved === 'published' || saved === 'scheduled' || saved === 'archived' || saved === 'already') { %>
   <p class="bb-ba-ok" role="status">
     <% if (saved === 'published') { %>Announcement published.<% }
+       else if (saved === 'scheduled') { %>Announcement scheduled (visible when start time is reached).<% }
        else if (saved === 'archived') { %>Announcement archived.<% }
        else if (saved === 'already') { %>Already published.<% }
        else { %>Saved.<% } %>
@@ -75,9 +80,32 @@
     <dl class="bb-ann-dl">
       <div><dt>Pinned</dt><dd><%= item.isPinned ? 'Yes' : 'No' %></dd></div>
       <div><dt>Featured</dt><dd><%= item.isFeatured ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Timezone</dt><dd><%= item.timezone || 'UTC' %></dd></div>
+      <div><dt>Starts</dt><dd><%= formatWhen(item.startsAt) %></dd></div>
+      <div><dt>Ends</dt><dd><%= formatWhen(item.endsAt) %></dd></div>
       <div><dt>Published</dt><dd><%= formatWhen(item.publishedAt) %></dd></div>
       <div><dt>Updated</dt><dd><%= formatWhen(item.updatedAt) %></dd></div>
     </dl>
+  </section>
+
+  <section class="bb-ba-panel" data-publication-history="1">
+    <h2 class="bb-ba-section-title">Publication history</h2>
+    <% if (!history.length) { %>
+      <p class="bb-ba-hint">No publication events recorded yet.</p>
+    <% } else { %>
+      <ul class="bb-ann-history">
+        <% history.forEach(function (ev) { %>
+          <li>
+            <strong><%= ev.actionKey %></strong>
+            · <%= formatWhen(ev.createdAt) %>
+            <% if (ev.metadata && (ev.metadata.from_status || ev.metadata.to_status)) { %>
+              <span class="bb-ba-hint"><%= ev.metadata.from_status || '—' %> → <%= ev.metadata.to_status || '—' %></span>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <p class="bb-ba-hint">Audit is append-only. Live notification delivery is not enabled.</p>
   </section>
 
   <% if (item.delivery) { %>

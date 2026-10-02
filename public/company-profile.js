@@ -182,7 +182,7 @@
       if (!statusEl) return;
       statusEl.hidden = !msg;
       statusEl.textContent = msg || "";
-      statusEl.style.color = ok ? "" : "var(--danger, #b91c1c)";
+      statusEl.style.color = ok ? "" : "var(--danger)";
     }
 
     function pngBlobFromImage(imageEl) {

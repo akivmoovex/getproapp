@@ -1,0 +1,67 @@
+<%
+  var rows = Array.isArray(referrals) ? referrals : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--referrals"
+  data-ac-page-section="patient-referrals"
+  data-ac-batch3="AC-P11"
+  data-ac-stitch="<%= stitch.desktop || 'ac-p11' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ac-p11-m' %>"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Care records</p>
+    <h1>My referrals</h1>
+    <p class="acp-auth-card__lede">Read-only referral requests for your patient record. Staff workflow notes are not shown.</p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <% if (!rows.length) { %>
+  <div class="ac-patient-empty-state" data-ac-empty="referrals">
+    <p class="acp-portal-leaf__empty-title">No referrals yet</p>
+    <p class="ac-patient-empty">When your clinician creates a referral for you, it will appear here.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-referrals-desktop="1">
+    <table class="ac-patient-table">
+      <thead>
+        <tr>
+          <th scope="col">Referral</th>
+          <th scope="col">Status</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (ref) { %>
+        <tr data-ac-referral-id="<%= ref.id %>">
+          <td>
+            <a href="/clinics/<%= clinicKey %>/patient/referrals/<%= encodeURIComponent(ref.id) %>" data-ac-referral-link="1">
+              <%= escapeHtml(ref.title) %>
+            </a>
+          </td>
+          <td><%= escapeHtml(ref.statusLabel || ref.status) %></td>
+          <td><%= escapeHtml(ref.facilityDisplayName || '') %></td>
+          <td><%= escapeHtml(ref.createdAt ? String(ref.createdAt).replace('T',' ').slice(0,16) : '') %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-patients-mobile" data-ac-referrals-mobile="1">
+    <% rows.forEach(function (ref) { %>
+    <li class="ac-card acp-portal-leaf__card" data-ac-referral-id="<%= ref.id %>">
+      <p class="ac-card__title">
+        <a href="/clinics/<%= clinicKey %>/patient/referrals/<%= encodeURIComponent(ref.id) %>" data-ac-referral-link="1">
+          <%= escapeHtml(ref.title) %>
+        </a>
+      </p>
+      <p class="ac-muted"><%= escapeHtml(ref.statusLabel || ref.status) %> · <%= escapeHtml(ref.facilityDisplayName || '') %></p>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>

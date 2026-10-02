@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %> · ActiveClinic</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+  <%- include('../../platform/partials/head-platform-colors') %>
+  <link rel="stylesheet" href="/platform/gp-ops-shared.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'gp-ops-1' %>" />
+  <link rel="stylesheet" href="/platform/admin-console-shell.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'v205-acs-1' %>" />
+  <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" />
+  <link rel="stylesheet" href="/activeclinic/ac-app-tokens.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'v2-03-shared-01' %>" />
+  <link rel="stylesheet" href="/activeclinic/ac-app.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'v2-03-shared-01' %>" />
+  <link rel="stylesheet" href="/activeclinic/ac-urp.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'urp-1' %>" />
+  <link rel="stylesheet" href="/platform/phone-field.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'phone-1' %>" />
+  <link rel="stylesheet" href="/activeclinic/website-cms.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-1' %>" />
+  <link rel="stylesheet" href="/platform/website-media-field.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-media-1' %>" />
+</head>
+<body
+  class="ac-app-body gp-admin-console<% if ((typeof websiteCmsShell !== 'undefined' && websiteCmsShell) || (shell && shell.websiteCmsShell) || (shell && shell.pageData && shell.pageData.cmsNav)) { %> ac-app-body--mw<% } %>"
+  data-product="activeclinic"
+  data-surface="staff"
+  data-ac-product="activeclinic"
+  data-ac-shell="staff-app"
+  data-gp-admin-console="AdminConsoleShell"
+  data-gp-admin-console-product="activeclinic"
+  data-gp-admin-console-stitch="AC-ADM-01"
+  data-gp-admin-console-desktop="1440"
+  data-gp-admin-console-mobile="390"
+  data-ac-page="<%= activeNav || 'home' %>"
+  data-ac-shell-version="<%= (shell && shell.shellChrome && shell.shellChrome.version) || 'b2' %>"
+  data-ac-shell-batch="2"
+>
+  <a class="ac-skip" href="#ac-main">Skip to content</a>
+  <div id="ac-shell-nav-live" class="ac-sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="ac-app gp-admin-console__app" data-ac-composition="desktop-shell" data-gp-admin-console-app="1">
+    <aside class="ac-sidebar gp-admin-console__sidebar" data-ac-nav="desktop-sidebar" data-gp-admin-console-sidebar="1" aria-label="ActiveClinic navigation">
+      <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null }) %>
+    </aside>
+
+    <div class="ac-main-wrap gp-admin-console__frame">
+      <header class="ac-topbar gp-admin-console__topbar" data-ac-nav="mobile-header" data-ac-composition="mobile-topbar" data-gp-admin-console-topbar="mobile">
+        <button
+          type="button"
+          class="ac-icon-btn"
+          data-ac-nav-toggle="1"
+          aria-expanded="false"
+          aria-controls="ac-nav-drawer"
+          aria-label="Open navigation menu"
+        >
+          <%- include('../partials/nav-icon', { name: 'menu' }) %>
+          <span class="ac-sr-only">Menu</span>
+        </button>
+        <div class="ac-topbar__context">
+          <strong><%= (shell && shell.product && shell.product.displayName) || 'ActiveClinic' %></strong>
+          <div class="ac-muted ac-topbar__sub">
+            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
+            <% if (shell && shell.selectedFacility) { %>
+              · <%= shell.selectedFacility.displayName %>
+            <% } %>
+          </div>
+        </div>
+        <div class="ac-topbar__actions">
+          <% if (shell && shell.globalSearchEnabled) { %>
+          <a
+            class="ac-icon-btn"
+            href="/app/patients"
+            data-ac-shell-search-mobile="1"
+            aria-label="Search patients"
+          >
+            <%- include('../partials/nav-icon', { name: 'search' }) %>
+          </a>
+          <% } %>
+          <details class="ac-topbar-account" data-ac-account-menu="mobile">
+            <summary class="ac-icon-btn" aria-label="Account menu"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></summary>
+            <div class="ac-topbar-account__menu">
+              <p class="ac-muted" style="margin:0 0 .5rem;font-size:.85rem"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></p>
+              <a href="/account/change-password">Change password</a>
+              <% if (shell && shell.canSwitchOrganization) { %>
+              <a href="/app/select-organization">Switch organization</a>
+              <% } %>
+              <% if (shell && (shell.canSwitchFacility || (shell.availableFacilities && shell.availableFacilities.length > 1))) { %>
+              <a href="/app/select-facility">Switch facility</a>
+              <% } %>
+              <form method="post" action="/logout">
+                <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || '_csrf' %>" value="<%= (shell && shell.csrf && shell.csrf.token) || '' %>" />
+                <button type="submit">Sign out</button>
+              </form>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <header class="ac-desktop-header" data-ac-nav="desktop-header" data-ac-composition="desktop-topbar">
+        <div class="ac-desktop-header__left">
+          <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+          <nav class="ac-desktop-header__crumbs" aria-label="Breadcrumb">
+            <ol class="ac-breadcrumbs ac-breadcrumbs--header">
+              <% breadcrumbs.forEach(function (crumb) { %>
+              <li>
+                <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
+              </li>
+              <% }) %>
+            </ol>
+          </nav>
+          <% } else { %>
+          <p class="ac-desktop-header__context ac-muted" data-ac-facility-context="desktop-header" data-gp-admin-console-context="location">
+            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
+            <% if (shell && shell.selectedFacility) { %> · <span data-ac-location-context="1"><%= shell.selectedFacility.displayName %></span><% } %>
+          </p>
+          <% } %>
+        </div>
+        <%- include('../partials/staff-shell-ops-tools', { shell: typeof shell !== 'undefined' ? shell : null }) %>
+      </header>
+
+      <main id="ac-main" class="ac-content" tabindex="-1">
+        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+        <nav class="ac-breadcrumbs-mobile" aria-label="Breadcrumb">
+          <ol class="ac-breadcrumbs">
+            <% breadcrumbs.forEach(function (crumb) { %>
+            <li>
+              <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
+            </li>
+            <% }) %>
+          </ol>
+        </nav>
+        <% } %>
+
+        <% if (typeof flash !== 'undefined' && flash && flash.message) { %>
+        <p class="ac-flash ac-flash--<%= flash.type || 'success' %>" role="status"><%= flash.message %></p>
+        <% } %>
+        <% if (shell && shell.provisioningIncomplete) { %>
+        <p
+          class="ac-flash ac-flash--warn"
+          role="status"
+          data-ac-provisioning-incomplete="1"
+          data-ac-failed-stage="<%= shell.failedStage || '' %>"
+        >This clinic is still finishing setup<% if (shell.failedStage) { %> (<%= shell.failedStage.replace(/_/g, ' ') %>)<% } %>. You can keep editing website content. Publishing may be limited until setup completes.</p>
+        <% } %>
+
+        <%
+          var _mwShell = (typeof websiteCmsShell !== 'undefined' && websiteCmsShell)
+            || (shell && shell.websiteCmsShell)
+            || (shell && shell.pageData && shell.pageData.cmsNav);
+        %>
+        <% if (!_mwShell) { %>
+        <header class="ac-page-header">
+          <div>
+            <h1><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %></h1>
+            <% if (pageHeader && pageHeader.description) { %>
+            <p><%= pageHeader.description %></p>
+            <% } %>
+          </div>
+          <% if (pageHeader && pageHeader.actions && pageHeader.actions.length) { %>
+          <div class="ac-actions">
+            <% pageHeader.actions.forEach(function (action) { %>
+              <% if (action.href) { %>
+              <a class="ac-btn<%= action.ghost ? ' ac-btn--ghost' : '' %>" href="<%= action.href %>"><%= action.label %></a>
+              <% } %>
+            <% }) %>
+          </div>
+          <% } %>
+        </header>
+        <% } %>
+
+        <%- body %>
+      </main>
+    </div>
+  </div>
+
+  <%- include('../partials/staff-mobile-bottom-nav', { shell: typeof shell !== 'undefined' ? shell : null }) %>
+
+  <div class="ac-drawer-backdrop" data-ac-nav-backdrop="1" hidden></div>
+  <div
+    id="ac-nav-drawer"
+    class="ac-drawer"
+    data-ac-nav-drawer="1"
+    data-ac-composition="mobile-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Navigation"
+    aria-hidden="true"
+  >
+    <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null, mobile: true }) %>
+  </div>
+
+  <script src="/activeclinic/ac-a11y.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
+  <script src="/activeclinic/ac-shell-nav.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
+  <script src="/activeclinic/ac-auth.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
+  <script src="/platform/phone-field.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'phone-2' %>" defer></script>
+  <script src="/activeclinic/ac-urp.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'urp-1' %>" defer></script>
+  <script src="/activeclinic/website-cms.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-1' %>" defer></script>
+  <script src="/platform/gp-ops-fetch.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'gp-ops-fetch-1' %>" defer></script>
+  <script src="/platform/website-media-field.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-media-1' %>" defer></script>
+  <div id="ac-form-busy-live" class="ac-sr-only" aria-live="polite"></div>
+</body>
+</html>

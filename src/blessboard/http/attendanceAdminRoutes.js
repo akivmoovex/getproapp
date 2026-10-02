@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -44,9 +44,8 @@ const {
   STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
 const {
-  authorizeBlessBoardTenantAccess,
-  STATUS: AUTHZ_STATUS,
-} = require("../services/authorizeBlessBoardTenantAccess");
+  authorize,
+} = require("../services/blessBoardRbacAuthorizationService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -120,13 +119,11 @@ function createAttendanceAdminRouter(deps) {
   const shellKind = variant === "hq" ? "hq" : "branch";
   const loginNext = variant === "hq" ? "/hq/attendance" : "/branch-admin/attendance";
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const requireAccess = createRequireBlessBoardPermission("attendance.view", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -230,16 +227,17 @@ function createAttendanceAdminRouter(deps) {
         );
         return null;
       }
-      const authz = await authorizeBlessBoardTenantAccess(getPool(), {
-        userId: session.userId,
-        tenant,
-        branchId: resolved.branch.id,
+      const authz = await authorize(getPool(), {
+        actor: { userId: session.userId },
+        permission: "attendance.view",
+        tenantContext: tenant,
+        resourceContext: {
+          organizationId: tenant.organization.id,
+          churchId: tenant.church.id,
+          branchId: resolved.branch.id,
+        },
       });
-      if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
-        sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
-        return null;
-      }
-      if (!authz.ok) {
+      if (!authz.allowed) {
         sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
         return null;
       }

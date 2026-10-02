@@ -10,8 +10,8 @@
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -25,6 +25,9 @@ const {
   STATUS: WEBSITE_SCOPE_STATUS,
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
+const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
 const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
@@ -106,14 +109,14 @@ function createWebsiteServiceTimesAdminRouter(deps) {
       sendControlled(req, res, 404, "Not found on this host.", "hq"),
   });
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
-  const requireBranchSurface = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["platform_admin", "church_hq_admin", "branch_admin"],
-  });
+  const requireHq = createRequireBlessBoardPermission("website.edit", null, { getPool, scopeMode: "church" });
+  // Branch admins hold website.edit on their assigned branch, which is not
+  // the church primary branch in a multi-branch church.
+  const requireBranchSurface = createRequireBlessBoardPermission(
+    "website.edit",
+    createAssignedBranchResourceContextResolver({ getPool }),
+    { getPool }
+  );
 
   function gateSession(req, res, next, loginNext, shellKind) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);

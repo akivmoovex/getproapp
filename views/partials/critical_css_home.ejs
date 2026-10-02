@@ -10,8 +10,8 @@
   }
   body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f6f7fb;
-    color: #121417;
+    background: var(--color-background);
+    color: var(--color-text-primary);
   }
   /* Match loaded `styles.css` public band: 1200px + gutters (24px mobile, 32px ≥768px). */
   .container,
@@ -42,7 +42,7 @@
     width: 100%;
   }
   .app-top-app-bar {
-    background: #f6f7fb;
+    background: var(--color-background);
     border-bottom: none;
     box-shadow: none;
   }
@@ -59,7 +59,7 @@
   .gp-home-hero__bg {
     position: relative;
     overflow: hidden;
-    background: #0b0b10;
+    background: var(--color-text-primary);
   }
   .gp-home-hero__photo {
     display: block;
@@ -71,7 +71,7 @@
   .gp-home-hero__scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-text-primary) 55%, transparent) 0%, color-mix(in srgb, var(--color-text-primary) 25%, transparent) 45%, color-mix(in srgb, var(--color-text-primary) 35%, transparent) 100%);
     pointer-events: none;
   }
   .gp-home-hero__content {
@@ -81,8 +81,8 @@
   }
   .gp-home-hero__title {
     margin: 0;
-    color: rgba(255, 255, 255, 0.96);
-    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+    color: color-mix(in srgb, var(--color-surface) 96%, transparent);
+    text-shadow: 0 2px 18px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
     font-weight: 900;
     letter-spacing: -0.02em;
     font-size: 2.1rem;
@@ -90,18 +90,18 @@
   }
   .gp-home-hero__subtext {
     margin: 8px 0 0;
-    color: rgba(255, 255, 255, 0.88);
-    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+    color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    text-shadow: 0 2px 18px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
     font-size: 1rem;
     line-height: 1.45;
     max-width: 60ch;
   }
   .gp-home-search-card {
     margin-top: 16px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(228, 232, 240, 0.9);
+    background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-border-default) 90%, transparent);
     border-radius: 22px;
-    box-shadow: 0 14px 44px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 14px 44px color-mix(in srgb, var(--color-text-primary) 14%, transparent);
     padding: 16px;
   }
   @media (max-width: 420px) {

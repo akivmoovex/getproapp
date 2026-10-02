@@ -2,14 +2,15 @@
 
 /**
  * BlessBoard V5 staff invitation + activation (copy-once token; no email delivery yet).
- * Supported invite roles (verified): church_hq_admin, branch_admin.
- * platform_admin cannot be invited via this path.
+ * Catalogue role keys only for new invites (V2.02). Legacy keys normalized on write/accept.
+ * platform_administrator cannot be invited via this path.
  */
 
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const inviteRepo = require("../repositories/userInvitationRepository");
+const rbacRepo = require("../repositories/blessBoardRbacRepository");
 const { normalizeEmail } = require("./createBlessBoardUser");
 const {
   evaluateStaffAccountLimit,
@@ -17,6 +18,18 @@ const {
 } = require("../../platform/services/entitlementService");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
+const {
+  validatePasswordPair,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
+const {
+  normalizeToCatalogueRoleKey,
+  listCatalogueLoginRolesForUser,
+  isCatalogueHqRole,
+  isCatalogueBranchRole,
+  defaultScopeForCatalogueRole,
+} = require("./blessBoardCatalogueLogin");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -31,9 +44,37 @@ const STATUS = Object.freeze({
   LOOKUP_ERROR: "lookup_error",
 });
 
-/** Verified invite-capable roles from blessboard.user_roles CHECK / HQ assignable set. */
-const INVITE_ROLES = Object.freeze(["church_hq_admin", "branch_admin"]);
-const ACTOR_ROLES = Object.freeze(["church_hq_admin", "branch_admin", "platform_admin"]);
+/** Catalogue roles that may be invited via this path. */
+const INVITE_ROLES = Object.freeze([
+  "organisation_administrator",
+  "church_system_administrator",
+  "branch_administrator",
+  "branch_pastor",
+  "ministry_leader",
+  "registration_officer",
+  "first_timers_coordinator",
+  "classes_coordinator",
+  "cell_coordinator",
+  "cell_leader",
+  "department_head",
+  "service_director",
+  "minister",
+  "welfare_officer",
+  "finance_director",
+  "finance_officer",
+  "finance_approver",
+  "communications_officer",
+  "website_editor",
+  "website_publisher",
+  "auditor",
+]);
+
+const ACTOR_CATALOGUE_ROLES = Object.freeze([
+  "platform_administrator",
+  "organisation_administrator",
+  "church_system_administrator",
+  "branch_administrator",
+]);
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const BCRYPT_ROUNDS = 12;
 const UUID_RE =
@@ -48,12 +89,24 @@ function generateInviteToken() {
   return { rawToken, tokenHash: hashSessionToken(rawToken) };
 }
 
-function validatePassword(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
-    return { ok: false, reason: "password" };
+function validatePassword(password, confirmPassword) {
+  // When only password is supplied (legacy callers), confirm against itself so
+  // length policy still applies without forcing a confirm argument.
+  const confirmProvided =
+    arguments.length >= 2 &&
+    confirmPassword != null &&
+    String(confirmPassword).length > 0;
+  const confirm = confirmProvided ? confirmPassword : password;
+  const pair = validatePasswordPair(password, confirm);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      reason: pair.field === "password_confirm" ? "confirm" : "password",
+      code: pair.code,
+      message: pair.error,
+    };
   }
-  return { ok: true, value };
+  return { ok: true, value: pair.value };
 }
 
 async function withClient(db, fn) {
@@ -76,55 +129,127 @@ async function withClient(db, fn) {
 }
 
 async function loadActorRoles(client, actorUserId, organizationId) {
-  const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-  return (roles || []).filter(
-    (r) =>
-      ACTOR_ROLES.includes(String(r.role_key)) &&
-      (String(r.role_key) === "platform_admin" ||
-        String(r.organization_id) === String(organizationId))
-  );
+  const roles = await listCatalogueLoginRolesForUser(client, actorUserId, organizationId);
+  return (roles || []).filter((r) => {
+    const key = String(r.role_key || "");
+    if (!ACTOR_CATALOGUE_ROLES.includes(key)) return false;
+    if (key === "platform_administrator") return true;
+    return String(r.organization_id) === String(organizationId);
+  });
 }
 
 function actorMayInvite(actorRoles, input) {
-  const isPlatform = actorRoles.some((r) => r.role_key === "platform_admin");
+  const isPlatform = actorRoles.some((r) => r.role_key === "platform_administrator");
   const isHq = actorRoles.some(
     (r) =>
-      r.role_key === "church_hq_admin" &&
-      String(r.church_id) === String(input.churchId) &&
-      String(r.organization_id) === String(input.organizationId)
+      isCatalogueHqRole(r.role_key) &&
+      r.role_key !== "platform_administrator" &&
+      String(r.organization_id) === String(input.organizationId) &&
+      (!r.church_id || String(r.church_id) === String(input.churchId))
   );
   if (isPlatform || isHq) {
-    if (input.roleKey === "church_hq_admin") return { ok: true, source: isPlatform ? "platform" : "hq" };
-    if (input.roleKey === "branch_admin") return { ok: true, source: isPlatform ? "platform" : "hq" };
-    return { ok: false, reason: "role_key" };
+    if (!INVITE_ROLES.includes(input.roleKey)) return { ok: false, reason: "role_key" };
+    return { ok: true, source: isPlatform ? "platform" : "hq" };
   }
   const branchRoles = actorRoles.filter(
     (r) =>
-      r.role_key === "branch_admin" &&
+      isCatalogueBranchRole(r.role_key) &&
       String(r.organization_id) === String(input.organizationId) &&
-      String(r.church_id) === String(input.churchId)
+      (!r.church_id || String(r.church_id) === String(input.churchId))
   );
   if (!branchRoles.length) return { ok: false, reason: "actor" };
-  if (input.roleKey !== "branch_admin") return { ok: false, reason: "role_escalation" };
+  if (!isCatalogueBranchRole(input.roleKey)) return { ok: false, reason: "role_escalation" };
   if (!input.branchId) return { ok: false, reason: "branch_required" };
   const ownsBranch = branchRoles.some((r) => String(r.branch_id) === String(input.branchId));
   if (!ownsBranch) return { ok: false, reason: "branch_scope" };
-  return { ok: true, source: "branch_admin" };
+  return { ok: true, source: "branch_administrator" };
+}
+
+async function ensureCatalogueAssignmentOnAccept(client, input) {
+  const catalogueRoleKey = normalizeToCatalogueRoleKey(input.roleKey);
+  const role = await rbacRepo.findRoleByKey(client, catalogueRoleKey);
+  if (!role || !role.isActive) {
+    return { ok: false, reason: "role_missing" };
+  }
+  const scope = defaultScopeForCatalogueRole(catalogueRoleKey, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId,
+  });
+  if (scope.scopeType === "branch" && !scope.scopeId) {
+    return { ok: false, reason: "branch_required" };
+  }
+
+  const existing = await rbacRepo.listAssignmentsForUserOrg(
+    client,
+    input.userId,
+    input.organizationId
+  );
+  const activeSame = (existing || []).find(
+    (a) =>
+      String(a.status) === "active" &&
+      String(a.roleKey) === catalogueRoleKey &&
+      String(a.scopeType) === String(scope.scopeType) &&
+      String(a.scopeId || "") === String(scope.scopeId || "")
+  );
+  if (activeSame) {
+    return { ok: true, assignment: activeSame, created: false };
+  }
+
+  const assignment = await rbacRepo.insertAssignment(client, {
+    userId: input.userId,
+    organizationId: input.organizationId,
+    churchId: scope.churchId,
+    roleId: role.id,
+    scopeType: scope.scopeType,
+    scopeId: scope.scopeId,
+    assignedByUserId: input.actorUserId || null,
+    assignmentOrigin: "manual",
+    assignmentReason: "invitation_accepted",
+    expiresAt: null,
+  });
+  await rbacRepo.insertAssignmentEvent(client, {
+    assignmentId: assignment.id,
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId || input.userId,
+    eventKey: "rbac.assignment.created",
+    previousStatus: null,
+    newStatus: "active",
+    reason: "invitation_accepted",
+    metadata: { role_key: catalogueRoleKey, source: "invite_accept" },
+  });
+  return { ok: true, assignment, created: true };
 }
 
 /**
  * Create or resend a staff invitation. Raw token returned once for copy-once delivery.
+ * When allowPhoneOnly is true, email may be omitted if phoneNormalized (E.164) is provided.
+ * When skipTransaction is true, caller must already hold an open transaction on `db`.
  */
 async function inviteBlessBoardStaff(db, input) {
   const organizationId = String((input && input.organizationId) || "").trim();
   const churchId = String((input && input.churchId) || "").trim();
   const actorUserId = String((input && input.actorUserId) || "").trim();
   const emailDisplay = String((input && input.email) || "").trim();
-  const email = normalizeEmail(emailDisplay);
-  const roleKey = String((input && input.roleKey) || "")
+  const email = emailDisplay ? normalizeEmail(emailDisplay) : "";
+  const allowPhoneOnly = Boolean(input && input.allowPhoneOnly);
+  const skipTransaction = Boolean(input && input.skipTransaction);
+  const phoneNormalized =
+    input && input.phoneNormalized != null
+      ? String(input.phoneNormalized).trim()
+      : "";
+  const phoneDisplay =
+    input && input.phoneDisplay != null
+      ? String(input.phoneDisplay).trim().slice(0, 40)
+      : phoneNormalized;
+  const roleKeyRaw = String((input && input.roleKey) || "")
     .trim()
     .toLowerCase();
-  const displayName = String((input && input.displayName) || "").trim() || emailDisplay;
+  const roleKey = normalizeToCatalogueRoleKey(roleKeyRaw);
+  const displayName =
+    String((input && input.displayName) || "").trim() ||
+    emailDisplay ||
+    phoneDisplay;
   let branchId =
     input && input.branchId != null && String(input.branchId).trim()
       ? String(input.branchId).trim()
@@ -135,19 +260,28 @@ async function inviteBlessBoardStaff(db, input) {
   if (!UUID_RE.test(organizationId) || !UUID_RE.test(churchId) || !UUID_RE.test(actorUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope" };
   }
-  if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+  if (email && (!EMAIL_RE.test(email) || email.length > 254)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "email", message: "Enter a valid email address." };
   }
-  if (!INVITE_ROLES.includes(roleKey)) {
+  if (!email && !(allowPhoneOnly && phoneNormalized)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "email", message: "Enter a valid email address." };
+  }
+  if (allowPhoneOnly && phoneNormalized && !/^\+[1-9][0-9]{6,14}$/.test(phoneNormalized)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "phone", message: "Enter a valid phone number." };
+  }
+  if (!roleKey || !INVITE_ROLES.includes(roleKey)) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "role_escalation" };
   }
-  if (roleKey === "platform_admin") {
+  if (roleKey === "platform_administrator") {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "role_escalation" };
   }
-  if (roleKey === "church_hq_admin" && (branchId || branchKey)) {
+  if (
+    (roleKey === "organisation_administrator" || roleKey === "church_system_administrator") &&
+    (branchId || branchKey)
+  ) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "hq_scope" };
   }
-  if (roleKey === "branch_admin" && !branchId && !branchKey) {
+  if (isCatalogueBranchRole(roleKey) && !branchId && !branchKey) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "branch_required" };
   }
   if (!displayName || displayName.length > 200) {
@@ -156,15 +290,19 @@ async function inviteBlessBoardStaff(db, input) {
 
   try {
     return await withClient(db, async (client) => {
-      await client.query("BEGIN");
+      if (!skipTransaction) await client.query("BEGIN");
       try {
         const org = await client.query(
           `SELECT id, status FROM platform.organizations WHERE id = $1 FOR UPDATE`,
           [organizationId]
         );
+        const fail = async (payload) => {
+          if (!skipTransaction) await client.query("ROLLBACK");
+          return payload;
+        };
+
         if (!org.rows[0] || String(org.rows[0].status) !== "active") {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.ORG_INACTIVE, reason: "organization_inactive" };
+          return fail({ ok: false, status: STATUS.ORG_INACTIVE, reason: "organization_inactive" });
         }
         const church = await client.query(
           `SELECT id, organization_id, status FROM blessboard.churches WHERE id = $1 FOR UPDATE`,
@@ -176,16 +314,14 @@ async function inviteBlessBoardStaff(db, input) {
           String(church.rows[0].status) === "suspended" ||
           String(church.rows[0].status) === "archived"
         ) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.ORG_INACTIVE, reason: "church_inactive" };
+          return fail({ ok: false, status: STATUS.ORG_INACTIVE, reason: "church_inactive" });
         }
 
-        if (roleKey === "branch_admin") {
+        if (isCatalogueBranchRole(roleKey)) {
           if (!branchId && branchKey) {
             const branch = await authRepo.findBranchByChurchAndKey(client, churchId, branchKey);
             if (!branch || String(branch.status) !== "active") {
-              await client.query("ROLLBACK");
-              return { ok: false, status: STATUS.NOT_FOUND, reason: "branch" };
+              return fail({ ok: false, status: STATUS.NOT_FOUND, reason: "branch" });
             }
             branchId = branch.id;
           } else if (branchId) {
@@ -198,8 +334,7 @@ async function inviteBlessBoardStaff(db, input) {
               String(br.rows[0].church_id) !== churchId ||
               String(br.rows[0].status) !== "active"
             ) {
-              await client.query("ROLLBACK");
-              return { ok: false, status: STATUS.NOT_FOUND, reason: "branch" };
+              return fail({ ok: false, status: STATUS.NOT_FOUND, reason: "branch" });
             }
           }
         } else {
@@ -214,56 +349,57 @@ async function inviteBlessBoardStaff(db, input) {
           roleKey,
         });
         if (!gate.ok) {
-          await client.query("ROLLBACK");
-          return {
+          return fail({
             ok: false,
             status: STATUS.FORBIDDEN,
             reason: gate.reason || "actor",
-          };
+          });
         }
 
-        const existingUser = await authRepo.findUserByEmail(client, email);
+        let existingUser = email
+          ? await authRepo.findUserByEmail(client, email)
+          : null;
+        if (!existingUser && phoneNormalized) {
+          existingUser = await authRepo.findUserByPhone(client, phoneNormalized);
+        }
         if (existingUser && String(existingUser.id) === actorUserId) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, reason: "self_invite" };
+          return fail({ ok: false, status: STATUS.FORBIDDEN, reason: "self_invite" });
         }
 
         let hasActiveStaffInOrg = false;
         if (existingUser) {
-          const staff = await client.query(
-            `SELECT 1 FROM blessboard.user_roles
-              WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-                AND role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
-              LIMIT 1`,
-            [existingUser.id, organizationId]
+          const staffRoles = await listCatalogueLoginRolesForUser(
+            client,
+            existingUser.id,
+            organizationId
           );
-          hasActiveStaffInOrg = staff.rows.length > 0;
+          hasActiveStaffInOrg = (staffRoles || []).length > 0;
 
-          const sameRole = await authRepo.findRole(client, {
-            userId: existingUser.id,
-            organizationId,
-            churchId,
-            branchId,
-            roleKey,
-          });
-          if (sameRole && String(sameRole.status) === "active") {
-            await client.query("ROLLBACK");
-            return {
+          const sameRole = (staffRoles || []).find(
+            (r) =>
+              String(r.role_key) === roleKey &&
+              (isCatalogueBranchRole(roleKey)
+                ? String(r.branch_id || "") === String(branchId || "")
+                : true)
+          );
+          if (sameRole) {
+            return fail({
               ok: false,
               status: STATUS.CONFLICT,
               reason: "already_assigned",
               message: "That user already has this role.",
-            };
+            });
           }
         }
 
         const countsAsNewStaff = !hasActiveStaffInOrg;
         const countsAsNewUser = !hasActiveStaffInOrg;
-        // Pending invite for this email already counted in seat totals; resend does not add a seat.
+        // Pending invite for this identity already counted in seat totals; resend does not add a seat.
         const pending = await inviteRepo.findPendingByScope(client, {
           organizationId,
           churchId,
-          emailNormalized: email,
+          emailNormalized: email || null,
+          phoneNormalized: phoneNormalized || null,
           roleKey,
           branchId,
         });
@@ -273,33 +409,45 @@ async function inviteBlessBoardStaff(db, input) {
           countsAsNewUser: pending ? false : countsAsNewUser,
         });
         if (!seatGate.ok) {
-          await client.query("ROLLBACK");
           const mapped =
             seatGate.status === ENT_STATUS.LIMIT_EXCEEDED
               ? STATUS.LIMIT_EXCEEDED
               : STATUS.FORBIDDEN;
-          return {
+          return fail({
             ok: false,
             status: mapped,
             reason: seatGate.reason,
             current: seatGate.current,
             limit: seatGate.limit,
             message: seatGate.message,
-          };
+          });
         }
 
         if (pending) {
           await inviteRepo.markRevoked(client, pending.id, actorUserId);
         }
 
+        let userId = existingUser ? String(existingUser.id) : null;
         if (!existingUser) {
-          await authRepo.insertUser(client, {
-            emailNormalized: email,
-            emailDisplay: emailDisplay.slice(0, 254),
+          const created = await authRepo.insertUser(client, {
+            emailNormalized: email || null,
+            emailDisplay: email ? emailDisplay.slice(0, 254) : null,
             passwordHash: null,
             status: "invited",
             displayName: displayName.slice(0, 200),
+            phoneNormalized: phoneNormalized || null,
+            phoneDisplay: phoneNormalized ? phoneDisplay || phoneNormalized : null,
           });
+          userId = String(created.id);
+        } else if (phoneNormalized && !existingUser.phone_normalized) {
+          await client.query(
+            `UPDATE blessboard.users
+                SET phone_normalized = COALESCE(phone_normalized, $2),
+                    phone_display = COALESCE(phone_display, $3),
+                    updated_at = now()
+              WHERE id = $1`,
+            [existingUser.id, phoneNormalized, phoneDisplay || phoneNormalized]
+          );
         }
 
         const { rawToken, tokenHash } = generateInviteToken();
@@ -308,14 +456,49 @@ async function inviteBlessBoardStaff(db, input) {
           organizationId,
           churchId,
           branchId,
-          emailNormalized: email,
-          emailDisplay: emailDisplay.slice(0, 254),
+          emailNormalized: email || null,
+          emailDisplay: email ? emailDisplay.slice(0, 254) : null,
+          phoneNormalized: phoneNormalized || null,
+          phoneDisplay: phoneNormalized ? phoneDisplay || phoneNormalized : null,
           displayName: displayName.slice(0, 200),
           roleKey,
           tokenHash,
           expiresAt,
           invitedByUserId: actorUserId,
         });
+
+        const depCode =
+          (input && input.deploymentCode) ||
+          (await (async () => {
+            const fromEnv = (() => {
+              try {
+                const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+                const id = getPlatformDeploymentCode((input && input.env) || process.env);
+                return id && id.ok ? id.code : null;
+              } catch {
+                return null;
+              }
+            })();
+            if (fromEnv) {
+              const exists = await client.query(
+                `SELECT 1 FROM platform.deployments WHERE deployment_code = $1 LIMIT 1`,
+                [fromEnv]
+              );
+              if (exists.rows[0]) return fromEnv;
+            }
+            const row = await client.query(
+              `SELECT deployment_id AS deployment_code
+                 FROM platform.domains
+                WHERE organization_id = $1
+                ORDER BY is_primary DESC NULLS LAST, created_at ASC
+                LIMIT 1`,
+              [organizationId]
+            );
+            if (row.rows[0] && row.rows[0].deployment_code) {
+              return String(row.rows[0].deployment_code);
+            }
+            return fromEnv || "blessboard-org-staging";
+          })());
 
         await recordBlessBoardAudit(client, {
           churchId,
@@ -326,22 +509,29 @@ async function inviteBlessBoardStaff(db, input) {
           entityType: "user_invitation",
           entityId: invitation.id,
           outcome: "success",
+          env: input && input.env,
+          deploymentCode: depCode,
           metadata: {
             status: pending ? "resent" : "created",
             reason_code: gate.source === "platform" ? "platform_override" : "tenant_invite",
             entity_key: roleKey,
             branch_key: branchKey || undefined,
             source: gate.source,
+            has_email: Boolean(email),
+            has_phone: Boolean(phoneNormalized),
           },
         });
 
-        await client.query("COMMIT");
+        if (!skipTransaction) await client.query("COMMIT");
         return {
           ok: true,
           status: STATUS.OK,
+          userId,
+          existingUser: Boolean(existingUser),
           invitation: {
             id: invitation.id,
             emailDisplay: invitation.emailDisplay,
+            phoneDisplay: invitation.phoneDisplay,
             roleKey: invitation.roleKey,
             expiresAt: invitation.expiresAt,
             resent: Boolean(pending),
@@ -351,10 +541,12 @@ async function inviteBlessBoardStaff(db, input) {
           delivery: "copy_once",
         };
       } catch (err) {
-        try {
-          await client.query("ROLLBACK");
-        } catch {
-          /* ignore */
+        if (!skipTransaction) {
+          try {
+            await client.query("ROLLBACK");
+          } catch {
+            /* ignore */
+          }
         }
         throw err;
       }
@@ -496,7 +688,12 @@ async function getInvitationForAccept(db, rawToken) {
         await inviteRepo.markExpired(client, invite.id);
         return { ok: false, status: STATUS.EXPIRED, message: GENERIC_ACCEPT_FAILURE };
       }
-      const user = await authRepo.findUserByEmail(client, invite.emailNormalized);
+      let user = invite.emailNormalized
+        ? await authRepo.findUserByEmail(client, invite.emailNormalized)
+        : null;
+      if (!user && invite.phoneNormalized) {
+        user = await authRepo.findUserByPhone(client, invite.phoneNormalized);
+      }
       const requiresPassword = !user || String(user.status) !== "active";
       return {
         ok: true,
@@ -506,6 +703,8 @@ async function getInvitationForAccept(db, rawToken) {
           roleKey: invite.roleKey,
           displayName: invite.displayName,
           requiresPassword,
+          hasEmail: Boolean(invite.emailNormalized),
+          hasPhone: Boolean(invite.phoneNormalized),
         },
       };
     });
@@ -528,13 +727,15 @@ async function acceptInvitation(db, input) {
     input && input.password != null && String(input.password).length > 0;
   let passwordHash = null;
   if (passwordProvided) {
-    const passwordCheck = validatePassword(input.password);
+    const passwordCheck = validatePassword(input.password, input.passwordConfirm);
     if (!passwordCheck.ok) {
       return {
         ok: false,
         status: STATUS.INVALID_INPUT,
-        reason: "password",
-        message: "Choose a password between 10 and 200 characters.",
+        reason: passwordCheck.reason || "password",
+        message:
+          passwordCheck.message ||
+          `Choose a password between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters.`,
       };
     }
     passwordHash = await bcrypt.hash(passwordCheck.value, BCRYPT_ROUNDS);
@@ -594,7 +795,12 @@ async function acceptInvitation(db, input) {
           }
         }
 
-        let user = await authRepo.findUserByEmail(client, invite.emailNormalized);
+        let user = invite.emailNormalized
+          ? await authRepo.findUserByEmail(client, invite.emailNormalized)
+          : null;
+        if (!user && invite.phoneNormalized) {
+          user = await authRepo.findUserByPhone(client, invite.phoneNormalized);
+        }
         if (!user) {
           if (!passwordHash) {
             await client.query("ROLLBACK");
@@ -606,11 +812,13 @@ async function acceptInvitation(db, input) {
             };
           }
           user = await authRepo.insertUser(client, {
-            emailNormalized: invite.emailNormalized,
-            emailDisplay: invite.emailDisplay,
+            emailNormalized: invite.emailNormalized || null,
+            emailDisplay: invite.emailDisplay || null,
             passwordHash,
             status: "active",
             displayName: invite.displayName,
+            phoneNormalized: invite.phoneNormalized || null,
+            phoneDisplay: invite.phoneDisplay || null,
           });
         } else if (String(user.status) === "invited") {
           if (!passwordHash) {
@@ -633,31 +841,60 @@ async function acceptInvitation(db, input) {
         }
         // else: existing active identity — assign role only (explicit multi-org membership)
 
-        const existingRole = await authRepo.findRole(client, {
+        // Catalogue assignment only — do not write blessboard.user_roles.
+        const assigned = await ensureCatalogueAssignmentOnAccept(client, {
           userId: user.id,
           organizationId: invite.organizationId,
           churchId: invite.churchId,
           branchId: invite.branchId,
           roleKey: invite.roleKey,
+          actorUserId: user.id,
         });
-        let roleRow = existingRole;
-        if (existingRole && String(existingRole.status) !== "active") {
-          roleRow = await authRepo.updateRoleStatus(client, existingRole.id, "active");
-        } else if (!existingRole) {
-          roleRow = await authRepo.insertRole(client, {
-            userId: user.id,
-            organizationId: invite.organizationId,
-            churchId: invite.churchId,
-            branchId: invite.branchId,
-            roleKey: invite.roleKey,
-          });
+        if (!assigned.ok) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.FORBIDDEN,
+            reason: assigned.reason || "assignment_failed",
+            message: GENERIC_ACCEPT_FAILURE,
+          };
         }
+        const roleRow = assigned.assignment;
 
         const accepted = await inviteRepo.markAccepted(client, invite.id, user.id);
         if (!accepted) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.CONFLICT, message: GENERIC_ACCEPT_FAILURE };
         }
+
+        const acceptDepCode = await (async () => {
+          try {
+            const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+            const id = getPlatformDeploymentCode((input && input.env) || process.env);
+            const fromEnv = id && id.ok ? id.code : null;
+            if (fromEnv) {
+              const exists = await client.query(
+                `SELECT 1 FROM platform.deployments WHERE deployment_code = $1 LIMIT 1`,
+                [fromEnv]
+              );
+              if (exists.rows[0]) return fromEnv;
+            }
+            const row = await client.query(
+              `SELECT deployment_id AS deployment_code
+                 FROM platform.domains
+                WHERE organization_id = $1
+                ORDER BY is_primary DESC NULLS LAST, created_at ASC
+                LIMIT 1`,
+              [invite.organizationId]
+            );
+            if (row.rows[0] && row.rows[0].deployment_code) {
+              return String(row.rows[0].deployment_code);
+            }
+            return fromEnv || "blessboard-org-staging";
+          } catch {
+            return "blessboard-org-staging";
+          }
+        })();
 
         await recordBlessBoardAudit(client, {
           churchId: invite.churchId,
@@ -668,6 +905,8 @@ async function acceptInvitation(db, input) {
           entityType: "user_invitation",
           entityId: invite.id,
           outcome: "success",
+          deploymentCode: acceptDepCode,
+          env: input && input.env,
           metadata: {
             status: "accepted",
             entity_key: invite.roleKey,
@@ -683,6 +922,8 @@ async function acceptInvitation(db, input) {
           entityType: "user_role",
           entityId: roleRow && roleRow.id,
           outcome: "success",
+          deploymentCode: acceptDepCode,
+          env: input && input.env,
           metadata: {
             status: "assigned",
             entity_key: invite.roleKey,
@@ -725,6 +966,8 @@ module.exports = {
   INVITE_ROLES,
   INVITE_TTL_MS,
   GENERIC_ACCEPT_FAILURE,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   inviteBlessBoardStaff,
   listPendingInvitations,
   revokeInvitation,
@@ -732,4 +975,7 @@ module.exports = {
   acceptInvitation,
   generateInviteToken,
   validatePassword,
+  actorMayInvite,
+  loadActorRoles,
+  ensureCatalogueAssignmentOnAccept,
 };

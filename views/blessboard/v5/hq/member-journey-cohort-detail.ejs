@@ -1,0 +1,89 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var cohort = typeof cohort !== 'undefined' ? cohort : null;
+  var rows = typeof enrolments !== 'undefined' && enrolments ? enrolments : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-cohort-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/classes">Classes</a>
+      <span aria-hidden="true">›</span>
+      <span>Cohort</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= cohort ? cohort.displayName : 'Cohort' %></h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (!cohort) { %>
+    <p>Cohort not found.</p>
+  <% } else { %>
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Details</h2>
+      <ul class="bb-hq-list">
+        <li>Program: <%= cohort.programName %> (<%= cohort.programType %>)</li>
+        <li>Key: <%= cohort.cohortKey %></li>
+        <li>Status: <%= cohort.status %></li>
+        <li>Teacher: <%= cohort.teacherUserId || '—' %></li>
+      </ul>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Enrol member</h2>
+      <form method="post" action="/hq/classes/cohorts/<%= cohort.id %>/enrol" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Member id <input name="memberId" required maxlength="36" placeholder="UUID"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Enrol</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Enrolments</h2>
+      <% if (!rows.length) { %>
+        <p>No enrolments yet.</p>
+      <% } else { %>
+        <ul class="bb-hq-list">
+          <% rows.forEach(function (e) { %>
+            <li>
+              <%= e.firstName %> <%= e.lastName %> · <%= e.status %> · attendance <%= e.attendanceCount || 0 %>
+              <% if (e.recommended) { %> · recommended<% } %>
+              <% if (e.approved) { %> · approved<% } %>
+              <% if (e.status === 'enrolled') { %>
+                <form method="post" action="/hq/classes/cohorts/<%= cohort.id %>/attendance" style="display:inline">
+                  <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                  <input type="hidden" name="enrolmentId" value="<%= e.id %>"/>
+                  <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">+ Attendance</button>
+                </form>
+                <% if (!e.recommended) { %>
+                  <form method="post" action="/hq/classes/cohorts/<%= cohort.id %>/recommend" style="display:inline">
+                    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                    <input type="hidden" name="enrolmentId" value="<%= e.id %>"/>
+                    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Recommend</button>
+                  </form>
+                <% } %>
+                <% if (e.recommended && !e.approved) { %>
+                  <form method="post" action="/hq/classes/cohorts/<%= cohort.id %>/approve" style="display:inline">
+                    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                    <input type="hidden" name="enrolmentId" value="<%= e.id %>"/>
+                    <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Approve</button>
+                  </form>
+                <% } %>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% } %>
+  <p><a href="/hq/classes">Back to classes</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

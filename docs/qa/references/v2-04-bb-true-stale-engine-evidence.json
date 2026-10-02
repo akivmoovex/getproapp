@@ -1,0 +1,45 @@
+{
+  "product": "BB",
+  "tip": "7dbe945d6c93",
+  "org": "bb-v8qa-muq9wn7a9a3d",
+  "phase": "lifecycle-v2",
+  "steps": {
+    "staleBase": {
+      "status": 200,
+      "ok": true,
+      "expectedUpdatedAt": "2026-10-02T01:39:15.217Z",
+      "contentKeys": [
+        "id",
+        "organizationId",
+        "instanceId",
+        "contentKey",
+        "contentType",
+        "draftValue",
+        "publishedValue",
+        "visibility",
+        "sortOrder",
+        "updatedByIdentityId",
+        "updatedAt"
+      ]
+    },
+    "staleB": {
+      "status": 200,
+      "ok": true,
+      "code": "saved_to_draft",
+      "updatedAt": "2026-10-02T01:39:15.526Z"
+    },
+    "staleA": {
+      "status": 409,
+      "ok": false,
+      "code": "conflict",
+      "reason": "stale_draft_revision",
+      "body": "{\"ok\":false,\"code\":\"conflict\",\"reason\":\"stale_draft_revision\",\"requestId\":\"7b2c236e8a5dd56d9a638315\",\"correlationId\":\"7b2c236e8a5dd56d9a638315\"}"
+    },
+    "staleContent": {
+      "hasBase": false,
+      "hasNewer": true,
+      "hasStale": false
+    },
+    "classicInlineStaleNote": "Prior run: inline-field dual-session both HTTP 200; stale value won (silent overwrite) without expectedUpdatedAt support."
+  }
+}

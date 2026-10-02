@@ -1,0 +1,24 @@
+<%#
+  Shared ops card shell. Locals: title, bodyHtml (trusted), className, footerHtml
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? title : '';
+  var _cls = 'gp-ops-card' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<section class="<%= _cls %>" data-gp-ops="card">
+  <% if (_title) { %>
+  <header class="gp-ops-card__header">
+    <h2 class="gp-ops-card__title"><%= _title %></h2>
+  </header>
+  <% } %>
+  <div class="gp-ops-card__body">
+    <% if (typeof bodyHtml !== 'undefined' && bodyHtml) { %>
+    <%- bodyHtml %>
+    <% } else if (typeof body !== 'undefined' && body) { %>
+    <p><%= body %></p>
+    <% } %>
+  </div>
+  <% if (typeof footerHtml !== 'undefined' && footerHtml) { %>
+  <footer class="gp-ops-card__footer"><%- footerHtml %></footer>
+  <% } %>
+</section>

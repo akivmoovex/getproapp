@@ -182,21 +182,24 @@ function presentRegistrationOperatorView(row) {
     };
   }
 
-  if (app === "cancelled") {
+  if (prov === "provisioning_failed") {
     return {
-      displayStatus: DISPLAY.CLOSED,
-      explanation: "This application was cancelled.",
-      recommendedAction: ACTIONS.NONE,
-      recommendedActionLabel: ACTION_LABELS[ACTIONS.NONE],
-      queue: QUEUES.REJECTED,
-      tone: "muted",
+      displayStatus: DISPLAY.PROVISIONING_FAILED,
+      explanation:
+        "Provisioning did not complete. Review the technical details, then retry only if no organization was created.",
+      recommendedAction: network ? ACTIONS.NONE : ACTIONS.RETRY_PROVISIONING,
+      recommendedActionLabel: network
+        ? ACTION_LABELS[ACTIONS.NONE]
+        : ACTION_LABELS[ACTIONS.RETRY_PROVISIONING],
+      queue: QUEUES.PROVISIONING_FAILED,
+      tone: "danger",
       planLabel,
       isNetwork: network,
       organizationHref,
     };
   }
 
-  if (prov === "provisioned" || (app === "closed" && orgKey)) {
+  if (prov === "provisioned" || app === "active") {
     let explanation = `This ${planLabel} registration was provisioned successfully.`;
     if (growthTrial) {
       explanation =
@@ -216,23 +219,6 @@ function presentRegistrationOperatorView(row) {
         : ACTION_LABELS[ACTIONS.NONE],
       queue: QUEUES.PROVISIONED,
       tone: "success",
-      planLabel,
-      isNetwork: network,
-      organizationHref,
-    };
-  }
-
-  if (prov === "provisioning_failed") {
-    return {
-      displayStatus: DISPLAY.PROVISIONING_FAILED,
-      explanation:
-        "Provisioning did not complete. Review the technical details, then retry only if no organization was created.",
-      recommendedAction: network ? ACTIONS.NONE : ACTIONS.RETRY_PROVISIONING,
-      recommendedActionLabel: network
-        ? ACTION_LABELS[ACTIONS.NONE]
-        : ACTION_LABELS[ACTIONS.RETRY_PROVISIONING],
-      queue: QUEUES.PROVISIONING_FAILED,
-      tone: "danger",
       planLabel,
       isNetwork: network,
       organizationHref,
@@ -296,21 +282,10 @@ function presentRegistrationOperatorView(row) {
     };
   }
 
-  if (app === "duplicate_review") {
-    return {
-      displayStatus: DISPLAY.NEEDS_REVIEW,
-      explanation: `This ${planLabel} registration requires duplicate or similarity review before provisioning.`,
-      recommendedAction: ACTIONS.APPROVE_AND_PROVISION,
-      recommendedActionLabel: ACTION_LABELS[ACTIONS.APPROVE_AND_PROVISION],
-      queue: QUEUES.NEEDS_REVIEW,
-      tone: "warn",
-      planLabel,
-      isNetwork: false,
-      organizationHref: null,
-    };
-  }
-
-  if (app === "submitted" && (prov === "not_started" || prov === "provisioning")) {
+  if (
+    (app === "review_required" || app === "submitted") &&
+    (prov === "not_started" || prov === "provisioning")
+  ) {
     return {
       displayStatus: DISPLAY.NEEDS_REVIEW,
       explanation:

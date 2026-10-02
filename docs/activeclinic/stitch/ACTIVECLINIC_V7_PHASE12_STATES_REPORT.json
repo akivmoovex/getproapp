@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-08-12T11:50:00.000Z",
+  "verdict": "PHASE12_COMPLETE",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "pushed": false,
+    "deployed": false,
+    "fake_production_api_failures": false,
+    "new_redundant_routes": false
+  },
+  "stitch_projects": {
+    "public_booking_portal": "17813606734422395399",
+    "internal_ops": "12272131183982732110"
+  },
+  "required_states": {
+    "EMPTY": "implemented",
+    "LOADING": "implemented_presentation_no_fake_prod_fetch",
+    "ERROR": "implemented",
+    "SUCCESS": "implemented",
+    "VALIDATION_ERROR": "implemented",
+    "PERMISSION_DENIED": "implemented",
+    "DEPARTMENT_DISABLED": "implemented",
+    "FACILITY_UNAVAILABLE": "implemented",
+    "NOT_FOUND": "implemented",
+    "OFFLINE": "presentation_only_no_service_worker"
+  },
+  "missing_before": [
+    "clinical queue/alerts ad-hoc empty",
+    "lab/radiology queue ad-hoc empty",
+    "pharmacy PO muted empty",
+    "payment history muted empty",
+    "booking-requests muted empty",
+    "select-facility custom empty (no taxonomy key)",
+    "portal dashboard empty unmarked"
+  ],
+  "implemented": [
+    "FACILITY_UNAVAILABLE taxonomy",
+    "canonical ac-inline-state on clinical/diagnostics/pharmacy PO/billing payments/booking-requests/select-facility",
+    "data-ac-state-key on public/portal/success/error terminals"
+  ],
+  "remaining": [
+    "No browser offline detection / service worker",
+    "Directory loading query hook is NODE_ENV=test only",
+    "Stitch SMS progress screens stay honesty notes"
+  ],
+  "tests": {
+    "file": "tests/activeclinic-phase12-states.test.js",
+    "pass": 10,
+    "fail": 0
+  },
+  "next": "PHASE 13 — data integrity/domain rules"
+}

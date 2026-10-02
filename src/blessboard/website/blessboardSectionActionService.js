@@ -1,0 +1,386 @@
+"use strict";
+
+const { presentSectionManifest } = require("../../platform/website-engine/presentSectionManifest");
+const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+const contentRepo = require("../repositories/publicContentRepository");
+const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
+const draftRepo = require("../repositories/websiteStructuredDraftRepository");
+
+const LOCKED_SECTIONS = new Set(["hero", "service_times", "services", "worship_times"]);
+
+/** Home sermon-library teaser — presentation section (not individual sermon records). */
+const SERMONS_INTRO_SECTION_KEY = "sermons_intro";
+
+function isLockedSection(sectionKey) {
+  return LOCKED_SECTIONS.has(String(sectionKey || "").trim());
+}
+
+function hasPageSectionRemoveDraft(drafts, pageKey, sectionKey) {
+  const page = String(pageKey || "").trim();
+  const key = String(sectionKey || "").trim();
+  if (!page || !key) return false;
+  for (const d of drafts || []) {
+    if (d.draftKind !== "page_section" || d.op !== "remove") continue;
+    if (String(d.pageKey || "") !== page) continue;
+    const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+    if (sk === key) return true;
+  }
+  return false;
+}
+
+/**
+ * Soft-fill / empty CMS homes still render the sermon library teaser from template
+ * defaults ("Full library"). Ensure that area participates in the shared section
+ * manifest so edit/hide chrome attaches. Does not invent sermon entity records.
+ *
+ * @param {object} model
+ * @param {object[]} [structuredDrafts]
+ * @returns {object} model
+ */
+function ensureSermonsIntroPresentationSection(model, structuredDrafts) {
+  if (!model || String(model.pageKey || "") !== "home") return model;
+  const teasers = model.homeTeasers;
+  const sermonTeasers = teasers && Array.isArray(teasers.sermons) ? teasers.sermons : [];
+  if (!sermonTeasers.length) return model;
+  if (hasPageSectionRemoveDraft(structuredDrafts, "home", SERMONS_INTRO_SECTION_KEY)) {
+    return model;
+  }
+  const exists = (model.sections || []).some(
+    (s) => s && String(s.sectionKey || "") === SERMONS_INTRO_SECTION_KEY
+  );
+  if (exists) return model;
+
+  const fb =
+    model.homeDemoFallback && typeof model.homeDemoFallback === "object"
+      ? model.homeDemoFallback
+      : {};
+  const maxSort = (model.sections || []).reduce(
+    (max, s) => Math.max(max, Number(s && s.sortOrder) || 0),
+    0
+  );
+  model.sections = [
+    ...(model.sections || []),
+    {
+      sectionKey: SERMONS_INTRO_SECTION_KEY,
+      sectionType: "text",
+      heading: fb.sermonIntroHeading || "Latest Sermon",
+      bodyText: fb.sermonIntroBody || "",
+      mediaUrl: null,
+      sortOrder: maxSort > 0 ? maxSort + 10 : 40,
+      status: "draft",
+      layoutMetadata: { buttonText: "Full library" },
+      _softPresentation: true,
+    },
+  ];
+  return model;
+}
+
+function sectionOrderKeys(sections) {
+  return (sections || [])
+    .slice()
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+    .map((s) => String(s.sectionKey || ""))
+    .filter(Boolean);
+}
+
+function applyVisibilityDrafts(sections, drafts, pageKey) {
+  const hidden = new Set();
+  const removed = new Set();
+  for (const d of drafts || []) {
+    if (d.draftKind !== "page_section" || d.pageKey !== pageKey) continue;
+    if (d.op === "remove") {
+      const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+      if (sk) removed.add(sk);
+      continue;
+    }
+    if (d.op !== "visibility") continue;
+    const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+    if (!sk) continue;
+    if (d.payload && d.payload.hidden === true) hidden.add(sk);
+    else hidden.delete(sk);
+  }
+  return (sections || [])
+    .filter((s) => !removed.has(String(s.sectionKey || "")))
+    .map((s) => {
+      const key = String(s.sectionKey || "");
+      const isHidden = hidden.has(key) || String(s.status || "") === "archived";
+      return {
+        ...s,
+        _draftHidden: hidden.has(key),
+        status: hidden.has(key) ? "archived" : s.status,
+        _editorHidden: isHidden,
+      };
+    });
+}
+
+function buildManifest(pageKey, sections, structuredDrafts) {
+  const visibleSections = applyVisibilityDrafts(sections, structuredDrafts, pageKey);
+  const ordered = visibleSections
+    .slice()
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  const total = ordered.length;
+  const capabilities = ordered.map((section, index) => {
+    const sectionKey = String(section.sectionKey || "");
+    const locked = isLockedSection(sectionKey) || sectionKey === "hero";
+    const isHidden =
+      section._draftHidden === true ||
+      section._editorHidden === true ||
+      String(section.status || "") === "archived";
+    return {
+      sectionKey,
+      sectionId: sectionKey,
+      pageKey,
+      label: section.heading ? String(section.heading) : null,
+      title: section.heading || null,
+      canEdit: true,
+      canReorder: total > 1 && !locked,
+      canHide: !locked,
+      canRestoreDefault: !locked && Boolean(section.sectionKey) && section._isDraftNew !== true,
+      canRemove:
+        !locked &&
+        (section._isDraftNew === true ||
+          ["plain_text", "image", "image_text"].includes(String(section.sectionType || ""))),
+      isHidden,
+      isDefault: false,
+      isCustom:
+        section._isDraftNew === true ||
+        ["plain_text", "image", "image_text"].includes(String(section.sectionType || "")),
+      sortIndex: index,
+      selector: `[data-section="${sectionKey}"]`,
+      sectionType: String(section.sectionType || ""),
+    };
+  });
+  return presentSectionManifest({
+    pageKey,
+    selectorAttr: "data-section",
+    sections: capabilities,
+  });
+}
+
+async function reorderSections(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const order = Array.isArray(input.order) ? input.order.map(String) : [];
+  if (!order.length) return { ok: false, code: "invalid_input" };
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey: null,
+    entityKey: `page:${pageKey}:section-order`,
+    op: "reorder",
+    payload: { order },
+    previousPayload: input.previousOrder ? { order: input.previousOrder } : null,
+  });
+  return { ok: true, order };
+}
+
+async function setSectionVisibility(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey) return { ok: false, code: "invalid_input" };
+  if (isLockedSection(sectionKey)) return { ok: false, code: "locked_item" };
+  const hidden = input.hidden === true;
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:visibility`,
+    op: "visibility",
+    payload: { sectionKey, hidden },
+    previousPayload: input.previousPayload || null,
+  });
+  return { ok: true, hidden };
+}
+
+async function restoreSectionDefault(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey || isLockedSection(sectionKey)) return { ok: false, code: "locked_item" };
+  const page = await contentRepo.findPageByScope(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    pageKey,
+  });
+  if (!page) return { ok: false, code: "not_found" };
+  const sections = await contentRepo.listSectionsForPage(db, page.id, {});
+  const section = (sections || []).find((s) => String(s.sectionKey) === sectionKey);
+  if (!section) return { ok: false, code: "not_found" };
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:restore_default`,
+    op: "restore_default",
+    payload: { sectionKey },
+    previousPayload: {
+      heading: section.heading,
+      bodyText: section.bodyText,
+      mediaUrl: section.mediaUrl,
+    },
+  });
+  const drafts = await fieldDraftRepo.listDrafts(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    pageKey,
+    status: "draft",
+  });
+  for (const draft of drafts) {
+    if (String(draft.sectionKey) !== sectionKey) continue;
+    await fieldDraftRepo.discardDraft(db, { id: draft.id, churchId: input.churchId });
+  }
+  return { ok: true };
+}
+
+async function loadPageSections(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const page = await contentRepo.findPageByScope(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    pageKey,
+  });
+  if (!page) return [];
+  return contentRepo.listSectionsForPage(db, page.id, {});
+}
+
+async function removeSection(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey) return { ok: false, code: "invalid_input" };
+  if (isLockedSection(sectionKey) || sectionKey === "hero") {
+    return { ok: false, code: "locked_item" };
+  }
+  // Drop a pending add draft so remove is not undone by a later add overlay.
+  await draftRepo.discardStructuredDraftByKey(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    draftKind: "page_section",
+    entityKey: `section:${sectionKey}:add`,
+    pageKey,
+    sectionKey,
+  });
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:remove`,
+    op: "remove",
+    payload: { sectionKey },
+    previousPayload: input.previousPayload || null,
+  });
+  return { ok: true, sectionKey };
+}
+
+async function updateSectionContent(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey) return { ok: false, code: "invalid_input", published: false };
+  if (isLockedSection(sectionKey) || sectionKey === "hero") {
+    return { ok: false, code: "locked_item", published: false };
+  }
+  const page = await contentRepo.findPageByScope(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    pageKey,
+  });
+  const live = page
+    ? (await contentRepo.listSectionsForPage(db, page.id, {})).find(
+        (s) => String(s.sectionKey) === sectionKey
+      )
+    : null;
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:update`,
+    op: "update_section",
+    payload: {
+      sectionKey,
+      heading: input.heading,
+      bodyText: input.bodyText,
+      mediaUrl: input.mediaUrl,
+    },
+    previousPayload: live
+      ? {
+          heading: live.heading,
+          bodyText: live.bodyText,
+          mediaUrl: live.mediaUrl,
+        }
+      : null,
+  });
+  return { ok: true, sectionKey, published: false };
+}
+
+async function applySectionAction(db, input) {
+  const action = String(input.action || "").trim();
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sections = await loadPageSections(db, input);
+
+  if (action === "reorder") {
+    return reorderSections(db, input);
+  }
+  if (action === "move_up" || action === "move_down") {
+    const order = sectionOrderKeys(sections);
+    const key = String(input.sectionKey || "");
+    const idx = order.indexOf(key);
+    if (idx < 0) return { ok: false, code: "not_found" };
+    const next = order.slice();
+    const swap = action === "move_up" ? idx - 1 : idx + 1;
+    if (swap < 0 || swap >= next.length) return { ok: true, order: next };
+    const tmp = next[idx];
+    next[idx] = next[swap];
+    next[swap] = tmp;
+    return reorderSections(db, { ...input, pageKey, order: next, previousOrder: order });
+  }
+  if (action === "hide") {
+    return setSectionVisibility(db, { ...input, hidden: true });
+  }
+  if (action === "show") {
+    return setSectionVisibility(db, { ...input, hidden: false });
+  }
+  if (action === "restore_default") {
+    return restoreSectionDefault(db, input);
+  }
+  if (action === "remove") {
+    return removeSection(db, input);
+  }
+  if (action === "update" || action === "update_section") {
+    return updateSectionContent(db, input);
+  }
+  return { ok: false, code: "invalid_action" };
+}
+
+module.exports = {
+  LOCKED_SECTIONS,
+  SERMONS_INTRO_SECTION_KEY,
+  buildManifest,
+  applySectionAction,
+  applyVisibilityDrafts,
+  sectionOrderKeys,
+  updateSectionContent,
+  ensureSermonsIntroPresentationSection,
+  hasPageSectionRemoveDraft,
+};

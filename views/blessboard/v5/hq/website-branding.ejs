@@ -1,0 +1,154 @@
+<%- include('../partials/hq-shell-start', { loadWebsiteEngineCss: true, loadSharedWebsiteMedia: true }) %>
+<%
+  var branding = (typeof websiteBranding !== 'undefined' && websiteBranding) ? websiteBranding : {};
+  var values = branding.values || {};
+  var brandingError = branding.error || '';
+  var saved = branding.saved === true;
+  var canEditBranding = branding.canEdit !== false;
+  var logo = values.logo || { src: '', alt: '', mediaId: '' };
+  var hero = values.hero || { src: '', alt: '', mediaId: '' };
+  var primary = values.primaryColor || '';
+  var accent = values.accentColor || '';
+  var defaults = branding.defaults || { primary: '#6c5ce7', accent: '#5341cd' };
+  var previewName = branding.churchName || (typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : 'Your church');
+  var mediaListUrl = branding.mediaListUrl || '';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var previewHref = branding.previewHref || '';
+  var editHref = branding.editHref || '';
+  var hubHref = '/hq/website';
+%>
+<section
+  class="bb-wb"
+  data-bb-website-branding="1"
+  data-bb-hq-website-branding="1"
+  data-bb-viewport="responsive"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">HQ</a>
+      <span aria-hidden="true">›</span>
+      <a href="<%= hubHref %>">Website</a>
+      <span aria-hidden="true">›</span>
+      <span>Branding</span>
+    </p>
+  </header>
+
+  <div class="bb-wb-head">
+    <div>
+      <h2>Branding Settings</h2>
+      <p class="bb-wb-muted">Logo, colours, and optional cover image. The preview updates as you change these fields. Save as a draft, then publish when ready.</p>
+    </div>
+    <div class="bb-wb-head__links">
+      <% if (previewHref) { %>
+      <a class="bb-wm-btn" href="<%= previewHref %>">Preview</a>
+      <% } %>
+      <% if (editHref) { %>
+      <a class="bb-wm-btn" href="<%= editHref %>" data-bb-edit-website="1">Edit website</a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (brandingError) { %><p class="bb-hq-error" role="alert"><%= brandingError %></p><% } %>
+  <% if (saved) { %><p class="bb-hq-ok" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+
+  <div class="bb-wb-layout">
+    <form class="bb-wb-form" method="post" action="/hq/website/branding" data-bb-wb-brand-form="1"<%= canEditBranding ? '' : ' data-bb-wb-readonly="1"' %>>
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfToken %>"/>
+      <p class="bb-wb-form__legend">Church logo</p>
+      <% if (canEditBranding) { %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: 'logoMediaId',
+          srcName: 'logoSrc',
+          altName: 'logoAlt',
+          altLabel: 'Logo description',
+          mediaId: logo.mediaId || '',
+          src: logo.src || '',
+          alt: logo.alt || '',
+          emptyText: 'No image selected. The BlessBoard default mark is used until you choose a logo.'
+        },
+        mediaListUrl: mediaListUrl
+      }) %>
+      <% } else { %>
+      <p class="bb-wb-media-preview-wrap">
+        <img src="<%= logo.src || '' %>" alt="<%= logo.alt || '' %>" class="bb-wb-media-preview" <%= logo.src ? '' : 'hidden' %>/>
+      </p>
+      <p class="bb-wb-muted"><%= logo.src ? (logo.alt || 'Logo') : 'No image selected. The BlessBoard default mark is used until you choose a logo.' %></p>
+      <% } %>
+
+      <label data-bb-wb-color="1">
+        Primary colour
+        <span class="bb-wb-color">
+          <input type="color" data-bb-wb-color-swatch value="<%= primary || defaults.primary %>" aria-label="Primary colour picker"<%= canEditBranding ? '' : ' disabled' %>/>
+          <input type="text" name="primaryColor" maxlength="7" value="<%= primary %>" placeholder="<%= defaults.primary %>" data-bb-wb-color-text autocomplete="off"<%= canEditBranding ? '' : ' disabled' %>/>
+        </span>
+      </label>
+      <label data-bb-wb-color="1">
+        Accent colour
+        <span class="bb-wb-color">
+          <input type="color" data-bb-wb-color-swatch value="<%= accent || defaults.accent %>" aria-label="Accent colour picker"<%= canEditBranding ? '' : ' disabled' %>/>
+          <input type="text" name="accentColor" maxlength="7" value="<%= accent %>" placeholder="<%= defaults.accent %>" data-bb-wb-color-text autocomplete="off"<%= canEditBranding ? '' : ' disabled' %>/>
+        </span>
+      </label>
+      <p class="bb-wb-hint">Use a 6-digit colour such as <%= defaults.primary %>. Leave blank to keep the BlessBoard default violet. These colours style primary buttons, links, and highlights — not status or GetPro colours.</p>
+
+      <p class="bb-wb-form__legend">Cover / hero image (optional)</p>
+      <% if (canEditBranding) { %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: 'heroMediaId',
+          srcName: 'heroSrc',
+          altName: 'heroAlt',
+          altLabel: 'Cover image description',
+          mediaId: hero.mediaId || '',
+          src: hero.src || '',
+          alt: hero.alt || '',
+          emptyText: 'No cover image selected.',
+          previewClass: 'bb-wb-media-preview--hero'
+        },
+        mediaListUrl: mediaListUrl
+      }) %>
+      <% } else { %>
+      <p class="bb-wb-media-preview-wrap">
+        <img src="<%= hero.src || '' %>" alt="<%= hero.alt || '' %>" class="bb-wb-media-preview bb-wb-media-preview--hero" <%= hero.src ? '' : 'hidden' %>/>
+      </p>
+      <p class="bb-wb-muted"><%= hero.src ? (hero.alt || 'Cover image') : 'No cover image selected.' %></p>
+      <% } %>
+
+      <% if (canEditBranding) { %>
+      <div class="bb-wb-actions">
+        <button type="submit" class="bb-wm-btn bb-wm-btn--primary">Save branding</button>
+      </div>
+      <% } else { %>
+      <p class="bb-wb-muted">You can view branding. Saving requires website edit permission.</p>
+      <% } %>
+    </form>
+
+    <aside
+      class="bb-wb-preview"
+      data-bb-wb-brand-preview="1"
+      data-preview-name="<%= previewName %>"
+      data-preview-primary="<%= defaults.primary %>"
+      data-preview-accent="<%= defaults.accent %>"
+      aria-label="Live branding preview"
+    >
+      <p class="bb-wb-preview__label">Preview</p>
+      <div class="bb-wb-preview__site">
+        <div class="bb-wb-preview__bar">
+          <img data-bb-wb-preview-logo src="<%= logo.src || '' %>" alt="" <%= logo.src ? '' : 'hidden' %>/>
+          <strong data-bb-wb-preview-name><%= previewName %></strong>
+        </div>
+        <div class="bb-wb-preview__hero">
+          <img data-bb-wb-preview-hero src="<%= hero.src || '' %>" alt="" <%= hero.src ? '' : 'hidden' %>/>
+          <span class="bb-wb-preview__cta" data-bb-wb-preview-cta>Plan Your Visit</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <% if (canEditBranding) { %>
+  <%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: mediaListUrl }) %>
+  <% } %>
+</section>
+<script src="/blessboard/v5/website-branding.js?v=v2-media-parity-1" defer></script>
+<%- include('../partials/hq-shell-end', { loadSharedWebsiteMedia: true }) %>

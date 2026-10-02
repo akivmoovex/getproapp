@@ -1,0 +1,62 @@
+<%
+  var lockedVersion = typeof versionLocked !== 'undefined' ? versionLocked : '';
+  var action = lockedVersion ? ('/release-notes/' + lockedVersion + (typeof panel !== 'undefined' && panel !== 'details' ? '/' + (panel === 'share' ? 'share' : panel === 'bugs' ? 'bugs' : panel === 'qa' ? 'qa' : '') : '')) : '/release-notes';
+%>
+<form class="rnc-filters" method="get" action="<%= action %>" data-rnc-filters>
+  <div class="rnc-filters__grid">
+    <% if (!lockedVersion) { %>
+      <label>Version
+        <select name="version">
+          <option value="">All</option>
+          <% filterOptions.versions.forEach(function (v) { %>
+            <option value="<%= v %>" <%= filters.version === v ? 'selected' : '' %>><%= v %></option>
+          <% }) %>
+        </select>
+      </label>
+    <% } %>
+    <label>Product
+      <select name="product">
+        <option value="">All</option>
+        <% filterOptions.products.forEach(function (p) { %>
+          <option value="<%= p %>" <%= filters.product === p ? 'selected' : '' %>><%= p %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Feature type
+      <select name="featureType">
+        <option value="">All</option>
+        <% filterOptions.featureTypes.forEach(function (t) { %>
+          <option value="<%= t %>" <%= filters.featureType === t ? 'selected' : '' %>><%= t %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Implementation
+      <select name="implementationStatus">
+        <option value="">All</option>
+        <% filterOptions.implementationStatuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= filters.implementationStatus === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>QA status
+      <select name="qaStatus">
+        <option value="">All</option>
+        <% filterOptions.qaStatuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= filters.qaStatus === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Bug severity
+      <select name="severity">
+        <option value="">All</option>
+        <% filterOptions.severities.forEach(function (s) { %>
+          <option value="<%= s %>" <%= filters.severity === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+  </div>
+  <div class="rnc-filters__actions">
+    <button type="submit" class="rnc-btn">Apply filters</button>
+    <a class="rnc-btn rnc-btn--secondary" href="<%= lockedVersion ? ('/release-notes/' + lockedVersion) : '/release-notes' %>">Reset</a>
+  </div>
+</form>

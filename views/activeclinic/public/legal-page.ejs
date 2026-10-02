@@ -1,0 +1,50 @@
+<article class="ac-public-section ac-legal" data-ac-page-section="public-legal" data-ac-legal-doc="<%= activeNav %>">
+  <%- include('../../platform/partials/registration-return-bar') %>
+  <header class="ac-legal__header">
+    <p class="ac-public-eyebrow">Legal</p>
+    <h1 id="ac-legal-title"><%= legalDoc.title %></h1>
+    <p class="ac-legal__meta">
+      <time datetime="<%= legalDoc.effectiveDateIso %>">Effective date: <%= legalDoc.effectiveDateDisplay %></time>
+      <% if (legalDoc.documentVersion) { %>
+      <span>Version: <code data-ac-legal-version="1"><%= legalDoc.documentVersion %></code></span>
+      <% } %>
+    </p>
+    <p class="ac-public-lede"><%= legalDoc.intro %></p>
+    <% if (legalDoc.draftBanner) { %>
+    <p class="ac-legal__draft" role="note"><%= legalDoc.draftBanner %></p>
+    <% } %>
+  </header>
+
+  <nav class="ac-legal__toc" aria-label="Table of contents">
+    <h2 class="ac-legal__toc-title">Contents</h2>
+    <ol class="ac-legal__toc-list">
+      <% legalDoc.sections.forEach(function (section) { %>
+      <li><a href="#<%= section.id %>"><span><%= section.number %>.</span> <%= section.title %></a></li>
+      <% }) %>
+    </ol>
+  </nav>
+
+  <div class="ac-legal__body">
+    <% legalDoc.sections.forEach(function (section) { %>
+    <section class="ac-legal__section" id="<%= section.id %>" aria-labelledby="<%= section.id %>-heading">
+      <h2 id="<%= section.id %>-heading">
+        <span class="ac-legal__section-num"><%= section.number %>.</span>
+        <%= section.title %>
+      </h2>
+      <div class="ac-legal__prose">
+        <%- section.html %>
+      </div>
+    </section>
+    <% }) %>
+  </div>
+
+  <footer class="ac-legal__footer">
+    <p>Last updated: <time datetime="<%= legalDoc.effectiveDateIso %>"><%= legalDoc.effectiveDateDisplay %></time></p>
+    <p class="ac-public-note">
+      Related:
+      <a href="/terms">Terms of Service</a> ·
+      <a href="/privacy">Privacy Policy</a> ·
+      <a href="/register-clinic">Register your clinic</a>
+    </p>
+  </footer>
+</article>

@@ -1,0 +1,31 @@
+<%
+  var banner = typeof supportBanner !== 'undefined' ? supportBanner : null;
+  // Banner visibility is server-controlled; query params cannot hide it.
+  if (banner && banner.visible) {
+    var targetLabel = banner.branchName
+      ? (banner.churchName + ' / ' + banner.branchName)
+      : (banner.churchName || 'this church');
+    var exitAction = banner.exitAction || '/admin/support/exit';
+    var csrfName = typeof csrfField !== 'undefined' ? csrfField : '_csrf';
+    var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<div
+  class="bb-support-banner"
+  role="status"
+  data-bb-support-banner="1"
+  data-bb-support-type="<%= banner.supportType || '' %>"
+>
+  <div class="bb-support-banner__inner">
+    <span class="material-symbols-outlined bb-support-banner__icon" aria-hidden="true">support_agent</span>
+    <div class="bb-support-banner__copy">
+      <strong>Support mode:</strong>
+      You are viewing <span data-bb-support-target="1"><%= targetLabel %></span> as a Platform Administrator.
+      Your actions are audited.
+    </div>
+    <form class="bb-support-banner__exit" method="post" action="<%= exitAction %>" data-bb-support-exit="1">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <button type="submit">Exit support mode</button>
+    </form>
+  </div>
+</div>
+<% } %>

@@ -1,0 +1,129 @@
+/**
+ * ActiveClinic authenticated staff app tokens.
+ *
+ * Compatibility aliases → V2.04 platform semantic / component tokens.
+ * Brand resolves via [data-product="activeclinic"][data-surface="staff"]
+ * (and data-ac-shell="staff-app") in src/platform/ui/theme/colors.css.
+ *
+ * Color aliases are product-scoped (not :root). Custom properties inherit
+ * computed values; a :root alias of var(--color-brand-primary) would freeze
+ * the platform violet default instead of staff blue / public teal.
+ *
+ * Public/portal teal (--acp-*) remains in ac-tokens.css and is untouched.
+ * Loaded by staff app-shell after platform colors + ac-tokens.css.
+ */
+:root {
+  /* —— Chrome metrics (non-color; safe on :root) —— */
+  --ac-radius: 8px;
+  --ac-radius-sm: 8px;
+  --ac-radius-lg: 12px;
+  --ac-radius-pill: 999px;
+  --ac-radius-card: 12px;
+  --ac-staff-sidebar-w: 16.5rem;
+  --ac-staff-topbar-h: 56px;
+  --ac-staff-bottom-nav-h: 64px;
+  --ac-touch-min: 44px;
+  --ac-sidebar-w: var(--ac-staff-sidebar-w);
+  --ac-content-max: 72rem;
+  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
+  --gp-ops-radius: 8px;
+  --gp-ops-radius-lg: 12px;
+  --gp-ops-font: var(--ac-font);
+
+  /*
+   * Website CMS preview chrome — must keep public teal while staff shell is blue.
+   * Literal palette refs (not brand aliases) so staff scope cannot freeze them.
+   */
+  --ac-website-preview-primary: var(--palette-teal-700);
+  --ac-website-preview-accent: var(--palette-teal-600);
+
+  /*
+   * Distinct clinical cue (not brand primary / not danger). Literal only in this alias bridge.
+   */
+  --status-encounter-with-practitioner: #7c3aed;
+}
+
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"],
+[data-ac-shell="staff-app"],
+body.ac-app-body {
+  /* —— Brand / surfaces —— */
+  --ac-primary: var(--color-brand-primary);
+  --ac-primary-dark: var(--color-brand-primary-hover);
+  --ac-primary-light: var(--color-brand-primary-light);
+  --ac-text-primary: var(--color-text-primary);
+  --ac-text-secondary: var(--color-text-secondary);
+  --ac-border: var(--color-border-default);
+  --ac-surface: var(--color-surface);
+  --ac-surface-muted: var(--color-surface-subtle);
+  --ac-background: var(--color-background);
+  --ac-success: var(--color-success-text);
+  --ac-warning: var(--color-warning-text);
+  --ac-danger: var(--color-danger-text);
+  --ac-info: var(--color-info-text);
+  --ac-disabled: var(--color-disabled-text);
+
+  /* —— Staff app aliases (existing --ac-* consumers) —— */
+  --ac-bg: var(--color-background);
+  --ac-bg-page: var(--color-background);
+  --ac-bg-subtle: var(--color-brand-primary-light);
+  --ac-bg-muted: var(--color-surface-subtle);
+  --ac-ink: var(--color-text-primary);
+  --ac-text: var(--color-text-primary);
+  --ac-text-ink: var(--color-text-primary);
+  --ac-muted: var(--color-text-secondary);
+  --ac-text-muted: var(--color-text-muted);
+  --ac-text-subtle: var(--color-text-muted);
+  --ac-border-subtle: var(--color-border-subtle);
+  --ac-border-strong: var(--color-border-strong);
+  --ac-primary-2: var(--color-brand-primary-hover);
+  --ac-primary-soft: var(--color-brand-primary-light);
+  --ac-primary-strong: var(--color-brand-primary-active);
+  /*
+   * Staff secondary accent (public teal family under staff-blue brand).
+   */
+  --ac-brand-accent: var(--color-brand-accent);
+  --ac-brand-accent-soft: color-mix(in srgb, var(--color-brand-accent) 12%, var(--color-surface));
+  --ac-focus: var(--color-focus);
+  --ac-color-primary: var(--color-brand-primary);
+
+  /* —— Status (authenticated) —— */
+  --ac-status-success: var(--color-success-text);
+  --ac-status-success-bg: var(--color-success-bg);
+  --ac-status-warning: var(--color-warning-text);
+  --ac-status-warning-bg: var(--color-warning-bg);
+  --ac-status-danger: var(--color-danger-text);
+  --ac-status-danger-bg: var(--color-danger-bg);
+  --ac-status-info: var(--color-info-text);
+  --ac-status-info-bg: var(--color-info-bg);
+  --ac-status-neutral: var(--color-text-secondary);
+  --ac-status-neutral-bg: var(--color-surface-subtle);
+  --ac-status-pending: var(--color-warning-text);
+  --ac-status-pending-bg: var(--color-warning-bg);
+  --ac-success-bg: var(--color-success-bg);
+  --ac-warning-bg: var(--color-warning-bg);
+  --ac-danger-bg: var(--color-danger-bg);
+
+  /*
+   * Domain appointment / encounter status (not generic success/danger).
+   */
+  --status-appointment-requested: var(--color-warning-text);
+  --status-appointment-waiting: var(--color-brand-primary);
+
+  /* —— Shadows mixing product text —— */
+  --ac-shadow: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+  --ac-shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+  --ac-shadow-card: var(--ac-shadow-sm);
+
+  /* —— gp-ops overrides (AC staff brand) —— */
+  --gp-ops-primary: var(--color-brand-primary);
+  --gp-ops-primary-hover: var(--color-brand-primary-hover);
+  --gp-ops-border: var(--color-border-default);
+  --gp-ops-text: var(--color-text-primary);
+  --gp-ops-muted: var(--color-text-secondary);
+  --gp-ops-canvas: var(--color-background);
+  --gp-ops-surface: var(--color-surface);
+}

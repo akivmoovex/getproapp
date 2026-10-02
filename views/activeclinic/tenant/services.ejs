@@ -1,0 +1,68 @@
+<%#
+  AC-MW-R03 Our Services — Stitch Batch 2.
+  Canonical AC service catalogue via CollectionPresentation; no second services store.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const editingServices = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const serviceList = Array.isArray(services) ? services : [];
+  const procedureList = Array.isArray(procedures) ? procedures : [];
+  const servicesReturnTo = '/clinics/' + clinic.clinicKey + '/services?website_edit=1&website_mode=draft';
+  const servicesManageHref = '/app/settings/website/catalogue?tab=services&returnTo=' + encodeURIComponent(servicesReturnTo);
+%>
+<section class="ac-stitch-page ac-stitch-page--r03 ac-public-section" data-ac-page-section="tenant-services" data-ac-stitch-screen="R03">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
+  <% if (!serviceList.length && !procedureList.length) { %>
+  <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
+    <%- html.empty || '' %>
+    <%- include('../partials/website-operational-affordance', { href: servicesManageHref, label: 'Manage Public Catalogue', note: 'Create and publish clinic services from the shared public catalogue.', manageKind: 'services' }) %>
+    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
+  </div>
+  <% } %>
+
+  <% if (serviceList.length && html.services) { %>
+  <div class="ac-stitch-section ac-stitch-section--services-grid" data-ac-services-grid="1">
+    <%- html.services %>
+  </div>
+  <% if (editingServices) { %>
+  <ul class="ac-service-editor-links" hidden>
+    <% serviceList.forEach(function(s) { %>
+    <% const serviceEditHref = s.editHref || (s.id ? ('/app/settings/website/catalogue/services/' + encodeURIComponent(s.id) + '/edit') : ''); %>
+    <% if (serviceEditHref) { %>
+    <li>
+      <a
+        class="ac-btn ac-btn--secondary ac-btn--pill"
+        href="<%= serviceEditHref %>?returnTo=<%= encodeURIComponent(servicesReturnTo) %>"
+        data-ac-edit-service="1"
+        data-ac-service-id="<%= s.id || '' %>"
+      >Edit <%= s.displayName || 'service' %></a>
+    </li>
+    <% } %>
+    <% }) %>
+  </ul>
+  <% } %>
+  <% } %>
+
+  <% if (procedureList.length && html.procedures) { %>
+  <div class="ac-stitch-section ac-stitch-section--procedures">
+    <%- html.proceduresHeading || '' %>
+    <%- html.procedures %>
+  </div>
+  <% } %>
+
+  <% if (serviceList.length || procedureList.length) { %>
+  <%- include('../partials/website-operational-affordance', { href: servicesManageHref, label: 'Manage Public Catalogue', note: 'Edit service details and images in the shared public catalogue.', manageKind: 'services' }) %>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+
+  <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_services', librarySkipTypes: [] }) %>
+</section>

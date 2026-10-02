@@ -1,0 +1,26 @@
+<% const ref = booking && booking.requestNumber; %>
+<% const title = booking.serviceDisplayName || booking.procedureDisplayName || booking.bookingKind || ref || "Booking"; %>
+<% const when = formatBookingWhen(booking.preferredStartsAt, booking.timezone); %>
+<% const tone = bookingStatusTone(booking.status); %>
+<% const statusLabel = bookingStatusLabels[booking.status] || booking.status || ""; %>
+<li class="acp-mf09-booking">
+  <% if (ref) { %>
+  <a class="acp-mf09-booking__link" href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(ref) %>">
+    <span class="acp-mf09-booking__title"><%= escapeHtml(title) %></span>
+    <span class="acp-mf09-booking__meta">
+      <%= escapeHtml(ref) %>
+      <% if (booking.staffDisplayName) { %> · <%= escapeHtml(booking.staffDisplayName) %><% } %>
+      <% if (booking.facilityDisplayName) { %> · <%= escapeHtml(booking.facilityDisplayName) %><% } %>
+    </span>
+    <% if (when) { %>
+    <span class="acp-mf09-booking__when">Preferred time: <%= escapeHtml(when) %></span>
+    <% } %>
+    <span class="acp-status-badge acp-status-badge--<%= tone %>"><%= escapeHtml(statusLabel) %></span>
+  </a>
+  <% } else { %>
+  <div class="acp-mf09-booking__link">
+    <span class="acp-mf09-booking__title"><%= escapeHtml(title) %></span>
+    <span class="acp-status-badge acp-status-badge--<%= tone %>"><%= escapeHtml(statusLabel) %></span>
+  </div>
+  <% } %>
+</li>

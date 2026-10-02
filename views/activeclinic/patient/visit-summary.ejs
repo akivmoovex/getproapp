@@ -1,0 +1,126 @@
+<%
+  var snap = (typeof snapshot !== 'undefined' && snapshot) ? snapshot : {};
+  var summary = (typeof visitSummary !== 'undefined' && visitSummary) ? visitSummary : {};
+  var stitch = stitch || {};
+  var meds = Array.isArray(snap.medications) ? snap.medications : [];
+  var invoice = snap.invoice || null;
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--visit-summary"
+  data-ac-page-section="patient-visit-summary"
+  data-ac-batch3="AC-P05"
+  data-ac-stitch="<%= stitch.desktop || 'cd4b21d6860843c6b6862f92326857af' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '5df55128997f4b9b916852f26b972bb5' %>"
+  data-ac-pdf-deferred="1"
+  data-ac-visit-summary-desktop="1"
+  data-ac-visit-summary-mobile="1"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/visit-summaries">← Back to Visit Summaries</a>
+  </p>
+
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Care records</p>
+    <h1>Visit Summary</h1>
+    <p class="acp-auth-card__lede">
+      Released by your clinic on
+      <%= summary.releasedAt ? new Date(summary.releasedAt).toLocaleString() : '—' %>.
+      This is the patient-safe summary your clinician shared — not the full clinical chart.
+    </p>
+  </header>
+
+  <div class="acp-portal-leaf__actions acp-visit-summary__toolbar">
+    <button type="button" class="ac-patient-btn ac-btn ac-btn--ghost" onclick="window.print()" data-ac-action="print-summary">Print Summary</button>
+    <span class="ac-muted" data-ac-pdf-deferred-note="1">PDF download is not available yet (private storage required).</span>
+  </div>
+
+  <section class="acp-portal-leaf__panel" aria-labelledby="acp05-meta">
+    <h2 id="acp05-meta" class="ac-sr-only">Visit details</h2>
+    <dl class="ac-patient-detail acp-portal-leaf__detail">
+      <div>
+        <dt>Date</dt>
+        <dd><%= escapeHtml(snap.visitDate || '—') %></dd>
+      </div>
+      <div>
+        <dt>Clinic location</dt>
+        <dd><%= escapeHtml(snap.facilityDisplayName || summary.facilityDisplayName || '—') %></dd>
+      </div>
+      <div>
+        <dt>Care provider</dt>
+        <dd><%= escapeHtml(snap.practitionerDisplayName || '—') %></dd>
+      </div>
+      <div>
+        <dt>Service provided</dt>
+        <dd><%= escapeHtml(snap.serviceLabel || '—') %></dd>
+      </div>
+      <% if (snap.encounterNumber) { %>
+      <div>
+        <dt>Encounter</dt>
+        <dd><%= escapeHtml(snap.encounterNumber) %></dd>
+      </div>
+      <% } %>
+    </dl>
+  </section>
+
+  <% if (snap.reasonForVisit) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="reason">
+    <h2>Reason for Visit</h2>
+    <p><%= escapeHtml(snap.reasonForVisit) %></p>
+  </section>
+  <% } %>
+
+  <% if (snap.assessmentSummary) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="assessment">
+    <h2>Assessment &amp; Clinical Summary</h2>
+    <p><%= escapeHtml(snap.assessmentSummary) %></p>
+  </section>
+  <% } %>
+
+  <% if (snap.careProvided) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="care">
+    <h2>Treatment &amp; Care Provided During Visit</h2>
+    <p><%= escapeHtml(snap.careProvided) %></p>
+  </section>
+  <% } %>
+
+  <% if (meds.length) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="medications">
+    <h2>Medications Reviewed</h2>
+    <ul>
+      <% meds.forEach(function (m) { %>
+      <li>
+        <strong><%= escapeHtml(m.name || 'Medication') %></strong>
+        <% if (m.instructions) { %> — <%= escapeHtml(m.instructions) %><% } %>
+      </li>
+      <% }); %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (snap.patientInstructions) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="instructions">
+    <h2>Patient Instructions &amp; Self-Care</h2>
+    <p><%= escapeHtml(snap.patientInstructions) %></p>
+  </section>
+  <% } %>
+
+  <% if (snap.followUp) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="follow-up">
+    <h2>Recommended Follow-up</h2>
+    <p><%= escapeHtml(snap.followUp) %></p>
+  </section>
+  <% } %>
+
+  <% if (invoice && invoice.invoiceNumber) { %>
+  <section class="acp-portal-leaf__panel" data-ac-summary-section="invoice">
+    <h2>Billing</h2>
+    <p>
+      An invoice for this visit is available
+      (Invoice #<%= escapeHtml(invoice.invoiceNumber) %>).
+    </p>
+    <p>
+      <a class="ac-patient-btn ac-btn ac-btn--ghost" href="/clinics/<%= clinicKey %>/patient/invoices" data-ac-action="view-invoice">View Invoice</a>
+    </p>
+  </section>
+  <% } %>
+</section>

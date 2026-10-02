@@ -1,0 +1,157 @@
+<section class="acw-home" data-ac-page-section="public-home" data-ac-acw-screen="ACW01">
+  <section class="acw-hero acw-hero--home acw-only-desktop" data-ac-home-section="hero">
+    <div class="acw-hero__copy">
+      <p class="acw-kicker"><span class="material-symbols-outlined" aria-hidden="true">hub</span> Unified Healthcare Platform</p>
+      <h1>Healthcare Precision, <span class="acw-accent">Human Warmth.</span></h1>
+      <p class="acw-hero__lede">The all-in-one platform for modern clinic management and seamless patient access. Connecting care providers with those who need them most.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/clinics"><span class="material-symbols-outlined" aria-hidden="true">search</span> Find a Clinic</a>
+        <a class="ac-btn ac-btn--secondary acw-btn-icon" href="/register-clinic"><span class="material-symbols-outlined" aria-hidden="true">add_business</span> Register Your Clinic</a>
+      </p>
+      <div class="acw-social-proof">
+        <div class="acw-avatars" aria-hidden="true">
+          <span class="acw-avatar">JD</span>
+          <span class="acw-avatar">AS</span>
+          <span class="acw-avatar">MK</span>
+        </div>
+        <p><strong>Trusted by 5,000+</strong><span>Clinics &amp; Patients</span></p>
+      </div>
+    </div>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-1.jpg') : ''),
+        alt: 'A bright, modern medical clinic reception area with a healthcare administrator using a tablet.',
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        objectPosition: 'center 35%',
+        width: 960,
+        height: 600,
+        loading: 'eager',
+      }) %>
+      <div class="acw-hero__panel" aria-hidden="true">
+        <span class="acw-hero__panel-icon"><span class="material-symbols-outlined filled">calendar_month</span></span>
+        <div>
+          <strong>Appointment Confirmed</strong>
+          <span>Dr. Sarah Jenkins - Today, 2:00 PM</span>
+        </div>
+        <span class="acw-badge">Upcoming</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="acw-hero acw-hero--home acw-hero--mobile acw-only-mobile" data-ac-home-section="hero-mobile">
+    <p class="acw-kicker">Modern Healthcare Delivery</p>
+    <h1>Connecting Care, <span class="acw-accent">Seamlessly.</span></h1>
+    <p class="acw-hero__lede">The comprehensive platform uniting clinics and patients. Streamline operations, elevate patient experience, and build a modern healthcare practice.</p>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg') : ''),
+        alt: 'Modern clinic interior',
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        width: 780,
+        height: 480,
+        loading: 'eager',
+        fetchpriority: 'high',
+      }) %>
+      <div class="acw-hero__panel" aria-hidden="true">
+        <span class="acw-hero__panel-icon"><span class="material-symbols-outlined filled">event_available</span></span>
+        <div>
+          <strong>Next Appointment</strong>
+          <span>Today, 2:30 PM</span>
+        </div>
+      </div>
+    </div>
+    <p class="ac-public-actions ac-public-actions--stack">
+      <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Get Started <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+      <a class="ac-btn ac-btn--secondary" href="/features">Explore Features</a>
+    </p>
+  </section>
+
+  <section class="acw-section acw-only-desktop" data-ac-home-section="what-is">
+    <header class="acw-section-header">
+      <h2>What is ActiveClinic?</h2>
+      <p>A fully integrated ecosystem designed to remove friction from healthcare. We bridge the gap between clinical operations and patient experience.</p>
+    </header>
+    <div class="acw-bento">
+      <article class="acw-card acw-bento__wide">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">sync</span></span>
+        <h3>Unified Workflows</h3>
+        <p>Connect scheduling, records, and billing in one seamless interface for your entire staff.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">health_metrics</span></span>
+        <h3>Data Precision</h3>
+        <p>Secure, accurate health records accessible when you need them.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--tertiary"><span class="material-symbols-outlined" aria-hidden="true">forum</span></span>
+        <h3>Instant Comm</h3>
+        <p>Secure messaging between providers and patients.</p>
+      </article>
+      <article class="acw-card acw-bento__wide acw-bento__photo">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">devices</span></span>
+        <h3>Anywhere Access</h3>
+        <p>Fully responsive platform accessible on mobile, tablet, and desktop for care on the go.</p>
+        <%- include('../partials/ac-media', {
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-2.jpg') : ''),
+          alt: 'A sleek, modern dashboard interface on a monitor in a medical office.',
+          className: 'acw-bento__image',
+          objectFit: 'cover',
+          width: 640,
+          height: 400,
+          loading: 'lazy',
+        }) %>
+      </article>
+    </div>
+  </section>
+
+  <section class="acw-section acw-only-mobile" data-ac-home-section="everything">
+    <header class="acw-section-header">
+      <h2>Everything you need</h2>
+      <p>A unified ecosystem for modern healthcare.</p>
+    </header>
+    <div class="acw-grid acw-grid--1">
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">analytics</span></span>
+        <h3>Practice Management</h3>
+        <p>Comprehensive tools to run your clinic efficiently, from scheduling to billing.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">patient_list</span></span>
+        <h3>Patient Portal</h3>
+        <p>Empower patients with self-scheduling, records access, and secure messaging.</p>
+      </article>
+      <article class="acw-card">
+        <%- include('../partials/ac-media', {
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-2.jpg') : ''),
+          alt: 'Telehealth feature',
+          className: 'acw-card__media',
+          objectFit: 'cover',
+          width: 640,
+          height: 360,
+          loading: 'lazy',
+        }) %>
+        <h3>Telehealth Ready</h3>
+        <p>Integrated secure video consultations.</p>
+      </article>
+    </div>
+    <p class="acw-trust-label">Trusted by healthcare providers</p>
+    <ul class="acw-trust-logos">
+      <li>MediCare+</li>
+      <li>CityHealth</li>
+      <li>Pulse</li>
+      <li>Nova</li>
+    </ul>
+  </section>
+
+  <section class="acw-cta-band acw-only-mobile" data-ac-home-section="final-cta">
+    <div class="acw-cta-band__inner">
+      <h2>Ready to transform your practice?</h2>
+      <p>Join hundreds of clinics delivering better care with ActiveClinic.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
+      </p>
+    </div>
+  </section>
+</section>

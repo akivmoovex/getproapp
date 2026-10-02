@@ -1,0 +1,8 @@
+<%#
+  BB V2.04 loading state → platform gp-ops-loading-state.
+%>
+<%- include('../../../../platform/partials/gp-ops-loading-state', {
+  title: typeof title !== 'undefined' ? title : 'Loading',
+  body: typeof body !== 'undefined' ? body : undefined,
+  className: typeof className !== 'undefined' ? className : undefined
+}) %>

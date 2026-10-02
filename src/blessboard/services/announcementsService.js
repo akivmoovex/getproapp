@@ -10,6 +10,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 const { safeExternalUrl } = require("../http/tenantPublicSafe");
 const {
   DEFAULT_PRODUCT_POLICY,
@@ -27,8 +28,17 @@ const STATUS = Object.freeze({
   LOOKUP_ERROR: "lookup_error",
 });
 
-const AUDIENCE_KEYS = Object.freeze(["members", "admins"]);
-const STATUSES = Object.freeze(new Set(["draft", "published", "archived"]));
+const AUDIENCE_KEYS = Object.freeze(["members", "admins", "public"]);
+const STATUSES = Object.freeze(
+  new Set(["draft", "scheduled", "published", "expired", "archived"])
+);
+/** No background scheduler — visibility is evaluated lazily at read time. */
+const SCHEDULER_DEPENDENCY = Object.freeze({
+  available: false,
+  mode: "lazy_read_time_evaluation",
+  reason:
+    "No background announcement scheduler is configured. Scheduled items become visible when starts_at <= now (and ends_at is null or > now).",
+});
 const HTML_HINT = /<\/?[a-z][\s\S]*>/i;
 const MEDIA_ASSET_PATH_RE =
   /^\/_bb\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -170,10 +180,23 @@ function mapDbError(err) {
  * @param {'read'|'write'|'publish'} action
  */
 function evaluateAnnouncementCapability(effectiveRoles, scope, productPolicy, action) {
+  const { normalizeRoleKey } = require("./assignBlessBoardRole");
   const roles = effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasBranch = roles.some((r) => r.roleKey === "branch_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
+  const roleKeyOf = (r) =>
+    normalizeRoleKey(typeof r === "string" ? r : r && (r.roleKey || r.role_key));
+  const hasHq = roles.some((r) => {
+    const key = roleKeyOf(r);
+    return key === "organisation_administrator" || key === "church_system_administrator";
+  });
+  const hasBranch = roles.some((r) => {
+    const key = roleKeyOf(r);
+    return (
+      key === "branch_administrator" ||
+      key === "branch_pastor" ||
+      key === "communications_officer"
+    );
+  });
+  const hasPlatform = roles.some((r) => roleKeyOf(r) === "platform_administrator");
   const policy = { ...DEFAULT_PRODUCT_POLICY, ...(productPolicy || {}) };
 
   if (action === "read") {
@@ -251,28 +274,75 @@ async function auditAnnouncementWrite(client, input) {
 
 /**
  * @param {{ query: Function }} client
- * @param {{ actorUserId: string, tenant: object, branchId: string|null }} input
+ * @param {{ actorUserId: string, tenant: object, branchId: string|null, permission: string, productPolicy?: object }} input
  */
 async function authorizeActor(client, input) {
-  const authz = await authorizeBlessBoardTenantAccess(
+  const permission = input.permission || "announcements.view";
+  const result = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission,
       branchId: input.branchId,
     }
   );
-  if (!authz.ok) {
+  if (!result.ok || !result.allowed) {
+    // Platform default: may draft (manage) but not publish unless product policy allows.
+    if (permission === "announcements.publish") {
+      const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
+      const {
+        listCatalogueLoginRolesForUser: listRoles,
+      } = require("./blessBoardCatalogueLogin");
+      const roles = await listRoles(client, input.actorUserId, null);
+      const isPlatform = roles.some((r) => String(r.role_key) === "platform_administrator");
+      const isHq = roles.some(
+        (r) =>
+          String(r.role_key) === "organisation_administrator" ||
+          String(r.role_key) === "church_system_administrator"
+      );
+      if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
+        return {
+          ok: false,
+          status: STATUS.FORBIDDEN,
+          reason: "platform_publish_denied",
+          mode: null,
+        };
+      }
+    }
     return {
       ok: false,
       status: STATUS.FORBIDDEN,
-      reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED,
-      effectiveRoles: [],
+      reason: result.reason || "denied",
+      mode: null,
     };
   }
+
+  if (permission === "announcements.publish") {
+    const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
+    const {
+      listCatalogueLoginRolesForUser,
+    } = require("./blessBoardCatalogueLogin");
+    const roles = await listCatalogueLoginRolesForUser(client, input.actorUserId, null);
+    const isPlatform = roles.some((r) => String(r.role_key) === "platform_administrator");
+    const isHq = roles.some(
+      (r) =>
+        String(r.role_key) === "organisation_administrator" ||
+        String(r.role_key) === "church_system_administrator"
+    );
+    if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
+      return {
+        ok: false,
+        status: STATUS.FORBIDDEN,
+        reason: "platform_publish_denied",
+        mode: result.mode,
+      };
+    }
+  }
+
   return {
     ok: true,
-    effectiveRoles: authz.context.effectiveRoles || [],
+    mode: result.mode,
   };
 }
 
@@ -381,6 +451,44 @@ function buildFields(raw, { partial }) {
       fields.clearAction = false;
     }
   }
+  if (!partial || raw.timezone !== undefined) {
+    const tz = String(raw.timezone == null || raw.timezone === "" ? "UTC" : raw.timezone).trim();
+    if (!/^[A-Za-z0-9_+\/\-]{1,64}$/.test(tz)) return { ok: false, reason: "timezone" };
+    fields.timezone = tz;
+  }
+  const hasStarts = raw.startsAt !== undefined || raw.starts_at !== undefined;
+  if (!partial || hasStarts) {
+    const rawStart = raw.startsAt !== undefined ? raw.startsAt : raw.starts_at;
+    if (rawStart == null || rawStart === "") {
+      fields.setStartsAt = true;
+      fields.startsAt = null;
+    } else {
+      const d = new Date(String(rawStart));
+      if (Number.isNaN(d.getTime())) return { ok: false, reason: "starts_at" };
+      fields.setStartsAt = true;
+      fields.startsAt = d.toISOString();
+    }
+  }
+  const hasEnds = raw.endsAt !== undefined || raw.ends_at !== undefined;
+  if (!partial || hasEnds) {
+    const rawEnd = raw.endsAt !== undefined ? raw.endsAt : raw.ends_at;
+    if (rawEnd == null || rawEnd === "") {
+      fields.setEndsAt = true;
+      fields.endsAt = null;
+    } else {
+      const d = new Date(String(rawEnd));
+      if (Number.isNaN(d.getTime())) return { ok: false, reason: "ends_at" };
+      fields.setEndsAt = true;
+      fields.endsAt = d.toISOString();
+    }
+  }
+  if (fields.startsAt && fields.endsAt && new Date(fields.endsAt) < new Date(fields.startsAt)) {
+    return { ok: false, reason: "ends_before_starts" };
+  }
+  if (fields.status === "scheduled") {
+    const startVal = fields.startsAt !== undefined ? fields.startsAt : null;
+    if (!partial && !startVal) return { ok: false, reason: "starts_at_required" };
+  }
   return { ok: true, fields };
 }
 
@@ -417,38 +525,23 @@ async function createAnnouncement(db, input) {
     return await withClient(db, async (client) => {
       let capabilityMode = null;
       if (input.tenant) {
+        const permission =
+          nextStatus === "published" || nextStatus === "scheduled"
+            ? "announcements.publish"
+            : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId,
           tenant: input.tenant,
           branchId,
+          permission,
+          productPolicy: input.productPolicy,
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        const writeCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId },
-          input.productPolicy,
-          "write"
-        );
-        if (!writeCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
-        }
-        capabilityMode = writeCap.mode;
-        if (branchId == null && writeCap.mode === "branch") {
+        capabilityMode = authz.mode;
+        if (branchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
-        }
-        if (nextStatus === "published") {
-          const pubCap = evaluateAnnouncementCapability(
-            authz.effectiveRoles,
-            { branchId },
-            input.productPolicy,
-            "publish"
-          );
-          if (!pubCap.ok) {
-            return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
-          }
-          capabilityMode = pubCap.mode;
         }
       }
 
@@ -563,29 +656,28 @@ async function updateAnnouncement(db, id, patch) {
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, item: null };
 
       const scopeBranchId = existing.branchId;
-      let effectiveRoles = [];
       let capabilityMode = null;
+      
+      const nextStatus =
+        built.fields.status !== undefined ? built.fields.status : existing.status;
+      const willPublish = nextStatus === "published" && existing.status !== "published";
+      const willSchedule = nextStatus === "scheduled" && existing.status !== "scheduled";
+      
       if (raw.tenant && raw.actorUserId) {
+        const permission =
+          willPublish || willSchedule ? "announcements.publish" : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId: raw.actorUserId,
           tenant: raw.tenant,
           branchId: scopeBranchId,
+          permission,
+          productPolicy: raw.productPolicy,
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        effectiveRoles = authz.effectiveRoles;
-        const writeCap = evaluateAnnouncementCapability(
-          effectiveRoles,
-          { branchId: scopeBranchId },
-          raw.productPolicy,
-          "write"
-        );
-        if (!writeCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
-        }
-        capabilityMode = writeCap.mode;
-        if (scopeBranchId == null && writeCap.mode === "branch") {
+        capabilityMode = authz.mode;
+        if (scopeBranchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
         if (raw.churchId && String(raw.churchId) !== String(existing.churchId)) {
@@ -599,9 +691,7 @@ async function updateAnnouncement(db, id, patch) {
         }
       }
 
-      const nextStatus =
-        built.fields.status !== undefined ? built.fields.status : existing.status;
-      if (nextStatus === "published" && existing.status !== "published") {
+      if (willPublish) {
         const conf = requirePublishConfirm(
           existing.status,
           nextStatus,
@@ -610,18 +700,6 @@ async function updateAnnouncement(db, id, patch) {
         );
         if (!conf.ok) {
           return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: conf.reason };
-        }
-        if (raw.tenant && raw.actorUserId) {
-          const pubCap = evaluateAnnouncementCapability(
-            effectiveRoles,
-            { branchId: scopeBranchId },
-            raw.productPolicy,
-            "publish"
-          );
-          if (!pubCap.ok) {
-            return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
-          }
-          capabilityMode = pubCap.mode;
         }
         built.fields.setPublishedAtNow = true;
       }
@@ -666,6 +744,8 @@ async function updateAnnouncement(db, id, patch) {
         let actionKey = "announcement_updated";
         if (nextStatus === "published" && existing.status !== "published") {
           actionKey = "announcement_published";
+        } else if (nextStatus === "scheduled" && existing.status !== "scheduled") {
+          actionKey = "announcement_scheduled";
         } else if (nextStatus === "archived" && existing.status !== "archived") {
           actionKey = "announcement_archived";
         }
@@ -708,20 +788,12 @@ async function listAdminAnnouncements(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId == null ? null : branchId,
+          permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: authz.reason };
         }
-        const readCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId: branchId == null ? null : branchId },
-          input.productPolicy,
-          "read"
-        );
-        if (!readCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: readCap.reason };
-        }
-        if (branchId == null && readCap.mode === "branch") {
+        if (branchId == null && authz.mode === "branch") {
           return {
             ok: false,
             status: STATUS.FORBIDDEN,
@@ -781,20 +853,12 @@ async function getAdminAnnouncement(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: existing.branchId,
+          permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        const readCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId: existing.branchId },
-          input.productPolicy,
-          "read"
-        );
-        if (!readCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: readCap.reason };
-        }
-        if (existing.branchId == null && readCap.mode === "branch") {
+        if (existing.branchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
       }
@@ -856,7 +920,14 @@ async function getMemberAnnouncement(db, input) {
       if (!existing || String(existing.churchId) !== churchId) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
-      if (existing.status !== "published") {
+      if (existing.status !== "published" && existing.status !== "scheduled") {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      const now = Date.now();
+      if (existing.startsAt && new Date(existing.startsAt).getTime() > now) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
       if (existing.branchId && String(existing.branchId) !== branchId) {
@@ -911,7 +982,17 @@ async function markAnnouncementRead(db, input) {
   try {
     return await withClient(db, async (client) => {
       const existing = await repo.findAnnouncementById(client, id);
-      if (!existing || String(existing.churchId) !== churchId || existing.status !== "published") {
+      if (!existing || String(existing.churchId) !== churchId) {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      if (existing.status !== "published" && existing.status !== "scheduled") {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      const now = Date.now();
+      if (existing.startsAt && new Date(existing.startsAt).getTime() > now) {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, read: null };
       }
       if (existing.branchId && String(existing.branchId) !== branchId) {
@@ -960,15 +1041,150 @@ async function removeAnnouncementAttachment(db, input) {
   }
 }
 
+function resolveEffectiveStatus(ann, now) {
+  const clock = now instanceof Date ? now : new Date();
+  const stored = String((ann && ann.status) || "draft");
+  if (stored === "archived" || stored === "draft" || stored === "expired") return stored;
+  const starts = ann.startsAt ? new Date(ann.startsAt) : null;
+  const ends = ann.endsAt ? new Date(ann.endsAt) : null;
+  if (stored === "scheduled") {
+    if (starts && starts.getTime() > clock.getTime()) return "scheduled";
+    if (ends && ends.getTime() <= clock.getTime()) return "expired";
+    return "published";
+  }
+  if (stored === "published") {
+    if (ends && ends.getTime() <= clock.getTime()) return "expired";
+    if (starts && starts.getTime() > clock.getTime()) return "scheduled";
+    return "published";
+  }
+  return stored;
+}
+
+function isPubliclyVisible(ann, now) {
+  return resolveEffectiveStatus(ann, now) === "published";
+}
+
+async function listPublicWebsiteAnnouncements(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  if (!churchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, items: [], reason: "scope" };
+  }
+  let branchId = null;
+  if (input.branchId != null && String(input.branchId).trim()) {
+    branchId = String(input.branchId).trim();
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const items = await repo.listPublicWebsiteAnnouncements(client, {
+        churchId,
+        branchId,
+        limit: input.limit,
+        offset: input.offset,
+      });
+      const now = new Date();
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items: items
+          .map((item) => ({
+            ...item,
+            effectiveStatus: resolveEffectiveStatus(item, now),
+            body: String(item.body || ""),
+            title: String(item.title || ""),
+            actionUrl: item.actionUrl ? safeExternalUrl(item.actionUrl) : null,
+          }))
+          .filter((item) => item.effectiveStatus === "published"),
+        scheduler: SCHEDULER_DEPENDENCY,
+      };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), items: [] };
+  }
+}
+
+async function getPublicWebsiteAnnouncement(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const id = String((input && input.id) || "").trim();
+  if (!churchId || !UUID_RE.test(id)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: "scope" };
+  }
+  let branchId = null;
+  if (input.branchId != null && String(input.branchId).trim()) {
+    branchId = String(input.branchId).trim();
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const existing = await repo.findAnnouncementById(client, id);
+      if (!existing || String(existing.churchId) !== churchId) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (branchId) {
+        if (existing.branchId && String(existing.branchId) !== branchId) {
+          return { ok: false, status: STATUS.NOT_FOUND, item: null };
+        }
+      } else if (existing.branchId) {
+        // Church-wide site does not expose branch-only announcements.
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      const audiences = await repo.listAudiences(client, id);
+      if (!audiences.some((a) => a.audienceKey === "public")) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (!isPubliclyVisible(existing)) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        item: {
+          ...existing,
+          effectiveStatus: "published",
+          audiences: audiences.map((a) => a.audienceKey),
+          attachments: [],
+          actionUrl: existing.actionUrl ? safeExternalUrl(existing.actionUrl) : null,
+          body: String(existing.body || ""),
+          title: String(existing.title || ""),
+        },
+        scheduler: SCHEDULER_DEPENDENCY,
+      };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), item: null };
+  }
+}
+
+async function listAnnouncementPublicationHistory(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const id = String((input && input.id) || "").trim();
+  if (!churchId || !UUID_RE.test(id)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [] };
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const events = await repo.listAnnouncementAuditEvents(client, {
+        churchId,
+        announcementId: id,
+        limit: input.limit,
+      });
+      return { ok: true, status: STATUS.OK, events };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), events: [] };
+  }
+}
+
 module.exports = {
   STATUS,
   AUDIENCE_KEYS,
+  SCHEDULER_DEPENDENCY,
   DEFAULT_PRODUCT_POLICY,
   resolveAnnouncementProductPolicy,
   evaluateAnnouncementCapability,
   requirePublishConfirm,
   httpsOrMediaUrl,
   presentAnnouncementForRender,
+  resolveEffectiveStatus,
+  isPubliclyVisible,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,
@@ -977,4 +1193,7 @@ module.exports = {
   getMemberAnnouncement,
   markAnnouncementRead,
   removeAnnouncementAttachment,
+  listPublicWebsiteAnnouncements,
+  getPublicWebsiteAnnouncement,
+  listAnnouncementPublicationHistory,
 };

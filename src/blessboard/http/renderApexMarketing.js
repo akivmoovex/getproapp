@@ -15,17 +15,93 @@ const {
   buildApexPricingFaq,
   mapDirectoryItems,
 } = require("./apexMarketingContent");
+const {
+  CONTACT_REASON_OPTIONS,
+} = require("../../church/platformInquiryValidation");
+const {
+  buildPlatformPhoneFieldLocals,
+} = require("../../platform/services/platformPhoneFieldLocals");
+const {
+  PRODUCT_CODE,
+  publicOriginForProduct,
+  publicWebsitePathPrefix,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
+  resolvePhoneValidationMode,
+  VALIDATION_MODES,
+} = require("../../platform/services/phoneNumberService");
+const {
+  RESERVED_ORGANIZATION_KEYS,
+  resolveBaseOrganizationKey,
+} = require("../../platform/organization/organizationKey");
+const {
+  buildRegistrationSuccessViewModel,
+} = require("../../platform/registration/registrationSuccessPresentation");
+const {
+  buildRegistrationPageLocals,
+  PRODUCT_CODE: REG_PRODUCT,
+} = require("../../platform/registration/registrationRenderLocals");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
+const {
+  V204_BROWSER_ASSET_VERSION,
+} = require("../../platform/ui/theme/browserAssetVersion");
+
+function registrationLocalsFromOpts(opts) {
+  const step = (opts && opts.wizardStep) || null;
+  const plan =
+    (opts && opts.selectedPlan) ||
+    (opts && opts.form && opts.form.selected_plan) ||
+    null;
+  const form = (opts && opts.form) || {};
+  return buildRegistrationPageLocals(opts && opts.req, REG_PRODUCT.BLESSBOARD, {
+    step,
+    plan,
+    selectedCountry: form.country || null,
+    env: (opts && opts.env) || process.env,
+  });
+}
 
 function renderApexView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
 }
 
 function shellLocals(opts) {
+  const env = (opts && opts.env) || process.env;
   return {
     authenticated: Boolean(opts && opts.authenticated),
     csrfToken: (opts && opts.csrfToken) || "",
     activeNav: (opts && opts.activeNav) || "home",
+    browserAssetVersion: V204_BROWSER_ASSET_VERSION,
+    assetVersion: V204_BROWSER_ASSET_VERSION,
+    cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, env) || "",
   };
+}
+
+function renderAboutPage(opts) {
+  const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
+  const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
+  const env = (opts && opts.env) || process.env;
+  return renderApexView("apex/about.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "About BlessBoard",
+    activeNav: "about",
+    buildInfo: getApplicationBuildInfo({ env }),
+    buildIdentity: getBuildIdentity({ env }),
+  });
+}
+
+function renderContactPage(opts) {
+  return renderApexView("apex/contact.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "Contact Us",
+    activeNav: "contact",
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    submitted: Boolean(opts && opts.submitted),
+    formError: (opts && opts.formError) || null,
+    fieldError: (opts && opts.fieldError) || null,
+    form: (opts && opts.form) || {},
+    contactReasons: CONTACT_REASON_OPTIONS,
+  });
 }
 
 function renderFeaturesPage(opts) {
@@ -47,6 +123,7 @@ function renderForChurchesPage(opts) {
 function renderPricingPage(opts) {
   return renderApexView("apex/pricing.ejs", {
     ...shellLocals(opts),
+    ...registrationLocalsFromOpts(opts),
     pageTitle: "Pricing",
     activeNav: "pricing",
     pricingOnboardingNote: BLESSBOARD_PRICING_ONBOARDING_NOTE,
@@ -82,10 +159,45 @@ function renderDirectoryPage(opts) {
 }
 
 function renderRegisterChurchPage(opts) {
+  const form = (opts && opts.form) || {};
+  const env = (opts && opts.env) || process.env;
+  const wizardStep =
+    (opts && opts.wizardStep) || "church";
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env,
+    selectedCountry: form.phone_country || null,
+    nationalValue:
+      form.phone_national ||
+      (form.phone && !String(form.phone).trim().startsWith("+") ? form.phone : "") ||
+      "",
+    e164Value:
+      !form.phone_national && form.phone && String(form.phone).trim().startsWith("+")
+        ? form.phone
+        : null,
+  });
+  const phoneMode = resolvePhoneValidationMode(env);
+  const origin = publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, env) || "https://blessboard.com";
+  const churchPublicHost = String(origin).replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const churchPublicPathPrefix = publicWebsitePathPrefix(PRODUCT_CODE.BLESSBOARD) || "/c";
+  const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
+  const churchNameForPreview = form.church_name || (opts && opts.organizationKeyPreview) || "";
+  const branchNameForPreview = form.branch_name || "";
+  const {
+    buildBlessBoardRegistrationWebsitePreview,
+  } = require("../../platform/registration/registrationSlugPreview");
+  const websitePreview = buildBlessBoardRegistrationWebsitePreview({
+    churchName: churchNameForPreview,
+    branchName: branchNameForPreview,
+    env,
+  });
+  const derivedPreview = websitePreview.organizationKey || resolveBaseOrganizationKey(churchNameForPreview).key || "";
+  const branchKeyPreview = websitePreview.branchKey || "";
   return renderApexView("apex/register-church.ejs", {
     ...shellLocals(opts),
+    ...registrationLocalsFromOpts(opts),
     pageTitle: "Register Your Church",
     activeNav: "register-church",
+    wizardStep,
     csrfField: (opts && opts.csrfField) || "_csrf",
     submitted: Boolean(opts && opts.submitted),
     submittedPlan: (opts && opts.submittedPlan) || null,
@@ -93,13 +205,80 @@ function renderRegisterChurchPage(opts) {
     workspaceReady: Boolean(opts && opts.workspaceReady),
     loginFallback: Boolean(opts && opts.loginFallback),
     review: Boolean(opts && opts.review),
-    organizationKeyPreview: (opts && opts.organizationKeyPreview) || "",
+    organizationKeyPreview:
+      (opts && opts.organizationKeyPreview) || derivedPreview || form.organization_key || "",
+    branchKeyPreview: branchKeyPreview || "",
+    registrationWebsitePreviewUrl: websitePreview.publicUrl || null,
+    churchPublicHost,
+    churchPublicPathPrefix,
+    churchPublicUrlBase,
+    reservedOrganizationKeys: RESERVED_ORGANIZATION_KEYS,
     formError: (opts && opts.formError) || null,
     fieldError: (opts && opts.fieldError) || null,
-    form: (opts && opts.form) || {},
+    form,
     selectedPlan: (opts && opts.selectedPlan) || null,
     showCsrfRetry: Boolean(opts && opts.showCsrfRetry),
     instantFreeEnabled: Boolean(opts && opts.instantFreeEnabled),
+    ...phoneLocals,
+    phoneValidationRelaxed: phoneMode === VALIDATION_MODES.RELAXED,
+    phoneValidationMode: phoneMode,
+  });
+}
+
+function renderRegisterChurchReviewPage(opts) {
+  const form = (opts && opts.form) || {};
+  const env = (opts && opts.env) || process.env;
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env,
+    selectedCountry: form.phone_country || null,
+    nationalValue: form.phone_national || "",
+    e164Value:
+      !form.phone_national && form.phone && String(form.phone).trim().startsWith("+")
+        ? form.phone
+        : null,
+  });
+  const origin = publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, env) || "https://blessboard.com";
+  const churchPublicHost = String(origin).replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const churchPublicPathPrefix = publicWebsitePathPrefix(PRODUCT_CODE.BLESSBOARD) || "/c";
+  const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
+  return renderApexView("apex/register-church-review.ejs", {
+    ...shellLocals(opts),
+    ...registrationLocalsFromOpts({ ...opts, wizardStep: "review" }),
+    pageTitle: "Review Church Registration",
+    activeNav: "register-church",
+    wizardStep: "review",
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    form,
+    formError: (opts && opts.formError) || null,
+    fieldError: (opts && opts.fieldError) || null,
+    selectedPlan: (opts && opts.selectedPlan) || form.selected_plan || null,
+    organizationKeyPreview:
+      (opts && opts.organizationKeyPreview) || form.organization_key || "",
+    churchPublicHost,
+    churchPublicPathPrefix,
+    churchPublicUrlBase,
+    instantFreeEnabled: Boolean(opts && opts.instantFreeEnabled),
+    ...phoneLocals,
+  });
+}
+
+function renderRegisterChurchSuccessPage(opts) {
+  const website = (opts && opts.website) || {};
+  const registrationSuccess = buildRegistrationSuccessViewModel({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    reference: opts && opts.applicationReference,
+    ready: opts && opts.ready,
+    reviewRequired: false,
+    authenticated: Boolean(opts && opts.authenticated),
+    website,
+  });
+  return renderApexView("apex/register-church-success.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "Church Registered Successfully",
+    activeNav: "register-church-success",
+    robotsNoIndex: true,
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    registrationSuccess,
   });
 }
 
@@ -126,10 +305,14 @@ function renderEmailVerificationResultPage(opts) {
 }
 
 module.exports = {
+  renderAboutPage,
+  renderContactPage,
   renderFeaturesPage,
   renderForChurchesPage,
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchReviewPage,
+  renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
 };

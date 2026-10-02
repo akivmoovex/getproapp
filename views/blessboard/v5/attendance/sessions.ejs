@@ -1,0 +1,187 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var openRows = Array.isArray(openSessions) ? openSessions : [];
+  var draftRows = Array.isArray(draftSessions) ? draftSessions : [];
+  var closedRows = Array.isArray(closedSessions) ? closedSessions : [];
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var filter = typeof statusFilter !== 'undefined' ? String(statusFilter) : '';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value).length === 10 ? value + 'T00:00:00' : value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatTime(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) {
+      var s = String(value);
+      var m = s.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : '—';
+    }
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function sessionTitle(s) {
+    return (s && s.title) || (s && s.serviceEventLabel) || 'Service session';
+  }
+  function statusTone(st) {
+    var key = String(st || '').toLowerCase();
+    if (key === 'open') return 'success';
+    if (key === 'draft') return 'warning';
+    if (key === 'closed') return 'info';
+    if (key === 'locked') return 'neutral';
+    return 'neutral';
+  }
+  function filterHref(st) {
+    return '/branch-admin/attendance/sessions' + (st ? ('?status=' + encodeURIComponent(st)) : '');
+  }
+%>
+
+<section
+  class="bb-v204-a01"
+  data-bb-stitch-v204="BB-A01"
+  data-bb-screen="BB-A01"
+  data-bb-stitch-id="7102d694cef5496e8d5b0f941ee545ee"
+  aria-label="Attendance Sessions"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Attendance Sessions',
+    subtitle: 'Manage active, upcoming, and certified parish gatherings',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance">Attendance</a> <span aria-hidden="true">›</span> <span>Service Sessions</span>',
+    actionsHtml: '<a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/attendance/sessions/new">+ Create Session</a>'
+  }) %>
+
+  <% if (saved === 'draft' || saved === 'opened' || saved === 'closed' || saved === 'locked') { %>
+  <div class="bb-v204-a01__banner" role="status">
+    <% if (saved === 'draft') { %>Session saved as draft.<% } %>
+    <% if (saved === 'opened') { %>Session opened for check-in.<% } %>
+    <% if (saved === 'closed') { %>Session closed — normal check-in stopped.<% } %>
+    <% if (saved === 'locked') { %>Session locked — final record protected.<% } %>
+  </div>
+  <% } %>
+
+  <div class="bb-v204-a01__meta" data-bb-a01-branch="1">
+    <span class="bb-v204-a01__branch"><%= branchLabel %></span>
+    <%- include('../partials/v204/status-chip', {
+      label: (typeof openCount === 'number' ? openCount : openRows.length) + ' Live',
+      tone: openRows.length ? 'success' : 'neutral'
+    }) %>
+  </div>
+
+  <nav class="bb-v204-a01__filters" aria-label="Session status filters" data-bb-a01-filters="1">
+    <a class="bb-ba-members-chip<%= !filter ? ' is-active' : '' %>" href="<%= filterHref('') %>">All</a>
+    <a class="bb-ba-members-chip<%= filter === 'open' ? ' is-active' : '' %>" href="<%= filterHref('open') %>">Open</a>
+    <a class="bb-ba-members-chip<%= filter === 'draft' ? ' is-active' : '' %>" href="<%= filterHref('draft') %>">Draft</a>
+    <a class="bb-ba-members-chip<%= filter === 'closed' ? ' is-active' : '' %>" href="<%= filterHref('closed') %>">Closed</a>
+    <a class="bb-ba-members-chip<%= filter === 'locked' ? ' is-active' : '' %>" href="<%= filterHref('locked') %>">Locked</a>
+  </nav>
+
+  <section class="bb-v204-a01__section" data-bb-a01-open="1" aria-labelledby="bb-a01-open-heading">
+    <header class="bb-v204-a01__section-head">
+      <h2 id="bb-a01-open-heading">Open Sessions</h2>
+      <p><%= openRows.length %> Live</p>
+    </header>
+    <% if (!openRows.length) { %>
+      <%- include('../partials/v204/empty-state', {
+        title: 'No open sessions',
+        body: 'Open a draft session to begin live check-in.',
+        actionHref: '/branch-admin/attendance/sessions/new',
+        actionLabel: '+ Create Session'
+      }) %>
+    <% } else { %>
+      <ul class="bb-v204-a01__cards">
+        <% openRows.forEach(function (s) { %>
+        <li class="bb-v204-a01__card bb-v204-a01__card--open" data-bb-session-status="open">
+          <div class="bb-v204-a01__card-top">
+            <%- include('../partials/v204/status-chip', { label: 'OPEN', tone: 'success' }) %>
+            <span class="bb-v204-a01__ref"><%= String(s.id).slice(0, 8).toUpperCase() %></span>
+          </div>
+          <h3><%= sessionTitle(s) %></h3>
+          <dl class="bb-v204-a01__dl">
+            <div><dt>Branch</dt><dd><%= branchLabel %></dd></div>
+            <div><dt>Date</dt><dd><%= formatDate(s.sessionDate) %></dd></div>
+            <div><dt>Time</dt><dd><%= formatTime(s.startTime) %></dd></div>
+            <div><dt>Late after</dt><dd><%= Number(s.lateThresholdMinutes) || 0 %> min</dd></div>
+          </dl>
+          <div class="bb-v204-a01__card-actions">
+            <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/attendance/sessions/<%= s.id %>">Enter Session Dashboard</a>
+            <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>#qr">Display QR Code</a>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-v204-a01__section" data-bb-a01-upcoming="1" aria-labelledby="bb-a01-draft-heading">
+    <header class="bb-v204-a01__section-head">
+      <h2 id="bb-a01-draft-heading">Upcoming Sessions</h2>
+      <p><%= draftRows.length %> Queued</p>
+    </header>
+    <% if (!draftRows.length) { %>
+      <p class="bb-v204-a01__muted">No draft sessions queued.</p>
+    <% } else { %>
+      <ul class="bb-v204-a01__list">
+        <% draftRows.forEach(function (s) { %>
+        <li class="bb-v204-a01__row" data-bb-session-status="draft">
+          <div>
+            <%- include('../partials/v204/status-chip', { label: 'Draft / Scheduled', tone: 'warning' }) %>
+            <strong><%= sessionTitle(s) %></strong>
+            <p><%= formatDate(s.sessionDate) %> · <%= formatTime(s.startTime) %> · <%= branchLabel %></p>
+          </div>
+          <div class="bb-v204-a01__row-actions">
+            <form method="post" action="/branch-admin/attendance/sessions/<%= s.id %>/transition">
+              <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+              <input type="hidden" name="to_status" value="open" />
+              <button type="submit" class="bb-ba-btn bb-ba-btn--secondary">Open Session Early</button>
+            </form>
+            <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>">View</a>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-v204-a01__section" data-bb-a01-recent="1" aria-labelledby="bb-a01-closed-heading">
+    <header class="bb-v204-a01__section-head">
+      <h2 id="bb-a01-closed-heading">Recent / Closed Sessions</h2>
+      <p>Archive</p>
+    </header>
+    <% if (!closedRows.length) { %>
+      <p class="bb-v204-a01__muted">No closed or locked sessions yet.</p>
+    <% } else { %>
+      <div class="bb-v204-a01__table-wrap">
+        <table class="bb-ba-table bb-v204-a01__table">
+          <thead>
+            <tr>
+              <th>Session details</th>
+              <th>Branch / location</th>
+              <th>Status</th>
+              <th>Late threshold</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% closedRows.forEach(function (s) { %>
+            <tr data-bb-session-status="<%= s.status %>">
+              <td>
+                <strong><%= sessionTitle(s) %></strong>
+                <div class="bb-v204-a01__muted"><%= formatDate(s.sessionDate) %> · <%= formatTime(s.startTime) %></div>
+              </td>
+              <td><%= branchLabel %></td>
+              <td><%- include('../partials/v204/status-chip', { label: s.statusLabel, tone: statusTone(s.status) }) %></td>
+              <td><%= Number(s.lateThresholdMinutes) || 0 %> min</td>
+              <td><a href="/branch-admin/attendance/sessions/<%= s.id %>">Open summary</a></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

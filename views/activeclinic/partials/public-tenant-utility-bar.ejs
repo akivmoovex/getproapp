@@ -1,0 +1,70 @@
+<%#
+  AC Stitch public utility / emergency chrome (Batch 7).
+  Canonical clinic/facility data only — never invent phone/hours/location.
+%>
+<%
+  var primaryFacility = (clinic && Array.isArray(clinic.facilities) && clinic.facilities.length)
+    ? (clinic.facilities.find(function (f) { return f && f.isPrimary; }) || clinic.facilities[0])
+    : null;
+  var utilityPhone = (clinic && (clinic.publicPhoneDisplay || clinic.headerPhone)) || null;
+  if (!utilityPhone && primaryFacility && primaryFacility.phoneDisplay) {
+    utilityPhone = primaryFacility.phoneDisplay;
+  }
+  var utilityHours = null;
+  if (clinic && clinic.locationHoursOverlay) {
+    utilityHours = String(clinic.locationHoursOverlay).trim() || null;
+  }
+  if (!utilityHours && clinic && clinic.websiteContent && clinic.websiteContent['location.hours']) {
+    utilityHours = String(clinic.websiteContent['location.hours']).trim() || null;
+  }
+  if (!utilityHours && primaryFacility && primaryFacility.publicHours && typeof primaryFacility.publicHours === 'object') {
+    var hourParts = [];
+    Object.keys(primaryFacility.publicHours).slice(0, 3).forEach(function (day) {
+      var val = primaryFacility.publicHours[day];
+      if (val) hourParts.push(day + ': ' + val);
+    });
+    if (hourParts.length) utilityHours = hourParts.join(' · ');
+  }
+  var utilityLocationBits = [];
+  if (primaryFacility) {
+    if (primaryFacility.addressLine1) utilityLocationBits.push(primaryFacility.addressLine1);
+    if (primaryFacility.city) utilityLocationBits.push(primaryFacility.city);
+  }
+  var utilityLocation = utilityLocationBits.length ? utilityLocationBits.join(', ') : null;
+  var pages = (clinic && clinic.publicPagePaths) || {};
+  var hasUtility = Boolean(utilityPhone || utilityHours || utilityLocation);
+%>
+<% if (hasUtility) { %>
+<div
+  class="ac-public-utility"
+  data-ac-public-utility="1"
+  data-ac-stitch-chrome="utility-bar"
+  role="region"
+  aria-label="Clinic contact summary"
+>
+  <div class="ac-public-utility__inner">
+    <% if (utilityPhone) { %>
+    <p class="ac-public-utility__item ac-public-utility__item--phone" data-ac-emergency-contact="1">
+      <span class="ac-public-utility__label">Clinic line</span>
+      <a class="ac-public-utility__value ac-public-utility__value--emphasis" href="tel:<%= String(utilityPhone).replace(/[^\d+]/g, '') %>"><%= utilityPhone %></a>
+    </p>
+    <% } %>
+    <% if (utilityHours) { %>
+    <p class="ac-public-utility__item ac-public-utility__item--hours">
+      <span class="ac-public-utility__label">Hours</span>
+      <span class="ac-public-utility__value"><%= utilityHours %></span>
+    </p>
+    <% } %>
+    <% if (utilityLocation) { %>
+    <p class="ac-public-utility__item ac-public-utility__item--location">
+      <span class="ac-public-utility__label">Location</span>
+      <% if (pages.location) { %>
+      <a class="ac-public-utility__value" href="<%= pages.location %>" data-ac-nav-item="location"><%= utilityLocation %></a>
+      <% } else { %>
+      <span class="ac-public-utility__value"><%= utilityLocation %></span>
+      <% } %>
+    </p>
+    <% } %>
+  </div>
+</div>
+<% } %>

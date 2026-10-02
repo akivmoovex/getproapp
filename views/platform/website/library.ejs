@@ -1,0 +1,203 @@
+<%#
+  Shared content/media library UI for the V7 website engine.
+  Rendered by src/platform/website/renderWebsiteLibrary.js and injected into a
+  product page. Locals: library (see libraryModel.buildLibraryView).
+
+  Class namespace gp-lib-* is styled by /platform/website-library.css, which
+  inherits each product's design tokens through CSS custom properties.
+%>
+<section class="gp-lib" data-gp-library="1" data-gp-library-state="<%= library.state %>" data-gp-library-mode="<%= library.mode %>">
+  <div class="gp-lib__head">
+    <div class="gp-lib__headings">
+      <h2 class="gp-lib__title"><%= library.heading %></h2>
+      <% if (library.description) { %>
+      <p class="gp-lib__description"><%= library.description %></p>
+      <% } %>
+    </div>
+    <p class="gp-lib__count" data-gp-library-count="1">
+      <% if (library.q || library.kind) { %>
+      <%= library.filteredTotal %> of <%= library.total %> file<%= library.total === 1 ? '' : 's' %>
+      <% } else { %>
+      <%= library.total %> file<%= library.total === 1 ? '' : 's' %>
+      <% } %>
+    </p>
+  </div>
+
+  <% if (library.foldersEnabled) { %>
+  <div class="gp-lib__folders" data-gp-library-folders="1">
+    <nav class="gp-lib__folder-rail" aria-label="Filter files by folder">
+      <% library.folderFilters.forEach(function (entry) { %>
+      <a
+        class="gp-lib__folder<%= entry.current ? ' is-current' : '' %><%= entry.isFolder ? '' : ' gp-lib__folder--view' %>"
+        href="<%= entry.href %>"
+        <%= entry.current ? 'aria-current="true"' : '' %>
+        data-gp-library-folder="<%= entry.key %>"
+      ><%= entry.label %> <span class="gp-lib__folder-count"><%= entry.count %></span></a>
+      <% }) %>
+    </nav>
+
+    <% if (library.canManageFolders) { %>
+    <div class="gp-lib__folder-admin">
+      <% if (library.folderCreateAction) { %>
+      <form class="gp-lib__folder-form" method="post" action="<%= library.folderCreateAction %>" data-gp-library-folder-create="1">
+        <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+        <label class="gp-lib__search-label" for="gp-lib-folder-name">New folder name</label>
+        <input
+          class="gp-lib__search-input"
+          id="gp-lib-folder-name"
+          type="text"
+          name="name"
+          maxlength="<%= library.maxFolderNameLength %>"
+          placeholder="New folder name"
+          required
+        />
+        <button class="gp-lib__btn" type="submit">Create folder</button>
+      </form>
+      <% } %>
+
+      <% if (library.activeFolder && library.activeFolder.isFolder) { %>
+      <div class="gp-lib__folder-actions">
+        <% if (library.folderRenameAction) { %>
+        <form class="gp-lib__folder-form" method="post" action="<%= library.folderRenameAction %>" data-gp-library-folder-rename="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="folderId" value="<%= library.activeFolder.key %>"/>
+          <label class="gp-lib__search-label" for="gp-lib-folder-rename">Rename this folder</label>
+          <input
+            class="gp-lib__search-input"
+            id="gp-lib-folder-rename"
+            type="text"
+            name="name"
+            maxlength="<%= library.maxFolderNameLength %>"
+            value="<%= library.activeFolder.label %>"
+            required
+          />
+          <button class="gp-lib__btn" type="submit">Rename</button>
+        </form>
+        <% } %>
+        <% if (library.folderDeleteAction) { %>
+        <form class="gp-lib__folder-form" method="post" action="<%= library.folderDeleteAction %>" data-gp-library-folder-delete="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="folderId" value="<%= library.activeFolder.key %>"/>
+          <button class="gp-lib__btn gp-lib__btn--ghost" type="submit">Delete folder</button>
+          <span class="gp-lib__folder-hint">Files move to Unfiled. Nothing is deleted.</span>
+        </form>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% if (library.folderNotice) { %>
+    <p class="gp-lib__folder-notice" role="status"><%= library.folderNotice %></p>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (library.searchEnabled || library.kindFilters.length) { %>
+  <div class="gp-lib__toolbar">
+    <% if (library.searchEnabled) { %>
+    <form class="gp-lib__search" method="get" action="<%= library.basePath %>" role="search" data-gp-library-search="1">
+      <% if (library.kind) { %><input type="hidden" name="type" value="<%= library.kind %>"/><% } %>
+      <label class="gp-lib__search-label" for="gp-lib-q">Search files</label>
+      <input
+        class="gp-lib__search-input"
+        id="gp-lib-q"
+        type="search"
+        name="q"
+        value="<%= library.q %>"
+        maxlength="100"
+        placeholder="Search by filename"
+        autocomplete="off"
+      />
+      <button class="gp-lib__btn" type="submit">Search</button>
+      <% if (library.q) { %>
+      <a class="gp-lib__btn gp-lib__btn--ghost" href="<%= library.basePath %><%= library.kind ? '?type=' + library.kind : '' %>">Clear</a>
+      <% } %>
+    </form>
+    <% } %>
+
+    <% if (library.typeFilterEnabled && library.kindFilters.length) { %>
+    <nav class="gp-lib__filters" aria-label="Filter files by type">
+      <% library.kindFilters.forEach(function (filter) { %>
+      <a
+        class="gp-lib__filter<%= filter.current ? ' is-current' : '' %>"
+        href="<%= filter.href %>"
+        <%= filter.current ? 'aria-current="true"' : '' %>
+      ><%= filter.label %> <span class="gp-lib__filter-count"><%= filter.count %></span></a>
+      <% }) %>
+    </nav>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (library.isEmpty) { %>
+  <div class="gp-lib__empty" data-gp-library-empty="1" role="status">
+    <span class="gp-lib__empty-icon" aria-hidden="true">🖼</span>
+    <p class="gp-lib__empty-title"><%= library.emptyState.title %></p>
+    <p class="gp-lib__empty-body"><%= library.emptyState.body %></p>
+  </div>
+  <% } else { %>
+  <ul class="gp-lib__grid" data-gp-library-grid="1">
+    <% library.items.forEach(function (item) { %>
+    <li class="gp-lib__card" data-gp-library-item="1" data-gp-library-id="<%= item.id %>" data-gp-library-kind="<%= item.kind %>">
+      <div class="gp-lib__thumb">
+        <% if (item.kind === 'image' && item.previewUrl) { %>
+        <img
+          class="gp-lib__thumb-img"
+          src="<%= item.previewUrl %>"
+          alt="<%= item.altText || item.title %>"
+          loading="lazy"
+          decoding="async"
+        />
+        <% } else { %>
+        <span class="gp-lib__thumb-placeholder" aria-hidden="true"><%= item.kind === 'video_url' ? '▶' : '📄' %></span>
+        <% } %>
+      </div>
+      <div class="gp-lib__body">
+        <p class="gp-lib__name" title="<%= item.title %>"><%= item.title %></p>
+        <p class="gp-lib__meta">
+          <span class="gp-lib__meta-item"><%= item.mimeType || item.kindLabel %></span>
+          <span class="gp-lib__meta-sep" aria-hidden="true">·</span>
+          <span class="gp-lib__meta-item"><%= item.sizeLabel %></span>
+          <% if (item.createdAtLabel) { %>
+          <span class="gp-lib__meta-sep" aria-hidden="true">·</span>
+          <span class="gp-lib__meta-item"><%= item.createdAtLabel %></span>
+          <% } %>
+        </p>
+        <% if (item.supportsAltText) { %>
+        <p class="gp-lib__alt<%= item.altText ? '' : ' gp-lib__alt--missing' %>" data-gp-library-alt="1">
+          <% if (item.altText) { %>
+          <span class="gp-lib__alt-label">Alt text</span> <%= item.altText %>
+          <% } else { %>
+          <span class="gp-lib__alt-label">Alt text</span> Not set
+          <% } %>
+        </p>
+        <% } %>
+        <% if (item.visibility) { %>
+        <p class="gp-lib__badges"><span class="gp-lib__badge gp-lib__badge--<%= item.visibility %>"><%= item.visibility %></span></p>
+        <% } %>
+        <% if (item.usageLabel) { %>
+        <p class="gp-lib__usage">Used on: <%= item.usageLabel %></p>
+        <% } %>
+        <% if (item.detailsUrl) { %>
+        <a class="gp-lib__btn gp-lib__btn--ghost gp-lib__card-action" href="<%= item.detailsUrl %>">Details</a>
+        <% } %>
+        <% if (library.canManageFolders && library.moveAction) { %>
+        <form class="gp-lib__move" method="post" action="<%= library.moveAction %>" data-gp-library-move="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="mediaId" value="<%= item.id %>"/>
+          <label class="gp-lib__search-label" for="gp-lib-move-<%= item.id %>">Move to folder</label>
+          <select class="gp-lib__move-select" id="gp-lib-move-<%= item.id %>" name="folderId">
+            <% library.moveTargets.forEach(function (target) { %>
+            <option value="<%= target.key %>" <%= (target.key || null) === (item.folderId || null) ? 'selected' : '' %>><%= target.label %></option>
+            <% }) %>
+          </select>
+          <button class="gp-lib__btn" type="submit">Move</button>
+        </form>
+        <% } %>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

@@ -23,6 +23,7 @@ const {
   gatherChurchProductionDiagnostics,
   LATEST_CHURCH_MIGRATION,
 } = require("../src/services/church/churchProductionDiagnostics");
+const { latestChurchSchemaMigration } = require("../src/db/pg/ensureChurchSchema");
 const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
 const { TENANT_ZM } = require("../src/tenants/tenantIds");
 
@@ -178,7 +179,7 @@ test("diagnostics reports missing database safely", async () => {
 });
 
 test("diagnostics service exposes latest migration constant", () => {
-  assert.equal(LATEST_CHURCH_MIGRATION, "108_church_backup_verification.sql");
+  assert.equal(LATEST_CHURCH_MIGRATION, latestChurchSchemaMigration());
 });
 
 test("production checklist mentions migration 090 and staging restoration", () => {

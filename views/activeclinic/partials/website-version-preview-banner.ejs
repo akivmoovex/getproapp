@@ -1,0 +1,26 @@
+<% if (typeof websiteVersionPreview !== 'undefined' && websiteVersionPreview) { %>
+<%
+  var version = typeof websitePreviewVersion !== 'undefined' && websitePreviewVersion ? websitePreviewVersion : {};
+  var historyUrl = typeof websiteHistoryUrl !== 'undefined' ? websiteHistoryUrl : '';
+  var restoreUrl = typeof websitePreviewRestoreUrl !== 'undefined' ? websitePreviewRestoreUrl : '';
+  var canRestorePreview = typeof websiteCanRestore !== 'undefined' && websiteCanRestore;
+%>
+<div class="ac-website-preview-banner" data-ac-website-version-preview="1" role="status">
+  <p><strong>Previewing saved version</strong><% if (version.versionNumber) { %> v<%= version.versionNumber %><% } %></p>
+  <p>This version is read-only. Restoring copies it into a new draft. The published website does not change until you publish.</p>
+  <p class="ac-website-preview-banner__actions">
+    <% if (historyUrl) { %><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= historyUrl %>">Back to version history</a><% } %>
+    <% if (canRestorePreview && restoreUrl) { %>
+    <form
+      method="post"
+      action="<%= restoreUrl %>"
+      class="ac-website-preview-banner__restore"
+      onsubmit="if(!confirm('Restore this version as a new draft? The live website will not change until you publish.')) return false; var b=this.querySelector('button[type=submit]'); if(b) b.disabled=true;"
+    >
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="ac-btn ac-btn--primary ac-btn--pill">Restore as new draft</button>
+    </form>
+    <% } %>
+  </p>
+</div>
+<% } %>

@@ -20,15 +20,13 @@
   <meta name="robots" content="index, follow"/>
   <% } %>
   <% } %>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <% if (isApexMarketing) { %>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <% } else { %>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <% } %>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=76"/>
+  <%- include('../../platform/partials/head-fonts', {
+    fontFamily: isApexMarketing ? 'hanken' : 'inter',
+    iconFont: 'subset',
+    fontAssetVersion: '77'
+  }) %>
+  <%- include('../../platform/partials/head-platform-colors') %>
+  <link rel="stylesheet" href="/church/church.css?v=77"/>
 </head>
 <%
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
@@ -40,7 +38,7 @@
     return _pathPrefix + path;
   }
 %>
-<body class="church-body<%= isVerticalApex ? ' church-body--apex' : ' church-body--branch' %><%= isBranchHome ? ' church-body--branch-home' : '' %>">
+<body class="church-body<%= isVerticalApex ? ' church-body--apex' : ' church-body--branch' %><%= isBranchHome ? ' church-body--branch-home' : '' %>" data-product="blessboard">
   <% if (isPreviewMode) { %>
   <div class="church-preview-banner" role="status">Preview only — not visible to public until published.</div>
   <% } %>

@@ -7,11 +7,28 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const libraryModel = require("../../platform/website/libraryModel");
+const mediaFoldersService = require("../../platform/website/mediaFoldersService");
+const {
+  renderWebsiteLibrary,
+  LIBRARY_STYLESHEET,
+} = require("../../platform/website/renderWebsiteLibrary");
+const {
+  folderNoticeMessage,
+  folderRedirect: redirectToMediaFolder,
+} = require("../website/blessboardClassicCmsAdapter");
+const { wantsHtml } = require("../../platform/website/http/websiteEditorHttpUtils");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
+const {
+  CONTENT_SHELL_VISIBLE_PERMISSIONS,
+} = require("./shellVisiblePermissions");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -25,9 +42,15 @@ const {
   SCOPE_TYPE: WEBSITE_SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
+const {
   resolveWebsiteMode,
   WEBSITE_MODE,
 } = require("../services/resolveWebsiteMode");
+const {
+  authorize,
+} = require("../services/blessBoardRbacAuthorizationService");
 const {
   canonicalChurchWideHqContentPath,
 } = require("./singleSiteHqContentCanonical");
@@ -39,10 +62,14 @@ const {
   CSRF_FIELD,
   validateCsrf,
 } = require("../../platform/http/v5Csrf");
-const multer = require("multer");
 const { createMediaUploadService, STATUS: MEDIA_STATUS } = require("../media/mediaUploadService");
-const { areMediaUploadsEnabled } = require("../config/mediaUploadsEnabled");
-const { MAX_ANY_BYTES, VISIBILITY } = require("../media/mediaConstants");
+const { VISIBILITY } = require("../media/mediaConstants");
+const {
+  createBlessBoardMediaUploadMulter,
+  requireMediaUploadsEnabled,
+  createMulterSingleMiddleware,
+  respondWithMediaUpload,
+} = require("./blessBoardMediaUploadHttp");
 const {
   provisionEmptyPublicPages,
   listAdminPages,
@@ -223,6 +250,55 @@ function verifyEntityScope(item, scope) {
 }
 
 /**
+ * Overlay current unpublished field + structured drafts onto a public page model.
+ * Used by authenticated preview surfaces so preview reads the current draft.
+ */
+async function applyCurrentDraftOverlaysToModel(db, model, scope) {
+  if (!model) return model;
+  const {
+    loadDraftOverlayMap,
+    applyDraftsToSections,
+  } = require("../services/websiteInlineDraftService");
+  const {
+    listStructuredDrafts,
+    applyStructuredDraftsToModel,
+  } = require("../services/websiteStructuredDraftService");
+  try {
+    const overlayMap = await loadDraftOverlayMap(db, {
+      organizationId: scope.organizationId || null,
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      pageKey: model.pageKey,
+    });
+    model.sections = applyDraftsToSections(model.sections, overlayMap);
+    if (model.pageKey === "contact" && model.publicContact) {
+      const email = overlayMap.get("details::email");
+      const phone = overlayMap.get("details::phone");
+      const address = overlayMap.get("details::address");
+      if (email !== undefined || phone !== undefined || address !== undefined) {
+        model.publicContact = {
+          ...model.publicContact,
+          email: email !== undefined ? email : model.publicContact.email,
+          phone: phone !== undefined ? phone : model.publicContact.phone,
+          addressText:
+            address !== undefined ? address : model.publicContact.addressText,
+          hasAny: true,
+        };
+      }
+    }
+    const structuredDrafts = await listStructuredDrafts(db, {
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      status: "draft",
+    });
+    applyStructuredDraftsToModel(model, structuredDrafts);
+  } catch {
+    /* show CMS preview without overlays if draft load fails */
+  }
+  return model;
+}
+
+/**
  * @param {object} body
  */
 function publishPatch(body) {
@@ -252,6 +328,12 @@ function errorMessage(reason, conflict) {
   if (reason === "entries_limit") {
     return "Too many service times. Remove some and try again.";
   }
+  if (reason === "published_requires_draft") {
+    return "This content is live. Save your change as a draft, then publish it from the website page.";
+  }
+  if (reason === "preached_at") {
+    return "Enter a valid preached date.";
+  }
   return "Please check the form and try again.";
 }
 
@@ -277,18 +359,85 @@ function createContentAdminRouter(deps) {
   const formClass = variant === "hq" ? "bb-hq-form" : "bb-ba-form";
   const loginNextDefault = variant === "hq" ? "/hq/content" : "/branch-admin/content";
 
-  const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_ANY_BYTES, files: 1 },
-  });
-
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
+  const upload = createBlessBoardMediaUploadMulter(env);
+  const multerSingle = createMulterSingleMiddleware(upload);
+  const requireUploadsEnabled = requireMediaUploadsEnabled(env);
 
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const resolveAssignedBranchContext = createAssignedBranchResourceContextResolver({ getPool });
+  // Final shell authorization is permission-based (website.view|edit|publish).
+  // Legacy HQ/branch roles enter only via compatibility website.* grants.
+  const requireWebsiteShell = createRequireAnyBlessBoardPermission(
+    CONTENT_SHELL_VISIBLE_PERMISSIONS,
+    {
+      getPool,
+      resolveResourceContext: async (req, tenant) => {
+        if (variant === "hq") {
+          return {
+            organizationId: tenant.organization.id,
+            churchId: tenant.church.id,
+            branchId: null,
+          };
+        }
+        return resolveAssignedBranchContext(req, tenant);
+      },
+      denyMessage: "You do not have access to the website editor.",
+    }
+  );
+  const requireWebsiteEdit = createRequireBlessBoardPermission("website.edit", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const requireWebsitePublish = createRequireBlessBoardPermission("website.publish", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const requireAccess = requireWebsiteShell;
+
+  async function assertWebsitePermission(req, permissionKey, branchId) {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !session || !session.userId) {
+      return { ok: false, status: 401, error: "Sign-in is required." };
+    }
+    // Explicit null = church-wide (do not fall back to primary branch).
+    const scopedBranchId =
+      branchId != null && String(branchId).trim() !== ""
+        ? String(branchId)
+        : null;
+    const authz = await authorize(getPool(), {
+      actor: { userId: session.userId },
+      permission: permissionKey,
+      tenantContext: tenant,
+      resourceContext: {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: scopedBranchId,
+      },
+    });
+    if (!authz.allowed) {
+      return { ok: false, status: 403, error: "Access denied." };
+    }
+    return { ok: true, tenant, session };
+  }
+
+  function legacyActorRoleLabel(req) {
+    const authzCtx = req.blessBoardAuthorizationContext;
+    const roleKeys = new Set(
+      ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+    );
+    if (roleKeys.has("platform_administrator")) return "platform_administrator";
+    if (
+      roleKeys.has("organisation_administrator") ||
+      roleKeys.has("church_system_administrator")
+    ) {
+      return "organisation_administrator";
+    }
+    if (roleKeys.has("branch_administrator") || roleKeys.has("branch_pastor")) {
+      return "branch_administrator";
+    }
+    return variant === "hq" ? "organisation_administrator" : "branch_administrator";
+  }
 
   function sendMissingContentTenantContext(req, res) {
     const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
@@ -355,6 +504,20 @@ function createContentAdminRouter(deps) {
       return sendMissingContentTenantContext(req, res);
     }
 
+    function afterShell(err) {
+      if (err) return next(err);
+      const method = String(req.method || "GET").toUpperCase();
+      if (method === "GET" || method === "HEAD") return next();
+      const path = String(req.path || req.url || "");
+      if (
+        path.includes("/draft-changes/publish") ||
+        path.includes("/api/inline-field/publish")
+      ) {
+        return requireWebsitePublish(req, res, next);
+      }
+      return requireWebsiteEdit(req, res, next);
+    }
+
     // Branch Admin surfaces must authorize against the assigned website branch,
     // not the catalogue primaryBranch used by global middleware.
     if (variant === "branch") {
@@ -404,7 +567,7 @@ function createContentAdminRouter(deps) {
             ...authz.context,
             reason: authz.status,
           };
-          return requireAccess(req, res, next);
+          return requireAccess(req, res, afterShell);
         } catch {
           return sendControlled(
             req,
@@ -417,7 +580,7 @@ function createContentAdminRouter(deps) {
       })();
     }
 
-    return requireAccess(req, res, next);
+    return requireAccess(req, res, afterShell);
   }
 
   /**
@@ -426,6 +589,10 @@ function createContentAdminRouter(deps) {
    * @param {object} [extra]
    */
   async function shellLocals(req, res, extra) {
+    const withMedia = {
+      websiteMediaListUrl: websiteMediaListUrlForReq(req),
+      ...(extra || {}),
+    };
     if (variant === "hq") {
       return buildHqAdminShellLocals(req, res, {
         env,
@@ -436,7 +603,7 @@ function createContentAdminRouter(deps) {
         extra: {
           shellKind: "hq",
           formClass,
-          ...(extra || {}),
+          ...withMedia,
         },
       });
     }
@@ -449,13 +616,28 @@ function createContentAdminRouter(deps) {
       extra: {
         shellKind: "branch",
         formClass,
-        ...(extra || {}),
+        ...withMedia,
       },
     });
   }
 
   function scopeInput(scope) {
     return { churchId: scope.churchId, branchId: scope.branchId };
+  }
+
+  /**
+   * Shared Hostinger/CDN media list+upload URL used by ActiveClinic and
+   * BlessBoard branding — not the legacy `/hq/content/media/upload` kill-switch path.
+   * @param {import('express').Request} req
+   */
+  function websiteMediaListUrlForReq(req) {
+    const tenant = resolveTenantForAuthorization(req);
+    const orgKey =
+      tenant &&
+      tenant.organization &&
+      (tenant.organization.key || tenant.organization.organizationKey);
+    if (!orgKey) return "";
+    return `/c/${encodeURIComponent(String(orgKey))}/website/media`;
   }
 
   /**
@@ -680,84 +862,26 @@ function createContentAdminRouter(deps) {
   function registerRoutes(mountPrefix, resolveScope) {
     const p = mountPrefix.replace(/\/$/, "");
 
-    function multerSingle(req, res, next) {
-      upload.single("file")(req, res, (err) => {
-        if (!err) return next();
-        if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ ok: false, reason: "size_limit" });
-        }
-        return res.status(400).json({ ok: false, reason: "upload_error" });
-      });
-    }
-
+    // Generic website content upload — still requires website.edit via gateContent.
     router.post(
       `${p}/media/upload`,
       rejectApex,
       gateContent,
-      (req, res, next) => {
-        if (!areMediaUploadsEnabled(env)) {
-          return res.status(403).json({ ok: false, reason: "media_uploads_disabled" });
-        }
-        return next();
-      },
+      requireUploadsEnabled,
       multerSingle,
       async (req, res) => {
-      const scope = await resolveScope(req, res);
-      if (!scope) return;
-      const submitted =
-        (req.body && req.body[CSRF_FIELD]) ||
-        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
-      if (!validateCsrf(req, submitted, env)) {
-        return res.status(403).json({ ok: false, reason: "csrf" });
-      }
-      if (!req.file || !req.file.buffer) {
-        return res.status(400).json({ ok: false, reason: "empty_file" });
-      }
-      const session = req.v5Session && req.v5Session.session;
-      const visibility =
-        String((req.body && req.body.visibility) || VISIBILITY.PUBLIC).toLowerCase() ===
-        VISIBILITY.PRIVATE
-          ? VISIBILITY.PRIVATE
-          : VISIBILITY.PUBLIC;
-
-      const result = await mediaService.uploadMediaAsset(getPool(), {
-        churchId: scope.churchId,
-        branchId: scope.branchId,
-        uploadedByUserId: session && session.userId,
-        buffer: req.file.buffer,
-        originalFilename: req.file.originalname,
-        claimedMime: req.file.mimetype,
-        visibility,
-      });
-
-      if (!result.ok) {
-        const status =
-          result.status === MEDIA_STATUS.FORBIDDEN
-            ? 403
-            : result.status === MEDIA_STATUS.CONFLICT
-              ? 409
-              : result.status === MEDIA_STATUS.STORAGE_ERROR
-                ? 503
-                : 400;
-        const cleanup =
-          result.status === MEDIA_STATUS.STORAGE_ERROR || result.reason === "upload_failed";
-        return res.status(status).json({
-          ok: false,
-          reason: result.reason || "upload_failed",
-          cleanup: cleanup ? "removed" : null,
+        if (!validateCsrfPost(req, res)) return;
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const session = req.v5Session && req.v5Session.session;
+        return respondWithMediaUpload(req, res, {
+          getPool,
+          mediaService,
+          env,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          uploadedByUserId: session && session.userId,
         });
-      }
-
-      return res.status(200).json({
-        ok: true,
-        assetId: result.asset.id,
-        deliveryPath: result.deliveryPath,
-        mimeType: result.asset.mimeType,
-        sizeBytes: result.asset.sizeBytes,
-        visibility: result.asset.visibility,
-        originalFilename: result.asset.originalFilename,
-        deduped: Boolean(result.deduped),
-      });
       }
     );
 
@@ -779,11 +903,164 @@ function createContentAdminRouter(deps) {
       if (!listed.ok) {
         return res.status(503).json({ ok: false, reason: listed.reason || "lookup", assets: [] });
       }
+      const base = String(scope.basePath || p).replace(/\/$/, "");
       const assets = (listed.assets || []).map((a) => ({
         ...a,
-        previewPath: `${String(scope.basePath || p).replace(/\/$/, "")}/media/${a.id}`,
+        previewPath: `${base}/media/${a.id}`,
       }));
-      return res.status(200).json({ ok: true, assets });
+
+      // The picker (and any JSON client) keeps the existing contract. A browser
+      // navigating here previously received a raw JSON body even though the
+      // admin templates link to it as "Content Library", so serve the shared
+      // library page when the client explicitly prefers HTML.
+      if (!wantsHtml(req)) {
+        return res.status(200).json({ ok: true, assets });
+      }
+
+      const libraryBasePath = `${base}/media`;
+
+      // Shared media folders, keyed by the organization that owns this church.
+      const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
+        product: "blessboard",
+        surface: mediaFoldersService.MEDIA_SURFACE.OPERATIONAL,
+        scopeId: scope.churchId,
+      });
+
+      const library = libraryModel.buildLibraryView({
+        items: libraryModel.normalizeLibraryItems(assets, (row) => ({
+          previewUrl: row.previewPath,
+        })),
+        q: req.query && req.query.q,
+        kind: req.query && req.query.type,
+        folder: req.query && req.query.folder,
+        basePath: libraryBasePath,
+        heading: "Content Library",
+        description:
+          "Images and documents uploaded for this church. Files are shared across HQ and branches.",
+        foldersEnabled: true,
+        canManageFolders: true,
+        folders: folderContext.folders || [],
+        folderCounts: folderContext.counts || {},
+        folderCreateAction: `${libraryBasePath}/folders`,
+        folderRenameAction: `${libraryBasePath}/folders/rename`,
+        folderDeleteAction: `${libraryBasePath}/folders/delete`,
+        moveAction: `${libraryBasePath}/move`,
+        folderNotice: folderNoticeMessage(req.query && req.query.folderNotice),
+        emptyState: {
+          title: "No files yet",
+          body: "Upload media from any website or content editor to build your library.",
+        },
+      });
+
+      const html = renderContentAdminView(
+        "content-admin/media-library.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Content Library",
+          scope,
+          library,
+          // Rendered in the template so the shared folder and move forms can
+          // carry the CSRF token from the shell locals.
+          renderLibrary: renderWebsiteLibrary,
+          libraryStylesheet: LIBRARY_STYLESHEET,
+          visibility,
+          basePath: base,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    // Folder routes precede "/media/:assetId/..." so "folders" and "move" are
+    // never captured as an asset id.
+    function folderRedirect(res, base, code, folder) {
+      return redirectToMediaFolder(res, {
+        mediaPath: `${base}/media`,
+        code,
+        folderId: folder,
+      });
+    }
+
+    function folderCsrfOk(req, res) {
+      const submitted =
+        (req.body && req.body[CSRF_FIELD]) ||
+        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+      if (validateCsrf(req, submitted, env)) return true;
+      res.status(403).json({ ok: false, reason: "csrf" });
+      return false;
+    }
+
+    router.post(`${p}/media/folders`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      const created = await mediaFoldersService.createFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        name: req.body && req.body.name,
+      });
+      if (!created.ok) return folderRedirect(res, base, created.code, null);
+      return folderRedirect(res, base, "folder_created", created.folder.id);
+    });
+
+    router.post(`${p}/media/folders/rename`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const folderId = req.body && req.body.folderId;
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      const renamed = await mediaFoldersService.renameFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        folderId,
+        name: req.body && req.body.name,
+      });
+      if (!renamed.ok) return folderRedirect(res, base, renamed.code, folderId);
+      return folderRedirect(res, base, "folder_renamed", renamed.folder.id);
+    });
+
+    router.post(`${p}/media/folders/delete`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      // Assets are preserved: folder_id is ON DELETE SET NULL, so filed media
+      // returns to Unfiled.
+      const removed = await mediaFoldersService.deleteFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        folderId: req.body && req.body.folderId,
+      });
+      if (!removed.ok) return folderRedirect(res, base, removed.code, null);
+      return folderRedirect(res, base, "folder_deleted", null);
+    });
+
+    router.post(`${p}/media/move`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const folderId = req.body && req.body.folderId;
+      const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
+        product: "blessboard",
+        surface: mediaFoldersService.MEDIA_SURFACE.OPERATIONAL,
+        scopeId: scope.churchId,
+        mediaId: req.body && req.body.mediaId,
+        folderId,
+      });
+      if (!moved.ok) return folderRedirect(res, base, moved.code, folderId);
+      return folderRedirect(res, base, "media_moved", moved.folderId);
     });
 
     router.post(`${p}/media/:assetId/archive`, rejectApex, gateContent, async (req, res) => {
@@ -1250,7 +1527,13 @@ function createContentAdminRouter(deps) {
       if (!updated.ok) {
         const isConflict = updated.status === ADMIN_STATUS.CONFLICT;
         const isConfirm = updated.reason === "confirm_publish";
-        const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
+        const statusCode = isConflict
+          ? 409
+          : isConfirm ||
+              updated.status === ADMIN_STATUS.INVALID_INPUT ||
+              updated.status === ADMIN_STATUS.PUBLISHED_LOCKED
+            ? 400
+            : 503;
         const html = renderContentAdminView(
           "content-admin/page.ejs",
           await shellLocals(req, res, {
@@ -1344,7 +1627,9 @@ function createContentAdminRouter(deps) {
           })
         );
         const statusCode =
-          created.reason === "confirm_publish" || created.status === ADMIN_STATUS.INVALID_INPUT
+          created.reason === "confirm_publish" ||
+          created.status === ADMIN_STATUS.INVALID_INPUT ||
+          created.status === ADMIN_STATUS.PUBLISHED_LOCKED
             ? 400
             : 503;
         return res.status(statusCode).type("html").send(html);
@@ -1354,6 +1639,201 @@ function createContentAdminRouter(deps) {
         `${scope.basePath}/pages/${req.params.pageKey}/sections/${created.section.sectionKey}?saved=1`
       );
     });
+
+    const SAME = (a, b) => String(a == null ? "" : a) === String(b == null ? "" : b);
+
+    /** Section keys in their current live order. */
+    function currentSectionOrder(sections) {
+      return (sections || [])
+        .slice()
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+        .map((s) => String(s.sectionKey));
+    }
+
+    /**
+     * Resolve the order the admin intended by giving one section a new sort
+     * value. The result is an explicit key list so the draft reproduces the
+     * order deterministically, independent of later sort_order churn.
+     */
+    function intendedSectionOrder(sections, section, requestedSortOrder) {
+      const requested = Number(requestedSortOrder);
+      const nextSort = Number.isFinite(requested) ? requested : Number(section.sortOrder || 0);
+      const ranked = (sections || []).map((s) => ({
+        key: String(s.sectionKey),
+        sort: String(s.sectionKey) === String(section.sectionKey) ? nextSort : Number(s.sortOrder || 0),
+        // Ties resolve in favour of the section the admin just moved.
+        tie: String(s.sectionKey) === String(section.sectionKey) ? 0 : 1,
+      }));
+      ranked.sort((a, b) => a.sort - b.sort || a.tie - b.tie);
+      return ranked.map((s) => s.key);
+    }
+
+    /**
+     * Draft-first compatibility shim for the classic section form.
+     *
+     * A live (published) section is never mutated in place. Text edits are
+     * rewritten into shared-engine field drafts; edits with no draft
+     * representation yet are refused rather than applied to the public site.
+     *
+     * @returns {Promise<boolean>} true when the response has been sent
+     */
+    async function routePublishedSectionEditToDraft(req, res, ctx) {
+      const { scope, page, sections, section, body, pageKey } = ctx;
+      if (String(section.status || "").toLowerCase() !== "published") return false;
+
+      const textChanges = [];
+      if (body.heading !== undefined && !SAME(body.heading, section.heading)) {
+        textChanges.push({ fieldKey: "heading", value: String(body.heading) });
+      }
+      if (body.body_text !== undefined && !SAME(body.body_text, section.bodyText)) {
+        textChanges.push({ fieldKey: "bodyText", value: String(body.body_text) });
+      }
+      const existingLayout =
+        section.layoutMetadata && typeof section.layoutMetadata === "object"
+          ? section.layoutMetadata
+          : {};
+      const existingAlt = existingLayout.altText != null ? String(existingLayout.altText) : "";
+
+      const mediaChanged =
+        body.media_url !== undefined && !SAME(body.media_url, section.mediaUrl);
+      // Preserve any alt text the classic form did not send, so an older form
+      // cannot silently strip accessibility metadata from live content.
+      const nextAlt =
+        body.media_alt_text !== undefined ? String(body.media_alt_text).trim() : existingAlt;
+      const altChanged = body.media_alt_text !== undefined && !SAME(nextAlt, existingAlt);
+
+      const orderChanged =
+        body.sort_order !== undefined && !SAME(body.sort_order, section.sortOrder);
+
+      const unsupported = [];
+      if (body.section_type !== undefined && !SAME(body.section_type, section.sectionType)) {
+        unsupported.push("layout");
+      }
+      if (
+        !textChanges.length &&
+        !mediaChanged &&
+        !altChanged &&
+        !orderChanged &&
+        !unsupported.length
+      ) {
+        return false;
+      }
+
+      const renderSectionError = async (statusCode, message) => {
+        const html = renderContentAdminView(
+          "content-admin/section.ejs",
+          await shellLocals(req, res, {
+            scope,
+            page,
+            section,
+            sections,
+            error: message,
+            conflict: false,
+            submitted: {
+              heading: body.heading != null ? String(body.heading) : section.heading,
+              body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
+              media_url: body.media_url != null ? String(body.media_url) : section.mediaUrl || "",
+              media_alt_text:
+                body.media_alt_text != null ? String(body.media_alt_text) : existingAlt,
+              sort_order:
+                body.sort_order != null ? String(body.sort_order) : String(section.sortOrder),
+              status: body.status != null ? String(body.status) : section.status,
+              section_type:
+                body.section_type != null ? String(body.section_type) : section.sectionType,
+            },
+          })
+        );
+        res.status(statusCode).type("html").send(html);
+        return true;
+      };
+
+      if (unsupported.length) {
+        return renderSectionError(
+          400,
+          "This section is live. Layout type changes must be made in the website editor so they can be previewed before publishing."
+        );
+      }
+
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return sendControlled(req, res, perm.status || 403, perm.error, shellKind);
+      }
+
+      const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
+      const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+      const draftBase = {
+        organizationId: perm.tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        editorUserId: perm.session.userId,
+        actorRole: legacyActorRoleLabel(req),
+        grantedPermissions: ["website.edit"],
+      };
+
+      try {
+        for (const change of textChanges) {
+          await saveInlineFieldDraft(getPool(), {
+            ...draftBase,
+            pageKey,
+            sectionKey: section.sectionKey,
+            fieldKey: change.fieldKey,
+            newValue: change.value,
+          });
+        }
+
+        if (mediaChanged || altChanged) {
+          const nextUrl =
+            body.media_url !== undefined
+              ? String(body.media_url).trim()
+              : String(section.mediaUrl || "").trim();
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            draftKind: "image",
+            pageKey,
+            sectionKey: section.sectionKey,
+            entityKey: `section:${section.sectionKey}:media`,
+            op: nextUrl ? "upsert" : "remove",
+            payload: nextUrl
+              ? {
+                  imageUrl: nextUrl,
+                  altText: nextAlt,
+                  focal: existingLayout.focal || null,
+                  fit: existingLayout.fit || null,
+                }
+              : {},
+            previousPayload: {
+              imageUrl: section.mediaUrl || null,
+              altText: existingAlt || null,
+            },
+          });
+        }
+
+        if (orderChanged) {
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            draftKind: "page_section",
+            pageKey,
+            sectionKey: null,
+            entityKey: `page:${pageKey}:section-order`,
+            op: "reorder",
+            payload: { order: intendedSectionOrder(sections, section, body.sort_order) },
+            previousPayload: { order: currentSectionOrder(sections) },
+          });
+        }
+      } catch (err) {
+        const message =
+          err && err.status && err.status < 500 && err.message
+            ? String(err.message)
+            : "Could not save this change. Please try again.";
+        return renderSectionError(err && err.status ? Number(err.status) : 500, message);
+      }
+
+      res.redirect(
+        303,
+        `${scope.basePath}/pages/${pageKey}/sections/${section.sectionKey}?saved=1&draft=1`
+      );
+      return true;
+    }
 
     router.post(`${p}/pages/:pageKey/sections/:sectionKey`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
@@ -1374,6 +1854,16 @@ function createContentAdminRouter(deps) {
       if (!section || section.pageId !== bundle.page.id) {
         return sendControlled(req, res, 404, "Section not found.", shellKind);
       }
+      // Draft-first: a live section is never edited in place by the classic form.
+      const draftRouted = await routePublishedSectionEditToDraft(req, res, {
+        scope,
+        page: bundle.page,
+        sections: bundle.sections || [],
+        section,
+        body,
+        pageKey: req.params.pageKey,
+      });
+      if (draftRouted) return;
       const updated = await updatePageSection(getPool(), section.id, {
         heading: body.heading,
         bodyText: body.body_text,
@@ -1390,7 +1880,13 @@ function createContentAdminRouter(deps) {
       if (!updated.ok) {
         const isConflict = updated.status === ADMIN_STATUS.CONFLICT;
         const isConfirm = updated.reason === "confirm_publish";
-        const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
+        const statusCode = isConflict
+          ? 409
+          : isConfirm ||
+              updated.status === ADMIN_STATUS.INVALID_INPUT ||
+              updated.status === ADMIN_STATUS.PUBLISHED_LOCKED
+            ? 400
+            : 503;
         const submitted = {
           heading: body.heading != null ? String(body.heading) : section.heading,
           body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
@@ -1445,7 +1941,7 @@ function createContentAdminRouter(deps) {
             organizationId: tenant.organization.id,
             branchId: scope.branchId || null,
             actorUserId: session && session.userId ? session.userId : null,
-            actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+            actorRole: variant === "hq" ? "organisation_administrator" : "branch_administrator",
             actionType: "draft_saved",
             pageKey: req.params.pageKey,
             sectionKey: req.params.sectionKey,
@@ -1493,7 +1989,7 @@ function createContentAdminRouter(deps) {
         churchId: scope.churchId,
         branchId,
         actorUserId: userId,
-        actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+        actorRole: variant === "hq" ? "organisation_administrator" : "branch_administrator",
         pageKey: req.params.pageKey,
         sectionKey: req.params.sectionKey,
         resolution,
@@ -1554,6 +2050,162 @@ function createContentAdminRouter(deps) {
       (req, res) => handleConflictResolution(req, res, "force_replace")
     );
 
+    const ENTITY_DRAFT_KINDS = Object.freeze({
+      leadership: "leader",
+      ministries: "ministry",
+      events: "event",
+      sermons: "sermon",
+      giving: "giving_method",
+      contact: "social_link",
+    });
+
+    /** Entity ids in their current live order. */
+    function currentEntityOrder(items) {
+      return (items || [])
+        .slice()
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+        .map((it) => String(it.id));
+    }
+
+    /**
+     * Resolve the order the admin intended by giving one item a new sort value.
+     * Mirrors intendedSectionOrder but keyed on entity ids.
+     */
+    function intendedEntityOrder(items, existing, requestedSortOrder) {
+      const requested = Number(requestedSortOrder);
+      const nextSort = Number.isFinite(requested) ? requested : Number(existing.sortOrder || 0);
+      const ranked = (items || []).map((it) => {
+        const isMoved = String(it.id) === String(existing.id);
+        return {
+          id: String(it.id),
+          sort: isMoved ? nextSort : Number(it.sortOrder || 0),
+          tie: isMoved ? 0 : 1,
+        };
+      });
+      ranked.sort((a, b) => a.sort - b.sort || a.tie - b.tie);
+      return ranked.map((it) => it.id);
+    }
+
+    /**
+     * Draft-first compatibility shim for the classic entity forms.
+     *
+     * Editing a published leader/ministry/event/sermon/giving/contact item is
+     * rewritten into a shared-engine structured draft so the public site only
+     * changes at publish time.
+     *
+     * @returns {Promise<boolean>} true when the response has been sent
+     */
+    async function routePublishedEntityEditToDraft(req, res, ctx) {
+      const { scope, routeKey, cfg, existing, body } = ctx;
+      if (String(existing.status || "").toLowerCase() !== "published") return false;
+
+      const draftKind = ENTITY_DRAFT_KINDS[routeKey];
+      const patch = entityPatchFromBody(routeKey, body);
+      const contentKeys = Object.keys(patch).filter(
+        (key) =>
+          !["status", "confirmPublish", "expectedUpdatedAt", "enforcePublishConfirm"].includes(key)
+      );
+      const changed = contentKeys.some(
+        (key) => patch[key] !== undefined && !SAME(patch[key], existing[key])
+      );
+      if (!changed) return false;
+
+      const renderEntityError = async (statusCode, message) => {
+        const listed = await cfg.listFn(getPool(), scopeInput(scope));
+        const html = renderContentAdminView(
+          "content-admin/entities.ejs",
+          await shellLocals(req, res, {
+            scope,
+            entityKind: routeKey,
+            entityTitle: cfg.title,
+            items: (listed && listed.items) || [],
+            statusFilter: "",
+            q: "",
+            whenFilter: "",
+            error: message,
+            conflict: false,
+            submitted: body,
+            editItemId: String(body.item_id || ""),
+            saved: false,
+            websiteMediaListUrl: websiteMediaListUrlForReq(req),
+          })
+        );
+        res.status(statusCode).type("html").send(html);
+        return true;
+      };
+
+      if (!draftKind) {
+        return renderEntityError(
+          400,
+          "This item is live. Edit it in the website editor so the change can be previewed before publishing."
+        );
+      }
+
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return sendControlled(req, res, perm.status || 403, perm.error, shellKind);
+      }
+
+      const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+      const draftBase = {
+        organizationId: perm.tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        editorUserId: perm.session.userId,
+        actorRole: legacyActorRoleLabel(req),
+        draftKind,
+        pageKey: cfg.pageKey,
+        sectionKey: null,
+      };
+
+      // Ordering is expressed as a canonical reorder draft rather than an
+      // absolute sort value, so the intended order survives concurrent edits.
+      const orderChanged =
+        patch.sortOrder !== undefined && !SAME(patch.sortOrder, existing.sortOrder);
+      const contentPatch = { ...patch };
+      delete contentPatch.sortOrder;
+      const contentChanged = Object.keys(contentPatch).some(
+        (key) =>
+          !["status", "confirmPublish", "expectedUpdatedAt", "enforcePublishConfirm"].includes(
+            key
+          ) &&
+          contentPatch[key] !== undefined &&
+          !SAME(contentPatch[key], existing[key])
+      );
+
+      try {
+        if (contentChanged) {
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            entityKey: String(existing.id),
+            op: "upsert",
+            payload: { ...contentPatch, status: existing.status },
+          });
+        }
+
+        if (orderChanged) {
+          const listed = await cfg.listFn(getPool(), scopeInput(scope));
+          const items = (listed && listed.items) || [];
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            entityKey: `collection:${routeKey}:order`,
+            op: "reorder",
+            payload: { order: intendedEntityOrder(items, existing, patch.sortOrder) },
+            previousPayload: { order: currentEntityOrder(items) },
+          });
+        }
+      } catch (err) {
+        const message =
+          err && err.status && err.status < 500 && err.message
+            ? String(err.message)
+            : "Could not save this change. Please try again.";
+        return renderEntityError(err && err.status ? Number(err.status) : 500, message);
+      }
+
+      res.redirect(303, `${scope.basePath}/${routeKey}?saved=1&draft=1`);
+      return true;
+    }
+
     for (const [routeKey, cfg] of Object.entries(ENTITY_ROUTES)) {
       router.get(`${p}/${routeKey}`, rejectApex, gateContent, async (req, res) => {
         const scope = await resolveScope(req, res);
@@ -1589,6 +2241,7 @@ function createContentAdminRouter(deps) {
             conflict: false,
             submitted: null,
             saved: String((req.query && req.query.saved) || "") === "1",
+            websiteMediaListUrl: websiteMediaListUrlForReq(req),
           })
         );
         return res.status(200).type("html").send(html);
@@ -1610,6 +2263,15 @@ function createContentAdminRouter(deps) {
           if (!existing || !verifyEntityScope(existing, scope)) {
             return sendControlled(req, res, 404, "Item not found.", shellKind);
           }
+          // Draft-first: a live item is never edited in place by the classic form.
+          const entityDraftRouted = await routePublishedEntityEditToDraft(req, res, {
+            scope,
+            routeKey,
+            cfg,
+            existing,
+            body,
+          });
+          if (entityDraftRouted) return;
           result = await cfg.updateFn(getPool(), itemId, entityPatchFromBody(routeKey, body));
         } else {
           result = await cfg.createFn(getPool(), {
@@ -1637,6 +2299,7 @@ function createContentAdminRouter(deps) {
               submitted: body,
               editItemId: action === "update" ? String(body.item_id || "") : null,
               saved: false,
+              websiteMediaListUrl: websiteMediaListUrlForReq(req),
             })
           );
           return res.status(statusCode).type("html").send(html);
@@ -1666,10 +2329,23 @@ function createContentAdminRouter(deps) {
       }
 
       const body = req.body && typeof req.body === "object" ? req.body : {};
-      const pageKey = String(body.pageKey || "").trim();
-      const sectionKey = String(body.sectionKey || "").trim();
-      const fieldKey = String(body.fieldKey || "").trim();
-      const newValue = body.value != null ? String(body.value) : "";
+      let pageKey = String(body.pageKey || "").trim();
+      let sectionKey = String(body.sectionKey || "").trim();
+      let fieldKey = String(body.fieldKey || "").trim();
+      if ((!pageKey || !sectionKey || !fieldKey) && (body.contentKey || body.key)) {
+        const { locatorFromContentKey } = require("../website/blessboardEngineContentService");
+        const locator = locatorFromContentKey(body.contentKey || body.key);
+        if (locator) {
+          pageKey = pageKey || locator.pageKey;
+          sectionKey = sectionKey || locator.sectionKey;
+          fieldKey = fieldKey || locator.fieldKey;
+        }
+      }
+      const {
+        readSubmittedEditableValue,
+      } = require("../../platform/website/editableFieldSchema");
+      // Preserve IMAGE objects `{ mediaId, src, alt }` — do not String() them.
+      const newValue = readSubmittedEditableValue(body);
 
       // Never trust client-provided organization / church IDs.
       if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
@@ -1680,29 +2356,12 @@ function createContentAdminRouter(deps) {
         });
       }
 
-      const tenant = resolveTenantForAuthorization(req);
-      if (!tenant || !tenant.organization || !tenant.church) {
-        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return res.status(perm.status).json({ ok: false, reason: "forbidden", error: perm.error });
       }
-
-      const session = req.v5Session && req.v5Session.session;
-      if (!session || !session.userId) {
-        return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
-      }
-
-      const authzCtx = req.blessBoardAuthorizationContext;
-      const roleKeys = new Set(
-        ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-      );
-      const allowed =
-        (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-        (variant === "branch" &&
-          (roleKeys.has("branch_admin") ||
-            roleKeys.has("church_hq_admin") ||
-            roleKeys.has("platform_admin")));
-      if (!allowed) {
-        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
-      }
+      const tenant = perm.tenant;
+      const session = perm.session;
 
       const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
       try {
@@ -1711,15 +2370,12 @@ function createContentAdminRouter(deps) {
           churchId: scope.churchId,
           branchId: scope.branchId,
           editorUserId: session.userId,
-          actorRole: roleKeys.has("platform_admin")
-            ? "platform_admin"
-            : roleKeys.has("church_hq_admin")
-              ? "church_hq_admin"
-              : "branch_admin",
+          actorRole: legacyActorRoleLabel(req),
           pageKey,
           sectionKey,
           fieldKey,
           newValue,
+          grantedPermissions: ["website.edit"],
         });
         return res.status(200).json({
           ok: true,
@@ -1809,10 +2465,22 @@ function createContentAdminRouter(deps) {
         }
 
         const body = req.body && typeof req.body === "object" ? req.body : {};
-        const pageKey = String(body.pageKey || "").trim();
-        const sectionKey = String(body.sectionKey || "").trim();
-        const fieldKey = String(body.fieldKey || "").trim();
-        const newValue = body.value != null ? String(body.value) : "";
+        let pageKey = String(body.pageKey || "").trim();
+        let sectionKey = String(body.sectionKey || "").trim();
+        let fieldKey = String(body.fieldKey || "").trim();
+        if ((!pageKey || !sectionKey || !fieldKey) && (body.contentKey || body.key)) {
+          const { locatorFromContentKey } = require("../website/blessboardEngineContentService");
+          const locator = locatorFromContentKey(body.contentKey || body.key);
+          if (locator) {
+            pageKey = pageKey || locator.pageKey;
+            sectionKey = sectionKey || locator.sectionKey;
+            fieldKey = fieldKey || locator.fieldKey;
+          }
+        }
+        const {
+          readSubmittedEditableValue,
+        } = require("../../platform/website/editableFieldSchema");
+        const newValue = readSubmittedEditableValue(body);
 
         if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
           return res.status(400).json({
@@ -1833,40 +2501,26 @@ function createContentAdminRouter(deps) {
           });
         }
 
-        const session = req.v5Session && req.v5Session.session;
-        if (!session || !session.userId) {
-          return res.status(401).json({
-            ok: false,
-            reason: "auth",
-            error: "Sign-in is required.",
-            published: false,
-          });
-        }
-
-        const authzCtx = req.blessBoardAuthorizationContext;
-        const roleKeys = new Set(
-          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-        );
-        const allowed =
-          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-          (variant === "branch" &&
-            (roleKeys.has("branch_admin") ||
-              roleKeys.has("church_hq_admin") ||
-              roleKeys.has("platform_admin")));
-        if (!allowed) {
-          return res.status(403).json({
+        const editPerm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+        if (!editPerm.ok) {
+          return res.status(editPerm.status).json({
             ok: false,
             reason: "forbidden",
-            error: "Access denied.",
+            error: editPerm.error,
             published: false,
           });
         }
-
-        const actorRole = roleKeys.has("platform_admin")
-          ? "platform_admin"
-          : roleKeys.has("church_hq_admin")
-            ? "church_hq_admin"
-            : "branch_admin";
+        const publishPerm = await assertWebsitePermission(req, "website.publish", scope.branchId);
+        if (!publishPerm.ok) {
+          return res.status(publishPerm.status).json({
+            ok: false,
+            reason: "forbidden",
+            error: "Publish permission required.",
+            published: false,
+          });
+        }
+        const session = publishPerm.session;
+        const actorRole = legacyActorRoleLabel(req);
 
         const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
         const { publishWebsiteDrafts } = require("../services/websiteDraftPublishService");
@@ -1883,6 +2537,7 @@ function createContentAdminRouter(deps) {
             sectionKey,
             fieldKey,
             newValue,
+            grantedPermissions: ["website.edit"],
           });
         } catch (err) {
           const status = err && err.status ? Number(err.status) : 500;
@@ -1909,28 +2564,36 @@ function createContentAdminRouter(deps) {
           branchId: scope.branchId,
           actorUserId: session.userId,
           actorRole,
+          tenant,
           confirmPublish: true,
           mobilePreviewConfirmed: true,
           deferServiceTimes: true,
           env,
+          requestId: req.requestId || req.correlationId || null,
+          correlationId: req.correlationId || req.requestId || null,
         });
 
         if (!publishResult.ok) {
-          const reason = String(publishResult.reason || "publish_failed");
+          const {
+            publicMessageForCode,
+          } = require("../services/websitePublishFailureDiagnostics");
+          const reason = String(
+            publishResult.publicCode || publishResult.reason || "publish_failed"
+          );
           const statusCode =
-            publishResult.status === "forbidden"
+            publishResult.status === "forbidden" || reason === "forbidden"
               ? 403
-              : publishResult.status === "not_ready" || reason === "no_changes"
+              : publishResult.status === "not_ready" ||
+                  reason === "no_changes" ||
+                  reason === "not_ready"
                 ? 409
-                : 500;
+                : publishResult.httpStatusHint && Number(publishResult.httpStatusHint) >= 400
+                  ? Number(publishResult.httpStatusHint)
+                  : 500;
           const message =
-            reason === "approval_required"
-              ? "These changes require approval before publication."
-              : reason === "no_changes"
-                ? "There are no draft changes to publish."
-                : reason === "not_ready" || publishResult.status === "not_ready"
-                  ? "Website is not ready to publish. Review draft changes for blocking issues."
-                  : "We could not publish these changes. Please try again.";
+            publishResult.message ||
+            publicMessageForCode(reason) ||
+            "We could not publish these changes. Please try again.";
           const validationErrors =
             (publishResult.publishResult && publishResult.publishResult.validationErrors) ||
             (publishResult.publishResult &&
@@ -1958,12 +2621,18 @@ function createContentAdminRouter(deps) {
             .map((i) => i.title || i.message)
             .filter(Boolean)
             .join("; ");
+          const requestId = req.requestId || req.correlationId || null;
           return res.status(statusCode).json({
             ok: false,
             reason,
             code: reason,
+            publicCode: reason,
+            engineCode: publishResult.engineCode || null,
+            failureStage: publishResult.failureStage || null,
             error: issueSummary ? `${message} ${issueSummary}` : message,
             message: issueSummary ? `${message} ${issueSummary}` : message,
+            requestId,
+            correlationId: requestId,
             saved: true,
             published: false,
             value: saveResult.value,
@@ -2033,35 +2702,18 @@ function createContentAdminRouter(deps) {
           return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
         }
 
-        const session = req.v5Session && req.v5Session.session;
-        if (!session || !session.userId) {
-          return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
+        const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+        if (!perm.ok) {
+          return res.status(perm.status).json({ ok: false, reason: "forbidden", error: perm.error });
         }
-
-        const authzCtx = req.blessBoardAuthorizationContext;
-        const roleKeys = new Set(
-          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-        );
-        const allowed =
-          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-          (variant === "branch" &&
-            (roleKeys.has("branch_admin") ||
-              roleKeys.has("church_hq_admin") ||
-              roleKeys.has("platform_admin")));
-        if (!allowed) {
-          return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
-        }
+        const session = perm.session;
 
         const {
           saveStructuredDraft,
           cancelStructuredDraft,
         } = require("../services/websiteStructuredDraftService");
         const action = String(body.action || "save").trim().toLowerCase();
-        const actorRole = roleKeys.has("platform_admin")
-          ? "platform_admin"
-          : roleKeys.has("church_hq_admin")
-            ? "church_hq_admin"
-            : "branch_admin";
+        const actorRole = legacyActorRoleLabel(req);
 
         try {
           if (action === "cancel") {
@@ -2116,9 +2768,9 @@ function createContentAdminRouter(deps) {
       const roleKeys = new Set(
         ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
       );
-      if (roleKeys.has("platform_admin")) return "platform_admin";
-      if (roleKeys.has("church_hq_admin")) return "church_hq_admin";
-      if (roleKeys.has("branch_admin")) return "branch_admin";
+      if (roleKeys.has("platform_administrator")) return "platform_administrator";
+      if (roleKeys.has("organisation_administrator") || roleKeys.has("church_system_administrator")) return "organisation_administrator";
+      if (roleKeys.has("branch_administrator") || roleKeys.has("branch_pastor")) return "branch_administrator";
       return null;
     }
 
@@ -2127,20 +2779,41 @@ function createContentAdminRouter(deps) {
       const session = req.v5Session && req.v5Session.session;
       const orgKey = tenant && tenant.organization ? tenant.organization.key : null;
       const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+      const {
+        PRODUCT_CODE,
+        buildPublicWebsiteEditPath,
+      } = require("../../platform/website/publicWebsiteUrl");
       const publicHome = publicChurchHomePath(orgKey) || "/";
+      let canPublish = false;
+      if (tenant && session && session.userId) {
+        const pub = await authorize(getPool(), {
+          actor: { userId: session.userId },
+          permission: "website.publish",
+          tenantContext: tenant,
+          resourceContext: {
+            organizationId: tenant.organization.id,
+            churchId: tenant.church.id,
+            branchId: scope.branchId || null,
+          },
+        });
+        canPublish = pub.allowed === true;
+      }
       return {
         organizationId: tenant && tenant.organization ? tenant.organization.id : null,
         churchId: scope.churchId,
         branchId: scope.branchId,
         actorRole: resolveActorRole(req),
         actorUserId: session && session.userId,
+        tenant,
+        canPublish,
         scopeLabel: scope.scopeLabel || (scope.branchId ? "Branch website" : "Organization website"),
         basePath: scope.basePath,
         publicHomePath: publicHome,
-        editHomePath: `${publicHome}${publicHome.includes("?") ? "&" : "?"}website_edit=1`.replace(
-          "?&",
-          "?"
-        ),
+        editHomePath:
+          buildPublicWebsiteEditPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+          }) || publicHome,
       };
     }
 
@@ -2222,25 +2895,39 @@ function createContentAdminRouter(deps) {
         return res.redirect(303, `${scope.basePath}/draft-changes`);
       }
       const errQ = String((req.query && req.query.error) || "");
+      const requestIdQ = String((req.query && req.query.requestId) || "").slice(0, 64);
+      const {
+        publicMessageForCode,
+      } = require("../services/websitePublishFailureDiagnostics");
+      let errorMessage = null;
+      if (errQ === "publish_failed") {
+        errorMessage =
+          "We could not publish these changes. Please try again. Drafts were preserved and the public website was not changed.";
+      } else if (errQ === "submit_failed") {
+        errorMessage = "Approval submission failed. Drafts were preserved — try again.";
+      } else if (errQ === "csrf") {
+        errorMessage = "Invalid or missing security token. Refresh and try again.";
+      } else if (errQ === "not_ready") {
+        errorMessage =
+          "Website is not ready to publish. Review the issues below, then try Save and Publish again.";
+      } else if (errQ === "confirm") {
+        errorMessage = "Confirm publication before continuing.";
+      } else if (errQ === "forbidden") {
+        errorMessage = "You do not have permission for that action.";
+      } else if (errQ) {
+        errorMessage = publicMessageForCode(errQ);
+      }
+      if (errorMessage && requestIdQ) {
+        errorMessage = `${errorMessage} Request ID: ${requestIdQ}`;
+      }
       const html = renderContentAdminView(
         "content-admin/website-publish-review.ejs",
         await shellLocals(req, res, {
           scope,
           review,
-          error:
-            errQ === "publish_failed"
-              ? "We could not publish these changes. Please try again. Drafts were preserved and the public website was not changed."
-              : errQ === "submit_failed"
-                ? "Approval submission failed. Drafts were preserved — try again."
-                : errQ === "csrf"
-                  ? "Invalid or missing security token. Refresh and try again."
-                  : errQ === "not_ready"
-                    ? "Website is not ready to publish. Review the issues below, then try Save and Publish again."
-                    : errQ === "confirm"
-                      ? "Confirm publication before continuing."
-                      : errQ === "forbidden"
-                        ? "You do not have permission for that action."
-                        : null,
+          error: errorMessage,
+          publishErrorCode: errQ || null,
+          publishRequestId: requestIdQ || null,
         })
       );
       return res.status(200).type("html").send(html);
@@ -2296,6 +2983,7 @@ function createContentAdminRouter(deps) {
         branchId: scope.branchId,
         actorUserId: session.userId,
         actorRole: resolveActorRole(req),
+        tenant,
         confirmPublish: req.body && req.body.confirm_publish,
         // Phase 7 draft republish: incremental text/media changes must not re-block
         // on first-publish service-time gaps that the review UI only treats as warnings.
@@ -2308,17 +2996,28 @@ function createContentAdminRouter(deps) {
               req.body.acknowledge_public === "on")
         ),
         env,
+        requestId: req.requestId || req.correlationId || null,
+        correlationId: req.correlationId || req.requestId || null,
       });
       if (!result.ok) {
         const code =
-          result.reason === "cross_org" || result.status === "forbidden"
+          result.reason === "cross_org" ||
+          result.status === "forbidden" ||
+          result.publicCode === "forbidden"
             ? "forbidden"
             : result.reason === "confirm_publish"
               ? "confirm"
               : result.reason === "no_changes" || result.status === "not_ready"
                 ? "not_ready"
-                : "publish_failed";
-        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=${code}`);
+                : String(result.publicCode || result.reason || "publish_failed");
+        const requestId = req.requestId || req.correlationId || "";
+        const qs = new URLSearchParams({ error: code });
+        if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+        if (result.engineCode) qs.set("engineCode", String(result.engineCode).slice(0, 64));
+        return res.redirect(
+          303,
+          `${scope.basePath}/draft-changes/publish-review?${qs.toString()}`
+        );
       }
       return res.redirect(303, `${scope.basePath}/draft-changes?notice=published`);
     });
@@ -2347,6 +3046,7 @@ function createContentAdminRouter(deps) {
         branchId: scope.branchId,
         actorUserId: session.userId,
         actorRole: resolveActorRole(req),
+        tenant,
         reason: req.body && req.body.reason,
         submitterNote: req.body && req.body.submitter_note,
       });
@@ -2367,14 +3067,6 @@ function createContentAdminRouter(deps) {
 
       const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
       const { renderTenantPublicPage } = require("./renderTenantPublicPage");
-      const {
-        loadDraftOverlayMap,
-        applyDraftsToSections,
-      } = require("../services/websiteInlineDraftService");
-      const {
-        listStructuredDrafts,
-        applyStructuredDraftsToModel,
-      } = require("../services/websiteStructuredDraftService");
 
       let previewBranchId = scope.branchId;
       let selectedBranch = scope.branch || null;
@@ -2424,39 +3116,13 @@ function createContentAdminRouter(deps) {
       }
 
       try {
-        const overlayMap = await loadDraftOverlayMap(getPool(), {
-          churchId: scope.churchId,
-          branchId: scope.branchId,
-          pageKey: model.pageKey,
-        });
-        model.sections = applyDraftsToSections(model.sections, overlayMap);
-        if (model.pageKey === "contact" && model.publicContact) {
-          const email = overlayMap.get("details::email");
-          const phone = overlayMap.get("details::phone");
-          const address = overlayMap.get("details::address");
-          if (email !== undefined || phone !== undefined || address !== undefined) {
-            model.publicContact = {
-              ...model.publicContact,
-              email: email !== undefined ? email : model.publicContact.email,
-              phone: phone !== undefined ? phone : model.publicContact.phone,
-              addressText:
-                address !== undefined ? address : model.publicContact.addressText,
-              hasAny: true,
-            };
-          }
-        }
-        const structuredDrafts = await listStructuredDrafts(getPool(), {
-          churchId: scope.churchId,
-          branchId: scope.branchId,
-          status: "draft",
-        });
-        applyStructuredDraftsToModel(model, structuredDrafts);
+        await applyCurrentDraftOverlaysToModel(getPool(), model, scope);
       } catch {
         /* show CMS preview without overlays if draft load fails */
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=52";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=68";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });
@@ -2535,6 +3201,7 @@ function createContentAdminRouter(deps) {
           shellKind
         );
       }
+      await applyCurrentDraftOverlaysToModel(getPool(), model, pageScope);
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });
@@ -2605,6 +3272,7 @@ function entityPatchFromBody(routeKey, body) {
         summary: body.summary,
         mediaUrl: body.media_url,
         resourceUrl: body.resource_url,
+        imageUrl: body.image_url,
       };
     case "contact":
       return {

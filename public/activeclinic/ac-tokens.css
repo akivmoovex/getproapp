@@ -1,0 +1,281 @@
+/**
+ * ActiveClinic shared design tokens (Pass 8).
+ * Product-isolated under /activeclinic/. Loaded by all ActiveClinic shells.
+ * Defines custom properties only — no global element styling.
+ *
+ * Layers:
+ *  1) Shared semantic status / space / radius / z
+ *  2) Public+portal teal system (--acp-*) — Stitch project 17813606734422395399
+ *  3) Typography scale for public/portal
+ *
+ * Authenticated staff app brand tokens live in ac-app-tokens.css (V2.03 canonical).
+ * Staff auth navy tokens remain in ac-auth.css (--ac-auth-*).
+ */
+:root {
+  /* —— Shared semantic status → V2.04 platform —— */
+  --ac-status-success: var(--color-success-text);
+  --ac-status-success-bg: var(--color-success-bg);
+  --ac-status-warning: var(--color-warning-text);
+  --ac-status-warning-bg: var(--color-warning-bg);
+  --ac-status-danger: var(--color-danger-text);
+  --ac-status-danger-bg: var(--color-danger-bg);
+  --ac-status-info: var(--color-info-text);
+  --ac-status-info-bg: var(--color-info-bg);
+  /* Neutral status + shadows rebind under product scope (see below). */
+  --ac-status-pending: var(--color-warning-text);
+  --ac-status-pending-bg: var(--color-warning-bg);
+
+  /* —— Shared space scale —— */
+  --ac-space-1: 0.25rem;
+  --ac-space-2: 0.5rem;
+  --ac-space-3: 0.75rem;
+  --ac-space-4: 1rem;
+  --ac-space-5: 1.5rem;
+  --ac-space-6: 2rem;
+  --ac-space-7: 3rem;
+  --ac-space-8: 2rem;
+
+  /* —— Wave 1: Stitch-aligned typography scale (P01 auth + internal ops) —— */
+  --ac-text-caption: 0.75rem;
+  --ac-text-body-md: 0.875rem;
+  --ac-text-body-lg: 1rem;
+  --ac-text-headline-sm: 1.25rem;
+  --ac-text-headline-md: 1.5rem;
+  --ac-text-headline-lg: 1.875rem;
+  --ac-leading-caption: 1.333;
+  --ac-leading-body: 1.428;
+  --ac-leading-headline: 1.333;
+
+  /* —— Wave 1: control + card radii (Stitch P01 login HTML) —— */
+  --ac-control-radius: 2px;
+  --ac-card-radius: 8px;
+
+  /* —— Shared radii —— */
+  --ac-radius-sm: 8px;
+  --ac-radius-md: 12px;
+  --ac-radius-lg: 1.25rem;
+  --ac-radius-xl: 1.75rem;
+  --ac-radius-pill: 999px;
+
+  /* —— Shared z-index —— */
+  --ac-z-sticky: 50;
+  --ac-z-drawer: 80;
+  --ac-z-modal: 90;
+  --ac-z-popover: 100;
+  --ac-z-skip: 1000;
+
+  /* —— Shared touch / control —— */
+  --ac-touch: 2.75rem;
+  --ac-control-h: 2.75rem;
+
+  /* —— Breakpoint reference (documentation; media queries still literal) ——
+     --ac-bp-sm: 480px;
+     --ac-bp-mobile: 767px;
+     --ac-bp-tablet: 768px;
+     --ac-bp-app: 900px;
+     --ac-bp-desktop: 1024px;
+     --ac-bp-wide: 1440px;
+  */
+
+  /* —— Public layout metrics (non-color; safe on :root) —— */
+  --acp-radius: 0.5rem;
+  --acp-radius-lg: 0.5rem;
+  --acp-radius-xl: 0.5rem;
+  --acp-radius-card: 0.5rem;
+  --acp-shadow-sm: var(--ac-shadow-sm);
+  /* V2.04 Batch 7 — Clinical Clarity public typography (Inter). BlessBoard unchanged. */
+  --acp-font: Inter, "Public Sans", Segoe UI, system-ui, sans-serif;
+  --acp-touch: 3rem;
+  /* Layout family: AC clinic mini-site + patient portal public band
+     Desktop: 75rem (1200px) centered — 120px margin @ 1440 viewport
+     Mobile (≤767): --acp-gutter becomes 1rem (16px) via ac-public.css */
+  --acp-max: 75rem;
+  --acp-space-1: var(--ac-space-1);
+  --acp-space-2: var(--ac-space-2);
+  --acp-space-3: var(--ac-space-3);
+  --acp-space-4: var(--ac-space-4);
+  --acp-space-5: var(--ac-space-5);
+  --acp-space-6: var(--ac-space-6);
+  --acp-space-7: var(--ac-space-7);
+  --acp-gutter: 1.25rem; /* 20px desktop; overridden to 1rem mobile in ac-public.css */
+  --acp-section-gap: 1.5rem;
+  --acp-card-gap: 1rem;
+  --acp-heading-mobile: clamp(1.65rem, 6vw, 2.1rem);
+  --acp-body-mobile: 1rem;
+  --acp-bottom-nav-h: 4.5rem;
+  --acp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ac-keyboard-inset: 0px;
+
+  /* —— Public typography scale —— */
+  --acp-text-display: 2rem;
+  --acp-text-h1: 1.5rem;
+  --acp-text-h2: 1.5rem;
+  --acp-text-h3: 1.125rem;
+  --acp-text-body: 0.875rem;
+  --acp-text-body-lg: 1rem;
+  --acp-text-small: 0.92rem;
+  --acp-text-label: 0.875rem;
+  --acp-text-caption: 0.8rem;
+  --acp-text-badge: 0.75rem;
+  --acp-leading-tight: 1.25;
+  --acp-leading-display: 2.5rem;
+  --acp-leading-body: 1.5;
+}
+
+/*
+ * Product-scoped color aliases.
+ * Must NOT live on :root — custom properties inherit computed values, so a
+ * :root alias of var(--color-brand-primary) freezes the platform violet default
+ * and ignores data-product="activeclinic" brand overrides on <body>.
+ */
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"],
+[data-ac-shell],
+body.ac-app-body,
+body.ac-auth-body,
+body.ac-public-body,
+.ac-public-body,
+.ac-auth-body,
+.ac-app-body {
+  /* Public / tenant / portal brand bridge → V2.04 (tenant may override --acp-primary*) */
+  --acp-primary: var(--color-brand-primary);
+  --acp-primary-strong: var(--color-brand-primary-active);
+  --acp-primary-hover: var(--color-brand-primary-hover);
+  --acp-primary-soft: var(--color-brand-primary-light);
+  --acp-navy: var(--color-brand-accent);
+  --acp-ink: var(--color-text-primary);
+  --acp-muted: var(--color-text-secondary);
+  --acp-surface: var(--color-surface);
+  --acp-surface-low: var(--color-surface-subtle);
+  --acp-surface-elevated: var(--color-surface-elevated);
+  --acp-bg: var(--color-background);
+  --acp-border: var(--color-border-default);
+  --acp-outline: var(--color-border-strong);
+  --acp-focus: var(--color-focus);
+  --acp-error: var(--color-danger-text);
+  --acp-error-bg: var(--color-danger-bg);
+
+  /* Shadows that mix product text color */
+  --ac-shadow-sm: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  --ac-shadow-md: 0 12px 28px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  --acp-shadow-sm: var(--ac-shadow-sm);
+
+  /* Neutral status that follows product text/surface */
+  --ac-status-neutral: var(--color-text-secondary);
+  --ac-status-neutral-bg: var(--color-surface-subtle);
+
+  /* Cross-platform semantic aliases */
+  --product-primary: var(--color-brand-primary);
+  --product-primary-strong: var(--color-brand-primary-active);
+  --product-primary-hover: var(--color-brand-primary-hover);
+  --product-bg: var(--color-background);
+  --product-surface: var(--color-surface);
+  --product-text: var(--color-text-primary);
+  --product-muted: var(--color-text-secondary);
+  --product-border: var(--color-border-default);
+  --product-focus: var(--color-focus);
+  --product-link: var(--color-link);
+}
+
+/* Semantic status badge primitives (shared by public + portal) */
+.ac-status-badge,
+.acp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--ac-radius-pill);
+  font-size: var(--acp-text-badge);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+.ac-status-badge--success,
+.acp-status-badge--done {
+  background: var(--ac-status-success-bg);
+  color: var(--ac-status-success);
+}
+.ac-status-badge--info,
+.acp-status-badge--info {
+  background: var(--ac-status-info-bg);
+  color: var(--ac-status-info);
+}
+.acp-status-badge--confirmed {
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary-strong);
+}
+.ac-status-badge--pending,
+.acp-status-badge--pending {
+  background: var(--ac-status-pending-bg);
+  color: var(--ac-status-pending);
+}
+.ac-status-badge--warning {
+  background: var(--ac-status-warning-bg);
+  color: var(--ac-status-warning);
+}
+.ac-status-badge--danger {
+  background: var(--ac-status-danger-bg);
+  color: var(--ac-status-danger);
+}
+.ac-status-badge--neutral {
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+
+/* Optional typography utilities (public/portal). Prefer these over ad-hoc sizes. */
+.ac-type-display,
+.acp-type-display {
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-tight);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--acp-navy);
+}
+.ac-type-h1,
+.acp-type-h1 {
+  font-size: var(--acp-text-h1);
+  line-height: var(--acp-leading-tight);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--acp-navy);
+}
+.ac-type-h2,
+.acp-type-h2 {
+  font-size: var(--acp-text-h2);
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.ac-type-h3,
+.acp-type-h3 {
+  font-size: var(--acp-text-h3);
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.ac-type-body,
+.acp-type-body {
+  font-size: var(--acp-text-body);
+  line-height: var(--acp-leading-body);
+  color: var(--acp-ink);
+}
+.ac-type-lede,
+.acp-type-lede {
+  font-size: var(--acp-text-body-lg);
+  line-height: var(--acp-leading-body);
+  color: var(--acp-muted);
+}
+.ac-type-label,
+.acp-type-label {
+  font-size: var(--acp-text-label);
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+.ac-type-caption,
+.acp-type-caption {
+  font-size: var(--acp-text-caption);
+  color: var(--acp-muted);
+}
+

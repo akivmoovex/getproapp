@@ -1,0 +1,53 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Groups</h1>
+          <p class="church-branch-topbar__subtitle">Leaders, membership, meetings, and attendance</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Create group</h2>
+        <form class="church-form" method="post" action="/branch/groups">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label">Name</label><input class="church-input" name="name" required/></div>
+            <div class="church-field"><label class="church-label">Capacity</label><input class="church-input" name="capacity" type="number" min="1"/></div>
+            <div class="church-field"><label class="church-label">Meeting day (0=Sun)</label><input class="church-input" name="meeting_day_of_week" type="number" min="0" max="6"/></div>
+            <div class="church-field"><label class="church-label">Meeting time</label><input class="church-input" name="meeting_time" type="time"/></div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Create</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Pending join requests</h2>
+        <ul class="church-list">
+          <% (pending || []).forEach(function (r) { %>
+          <li>
+            <%= r.member_name %> → <%= r.group_name %>
+            <form class="church-form church-form--inline" method="post" action="/branch/groups/join-requests/<%= r.id %>/decide">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--primary" name="decision" value="approve" type="submit">Approve</button>
+              <button class="church-btn church-btn--outline" name="decision" value="waitlist" type="submit">Waitlist</button>
+              <button class="church-btn church-btn--ghost" name="decision" value="decline" type="submit">Decline</button>
+            </form>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Groups</h2>
+        <ul class="church-list">
+          <% (groups || []).forEach(function (g) { %>
+          <li>
+            <a href="/branch/groups/<%= g.id %>"><%= g.name %></a>
+            · <%= g.status %> · <%= g.active_count || 0 %><% if (g.capacity) { %>/<%= g.capacity %><% } %> members
+            <% if (g.waitlist_count) { %> · waitlist <%= g.waitlist_count %><% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

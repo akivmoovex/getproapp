@@ -1,0 +1,35 @@
+<%#
+  Shared registration consent checkbox.
+  Locals:
+    registrationTermsHref, registrationPrivacyHref
+    consentField (default registration_consent)
+    consentChecked, consentError, consentErrorField
+    productLabel (optional, e.g. BlessBoard / ActiveClinic)
+%>
+<%
+  var consentFieldName = typeof consentField !== 'undefined' && consentField ? consentField : 'registration_consent';
+  var isConsentChecked = typeof consentChecked !== 'undefined' && Boolean(consentChecked);
+  var termsHref = typeof registrationTermsHref !== 'undefined' && registrationTermsHref ? registrationTermsHref : '/terms';
+  var privacyHref = typeof registrationPrivacyHref !== 'undefined' && registrationPrivacyHref ? registrationPrivacyHref : '/privacy';
+  var hasConsentError = typeof consentErrorField !== 'undefined' && consentErrorField === consentFieldName && consentError;
+%>
+<div class="gp-registration-consent<%= hasConsentError ? ' is-error' : '' %>" data-gp-registration-consent="1">
+  <label class="gp-registration-consent__label">
+    <input
+      type="checkbox"
+      id="<%= consentFieldName %>"
+      name="<%= consentFieldName %>"
+      value="on"
+      required
+      <% if (isConsentChecked) { %>checked<% } %>
+      <% if (hasConsentError) { %>aria-invalid="true" aria-describedby="registration-consent-error"<% } %>
+    />
+    <span>
+      I agree to the
+      <a href="<%= termsHref %>" data-gp-registration-nav="1">Terms of Service</a>
+      and
+      <a href="<%= privacyHref %>" data-gp-registration-nav="1">Privacy Policy</a>.
+    </span>
+  </label>
+  <p class="gp-registration-consent__error" id="registration-consent-error" data-gp-consent-error role="alert"<% if (!hasConsentError) { %> hidden<% } %>><%= hasConsentError ? consentError : '' %></p>
+</div>

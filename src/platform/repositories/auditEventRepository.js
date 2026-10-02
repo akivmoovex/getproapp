@@ -4,8 +4,26 @@
  * platform.audit_events repository — INSERT + SELECT only.
  */
 
-const COLS = `id, deployment_code, organization_id, church_id, branch_id, actor_user_id,
-  action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
+const COLS = `id, deployment_code, organization_id, church_id, branch_id, facility_id, product_code,
+  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
+
+// REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1:
+// Production platform ledger stops at 035; facility_id/product_code arrive in 037.
+// Fresh + QA already have both columns. Keep pre-037 INSERT/SELECT until production
+// receives canonical migrate/reset (PL12 currently BLOCKED).
+const COLS_LEGACY = `id, deployment_code, organization_id, church_id, branch_id,
+  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
+
+/** @param {string|null|undefined} before */
+function parseAuditBeforeCursor(before) {
+  const raw = before != null ? String(before).trim() : "";
+  if (!raw) return null;
+  const pipe = raw.indexOf("|");
+  if (pipe > 0) {
+    return { createdAt: raw.slice(0, pipe), id: raw.slice(pipe + 1) || null };
+  }
+  return { createdAt: raw, id: null };
+}
 
 function mapEvent(row) {
   if (!row) return null;
@@ -15,6 +33,8 @@ function mapEvent(row) {
     organizationId: row.organization_id,
     churchId: row.church_id || null,
     branchId: row.branch_id || null,
+    facilityId: row.facility_id || null,
+    productCode: row.product_code || null,
     actorUserId: row.actor_user_id || null,
     actionKey: row.action_key,
     entityType: row.entity_type,
@@ -26,26 +46,53 @@ function mapEvent(row) {
 }
 
 async function insertAuditEvent(client, fields) {
-  const { rows } = await client.query(
-    `INSERT INTO platform.audit_events
-       (deployment_code, organization_id, church_id, branch_id, actor_user_id,
-        action_key, entity_type, entity_id, outcome, metadata_json)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
-     RETURNING ${COLS}`,
-    [
-      fields.deploymentCode,
-      fields.organizationId,
-      fields.churchId || null,
-      fields.branchId || null,
-      fields.actorUserId || null,
-      fields.actionKey,
-      fields.entityType,
-      fields.entityId || null,
-      fields.outcome,
-      JSON.stringify(fields.metadata || {}),
-    ]
-  );
-  return mapEvent(rows[0]);
+  try {
+    const { rows } = await client.query(
+      `INSERT INTO platform.audit_events
+         (deployment_code, organization_id, church_id, branch_id, facility_id, product_code,
+          actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb)
+       RETURNING ${COLS}`,
+      [
+        fields.deploymentCode,
+        fields.organizationId,
+        fields.churchId || null,
+        fields.branchId || null,
+        fields.facilityId || null,
+        fields.productCode || null,
+        fields.actorUserId || null,
+        fields.actionKey,
+        fields.entityType,
+        fields.entityId || null,
+        fields.outcome,
+        JSON.stringify(fields.metadata || {}),
+      ]
+    );
+    return mapEvent(rows[0]);
+  } catch (err) {
+    // REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1 (pre-037 writers).
+    if (!err || err.code !== "42703") throw err;
+    const { rows } = await client.query(
+      `INSERT INTO platform.audit_events
+         (deployment_code, organization_id, church_id, branch_id, actor_user_id,
+          action_key, entity_type, entity_id, outcome, metadata_json)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+       RETURNING ${COLS_LEGACY}`,
+      [
+        fields.deploymentCode,
+        fields.organizationId,
+        fields.churchId || null,
+        fields.branchId || null,
+        fields.actorUserId || null,
+        fields.actionKey,
+        fields.entityType,
+        fields.entityId || null,
+        fields.outcome,
+        JSON.stringify(fields.metadata || {}),
+      ]
+    );
+    return mapEvent(rows[0]);
+  }
 }
 
 /**
@@ -54,6 +101,8 @@ async function insertAuditEvent(client, fields) {
  *   organizationId: string,
  *   churchId?: string|null,
  *   branchId?: string|null,
+ *   facilityId?: string|null,
+ *   productCode?: string|null,
  *   actorUserId?: string|null,
  *   actionKey?: string|null,
  *   actionCategory?: string|null,
@@ -76,6 +125,14 @@ async function listAuditEvents(client, opts) {
     params.push(opts.branchId);
     where += ` AND branch_id = $${params.length}`;
   }
+  if (opts.facilityId) {
+    params.push(opts.facilityId);
+    where += ` AND facility_id = $${params.length}`;
+  }
+  if (opts.productCode) {
+    params.push(opts.productCode);
+    where += ` AND product_code = $${params.length}`;
+  }
   if (opts.actorUserId) {
     params.push(opts.actorUserId);
     where += ` AND actor_user_id = $${params.length}`;
@@ -93,6 +150,10 @@ async function listAuditEvents(client, opts) {
     params.push(opts.entityType);
     where += ` AND entity_type = $${params.length}`;
   }
+  if (opts.entityId) {
+    params.push(opts.entityId);
+    where += ` AND entity_id = $${params.length}`;
+  }
   if (opts.outcome) {
     params.push(opts.outcome);
     where += ` AND outcome = $${params.length}`;
@@ -105,31 +166,114 @@ async function listAuditEvents(client, opts) {
     params.push(opts.createdBeforeExclusive);
     where += ` AND created_at < $${params.length}::timestamptz`;
   }
-  if (opts.before) {
-    params.push(opts.before);
-    where += ` AND created_at < $${params.length}::timestamptz`;
+  const beforeCursor = parseAuditBeforeCursor(opts.before);
+  if (beforeCursor) {
+    params.push(beforeCursor.createdAt);
+    const tsIdx = params.length;
+    if (beforeCursor.id) {
+      params.push(beforeCursor.id);
+      // Tuple compare avoids timestamptz string/equality precision losing same-ms rows.
+      where += ` AND (created_at, id) < ($${tsIdx}::timestamptz, $${params.length}::uuid)`;
+    } else {
+      where += ` AND created_at < $${tsIdx}::timestamptz`;
+    }
   }
   const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
   params.push(limit + 1); // fetch one extra for hasMore
-  const { rows } = await client.query(
-    `SELECT ${COLS}
-       FROM platform.audit_events
-      WHERE ${where}
-      ORDER BY created_at DESC, id DESC
-      LIMIT $${params.length}`,
-    params
-  );
+  let rows;
+  try {
+    const result = await client.query(
+      `SELECT ${COLS}
+         FROM platform.audit_events
+        WHERE ${where}
+        ORDER BY created_at DESC, id DESC
+        LIMIT $${params.length}`,
+      params
+    );
+    rows = result.rows;
+  } catch (err) {
+    // REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1 (pre-037 readers).
+    if (!err || err.code !== "42703") throw err;
+    const legacyParams = [opts.organizationId];
+    let legacyWhere = `organization_id = $1`;
+    if (opts.churchId) {
+      legacyParams.push(opts.churchId);
+      legacyWhere += ` AND church_id = $${legacyParams.length}`;
+    }
+    if (opts.branchId) {
+      legacyParams.push(opts.branchId);
+      legacyWhere += ` AND branch_id = $${legacyParams.length}`;
+    }
+    if (opts.actorUserId) {
+      legacyParams.push(opts.actorUserId);
+      legacyWhere += ` AND actor_user_id = $${legacyParams.length}`;
+    }
+    if (opts.actionKey) {
+      legacyParams.push(opts.actionKey);
+      legacyWhere += ` AND action_key = $${legacyParams.length}`;
+    } else if (opts.actionCategory) {
+      legacyParams.push(opts.actionCategory);
+      const catIdx = legacyParams.length;
+      legacyParams.push(`${opts.actionCategory}.%`);
+      legacyWhere += ` AND (action_key = $${catIdx} OR action_key LIKE $${legacyParams.length})`;
+    }
+    if (opts.entityType) {
+      legacyParams.push(opts.entityType);
+      legacyWhere += ` AND entity_type = $${legacyParams.length}`;
+    }
+    if (opts.entityId) {
+      legacyParams.push(opts.entityId);
+      legacyWhere += ` AND entity_id = $${legacyParams.length}`;
+    }
+    if (opts.outcome) {
+      legacyParams.push(opts.outcome);
+      legacyWhere += ` AND outcome = $${legacyParams.length}`;
+    }
+    if (opts.createdOnOrAfter) {
+      legacyParams.push(opts.createdOnOrAfter);
+      legacyWhere += ` AND created_at >= $${legacyParams.length}::timestamptz`;
+    }
+    if (opts.createdBeforeExclusive) {
+      legacyParams.push(opts.createdBeforeExclusive);
+      legacyWhere += ` AND created_at < $${legacyParams.length}::timestamptz`;
+    }
+    if (beforeCursor) {
+      legacyParams.push(beforeCursor.createdAt);
+      const tsIdx = legacyParams.length;
+      if (beforeCursor.id) {
+        legacyParams.push(beforeCursor.id);
+        legacyWhere += ` AND (created_at, id) < ($${tsIdx}::timestamptz, $${legacyParams.length}::uuid)`;
+      } else {
+        legacyWhere += ` AND created_at < $${tsIdx}::timestamptz`;
+      }
+    }
+    legacyParams.push(limit + 1);
+    const result = await client.query(
+      `SELECT ${COLS_LEGACY}
+         FROM platform.audit_events
+        WHERE ${legacyWhere}
+        ORDER BY created_at DESC, id DESC
+        LIMIT $${legacyParams.length}`,
+      legacyParams
+    );
+    rows = result.rows;
+  }
   const hasMore = rows.length > limit;
-  const page = hasMore ? rows.slice(0, limit) : rows;
-  return {
-    events: page.map(mapEvent),
-    hasMore,
-    nextBefore: hasMore && page.length ? page[page.length - 1].created_at : null,
-  };
+  const events = rows.slice(0, limit).map(mapEvent);
+  let nextBefore = null;
+  if (hasMore && events.length) {
+    const tail = events[events.length - 1];
+    const createdAt =
+      tail.createdAt instanceof Date
+        ? tail.createdAt.toISOString()
+        : String(tail.createdAt || "");
+    nextBefore = createdAt && tail.id ? `${createdAt}|${tail.id}` : createdAt || null;
+  }
+  return { events, hasMore, nextBefore };
 }
 
 module.exports = {
-  mapEvent,
   insertAuditEvent,
   listAuditEvents,
+  mapEvent,
 };

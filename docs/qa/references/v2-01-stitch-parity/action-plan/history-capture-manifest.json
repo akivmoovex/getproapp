@@ -1,0 +1,91 @@
+{
+  "capturedAt": "2026-09-26T00:26:23.216Z",
+  "gitSha": "544f6b997a2b",
+  "deploymentCode": "moovex-platform-v8-testing",
+  "rows": [
+    {
+      "product": "bb",
+      "label": "desktop1440",
+      "width": 1440,
+      "ok": true,
+      "detail": "open=true hidden=false choices=true confirm=true",
+      "click": {
+        "ok": true,
+        "key": "home.hero.heading"
+      },
+      "sheet": {
+        "present": true,
+        "hidden": false,
+        "openClass": true,
+        "text": "REVISION HISTORY\nHistory · home.hero.heading\nclose\n\nSelect a version to compare. Restoring replaces your draft — it will not auto-publish to your live website until you choose to publish.\n\nDraft safe & ready to compare. All changes are non-destructive.\nUndo current edit\nRestore the live published value to draft\nNo unpublished edit to undo\nPreviously saved\nPrior draft revision\nPrior draft history i",
+        "hasChoices": true,
+        "hasConfirm": true,
+        "loadingHidden": true
+      },
+      "file": "docs/qa/references/v2-01-stitch-parity/action-plan/bb-desktop1440-field-history-sheet.png"
+    },
+    {
+      "product": "bb",
+      "label": "mobile390",
+      "width": 390,
+      "ok": true,
+      "detail": "open=true hidden=false choices=true confirm=true",
+      "click": {
+        "ok": true,
+        "key": "home.hero.heading"
+      },
+      "sheet": {
+        "present": true,
+        "hidden": false,
+        "openClass": true,
+        "text": "REVISION HISTORY\nHistory · home.hero.heading\nclose\n\nSelect a version to compare. Restoring replaces your draft — it will not auto-publish to your live website until you choose to publish.\n\nDraft safe & ready to compare. All changes are non-destructive.\nUndo current edit\nRestore the live published value to draft\nNo unpublished edit to undo\nPreviously saved\nPrior draft revision\nPrior draft history i",
+        "hasChoices": true,
+        "hasConfirm": true,
+        "loadingHidden": true
+      },
+      "file": "docs/qa/references/v2-01-stitch-parity/action-plan/bb-mobile390-field-history-sheet.png"
+    },
+    {
+      "product": "ac",
+      "label": "desktop1440",
+      "width": 1440,
+      "ok": true,
+      "detail": "open=true hidden=false choices=true confirm=true",
+      "click": {
+        "ok": true,
+        "key": "home.hero.title"
+      },
+      "sheet": {
+        "present": true,
+        "hidden": false,
+        "openClass": true,
+        "text": "REVISION HISTORY\nHistory · home.hero.title\nclose\n\nSelect a version to compare. Restoring replaces your draft — it will not auto-publish to your live website until you choose to publish.\n\nDraft safe & ready to compare. All changes are non-destructive.\nUndo current edit\nRestore the live published value to draft\nNo unpublished edit to undo\nPreviously saved\nPrior draft revision\nPrior draft history is ",
+        "hasChoices": true,
+        "hasConfirm": true,
+        "loadingHidden": true
+      },
+      "file": "docs/qa/references/v2-01-stitch-parity/action-plan/ac-desktop1440-field-history-sheet.png"
+    },
+    {
+      "product": "ac",
+      "label": "mobile390",
+      "width": 390,
+      "ok": true,
+      "detail": "open=true hidden=false choices=true confirm=true",
+      "click": {
+        "ok": true,
+        "key": "home.hero.title"
+      },
+      "sheet": {
+        "present": true,
+        "hidden": false,
+        "openClass": true,
+        "text": "REVISION HISTORY\nHistory · home.hero.title\nclose\n\nSelect a version to compare. Restoring replaces your draft — it will not auto-publish to your live website until you choose to publish.\n\nDraft safe & ready to compare. All changes are non-destructive.\nUndo current edit\nRestore the live published value to draft\nNo unpublished edit to undo\nPreviously saved\nPrior draft revision\nPrior draft history is ",
+        "hasChoices": true,
+        "hasConfirm": true,
+        "loadingHidden": true
+      },
+      "file": "docs/qa/references/v2-01-stitch-parity/action-plan/ac-mobile390-field-history-sheet.png"
+    }
+  ]
+}

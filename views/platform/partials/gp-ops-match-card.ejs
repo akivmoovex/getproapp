@@ -1,0 +1,53 @@
+<%#
+  Shared possible-match card (product-neutral).
+  Callers supply labels/actions — no product identity wording here.
+  Locals:
+    title (required), subtitle?, scoreLabel?, tone (neutral|info|warning|danger|success|accent),
+    fields: Array<{ label, value, highlight? }>,
+    headerMetaHtml?, actionsHtml?, className?, id?
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? String(title) : '';
+  var _subtitle = typeof subtitle !== 'undefined' && subtitle ? String(subtitle) : '';
+  var _score = typeof scoreLabel !== 'undefined' && scoreLabel ? String(scoreLabel) : '';
+  var _tone = typeof tone !== 'undefined' && tone ? String(tone) : 'warning';
+  var _fields = Array.isArray(fields) ? fields : [];
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _cls = 'gp-ops-match-card gp-ops-match-card--' + _tone + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<article
+  class="<%= _cls %>"
+  data-gp-ops="match-card"
+  data-gp-ops-tone="<%= _tone %>"
+  <% if (_id) { %>id="<%= _id %>"<% } %>
+>
+  <header class="gp-ops-match-card__header">
+    <div class="gp-ops-match-card__heading">
+      <h3 class="gp-ops-match-card__title"><%= _title %></h3>
+      <% if (_subtitle) { %>
+      <p class="gp-ops-match-card__subtitle"><%= _subtitle %></p>
+      <% } %>
+    </div>
+    <div class="gp-ops-match-card__meta">
+      <% if (_score) { %>
+      <%- include('./gp-ops-status-badge', { label: _score, tone: _tone }) %>
+      <% } %>
+      <% if (typeof headerMetaHtml !== 'undefined' && headerMetaHtml) { %>
+      <%- headerMetaHtml %>
+      <% } %>
+    </div>
+  </header>
+  <% if (_fields.length) { %>
+  <dl class="gp-ops-match-card__fields">
+    <% _fields.forEach(function (f) { %>
+    <div class="gp-ops-match-card__row<%= f && f.highlight ? ' is-highlight' : '' %>">
+      <dt class="gp-ops-match-card__label"><%= f && f.label ? f.label : '' %></dt>
+      <dd class="gp-ops-match-card__value"><%= f && f.value != null ? f.value : '' %></dd>
+    </div>
+    <% }) %>
+  </dl>
+  <% } %>
+  <% if (typeof actionsHtml !== 'undefined' && actionsHtml) { %>
+  <footer class="gp-ops-match-card__actions"><%- actionsHtml %></footer>
+  <% } %>
+</article>

@@ -2,7 +2,6 @@
 
 const crypto = require("crypto");
 const path = require("path");
-const { execFileSync } = require("child_process");
 
 const { getChurchHostDomain, parseChurchHostFromDedicatedDomain } = require("../../church/host");
 const {
@@ -33,40 +32,21 @@ function shortHash(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex").slice(0, 12);
 }
 
-/** Git commit SHA + branch, best effort: env first, then `git` (never throws). */
+/** Git commit SHA + branch via shared platform build identity (never throws). */
 function getGitInfo() {
-  let sha = String(process.env.GETPRO_GIT_SHA || "").trim();
-  let branch = String(process.env.GETPRO_GIT_BRANCH || "").trim();
-  if (!sha) {
-    try {
-      sha = execFileSync("git", ["rev-parse", "HEAD"], {
-        cwd: PROJECT_ROOT,
-        timeout: 800,
-        stdio: ["ignore", "pipe", "ignore"],
-      })
-        .toString()
-        .trim();
-    } catch {
-      sha = "";
-    }
+  try {
+    const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
+    const id = getBuildIdentity({ appRoot: PROJECT_ROOT, env: process.env });
+    return {
+      commitSha: id.gitShaShort || id.gitSha || "(unavailable)",
+      branch: id.branch || "(unavailable)",
+    };
+  } catch {
+    return {
+      commitSha: "(unavailable)",
+      branch: "(unavailable)",
+    };
   }
-  if (!branch) {
-    try {
-      branch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-        cwd: PROJECT_ROOT,
-        timeout: 800,
-        stdio: ["ignore", "pipe", "ignore"],
-      })
-        .toString()
-        .trim();
-    } catch {
-      branch = "";
-    }
-  }
-  return {
-    commitSha: sha ? sha.slice(0, 12) : "(unavailable)",
-    branch: branch || "(unavailable)",
-  };
 }
 
 /**

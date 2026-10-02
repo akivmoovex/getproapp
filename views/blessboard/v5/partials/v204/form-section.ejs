@@ -1,0 +1,11 @@
+<%#
+  BB V2.04 form section → platform gp-ops-form-section.
+%>
+<%- include('../../../../platform/partials/gp-ops-form-section', {
+  title: typeof title !== 'undefined' ? title : undefined,
+  description: typeof description !== 'undefined' ? description : undefined,
+  bodyHtml: typeof bodyHtml !== 'undefined' ? bodyHtml : undefined,
+  className: typeof className !== 'undefined' ? className : undefined,
+  id: typeof id !== 'undefined' ? id : undefined,
+  labelledBy: typeof labelledBy !== 'undefined' ? labelledBy : undefined
+}) %>

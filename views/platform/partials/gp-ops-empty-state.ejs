@@ -1,0 +1,20 @@
+<%#
+  Shared ops empty state (product-neutral).
+  Locals: title, body, actionHref, actionLabel, className
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? title : 'Nothing here yet';
+  var _body = typeof body !== 'undefined' ? body : '';
+  var _cls = 'gp-ops-empty' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div class="<%= _cls %>" role="status" data-gp-ops="empty-state">
+  <h2 class="gp-ops-empty__title"><%= _title %></h2>
+  <% if (_body) { %>
+  <p class="gp-ops-empty__body"><%= _body %></p>
+  <% } %>
+  <% if (typeof actionHref !== 'undefined' && actionHref && typeof actionLabel !== 'undefined' && actionLabel) { %>
+  <p class="gp-ops-empty__action">
+    <a class="gp-ops-btn gp-ops-btn--primary" href="<%= actionHref %>"><%= actionLabel %></a>
+  </p>
+  <% } %>
+</div>

@@ -9,14 +9,16 @@
     if (key === 'draft') return 'Draft';
     if (key === 'submitted') return 'Submitted';
     if (key === 'approved') return 'Approved';
+    if (key === 'rejected') return 'Rejected';
     if (key === 'void') return 'Void';
+    if (key === 'reversed') return 'Reversed';
     return s || '—';
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'submitted' || key === 'approved') return 'bb-ba-chip--ok';
     if (key === 'draft') return 'bb-ba-chip--pending';
-    if (key === 'void') return 'bb-ba-chip--danger';
+    if (key === 'void' || key === 'reversed' || key === 'rejected') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
   }
   function formatDate(value) {
@@ -24,6 +26,12 @@
     var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatDateTime(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
   function formatGivingMoney(amount, currency) {
     var cur = String(currency || '').toUpperCase() || 'USD';
@@ -36,6 +44,7 @@
     var frac = parts.length > 1 ? '.' + parts[1] : '';
     return cur + ' ' + (neg ? '-' : '') + intPart + frac;
   }
+  var actorEvents = typeof events !== 'undefined' && events ? events : [];
 %>
 
 <section
@@ -43,6 +52,7 @@
   data-bb-giving-admin-detail="1"
   data-bb-status="<%= entry.status %>"
   data-bb-stitch-giving-detail="39-branch-giving-summary"
+  data-bb-finance-readonly="<%= readOnly ? '1' : '0' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
@@ -57,6 +67,7 @@
       <h1 class="bb-ba-page-head__title"><%= entry.categoryLabel || entry.categoryKey %></h1>
       <p class="bb-ba-lede bb-giv-detail__lede">
         <span class="bb-ba-chip <%= statusChip(entry.status) %>"><%= statusLabel(entry.status) %></span>
+        <% if (readOnly) { %><span class="bb-ba-chip bb-ba-chip--muted">Read-only</span><% } %>
         <span class="bb-giv-detail__meta">
           <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
           <%= formatDate(entry.givingDate) %>
@@ -80,31 +91,47 @@
       <% if (canVoid) { %>
       <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-open="bb-giv-void-modal" data-bb-giv-void-open="1">Void</button>
       <% } %>
+      <% if (canReverse) { %>
+      <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-open="bb-giv-reverse-modal" data-bb-giv-reverse-open="1">Reverse</button>
+      <% } %>
     </div>
   </header>
 
-  <% if (saved === '1' || saved === 'updated' || saved === 'submitted' || saved === 'approved' || saved === 'voided') { %>
+  <% if (saved === '1' || saved === 'updated' || saved === 'submitted' || saved === 'approved' || saved === 'voided' || saved === 'rejected' || saved === 'adjusted' || saved === 'reversed') { %>
   <%- include('../partials/flash-message', {
     type: 'success',
     title: saved === 'submitted' ? 'Submitted'
       : (saved === 'updated' ? 'Updated'
       : (saved === 'approved' ? 'Approved'
-      : (saved === 'voided' ? 'Voided' : 'Saved'))),
+      : (saved === 'voided' ? 'Voided'
+      : (saved === 'rejected' ? 'Rejected'
+      : (saved === 'adjusted' ? 'Adjusted'
+      : (saved === 'reversed' ? 'Reversed' : 'Saved')))))),
     message: saved === 'submitted' ? 'Giving entry submitted.'
       : (saved === 'updated' ? 'Draft updated.'
       : (saved === 'approved' ? 'Giving entry approved.'
-      : (saved === 'voided' ? 'Giving entry voided.' : 'Saved.')))
+      : (saved === 'voided' ? 'Giving entry voided.'
+      : (saved === 'rejected' ? 'Giving entry rejected.'
+      : (saved === 'adjusted' ? 'Adjustment submitted for re-approval.'
+      : (saved === 'reversed' ? 'Giving entry reversed.' : 'Saved.'))))))
   }) %>
   <% } %>
   <% if (error) { %>
   <%- include('../partials/form-errors', { errors: [error], id: 'bb-giv-detail-errors' }) %>
   <% } %>
+  <% if (approvalBlockedReason) { %>
+  <%- include('../partials/flash-message', {
+    type: 'warning',
+    title: 'Approval unavailable',
+    message: approvalBlockedReason
+  }) %>
+  <% } %>
 
   <div class="bb-att-lifecycle" data-bb-giv-lifecycle="1" aria-label="Workflow status">
     <div class="bb-att-lifecycle__step is-done">Created</div>
     <div class="bb-att-lifecycle__step<%= entry.status === 'draft' ? ' is-current' : (entry.status !== 'draft' ? ' is-done' : '') %>">Draft</div>
-    <div class="bb-att-lifecycle__step<%= entry.status === 'submitted' ? ' is-current' : (['approved','void'].indexOf(entry.status) !== -1 && entry.status !== 'draft' ? ' is-done' : '') %>">Submitted</div>
-    <div class="bb-att-lifecycle__step<%= entry.status === 'approved' ? ' is-done' : (entry.status === 'void' ? ' is-done' : '') %>"><%= entry.status === 'void' ? 'Void' : 'HQ review' %></div>
+    <div class="bb-att-lifecycle__step<%= entry.status === 'submitted' ? ' is-current' : (['approved','void','reversed'].indexOf(entry.status) !== -1 ? ' is-done' : (entry.status === 'rejected' ? ' is-done' : '')) %>">Submitted</div>
+    <div class="bb-att-lifecycle__step<%= entry.status === 'approved' ? ' is-done' : (entry.status === 'void' || entry.status === 'reversed' ? ' is-done' : (entry.status === 'rejected' ? ' is-current' : '')) %>"><%= entry.status === 'void' ? 'Void' : (entry.status === 'reversed' ? 'Reversed' : (entry.status === 'rejected' ? 'Rejected' : 'Review')) %></div>
   </div>
 
   <section class="bb-ba-panel bb-giv-meta-panel" data-bb-giv-meta="1">
@@ -120,27 +147,92 @@
       </div>
       <% if (entry.reference) { %><div><dt>Reference</dt><dd><%= entry.reference %></dd></div><% } %>
       <% if (entry.notes) { %><div><dt>Notes</dt><dd><%= entry.notes %></dd></div><% } %>
+      <div><dt>Created by</dt><dd><%= entry.recordedByUserId ? 'Staff record on file' : '—' %></dd></div>
+      <div><dt>Submitted</dt><dd><%= entry.submittedAt ? formatDateTime(entry.submittedAt) : '—' %></dd></div>
+      <div><dt>Approved</dt><dd><%= entry.approvedAt ? formatDateTime(entry.approvedAt) : '—' %></dd></div>
+      <% if (entry.rejectedAt) { %>
+      <div><dt>Rejected</dt><dd><%= formatDateTime(entry.rejectedAt) %></dd></div>
+      <div><dt>Rejection reason</dt><dd><%= entry.rejectionReason || '—' %></dd></div>
+      <% } %>
+      <% if (entry.adjustedAt) { %>
+      <div><dt>Adjusted</dt><dd><%= formatDateTime(entry.adjustedAt) %></dd></div>
+      <div><dt>Adjustment reason</dt><dd><%= entry.adjustmentReason || '—' %></dd></div>
+      <% } %>
       <% if (entry.status === 'void' && entry.voidReason) { %>
       <div><dt>Void reason</dt><dd><%= entry.voidReason %></dd></div>
+      <% } %>
+      <% if (entry.status === 'reversed') { %>
+      <div><dt>Reversal reason</dt><dd><%= entry.reversalReason || '—' %></dd></div>
+      <% } %>
+      <% if (entry.reversalOfEntryId) { %>
+      <div><dt>Reversal of</dt><dd><code><%= entry.reversalOfEntryId %></code></dd></div>
       <% } %>
     </dl>
     <p class="bb-ba-hint" data-bb-giv-privacy="1">
       This is a reporting summary, not a payment ledger. Amounts use NUMERIC decimal strings.
-      Entries are voided, never hard-deleted. No donor PII is stored on this record.
+      Entries are voided or reversed, never hard-deleted. No donor PII is stored on this record.
     </p>
   </section>
 
-  <% if (isHq && entry.status === 'submitted') { %>
+  <% if (actorEvents.length) { %>
+  <section class="bb-ba-panel" data-bb-giv-history="1">
+    <h2 class="bb-ba-section-title">Audit history</h2>
+    <ol class="bb-ba-timeline">
+      <% actorEvents.forEach(function (ev) { %>
+      <li>
+        <strong><%= ev.eventType %></strong>
+        <span><%= formatDateTime(ev.createdAt) %></span>
+        <% if (ev.fromStatus || ev.toStatus) { %>
+        <span><%= ev.fromStatus || '—' %> → <%= ev.toStatus || '—' %></span>
+        <% } %>
+        <% if (ev.reason) { %><span><%= ev.reason %></span><% } %>
+      </li>
+      <% }) %>
+    </ol>
+  </section>
+  <% } %>
+
+  <% if ((canApprove || canReject) && entry.status === 'submitted') { %>
   <section class="bb-ba-decision">
-    <h2 class="bb-ba-section-title">HQ actions</h2>
+    <h2 class="bb-ba-section-title">Review actions</h2>
+    <% if (canApprove) { %>
     <form method="post" action="<%= basePath %>/<%= entry.id %>/approve" class="bb-ba-decision__actions">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Approve</button>
     </form>
+    <% } %>
+    <% if (canReject) { %>
+    <form method="post" action="<%= basePath %>/<%= entry.id %>/reject" class="bb-ba-decision__actions bb-giv-reject-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="bb-ba-field">
+        <label for="rejection_reason">Rejection reason</label>
+        <input id="rejection_reason" type="text" name="rejection_reason" maxlength="500" required />
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">Reject</button>
+    </form>
+    <% } %>
   </section>
   <% } %>
 
-  <% if (entry.status === 'draft') { %>
+  <% if (canAdjust) { %>
+  <section class="bb-ba-panel">
+    <h2 class="bb-ba-section-title">Controlled adjustment</h2>
+    <form method="post" action="<%= basePath %>/<%= entry.id %>/adjust" class="bb-ba-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="bb-ba-field">
+        <label for="adjust_amount">New amount</label>
+        <input id="adjust_amount" type="text" name="amount" value="<%= entry.amount %>" required />
+      </div>
+      <div class="bb-ba-field">
+        <label for="adjustment_reason">Adjustment reason</label>
+        <input id="adjustment_reason" type="text" name="adjustment_reason" maxlength="500" required />
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Submit adjustment</button>
+    </form>
+  </section>
+  <% } %>
+
+  <% if (entry.status === 'draft' && canSubmit) { %>
   <div
     class="bb-ds-modal"
     id="bb-giv-submit-modal"
@@ -191,6 +283,35 @@
         </div>
         <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
         <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm void</button>
+      </form>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (canReverse) { %>
+  <div
+    class="bb-ds-modal"
+    id="bb-giv-reverse-modal"
+    data-bb-ds-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bb-giv-reverse-title"
+  >
+    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+    <div class="bb-ds-modal__panel" tabindex="-1">
+      <h2 id="bb-giv-reverse-title" class="bb-ds-modal__title">Reverse this giving entry?</h2>
+      <p class="bb-ds-modal__body">
+        Reversal keeps the original record and links a reversal marker for audit.
+      </p>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/reverse" class="bb-ds-modal__actions" data-bb-giv-reverse="1">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="bb-ba-field">
+          <label for="reversal_reason">Reversal reason</label>
+          <input id="reversal_reason" type="text" name="reversal_reason" maxlength="500" required />
+        </div>
+        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm reverse</button>
       </form>
     </div>
   </div>

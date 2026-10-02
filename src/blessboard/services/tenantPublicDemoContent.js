@@ -3,7 +3,9 @@
 /**
  * Centralized public website demo fixtures for BlessBoard V5 tenant sites.
  * Used when a church has published pages but little/no customized content.
- * No lorem ipsum, no fabricated statistics, no public “demo” notices.
+ * No lorem ipsum, no fabricated statistics.
+ * Public soft-fill of named people, events, and ministries must be labeled
+ * as template examples — never presented as this congregation’s published facts.
  *
  * Demo copy uses the safe token {{churchName}} (and aliases). Resolve with
  * interpolateDemoText / buildPublicDemoPack — never evaluate arbitrary expressions.
@@ -16,6 +18,11 @@ const CHURCH_NAME_ALIASES = Object.freeze([
   "{{publicName}}",
 ]);
 
+/**
+ * Platform soft-fill image keys (public-path aliases).
+ * Runtime presentation must go through CDN (`presentRuntimeImageSrc` /
+ * `mediaOrFallback`) — never emit these paths into HTML.
+ */
 const MEDIA = Object.freeze({
   homeHero: "/church/images/tenant-public/home-desktop-hero.jpg",
   homeHeroMobile: "/church/images/tenant-public/home-mobile-hero.jpg",
@@ -24,6 +31,10 @@ const MEDIA = Object.freeze({
   aboutGallery1: "/church/images/tenant-public/about-hero-building.jpg",
   aboutGallery2: "/church/images/tenant-public/home-desktop-hero.jpg",
   aboutGallery3: "/church/images/leadership/ministry-1.jpg",
+  /** Life Together featured image — independent from the three-image gallery grid. */
+  aboutLifeTogether: "/church/images/about/about-culture-1.jpg",
+  /** Visit on Sunday featured image — independent from gallery + Life Together. */
+  aboutVisitSunday: "/church/images/about/about-branch-building.jpg",
   pastor: "/church/images/leadership/pastor-desktop.jpg",
   associate: "/church/images/leadership/assistant-desktop.jpg",
   leader3: "/church/images/leadership/elder-1.jpg",
@@ -256,8 +267,16 @@ function buildPublicDemoPack(opts) {
       bodyText: `${N} invests time and resources in local education support, neighbourhood care projects, and partnerships that strengthen the city around us. We prefer steady presence over spectacle — showing up with meals, mentoring, and practical help when it matters.`,
       mediaUrl: null,
     }),
+    lifeTogether: Object.freeze({
+      sectionKey: "life_together",
+      sectionType: "life_together",
+      heading: "Life Together",
+      bodyText: `Sundays and midweek gatherings at ${N} are where friendships form, children are known by name, and faith becomes a shared practice — not a private habit. Come early, stay after, and let the room become familiar.`,
+      mediaUrl: MEDIA.aboutLifeTogether,
+    }),
     visitorCtaHeading: "Visit on a Sunday",
     visitorCtaBody: `Come see ${N} in person. Arrive a few minutes early, find a greeter, and stay after the service if you would like to meet someone from the pastoral team. You are welcome exactly as you are.`,
+    visitorCtaMediaUrl: MEDIA.aboutVisitSunday,
     gallery: Object.freeze([MEDIA.aboutGallery1, MEDIA.aboutGallery2, MEDIA.aboutGallery3]),
   });
 
@@ -605,16 +624,56 @@ function buildPublicDemoPack(opts) {
 }
 
 /**
- * Prefer a valid media URL; otherwise fall back to a known local asset.
+ * Prefer a CDN-presented media URL. Local filesystem paths are rewritten via
+ * the platform marketing/demo asset map; unmapped local paths are refused.
  * @param {string|null|undefined} url
- * @param {string} fallback
+ * @param {string|null|undefined} [fallback]
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function mediaOrFallback(url, fallback) {
-  const raw = url != null ? String(url).trim() : "";
-  if (!raw || raw === "#" || /^javascript:/i.test(raw)) {
-    return fallback || null;
+function mediaOrFallback(url, fallback, env) {
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  const source = env || process.env;
+  for (const candidate of [url, fallback]) {
+    const raw = candidate != null ? String(candidate).trim() : "";
+    if (!raw || raw === "#" || /^javascript:/i.test(raw)) continue;
+    const presented = presentRuntimeImageSrc(raw, source, { allowMarketing: true });
+    if (presented) return presented;
   }
-  return raw;
+  return null;
+}
+
+const PUBLIC_TEMPLATE_EXAMPLE_NOTICE =
+  "Template examples — replace with your church’s published information. These names, events, and ministries are not this congregation’s facts.";
+
+function alreadyTemplateLabeled(value) {
+  return /\(template example\)/i.test(String(value || ""));
+}
+
+function withPublicTemplateNotice(text) {
+  const body = String(text || "").trim();
+  if (!body) return PUBLIC_TEMPLATE_EXAMPLE_NOTICE;
+  if (/template example/i.test(body)) return body;
+  return `${body}\n\n${PUBLIC_TEMPLATE_EXAMPLE_NOTICE}`;
+}
+
+/**
+ * Mark render-time demo-pack entities as template examples (does not mutate the pack).
+ * @param {object[]} items
+ * @param {string|string[]} nameKeys
+ */
+function markPublicTemplateExamples(items, nameKeys) {
+  const keys = Array.isArray(nameKeys) ? nameKeys : nameKeys ? [nameKeys] : [];
+  return (Array.isArray(items) ? items : []).map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const next = { ...item, templateExample: true };
+    for (const key of keys) {
+      const value = next[key];
+      if (typeof value === "string" && value.trim() && !alreadyTemplateLabeled(value)) {
+        next[key] = `${value.trim()} (template example)`;
+      }
+    }
+    return next;
+  });
 }
 
 module.exports = {
@@ -623,9 +682,12 @@ module.exports = {
   SOCIAL_LINKS,
   CHURCH_NAME_TOKEN,
   CHURCH_NAME_ALIASES,
+  PUBLIC_TEMPLATE_EXAMPLE_NOTICE,
   resolveCanonicalChurchName,
   interpolateDemoText,
   interpolateDemoValue,
   buildPublicDemoPack,
   mediaOrFallback,
+  withPublicTemplateNotice,
+  markPublicTemplateExamples,
 };

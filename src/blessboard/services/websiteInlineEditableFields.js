@@ -3,7 +3,20 @@
 /**
  * Allowlisted editable website fields for Phase 7 Stage 4 inline text editing.
  * Keys are stable product identifiers — never expose raw DB column paths to clients.
+ * The shared schema in src/platform/website/editableFieldSchema.js is the mutation gate.
  */
+
+const { CONTENT_TYPES } = require("../../platform/website/contentTypes");
+const { PERMISSIONS } = require("../../platform/website/permissions");
+const {
+  PRODUCT_CODE,
+  STORAGE_KIND,
+  VALIDATION_MODE,
+  registerProductEditableFields,
+  resolveEditableField: resolveSchemaField,
+  assertEditableMutation,
+  stableKeyFromLocator,
+} = require("../../platform/website/editableFieldSchema");
 
 const FIELD_TYPES = Object.freeze({
   heading: "heading",
@@ -12,6 +25,7 @@ const FIELD_TYPES = Object.freeze({
   buttonText: "buttonText",
   buttonUrl: "buttonUrl",
   contactText: "contactText",
+  image: "image",
 });
 
 /**
@@ -55,11 +69,19 @@ function heroChromeFields(pageKey) {
   ]);
 }
 
+/** Shared WE01 image pencil for page heroes (AC pattern). */
+function heroImageField(pageKey) {
+  return fieldsFor(pageKey, "hero", [
+    ["image", FIELD_TYPES.image, 500, { guidance: "Page hero image" }],
+  ]);
+}
+
 /** @type {EditableFieldDef[]} */
 const EDITABLE_FIELDS = [
   ...fieldsFor("home", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true, guidance: "Up to 120 characters" }],
     ["bodyText", FIELD_TYPES.paragraph, 500, { guidance: "Up to 500 characters" }],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Hero image" }],
   ]),
   ...heroChromeFields("home"),
   ...fieldsFor("home", "welcome", [
@@ -67,6 +89,7 @@ const EDITABLE_FIELDS = [
     ["bodyText", FIELD_TYPES.paragraph, 2000],
     ["buttonText", FIELD_TYPES.buttonText, 48],
     ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Welcome media image" }],
   ]),
   ...fieldsFor("home", "ministries_intro", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -109,10 +132,12 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("about"),
   ...heroChromeFields("about"),
   ...fieldsFor("about", "story", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 4000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About story image" }],
   ]),
   ...fieldsFor("about", "mission", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -148,13 +173,32 @@ const EDITABLE_FIELDS = [
   ...fieldsFor("about", "community", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About community image" }],
   ]),
+  ...fieldsFor("about", "life_together", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Life Together featured image" }],
+  ]),
+  // Legacy Life Together section key (pre life_together rename).
   ...fieldsFor("about", "gallery", [
     ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["image", FIELD_TYPES.image, 500, { guidance: "About gallery featured image" }],
   ]),
-  ...fieldsFor("about", "gallery_1", [["heading", FIELD_TYPES.label, 120]]),
-  ...fieldsFor("about", "gallery_2", [["heading", FIELD_TYPES.label, 120]]),
-  ...fieldsFor("about", "gallery_3", [["heading", FIELD_TYPES.label, 120]]),
+  ...fieldsFor("about", "gallery_heading", [["heading", FIELD_TYPES.heading, 120]]),
+  ...fieldsFor("about", "gallery_1", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 1" }],
+  ]),
+  ...fieldsFor("about", "gallery_2", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 2" }],
+  ]),
+  ...fieldsFor("about", "gallery_3", [
+    ["heading", FIELD_TYPES.label, 120],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Gallery image 3" }],
+  ]),
   ...fieldsFor("about", "visitor_cta", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 800],
@@ -162,33 +206,39 @@ const EDITABLE_FIELDS = [
     ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
     ["secondaryButtonText", FIELD_TYPES.buttonText, 48],
     ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Visit on Sunday featured image" }],
   ]),
 
   ...fieldsFor("leadership", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("leadership"),
   ...heroChromeFields("leadership"),
   ...fieldsFor("ministries", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("ministries"),
   ...heroChromeFields("ministries"),
   ...fieldsFor("events", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("events"),
   ...heroChromeFields("events"),
   ...fieldsFor("sermons", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("sermons"),
   ...heroChromeFields("sermons"),
 
   ...fieldsFor("contact", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("contact"),
   ...heroChromeFields("contact"),
   ...fieldsFor("contact", "details", [
     ["email", FIELD_TYPES.contactText, 254, { guidance: "Contact email" }],
@@ -220,6 +270,7 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroImageField("giving"),
   ...heroChromeFields("giving"),
   ...fieldsFor("giving", "why", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -266,6 +317,94 @@ const FIELD_INDEX = new Map(
   EDITABLE_FIELDS.map((f) => [`${f.pageKey}::${f.sectionKey}::${f.fieldKey}`, f])
 );
 
+function mapBlessboardType(field) {
+  if (field.type === FIELD_TYPES.buttonUrl) return CONTENT_TYPES.URL;
+  if (field.type === FIELD_TYPES.paragraph) return CONTENT_TYPES.LONG_TEXT;
+  if (field.type === FIELD_TYPES.contactText && field.fieldKey === "email") return CONTENT_TYPES.EMAIL;
+  if (field.type === FIELD_TYPES.contactText && field.fieldKey === "phone") return CONTENT_TYPES.PHONE;
+  if (field.type === FIELD_TYPES.image) return CONTENT_TYPES.IMAGE;
+  return CONTENT_TYPES.SHORT_TEXT;
+}
+
+function registerBlessBoardEditableFields() {
+  const defs = EDITABLE_FIELDS.map((field) => ({
+    key: stableKeyFromLocator(field.pageKey, field.sectionKey, field.fieldKey),
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    templateId: "blessboard_church",
+    templateVersion: 1,
+    type: mapBlessboardType(field),
+    productType: field.type,
+    maxLen: field.maxLength,
+    minLength: field.minLength,
+    required: field.required === true,
+    permission: PERMISSIONS.EDIT,
+    validationMode:
+      field.type === FIELD_TYPES.image ||
+      (field.type === FIELD_TYPES.contactText &&
+        (field.fieldKey === "email" || field.fieldKey === "phone"))
+        ? VALIDATION_MODE.CONTENT_TYPES
+        : VALIDATION_MODE.BLESSBOARD_INLINE,
+    allowRelativeUrl: field.type === FIELD_TYPES.buttonUrl,
+    inline: true,
+    group: field.pageKey,
+    description: field.guidance || `${field.pageKey}.${field.sectionKey}.${field.fieldKey}`,
+    storage: {
+      kind: STORAGE_KIND.PLATFORM_CONTENT_KEY,
+      contentKey: stableKeyFromLocator(field.pageKey, field.sectionKey, field.fieldKey),
+      pageKey: field.pageKey,
+      sectionKey: field.sectionKey,
+      fieldKey: field.fieldKey,
+    },
+  }));
+  defs.push(
+    {
+      key: "home.logo",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.IMAGE,
+      maxLen: 500,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "home",
+      description: "Church logo",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "home.logo" },
+    },
+    {
+      key: "brand.primary_color",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.SHORT_TEXT,
+      maxLen: 7,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "brand",
+      description: "Primary brand colour",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.primary_color" },
+    },
+    {
+      key: "brand.accent_color",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.SHORT_TEXT,
+      maxLen: 7,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "brand",
+      description: "Accent brand colour",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.accent_color" },
+    }
+  );
+  registerProductEditableFields(PRODUCT_CODE.BLESSBOARD, defs);
+}
+
+registerBlessBoardEditableFields();
+
 /**
  * @param {string} pageKey
  * @param {string} sectionKey
@@ -273,6 +412,13 @@ const FIELD_INDEX = new Map(
  * @returns {EditableFieldDef|null}
  */
 function resolveEditableField(pageKey, sectionKey, fieldKey) {
+  const resolved = resolveSchemaField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey,
+    sectionKey,
+    fieldKey,
+  });
+  if (!resolved.ok) return null;
   return FIELD_INDEX.get(`${pageKey}::${sectionKey}::${fieldKey}`) || null;
 }
 
@@ -318,24 +464,18 @@ function validateSafeUrl(raw) {
  * @returns {{ ok: true, value: string }|{ ok: false, error: string }}
  */
 function validateFieldValue(field, raw) {
-  const value = String(raw ?? "");
-  if (field.type === FIELD_TYPES.buttonUrl) {
-    return validateSafeUrl(value);
+  if (!field) return { ok: false, error: "That field cannot be edited." };
+  const asserted = assertEditableMutation({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey: field.pageKey,
+    sectionKey: field.sectionKey,
+    fieldKey: field.fieldKey,
+    value: raw,
+  });
+  if (!asserted.ok) {
+    return { ok: false, error: asserted.message || "That field cannot be edited." };
   }
-  const trimmed = value.trim();
-  if (field.required && !trimmed) {
-    return { ok: false, error: "This field is required." };
-  }
-  if (field.minLength != null && trimmed.length < field.minLength) {
-    return { ok: false, error: `Enter at least ${field.minLength} characters.` };
-  }
-  if (trimmed.length > field.maxLength) {
-    return { ok: false, error: `Keep this under ${field.maxLength} characters.` };
-  }
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(value)) {
-    return { ok: false, error: "Text contains invalid characters." };
-  }
-  return { ok: true, value: trimmed };
+  return { ok: true, value: asserted.value };
 }
 
 module.exports = {
@@ -345,4 +485,5 @@ module.exports = {
   listEditableFieldsForPage,
   validateFieldValue,
   validateSafeUrl,
+  registerBlessBoardEditableFields,
 };

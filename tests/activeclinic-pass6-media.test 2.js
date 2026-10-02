@@ -1,0 +1,84 @@
+"use strict";
+
+const { describe, it } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const path = require("path");
+
+const {
+  resolveDoctorPhoto,
+  resolveClinicHero,
+  resolveDirectoryCardImage,
+  enrichPublicLocals,
+  DOCTOR_FALLBACK,
+  PLATFORM_HERO,
+} = require("../src/activeclinic/services/activeClinicPublicMediaService");
+
+const ASSETS_ROOT = path.join(__dirname, "..", "public", "activeclinic", "assets");
+
+describe("ActiveClinic Pass 6 public media", () => {
+  it("maps Julflona doctors deterministically and falls back for nurse", () => {
+    const banda = resolveDoctorPhoto("dr-julflona-banda");
+    const mwansa = resolveDoctorPhoto("dr-julflona-mwansa");
+    const nurse = resolveDoctorPhoto("nurse-julflona-tembo");
+    assert.equal(banda.isFallback, false);
+    assert.match(String(banda.src || ""), /dr-julflona-banda\.jpg/);
+    assert.equal(mwansa.isFallback, false);
+    assert.match(String(mwansa.src || ""), /dr-julflona-mwansa\.jpg/);
+    assert.equal(nurse.isFallback, true);
+    // Runtime srcs are CDN-presented; fallback still resolves from the canonical asset path.
+    assert.match(String(nurse.src || ""), /doctor-fallback\.svg/);
+    assert.match(DOCTOR_FALLBACK, /doctor-fallback\.svg$/);
+  });
+
+  it("uses julflona hero for julflona clinic only", () => {
+    const juflona = resolveClinicHero({ clinicKey: "julflona-clinic" });
+    const other = resolveClinicHero({ clinicKey: "some-other-clinic" });
+    assert.match(String(juflona.src || ""), /julflona-hero\.jpg/);
+    // Non-demo clinics do not inherit a hardcoded local tenant default.
+    assert.equal(other.src, null);
+    assert.equal(other.isFallback, true);
+  });
+
+  it("does not force julflona hero onto every directory card", () => {
+    const a = resolveDirectoryCardImage({ clinicKey: "alpha-clinic" }, 0);
+    const b = resolveDirectoryCardImage({ clinicKey: "julflona-clinic" }, 0);
+    assert.match(String(b.src || ""), /julflona-hero\.jpg/);
+    assert.notEqual(a.src, b.src);
+  });
+
+  it("enriches locals with consistent doctor photoUrl across list fields", () => {
+    const locals = enrichPublicLocals({
+      clinic: { clinicKey: "julflona-clinic", publicName: "Julflona" },
+      profiles: [{ staffKey: "dr-julflona-banda", displayName: "Dr. Julflona Banda" }],
+      profile: { staffKey: "dr-julflona-banda", displayName: "Dr. Julflona Banda" },
+    });
+    assert.equal(locals.profiles[0].photoUrl, locals.profile.photoUrl);
+    assert.match(String(locals.clinic.websiteHeroUrl || ""), /julflona-hero\.jpg/);
+    assert.match(String(locals.platformHero.src || ""), /home-hero\.jpg/);
+    assert.match(PLATFORM_HERO, /home-hero\.jpg$/);
+  });
+
+  it("ships priority asset files on disk", () => {
+    const required = [
+      "clinic-hero-default.jpg",
+      "clinic/julflona-hero.jpg",
+      "clinic/directory-waiting.jpg",
+      "clinic/directory-dental.jpg",
+      "clinic/directory-lab.jpg",
+      "doctors/dr-julflona-banda.jpg",
+      "doctors/dr-julflona-mwansa.jpg",
+      "doctors/doctor-fallback.svg",
+      "platform/home-hero.jpg",
+      "icons/general.svg",
+      "icons/consultation.svg",
+      "icons/lab.svg",
+      "icons/procedure.svg",
+    ];
+    for (const rel of required) {
+      const abs = path.join(ASSETS_ROOT, rel);
+      assert.ok(fs.existsSync(abs), `missing ${rel}`);
+      assert.ok(fs.statSync(abs).size > 100, `too small ${rel}`);
+    }
+  });
+});

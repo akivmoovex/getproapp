@@ -1,0 +1,30 @@
+<%#
+  Shared ops page header (product-neutral).
+  Locals: title (required), subtitle?, eyebrow?, badgeHtml?, actionsHtml?, className?, breadcrumbsHtml?
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? String(title) : '';
+  var _cls = 'gp-ops-page-header' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<header class="<%= _cls %>" data-gp-ops="page-header">
+  <div class="gp-ops-page-header__copy">
+    <% if (typeof breadcrumbsHtml !== 'undefined' && breadcrumbsHtml) { %>
+    <div class="gp-ops-page-header__crumbs"><%- breadcrumbsHtml %></div>
+    <% } %>
+    <% if (typeof eyebrow !== 'undefined' && eyebrow) { %>
+    <p class="gp-ops-page-header__eyebrow"><%= eyebrow %></p>
+    <% } %>
+    <div class="gp-ops-page-header__title-row">
+      <h1 class="gp-ops-page-header__title"><%= _title %></h1>
+      <% if (typeof badgeHtml !== 'undefined' && badgeHtml) { %>
+      <div class="gp-ops-page-header__badge"><%- badgeHtml %></div>
+      <% } %>
+    </div>
+    <% if (typeof subtitle !== 'undefined' && subtitle) { %>
+    <p class="gp-ops-page-header__subtitle"><%= subtitle %></p>
+    <% } %>
+  </div>
+  <% if (typeof actionsHtml !== 'undefined' && actionsHtml) { %>
+  <div class="gp-ops-page-header__actions"><%- actionsHtml %></div>
+  <% } %>
+</header>

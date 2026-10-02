@@ -62,11 +62,11 @@
 >
   <header class="bb-pa-page-head bb-pa-page-head--split">
     <div>
-      <p class="bb-pa-deployments__eyebrow">Deployments directory</p>
+      <p class="bb-pa-deployments__eyebrow">System · technical diagnostics</p>
       <h1 class="bb-pa-page-head__title">Deployments</h1>
       <p class="bb-pa-lede">
-        Live <code>platform.deployments</code> catalogue — identity, environment, host, and status.
-        Open a row for safe detail and diagnostics. Deploy, restart, rollback, environment-variable editing, and log streaming are not available.
+        Read-only infrastructure registry. Deployments are technical — organisation tenants are provisioned separately.
+        Restart, rollback, environment editing, and secret values are not available.
       </p>
     </div>
     <div class="bb-pa-page-head__actions">
@@ -147,7 +147,7 @@
           <% if (d.deploymentCode === current) { %>data-bb-current="1"<% } %>
         >
           <td>
-            <a class="bb-pa-link" href="/admin/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
+            <a class="bb-pa-link" href="/admin/system/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
               <code class="bb-pa-key"><%= d.deploymentCode %></code>
             </a>
             <% if (d.deploymentCode === current) { %>
@@ -187,7 +187,7 @@
       <% if (d.deploymentCode === current) { %>data-bb-current="1"<% } %>
     >
       <div class="bb-pa-deploy-card__top">
-        <a class="bb-pa-link" href="/admin/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
+        <a class="bb-pa-link" href="/admin/system/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
           <code class="bb-pa-key"><%= d.deploymentCode %></code>
         </a>
         <span class="bb-pa-chip <%= statusChip(d.status) %>" data-bb-status-badge="<%= d.status %>">

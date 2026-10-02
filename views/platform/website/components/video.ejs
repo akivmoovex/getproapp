@@ -1,0 +1,33 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+  var url = m.url || m.videoUrl || '';
+  var embedUrl = m.embedUrl || '';
+  var title = m.title || 'Video';
+  var allow = m.allow || 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  var referrerPolicy = m.referrerPolicy || 'strict-origin-when-cross-origin';
+%>
+<section class="gp-website-pc gp-website-pc--video<%= extraClass %>" data-gp-website-component="video" data-gp-video-embed-editor="VideoEmbedEditor">
+  <% if (m.title) { %><h2 class="gp-website-pc__title"><%= m.title %></h2><% } %>
+  <% if (embedUrl) { %>
+  <div class="gp-website-pc__video-frame" data-gp-video-embed="1">
+    <iframe
+      class="gp-website-pc__video-iframe"
+      src="<%= embedUrl %>"
+      title="<%= title %>"
+      loading="lazy"
+      allow="<%= allow %>"
+      referrerpolicy="<%= referrerPolicy %>"
+      allowfullscreen
+    ></iframe>
+  </div>
+  <% } else if (url) { %>
+  <div class="gp-website-pc__video-frame">
+    <a class="gp-website-pc__link" href="<%= url %>" rel="noopener noreferrer" target="_blank">Watch video</a>
+    <% if (m.poster) {
+      var posterSrc = typeof m.poster === 'string' ? m.poster : (m.poster.src || '');
+      if (posterSrc) { %><img class="gp-website-pc__img" src="<%= posterSrc %>" alt="<%= title %>" /><% }
+    } %>
+  </div>
+  <% } %>
+</section>

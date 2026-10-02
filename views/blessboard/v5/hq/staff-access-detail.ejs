@@ -1,0 +1,330 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var d = detail || {};
+  var u = d.user || {};
+  var scopeOpts = scopeOptions || {};
+  var types = scopeTypes || [];
+  var catalogue = assignableRoles || [];
+  var actorId = typeof actorUserId !== 'undefined' ? String(actorUserId) : '';
+  var isSelf = actorId && String(u.id) === actorId;
+  var safetyKind = typeof safety !== 'undefined' ? safety : '';
+  var grouped = d.effectiveGrouped || {};
+  var grantedMods = Object.keys(grouped);
+  var branchOpts = scopeOpts.branch || [];
+  var churchOpts = scopeOpts.church || [];
+  function fmtDate(v) {
+    if (!v) return '—';
+    try {
+      return new Date(v).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return String(v); }
+  }
+  function scopeLabel(a) {
+    if (!a) return '—';
+    if (a.scopeType === 'church' || a.scopeType === 'organisation' || a.roleKey === 'church_hq_admin') return 'Global';
+    if (a.branchDisplayName) return a.branchDisplayName;
+    return a.scopeType || '—';
+  }
+%>
+<section
+  class="bb-hq-page bb-urp bb-urp-page"
+  data-bb-staff-access-detail="1"
+  data-bb-visual="stitch-urp"
+  data-bb-urp-safety="<%= safetyKind %>"
+  aria-label="User access"
+>
+  <p class="bb-urp-crumb">
+    <a href="/hq/settings/staff-access">Users</a>
+    <span aria-hidden="true"> › </span>
+    <span><%= u.displayName %></span>
+  </p>
+
+  <% if (notice) { %>
+  <p class="bb-urp-banner bb-urp-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-urp-banner bb-urp-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <header class="bb-urp-detail__head">
+    <div class="bb-urp-detail__id">
+      <div class="bb-urp-avatar bb-urp-avatar--lg" aria-hidden="true"><%= u.initials || '?' %></div>
+      <div>
+        <h1 class="bb-urp-title"><%= u.displayName %></h1>
+        <p class="bb-urp-lede"><%= u.emailDisplay || '' %></p>
+        <p style="margin:0.5rem 0 0">
+          <span class="bb-urp-chip bb-urp-chip--<%= u.statusChip || 'pending' %>">
+            <span class="bb-urp-chip__dot" aria-hidden="true"></span>
+            <%= u.statusLabel || u.status %>
+          </span>
+        </p>
+      </div>
+    </div>
+    <div class="bb-urp-detail__actions">
+      <button type="button" class="bb-urp-btn bb-urp-btn--primary" data-bb-urp-open="bb-urp-assign" id="assign">
+        <span class="material-symbols-outlined">add</span> Assign Role
+      </button>
+    </div>
+  </header>
+
+  <div class="bb-urp-grid">
+    <article class="bb-urp-panel bb-urp-section">
+      <h2>Account Details</h2>
+      <dl class="bb-urp-kv">
+        <dt>User ID</dt>
+        <dd><code class="bb-hq-key"><%= u.id %></code></dd>
+        <dt>Last Login</dt>
+        <dd><%= u.lastActiveLabel || fmtDate(u.lastLoginAt) %></dd>
+        <dt>Phone</dt>
+        <dd><%= u.phoneMasked || u.phoneDisplay || '—' %></dd>
+        <dt>Created</dt>
+        <dd><%= fmtDate(u.createdAt) %></dd>
+      </dl>
+    </article>
+
+    <article class="bb-urp-panel bb-urp-section">
+      <h2>Memberships</h2>
+      <div class="bb-urp-role-row">
+        <div>
+          <strong>Global Church</strong>
+          <p class="bb-urp-muted" style="margin:0.25rem 0 0">Primary organisation</p>
+        </div>
+        <span class="material-symbols-outlined" aria-hidden="true">public</span>
+      </div>
+      <% (d.legacyRoles || []).filter(function (leg) { return leg.branchDisplayName; }).forEach(function (leg) { %>
+      <div class="bb-urp-role-row">
+        <div>
+          <strong><%= leg.branchDisplayName %></strong>
+          <p class="bb-urp-muted" style="margin:0.25rem 0 0">Branch location</p>
+        </div>
+        <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+      </div>
+      <% }); %>
+      <% (d.activeAssignments || []).filter(function (a) { return a.scopeType === 'branch'; }).forEach(function (a) { %>
+      <div class="bb-urp-role-row">
+        <div>
+          <strong><%= scopeLabel(a) %></strong>
+          <p class="bb-urp-muted" style="margin:0.25rem 0 0">Branch assignment</p>
+        </div>
+        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+      </div>
+      <% }); %>
+    </article>
+  </div>
+
+  <article class="bb-urp-panel bb-urp-section" style="margin-top:1.5rem" data-bb-role-assignments="1">
+    <div class="bb-urp-section__head">
+      <h2>Roles &amp; Scope</h2>
+      <button type="button" class="bb-urp-btn bb-urp-btn--ghost" data-bb-urp-open="bb-urp-assign">Manage Roles</button>
+    </div>
+
+    <% if (!(d.legacyRoles || []).length && !(d.activeAssignments || []).length) { %>
+    <p class="bb-urp-muted">No roles assigned.</p>
+    <% } %>
+
+    <% (d.legacyRoles || []).forEach(function (leg) { %>
+    <div class="bb-urp-role-row">
+      <div>
+        <strong><%= leg.displayName || leg.roleKey %></strong>
+        <p class="bb-urp-muted" style="margin:0.25rem 0 0">
+          Legacy compatibility · Scope: <%= scopeLabel(leg) %> · since <%= fmtDate(leg.createdAt) %>
+        </p>
+      </div>
+      <span class="bb-urp-chip bb-urp-chip--pending">Legacy</span>
+    </div>
+    <% }); %>
+
+    <% (d.activeAssignments || []).forEach(function (a) { %>
+    <div class="bb-urp-role-row" data-bb-assignment="<%= a.id %>">
+      <div>
+        <strong><%= a.displayName || a.roleKey %></strong>
+        <p class="bb-urp-muted" style="margin:0.25rem 0 0">
+          Scope: <%= scopeLabel(a) %><% if (a.createdAt) { %> · Assigned <%= fmtDate(a.createdAt) %><% } %>
+        </p>
+      </div>
+      <form method="post" action="/hq/settings/staff-access/<%= u.id %>/assignments/<%= a.id %>/revoke" data-bb-urp-revoke="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <% if (!(a.sensitivityLabel && a.sensitivityLabel !== 'Standard')) { %>
+        <input type="hidden" name="revocation_reason" value="Revoked from user access" />
+        <% } %>
+        <button type="button" class="bb-urp-btn bb-urp-btn--ghost" data-bb-urp-open="bb-urp-revoke-<%= a.id %>" aria-label="Remove role">
+          <span class="material-symbols-outlined">delete_outline</span>
+        </button>
+        <div class="bb-urp-overlay" id="bb-urp-revoke-<%= a.id %>" aria-hidden="true">
+          <div class="bb-urp-dialog" role="dialog" aria-labelledby="revoke-title-<%= a.id %>">
+            <div class="bb-urp-dialog__head">
+              <h2 id="revoke-title-<%= a.id %>">Remove Role Confirmation</h2>
+              <button type="button" class="bb-urp-more" data-bb-urp-close="1" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="bb-urp-dialog__body">
+              <p>Are you sure you want to remove the <strong><%= a.displayName || a.roleKey %></strong> role from <strong><%= u.displayName %></strong>?</p>
+              <% if (a.sensitivityLabel && a.sensitivityLabel !== 'Standard') { %>
+              <div class="bb-urp-field">
+                <label for="revoke-reason-<%= a.id %>">Reason (required for sensitive roles)</label>
+                <input id="revoke-reason-<%= a.id %>" name="revocation_reason" type="text" maxlength="500" required />
+              </div>
+              <% } %>
+            </div>
+            <div class="bb-urp-dialog__foot">
+              <button type="button" class="bb-urp-btn bb-urp-btn--ghost" data-bb-urp-close="1">Cancel</button>
+              <button type="submit" class="bb-urp-btn bb-urp-btn--danger">Remove Role</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <% }); %>
+  </article>
+
+  <article class="bb-urp-panel bb-urp-section" style="margin-top:1.5rem" aria-label="Effective permissions">
+    <div class="bb-urp-section__head">
+      <h2>Effective Permissions</h2>
+      <span class="bb-urp-chip bb-urp-chip--readonly">Read-only</span>
+    </div>
+    <p class="bb-urp-lede">These permissions are read-only and derived from assigned roles. They reflect the combined access rights for the selected context.</p>
+
+    <div class="bb-urp-desktop-only">
+      <% if (!grantedMods.length) { %>
+      <p class="bb-urp-muted">No resolved permissions for this user in this church.</p>
+      <% } %>
+      <% grantedMods.forEach(function (mod) { %>
+      <h3 style="margin:1.25rem 0 0.5rem"><%= mod %></h3>
+      <% grouped[mod].forEach(function (p) { %>
+      <div class="bb-urp-perm">
+        <div>
+          <div class="bb-urp-perm__name"><%= p.displayName %></div>
+          <div class="bb-urp-perm__src">Granted by: <%= p.sourceRole || (p.source === 'legacy_compatibility' ? 'legacy compatibility' : 'assigned role') %></div>
+        </div>
+        <span class="material-symbols-outlined bb-urp-icon-ok" aria-label="Granted">check_circle</span>
+      </div>
+      <% }); %>
+      <% }); %>
+    </div>
+
+    <div class="bb-urp-accordion bb-urp-mobile-only">
+      <% grantedMods.forEach(function (mod) { %>
+      <details open>
+        <summary><%= mod %></summary>
+        <% grouped[mod].forEach(function (p) { %>
+        <div class="bb-urp-perm">
+          <div>
+            <div class="bb-urp-perm__name"><%= p.displayName %></div>
+            <div class="bb-urp-perm__src">Granted by: <%= p.sourceRole || 'assigned role' %></div>
+          </div>
+          <span class="material-symbols-outlined bb-urp-icon-ok">check</span>
+        </div>
+        <% }); %>
+      </details>
+      <% }); %>
+    </div>
+  </article>
+
+  <% if ((d.expiredAssignments || []).length || (d.revokedAssignments || []).length) { %>
+  <article class="bb-urp-panel bb-urp-section" style="margin-top:1.5rem">
+    <h2>Assignment history</h2>
+    <% (d.expiredAssignments || []).forEach(function (a) { %>
+    <p class="bb-urp-muted"><span class="bb-urp-chip bb-urp-chip--pending">Expired</span> <%= a.displayName || a.roleKey %></p>
+    <% }); %>
+    <% (d.revokedAssignments || []).forEach(function (a) { %>
+    <p class="bb-urp-muted"><span class="bb-urp-chip bb-urp-chip--inactive">Revoked</span> <%= a.displayName || a.roleKey %></p>
+    <% }); %>
+  </article>
+  <% } %>
+
+  <div class="bb-urp-overlay" id="bb-urp-assign" aria-hidden="true">
+    <div class="bb-urp-dialog" role="dialog" aria-labelledby="assign-title">
+      <form method="post" action="/hq/settings/staff-access/<%= u.id %>/assign" data-bb-staff-assign="1" data-bb-urp-assign-form="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <input type="hidden" name="scope_type" value="church" />
+        <div class="bb-urp-dialog__head">
+          <h2 id="assign-title">Assign Role</h2>
+          <button type="button" class="bb-urp-more" data-bb-urp-close="1" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="bb-urp-dialog__body">
+          <p class="bb-urp-muted bb-urp-mobile-only">Select a role and define its scope.</p>
+          <div class="bb-urp-user" style="background:var(--bb-urp-surface-low);padding:0.75rem;border-radius:0.5rem;margin-bottom:1rem">
+            <div class="bb-urp-avatar"><%= u.initials || '?' %></div>
+            <div>
+              <strong><%= u.displayName %></strong>
+              <div class="bb-urp-muted"><%= u.emailDisplay || '' %></div>
+            </div>
+          </div>
+          <div class="bb-urp-field">
+            <label for="role_key">Select Role</label>
+            <select id="role_key" name="role_key" required>
+              <option value="">Choose a role...</option>
+              <% catalogue.forEach(function (r) { %>
+              <option value="<%= r.roleKey %>"><%= r.displayName %></option>
+              <% }); %>
+            </select>
+          </div>
+          <fieldset class="bb-urp-field" style="border:0;padding:0">
+            <legend class="bb-urp-field" style="margin-bottom:0.5rem">Role Scope</legend>
+            <label class="bb-urp-radio">
+              <input type="radio" name="scope_mode" value="global" checked />
+              <span>
+                <span style="display:block;font-weight:500">Global (Entire Church)</span>
+                <span class="bb-urp-muted">Access across all campuses and ministries.</span>
+              </span>
+            </label>
+            <label class="bb-urp-radio">
+              <input type="radio" name="scope_mode" value="branch" <%= !branchOpts.length ? 'disabled' : '' %> />
+              <span>
+                <span style="display:block;font-weight:500">Branch Specific</span>
+                <span class="bb-urp-muted">Limit access to selected locations.</span>
+              </span>
+            </label>
+          </fieldset>
+          <div class="bb-urp-field" data-bb-urp-branch-wrap hidden>
+            <label for="scope_id">Select Branch</label>
+            <select id="scope_id" name="scope_id">
+              <% branchOpts.forEach(function (b) { %>
+              <option value="<%= b.id %>"><%= b.label || b.key %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="bb-urp-field">
+            <label for="assignment_reason">Reason (required for sensitive roles)</label>
+            <textarea id="assignment_reason" name="assignment_reason" rows="2" maxlength="1000"></textarea>
+          </div>
+        </div>
+        <div class="bb-urp-dialog__foot">
+          <button type="button" class="bb-urp-btn bb-urp-btn--ghost" data-bb-urp-close="1">Cancel</button>
+          <button type="submit" class="bb-urp-btn bb-urp-btn--primary">Assign Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bb-urp-overlay" id="bb-urp-safety-last-admin" aria-hidden="true">
+    <div class="bb-urp-dialog" role="alertdialog" aria-labelledby="last-admin-title">
+      <div class="bb-urp-dialog__head">
+        <h2 id="last-admin-title">Blocked: Last Admin</h2>
+        <button type="button" class="bb-urp-more" data-bb-urp-close="1" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="bb-urp-dialog__body">
+        <p>This role cannot be removed because the church must have at least one active Church HQ Administrator.</p>
+        <p class="bb-urp-muted">Action prevented by system constraints.</p>
+      </div>
+      <div class="bb-urp-dialog__foot">
+        <button type="button" class="bb-urp-btn bb-urp-btn--primary" data-bb-urp-close="1">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bb-urp-overlay" id="bb-urp-safety-self" aria-hidden="true">
+    <div class="bb-urp-dialog" role="alertdialog">
+      <div class="bb-urp-dialog__head">
+        <h2>Self-Demotion Warning</h2>
+        <button type="button" class="bb-urp-more" data-bb-urp-close="1" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="bb-urp-dialog__body">
+        <p>You cannot remove your own administrator role from this screen. Ask another Church HQ Administrator to change your access.</p>
+      </div>
+      <div class="bb-urp-dialog__foot">
+        <button type="button" class="bb-urp-btn bb-urp-btn--primary" data-bb-urp-close="1">Dismiss</button>
+      </div>
+    </div>
+  </div>
+</section>
+<script type="application/json" id="bb-urp-scope-options"><%- JSON.stringify(scopeOpts) %></script>
+<%- include('../partials/hq-shell-end') %>

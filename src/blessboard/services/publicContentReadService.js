@@ -7,6 +7,12 @@
 
 const repo = require("../repositories/publicContentRepository");
 const { KEY_RE } = require("./publicContentConstants");
+const {
+  loadCurrentPublishedSnapshot,
+  overlayPublishedPage,
+  overlayPublishedEntities,
+  snapshotUsable,
+} = require("./websitePublishedSnapshotRead");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -49,8 +55,60 @@ function normalizeScope(input) {
   return { ok: true, churchId, branchId, pageKey };
 }
 
+function historicalBindingFrom(input) {
+  return input && input.historicalBinding && typeof input.historicalBinding === "object"
+    ? input.historicalBinding
+    : null;
+}
+
+function applyHistoricalCmsOverlay(livePage, liveSections, binding, pageKey) {
+  const cms = binding && binding.cmsSnapshot;
+  if (!cms || !snapshotUsable(cms)) {
+    return { page: livePage, sections: liveSections, fromSnapshot: false };
+  }
+  return overlayPublishedPage(livePage, liveSections, cms, pageKey, { includeAllStatuses: true });
+}
+
+function applyHistoricalFieldOverlay(page, sections, binding, pageKey) {
+  const values = binding && binding.fieldValues;
+  if (!values || typeof values !== "object") return { page, sections };
+  try {
+    const { applySnapshotFieldsToPage } = require("../website/blessboardEngineContentService");
+    return applySnapshotFieldsToPage({ page, sections, values, pageKey });
+  } catch {
+    return { page, sections };
+  }
+}
+
+/**
+ * Overlay published shared-engine field values onto CMS sections.
+ * Never reads draft_value. Does not create website instances.
+ */
+async function applyPublishedEngineOverlay(client, church, page, sections, pageKey, branchId) {
+  const organizationId =
+    church && (church.organization_id || church.organizationId)
+      ? String(church.organization_id || church.organizationId)
+      : "";
+  if (!organizationId || !page) return { page, sections };
+  try {
+    const {
+      applyPublishedEngineFieldsToPage,
+    } = require("../website/blessboardEngineContentService");
+    return await applyPublishedEngineFieldsToPage(client, {
+      organizationId,
+      branchId: branchId || null,
+      pageKey,
+      page,
+      sections,
+    });
+  } catch {
+    return { page, sections };
+  }
+}
+
 /**
  * Load a published page and its published sections (ordered).
+ * Engine published_value wins over CMS/snapshot for registered field keys.
  * @param {{ connect?: Function, query?: Function }} db
  * @param {{ churchId: string, branchId?: string|null, pageKey: string }} input
  */
@@ -71,12 +129,72 @@ async function getPublishedPage(db, input) {
           return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
         }
       }
+      const historical = historicalBindingFrom(input);
       const page = await repo.findPageByScope(client, scope);
-      if (!page || page.status !== "published") {
+      const livePublished = Boolean(page && page.status === "published");
+      const liveSections = livePublished
+        ? await repo.listSectionsForPage(client, page.id, { status: "published" })
+        : [];
+      const livePage = livePublished ? page : null;
+
+      if (historical) {
+        const cmsOverlaid = applyHistoricalCmsOverlay(
+          livePage,
+          liveSections,
+          historical,
+          scope.pageKey
+        );
+        const resolvedPage = cmsOverlaid.page || livePage;
+        const resolvedSections = cmsOverlaid.fromSnapshot ? cmsOverlaid.sections : liveSections;
+        if (!resolvedPage) {
+          return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
+        }
+        const engine = applyHistoricalFieldOverlay(
+          resolvedPage,
+          resolvedSections,
+          historical,
+          scope.pageKey
+        );
+        return { ok: true, status: STATUS.OK, page: engine.page, sections: engine.sections };
+      }
+
+      if (!livePublished) {
+        const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
+        if (snap && snap.snapshot) {
+          const overlaid = overlayPublishedPage(null, [], snap.snapshot, scope.pageKey);
+          if (overlaid.fromSnapshot && overlaid.page) {
+            const engine = await applyPublishedEngineOverlay(
+              client,
+              church,
+              overlaid.page,
+              overlaid.sections,
+              scope.pageKey,
+              scope.branchId
+            );
+            return { ok: true, status: STATUS.OK, page: engine.page, sections: engine.sections };
+          }
+        }
         return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
       }
-      const sections = await repo.listSectionsForPage(client, page.id, { status: "published" });
-      return { ok: true, status: STATUS.OK, page, sections };
+      const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
+      let resolvedPage = livePage;
+      let resolvedSections = liveSections;
+      if (snap && snap.snapshot) {
+        const overlaid = overlayPublishedPage(livePage, liveSections, snap.snapshot, scope.pageKey);
+        if (overlaid.fromSnapshot) {
+          resolvedPage = overlaid.page;
+          resolvedSections = overlaid.sections;
+        }
+      }
+      const engine = await applyPublishedEngineOverlay(
+        client,
+        church,
+        resolvedPage,
+        resolvedSections,
+        scope.pageKey,
+        scope.branchId
+      );
+      return { ok: true, status: STATUS.OK, page: engine.page, sections: engine.sections };
     });
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, page: null, sections: [] };
@@ -126,6 +244,24 @@ async function listPublishedContent(db, input, kind) {
         branchId: branchId === undefined ? undefined : branchId,
         status: "published",
       });
+      const historical = historicalBindingFrom(input);
+      if (historical && historical.cmsSnapshot) {
+        const overlaid = overlayPublishedEntities(kind, items, historical.cmsSnapshot);
+        if (overlaid.fromSnapshot) {
+          return { ok: true, status: STATUS.OK, items: overlaid.items };
+        }
+      }
+      const snap = await loadCurrentPublishedSnapshot(
+        client,
+        churchId,
+        branchId === undefined ? null : branchId
+      );
+      if (snap && snap.snapshot) {
+        const overlaid = overlayPublishedEntities(kind, items, snap.snapshot);
+        if (overlaid.fromSnapshot) {
+          return { ok: true, status: STATUS.OK, items: overlaid.items };
+        }
+      }
       return { ok: true, status: STATUS.OK, items };
     });
   } catch {

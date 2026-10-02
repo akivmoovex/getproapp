@@ -1,5 +1,6 @@
 <%#
-  Shared leader card.
+  Shared leader card — Phase 4: public (non-edit) uses platform person_card.
+  Edit mode keeps BB structured-edit hooks (church-specific).
   Locals: leader, featured (optional boolean), bioMax (optional)
 %>
 <%
@@ -11,23 +12,96 @@
     _bio = t.length <= _bioMax ? t : (t.slice(0, _bioMax - 1) + '…');
   }
   var _img = leader && leader.imageUrl ? leader.imageUrl : null;
+  if (_img && typeof presentImageSrc === 'function') {
+    _img = presentImageSrc(_img) || null;
+  }
+  var _placement = (leader && (leader.imagePlacement || leader.placement)) || null;
+  var _ps =
+    typeof presentImagePlacementStyle === 'function'
+      ? presentImagePlacementStyle(_placement)
+      : { className: '', style: '' };
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _leaderKey = leader && (leader.id || leader.entityKey)
+    ? String(leader.id || leader.entityKey)
+    : '';
+  var _canEdit = Boolean(_wa && _wa.editingMode && _leaderKey);
+  var _nameClean = String(leader && leader.displayName || '')
+    .replace(/\s*\(template example\)\s*$/i, '')
+    .trim();
+  var _roleClean = String(leader && leader.roleTitle || '')
+    .replace(/\s*\(template example\)\s*$/i, '')
+    .trim();
+  var _bioClean = String(leader && leader.biography || '')
+    .replace(/\s*\(template example\)\s*$/i, '')
+    .trim();
 %>
-<article class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %>">
-  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %>">
+<% if (!_canEdit) { %>
+<%- include('../../../../platform/website/components/person-card', {
+  person: {
+    image: _img,
+    name: _nameClean || (leader && leader.displayName) || '',
+    title: _roleClean || (leader && leader.roleTitle) || null,
+    subtitle: null,
+    description: _bio || null,
+    cta: leader && leader.contactHref
+      ? { label: 'Contact', url: leader.contactHref }
+      : (leader && leader.socialUrl
+        ? { label: 'Profile', url: leader.socialUrl }
+        : null),
+    badges: [],
+    mediaVariant: 'portrait',
+    displayOrder: leader && leader.sortOrder != null ? leader.sortOrder : 0,
+    visibility: leader && leader.visible !== false,
+    featured: Boolean(_featured || (leader && leader.seniorLeader)),
+    sourceProduct: 'blessboard',
+    sourceDomain: 'pastor_leader',
+    sourceId: _leaderKey || null
+  },
+  editEnabled: false,
+  className: 'bb-tp-platform-bridge bb-tp-leader-card-platform' + (_featured ? ' is-featured' : '') + (leader && leader.templateExample ? ' bb-tp-leader-card--template' : '')
+}) %>
+<% } else { %>
+<article
+  class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %><%= leader && leader.templateExample ? ' bb-tp-leader-card--template' : '' %> bb-tp-leader-card--editable"
+  <% if (leader && leader.templateExample) { %> data-bb-template-example="leader"<% } %>
+  data-bb-leader-card="1" data-bb-leader-id="<%= _leaderKey %>"
+>
+  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %> bb-tp-edit-media-wrap">
     <% if (_img) { %>
     <img
+      class="<%= _ps.className || '' %>"
       src="<%= _img %>"
-      alt="<%= leader.displayName %>"
+      alt="<%= leader.templateExample ? 'Template portrait' : leader.displayName %>"
       width="<%= _featured ? 480 : 400 %>"
       height="<%= _featured ? 600 : 400 %>"
       loading="<%= _featured ? 'eager' : 'lazy' %>"
       decoding="async"
+      data-bb-leader-image="1"
+      <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
     />
     <% } else { %>
     <div class="bb-tp-avatar<%= _featured ? ' bb-tp-avatar--xl' : '' %>" role="img" aria-label="<%= leader.displayName %>">
       <%= initials(leader.displayName) %>
     </div>
     <% } %>
+    <%- include('../../partials/entity-image-edit-trigger', {
+      editKind: 'leader',
+      editEntityKey: _leaderKey,
+      editPayload: {
+        displayName: _nameClean,
+        roleTitle: _roleClean,
+        biography: _bioClean,
+        imageUrl: leader.imageUrl || '',
+        placement: _placement,
+        sortOrder: leader.sortOrder != null ? leader.sortOrder : 10,
+        seniorLeader: Boolean(_featured || leader.seniorLeader),
+        visible: leader.visible !== false,
+        contactPublic: Boolean(leader.contactPublic),
+        email: leader.email || '',
+        phone: leader.phone || '',
+        socialUrl: leader.socialUrl || ''
+      }
+    }) %>
   </div>
   <div class="bb-tp-leader-card__body">
     <% if (_featured && leader.roleTitle) { %>
@@ -35,33 +109,38 @@
     <% } %>
     <h3 class="bb-tp-leader-card__name<%= _featured ? ' bb-tp-featured-leader__name' : '' %>">
       <%= leader.displayName %>
-      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-      <%- include('../../partials/structured-edit-trigger', {
-        editKind: 'leader',
-        editEntityKey: String(leader.id || ('leader-' + leader.displayName)),
-        editLabel: 'Edit ' + leader.displayName,
-        editPayload: {
-          displayName: leader.displayName,
-          roleTitle: leader.roleTitle,
-          biography: leader.biography,
-          imageUrl: leader.imageUrl,
-          sortOrder: leader.sortOrder,
-          seniorLeader: Boolean(_featured),
-          visible: true
-        }
-      }) %>
-      <% } %>
     </h3>
-    <% if (!_featured && leader.roleTitle) { %>
-    <p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p>
-    <% } else if (_featured && leader.roleTitle) { %>
-    <p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p>
+    <% if (leader.roleTitle) { %>
+    <p class="bb-tp-leader-card__role" data-bb-leader-role="1"><%= leader.roleTitle %></p>
     <% } %>
     <% if (_bio) { %>
-    <p class="bb-tp-leader-card__bio"><%= _bio %></p>
+    <p class="bb-tp-leader-card__bio" data-bb-leader-bio="1"><%= _bio %></p>
     <% } %>
     <% if (leader.contactHref) { %>
     <a class="bb-tp-leader-card__contact" href="<%= leader.contactHref %>">Contact</a>
     <% } %>
+    <div class="bb-tp-leader-card__edit-actions">
+      <%- include('../../partials/structured-edit-trigger', {
+        editKind: 'leader',
+        editEntityKey: _leaderKey,
+        editLabel: 'Edit details',
+        editDialogTitle: 'Edit details',
+        editButtonText: 'Edit details',
+        editPayload: {
+          displayName: _nameClean,
+          roleTitle: _roleClean,
+          biography: _bioClean,
+          imageUrl: leader.imageUrl || '',
+          sortOrder: leader.sortOrder != null ? leader.sortOrder : 10,
+          seniorLeader: Boolean(_featured || leader.seniorLeader),
+          visible: leader.visible !== false,
+          contactPublic: Boolean(leader.contactPublic),
+          email: leader.email || '',
+          phone: leader.phone || '',
+          socialUrl: leader.socialUrl || ''
+        }
+      }) %>
+    </div>
   </div>
 </article>
+<% } %>

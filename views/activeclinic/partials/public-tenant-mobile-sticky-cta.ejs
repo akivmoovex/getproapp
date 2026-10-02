@@ -1,0 +1,33 @@
+<%#
+  AC Stitch R01 mobile sticky booking / clinic-line affordances (Batch 7 finalization).
+  Real clinic phone + booking path only — never invent emergency numbers.
+%>
+<%
+  var pages = (clinic && clinic.publicPagePaths) || {};
+  var bookHref = pages.book || (clinic && clinic.publicBasePath ? clinic.publicBasePath + '/book' : null);
+  var stickyPhone = (clinic && (clinic.publicPhoneDisplay || clinic.headerPhone)) || null;
+  if (!stickyPhone && clinic && Array.isArray(clinic.facilities) && clinic.facilities.length) {
+    var pf = clinic.facilities.find(function (f) { return f && f.isPrimary; }) || clinic.facilities[0];
+    if (pf && pf.phoneDisplay) stickyPhone = pf.phoneDisplay;
+  }
+  var bookLabel = clinic && clinic.publicBookingEnabled ? 'Book Appointment' : 'Request Appointment';
+  var showSticky = Boolean(bookHref || stickyPhone);
+%>
+<% if (showSticky && !(typeof websiteEdit !== 'undefined' && websiteEdit)) { %>
+<div class="ac-tenant-mobile-sticky" data-ac-tenant-mobile-sticky="1" data-ac-stitch-chrome="mobile-sticky-cta">
+  <% if (stickyPhone) { %>
+  <a
+    class="ac-tenant-mobile-sticky__btn ac-tenant-mobile-sticky__btn--call"
+    href="tel:<%= String(stickyPhone).replace(/[^\d+]/g, '') %>"
+    data-ac-sticky-call="1"
+  >Call clinic</a>
+  <% } %>
+  <% if (bookHref) { %>
+  <a
+    class="ac-tenant-mobile-sticky__btn ac-tenant-mobile-sticky__btn--book"
+    href="<%= bookHref %>"
+    data-ac-sticky-book="1"
+  ><%= bookLabel %></a>
+  <% } %>
+</div>
+<% } %>

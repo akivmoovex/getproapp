@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -54,6 +54,10 @@ const {
 } = require("../services/authorizeBlessBoardTenantAccess");
 const { createMediaUploadService } = require("../media/mediaUploadService");
 const formsRepo = require("../repositories/formsRequestsRepository");
+const { authorize } = require("../services/blessBoardRbacAuthorizationService");
+const {
+  presentMemberRequestWithPastoralRedaction,
+} = require("../services/memberRequestPastoralRedaction");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -140,7 +144,7 @@ function presentAdminSubmissions(submissions, form) {
   });
 }
 
-function presentAdminRequest(request, attachmentMeta) {
+function presentAdminRequest(request, attachmentMeta, opts) {
   if (!request) return null;
   const history = Array.isArray(request.history)
     ? request.history.map((h) => ({
@@ -151,7 +155,7 @@ function presentAdminRequest(request, attachmentMeta) {
         createdAt: h.createdAt || null,
       }))
     : [];
-  return {
+  const base = {
     id: request.id,
     category: request.category,
     subject: request.subject,
@@ -165,6 +169,8 @@ function presentAdminRequest(request, attachmentMeta) {
     history,
     nextStatuses: REQUEST_TRANSITIONS[request.status] || [],
   };
+  const redacted = presentMemberRequestWithPastoralRedaction(base, opts);
+  return redacted;
 }
 
 async function loadAttachmentMeta(pool, mediaAssetId, churchId) {
@@ -199,13 +205,11 @@ function createFormsRequestsAdminRouter(deps) {
   const shellKind = variant === "hq" ? "hq" : "branch";
   const mediaService = deps.mediaService || createMediaUploadService(env);
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const requireAccess = createRequireBlessBoardPermission("requests.view", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -408,7 +412,13 @@ function createFormsRequestsAdminRouter(deps) {
           limit: LIST_LIMIT,
         });
         if (!listed.ok) {
-          return sendControlled(req, res, 503, "Resources unavailable.", shellKind);
+          return sendControlled(
+            req,
+            res,
+            listed.status === STATUS.FORBIDDEN ? 403 : 503,
+            "Resources unavailable.",
+            shellKind
+          );
         }
         let resources = listed.resources || [];
         if (searchQ) {
@@ -512,7 +522,13 @@ function createFormsRequestsAdminRouter(deps) {
         limit: LIST_LIMIT,
       });
       if (!listed.ok) {
-        return sendControlled(req, res, 503, "Forms unavailable.", shellKind);
+        return sendControlled(
+          req,
+          res,
+          listed.status === STATUS.FORBIDDEN ? 403 : 503,
+          "Forms unavailable.",
+          shellKind
+        );
       }
       let forms = listed.forms || [];
       if (searchQ) {
@@ -710,6 +726,24 @@ function createFormsRequestsAdminRouter(deps) {
           loaded.request.mediaAssetId,
           scope.churchId
         );
+        let mayViewPastoralBodies = false;
+        try {
+          // Form-request pastoral category messages are operational request content.
+          // Confidential pastoral_cases note bodies remain gated by pastoral permissions elsewhere.
+          const pastoralBody = await authorize(getPool(), {
+            actor: { userId: scope.actorUserId },
+            permission: "requests.manage",
+            tenantContext: scope.tenant,
+            resourceContext: {
+              organizationId: scope.tenant.organization.id,
+              churchId: scope.churchId,
+              branchId: scope.branchId,
+            },
+          });
+          mayViewPastoralBodies = pastoralBody.allowed === true;
+        } catch {
+          mayViewPastoralBodies = false;
+        }
         const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
@@ -720,7 +754,9 @@ function createFormsRequestsAdminRouter(deps) {
               await shellLocals(req, res, "requests", {
                 pageTitle: loaded.request.subject || "Request",
                 basePath: scope.basePath,
-                request: presentAdminRequest(loaded.request, attachmentMeta),
+                request: presentAdminRequest(loaded.request, attachmentMeta, {
+                  mayViewPastoralBodies,
+                }),
                 saved: String((req.query && req.query.saved) || ""),
                 error: String((req.query && req.query.error) || ""),
                 ...branchLocals,

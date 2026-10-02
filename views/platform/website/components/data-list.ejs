@@ -1,0 +1,30 @@
+<%#
+  Generic key/value data display — forms stay product-owned; this is display chrome.
+  Locals: model, editEnabled, edit, className
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var rows = Array.isArray(m.rows) ? m.rows : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--data-list<%= extraClass %>" data-gp-website-component="data_list">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <% if (!rows.length && m.emptyState) { %>
+  <div class="gp-website-pc__empty">
+    <% if (m.emptyState.heading) { %><h3 class="gp-website-pc__title"><%= m.emptyState.heading %></h3><% } %>
+    <% if (m.emptyState.body) { %><p class="gp-website-pc__body"><%= m.emptyState.body %></p><% } %>
+  </div>
+  <% } else { %>
+  <dl class="gp-website-pc__data-rows">
+    <% rows.forEach(function (row) { %>
+    <div class="gp-website-pc__data-row">
+      <dt class="gp-website-pc__data-label"><%= row.label %></dt>
+      <dd class="gp-website-pc__data-value">
+        <% if (row.href) { %><a class="gp-website-pc__link" href="<%= row.href %>"><%= row.value || row.href %></a>
+        <% } else { %><%= row.value || '' %><% } %>
+      </dd>
+    </div>
+    <% }) %>
+  </dl>
+  <% } %>
+</section>

@@ -62,7 +62,7 @@ test("/login renders without 500/503", async () => {
   const res = await request(makeBranchApp()).get("/login");
   assert.equal(res.status, 200);
   assert.doesNotMatch(res.text, /Service Unavailable|503/);
-  assert.match(res.text, /church\.css\?v=47/);
+  assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
   assert.match(res.text, /Member Access/);
   assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);

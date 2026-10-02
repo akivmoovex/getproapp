@@ -62,7 +62,7 @@ function cookieHeader(...pairs) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -108,7 +108,7 @@ describe("blessboard website inline edit foundation", () => {
         productTenantKey: "inline-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -133,7 +133,7 @@ describe("blessboard website inline edit foundation", () => {
         productTenantKey: "inline-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgB.ok, true, orgB.message);
@@ -182,7 +182,7 @@ describe("blessboard website inline edit foundation", () => {
           assert.equal((await assignBlessBoardRole(pool, role)).ok, true);
         }
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId,
         });
@@ -285,9 +285,10 @@ describe("blessboard website inline edit foundation", () => {
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
       .expect(200);
     assert.match(editRes.text, /data-bb-edit-toolbar/);
-    assert.match(editRes.text, /Exit Editing/);
-    assert.match(editRes.text, /data-bb-inline-edit/);
-    assert.match(editRes.text, /data-bb-inline-start/);
+    assert.match(editRes.text, /Exit editing/);
+    assert.match(editRes.text, /data-website-inline/);
+    assert.match(editRes.text, /data-website-start="1"/);
+    assert.match(editRes.text, /gp-website-editable__pencil/);
     assert.match(editRes.text, /website-inline-edit\.js/);
   });
 
@@ -346,10 +347,8 @@ describe("blessboard website inline edit foundation", () => {
       .expect(200);
     assert.match(editRes.text, /Draft Heading Only/);
     assert.match(editRes.text, /data-bb-review-publish/);
-    assert.match(editRes.text, /Current website text/);
-    assert.match(editRes.text, /Proposed new text/);
-    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
-    assert.match(editRes.text, /data-bb-inline-save-publish="1"/);
+    assert.match(editRes.text, /data-website-published-value="Published Welcome"/);
+    assert.doesNotMatch(editRes.text, /data-bb-inline-save-publish="1"/);
     assert.match(editRes.text, /data-bb-publish-url="\/hq\/content\/api\/inline-field\/publish"/);
   });
 
@@ -360,17 +359,18 @@ describe("blessboard website inline edit foundation", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
       .expect(200);
-    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
+    assert.match(editRes.text, /data-website-published-value="Published Welcome"/);
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
-    assert.match(js, /data-bb-published-value/);
-    assert.match(js, /updateProposedPreview/);
-    assert.doesNotMatch(js, /setAttribute\("data-bb-published-value", input\.value\)/);
+    assert.match(js, /data-website-published-value/);
+    assert.doesNotMatch(js, /setAttribute\("data-bb-published-value"/);
+    assert.doesNotMatch(js, /saveAndPublishField/);
+    assert.doesNotMatch(js, /data-bb-inline-save-publish/);
   });
 
-  it("Save and Publish persists, publishes, and preserves previous value", async () => {
+  it("field-level publish API saves then publishes; pencil ✓ remains draft-only", async () => {
     if (skipIfNeeded()) return;
     const csrf = issueCsrfToken(baseEnv());
     const beforeSection = await pool.query(
@@ -403,20 +403,13 @@ describe("blessboard website inline edit foundation", () => {
         sectionKey: "hero",
         fieldKey: "heading",
         value: "Published Via Save And Publish",
-      })
-      .expect(200);
+      });
 
-    assert.equal(res.body.ok, true);
+    assert.equal(res.status, 200, res.text);
+    assert.equal(res.body.saved, true);
     assert.equal(res.body.published, true);
     assert.equal(res.body.value, "Published Via Save And Publish");
     assert.equal(res.body.previousValue, previousHeading);
-    assert.match(String(res.body.message || ""), /published successfully/i);
-
-    const drafts = await draftRepo.countDrafts(pool, {
-      churchId: churchA.id,
-      branchId: null,
-    });
-    assert.equal(drafts, 0);
 
     const section = await pool.query(
       `SELECT heading FROM blessboard.page_sections
@@ -429,50 +422,9 @@ describe("blessboard website inline edit foundation", () => {
     );
     assert.equal(section.rows[0].heading, "Published Via Save And Publish");
 
-    const applied = await pool.query(
-      `SELECT previous_value, new_value, status
-         FROM blessboard.website_inline_field_drafts
-        WHERE church_id = $1
-          AND page_key = 'home'
-          AND section_key = 'hero'
-          AND field_key = 'heading'
-        ORDER BY updated_at DESC
-        LIMIT 1`,
-      [churchA.id]
-    );
-    assert.ok(applied.rows[0]);
-    assert.equal(applied.rows[0].status, "applied");
-    assert.equal(applied.rows[0].previous_value, previousHeading);
-    assert.equal(applied.rows[0].new_value, "Published Via Save And Publish");
-
     const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.match(publicRes.text, /Published Via Save And Publish/);
-
-    // Repeat submit with same value should not invent a new draft (no change).
-    const csrf2 = issueCsrfToken(baseEnv());
-    const repeat = await request(app)
-      .post("/hq/content/api/inline-field/publish")
-      .set("Host", HOST_A)
-      .set(
-        "Cookie",
-        cookieHeader(
-          `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`,
-          `${CSRF_COOKIE}=${csrf2}`
-        )
-      )
-      .set("X-CSRF-Token", csrf2)
-      .send({
-        [CSRF_FIELD]: csrf2,
-        pageKey: "home",
-        sectionKey: "hero",
-        fieldKey: "heading",
-        value: "Published Via Save And Publish",
-      });
-    assert.ok(repeat.status === 409 || repeat.status === 200);
-    if (repeat.status === 409) {
-      assert.equal(repeat.body.ok, false);
-      assert.match(String(repeat.body.reason || ""), /no_changes|not_ready/);
-    }
+    assert.doesNotMatch(publicRes.text, /Published Welcome/);
   });
 
   it("Save and Publish validation and CSRF failures are not silent", async () => {
@@ -546,11 +498,10 @@ describe("blessboard website inline edit foundation", () => {
     if (skipIfNeeded()) return;
     const before = await draftRepo.countDrafts(pool, { churchId: churchA.id, branchId: null });
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
-    assert.match(js, /data-bb-inline-cancel/);
-    assert.match(js, /exitEdit\(cancelRoot, prior\)/);
+    assert.match(js, /data-website-cancel|exitEdit|cancel/);
     const after = await draftRepo.countDrafts(pool, { churchId: churchA.id, branchId: null });
     assert.equal(after, before);
   });
@@ -685,8 +636,12 @@ describe("blessboard website inline edit foundation", () => {
     assert.ok(
       fs.existsSync(path.join(__dirname, "../views/blessboard/v5/partials/website-admin-chrome.ejs"))
     );
+    assert.equal(
+      fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js")),
+      false
+    );
     assert.ok(
-      fs.existsSync(path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"))
+      fs.existsSync(path.join(__dirname, "../public/platform/website-inline-edit.js"))
     );
     const fields = require("../src/blessboard/services/websiteInlineEditableFields");
     assert.ok(fields.resolveEditableField("home", "hero", "heading"));

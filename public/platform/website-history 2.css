@@ -1,0 +1,308 @@
+/* Shared website version history — Wave 4B-1 (design extension from editor system). */
+
+.gp-we-tool {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 2.5rem;
+}
+
+.gp-we-history__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.gp-we-history__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--gp-we-on-surface, #121c2a);
+}
+
+.gp-we-history__site {
+  margin: 0.25rem 0 0;
+  color: var(--gp-we-on-surface-variant, #4a4455);
+  font-size: 0.95rem;
+}
+
+.gp-we-history__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--gp-we-outline-variant, #ccc3d8);
+  color: var(--gp-we-on-surface, #121c2a);
+  text-decoration: none;
+  font-weight: 600;
+  background: #fff;
+}
+
+.gp-we-history__intro,
+.gp-we-history__empty {
+  margin: 0 0 1rem;
+  color: var(--gp-we-on-surface-variant, #4a4455);
+}
+
+.gp-we-history__notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.gp-we-history__error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: var(--gp-we-error-container, #ffdad6);
+  color: var(--gp-we-error, #ba1a1a);
+}
+
+.gp-we-history__list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gp-we-history__card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid var(--gp-we-outline-variant, #ccc3d8);
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.gp-we-history__card--live {
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.15);
+}
+
+.gp-we-history__card--draft {
+  background: #f8f9ff;
+  border-style: dashed;
+}
+
+.gp-we-history__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  align-items: center;
+}
+
+.gp-we-history__version {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.gp-we-history__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--gp-we-on-surface-variant, #4a4455);
+}
+
+.gp-we-history__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.gp-we-history__badge--live {
+  background: #6c5ce7;
+  color: #fff;
+}
+
+.gp-we-history__badge--draft {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.gp-we-history__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gp-we-history__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.gp-we-history__btn--ghost {
+  border-color: var(--gp-we-outline-variant, #ccc3d8);
+  background: #fff;
+  color: var(--gp-we-on-surface, #121c2a);
+}
+
+.gp-we-history__btn--primary {
+  background: var(--gp-we-primary, #630ed4);
+  color: var(--gp-we-on-primary, #fff);
+}
+
+.gp-we-history__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gp-we-history__dialog-host[hidden] {
+  display: none;
+}
+
+.gp-we-history__dialog-host:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--gp-we-z-sheet, 85);
+}
+
+.gp-we-history__dialog-host .gp-website-lifecycle__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 28, 42, 0.45);
+}
+
+.gp-we-history__dialog-host .gp-we-history__dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(18, 28, 42, 0.18);
+}
+
+@media (max-width: 767px) {
+  .gp-we-tool {
+    padding: 0.75rem 0.75rem 5rem;
+  }
+
+  .gp-we-history__card {
+    align-items: stretch;
+  }
+
+  .gp-we-history__actions {
+    width: 100%;
+  }
+
+  .gp-we-history__actions .gp-we-history__btn,
+  .gp-we-history__actions .gp-we-history__restore-form {
+    flex: 1 1 auto;
+  }
+
+  .gp-we-history__restore-form .gp-we-history__btn {
+    width: 100%;
+  }
+
+  .gp-we-history__dialog-host .gp-we-history__dialog {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: auto;
+    max-height: 85vh;
+    border-radius: 1rem 1rem 0 0;
+  }
+}
+
+.gp-we-media-page__head {
+  margin-bottom: 0.75rem;
+}
+
+.gp-we-media-page__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.gp-we-media-page__site {
+  margin: 0.25rem 0 0;
+  color: var(--gp-we-on-surface-variant, #4a4455);
+}
+
+.gp-we-media-page__toolbar {
+  margin: 0 0 1rem;
+}
+
+.gp-we-media-page__dialog {
+  border: none;
+  border-radius: 1rem;
+  padding: 0;
+  max-width: 28rem;
+  width: calc(100vw - 2rem);
+}
+
+.gp-we-media-page__dialog::backdrop {
+  background: rgba(18, 28, 42, 0.45);
+}
+
+.gp-we-media-page__dialog-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gp-we-media-page__drop {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px dashed var(--gp-we-outline-variant, #ccc3d8);
+  border-radius: 0.75rem;
+}
+
+.gp-we-media-page__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--gp-we-on-surface-variant, #4a4455);
+}
+
+.gp-we-media-page__dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.gp-we-media-page__notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.gp-we-media-page__error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: var(--gp-we-error-container, #ffdad6);
+  color: var(--gp-we-error, #ba1a1a);
+}
+
+body.gp-we-history-dialog-open {
+  overflow: hidden;
+}

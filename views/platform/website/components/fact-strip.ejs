@@ -1,0 +1,23 @@
+<%#
+  Trust / quick-info fact strip — shared across products.
+  Locals: model, editEnabled, edit, className
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var items = Array.isArray(m.items) ? m.items : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+  var layout = m.layoutVariant || 'row';
+%>
+<section class="gp-website-pc gp-website-pc--fact-strip gp-website-pc--fact-<%= layout %><%= extraClass %>" data-gp-website-component="fact_strip">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <ul class="gp-website-pc__fact-list">
+    <% items.forEach(function (item) { %>
+    <li class="gp-website-pc__fact-item">
+      <% if (item.href) { %><a class="gp-website-pc__fact-link" href="<%= item.href %>"><% } %>
+      <% if (item.label) { %><span class="gp-website-pc__fact-label"><%= item.label %></span><% } %>
+      <% if (item.value) { %><span class="gp-website-pc__fact-value"><%= item.value %></span><% } %>
+      <% if (item.href) { %></a><% } %>
+    </li>
+    <% }) %>
+  </ul>
+</section>

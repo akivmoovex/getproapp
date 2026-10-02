@@ -1,0 +1,264 @@
+<%
+  var f = form || {};
+  var ready = readiness || {};
+  var statusKey = status || ready.status || 'draft';
+  var statusLabel = ready.statusLabel || (statusKey === 'published' ? 'Published' : 'Draft');
+  var summaryHref = typeof summaryHref !== 'undefined' ? summaryHref : '/branch/giving-summary';
+  var canEdit = typeof canEditSettings !== 'undefined' ? canEditSettings : true;
+  var categoriesPreview = String(f.giving_categories || '').split(/\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+%>
+      <div
+        class="church-p6-giving-settings"
+        data-p6-screen="giving-settings"
+        data-settings-status="<%= statusKey %>"
+        data-responsive="desktop-mobile"
+        data-testid="giving-settings"
+        aria-busy="false"
+      >
+        <header class="church-p6-page-hero">
+          <div>
+            <p class="church-p6-page-hero__kicker church-show-mobile-only"><%= churchName %></p>
+            <p class="church-p6-page-hero__eyebrow church-show-desktop-only">Giving Configuration</p>
+            <h1 class="church-p6-page-hero__title">Giving Settings</h1>
+            <p class="church-p6-page-hero__subtitle">Manage giving instructions for <%= churchName %>. Publish bank, mobile money, and category details members can use offline.</p>
+          </div>
+          <div class="church-p6-page-hero__actions church-show-desktop-only">
+            <a class="church-btn church-btn--outline" href="<%= summaryHref %>">Giving summary</a>
+          </div>
+        </header>
+
+        <h2 class="church-p6-giving-settings-lead church-show-desktop-only">Manage Giving Ecosystem</h2>
+
+        <% if (notice) { %><div class="church-alert church-alert--success" role="status" data-testid="giving-settings-notice"><%= notice %></div><% } %>
+        <% if (typeof listError !== 'undefined' && listError) { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="giving-settings-load-error"><%= listError %></div>
+        <% } %>
+        <% if (error) { %><div class="church-alert church-alert--error" role="alert" data-testid="giving-settings-error"><%= error %></div><% } %>
+
+        <div class="church-alert church-alert--info" role="note" data-testid="giving-settings-mvp-note">
+          This page publishes giving <strong>instructions</strong> for public and member pages. BlessBoard does not process card payments or store payment-provider secrets here.
+        </div>
+
+        <section class="church-p6-giving-settings-status" aria-label="Publication status" data-testid="giving-settings-status">
+          <div>
+            <p class="church-p6-attendance-stat__label">Availability</p>
+            <p class="church-p6-attendance-stat__value church-p6-giving-settings-status__value">
+              <span class="church-status-chip church-status-chip--<%= statusKey === 'published' ? 'verified' : 'pending' %>"><%= statusLabel %></span>
+            </p>
+            <p class="church-p6-attendance-stat__hint">
+              <% if (statusKey === 'published') { %>
+              Published instructions are visible on public/member giving pages.
+              <% } else { %>
+              Draft is not shown publicly until you publish.
+              <% } %>
+            </p>
+          </div>
+          <ul class="church-p6-giving-settings-chips" aria-label="Channel readiness">
+            <li class="<%= ready.hasBankChannel ? 'is-ready' : '' %>">Bank transfer <%= ready.hasBankChannel ? 'ready' : 'incomplete' %></li>
+            <li class="<%= ready.hasMobileChannel ? 'is-ready' : '' %>">Mobile money <%= ready.hasMobileChannel ? 'ready' : 'incomplete' %></li>
+            <li><%= ready.categoryCount || 0 %> categor<%= (ready.categoryCount === 1) ? 'y' : 'ies' %></li>
+          </ul>
+        </section>
+
+        <% if (canEdit) { %>
+        <form class="church-form church-p6-giving-settings-form" method="post" action="/branch/giving-settings" data-unsaved-guard="1" data-testid="giving-settings-form">
+          <%- include('./csrf_field') %>
+
+          <div class="church-p6-giving-settings-grid">
+          <details class="church-p6-giving-settings-section" open>
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
+              Giving Categories
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <p class="church-p6-empty__hint">Listed on public/member giving pages. One category per line. Deleting a line only removes the label — monthly summary fund columns are separate.</p>
+              <div class="church-field church-field--full">
+                <label class="church-label" for="giving_categories">Categories / funds</label>
+                <textarea class="church-input church-input--textarea" id="giving_categories" name="giving_categories" rows="5" maxlength="3200" placeholder="Tithes&#10;Offerings&#10;Building fund"><%= f.giving_categories || '' %></textarea>
+              </div>
+              <% if (categoriesPreview.length) { %>
+              <ul class="church-p6-giving-settings-category-list" data-testid="giving-settings-categories">
+                <% categoriesPreview.forEach(function (cat) { %>
+                <li><%= cat %></li>
+                <% }); %>
+              </ul>
+              <% } %>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section" open>
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">account_balance</span>
+              Bank transfer instructions
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-form-grid">
+                <div class="church-field">
+                  <label class="church-label" for="bank_name">Bank name</label>
+                  <input class="church-input" id="bank_name" name="bank_name" type="text" maxlength="120" value="<%= f.bank_name || '' %>" autocomplete="organization"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="account_name">Account name</label>
+                  <input class="church-input" id="account_name" name="account_name" type="text" maxlength="120" value="<%= f.account_name || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="account_number">Account number</label>
+                  <input class="church-input" id="account_number" name="account_number" type="text" maxlength="64" value="<%= f.account_number || '' %>" autocomplete="off"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="branch_code">Branch code</label>
+                  <input class="church-input" id="branch_code" name="branch_code" type="text" maxlength="64" value="<%= f.branch_code || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="swift_code">SWIFT code (optional)</label>
+                  <input class="church-input" id="swift_code" name="swift_code" type="text" maxlength="32" value="<%= f.swift_code || '' %>"/>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section" open>
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+              Mobile money instructions
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-form-grid">
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_provider_1">Provider 1</label>
+                  <input class="church-input" id="mobile_money_provider_1" name="mobile_money_provider_1" type="text" maxlength="80" placeholder="MTN / Airtel" value="<%= f.mobile_money_provider_1 || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_number_1">Number 1</label>
+                  <input class="church-input" id="mobile_money_number_1" name="mobile_money_number_1" type="text" maxlength="40" value="<%= f.mobile_money_number_1 || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_name_1">Registered name 1</label>
+                  <input class="church-input" id="mobile_money_name_1" name="mobile_money_name_1" type="text" maxlength="120" value="<%= f.mobile_money_name_1 || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_provider_2">Provider 2 (optional)</label>
+                  <input class="church-input" id="mobile_money_provider_2" name="mobile_money_provider_2" type="text" maxlength="80" value="<%= f.mobile_money_provider_2 || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_number_2">Number 2 (optional)</label>
+                  <input class="church-input" id="mobile_money_number_2" name="mobile_money_number_2" type="text" maxlength="40" value="<%= f.mobile_money_number_2 || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="mobile_money_name_2">Registered name 2 (optional)</label>
+                  <input class="church-input" id="mobile_money_name_2" name="mobile_money_name_2" type="text" maxlength="120" value="<%= f.mobile_money_name_2 || '' %>"/>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section" open>
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">sticky_note_2</span>
+              Public instructions &amp; contact
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-form-grid">
+                <div class="church-field church-field--full">
+                  <label class="church-label" for="giving_instructions">Giving instructions</label>
+                  <textarea class="church-input church-input--textarea" id="giving_instructions" name="giving_instructions" rows="4" maxlength="4000"><%= f.giving_instructions || '' %></textarea>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="qr_code_label">QR / offline label</label>
+                  <input class="church-input" id="qr_code_label" name="qr_code_label" type="text" maxlength="120" value="<%= f.qr_code_label || '' %>" placeholder="Scan to give / Bring cash to the office"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="finance_contact_name">Finance contact name</label>
+                  <input class="church-input" id="finance_contact_name" name="finance_contact_name" type="text" maxlength="120" value="<%= f.finance_contact_name || '' %>"/>
+                </div>
+                <div class="church-field">
+                  <label class="church-label" for="finance_contact_phone">Finance contact phone</label>
+                  <input class="church-input" id="finance_contact_phone" name="finance_contact_phone" type="text" maxlength="40" value="<%= f.finance_contact_phone || '' %>"/>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section">
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+              Currency
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-empty-state church-p6-empty" data-testid="giving-settings-currency-note">
+                <p class="church-empty-state__body">Default currency is not editable on this screen.</p>
+                <p class="church-p6-empty__hint"><%= ready.defaultCurrencyNote || '' %></p>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section">
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+              Payment Integrations
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-empty-state church-p6-empty" data-testid="giving-settings-provider-unavailable" data-provider-status="unavailable">
+                <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">link_off</span>
+                <p class="church-empty-state__body">Payment provider connection unavailable</p>
+                <p class="church-p6-empty__hint"><%= ready.paymentProviderLabel || '' %> Stripe Connect and similar live payout status are not shown here.</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section">
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">flag</span>
+              Financial Goals
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <div class="church-empty-state church-p6-empty" data-testid="giving-settings-goals-unavailable">
+                <p class="church-empty-state__body">Goal tracking is not available</p>
+                <p class="church-p6-empty__hint">Monthly progress toward giving goals is not configured in BlessBoard yet.</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="church-p6-giving-settings-section">
+            <summary class="church-p6-giving-settings-section__summary">
+              <span class="material-symbols-outlined" aria-hidden="true">outgoing_mail</span>
+              Receipt Settings
+            </summary>
+            <div class="church-p6-giving-settings-section__body">
+              <ul class="church-p6-giving-settings-unavailable" data-testid="giving-settings-unsupported">
+                <li>Automated PDF receipts — not supported</li>
+                <li>Annual tax summaries — not supported</li>
+                <li>Anonymous giving preference toggle — not supported</li>
+                <li>Organization-wide inherited settings — branch settings only</li>
+              </ul>
+            </div>
+          </details>
+          </div>
+
+          <div class="church-p6-giving-settings-actions" data-testid="giving-settings-actions">
+            <a class="church-btn church-btn--outline" href="/branch/giving-settings" data-testid="giving-settings-cancel">Cancel</a>
+            <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft" data-testid="giving-settings-save-draft">Save draft</button>
+            <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish" data-testid="giving-settings-publish">Save Config</button>
+          </div>
+        </form>
+        <script>
+          (function () {
+            var form = document.querySelector('[data-unsaved-guard="1"]');
+            if (!form) return;
+            var dirty = false;
+            form.addEventListener('input', function () { dirty = true; });
+            form.addEventListener('change', function () { dirty = true; });
+            form.addEventListener('submit', function () { dirty = false; });
+            window.addEventListener('beforeunload', function (e) {
+              if (!dirty) return;
+              e.preventDefault();
+              e.returnValue = '';
+            });
+          })();
+        </script>
+        <% } else { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="giving-settings-restricted">
+          You do not have permission to edit giving settings for this branch.
+        </div>
+        <% } %>
+      </div>

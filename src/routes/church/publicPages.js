@@ -372,12 +372,18 @@ function registerPublicPagesRoutes(router) {
     try {
       const ctx = req.churchContext;
       if (ctx.kind === "vertical-apex") {
+        const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
+        const { getBuildIdentity } = require("../../platform/runtime/buildIdentity");
         return res.render(
           "church/public/platform_about",
           apexPageLocals(
             {
               pageTitle: "About BlessBoard",
               activePage: "about",
+              buildInfo: getApplicationBuildInfo({ env: process.env }),
+              buildIdentity: getBuildIdentity({ env: process.env }),
+              metaDescription:
+                "About BlessBoard — digital tools that help churches manage, connect and grow their communities.",
             },
             req
           )

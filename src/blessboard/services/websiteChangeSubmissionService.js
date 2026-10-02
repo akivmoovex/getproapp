@@ -235,7 +235,9 @@ async function loadSubmissionsList(db, opts) {
         organizationId,
         q: opts.q,
         status: statusFilter,
-        branchId,
+        // Omit branchId when unset so "All Branches" does not collapse to HQ-only
+        // (repository treats an explicit null as branch_id IS NULL).
+        ...(branchId ? { branchId } : {}),
         pageKey: opts.pageKey,
         submittedBy,
         submittedFrom,
@@ -481,7 +483,11 @@ async function approveSubmission(db, opts) {
           applyWebsiteDraftsInTransaction,
           applyProposedPhase7DraftsInTransaction,
         } = require("./websiteDraftApplyService");
-        const { publishChurchWebsite } = require("./churchWebsitePublishService");
+        const {
+          publish: publishProductWebsite,
+          PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+        } = require("../../platform/website/publicationOrchestrator");
+        const { PRODUCT } = require("../../platform/registration/constants");
 
         let churchId = updated.churchId;
         if (!churchId && updated.branchId) {
@@ -516,19 +522,23 @@ async function approveSubmission(db, opts) {
           throw err;
         }
 
-        published = await publishChurchWebsite(client, {
-          organizationId,
-          churchId,
-          branchId: updated.branchId,
-          actorUserId: reviewerUserId,
-          confirmPublish: true,
-          deferServiceTimes: true,
-          relaxPreviewRequirement: true,
-          forcePublishVersion: true,
-          sourceType: "branch_submission",
-          sourceSubmissionId: submissionId,
-          publicationNote: "Published from approved branch website draft submission",
-          env: opts.env,
+        published = await publishProductWebsite(client, {
+          productCode: PRODUCT.BLESSBOARD,
+          grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+          request: {
+            organizationId,
+            churchId,
+            branchId: updated.branchId,
+            actorUserId: reviewerUserId,
+            confirmPublish: true,
+            deferServiceTimes: true,
+            relaxPreviewRequirement: true,
+            forcePublishVersion: true,
+            sourceType: "branch_submission",
+            sourceSubmissionId: submissionId,
+            publicationNote: "Published from approved branch website draft submission",
+            env: opts.env,
+          },
         });
         if (!published || !published.ok) {
           const err = new Error("approve_publish_failed");

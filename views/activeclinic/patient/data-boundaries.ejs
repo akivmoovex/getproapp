@@ -1,0 +1,19 @@
+<section class="acp-page acp-auth-card" data-ac-page-section="patient-data-boundaries">
+  <header class="acp-auth-card__header">
+    <p class="ac-public-eyebrow">Patient portal</p>
+    <h1>Patient data boundaries</h1>
+    <p class="acp-auth-card__lede">
+      ActiveClinic keeps clinical records inside the authenticated clinic app. This portal only shows booking requests and profile details that you (or the clinic) have published for patient access.
+    </p>
+  </header>
+  <ul class="ac-patient-list">
+    <li>Portal login does not expose full medical charts, lab results, or pharmacy dispense history.</li>
+    <li>Guest booking lookup uses a secure access token scoped to one request — do not share it.</li>
+    <li>Clinic staff still confirm appointments; a patient request is not an automatic booking.</li>
+  </ul>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient">Back to dashboard</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/privacy">Clinic privacy policy</a>
+  </p>
+</section>

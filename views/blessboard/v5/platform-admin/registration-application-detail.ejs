@@ -63,7 +63,8 @@
     if (code === 'application_reopened') {
       return 'Application reopened for review. Prior rejection history and communications were preserved. No email was sent.';
     }
-    if (code === 'retry_succeeded') return 'Provisioning retry completed.';
+    if (code === 'retry_succeeded' || code === 'provision_retried') return 'Provisioning retry completed.';
+    if (code === 'already_healthy') return 'Provisioning is already complete. Healthy resources were not rebuilt.';
     if (code === 'organization_linked') return 'Application linked to the existing organization.';
     if (code === 'phone_attempt_recorded') return 'Phone verification attempt recorded.';
     if (code === 'email_verification_sent') {
@@ -120,6 +121,9 @@
     if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
     if (code === 'provision_failed') {
       return 'Provisioning failed. No organization was created.';
+    }
+    if (code === 'not_retryable') {
+      return 'Provisioning retry is not available. Healthy resources were not rebuilt.';
     }
     if (code === 'schema_mismatch') {
       return 'Registration approval is temporarily unavailable because the database schema is incomplete. BlessBoard support has been notified via server logs — try again after pending migrations are applied.';
@@ -246,6 +250,8 @@
   <% if (errorMsg) { %>
   <div class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></div>
   <% } %>
+
+  <%- include('../partials/tenant-health-summary', { tenantHealth: typeof tenantHealth !== 'undefined' ? tenantHealth : null }) %>
 
   <header class="bb-pa-page-head bb-pa-reg-hub__header" data-bb-pa-reg-section="overview" id="reg-overview">
     <div class="bb-pa-reg-hub__header-main">

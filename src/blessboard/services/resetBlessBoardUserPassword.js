@@ -13,6 +13,11 @@ const {
   resolveManageTransactionOption,
   openProvisioningSession,
 } = require("../../platform/db/provisioningTransaction");
+const {
+  validatePasswordPolicy: validateSharedPasswordPolicy,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
 
 const STATUS = Object.freeze({
   RESET: "reset",
@@ -25,19 +30,19 @@ const STATUS = Object.freeze({
   TRANSACTION_ERROR: "transaction_error",
 });
 
-/** Match createBlessBoardUser bcrypt cost. */
+/** Match shared platform password policy (bcrypt cost unchanged). */
 const BCRYPT_ROUNDS = 12;
 
 /**
- * Same length policy as createBlessBoardUser (10–200).
  * @param {unknown} password
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function validatePasswordPolicy(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
+function validatePasswordPolicy(password, env) {
+  const policy = validateSharedPasswordPolicy(password, env);
+  if (!policy.ok) {
     return { ok: false, reason: "password" };
   }
-  return { ok: true, value };
+  return { ok: true, value: policy.value };
 }
 
 /**
@@ -68,7 +73,7 @@ function validateResetInput(input) {
     passwordPolicyOk = false;
   }
 
-  const deploymentCode = String(raw.deploymentCode || "blessboard-org-v5")
+  const deploymentCode = String(raw.deploymentCode || "blessboard-org-staging")
     .trim()
     .toLowerCase();
 
@@ -182,7 +187,10 @@ async function resetBlessBoardUserPassword(db, input, options) {
 
     const passwordHash = await bcrypt.hash(req.password, BCRYPT_ROUNDS);
     await repo.updateUserPasswordHash(client, user.id, passwordHash);
-    const revokedCount = await repo.revokeAllSessionsForUser(client, user.id);
+    const revokedCount = await repo.revokeAllSessionsForUser(client, user.id, {
+      deploymentCode: req.deploymentCode,
+      allowGlobal: false,
+    });
 
     const organizationId = await repo.findAuditOrganizationIdForUser(client, user.id);
     if (organizationId) {
@@ -241,6 +249,8 @@ async function resetBlessBoardUserPassword(db, input, options) {
 module.exports = {
   STATUS,
   BCRYPT_ROUNDS,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   validatePasswordPolicy,
   validateResetInput,
   resetBlessBoardUserPassword,

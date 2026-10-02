@@ -10,7 +10,11 @@ const CATEGORY_COLS = `id, church_id, category_key, label, sort_order, status, c
 const ENTRY_COLS = `id, church_id, branch_id, category_id, giving_date, amount::text AS amount, currency,
   reference, notes, status, recorded_by_user_id, submitted_by_user_id, submitted_at,
   approved_by_user_id, approved_at, voided_by_user_id, voided_at, void_reason,
-  created_at, updated_at`;
+  rejected_by_user_id, rejected_at, rejection_reason,
+  adjusted_by_user_id, adjusted_at, adjustment_reason,
+  reversed_by_user_id, reversed_at, reversal_reason, reversal_of_entry_id,
+  last_materially_edited_by_user_id, last_materially_edited_at,
+  welfare_request_id, created_at, updated_at`;
 
 const DEFAULT_CATEGORIES = Object.freeze([
   { key: "tithes", label: "Tithes", sort: 10 },
@@ -62,6 +66,19 @@ function mapEntry(row) {
     voidedByUserId: row.voided_by_user_id || null,
     voidedAt: row.voided_at || null,
     voidReason: row.void_reason || null,
+    rejectedByUserId: row.rejected_by_user_id || null,
+    rejectedAt: row.rejected_at || null,
+    rejectionReason: row.rejection_reason || null,
+    adjustedByUserId: row.adjusted_by_user_id || null,
+    adjustedAt: row.adjusted_at || null,
+    adjustmentReason: row.adjustment_reason || null,
+    reversedByUserId: row.reversed_by_user_id || null,
+    reversedAt: row.reversed_at || null,
+    reversalReason: row.reversal_reason || null,
+    reversalOfEntryId: row.reversal_of_entry_id || null,
+    lastMateriallyEditedByUserId: row.last_materially_edited_by_user_id || null,
+    lastMateriallyEditedAt: row.last_materially_edited_at || null,
+    welfareRequestId: row.welfare_request_id || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -139,7 +156,11 @@ async function listEntries(client, opts) {
             e.amount::text AS amount, e.currency, e.reference, e.notes, e.status,
             e.recorded_by_user_id, e.submitted_by_user_id, e.submitted_at,
             e.approved_by_user_id, e.approved_at, e.voided_by_user_id, e.voided_at,
-            e.void_reason, e.created_at, e.updated_at,
+            e.void_reason, e.rejected_by_user_id, e.rejected_at, e.rejection_reason,
+            e.adjusted_by_user_id, e.adjusted_at, e.adjustment_reason,
+            e.reversed_by_user_id, e.reversed_at, e.reversal_reason, e.reversal_of_entry_id,
+            e.last_materially_edited_by_user_id, e.last_materially_edited_at,
+            e.welfare_request_id, e.created_at, e.updated_at,
             c.category_key, c.label AS category_label
        FROM blessboard.giving_entries e
        INNER JOIN blessboard.giving_categories c ON c.id = e.category_id
@@ -159,8 +180,9 @@ async function insertEntry(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO blessboard.giving_entries
        (church_id, branch_id, category_id, giving_date, amount, currency,
-        reference, notes, status, recorded_by_user_id)
-     VALUES ($1, $2, $3, $4::date, $5::numeric, $6, $7, $8, 'draft', $9)
+        reference, notes, status, recorded_by_user_id, welfare_request_id,
+        reversal_of_entry_id)
+     VALUES ($1, $2, $3, $4::date, $5::numeric, $6, $7, $8, $9, $10, $11, $12)
      RETURNING ${ENTRY_COLS}`,
     [
       fields.churchId,
@@ -171,7 +193,10 @@ async function insertEntry(client, fields) {
       fields.currency,
       fields.reference || null,
       fields.notes || null,
+      fields.status || "draft",
       fields.recordedByUserId,
+      fields.welfareRequestId || null,
+      fields.reversalOfEntryId || null,
     ]
   );
   return mapEntry(rows[0]);
@@ -208,15 +233,37 @@ async function updateEntryStatus(client, id, patch) {
   const { rows } = await client.query(
     `UPDATE blessboard.giving_entries
         SET status = $2,
-            submitted_by_user_id = COALESCE($3, submitted_by_user_id),
-            submitted_at = COALESCE($4, submitted_at),
-            approved_by_user_id = COALESCE($5, approved_by_user_id),
-            approved_at = COALESCE($6, approved_at),
+            submitted_by_user_id = CASE
+              WHEN $10::boolean THEN NULL ELSE COALESCE($3, submitted_by_user_id) END,
+            submitted_at = CASE
+              WHEN $10::boolean THEN NULL ELSE COALESCE($4, submitted_at) END,
+            approved_by_user_id = CASE
+              WHEN $11::boolean THEN NULL ELSE COALESCE($5, approved_by_user_id) END,
+            approved_at = CASE
+              WHEN $11::boolean THEN NULL ELSE COALESCE($6, approved_at) END,
             voided_by_user_id = COALESCE($7, voided_by_user_id),
             voided_at = COALESCE($8, voided_at),
             void_reason = COALESCE($9, void_reason),
+            rejected_by_user_id = CASE
+              WHEN $18::boolean THEN NULL ELSE COALESCE($12, rejected_by_user_id) END,
+            rejected_at = CASE
+              WHEN $18::boolean THEN NULL ELSE COALESCE($13, rejected_at) END,
+            rejection_reason = CASE
+              WHEN $18::boolean THEN NULL ELSE COALESCE($14, rejection_reason) END,
+            adjusted_by_user_id = COALESCE($15, adjusted_by_user_id),
+            adjusted_at = COALESCE($16, adjusted_at),
+            adjustment_reason = COALESCE($17, adjustment_reason),
+            reversed_by_user_id = COALESCE($19, reversed_by_user_id),
+            reversed_at = COALESCE($20, reversed_at),
+            reversal_reason = COALESCE($21, reversal_reason),
+            last_materially_edited_by_user_id =
+              COALESCE($22, last_materially_edited_by_user_id),
+            last_materially_edited_at = COALESCE($23, last_materially_edited_at),
+            amount = COALESCE($24::numeric, amount),
+            category_id = COALESCE($25, category_id),
             updated_at = now()
       WHERE id = $1
+        AND ($26::text IS NULL OR status = $26)
       RETURNING ${ENTRY_COLS}`,
     [
       id,
@@ -228,9 +275,69 @@ async function updateEntryStatus(client, id, patch) {
       patch.voidedByUserId || null,
       patch.voidedAt || null,
       patch.voidReason || null,
+      patch.clearSubmitted === true,
+      patch.clearApproved === true,
+      patch.rejectedByUserId || null,
+      patch.rejectedAt || null,
+      patch.rejectionReason || null,
+      patch.adjustedByUserId || null,
+      patch.adjustedAt || null,
+      patch.adjustmentReason || null,
+      patch.clearRejected === true,
+      patch.reversedByUserId || null,
+      patch.reversedAt || null,
+      patch.reversalReason || null,
+      patch.lastMateriallyEditedByUserId || null,
+      patch.lastMateriallyEditedAt || null,
+      patch.amount || null,
+      patch.categoryId || null,
+      patch.expectStatus || null,
     ]
   );
   return mapEntry(rows[0] || null);
+}
+
+async function insertEntryEvent(client, fields) {
+  const { rows } = await client.query(
+    `INSERT INTO blessboard.giving_entry_events
+       (entry_id, church_id, branch_id, actor_user_id, event_type,
+        from_status, to_status, reason, metadata_json)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9::jsonb, '{}'::jsonb))
+     RETURNING id, entry_id, event_type, from_status, to_status, reason, created_at`,
+    [
+      fields.entryId,
+      fields.churchId,
+      fields.branchId,
+      fields.actorUserId,
+      fields.eventType,
+      fields.fromStatus || null,
+      fields.toStatus || null,
+      fields.reason || null,
+      fields.metadataJson ? JSON.stringify(fields.metadataJson) : null,
+    ]
+  );
+  return rows[0] || null;
+}
+
+async function listEntryEvents(client, entryId) {
+  const { rows } = await client.query(
+    `SELECT id, entry_id, actor_user_id, event_type, from_status, to_status,
+            reason, created_at
+       FROM blessboard.giving_entry_events
+      WHERE entry_id = $1
+      ORDER BY created_at ASC`,
+    [entryId]
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    entryId: row.entry_id,
+    actorUserId: row.actor_user_id,
+    eventType: row.event_type,
+    fromStatus: row.from_status,
+    toStatus: row.to_status,
+    reason: row.reason,
+    createdAt: row.created_at,
+  }));
 }
 
 /**
@@ -330,6 +437,8 @@ module.exports = {
   insertEntry,
   updateDraftEntry,
   updateEntryStatus,
+  insertEntryEvent,
+  listEntryEvents,
   monthlySummary,
   monthlyChurchTotals,
   findBranchScope,

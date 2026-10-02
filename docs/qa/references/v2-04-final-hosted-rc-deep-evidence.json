@@ -1,0 +1,155 @@
+{
+  "sha_gate": {
+    "HUB": {
+      "gitSha": "2a2498f63067",
+      "branch": "V4",
+      "full_match": true
+    },
+    "AC": {
+      "gitSha": "2a2498f63067",
+      "branch": "V4",
+      "full_match": true
+    },
+    "BB": {
+      "gitSha": "2a2498f63067",
+      "branch": "V4",
+      "full_match": true
+    }
+  },
+  "members_deep": {
+    "branch_login": {
+      "status": 200,
+      "url": "https://blessboard.neuniversity.org/branch-admin"
+    },
+    "branch_members": {
+      "status": 200,
+      "title": "Members \u00b7 V8 QA Church muq9wn7a9a3d",
+      "addHref": true,
+      "count": null,
+      "unavailable": false
+    },
+    "add_form": {
+      "status": 200,
+      "title": "Register New Member \u00b7 V8 QA Church muq9wn7a9a3d",
+      "fields": [
+        "_csrf",
+        "address_line_1",
+        "baptism_spirit",
+        "baptism_water",
+        "branch_id",
+        "date_of_birth",
+        "email",
+        "full_name",
+        "gender",
+        "marital_status",
+        "membership_status",
+        "next_of_kin_name",
+        "next_of_kin_phone",
+        "next_of_kin_relationship",
+        "number_of_children",
+        "occupation",
+        "phone_country",
+        "phone_national",
+        "preferred_name",
+        "robots",
+        "viewport"
+      ]
+    },
+    "create_post": {
+      "status": 400,
+      "url": "https://blessboard.neuniversity.org/branch-admin/members/new",
+      "title": "Register New Member \u00b7 V8 QA Church muq9wn7a9a3d",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Register New Member \u00b7 V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" c",
+      "step": "other"
+    },
+    "hq_after_create": {
+      "status": 200,
+      "total": "0",
+      "hasChurchIdLabel": false,
+      "hasPortal": false,
+      "snip": "Members \u00b7 V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V8 QA Church muq9wn7a9a3d V8 QA Church muq9wn7a9a3d domain organisation administrator dashboard Dashboard apartment Branches how_to_reg Registrations badge M"
+    },
+    "staff": {
+      "status": 200,
+      "title": "Users \u00b7 V8 QA Church muq9wn7a9a3d"
+    },
+    "roles": {
+      "status": 200,
+      "title": "Staff permissions \u00b7 V8 QA Church muq9wn7a9a3d"
+    },
+    "audit": {
+      "status": 200,
+      "title": "Audit trail \u00b7 V8 QA Church muq9wn7a9a3d"
+    },
+    "journey": {
+      "status": 200,
+      "title": "Member journey \u00b7 V8 QA Church muq9wn7a9a3d"
+    },
+    "activate_page": {
+      "status": 404,
+      "title": "",
+      "fields": []
+    },
+    "member_login_page": {
+      "status": 404,
+      "title": "",
+      "fields": [],
+      "snip": "Not found."
+    },
+    "hq_to_member": {
+      "status": 503,
+      "title": "Unavailable",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"utf-8\"/><title>Unavailable</title></head> <body><p>This page is not yet available in BlessBoard V5.</p></body></html>"
+    }
+  },
+  "lifecycle_deep": {
+    "ac_get_/clinics/ac-hqa-v8-muq9wn7a9a3d/website/drafts": {
+      "status": 404,
+      "snip": "{\"ok\":false,\"reason\":\"server_error\",\"code\":\"server_error\",\"requestId\":\"e314987afd7d146107ed1362\",\"correlationId\":\"e314987afd7d146107ed1362\"}"
+    },
+    "ac_get_/clinics/ac-hqa-v8-muq9wn7a9a3d/website/content": {
+      "status": 404,
+      "snip": "{\"ok\":false,\"reason\":\"server_error\",\"code\":\"server_error\",\"requestId\":\"7527721cbbb1b3d6d4c398c0\",\"correlationId\":\"7527721cbbb1b3d6d4c398c0\"}"
+    },
+    "ac_save1": {
+      "status": 200,
+      "snip": "{\"ok\":true,\"published\":false,\"code\":\"saved_to_draft\",\"content\":{\"id\":\"d553b195-c9d1-4b44-8d77-e02a6784b32e\",\"organizationId\":\"67ed20cf-7e01-4885-a742-9349467bd4a0\",\"instanceId\":\"d563bad2-d6ce-4971-afc9-cbbdc31fdc7c\",\"con"
+    },
+    "ac_save2": {
+      "status": 200,
+      "snip": "{\"ok\":true,\"published\":false,\"code\":\"saved_to_draft\",\"content\":{\"id\":\"d553b195-c9d1-4b44-8d77-e02a6784b32e\",\"organizationId\":\"67ed20cf-7e01-4885-a742-9349467bd4a0\",\"instanceId\":\"d563bad2-d6ce-4971-afc9-cbbdc31fdc7c\",\"con"
+    },
+    "ac_save3": {
+      "status": 403,
+      "snip": "{\"ok\":false,\"code\":\"csrf\",\"requestId\":\"ab5d54d8c4587527f709a3d6\",\"correlationId\":\"ab5d54d8c4587527f709a3d6\"}"
+    },
+    "ac_restore_/clinics/ac-hqa-v8-muq9wn7a9a3d/website/versions/805c16b8-cfda-4ff9-8deb-dc118ae6ced2/restore": {
+      "status": 200,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-hqa-v8-muq9wn7a9a3d/website/versions/805c16b8-cfda-4ff9-8deb-dc118ae6ced2/restore",
+      "snip": "{\"ok\":true,\"code\":\"restored_draft\",\"publishedUnchanged\":true,\"version\":{\"id\":\"805c16b8-cfda-4ff9-8deb-dc118ae6ced2\",\"organizationId\":\"67ed20cf-7e01-4885-a742-9349467bd4a0\",\"instanceId\":\"d563bad2-d6ce-4971-afc9-cbbdc31fdc",
+      "loc": null
+    },
+    "ac_restore_/clinics/ac-hqa-v8-muq9wn7a9a3d/website/history/restore": {
+      "status": 404,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-hqa-v8-muq9wn7a9a3d/website/history/restore",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\"/> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/> <title>Not found \u00b7 ActiveClinic</title> <meta name=\"robots\" conten",
+      "loc": null
+    },
+    "bb_review_ready": {
+      "not_ready": false,
+      "ready": true,
+      "snip": "Publish Website Changes \u00b7 V8 QA Church muq9wn7a9a3d Skip to content BlessBoard V4 testing V8 QA Church muq9wn7a9a3d V8 QA Church muq9wn7a9a3d domain organisation administrator dashboard Dashboard apartment Branches how_t"
+    },
+    "public_now": {
+      "ac": {
+        "status": 200,
+        "title": "Ac Hqa V8 muq9wn7a9a3d \u00b7 ActiveClinic"
+      },
+      "bb": {
+        "status": 200,
+        "title": "V8 QA Church 1790904934231",
+        "comingSoon": false
+      }
+    }
+  }
+}

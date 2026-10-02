@@ -1,0 +1,1025 @@
+{
+  "projectId": "17813606734422395399",
+  "projectTitle": "ActiveClinic Public Ecosystem & Booking Flow",
+  "screens": [
+    {
+      "id": "2a7f744da5a44fc68c1f1bfeafba67ff",
+      "name": "projects/17813606734422395399/screens/2a7f744da5a44fc68c1f1bfeafba67ff",
+      "title": "P22 - Juflona Public - Terms - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "4266"
+    },
+    {
+      "id": "82a454047e064592b763896f815aa721",
+      "name": "projects/17813606734422395399/screens/82a454047e064592b763896f815aa721",
+      "title": "P25 - Juflona Booking - Procedure Progress Patterns - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "85d2b873d38f4196a9b17eb35e2bc4da",
+      "name": "projects/17813606734422395399/screens/85d2b873d38f4196a9b17eb35e2bc4da",
+      "title": "P22 - Juflona Public - Home - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "4e84a1501ffa454b91221a4f32cfaabb",
+      "name": "projects/17813606734422395399/screens/4e84a1501ffa454b91221a4f32cfaabb",
+      "title": "P26 - Juflona Booking - Pending Preference Change - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1868"
+    },
+    {
+      "id": "5263923b759a4bc288c23c8ffe5c85b0",
+      "name": "projects/17813606734422395399/screens/5263923b759a4bc288c23c8ffe5c85b0",
+      "title": "P24 - Juflona Booking - Review - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2050"
+    },
+    {
+      "id": "a4096a26352040fd9d56be53a393fe4b",
+      "name": "projects/17813606734422395399/screens/a4096a26352040fd9d56be53a393fe4b",
+      "title": "P24 - Juflona Booking - Consultation Type - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "4685ca7800dd477faa561270dfe01cba",
+      "name": "projects/17813606734422395399/screens/4685ca7800dd477faa561270dfe01cba",
+      "title": "P26 - Juflona Booking - Cancellation Review - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "32812bec1d384d2ab5c9821f6865e85a",
+      "name": "projects/17813606734422395399/screens/32812bec1d384d2ab5c9821f6865e85a",
+      "title": "P24 - Juflona Booking - Choose Slot - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2476"
+    },
+    {
+      "id": "7f422dccacea4a5c93932db627522000",
+      "name": "projects/17813606734422395399/screens/7f422dccacea4a5c93932db627522000",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Success - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "dae36b9307f149d9ad4989a16eec975d",
+      "name": "projects/17813606734422395399/screens/dae36b9307f149d9ad4989a16eec975d",
+      "title": "P23 - Juflona Public - Doctors - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2406"
+    },
+    {
+      "id": "8e3e9337e8404c38b4f3e1dacdc7ba9c",
+      "name": "projects/17813606734422395399/screens/8e3e9337e8404c38b4f3e1dacdc7ba9c",
+      "title": "P26 - Juflona Booking - Booking Detail Rescheduled - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2156"
+    },
+    {
+      "id": "a59b166b17ff4c1b8514102aedaeef57",
+      "name": "projects/17813606734422395399/screens/a59b166b17ff4c1b8514102aedaeef57",
+      "title": "P23 - Juflona Public - Public Price Patterns - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "e50e9dfeaf1a405bbf3f3c334ebbe039",
+      "name": "projects/17813606734422395399/screens/e50e9dfeaf1a405bbf3f3c334ebbe039",
+      "title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2178"
+    },
+    {
+      "id": "a45f68ec92f8495d8f5cd1aa42831e88",
+      "name": "projects/17813606734422395399/screens/a45f68ec92f8495d8f5cd1aa42831e88",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2372"
+    },
+    {
+      "id": "3b7d3c9f3808441a8965c43b86c4ba44",
+      "name": "projects/17813606734422395399/screens/3b7d3c9f3808441a8965c43b86c4ba44",
+      "title": "P23 - Juflona Public - Services - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2088"
+    },
+    {
+      "id": "4443fa4c1eea429fb6ee67a97efb8f92",
+      "name": "projects/17813606734422395399/screens/4443fa4c1eea429fb6ee67a97efb8f92",
+      "title": "P21 - ActiveClinic Public - About - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "3036"
+    },
+    {
+      "id": "3be2c468e5e24ae592feb7c8b264b098",
+      "name": "projects/17813606734422395399/screens/3be2c468e5e24ae592feb7c8b264b098",
+      "title": "P26 - Juflona Booking - Cancellation Review - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "a789772602dc4e2bac342970ca833751",
+      "name": "projects/17813606734422395399/screens/a789772602dc4e2bac342970ca833751",
+      "title": "P22 - Juflona Public - Terms - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "b1e95d2173934e969b8d2b85346b82bd",
+      "name": "projects/17813606734422395399/screens/b1e95d2173934e969b8d2b85346b82bd",
+      "title": "P24 - Juflona Booking - Patient Details - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "df011954ab5248cfb5126f49d6187258",
+      "name": "projects/17813606734422395399/screens/df011954ab5248cfb5126f49d6187258",
+      "title": "P26 - Juflona Booking - Booking Detail Cancelled - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "38abfa8767f4492ca11895b4f360effe",
+      "name": "projects/17813606734422395399/screens/38abfa8767f4492ca11895b4f360effe",
+      "title": "P22 - Juflona Public - About - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "3888"
+    },
+    {
+      "id": "bb4906f130374a72a21596d427c2af9d",
+      "name": "projects/17813606734422395399/screens/bb4906f130374a72a21596d427c2af9d",
+      "title": "P25 - Juflona Booking - Preparation States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2096"
+    },
+    {
+      "id": "ac6b69a1ef614134af6d674c62891632",
+      "name": "projects/17813606734422395399/screens/ac6b69a1ef614134af6d674c62891632",
+      "title": "P21 - ActiveClinic Public - Solutions - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "3024"
+    },
+    {
+      "id": "a8ad8c9b489149d592cd9ca53a525e14",
+      "name": "projects/17813606734422395399/screens/a8ad8c9b489149d592cd9ca53a525e14",
+      "title": "P26 - Juflona Booking - My Booking - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "b887c39d2de947fda062d568b641f229",
+      "name": "projects/17813606734422395399/screens/b887c39d2de947fda062d568b641f229",
+      "title": "P23 - Juflona Public - Procedure Service Detail - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "e1a9a3b347b74171848d5639eaf48694",
+      "name": "projects/17813606734422395399/screens/e1a9a3b347b74171848d5639eaf48694",
+      "title": "P26 - Juflona Booking - Booking Activity Pattern - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "5adb49b9a1a940a581eeaca83524c7f1",
+      "name": "projects/17813606734422395399/screens/5adb49b9a1a940a581eeaca83524c7f1",
+      "title": "P22 - Juflona Public - Patient Information - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2716"
+    },
+    {
+      "id": "2d5d9db651e046eabb65fdbc89b676e2",
+      "name": "projects/17813606734422395399/screens/2d5d9db651e046eabb65fdbc89b676e2",
+      "title": "P25 - Juflona Booking - Procedure Form States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2218"
+    },
+    {
+      "id": "15321bc4c76f4c08b61e59972aa7d44f",
+      "name": "projects/17813606734422395399/screens/15321bc4c76f4c08b61e59972aa7d44f",
+      "title": "P26 - Juflona Booking - Reschedule Review - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "e4e98986370640f2864a9aa2279ad878",
+      "name": "projects/17813606734422395399/screens/e4e98986370640f2864a9aa2279ad878",
+      "title": "P24 - Juflona Booking - Appointment Entry - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2116"
+    },
+    {
+      "id": "a1a662f6a5c342df8783414bff11a866",
+      "name": "projects/17813606734422395399/screens/a1a662f6a5c342df8783414bff11a866",
+      "title": "P22 - Juflona Public - Contact - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2510"
+    },
+    {
+      "id": "5511e7ced0094007b300f58665fc9ccd",
+      "name": "projects/17813606734422395399/screens/5511e7ced0094007b300f58665fc9ccd",
+      "title": "P26 - Juflona Booking - Booking Detail Confirmed - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "d2c8f78719484d7ca4d443f844f83929",
+      "name": "projects/17813606734422395399/screens/d2c8f78719484d7ca4d443f844f83929",
+      "title": "P25 - Juflona Booking - Procedure Patient Details - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2058"
+    },
+    {
+      "id": "a0d78f650671453594236ad0ad1f727f",
+      "name": "projects/17813606734422395399/screens/a0d78f650671453594236ad0ad1f727f",
+      "title": "P26 - Juflona Booking - Booking Detail Completed - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "d033da337b5740f29b4681042ab4a99c",
+      "name": "projects/17813606734422395399/screens/d033da337b5740f29b4681042ab4a99c",
+      "title": "P25 - Juflona Booking - Procedure Information - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2056"
+    },
+    {
+      "id": "81d1f26454324356b25cfec1db745491",
+      "name": "projects/17813606734422395399/screens/81d1f26454324356b25cfec1db745491",
+      "title": "P26 - Juflona Booking - Cancellation Request - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1838"
+    },
+    {
+      "id": "ba51a076b8ed49e0b4761f3068b56e41",
+      "name": "projects/17813606734422395399/screens/ba51a076b8ed49e0b4761f3068b56e41",
+      "title": "P26 - Juflona Booking - Reschedule Submitted - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "e0ebb2af00e944e0b90a6400ea6093ba",
+      "name": "projects/17813606734422395399/screens/e0ebb2af00e944e0b90a6400ea6093ba",
+      "title": "ActiveClinic Public - Mobile Navigation",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "dba48eeff55343cc95f1876c76388ce6",
+      "name": "projects/17813606734422395399/screens/dba48eeff55343cc95f1876c76388ce6",
+      "title": "P23 - Juflona Public - Doctors - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "3292"
+    },
+    {
+      "id": "990884d1aa844bb2a789f41b23b7704e",
+      "name": "projects/17813606734422395399/screens/990884d1aa844bb2a789f41b23b7704e",
+      "title": "P21 - ActiveClinic Public - Solutions - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3694"
+    },
+    {
+      "id": "f9d67dd3a8c2457884c7e32bcbbf47e5",
+      "name": "projects/17813606734422395399/screens/f9d67dd3a8c2457884c7e32bcbbf47e5",
+      "title": "P24 - Juflona Booking - Choose Doctor - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "ffc4c24bcadd4b919bdb573d7d06681c",
+      "name": "projects/17813606734422395399/screens/ffc4c24bcadd4b919bdb573d7d06681c",
+      "title": "P25 - Juflona Booking - Procedure Mobile Summary Pattern - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2218"
+    },
+    {
+      "id": "6dadae69ad0d4e4e9441e1a68b3f6282",
+      "name": "projects/17813606734422395399/screens/6dadae69ad0d4e4e9441e1a68b3f6282",
+      "title": "P21 - ActiveClinic Public - Home - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2604"
+    },
+    {
+      "id": "72428671e0fa4317bad44d3ccf367ea8",
+      "name": "projects/17813606734422395399/screens/72428671e0fa4317bad44d3ccf367ea8",
+      "title": "P25 - Juflona Booking - Referral Clarification - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "2447429876f24ac287f903795c4d4d04",
+      "name": "projects/17813606734422395399/screens/2447429876f24ac287f903795c4d4d04",
+      "title": "P21 - ActiveClinic Public - About - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "4854"
+    },
+    {
+      "id": "e6205fec780046f5bb006c669276a5c5",
+      "name": "projects/17813606734422395399/screens/e6205fec780046f5bb006c669276a5c5",
+      "title": "P23 - Juflona Public - Consultation Service Detail - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1844"
+    },
+    {
+      "id": "c016257b490d42ccb49bdb01e4228c2f",
+      "name": "projects/17813606734422395399/screens/c016257b490d42ccb49bdb01e4228c2f",
+      "title": "P26 - Juflona Booking - Reschedule Request - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1868"
+    },
+    {
+      "id": "ca7cdd02f84f4a13abb5b324f3fb453f",
+      "name": "projects/17813606734422395399/screens/ca7cdd02f84f4a13abb5b324f3fb453f",
+      "title": "P26 - Juflona Booking - Booking Changed During Request - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "97540ef2e0244f97a2974c50835276c3",
+      "name": "projects/17813606734422395399/screens/97540ef2e0244f97a2974c50835276c3",
+      "title": "P26 - Juflona Booking - Reschedule Request - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2872"
+    },
+    {
+      "id": "62f5da19ec9047898ba0957faf21b408",
+      "name": "projects/17813606734422395399/screens/62f5da19ec9047898ba0957faf21b408",
+      "title": "P22 - Juflona Public - Patient Information - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2490"
+    },
+    {
+      "id": "cf33b64cfa39421893a4413422a4e13a",
+      "name": "projects/17813606734422395399/screens/cf33b64cfa39421893a4413422a4e13a",
+      "title": "P23 - Juflona Public - Informational Service Detail - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2282"
+    },
+    {
+      "id": "82cc9c49d881406592c6d877240731fd",
+      "name": "projects/17813606734422395399/screens/82cc9c49d881406592c6d877240731fd",
+      "title": "P24 - Juflona Booking - Consultation Type - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1848"
+    },
+    {
+      "id": "8f9a5650ff3d4f7482de4f82bcee597b",
+      "name": "projects/17813606734422395399/screens/8f9a5650ff3d4f7482de4f82bcee597b",
+      "title": "P26 - Juflona Booking - Mobile Booking Summary Pattern - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "688a0eee8f014c7a8c999762b22be06d",
+      "name": "projects/17813606734422395399/screens/688a0eee8f014c7a8c999762b22be06d",
+      "title": "P24 - Juflona Booking - Choose Doctor - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "8f72ff10f79d421fade5a7ac6e6d875f",
+      "name": "projects/17813606734422395399/screens/8f72ff10f79d421fade5a7ac6e6d875f",
+      "title": "P24 - Juflona Booking - Request Submitted - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1926"
+    },
+    {
+      "id": "a1ceb17fd59a429a980d0b20ea42e83b",
+      "name": "projects/17813606734422395399/screens/a1ceb17fd59a429a980d0b20ea42e83b",
+      "title": "P22 - Juflona Public - Contact - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3304"
+    },
+    {
+      "id": "64cf5e42e55c4f9fbcebaf59a6940f5b",
+      "name": "projects/17813606734422395399/screens/64cf5e42e55c4f9fbcebaf59a6940f5b",
+      "title": "P23 - Juflona Public - Doctor Profile - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2774"
+    },
+    {
+      "id": "684f5190840549698bd9237caedeccb3",
+      "name": "projects/17813606734422395399/screens/684f5190840549698bd9237caedeccb3",
+      "title": "P26 - Juflona Booking - Reschedule Submitted - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2098"
+    },
+    {
+      "id": "c3586685e9f342f681f177d1036c18fc",
+      "name": "projects/17813606734422395399/screens/c3586685e9f342f681f177d1036c18fc",
+      "title": "P22 - Juflona Public - Contact Success - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "ab96f1f72f444e9e943a1e6b2d539b46",
+      "name": "projects/17813606734422395399/screens/ab96f1f72f444e9e943a1e6b2d539b46",
+      "title": "P26 - Juflona Booking - Lookup Progress - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "042c455322b94242b289e4c5cee37fe8",
+      "name": "projects/17813606734422395399/screens/042c455322b94242b289e4c5cee37fe8",
+      "title": "P25 - Juflona Booking - Procedure Unavailable - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "766528bda7e548ac93d381129023802f",
+      "name": "projects/17813606734422395399/screens/766528bda7e548ac93d381129023802f",
+      "title": "P26 - Juflona Booking - Cancellation Request - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2142"
+    },
+    {
+      "id": "e49351b2224449d2b86756b198e5ffb6",
+      "name": "projects/17813606734422395399/screens/e49351b2224449d2b86756b198e5ffb6",
+      "title": "P24 - Juflona Booking - Patient Details - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "e0b4b500de47418cb4df06df8a65428b",
+      "name": "projects/17813606734422395399/screens/e0b4b500de47418cb4df06df8a65428b",
+      "title": "P23 - Juflona Public - Services - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2214"
+    },
+    {
+      "id": "95f3a0fc88f7490fbd7d46e649e6b61e",
+      "name": "projects/17813606734422395399/screens/95f3a0fc88f7490fbd7d46e649e6b61e",
+      "title": "P25 - Juflona Booking - Resource Availability States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3324"
+    },
+    {
+      "id": "4aa46e7ddb424bc690e16a246de28c6b",
+      "name": "projects/17813606734422395399/screens/4aa46e7ddb424bc690e16a246de28c6b",
+      "title": "P22 - Juflona Public - About - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3606"
+    },
+    {
+      "id": "2f99501abec942138637abb0934ed767",
+      "name": "projects/17813606734422395399/screens/2f99501abec942138637abb0934ed767",
+      "title": "P25 - Juflona Booking - Procedure Confirmation Rules - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2250"
+    },
+    {
+      "id": "9526a27d8e5a4c8eb5a9bee842bee41b",
+      "name": "projects/17813606734422395399/screens/9526a27d8e5a4c8eb5a9bee842bee41b",
+      "title": "P25 - Juflona Booking - Choose Procedure - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2012"
+    },
+    {
+      "id": "f30239e9267242c0af4dfbaf44bb2d20",
+      "name": "projects/17813606734422395399/screens/f30239e9267242c0af4dfbaf44bb2d20",
+      "title": "P26 - Juflona Booking - Cancellation Submitted - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2218"
+    },
+    {
+      "id": "7377b7ca51e049048c10e34af2950bac",
+      "name": "projects/17813606734422395399/screens/7377b7ca51e049048c10e34af2950bac",
+      "title": "P25 - Juflona Booking - Referral Requirements - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "9a4b08f02d2b4cc990eab7b16b4202aa",
+      "name": "projects/17813606734422395399/screens/9a4b08f02d2b4cc990eab7b16b4202aa",
+      "title": "P25 - Juflona Booking - Procedure SMS States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1804"
+    },
+    {
+      "id": "f8ab02fa6a8143debebc923644f62961",
+      "name": "projects/17813606734422395399/screens/f8ab02fa6a8143debebc923644f62961",
+      "title": "ActiveClinic Tenant Template - Footer",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2828"
+    },
+    {
+      "id": "bb250d93ee27449793869522211fb17c",
+      "name": "projects/17813606734422395399/screens/bb250d93ee27449793869522211fb17c",
+      "title": "P24 - Juflona Booking - SMS Notification States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2172"
+    },
+    {
+      "id": "48a852ead3284e44b9700df8a8875167",
+      "name": "projects/17813606734422395399/screens/48a852ead3284e44b9700df8a8875167",
+      "title": "P26 - Juflona Booking - Booking Detail Cancelled - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1774"
+    },
+    {
+      "id": "2c612094416e468ea4063dc162667609",
+      "name": "projects/17813606734422395399/screens/2c612094416e468ea4063dc162667609",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2292"
+    },
+    {
+      "id": "e04f78111c6a43eb851a0db24cc2f001",
+      "name": "projects/17813606734422395399/screens/e04f78111c6a43eb851a0db24cc2f001",
+      "title": "P25 - Juflona Booking - Procedure Review - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "e712f1d474024445899b4014f1d5c977",
+      "name": "projects/17813606734422395399/screens/e712f1d474024445899b4014f1d5c977",
+      "title": "P26 - Juflona Booking - Booking Detail No-show - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "1e23d5e9dfa649aab7746c966b255a5f",
+      "name": "projects/17813606734422395399/screens/1e23d5e9dfa649aab7746c966b255a5f",
+      "title": "P25 - Juflona Booking - Procedure Submitted - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "ece91cba8cff4381a9ef2e8ac97cb988",
+      "name": "projects/17813606734422395399/screens/ece91cba8cff4381a9ef2e8ac97cb988",
+      "title": "P24 - Juflona Booking - Choose Slot - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "e879dd50e2d64f6b93aa807efbdd1775",
+      "name": "projects/17813606734422395399/screens/e879dd50e2d64f6b93aa807efbdd1775",
+      "title": "P24 - Juflona Booking - Appointment Entry - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "2a64a22146ed4b2ca704d01d9cb18383",
+      "name": "projects/17813606734422395399/screens/2a64a22146ed4b2ca704d01d9cb18383",
+      "title": "P25 - Juflona Booking - Procedure Patient Details - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2662"
+    },
+    {
+      "id": "6eb5bda4ca694e54b34693e3f86e986b",
+      "name": "projects/17813606734422395399/screens/6eb5bda4ca694e54b34693e3f86e986b",
+      "title": "P22 - Juflona Public - Home - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3034"
+    },
+    {
+      "id": "dbe4c18b488e4d12ba3ce57af8e49d9f",
+      "name": "projects/17813606734422395399/screens/dbe4c18b488e4d12ba3ce57af8e49d9f",
+      "title": "ActiveClinic Public - Design System",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2702"
+    },
+    {
+      "id": "8a5894d5bc294a90ae7c8a83ec159230",
+      "name": "projects/17813606734422395399/screens/8a5894d5bc294a90ae7c8a83ec159230",
+      "title": "P23 - Juflona Public - Doctors States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3762"
+    },
+    {
+      "id": "e54a6661157f441d93c94efad91a8858",
+      "name": "projects/17813606734422395399/screens/e54a6661157f441d93c94efad91a8858",
+      "title": "P23 - Juflona Public - Procedure Service Detail - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "3126"
+    },
+    {
+      "id": "0a244c1b24f140368509e4f6f014a9fe",
+      "name": "projects/17813606734422395399/screens/0a244c1b24f140368509e4f6f014a9fe",
+      "title": "P26 - Juflona Booking - Booking Detail No-show - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "6da5390fcac44722a37ae34f2ae82a11",
+      "name": "projects/17813606734422395399/screens/6da5390fcac44722a37ae34f2ae82a11",
+      "title": "P25 - Juflona Booking - Procedure Review - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2276"
+    },
+    {
+      "id": "7b7546940db743839e4c4b11ae366dda",
+      "name": "projects/17813606734422395399/screens/7b7546940db743839e4c4b11ae366dda",
+      "title": "P26 - Juflona Booking - Change Request States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2548"
+    },
+    {
+      "id": "ab5711022ce84342b2e9ecfae818d78e",
+      "name": "projects/17813606734422395399/screens/ab5711022ce84342b2e9ecfae818d78e",
+      "title": "P22 - Juflona Public - Privacy - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2720"
+    },
+    {
+      "id": "c158c997d0db4d6bb2b228164441ab37",
+      "name": "projects/17813606734422395399/screens/c158c997d0db4d6bb2b228164441ab37",
+      "title": "P23 - Juflona Public - Service States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2692"
+    },
+    {
+      "id": "22391e15f8c34fc5b23927b4e7644120",
+      "name": "projects/17813606734422395399/screens/22391e15f8c34fc5b23927b4e7644120",
+      "title": "P21 - ActiveClinic Public - Home - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2844"
+    },
+    {
+      "id": "e4fa5d144ebb46cea06c4ef3a3af3e7b",
+      "name": "projects/17813606734422395399/screens/e4fa5d144ebb46cea06c4ef3a3af3e7b",
+      "title": "P26 - Juflona Booking - Lookup Error States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "4492"
+    },
+    {
+      "id": "1167937cacc4424f852368d5179a7e7c",
+      "name": "projects/17813606734422395399/screens/1167937cacc4424f852368d5179a7e7c",
+      "title": "P24 - Juflona Booking - Review - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2120"
+    },
+    {
+      "id": "14b98caed9cc4b4889d77763373a0e28",
+      "name": "projects/17813606734422395399/screens/14b98caed9cc4b4889d77763373a0e28",
+      "title": "P24 - Juflona Booking - Progress Patterns - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "ea6f77fad9444fa3b3f04cf5178f9c72",
+      "name": "projects/17813606734422395399/screens/ea6f77fad9444fa3b3f04cf5178f9c72",
+      "title": "P25 - Juflona Booking - Procedure Information - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "45a9c24fcbfe4bbdb739452308397b95",
+      "name": "projects/17813606734422395399/screens/45a9c24fcbfe4bbdb739452308397b95",
+      "title": "P22 - Juflona Public - Privacy - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "8c52142a20484c39928c8f3355174384",
+      "name": "projects/17813606734422395399/screens/8c52142a20484c39928c8f3355174384",
+      "title": "P25 - Juflona Booking - Procedure Slot - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "189043d6d06d4819b06ea42e22e10035",
+      "name": "projects/17813606734422395399/screens/189043d6d06d4819b06ea42e22e10035",
+      "title": "P26 - Juflona Booking - Booking Detail Rescheduled - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "12e5d96e8ac647f49d0cf66457da4b17",
+      "name": "projects/17813606734422395399/screens/12e5d96e8ac647f49d0cf66457da4b17",
+      "title": "P24 - Juflona Booking - Request Submitted - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "3b311f353e1745c0b020b400af92b0f5",
+      "name": "projects/17813606734422395399/screens/3b311f353e1745c0b020b400af92b0f5",
+      "title": "P26 - Juflona Booking - Booking Detail Pending - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "5265ab7118c74f8b885de211483ef48c",
+      "name": "projects/17813606734422395399/screens/5265ab7118c74f8b885de211483ef48c",
+      "title": "ActiveClinic Public - Header",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "28dd3dae170e43f88902aa3a1f26cdfe",
+      "name": "projects/17813606734422395399/screens/28dd3dae170e43f88902aa3a1f26cdfe",
+      "title": "P25 - Juflona Booking - Referral Requirements - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2024"
+    },
+    {
+      "id": "d968e9e9008d4987a5c4cdba86ab9a95",
+      "name": "projects/17813606734422395399/screens/d968e9e9008d4987a5c4cdba86ab9a95",
+      "title": "P26 - Juflona Booking - Reschedule Review - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "3f05000a252b4732952b7dcbd70a9c06",
+      "name": "projects/17813606734422395399/screens/3f05000a252b4732952b7dcbd70a9c06",
+      "title": "P25 - Juflona Booking - Procedure Slot - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2100"
+    },
+    {
+      "id": "b18ffbdac9a644f8bea30734fc9368df",
+      "name": "projects/17813606734422395399/screens/b18ffbdac9a644f8bea30734fc9368df",
+      "title": "P26 - Juflona Booking - Booking Status Patterns - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2132"
+    },
+    {
+      "id": "4dc9024e5d6f4267bf6b5a8c6c80aa08",
+      "name": "projects/17813606734422395399/screens/4dc9024e5d6f4267bf6b5a8c6c80aa08",
+      "title": "P24 - Juflona Booking - Form States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2932"
+    },
+    {
+      "id": "d548137f807b40daaaaeff7fe2bcd0fa",
+      "name": "projects/17813606734422395399/screens/d548137f807b40daaaaeff7fe2bcd0fa",
+      "title": "P24 - Juflona Booking - Availability States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "4424"
+    },
+    {
+      "id": "df69f70fb79c467b9aa9a7750520a241",
+      "name": "projects/17813606734422395399/screens/df69f70fb79c467b9aa9a7750520a241",
+      "title": "P25 - Juflona Booking - Procedure Submitted - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1988"
+    },
+    {
+      "id": "ef1d0961e88e43549af5361a5fb9320c",
+      "name": "projects/17813606734422395399/screens/ef1d0961e88e43549af5361a5fb9320c",
+      "title": "P25 - Juflona Booking - Referral and Upload States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2292"
+    },
+    {
+      "id": "85f99ea3326f46a2bd0415ba1cf2d8d2",
+      "name": "projects/17813606734422395399/screens/85f99ea3326f46a2bd0415ba1cf2d8d2",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2710"
+    },
+    {
+      "id": "a2b5c7ddfddc4c80a1ddb035748da72f",
+      "name": "projects/17813606734422395399/screens/a2b5c7ddfddc4c80a1ddb035748da72f",
+      "title": "P26 - Juflona Booking - My Booking - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2050"
+    },
+    {
+      "id": "df7614f5b31347d4b3dff81928e5eadc",
+      "name": "projects/17813606734422395399/screens/df7614f5b31347d4b3dff81928e5eadc",
+      "title": "P26 - Juflona Booking - Booking Detail Pending - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2460"
+    },
+    {
+      "id": "f510ec7d017e426e86e801932011d346",
+      "name": "projects/17813606734422395399/screens/f510ec7d017e426e86e801932011d346",
+      "title": "P26 - Juflona Booking - Cancellation Submitted - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2196"
+    },
+    {
+      "id": "47005f4888bc4e099a990fd65a6b8962",
+      "name": "projects/17813606734422395399/screens/47005f4888bc4e099a990fd65a6b8962",
+      "title": "P23 - Juflona Public - Consultation Service Detail - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2048"
+    },
+    {
+      "id": "9f712f5799384727bb06b415618dd186",
+      "name": "projects/17813606734422395399/screens/9f712f5799384727bb06b415618dd186",
+      "title": "P23 - Juflona Public - Informational Service Detail - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2314"
+    },
+    {
+      "id": "83fe90078bb349efad00ea1138d795d2",
+      "name": "projects/17813606734422395399/screens/83fe90078bb349efad00ea1138d795d2",
+      "title": "ActiveClinic Tenant Template - Configuration Reference",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "5104"
+    },
+    {
+      "id": "6b916729502c43f08ef4ed61bf959159",
+      "name": "projects/17813606734422395399/screens/6b916729502c43f08ef4ed61bf959159",
+      "title": "P25 - Juflona Booking - Choose Procedure - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2198"
+    },
+    {
+      "id": "50d278a0dc7c4618b20e70e4fdfd6076",
+      "name": "projects/17813606734422395399/screens/50d278a0dc7c4618b20e70e4fdfd6076",
+      "title": "P21 - ActiveClinic Public - Clinic Search States - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "2684"
+    },
+    {
+      "id": "75e6b6a7fbba46018ee8aab976f72d23",
+      "name": "projects/17813606734422395399/screens/75e6b6a7fbba46018ee8aab976f72d23",
+      "title": "P23 - Juflona Public - Doctor Profile - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2358"
+    },
+    {
+      "id": "c8dc05d3e0744fcf9f0030ccbe63a172",
+      "name": "projects/17813606734422395399/screens/c8dc05d3e0744fcf9f0030ccbe63a172",
+      "title": "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1768"
+    },
+    {
+      "id": "bbe2c7c3fdf442b397ee457e287b1674",
+      "name": "projects/17813606734422395399/screens/bbe2c7c3fdf442b397ee457e287b1674",
+      "title": "P26 - Juflona Booking - Booking Detail Completed - Mobile",
+      "deviceType": "MOBILE",
+      "width": "780",
+      "height": "1814"
+    },
+    {
+      "id": "36db01f8f7d741a8ad3b91536834ab10",
+      "name": "projects/17813606734422395399/screens/36db01f8f7d741a8ad3b91536834ab10",
+      "title": "P26 - Juflona Booking - Booking Detail Confirmed - Desktop",
+      "deviceType": "DESKTOP",
+      "width": "2560",
+      "height": "2186"
+    }
+  ],
+  "phaseCounts": {
+    "P22": 13,
+    "P25": 24,
+    "P26": 35,
+    "P24": 19,
+    "P21": 11,
+    "P23": 15
+  },
+  "p27SecondInspection": {
+    "count": 30,
+    "titles": [
+      "P27 - Juflona Patient - Account Security - Desktop",
+      "P27 - Juflona Patient - Booking Detail - Desktop",
+      "P27 - Juflona Patient - Booking Filters - Mobile",
+      "P27 - Juflona Patient - Dashboard - Desktop",
+      "P27 - Juflona Patient - Dashboard - Mobile",
+      "P27 - Juflona Patient - Dashboard Empty - Mobile",
+      "P27 - Juflona Patient - Dashboard Multiple Bookings - Desktop",
+      "P27 - Juflona Patient - Forgot Password - Desktop",
+      "P27 - Juflona Patient - Forgot Password - Mobile",
+      "P27 - Juflona Patient - Link Guest Booking - Mobile",
+      "P27 - Juflona Patient - Login - Desktop",
+      "P27 - Juflona Patient - Login - Mobile",
+      "P27 - Juflona Patient - Login States - Mobile",
+      "P27 - Juflona Patient - Mobile Navigation Pattern - Mobile",
+      "P27 - Juflona Patient - My Bookings - Mobile",
+      "P27 - Juflona Patient - Notifications - Mobile",
+      "P27 - Juflona Patient - Password Updated - Mobile",
+      "P27 - Juflona Patient - Patient Data Boundaries - Desktop",
+      "P27 - Juflona Patient - Portal Component Patterns - Desktop",
+      "P27 - Juflona Patient - Portal Offline State - Mobile",
+      "P27 - Juflona Patient - Profile - Desktop",
+      "P27 - Juflona Patient - Recovery Verification - Mobile",
+      "P27 - Juflona Patient - Register - Desktop",
+      "P27 - Juflona Patient - Register - Mobile",
+      "P27 - Juflona Patient - Registration States - Mobile",
+      "P27 - Juflona Patient - Set New Password - Desktop",
+      "P27 - Juflona Patient - Set New Password - Mobile",
+      "P27 - Juflona Patient - Verification Success - Mobile",
+      "P27 - Juflona Patient - Verify Phone - Desktop",
+      "P27 - Juflona Patient - Verify Phone - Mobile"
+    ]
+  }
+}

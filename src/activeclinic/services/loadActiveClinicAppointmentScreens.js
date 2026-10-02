@@ -1,0 +1,805 @@
+"use strict";
+
+/**
+ * ActiveClinic appointment list / calendar / book / detail loaders (AC-V6-C04).
+ * Stitch P03 appointment family; reception/queue screens deferred to C05/C06.
+ */
+
+const {
+  listAppointments,
+  getAppointmentDetail,
+  listAppointmentServiceTypes,
+  listAvailableAppointmentSlots,
+  RESULT: APPT_RESULT,
+  PERM,
+  STATUS_LABELS,
+  LIFECYCLE_ORDER,
+  ALLOWED_TRANSITIONS,
+} = require("./activeClinicAppointmentService");
+const appointmentRepo = require("../repositories/appointmentRepository");
+const {
+  searchActiveClinicPatients,
+  getPatientByOrgAndId,
+  PERM: PATIENT_PERM,
+} = require("./activeClinicPatientService");
+const {
+  formatPatientDisplayName,
+} = require("./patientPrivacyHelpers");
+const {
+  listFacilitiesByOrganization,
+} = require("./facilityService");
+const {
+  listStaffMembersByOrganization,
+  listStaffMembersByFacility,
+} = require("./activeClinicStaffService");
+
+const STITCH = Object.freeze({
+  /** V2.03 Batch 2 Appointments workspace */
+  listDesktop: "6bf6da61f93a4e12972d7c3ab649549c",
+  listMobile: "b7ccd0f78b8a491580554999c8d1e1b9",
+  /**
+   * Canonical appointment detail visual target = Batch 2 AC-B2-05
+   * (project 7300898757945019896). Batch 1 ACN08 lifecycle/RBAC retained
+   * via data-ac-batch1 + services; ODS desktop ID kept for reference only.
+   */
+  detailDesktop: "abc9994a9cff42568c7d7ddb4bf905a4",
+  detailMobile: "2621d93473ab4a79a5280f9a036a2209",
+  detailDesktopOds: "1ec9b9f67d9746ebbbf331cd2ecf2a04",
+  /** Calendar remains Batch 1A ACN06 chrome within appointments workspace */
+  calendarDesktop: "3c1a421cf1e140e9affe193071c8f80a",
+  calendarMobile: "c36313bff4274c72b341c38cdfafbc35",
+  bookDesktop: "c1e205c9ebd84f7a8f67d21681230d83",
+  bookingQueueDesktop: "41394d581882437b80e941cebefbb95f",
+  confirmationDesktop: "327422c1b36747039e4026a17c5a2f33",
+  cancelDesktop: "b27eafc25bad4006868f3932d08bfed5",
+  rescheduleDesktop: "da39a3945ace4fac85cb12bd86f0cdc2",
+  rescheduleMobile: "9429b14e9ea243ad93aec4a486db93e9",
+  sharedStates: "089aa8f266664446a8b38cb69d1fda48",
+  missedDesktop: "7d37e069c7644e7cb4c9b72349a0ccf7",
+  scheduleDesktop: "fd009ceba70f40b2ae1755b94220c64b",
+});
+
+const ENCOUNTER_MANAGE = "activeclinic.encounter.manage";
+const ENCOUNTER_VIEW = "activeclinic.encounter.view";
+
+function hasPerm(perms, key) {
+  return Array.isArray(perms) ? perms.includes(key) : false;
+}
+
+function actorFromAuth(auth) {
+  return {
+    staffMemberId: auth.staffMember.id,
+    platformIdentityId: auth.platformIdentity && auth.platformIdentity.id,
+    organizationId: auth.organization.id,
+  };
+}
+
+function formatWhen(startsAt, endsAt, timezone) {
+  const start = startsAt instanceof Date ? startsAt : new Date(startsAt);
+  const end = endsAt instanceof Date ? endsAt : new Date(endsAt);
+  if (Number.isNaN(start.getTime())) {
+    return { dateLabel: "—", timeLabel: "—", dayKey: "" };
+  }
+  const dateLabel = start.toISOString().slice(0, 10);
+  const timeLabel = `${start.toISOString().slice(11, 16)}–${
+    Number.isNaN(end.getTime()) ? "?" : end.toISOString().slice(11, 16)
+  } UTC`;
+  return {
+    dateLabel,
+    timeLabel: `${timeLabel}${timezone ? ` (${timezone})` : ""}`,
+    dayKey: dateLabel,
+    startsAtIso: start.toISOString(),
+    endsAtIso: Number.isNaN(end.getTime()) ? "" : end.toISOString(),
+  };
+}
+
+async function loadFacilityOptions(db, auth) {
+  const listed = await listFacilitiesByOrganization(db, {
+    organizationId: auth.organization.id,
+  });
+  const facilities = (listed.facilities || []).filter((f) =>
+    ["active", "planned"].includes(f.status)
+  );
+  return facilities.map((f) => ({
+    id: f.id,
+    key: f.facilityKey,
+    displayName: f.displayName,
+    status: f.status,
+    timezone: f.timezone,
+  }));
+}
+
+async function enrichAppointments(db, auth, appointments) {
+  if (!appointments.length) return [];
+  const orgId = auth.organization.id;
+  const hcoId = auth.healthcareOrganization.id;
+  const patientIds = [...new Set(appointments.map((a) => a.patientId))];
+  const serviceIds = [...new Set(appointments.map((a) => a.serviceTypeId))];
+  const staffIds = [
+    ...new Set(appointments.map((a) => a.assignedStaffId).filter(Boolean)),
+  ];
+
+  const patients = {};
+  for (const id of patientIds) {
+    const p = await getPatientByOrgAndId(db, {
+      organizationId: orgId,
+      healthcareOrganizationId: hcoId,
+      patientId: id,
+    });
+    if (p.ok) {
+      patients[id] = {
+        id: p.patient.id,
+        patientNumber: p.patient.patientNumber,
+        displayName: formatPatientDisplayName(p.patient),
+      };
+    }
+  }
+
+  const facilities = {};
+  for (const f of await loadFacilityOptions(db, auth)) {
+    facilities[f.id] = f;
+  }
+
+  const services = {};
+  const svc = await listAppointmentServiceTypes(db, {
+    organizationId: orgId,
+    healthcareOrganizationId: hcoId,
+    actor: actorFromAuth(auth),
+    includeInactive: true,
+  });
+  if (svc.ok) {
+    for (const s of svc.serviceTypes) {
+      if (serviceIds.includes(s.id)) services[s.id] = s;
+    }
+  }
+
+  const staff = {};
+  if (staffIds.length) {
+    const allStaff = await listStaffMembersByOrganization(db, {
+      organizationId: orgId,
+      healthcareOrganizationId: hcoId,
+    });
+    const rows = allStaff.ok ? allStaff.staffMembers || [] : [];
+    for (const s of rows) {
+      if (staffIds.includes(s.id)) {
+        staff[s.id] = {
+          id: s.id,
+          displayName: [s.firstName || s.first_name, s.lastName || s.last_name]
+            .filter(Boolean)
+            .join(" "),
+        };
+      }
+    }
+  }
+
+  return appointments.map((a) => {
+    const when = formatWhen(a.startsAt, a.endsAt, a.timezone);
+    return {
+      ...a,
+      statusLabel: STATUS_LABELS[a.status] || a.status,
+      patient: patients[a.patientId] || null,
+      facility: facilities[a.facilityId] || null,
+      service: services[a.serviceTypeId] || null,
+      assignedStaff: a.assignedStaffId ? staff[a.assignedStaffId] || null : null,
+      when,
+    };
+  });
+}
+
+function parseListFilters(query) {
+  const date = String(query.date || "").trim();
+  const dateTo = String(query.date_to || "").trim();
+  let startsFrom = null;
+  let startsTo = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    startsFrom = new Date(`${date}T00:00:00.000Z`);
+    const endDay = /^\d{4}-\d{2}-\d{2}$/.test(dateTo) ? dateTo : date;
+    startsTo = new Date(new Date(`${endDay}T23:59:59.999Z`).getTime() + 1);
+  } else {
+    const y = new Date().toISOString().slice(0, 10);
+    startsFrom = new Date(`${y}T00:00:00.000Z`);
+    startsTo = new Date(startsFrom.getTime() + 7 * 24 * 60 * 60 * 1000);
+  }
+  return {
+    facilityId: String(query.facility || "").trim() || null,
+    status: String(query.status || "").trim() || null,
+    assignedStaffId: String(query.staff || "").trim() || null,
+    serviceTypeId: String(query.service || "").trim() || null,
+    date: date || startsFrom.toISOString().slice(0, 10),
+    dateTo: dateTo || "",
+    startsFrom,
+    startsTo,
+    active: Boolean(
+      query.facility ||
+        query.status ||
+        query.staff ||
+        query.service ||
+        query.date ||
+        query.date_to
+    ),
+  };
+}
+
+async function loadActiveClinicAppointmentListScreen(db, input) {
+  const { auth, query } = input;
+  const filters = parseListFilters(query || {});
+  const perms = auth.permissions || [];
+  const listed = await listAppointments(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    actor: actorFromAuth(auth),
+    facilityId: filters.facilityId,
+    status: filters.status,
+    assignedStaffId: filters.assignedStaffId,
+    serviceTypeId: filters.serviceTypeId,
+    startsFrom: filters.startsFrom,
+    startsTo: filters.startsTo,
+    limit: 100,
+  });
+  if (!listed.ok) {
+    return { ok: false, code: listed.code, list: null };
+  }
+  const appointments = await enrichAppointments(db, auth, listed.appointments);
+  const summaryListed = filters.status
+    ? await listAppointments(db, {
+        organizationId: auth.organization.id,
+        healthcareOrganizationId: auth.healthcareOrganization.id,
+        actor: actorFromAuth(auth),
+        facilityId: filters.facilityId,
+        assignedStaffId: filters.assignedStaffId,
+        serviceTypeId: filters.serviceTypeId,
+        startsFrom: filters.startsFrom,
+        startsTo: filters.startsTo,
+        limit: 500,
+      })
+    : listed;
+  const statusSummary = {
+    requested: 0,
+    confirmed: 0,
+    arrived: 0,
+    waiting: 0,
+    with_practitioner: 0,
+    completed: 0,
+    no_show: 0,
+    cancelled: 0,
+  };
+  for (const appointment of summaryListed.appointments || []) {
+    if (Object.prototype.hasOwnProperty.call(statusSummary, appointment.status)) {
+      statusSummary[appointment.status] += 1;
+    }
+  }
+  // Presentation aliases used by list chrome (map to real statuses only).
+  statusSummary.scheduled = statusSummary.requested + statusSummary.confirmed;
+  statusSummary.checked_in = statusSummary.arrived + statusSummary.waiting;
+  statusSummary.in_progress = statusSummary.with_practitioner;
+  const facilities = await loadFacilityOptions(db, auth);
+  const services = await listAppointmentServiceTypes(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    actor: actorFromAuth(auth),
+  });
+  let staffOptions = [];
+  const staffListed = await listStaffMembersByOrganization(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+  });
+  if (staffListed.ok) {
+    staffOptions = (staffListed.staffMembers || []).map((s) => ({
+      id: s.id,
+      label: [s.firstName || s.first_name, s.lastName || s.last_name]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  }
+
+  let emptyMode = null;
+  if (!appointments.length) {
+    emptyMode = filters.active ? "filtered" : "none";
+  }
+
+  return {
+    ok: true,
+    code: APPT_RESULT.OK,
+    list: {
+      appointments,
+      statusSummary,
+      filters,
+      filterOptions: {
+        facilities: facilities.map((f) => ({ value: f.id, label: f.displayName })),
+        statuses: Object.entries(STATUS_LABELS).map(([value, label]) => ({
+          value,
+          label,
+        })),
+        staff: staffOptions.map((s) => ({ value: s.id, label: s.label })),
+        services: (services.serviceTypes || []).map((s) => ({
+          value: s.id,
+          label: s.displayName,
+        })),
+      },
+      emptyMode,
+      resultCount: appointments.length,
+      actions: {
+        canCreate: hasPerm(perms, PERM.CREATE),
+        createHref: "/app/appointments/new",
+        calendarHref: "/app/appointments/calendar",
+        missedHref: "/app/appointments/missed",
+        scheduleHref: "/app/appointments/schedule",
+      },
+      stitch: {
+        code: "AC-B2-04",
+        desktop: STITCH.listDesktop,
+        mobile: STITCH.listMobile,
+        shared: STITCH.sharedStates,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentCalendarScreen(db, input) {
+  const query = { ...(input.query || {}) };
+  const view = String(query.view || "week").toLowerCase() === "day" ? "day" : "week";
+  // Mobile agenda defaults to a single day when date_to is absent.
+  if (view === "day" && query.date && !query.date_to) {
+    query.date_to = query.date;
+  } else if (!query.date_to && !query.date) {
+    const today = new Date();
+    const monday = new Date(today);
+    const day = monday.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    monday.setUTCDate(monday.getUTCDate() + diff);
+    query.date = monday.toISOString().slice(0, 10);
+    const friday = new Date(monday);
+    friday.setUTCDate(monday.getUTCDate() + 4);
+    query.date_to = friday.toISOString().slice(0, 10);
+  }
+
+  const listResult = await loadActiveClinicAppointmentListScreen(db, {
+    ...input,
+    query,
+  });
+  if (!listResult.ok) return listResult;
+
+  const blocks = await appointmentRepo.listAvailabilityBlocksInRange(db, {
+    organizationId: input.auth.organization.id,
+    healthcareOrganizationId: input.auth.healthcareOrganization.id,
+    startsFrom: listResult.list.filters.startsFrom,
+    startsTo: listResult.list.filters.startsTo,
+    staffMemberId: listResult.list.filters.assignedStaffId || null,
+  }).catch(() => []);
+
+  const byDay = {};
+  for (const a of listResult.list.appointments) {
+    const key = a.when.dayKey || "unknown";
+    if (!byDay[key]) byDay[key] = { appointments: [], blocks: [] };
+    byDay[key].appointments.push(a);
+  }
+  for (const block of blocks || []) {
+    const start = new Date(block.starts_at);
+    const key = Number.isNaN(start.getTime())
+      ? "unknown"
+      : start.toISOString().slice(0, 10);
+    if (!byDay[key]) byDay[key] = { appointments: [], blocks: [] };
+    byDay[key].blocks.push({
+      id: block.id,
+      kind: block.block_kind,
+      reason: block.reason,
+      startsAt: block.starts_at,
+      endsAt: block.ends_at,
+      staffMemberId: block.staff_member_id,
+      label: `BLOCKED: ${block.reason || block.block_kind || "Unavailable"}`,
+    });
+  }
+
+  const days = Object.keys(byDay)
+    .sort()
+    .map((dayKey) => ({
+      dayKey,
+      count: byDay[dayKey].appointments.length,
+      blockedCount: byDay[dayKey].blocks.length,
+      appointments: byDay[dayKey].appointments,
+      blocks: byDay[dayKey].blocks,
+    }));
+
+  const focusDate =
+    listResult.list.filters.date ||
+    (days[0] && days[0].dayKey) ||
+    new Date().toISOString().slice(0, 10);
+  const agendaDay = days.find((d) => d.dayKey === focusDate) || {
+    dayKey: focusDate,
+    count: 0,
+    blockedCount: 0,
+    appointments: [],
+    blocks: [],
+  };
+
+  return {
+    ok: true,
+    code: APPT_RESULT.OK,
+    calendar: {
+      ...listResult.list,
+      view,
+      days,
+      agendaDay,
+      blockCount: (blocks || []).length,
+      stitch: {
+        code: "AC-B2-04",
+        desktop: STITCH.calendarDesktop,
+        mobile: STITCH.calendarMobile,
+        listAlt: STITCH.listDesktop,
+        batch1: "ACN06",
+      },
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentMissedScreen(db, input) {
+  const result = await loadActiveClinicAppointmentListScreen(db, {
+    ...input,
+    query: { ...(input.query || {}), status: "no_show" },
+  });
+  if (!result.ok) return result;
+  result.list.viewMode = "missed";
+  result.list.stitch.desktop = STITCH.missedDesktop;
+  return result;
+}
+
+async function loadActiveClinicAppointmentScheduleScreen(db, input) {
+  const result = await loadActiveClinicAppointmentListScreen(db, input);
+  if (!result.ok) return result;
+  const groups = new Map();
+  for (const appointment of result.list.appointments) {
+    const id = appointment.assignedStaffId || "unassigned";
+    if (!groups.has(id)) {
+      groups.set(id, {
+        staffId: appointment.assignedStaffId || null,
+        staffName:
+          (appointment.assignedStaff && appointment.assignedStaff.displayName) ||
+          "Unassigned",
+        appointments: [],
+      });
+    }
+    groups.get(id).appointments.push(appointment);
+  }
+  return {
+    ok: true,
+    code: APPT_RESULT.OK,
+    schedule: {
+      ...result.list,
+      staffGroups: [...groups.values()].sort((a, b) =>
+        a.staffName.localeCompare(b.staffName)
+      ),
+      stitch: { desktop: STITCH.scheduleDesktop },
+    },
+  };
+}
+
+function emptyFormValues(auth) {
+  const selected = auth.selectedFacility;
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    patientId: "",
+    patientNumber: "",
+    patientQuery: "",
+    facilityId: selected && selected.id ? selected.id : "",
+    serviceTypeId: "",
+    assignedStaffId: "",
+    startsDate: today,
+    startsTime: "09:00",
+    endsTime: "09:30",
+    timezone: (selected && selected.timezone) || "Africa/Lusaka",
+    schedulingNote: "",
+    reminderChannel: "none",
+  };
+}
+
+function parseAppointmentFormBody(body) {
+  const b = body || {};
+  return {
+    patientId: String(b.patient_id || "").trim(),
+    patientNumber: String(b.patient_number || "").trim(),
+    patientQuery: String(b.patient_query || "").trim(),
+    facilityId: String(b.facility_id || "").trim(),
+    serviceTypeId: String(b.service_type_id || "").trim(),
+    assignedStaffId: String(b.assigned_staff_id || "").trim(),
+    startsDate: String(b.starts_date || "").trim(),
+    startsTime: String(b.starts_time || "").trim(),
+    endsTime: String(b.ends_time || "").trim(),
+    timezone: String(b.timezone || "").trim(),
+    schedulingNote: String(b.scheduling_note || "").trim(),
+    reminderChannel: String(b.reminder_channel || "none").trim(),
+    confirm: String(b.confirm || "").trim() === "1",
+    step: String(b.step || "").trim(),
+  };
+}
+
+function buildStartsEnds(values) {
+  const startsAt = new Date(`${values.startsDate}T${values.startsTime}:00`);
+  const endsAt = new Date(`${values.startsDate}T${values.endsTime}:00`);
+  return { startsAt, endsAt };
+}
+
+async function loadActiveClinicAppointmentFormScreen(db, input) {
+  const { auth, values, mode, appointment, error, review, slotCheck } = input;
+  const formValues = values || emptyFormValues(auth);
+  const facilities = await loadFacilityOptions(db, auth);
+  const services = await listAppointmentServiceTypes(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    actor: actorFromAuth(auth),
+  });
+  let staffOptions = [];
+  if (formValues.facilityId) {
+    const staffListed = await listStaffMembersByFacility(db, {
+      organizationId: auth.organization.id,
+      facilityId: formValues.facilityId,
+    });
+    if (staffListed.ok) {
+      staffOptions = (staffListed.staffMembers || []).map((s) => ({
+        id: s.id,
+        label: [s.firstName || s.first_name, s.lastName || s.last_name]
+          .filter(Boolean)
+          .join(" "),
+      }));
+    }
+  }
+  let patientMatches = [];
+  if (
+    formValues.patientQuery &&
+    formValues.patientQuery.length >= 2 &&
+    hasPerm(auth.permissions, PATIENT_PERM.SEARCH)
+  ) {
+    const search = await searchActiveClinicPatients(db, {
+      organizationId: auth.organization.id,
+      healthcareOrganizationId: auth.healthcareOrganization.id,
+      actor: actorFromAuth(auth),
+      nameQuery: formValues.patientQuery,
+      limit: 10,
+    });
+    if (search.ok) {
+      patientMatches = (search.results || search.patients || []).map((p) => ({
+        id: p.id,
+        patientNumber: p.patientNumber,
+        displayName: p.displayName || formatPatientDisplayName(p),
+      }));
+    }
+  }
+
+  return {
+    ok: true,
+    form: {
+      mode: mode || "create",
+      values: formValues,
+      facilities,
+      services: services.serviceTypes || [],
+      staffOptions,
+      patientMatches,
+      appointment: appointment || null,
+      error: error || null,
+      review: review || false,
+      slotCheck: slotCheck || null,
+      formAction:
+        (mode === "edit" || mode === "reschedule") && appointment
+          ? mode === "reschedule"
+            ? `/app/appointments/${appointment.id}/reschedule`
+            : `/app/appointments/${appointment.id}`
+          : "/app/appointments",
+      rescheduleAction:
+        appointment && `/app/appointments/${appointment.id}/reschedule`,
+      actions: {
+        canRegisterPatient: hasPerm(auth.permissions, PATIENT_PERM.CREATE),
+      },
+      stitch: {
+        book: STITCH.bookDesktop,
+        review: STITCH.confirmationDesktop,
+        rescheduleDesktop: STITCH.rescheduleDesktop,
+        rescheduleMobile: STITCH.rescheduleMobile,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentDetailScreen(db, input) {
+  const { auth, appointmentId } = input;
+  const detail = await getAppointmentDetail(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    appointmentId,
+    actor: actorFromAuth(auth),
+  });
+  if (!detail.ok) return { ok: false, code: detail.code, detail: null };
+
+  const enriched = (await enrichAppointments(db, auth, [detail.appointment]))[0];
+  const reminders = await appointmentRepo.listRemindersForAppointment(db, {
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+    appointmentId,
+  });
+  const perms = auth.permissions || [];
+  const status = detail.appointment.status;
+  const nextStatuses = ALLOWED_TRANSITIONS[status] || [];
+  const canEdit =
+    hasPerm(perms, PERM.UPDATE) &&
+    ["requested", "confirmed"].includes(status);
+  const canCancel =
+    hasPerm(perms, PERM.CANCEL) && nextStatuses.includes("cancelled");
+  const canConfirm =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("confirmed");
+  const canCheckIn =
+    hasPerm(perms, PERM.CHECK_IN) && nextStatuses.includes("arrived");
+  const canWaiting =
+    hasPerm(perms, PERM.CHECK_IN) && nextStatuses.includes("waiting");
+  const canWithPractitioner =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("with_practitioner");
+  const canComplete =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("completed");
+  const canNoShow =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("no_show");
+  const canStartEncounter =
+    (hasPerm(perms, ENCOUNTER_MANAGE) || hasPerm(perms, ENCOUNTER_VIEW)) &&
+    Boolean(enriched.patientId) &&
+    ["arrived", "waiting", "with_practitioner"].includes(status);
+  const startEncounterHref = canStartEncounter
+    ? `/app/clinical/start-encounter?patient_id=${encodeURIComponent(
+        enriched.patientId
+      )}&appointment_id=${encodeURIComponent(appointmentId)}`
+    : null;
+  const patientHref =
+    enriched.patient && enriched.patient.patientNumber
+      ? `/app/patients/${encodeURIComponent(enriched.patient.patientNumber)}`
+      : null;
+
+  const lifecycle = LIFECYCLE_ORDER.map((key) => ({
+    key,
+    label: STATUS_LABELS[key] || key,
+    reached:
+      LIFECYCLE_ORDER.indexOf(key) <= LIFECYCLE_ORDER.indexOf(status) ||
+      (status === "cancelled" && key === "requested") ||
+      (status === "no_show" && ["requested", "confirmed"].includes(key)),
+    current: key === status,
+  }));
+
+  const timelineEntries = (detail.statusEvents || []).map((e) => ({
+    at: e.createdAt
+      ? new Date(e.createdAt).toISOString()
+      : "",
+    title: STATUS_LABELS[e.toStatus] || e.toStatus,
+    summary: [
+      e.fromStatus ? `from ${STATUS_LABELS[e.fromStatus] || e.fromStatus}` : null,
+      e.reasonCode || null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    actorLabel: null,
+    kind: e.toStatus || "status",
+  }));
+
+  return {
+    ok: true,
+    detail: {
+      appointment: enriched,
+      statusEvents: (detail.statusEvents || []).map((e) => ({
+        ...e,
+        toStatusLabel: STATUS_LABELS[e.toStatus] || e.toStatus,
+        fromStatusLabel: e.fromStatus
+          ? STATUS_LABELS[e.fromStatus] || e.fromStatus
+          : null,
+        createdAtLabel: e.createdAt
+          ? new Date(e.createdAt).toISOString().replace("T", " ").slice(0, 16)
+          : "",
+      })),
+      timelineEntries,
+      reminders: reminders.map((r) => ({
+        channel: r.preferred_channel,
+        scheduledFor: r.scheduled_for,
+        deliveryState: r.delivery_state,
+      })),
+      lifecycle,
+      actions: {
+        canEdit,
+        canCancel,
+        canConfirm,
+        canCheckIn,
+        canWaiting,
+        canWithPractitioner,
+        canComplete,
+        canNoShow,
+        canStartEncounter,
+        startEncounterHref,
+        patientHref,
+        editHref: `/app/appointments/${appointmentId}/reschedule`,
+        cancelHref: `/app/appointments/${appointmentId}/cancel`,
+        listHref: "/app/appointments",
+        calendarHref: "/app/appointments/calendar",
+      },
+      stitch: {
+        code: "AC-B2-05",
+        desktop: STITCH.detailDesktop,
+        mobile: STITCH.detailMobile,
+        cancel: STITCH.cancelDesktop,
+        missed: STITCH.missedDesktop,
+        confirmation: STITCH.confirmationDesktop,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentSuccessScreen(db, input) {
+  const loaded = await loadActiveClinicAppointmentDetailScreen(db, input);
+  if (!loaded.ok) return loaded;
+  return {
+    ok: true,
+    success: {
+      appointment: loaded.detail.appointment,
+      detailHref: `/app/appointments/${input.appointmentId}`,
+      stitchConfirm: STITCH.confirmationDesktop,
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentCancelScreen(db, input) {
+  const loaded = await loadActiveClinicAppointmentDetailScreen(db, input);
+  if (!loaded.ok) return loaded;
+  if (!loaded.detail.actions.canCancel) {
+    return { ok: false, code: APPT_RESULT.INVALID_TRANSITION, cancel: null };
+  }
+  return {
+    ok: true,
+    cancel: {
+      appointment: loaded.detail.appointment,
+      canCancel: loaded.detail.actions.canCancel,
+      error: input.error || null,
+      stitch: STITCH.cancelDesktop,
+    },
+  };
+}
+
+async function loadActiveClinicAppointmentRescheduleScreen(db, input) {
+  const detail = await loadActiveClinicAppointmentDetailScreen(db, input);
+  if (!detail.ok) return detail;
+  if (!detail.detail.actions.canEdit) {
+    return { ok: false, code: APPT_RESULT.INVALID_TRANSITION, form: null };
+  }
+  const a = detail.detail.appointment;
+  const values = input.values || {
+    ...emptyFormValues(input.auth),
+    patientId: a.patientId,
+    patientNumber: (a.patient && a.patient.patientNumber) || "",
+    facilityId: a.facilityId,
+    serviceTypeId: a.serviceTypeId,
+    assignedStaffId: a.assignedStaffId || "",
+    startsDate: new Date(a.startsAt).toISOString().slice(0, 10),
+    startsTime: new Date(a.startsAt).toISOString().slice(11, 16),
+    endsTime: new Date(a.endsAt).toISOString().slice(11, 16),
+    timezone: a.timezone,
+    schedulingNote: a.schedulingNote || "",
+    reminderChannel: "none",
+  };
+  return loadActiveClinicAppointmentFormScreen(db, {
+    auth: input.auth,
+    values,
+    mode: "reschedule",
+    appointment: a,
+    error: input.error,
+    review: input.review,
+    slotCheck: input.slotCheck,
+  });
+}
+
+module.exports = {
+  STITCH,
+  STATUS_LABELS,
+  actorFromAuth,
+  emptyFormValues,
+  parseAppointmentFormBody,
+  buildStartsEnds,
+  loadActiveClinicAppointmentListScreen,
+  loadActiveClinicAppointmentCalendarScreen,
+  loadActiveClinicAppointmentMissedScreen,
+  loadActiveClinicAppointmentScheduleScreen,
+  loadActiveClinicAppointmentFormScreen,
+  loadActiveClinicAppointmentDetailScreen,
+  loadActiveClinicAppointmentSuccessScreen,
+  loadActiveClinicAppointmentCancelScreen,
+  loadActiveClinicAppointmentRescheduleScreen,
+  listAvailableAppointmentSlots,
+};

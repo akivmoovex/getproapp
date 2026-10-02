@@ -143,8 +143,45 @@ async function buildPublicationSnapshot(client, churchId, branchId) {
         mediaUrl: s.mediaUrl,
         sortOrder: s.sortOrder,
         status: s.status,
+        // Service times (and other structured sections) persist entries in
+        // layout_metadata — omitting it made published snapshots diverge from
+        // live public_pages for service_times_v1 while heading/body fields worked.
+        layoutMetadata:
+          s.layoutMetadata && typeof s.layoutMetadata === "object" ? s.layoutMetadata : null,
       })),
     });
+  }
+  const serviceTimeRefs = [];
+  for (const page of pages) {
+    for (const section of page.sections || []) {
+      const key = String(section.sectionKey || "");
+      const type = String(section.sectionType || "");
+      const isServiceTimes =
+        key === "service_times" ||
+        key === "services" ||
+        key === "worship_times" ||
+        type === "service_times" ||
+        type === "services" ||
+        type === "worship_times";
+      if (!isServiceTimes) continue;
+      const meta =
+        section.layoutMetadata && typeof section.layoutMetadata === "object"
+          ? section.layoutMetadata
+          : null;
+      const entries = meta && Array.isArray(meta.entries) ? meta.entries : [];
+      for (const entry of entries) {
+        if (!entry || typeof entry !== "object") continue;
+        serviceTimeRefs.push({
+          pageKey: page.pageKey,
+          sectionKey: section.sectionKey,
+          name: entry.name || null,
+          day: entry.day || null,
+          startTime: entry.startTime || null,
+          endTime: entry.endTime || null,
+          enabled: entry.enabled !== false,
+        });
+      }
+    }
   }
   return {
     themeKey: "default",
@@ -152,9 +189,41 @@ async function buildPublicationSnapshot(client, churchId, branchId) {
     pageKeys: pages.map((p) => p.pageKey),
     pages,
     navigation: [],
-    serviceTimeRefs: [],
+    serviceTimeRefs,
     contactDetailRefs: [],
     branchContentRefs: [],
+    entities: {
+      leaders: await publicContentRepo.listLeaders(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+      ministries: await publicContentRepo.listMinistries(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+      events: await publicContentRepo.listEvents(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+      sermons: await publicContentRepo.listSermons(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+      contact_channels: await publicContentRepo.listContactChannels(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+      giving_methods: await publicContentRepo.listGivingMethods(client, {
+        churchId,
+        branchId: scopedBranchId,
+        status: "published",
+      }),
+    },
   };
 }
 
@@ -217,6 +286,23 @@ async function recordPublishVersionInTransaction(client, input) {
   await versionRepo.supersedePublishedVersions(client, organizationId, branchId);
   const versionNumber = await versionRepo.getNextVersionNumber(client, organizationId);
   const snapshot = await buildPublicationSnapshot(client, churchId, branchId);
+  let themeKey = snapshot.themeKey || "default";
+  try {
+    const { loadWebsiteThemeState } = require("../../platform/website/websiteThemeService");
+    const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
+    const themeState = await loadWebsiteThemeState(client, {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      preferDraft: false,
+    });
+    if (themeState.ok && themeState.publicationThemeKey) {
+      themeKey = themeState.publicationThemeKey;
+      snapshot.themeKey = themeKey;
+      snapshot.websiteThemeId = themeState.publishedThemeId;
+    }
+  } catch {
+    /* keep legacy default theme_key */
+  }
   const changeSummary = {
     ...buildChangeSummary(snapshot, sourceType),
     publicationNote: input.publicationNote || null,
@@ -233,7 +319,7 @@ async function recordPublishVersionInTransaction(client, input) {
     churchId,
     branchId,
     versionNumber,
-    themeKey: snapshot.themeKey || "default",
+    themeKey,
     sourceType,
     sourceSubmissionId: input.sourceSubmissionId || null,
     sourceVersionId,
@@ -923,6 +1009,12 @@ async function applySnapshotPageToDraft(client, churchId, snapshotPage, branchId
     if (sec.mediaUrl != null && String(sec.mediaUrl).length > 0) {
       patch.mediaUrl = sec.mediaUrl;
     }
+    if (Object.prototype.hasOwnProperty.call(sec, "layoutMetadata")) {
+      patch.layoutMetadata =
+        sec.layoutMetadata && typeof sec.layoutMetadata === "object"
+          ? sec.layoutMetadata
+          : null;
+    }
     if (existing) {
       await publicContentRepo.updateSection(client, existing.id, patch);
     } else {
@@ -935,6 +1027,7 @@ async function applySnapshotPageToDraft(client, churchId, snapshotPage, branchId
         mediaUrl: patch.mediaUrl || null,
         sortOrder: patch.sortOrder,
         status: "draft",
+        layoutMetadata: patch.layoutMetadata != null ? patch.layoutMetadata : null,
       });
     }
   }
@@ -966,7 +1059,7 @@ async function createRestoredDraft(db, opts) {
     !versionRepo.isUuid(organizationId) ||
     !versionRepo.isUuid(churchId) ||
     !versionRepo.isUuid(versionId) ||
-    !versionRepo.isUuid(actorUserId)
+    (!versionRepo.isUuid(actorUserId) && opts.allowSystemActor !== true)
   ) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
   }
@@ -1099,6 +1192,42 @@ async function createRestoredDraft(db, opts) {
           branchId: restoreBranchId,
         },
       });
+
+      // V2.04 Phase 5: restore into platform draft SoT (not restoreDraftFromLegacy dual path).
+      try {
+        const contentService = require("../../platform/website/contentService");
+        const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+        const { SNAPSHOT_KEY } = require("../../platform/website-engine/productSchemaRegistry");
+        const ensured = await ensureBlessBoardWebsiteInstance(client, {
+          organizationId,
+          actorIdentityId: actorUserId,
+        });
+        if (ensured && ensured.ok && ensured.instance) {
+          await contentService.saveWebsiteDraft(client, {
+            organizationId,
+            instanceId: ensured.instance.id,
+            expectedProductCode: "blessboard",
+            contentKey: SNAPSHOT_KEY,
+            value: restoredSnapshot,
+            actorIdentityId: actorUserId,
+          });
+        }
+      } catch {
+        /* Platform draft restore is best-effort alongside CMS restore projection. */
+      }
+      try {
+        const {
+          overwriteEngineFieldsFromPages,
+        } = require("../website/blessboardEngineContentService");
+        await overwriteEngineFieldsFromPages(client, {
+          organizationId,
+          churchId,
+          branchId: restoreBranchId,
+          actorIdentityId: actorUserId,
+        });
+      } catch {
+        /* Engine field restore is best-effort; CMS rows remain the restore target. */
+      }
 
       return {
         ok: true,
@@ -1435,10 +1564,15 @@ async function loadGrowthPreviousWebsitePreview(db, opts) {
       sections: Array.isArray(page.sections)
         ? page.sections.map((sec) => ({
             sectionKey: sec.sectionKey,
+            sectionType: sec.sectionType || null,
             heading: sec.heading || null,
             bodyText: sec.bodyText || null,
             mediaUrl: sec.mediaUrl || null,
             status: sec.status || null,
+            layoutMetadata:
+              sec.layoutMetadata && typeof sec.layoutMetadata === "object"
+                ? sec.layoutMetadata
+                : null,
           }))
         : [],
     }));
@@ -1970,6 +2104,144 @@ async function loadPublishingHistoryEntry(db, opts) {
   }
 }
 
+/**
+ * Restore a historic published snapshot as a NEW current published version.
+ * Never mutates the historic row.
+ */
+async function restoreAndPublishCurrentVersion(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const churchId = opts && opts.churchId;
+  const versionId = opts && opts.versionId;
+  if (
+    !versionRepo.isUuid(organizationId) ||
+    !versionRepo.isUuid(churchId) ||
+    !versionRepo.isUuid(versionId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  const historical = await versionRepo.getVersionByOrgAndId(db, organizationId, versionId);
+  if (!historical) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
+  }
+  if (String(historical.churchId) !== String(churchId)) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
+  }
+  const snap = historical.snapshot || {};
+  const selectedPageKeys = (Array.isArray(snap.pages) ? snap.pages : [])
+    .map((p) => p.pageKey)
+    .filter(Boolean);
+  const keys = selectedPageKeys.length ? selectedPageKeys : PUBLIC_PAGE_KEYS.slice();
+  const restored = await createRestoredDraft(db, {
+    organizationId,
+    churchId,
+    versionId,
+    actorUserId: opts.actorUserId || null,
+    restorationReason:
+      opts.restorationReason || "Restored previous published version as a new current version.",
+    selectedPageKeys: keys,
+    restoreTheme: true,
+    restoreNavigation: true,
+    confirmed: true,
+    allowSystemActor: !versionRepo.isUuid(opts.actorUserId),
+  });
+  if (!restored.ok) return restored;
+  const {
+    publish: publishProductWebsite,
+    PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+  } = require("../../platform/website/publicationOrchestrator");
+  const { PRODUCT } = require("../../platform/registration/constants");
+  const published = await publishProductWebsite(db, {
+    productCode: PRODUCT.BLESSBOARD,
+    grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+    request: {
+      churchId,
+      organizationId,
+      confirmPublish: true,
+      forcePublishVersion: true,
+      deferServiceTimes: true,
+      actorUserId: opts.actorUserId || null,
+      env: opts.env,
+    },
+  });
+
+  // Contract: mint a NEW current published version. If the publish TX returned ok
+  // but left the draft restoration pending (engine projection aborted the TX),
+  // mint the version explicitly without re-entering the engine bridge.
+  let publication = published || null;
+  let current = await versionRepo.getCurrentPublishedVersion(db, organizationId);
+  const pendingAfter = await versionRepo.getLatestDraftRestoration(
+    db,
+    organizationId,
+    historical.branchId || null
+  );
+  const needsExplicitMint =
+    pendingAfter &&
+    pendingAfter.sourceType === "content_restoration" &&
+    String(pendingAfter.sourceVersionId) === String(versionId);
+  if (needsExplicitMint) {
+    try {
+      publication = await withTransaction(db, async (client) => {
+        const version = await recordPublishVersionInTransaction(client, {
+          organizationId,
+          churchId,
+          branchId: historical.branchId || null,
+          actorUserId: opts.actorUserId || null,
+          publishedAt: new Date().toISOString(),
+          sourceType: "content_restoration",
+        });
+        return {
+          ok: true,
+          status: STATUS.OK,
+          publicationVersionId: version && version.id,
+          publicationVersionNumber: version && version.versionNumber,
+          alreadyPublished: true,
+          restoredExplicitMint: true,
+        };
+      });
+      current = await versionRepo.getCurrentPublishedVersion(
+        db,
+        organizationId,
+        historical.branchId || null
+      );
+    } catch (mintErr) {
+      return {
+        ok: false,
+        status: STATUS.LOOKUP_ERROR,
+        reason: "restore_version_mint_failed",
+        restoredFrom: historical,
+        publication: published || null,
+        draft: restored,
+        mintError: mintErr && mintErr.message ? String(mintErr.message) : null,
+      };
+    }
+  }
+
+  return {
+    ok: Boolean(
+      publication &&
+        publication.ok &&
+        current &&
+        current.id &&
+        String(current.id) !== String(versionId)
+    ),
+    status:
+      publication && publication.status
+        ? publication.status
+        : STATUS.LOOKUP_ERROR,
+    reason:
+      publication &&
+      publication.ok &&
+      current &&
+      String(current.id) !== String(versionId)
+        ? publication.reason || null
+        : (publication && publication.reason) || "restore_did_not_mint_new_version",
+    restoredFrom: historical,
+    publication: publication || null,
+    draft: restored,
+    currentVersionId: current && current.id,
+  };
+}
+
 module.exports = {
   STATUS,
   STATUS_LABELS,
@@ -1995,6 +2267,7 @@ module.exports = {
   createGrowthRestoredWebsiteDraft,
   loadGrowthRestoredWebsiteDraftReview,
   discardGrowthRestoredWebsiteDraft,
+  restoreAndPublishCurrentVersion,
   friendlySourceLabel,
   FRIENDLY_SOURCE_LABELS,
   GROWTH_PREVIOUS_LIMIT,

@@ -21,7 +21,11 @@ const DRAFT_KINDS = Object.freeze([
   "sermon",
   "giving_method",
   "social_link",
+  "page_section",
 ]);
+
+// Kinds that only carry ordering intent; they have no upsert payload.
+const REORDER_ONLY_KINDS = Object.freeze(["page_section"]);
 
 const SOCIAL_LINK_TYPES = Object.freeze([
   "facebook",
@@ -42,18 +46,35 @@ const MEDIA_ASSET_PATH_RE = new RegExp(
   "i"
 );
 
-const VIDEO_HOST_ALLOWLIST = Object.freeze(
-  new Set([
-    "youtube.com",
-    "www.youtube.com",
-    "m.youtube.com",
-    "youtu.be",
-    "www.youtu.be",
-    "vimeo.com",
-    "www.vimeo.com",
-    "player.vimeo.com",
-  ])
-);
+/** Shared website-engine delivery paths from platform.website_media uploads. */
+const WEBSITE_ENGINE_MEDIA_PATH_RE =
+  /^\/(?:c|clinics)\/[^/]+\/website\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const {
+  validateVideoEmbedUrl,
+} = require("../../platform/website/videoEmbedEditor");
+
+/**
+ * External video URL allowlist (YouTube / Vimeo) or empty.
+ * Rejects raw iframe HTML and uploaded video files. Shared VideoEmbedEditor owns URL rules.
+ * @param {string} raw
+ */
+function validateVideoUrl(raw) {
+  if (raw != null && raw !== "") {
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("/") && MEDIA_ASSET_PATH_RE.test(trimmed)) {
+      return {
+        ok: false,
+        error: "Video file upload is not supported. Paste a YouTube or Vimeo link.",
+      };
+    }
+  }
+  const checked = validateVideoEmbedUrl(raw);
+  if (!checked.ok) {
+    return { ok: false, error: checked.error || "Enter a valid YouTube or Vimeo link." };
+  }
+  return { ok: true, value: checked.value };
+}
 
 function mapError(code, message, status = 400) {
   const err = new Error(message);
@@ -72,7 +93,25 @@ function sanitizePlain(raw, max) {
 }
 
 /**
- * Safe image URL: https, /_bb/media/:uuid, or known demo /church/images path.
+ * External video URL allowlist (YouTube / Vimeo) or empty — see validateVideoUrl above.
+ * @deprecated use validateVideoUrl; keep host set for tests that import allowlist shape via source.
+ */
+const VIDEO_HOST_ALLOWLIST = Object.freeze(
+  new Set([
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "youtu.be",
+    "www.youtu.be",
+    "vimeo.com",
+    "www.vimeo.com",
+    "player.vimeo.com",
+  ])
+);
+
+/**
+ * Safe image URL: https, /_bb/media/:uuid, shared website-engine media delivery
+ * (/c/:org/website/media/:uuid or /clinics/:key/website/media/:uuid), or known demo path.
  * @param {string} raw
  */
 function validateImageUrl(raw) {
@@ -85,8 +124,13 @@ function validateImageUrl(raw) {
       return { ok: false, error: "That image path is not allowed." };
     }
     if (MEDIA_ASSET_PATH_RE.test(value)) return { ok: true, value };
+    if (WEBSITE_ENGINE_MEDIA_PATH_RE.test(value)) return { ok: true, value };
+    // Demo / platform soft-fill keys → store CDN URL, never a local filesystem path.
     if (value.startsWith("/church/images/") && !/\s/.test(value)) {
-      return { ok: true, value };
+      const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+      const presented = presentRuntimeImageSrc(value, process.env, { allowMarketing: true });
+      if (presented) return { ok: true, value: presented };
+      return { ok: false, error: "That demo image is not available on CDN." };
     }
     return { ok: false, error: "Choose an uploaded or demo image." };
   }
@@ -102,43 +146,8 @@ function validateImageUrl(raw) {
 }
 
 /**
- * External video URL allowlist (YouTube / Vimeo) or empty.
- * @param {string} raw
- */
-function validateVideoUrl(raw) {
-  if (raw == null || raw === "") return { ok: true, value: "" };
-  const plain = sanitizePlain(raw, 2000);
-  if (!plain.ok) return plain;
-  const value = plain.value;
-  if (value.startsWith("/") && MEDIA_ASSET_PATH_RE.test(value)) {
-    // Uploaded video files are not supported; media assets are images/PDF only.
-    return {
-      ok: false,
-      error: "Video file upload is not supported. Paste a YouTube or Vimeo link.",
-    };
-  }
-  let parsed;
-  try {
-    parsed = new URL(value);
-  } catch {
-    return { ok: false, error: "Enter a valid YouTube or Vimeo link." };
-  }
-  if (parsed.protocol !== "https:") {
-    return { ok: false, error: "Video links must use https." };
-  }
-  const host = String(parsed.hostname || "").toLowerCase();
-  if (!VIDEO_HOST_ALLOWLIST.has(host)) {
-    return { ok: false, error: "Only YouTube and Vimeo links are supported." };
-  }
-  // Block javascript: already handled by URL parser; reject query-embedded HTML.
-  if (/[<>"]/.test(value)) {
-    return { ok: false, error: "Video link contains invalid characters." };
-  }
-  return { ok: true, value: parsed.toString() };
-}
-
-/**
- * Focal position for fit (no true crop pipeline).
+ * Focal position for fit (no true crop pipeline). Kept for backward compat.
+ * Prefer placement (Universal Image Editor) when present.
  * @param {unknown} raw
  */
 function validateFocal(raw) {
@@ -162,6 +171,28 @@ function validateFocal(raw) {
 }
 
 /**
+ * Optional Universal Image Editor placement (platform schema).
+ * @param {unknown} raw
+ * @param {{ contentKey?: string|null }} [opts]
+ */
+function validateOptionalPlacement(raw, opts) {
+  if (raw == null || raw === "") return { ok: true, value: null };
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return { ok: false, error: "Image framing is invalid." };
+    }
+  }
+  const { validateImagePlacement } = require("../../platform/website/imagePlacement");
+  const checked = validateImagePlacement(raw, opts || {});
+  if (!checked.ok) {
+    return { ok: false, error: "Image framing is invalid." };
+  }
+  return { ok: true, value: checked.value };
+}
+
+/**
  * @param {string} kind
  * @param {object} payload
  * @param {string} op
@@ -177,7 +208,74 @@ function validateStructuredPayload(kind, payload, op) {
     }
     const order = body.order.map((x) => String(x || "").trim()).filter(Boolean);
     if (!order.length) return { ok: false, error: "Reorder list cannot be empty." };
+    // A reorder draft must reproduce the intended order deterministically, so
+    // duplicates are a corrupt payload rather than something to silently dedupe.
+    if (new Set(order).size !== order.length) {
+      return { ok: false, error: "Reorder list cannot repeat the same item." };
+    }
     return { ok: true, payload: { order } };
+  }
+  if (op === "visibility") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section is required." };
+    return { ok: true, payload: { sectionKey, hidden: body.hidden === true } };
+  }
+  if (op === "restore_default") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section is required." };
+    return { ok: true, payload: { sectionKey } };
+  }
+  if (op === "add_section") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section key is required." };
+    const sectionType = String(body.sectionType || "plain_text").trim();
+    const heading = sanitizePlain(body.heading, 200);
+    if (!heading.ok) return heading;
+    const bodyText = sanitizePlain(body.bodyText, 4000);
+    if (!bodyText.ok) return bodyText;
+    const mediaUrl =
+      body.mediaUrl != null && String(body.mediaUrl).trim()
+        ? validateImageUrl(body.mediaUrl)
+        : { ok: true, value: null };
+    if (!mediaUrl.ok) return mediaUrl;
+    return {
+      ok: true,
+      payload: {
+        sectionKey,
+        sectionType,
+        heading: heading.value,
+        bodyText: bodyText.value,
+        mediaUrl: mediaUrl.value,
+        sortOrder: Number(body.sortOrder) || 0,
+        layout: body.layout ? String(body.layout) : null,
+      },
+    };
+  }
+  if (op === "update_section") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section key is required." };
+    const heading =
+      body.heading !== undefined ? sanitizePlain(body.heading, 200) : { ok: true, value: undefined };
+    if (!heading.ok) return heading;
+    const bodyText =
+      body.bodyText !== undefined ? sanitizePlain(body.bodyText, 4000) : { ok: true, value: undefined };
+    if (!bodyText.ok) return bodyText;
+    const mediaUrl =
+      body.mediaUrl !== undefined
+        ? body.mediaUrl == null || String(body.mediaUrl).trim() === ""
+          ? { ok: true, value: null }
+          : validateImageUrl(body.mediaUrl)
+        : { ok: true, value: undefined };
+    if (!mediaUrl.ok) return mediaUrl;
+    const payload = { sectionKey };
+    if (heading.value !== undefined) payload.heading = heading.value;
+    if (bodyText.value !== undefined) payload.bodyText = bodyText.value;
+    if (mediaUrl.value !== undefined) payload.mediaUrl = mediaUrl.value;
+    return { ok: true, payload };
+  }
+
+  if (REORDER_ONLY_KINDS.includes(kind)) {
+    return { ok: false, error: "This item only supports ordering changes." };
   }
 
   if (kind === "image") {
@@ -190,13 +288,18 @@ function validateStructuredPayload(kind, payload, op) {
     }
     const focal = validateFocal(body.focal);
     if (!focal.ok) return focal;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     return {
       ok: true,
       payload: {
         imageUrl: url.value,
         altText: alt.value,
         focal: focal.value,
-        fit: body.fit === "contain" ? "contain" : "cover",
+        fit:
+          (placement.value && placement.value.fit) ||
+          (body.fit === "contain" ? "contain" : "cover"),
+        placement: placement.value,
       },
     };
   }
@@ -244,6 +347,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "leader") {
     const image = validateImageUrl(body.imageUrl);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildLeaderFields(
       {
         displayName: body.displayName || body.fullName || body.name,
@@ -285,6 +390,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         email: email.value || null,
         phone: phone.value || null,
         socialUrl: socialUrl || null,
@@ -298,6 +404,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "ministry") {
     const image = validateImageUrl(body.imageUrl);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildMinistryFields(
       {
         name: body.name || body.ministryName,
@@ -335,6 +443,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         audience: sanitizePlain(body.audience || body.intendedAudience, 120).value || null,
         leaderName: sanitizePlain(body.leaderName || body.ministryLeader, 120).value || null,
         joinUrl: joinUrl || null,
@@ -347,6 +456,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "event") {
     const image = validateImageUrl(body.imageUrl || body.coverImage);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildEventFields(
       {
         title: body.title || body.eventTitle,
@@ -383,6 +494,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         organizer: sanitizePlain(body.organizer, 120).value || null,
         featured: Boolean(body.featured),
         visible: !(body.visible === false || body.hidden === true),
@@ -409,11 +521,15 @@ function validateStructuredPayload(kind, payload, op) {
         safeMedia = asHttps.value;
       }
     }
+    const preachedRaw =
+      body.preachedAt != null && String(body.preachedAt).trim() !== ""
+        ? body.preachedAt
+        : body.date;
     const built = contentAdmin.buildSermonFields(
       {
         title: body.title || body.sermonTitle,
         speakerName: body.speakerName || body.speaker,
-        preachedAt: body.preachedAt || body.date,
+        preachedAt: preachedRaw,
         summary: summaryParts.join(". "),
         status:
           body.visible === false || body.hidden === true
@@ -423,10 +539,15 @@ function validateStructuredPayload(kind, payload, op) {
       { partial: false }
     );
     if (!built.ok) {
+      if (built.reason === "preached_at") {
+        return { ok: false, error: "Enter a valid preached date." };
+      }
       return { ok: false, error: "Check the sermon fields and try again." };
     }
     const thumb = validateImageUrl(body.thumbnailUrl || body.imageUrl || body.thumbnail);
     if (!thumb.ok) return thumb;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     return {
       ok: true,
       payload: {
@@ -435,6 +556,7 @@ function validateStructuredPayload(kind, payload, op) {
         scripture: sanitizePlain(body.scripture, 120).value || null,
         series: sanitizePlain(body.series, 64).value || null,
         imageUrl: thumb.value || null,
+        placement: placement.value,
         featured: Boolean(body.featured),
         visible: !(body.visible === false || body.hidden === true),
       },
@@ -533,20 +655,57 @@ function combineDateTime(date, time) {
   return parsed.toISOString();
 }
 
+function parseStructuredMediaAssetId(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  if (!MEDIA_ASSET_PATH_RE.test(value)) return null;
+  return value.slice(PUBLIC_MEDIA_PATH_PREFIX.length);
+}
+
+/**
+ * Parse shared website-engine media delivery path → media UUID.
+ * @param {string} raw
+ * @returns {string|null}
+ */
+function parseWebsiteEngineMediaId(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  const match = value.match(WEBSITE_ENGINE_MEDIA_PATH_RE);
+  if (!match) return null;
+  return value.split("/").pop() || null;
+}
+
+function collectStructuredImageUrls(payload) {
+  if (!payload || typeof payload !== "object") return [];
+  const keys = ["imageUrl", "thumbnailUrl", "qrImageUrl", "mediaUrl", "coverImage"];
+  const out = [];
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) out.push(value.trim());
+  }
+  return out;
+}
+
 function isDemoImagePath(path) {
   return DEMO_IMAGE_PATHS.has(String(path || ""));
 }
 
 function listDemoImages() {
-  return Object.entries(DEMO_MEDIA || {}).map(([key, url]) => ({
-    key,
-    url,
-    label: key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
-  }));
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  return Object.entries(DEMO_MEDIA || {})
+    .map(([key, path]) => {
+      const url = presentRuntimeImageSrc(path, process.env, { allowMarketing: true });
+      if (!url) return null;
+      return {
+        key,
+        url,
+        label: key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
+      };
+    })
+    .filter(Boolean);
 }
 
 module.exports = {
   DRAFT_KINDS,
+  REORDER_ONLY_KINDS,
   DEMO_IMAGE_PATHS,
   VIDEO_HOST_ALLOWLIST,
   SOCIAL_LINK_TYPES,
@@ -557,4 +716,7 @@ module.exports = {
   isDemoImagePath,
   listDemoImages,
   mapError,
+  parseStructuredMediaAssetId,
+  parseWebsiteEngineMediaId,
+  collectStructuredImageUrls,
 };

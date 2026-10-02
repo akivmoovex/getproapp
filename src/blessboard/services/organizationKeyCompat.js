@@ -5,7 +5,7 @@
  * Kept explicit (no catch-all first-path resolver) to protect reserved apex routes.
  */
 
-const { isReservedOrganizationKey, normalizeOrganizationKey } = require("./organizationKey");
+const { isReservedOrganizationKey, normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const { normalizeBranchKey } = require("./branchKey");
 
 /** Old public keys → canonical organization_key after controlled rename. */

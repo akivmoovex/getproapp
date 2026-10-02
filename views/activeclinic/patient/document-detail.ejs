@@ -1,0 +1,36 @@
+<%
+  var r = result || {};
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--document-detail"
+  data-ac-page-section="patient-document-detail"
+  data-ac-batch3="AC-P12"
+  data-ac-result-modality="<%= r.modality || '' %>"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/documents">← Back to documents &amp; results</a>
+  </p>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Released result</p>
+    <h1 data-ac-result-title="1"><%= escapeHtml(r.title || '') %></h1>
+    <p class="ac-muted">
+      <%= escapeHtml(r.modality || '') %> · <%= escapeHtml(r.requestNumber || '') %> ·
+      released <%= escapeHtml(r.releasedAt ? String(r.releasedAt).replace('T',' ').slice(0,16) : '—') %>
+    </p>
+  </header>
+
+  <section class="acp-portal-leaf__panel" data-ac-released-result="1">
+    <h2>Summary</h2>
+    <% if (r.summary || r.impression) { %>
+    <p data-ac-result-summary="1"><%= escapeHtml(r.summary || r.impression) %></p>
+    <% } else { %>
+    <p class="ac-muted">No summary text was released with this result.</p>
+    <% } %>
+    <% if (r.findings) { %>
+    <h3 class="acp-portal-leaf__subhead">Findings</h3>
+    <p data-ac-result-findings="1"><%= escapeHtml(r.findings) %></p>
+    <% } %>
+    <p class="ac-muted"><%= escapeHtml(r.facilityDisplayName || '') %></p>
+  </section>
+</section>

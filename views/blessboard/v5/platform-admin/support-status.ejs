@@ -1,0 +1,42 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var ctx = supportContext || null;
+  var active = Boolean(supportActive);
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-support-status="1" aria-label="Support mode status">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-orgs__eyebrow"><a class="bb-pa-link" href="/admin">Dashboard</a></p>
+    <h1 class="bb-pa-page-head__title">Support mode status</h1>
+    <p class="bb-pa-lede">
+      Temporary audited Platform Admin access to a church HQ or branch portal.
+      Your Platform Admin session is not replaced.
+    </p>
+  </header>
+
+  <% if (!active || !ctx) { %>
+  <p class="bb-pa-muted" data-bb-pa-support-inactive="1">No active support session.</p>
+  <p><a class="bb-pa-link" href="/admin/organizations">Open an organisation to start support mode</a></p>
+  <% } else { %>
+  <dl class="bb-pa-dl" data-bb-pa-support-active="1">
+    <div><dt>Type</dt><dd><%= ctx.supportType %></dd></div>
+    <div><dt>Organisation</dt><dd><%= ctx.organizationName || ctx.organizationKey || '—' %></dd></div>
+    <div><dt>Church</dt><dd><%= ctx.churchName || '—' %></dd></div>
+    <div><dt>Branch</dt><dd><%= ctx.branchName || ctx.branchKey || '—' %></dd></div>
+    <div><dt>Started</dt><dd><%= ctx.startedAt || '—' %></dd></div>
+    <div><dt>Expires</dt><dd><%= ctx.expiresAt || '—' %></dd></div>
+    <div><dt>Status</dt><dd><%= ctx.status || 'active' %></dd></div>
+  </dl>
+  <p class="bb-pa-page-head__actions">
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= ctx.supportType === 'branch' ? '/branch-admin' : '/hq' %>">
+      Open portal
+    </a>
+  </p>
+  <form method="post" action="/admin/support/exit" data-bb-pa-support-exit="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <button type="submit" class="bb-pa-btn">Exit support mode</button>
+  </form>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

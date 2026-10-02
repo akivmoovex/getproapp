@@ -1,0 +1,183 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var st = String(s.status || '').toLowerCase();
+  var isOpen = st === 'open';
+  var isDraft = st === 'draft';
+  var isClosed = st === 'closed';
+  var isLocked = st === 'locked';
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var counts = typeof stats !== 'undefined' && stats ? stats : { total: 0, present: 0, late: 0 };
+  var stream = Array.isArray(recent) ? recent : [];
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var screen = typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB-A03';
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value).length === 10 ? value + 'T00:00:00' : value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatTime(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) {
+      var raw = String(value);
+      var m = raw.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : '—';
+    }
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  var titleText = s.title || s.serviceEventLabel || 'Service session';
+  var statusTone = isOpen ? 'success' : isDraft ? 'warning' : isClosed ? 'info' : 'neutral';
+  var statusText = isOpen ? 'SESSION OPEN' : (s.statusLabel || st).toUpperCase();
+%>
+
+<section
+  class="bb-v204-a03<%= isLocked ? ' bb-v204-a03--locked' : '' %><%= isClosed ? ' bb-v204-a03--closed' : '' %>"
+  data-bb-stitch-v204="<%= screen %>"
+  data-bb-screen="<%= screen %>"
+  data-bb-stitch-id="81d1cfbd65b04e0da93068bcf2d452fd"
+  data-bb-session-status="<%= st %>"
+  aria-label="<%= isLocked ? 'Locked Session Summary' : (isClosed ? 'Closed Session' : 'Open Session Dashboard') %>"
+>
+  <%- include('../partials/v204/page-header', {
+    title: titleText,
+    subtitle: isLocked
+      ? 'Final session record is locked. Corrections require a separate authorized workflow.'
+      : (isClosed
+        ? 'Normal check-in is stopped. You may lock to protect the final session.'
+        : 'Live attendance operations for this service session.'),
+    badgeHtml: '<span class="gp-ops-badge gp-ops-badge--' + statusTone + '"><span class="gp-ops-badge__dot" aria-hidden="true"></span>' + statusText + '</span>',
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions">Attendance Sessions</a> <span aria-hidden="true">›</span> <span>' + (isLocked ? 'Locked Summary' : (isClosed ? 'Closed Session' : 'Dashboard')) + '</span>',
+    actionsHtml: isOpen
+      ? '<a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/attendance/sessions/' + s.id + '/close">Close Session</a>'
+      : ''
+  }) %>
+
+  <% if (saved === 'opened' || saved === 'closed' || saved === 'locked' || saved === 'draft') { %>
+  <div class="bb-v204-a03__banner" role="status">
+    <% if (saved === 'opened') { %>Session is open for check-in.<% } %>
+    <% if (saved === 'closed') { %>Session closed — normal check-in stopped.<% } %>
+    <% if (saved === 'locked') { %>Session locked — final record protected.<% } %>
+    <% if (saved === 'draft') { %>Session saved as draft.<% } %>
+  </div>
+  <% } %>
+  <% if (error) { %>
+  <div class="bb-v204-a03__error" role="alert"><%= error %></div>
+  <% } %>
+
+  <% if (isOpen) { %>
+  <div class="bb-v204-a03__toolbar" data-bb-a03-toolbar="1">
+    <a class="bb-ba-btn bb-ba-btn--secondary" href="/branch-admin/attendance/sessions/<%= s.id %>/check-in">Manual Check-In</a>
+    <a class="bb-ba-btn bb-ba-btn--secondary" href="/branch-admin/attendance/sessions/<%= s.id %>/qr">Display QR Kiosk</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/peak">Peak Check-In Mode</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/roster">View Full Live Roster</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/audit">History / Audit</a>
+    <a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/attendance/sessions/<%= s.id %>/close">Close Session</a>
+  </div>
+  <% } %>
+
+  <div class="bb-v204-a03__meta-grid">
+    <div><span class="bb-v204-a03__meta-label">Branch Location</span><strong><%= branchLabel %></strong></div>
+    <div><span class="bb-v204-a03__meta-label">Service Date</span><strong><%= formatDate(s.sessionDate) %></strong></div>
+    <div><span class="bb-v204-a03__meta-label">Session Started</span><strong><%= formatTime(s.startTime) %></strong></div>
+    <div><span class="bb-v204-a03__meta-label">Late Threshold</span><strong><%= Number(s.lateThresholdMinutes) || 0 %> min after start</strong></div>
+  </div>
+
+  <div class="bb-v204-a03__stats">
+    <article class="bb-v204-a03__stat">
+      <h3>Total Checked In</h3>
+      <p class="bb-v204-a03__stat-value"><%= Number(counts.total) || 0 %></p>
+    </article>
+    <article class="bb-v204-a03__stat">
+      <h3>On-Time</h3>
+      <p class="bb-v204-a03__stat-value"><%= Number(counts.present) || 0 %></p>
+    </article>
+    <article class="bb-v204-a03__stat">
+      <h3>Late Arrivals</h3>
+      <p class="bb-v204-a03__stat-value"><%= Number(counts.late) || 0 %></p>
+    </article>
+  </div>
+
+  <% if (isOpen) { %>
+  <section class="bb-v204-a03__qr" id="qr" data-bb-a03-qr="1" aria-labelledby="bb-a03-qr-heading">
+    <header>
+      <h2 id="bb-a03-qr-heading">Display QR Kiosk</h2>
+      <p>Opaque session token — no Church ID, phone, or member PII. Open the projector view for large-screen readability.</p>
+    </header>
+    <div class="bb-v204-a03__qr-actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/attendance/sessions/<%= s.id %>/qr">Open QR Display</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions/<%= s.id %>/qr/check-in">Redeem QR</a>
+    </div>
+    <% if (qrToken) { %>
+    <details class="bb-v204-a03__qr-details">
+      <summary>Greeter assist · session token</summary>
+      <code class="bb-v204-a03__qr-token" data-bb-session-qr="1"><%= qrToken %></code>
+    </details>
+    <% } else { %>
+    <p class="bb-v204-a03__muted">QR token unavailable. Refresh to re-issue.</p>
+    <% } %>
+  </section>
+  <% } %>
+
+  <section class="bb-v204-a03__stream" data-bb-a03-stream="1" aria-labelledby="bb-a03-stream-heading">
+    <header class="bb-v204-a03__section-head">
+      <h2 id="bb-a03-stream-heading"><%= isOpen ? 'Live Influx Roster Stream' : 'Check-In Roster' %></h2>
+      <p><%= isOpen ? 'Recent check-ins for this open session' : 'Recorded check-ins (read-only)' %></p>
+    </header>
+    <% if (!stream.length) { %>
+      <%- include('../partials/v204/empty-state', {
+        title: isOpen ? 'Waiting for check-ins' : 'No check-ins recorded',
+        body: isOpen ? 'Members will appear here as they check in.' : 'This session has no recorded attendance yet.'
+      }) %>
+    <% } else { %>
+      <ul class="bb-v204-a03__stream-list">
+        <% stream.forEach(function (row) { %>
+        <li>
+          <div>
+            <strong><%= row.memberName || 'Member' %></strong>
+            <% if (row.memberNumber) { %><span class="bb-v204-a03__church-id"><%= row.memberNumber %></span><% } %>
+            <p><%= row.method || 'check-in' %> · <%= row.isLate ? 'Late' : 'On-Time' %></p>
+          </div>
+          <time><%= formatWhen(row.checkedInAt) %></time>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <div class="bb-v204-a03__lifecycle">
+    <% if (isDraft) { %>
+    <form method="post" action="/branch-admin/attendance/sessions/<%= s.id %>/transition">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="to_status" value="open" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Open Session</button>
+    </form>
+    <% } %>
+    <% if (isClosed) { %>
+    <form method="post" action="/branch-admin/attendance/sessions/<%= s.id %>/transition" data-bb-a11-lock="1">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="to_status" value="locked" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Lock Final Session</button>
+    </form>
+    <p class="bb-v204-a03__muted">Locking protects the final session. Corrections remain a separate authorized workflow.</p>
+    <% } %>
+    <% if (isLocked) { %>
+    <div class="bb-v204-a03__locked-note" data-bb-a11-summary="1">
+      <%- include('../partials/v204/status-chip', { label: 'LOCKED', tone: 'neutral' }) %>
+      <p>This session is locked. Normal check-in and session edits are blocked. Corrections require <code>attendance.correct</code> and remain outside this screen.</p>
+      <% if (s.lockedAt) { %><p class="bb-v204-a03__muted">Locked at <%= formatWhen(s.lockedAt) %></p><% } %>
+    </div>
+    <% } %>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/attendance/sessions">Back to Sessions</a>
+  </div>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

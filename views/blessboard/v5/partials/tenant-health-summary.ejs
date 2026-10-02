@@ -1,0 +1,62 @@
+<%#
+  Compact Platform Admin tenant health summary.
+  Locals: tenantHealth (one summary) or tenantHealthSummaries (array).
+%>
+<%
+  var summaries = typeof tenantHealthSummaries !== 'undefined' && Array.isArray(tenantHealthSummaries)
+    ? tenantHealthSummaries
+    : (typeof tenantHealth !== 'undefined' && tenantHealth ? [tenantHealth] : []);
+  function healthToneClass(tone) {
+    if (tone === 'ok') return 'bb-pa-chip--ok';
+    if (tone === 'fail') return 'bb-pa-chip--danger';
+    if (tone === 'warn') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+%>
+<% if (summaries.length) { %>
+<% summaries.forEach(function (health) { %>
+<section
+  class="bb-pa-panel bb-pa-tenant-health"
+  data-bb-pa-tenant-health="1"
+  data-product="<%= health.productCode || '' %>"
+  data-complete="<%= health.complete ? '1' : '0' %>"
+  data-failed-stage="<%= health.failedStage || '' %>"
+  data-retry-eligible="<%= health.retryEligible ? '1' : '0' %>"
+  aria-label="Tenant health"
+>
+  <h2 class="bb-pa-section-title">Tenant health</h2>
+  <p class="bb-pa-hint">
+    Live check of this <%= health.productLabel || 'organization' %> after registration.
+    Retry only fills missing stages; healthy resources are not rebuilt.
+  </p>
+  <dl class="bb-pa-dl bb-pa-tenant-health__dl">
+    <div>
+      <dt>Product</dt>
+      <dd data-bb-pa-health-product="1"><%= health.productLabel || health.productCode || '—' %></dd>
+    </div>
+    <div>
+      <dt>Registration lifecycle</dt>
+      <dd data-bb-pa-health-lifecycle="1"><%= health.lifecycle || '—' %></dd>
+    </div>
+    <% (health.checks || []).forEach(function (row) { %>
+    <div data-bb-pa-health-row="<%= row.key %>">
+      <dt><%= row.label %></dt>
+      <dd>
+        <span class="bb-pa-chip <%= healthToneClass(row.tone) %>" data-bb-pa-health-value="<%= row.key %>"><%= row.value %></span>
+      </dd>
+    </div>
+    <% }) %>
+    <div>
+      <dt>Retry eligibility</dt>
+      <dd data-bb-pa-health-retry="<%= health.retryEligible ? '1' : '0' %>"><%= health.retryEligible ? 'Eligible' : 'Not eligible' %></dd>
+    </div>
+  </dl>
+  <% if (health.retryEligible && health.retryHref) { %>
+  <form method="post" action="<%= health.retryHref %>" class="bb-pa-inline-form" data-bb-pa-retry-provision="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn">Retry missing stages</button>
+  </form>
+  <% } %>
+</section>
+<% }) %>
+<% } %>

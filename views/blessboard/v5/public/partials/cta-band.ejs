@@ -46,10 +46,29 @@
     }
   }
 %>
+<% if (!_canEditCta) { %>
+<%- include('../../../../platform/website/components/cta', {
+  model: {
+    heading: _title,
+    body: _body,
+    primaryCta: _primaryLabel
+      ? { label: _primaryLabel, url: _primaryHref || '#' }
+      : (typeof ctaPrimary !== 'undefined' && ctaPrimary
+        ? { label: ctaPrimary.label || '', url: ctaPrimary.href || '#' }
+        : null),
+    secondaryCta: _secondaryLabel
+      ? { label: _secondaryLabel, url: _secondaryHref || '#' }
+      : (typeof ctaSecondary !== 'undefined' && ctaSecondary
+        ? { label: ctaSecondary.label || '', url: ctaSecondary.href || '#' }
+        : null)
+  },
+  editEnabled: false,
+  className: 'bb-tp-platform-bridge bb-tp-cta-band-platform' + (typeof ctaClass !== 'undefined' && ctaClass ? (' ' + ctaClass) : '')
+}) %>
+<% } else { %>
 <section class="bb-tp-cta-band<%= typeof ctaClass !== 'undefined' && ctaClass ? ' ' + ctaClass : '' %>" data-bb-cta-band="1">
   <div class="bb-tp-container bb-tp-cta-band__inner">
     <div class="bb-tp-cta-band__copy">
-      <% if (_canEditCta) { %>
       <%- include('../../partials/editable-text', {
         editPageKey: _pageKey,
         editSectionKey: _sectionKey,
@@ -61,11 +80,7 @@
         editMaxLength: 120,
         editMultiline: false
       }) %>
-      <% } else { %>
-      <h2 class="bb-tp-section-title"><%= _title %></h2>
-      <% } %>
-      <% if (_canEditCta || _body) { %>
-        <% if (_canEditCta) { %>
+      <% if (_body || _canEditCta) { %>
         <%- include('../../partials/editable-text', {
           editPageKey: _pageKey,
           editSectionKey: _sectionKey,
@@ -77,14 +92,10 @@
           editMaxLength: 800,
           editMultiline: true
         }) %>
-        <% } else { %>
-        <p class="bb-tp-body"><%= _body %></p>
-        <% } %>
       <% } %>
     </div>
     <div class="bb-tp-cta-band__actions">
       <% if (typeof ctaPrimary !== 'undefined' && ctaPrimary) { %>
-        <% if (_canEditCta) { %>
         <%- include('../../partials/editable-text', {
           editPageKey: _pageKey,
           editSectionKey: _sectionKey,
@@ -108,12 +119,8 @@
           editMaxLength: 500,
           editMultiline: false
         }) %>
-        <% } else { %>
-        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= _primaryHref || ctaPrimary.href %>"><%= _primaryLabel || ctaPrimary.label %></a>
-        <% } %>
       <% } %>
       <% if (typeof ctaSecondary !== 'undefined' && ctaSecondary) { %>
-        <% if (_canEditCta) { %>
         <%- include('../../partials/editable-text', {
           editPageKey: _pageKey,
           editSectionKey: _sectionKey,
@@ -137,10 +144,8 @@
           editMaxLength: 500,
           editMultiline: false
         }) %>
-        <% } else { %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= _secondaryHref || ctaSecondary.href %>"><%= _secondaryLabel || ctaSecondary.label %></a>
-        <% } %>
       <% } %>
     </div>
   </div>
 </section>
+<% } %>

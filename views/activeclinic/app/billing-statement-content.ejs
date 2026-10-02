@@ -1,0 +1,77 @@
+<%
+  var st = (pageData && pageData.statement) || {};
+  var patient = st.patient || {};
+  var summary = st.summary || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-statement" data-ac-page-section="billing-statement" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <style>
+    @media print {
+      .ac-page-header, .ac-shell-nav, .ac-actions, .ac-btn { display: none !important; }
+      .ac-billing-statement { color: #000; }
+    }
+  </style>
+  <article class="ac-panel ac-receipt">
+    <h2 class="ac-receipt__title">Patient account statement</h2>
+    <p><strong><%= patient.name %></strong> · <%= patient.patientNumber %></p>
+    <p class="ac-muted">Generated <%= st.generatedAt %></p>
+
+    <h3 class="ac-dashboard__card-title">Summary</h3>
+    <dl class="ac-dl">
+      <div><dt>Charges</dt><dd class="ac-money"><%= summary.chargesTotalFormatted %></dd></div>
+      <div><dt>Payments</dt><dd class="ac-money"><%= summary.paymentsTotalFormatted %></dd></div>
+      <div><dt>Credits</dt><dd class="ac-money"><%= summary.creditsTotalFormatted %></dd></div>
+      <div><dt>Open balance</dt><dd class="ac-money"><strong><%= summary.openBalanceFormatted %></strong></dd></div>
+    </dl>
+
+    <h3 class="ac-dashboard__card-title">Invoices</h3>
+    <table class="ac-table">
+      <thead><tr><th>Number</th><th>Date</th><th>Status</th><th>Total</th><th>Balance</th></tr></thead>
+      <tbody>
+        <% (st.invoices || []).forEach(function (row) { %>
+        <tr>
+          <td><%= row.invoiceNumber %></td>
+          <td><%= row.invoiceDate %></td>
+          <td><%= row.status %></td>
+          <td class="ac-money"><%= row.totalFormatted %></td>
+          <td class="ac-money"><%= row.balanceFormatted %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <h3 class="ac-dashboard__card-title">Payments</h3>
+    <table class="ac-table">
+      <thead><tr><th>Number</th><th>Date</th><th>Method</th><th>Amount</th></tr></thead>
+      <tbody>
+        <% (st.payments || []).forEach(function (row) { %>
+        <tr>
+          <td><%= row.paymentNumber %></td>
+          <td><%= row.paymentDate %></td>
+          <td><%= row.paymentMethod %></td>
+          <td class="ac-money"><%= row.amountFormatted %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <h3 class="ac-dashboard__card-title">Credit notes</h3>
+    <table class="ac-table">
+      <thead><tr><th>Number</th><th>Status</th><th>Amount</th><th>Reason</th></tr></thead>
+      <tbody>
+        <% (st.creditNotes || []).forEach(function (row) { %>
+        <tr>
+          <td><%= row.creditNoteNumber %></td>
+          <td><%= row.status %></td>
+          <td class="ac-money"><%= row.amountFormatted %></td>
+          <td><%= row.reason %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="ac-actions" style="margin-top:1.5rem">
+      <button type="button" class="ac-btn" onclick="window.print()">Print statement</button>
+    </div>
+  </article>
+</section>

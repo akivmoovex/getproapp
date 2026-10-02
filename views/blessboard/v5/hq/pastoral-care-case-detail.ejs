@@ -1,0 +1,123 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var c = typeof pastoralCase !== 'undefined' && pastoralCase ? pastoralCase : null;
+  var noteRows = typeof notes !== 'undefined' && notes ? notes : [];
+%>
+<section class="bb-hq-page" data-bb-pastoral-case-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/pastoral-care">Pastoral care</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/pastoral-care/cases">Cases</a>
+      <span aria-hidden="true">›</span>
+      <span><%= c ? c.caseKey : 'Case' %></span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= c ? c.title : 'Pastoral case' %></h1>
+  </header>
+
+  <% if (typeof accessWarning !== 'undefined' && accessWarning) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= accessWarning %></p>
+  <% } %>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (c) { %>
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Case metadata</h2>
+    <ul class="bb-hq-list">
+      <li>Status: <strong><%= c.status %></strong></li>
+      <li>Confidentiality: <strong><%= c.confidentialityLevel %></strong></li>
+      <li>Category: <%= c.category %></li>
+    </ul>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Notes</h2>
+    <% if (!noteRows.length) { %>
+      <p class="bb-hq-lede">No notes.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% noteRows.forEach(function (n) { %>
+          <li>
+            <span class="bb-hq-badge"><%= n.noteVisibility %></span>
+            <% if (n.bodyRedacted || !n.body) { %>
+              <em>Body not available for your access level.</em>
+            <% } else { %>
+              <p><%= n.body %></p>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Add note</h2>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/notes" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Visibility
+        <select name="noteVisibility">
+          <option value="referrer_safe">Referrer-safe</option>
+          <option value="assigned_care">Assigned care</option>
+          <option value="minister_only">Minister only</option>
+          <option value="pastor_only">Pastor only</option>
+          <option value="safeguarding_only">Safeguarding only</option>
+        </select>
+      </label>
+      <label>Body <textarea name="body" required maxlength="20000" rows="4"></textarea></label>
+      <button type="submit">Add note</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Actions</h2>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/assign" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Assignee user id <input name="assigneeUserId" required/></label>
+      <label>Role
+        <select name="assignmentRole">
+          <option value="minister">Minister</option>
+          <option value="pastor">Pastor</option>
+          <option value="safeguarding">Safeguarding</option>
+        </select>
+      </label>
+      <button type="submit">Assign</button>
+    </form>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/confidentiality" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Confidentiality
+        <select name="confidentialityLevel">
+          <option value="general_care">General care</option>
+          <option value="restricted_care">Restricted care</option>
+          <option value="highly_confidential">Highly confidential</option>
+          <option value="safeguarding_restricted">Safeguarding restricted</option>
+        </select>
+      </label>
+      <button type="submit">Update confidentiality</button>
+    </form>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/escalate" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit">Escalate</button>
+    </form>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/close" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit">Close</button>
+    </form>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/reopen" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit">Reopen</button>
+    </form>
+    <form method="post" action="/hq/pastoral-care/cases/<%= c.id %>/archive" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit">Archive</button>
+    </form>
+  </section>
+  <% } %>
+</section>
+<%- include('../partials/hq-shell-end') %>

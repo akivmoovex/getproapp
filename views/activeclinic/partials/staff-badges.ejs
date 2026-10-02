@@ -1,0 +1,20 @@
+<%#
+  Shared staff status / account badges and avatar.
+  locals: status, statusLabel, accountKey, accountLabel, initials, displayName, size
+%>
+<% if (typeof initials !== 'undefined' && initials) { %>
+<span class="ac-avatar<%= typeof size !== 'undefined' && size === 'lg' ? ' ac-avatar--lg' : '' %>" aria-hidden="true" data-ac-staff-avatar="1"><%= initials %></span>
+<% } %>
+<% if (typeof status !== 'undefined' && status) { %>
+<span class="ac-badge ac-badge--<%= status %>" data-ac-staff-status="<%= status %>">
+  <%= statusLabel || status %>
+</span>
+<% } %>
+<% if (typeof accountKey !== 'undefined' && accountKey) { %>
+<span class="ac-badge<%= accountKey === 'active' ? ' ac-badge--active' : '' %>" data-ac-account-status="<%= accountKey %>">
+  <%= accountLabel || accountKey %>
+</span>
+<% } %>
+<% if (typeof invitationPending !== 'undefined' && invitationPending) { %>
+<span class="ac-badge ac-badge--invited" data-ac-invitation-status="pending">Invitation pending</span>
+<% } %>

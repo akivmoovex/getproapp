@@ -220,7 +220,7 @@ async function recordDuplicateMatchReviewDecision(db, input = {}, deps = {}) {
           app && app.organization_id != null ? String(app.organization_id) : null;
         if (organizationId && UUID_RE.test(organizationId)) {
           await auditSafe(client, {
-            deploymentCode: input.deploymentCode || "blessboard-org-v5",
+            deploymentCode: input.deploymentCode || "blessboard-org-staging",
             organizationId,
             actorUserId,
             outcome: "success",

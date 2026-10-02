@@ -119,9 +119,22 @@
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
+  function initPrintReceipt() {
+    document.querySelectorAll("[data-bb-print-receipt]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        window.print();
+      });
+    });
+  }
+
+  function boot() {
     init();
+    initPrintReceipt();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 })();

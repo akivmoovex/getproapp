@@ -133,7 +133,7 @@ test("apex /pricing renders three-package layout without checkout", async () => 
   const app = makeApexApp();
   const res = await request(app).get("/pricing");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=76/);
+  assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
   assert.match(res.text, /church-body--apex/);
   assert.match(res.text, /Simple plans for every stage of church growth/);
   assert.match(res.text, /bb-apex-pricing/);

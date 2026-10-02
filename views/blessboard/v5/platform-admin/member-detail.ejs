@@ -1,0 +1,101 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var m = member || {};
+  var tech = m.technical || {};
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-member-detail="1" aria-label="Member support profile">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-orgs__eyebrow"><a class="bb-pa-link" href="/admin/members">Members</a></p>
+    <h1 class="bb-pa-page-head__title"><%= m.displayName || 'Member' %></h1>
+    <p class="bb-pa-lede">
+      Support profile with identity and technical metadata only.
+      Pastoral notes, welfare narratives, safeguarding, and Finance are never included.
+    </p>
+  </header>
+
+  <h2 class="bb-pa-section-title">Identity</h2>
+  <dl class="bb-pa-dl" data-bb-pa-member-identity="1">
+    <div><dt>Name</dt><dd><%= m.displayName || '—' %></dd></div>
+    <div><dt>Member number</dt><dd><code class="bb-pa-key"><%= m.memberNumber %></code></dd></div>
+    <div><dt>Email</dt><dd><%= m.emailDisplay || '—' %></dd></div>
+    <div><dt>Phone</dt><dd><%= m.phoneDisplay || '—' %></dd></div>
+    <div><dt>Status</dt><dd><%= m.status || '—' %></dd></div>
+    <div><dt>Membership status</dt><dd><%= m.membershipStatus || '—' %></dd></div>
+    <div><dt>Registered</dt><dd><%= formatTs(m.registeredAt) %></dd></div>
+  </dl>
+
+  <h2 class="bb-pa-section-title">Owning organisation</h2>
+  <dl class="bb-pa-dl" data-bb-pa-member-org="1">
+    <div>
+      <dt>Organisation</dt>
+      <dd>
+        <% if (m.organizationKey) { %>
+        <a class="bb-pa-link" href="/admin/organizations/<%= m.organizationKey %>"><%= m.organizationName || m.organizationKey %></a>
+        <% } else { %>—<% } %>
+      </dd>
+    </div>
+    <div><dt>Church</dt><dd><%= m.churchName || m.churchKey || '—' %></dd></div>
+    <div><dt>Branch</dt><dd><%= m.branchName || m.branchKey || '—' %></dd></div>
+  </dl>
+
+  <h2 class="bb-pa-section-title">Account link</h2>
+  <dl class="bb-pa-dl" data-bb-pa-member-account="1">
+    <div><dt>Linked</dt><dd><%= m.accountLinked ? 'Yes' : 'No' %></dd></div>
+    <% if (m.accountLinked) { %>
+    <div><dt>User</dt><dd><%= m.linkedUserName || '—' %> (<%= m.linkedUserEmail || '—' %>)</dd></div>
+    <div><dt>User status</dt><dd><%= m.linkedUserStatus || '—' %></dd></div>
+    <div><dt>Last login</dt><dd><%= formatTs(m.linkedUserLastLoginAt) %></dd></div>
+    <div>
+      <dt>User id</dt>
+      <dd>
+        <% if (m.linkedUserId) { %>
+        <a class="bb-pa-link" href="/admin/users/<%= m.linkedUserId %>"><code class="bb-pa-key"><%= m.linkedUserId %></code></a>
+        <% } else { %>—<% } %>
+      </dd>
+    </div>
+    <% } %>
+  </dl>
+
+  <h2 class="bb-pa-section-title">Technical support metadata</h2>
+  <dl class="bb-pa-dl" data-bb-pa-member-tech="1">
+    <div><dt>Member id</dt><dd><code class="bb-pa-key"><%= tech.memberId || m.memberId %></code></dd></div>
+    <div><dt>Organisation id</dt><dd><code class="bb-pa-key"><%= tech.organizationId || '—' %></code></dd></div>
+    <div><dt>Church id</dt><dd><code class="bb-pa-key"><%= tech.churchId || '—' %></code></dd></div>
+    <div><dt>Branch id</dt><dd><code class="bb-pa-key"><%= tech.branchId || '—' %></code></dd></div>
+    <div><dt>Updated</dt><dd><%= formatTs(m.updatedAt) %></dd></div>
+    <div><dt>Joined branch</dt><dd><%= formatTs(m.joinedAt) %></dd></div>
+  </dl>
+
+  <h2 class="bb-pa-section-title">Safe audit history</h2>
+  <% if (!(m.safeAuditHistory || []).length) { %>
+  <p class="bb-pa-muted" data-bb-pa-member-audit-empty="1">No recent member audit events.</p>
+  <% } else { %>
+  <ul class="bb-pa-list" data-bb-pa-member-audit="1">
+    <% (m.safeAuditHistory || []).forEach(function (a) { %>
+    <li>
+      <code class="bb-pa-key"><%= a.actionKey %></code>
+      · <%= a.entityType %> · <%= a.outcome %>
+      · <time datetime="<%= a.createdAt || '' %>"><%= formatTs(a.createdAt) %></time>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <p class="bb-pa-muted" data-bb-pa-support-mode="unavailable">
+    <%= m.enterChurchAdminLabel || 'Enter church admin context (coming soon)' %>
+    — support mode is not enabled in this release.
+  </p>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

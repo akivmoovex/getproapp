@@ -96,7 +96,7 @@
           <% if (!(members || []).length) { %>
           <p class="muted" style="padding:1rem;">No members match these filters.</p>
           <% } else { members.forEach(function (m) { %>
-          <article class="church-mobile-list-card" style="padding:1rem;border-bottom:1px solid rgba(0,0,0,0.08);">
+          <article class="church-mobile-list-card" style="padding:1rem;border-bottom:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);">
             <h2 class="section-title section-title--flush" style="overflow-wrap:anywhere;"><%= m.full_name %></h2>
             <p class="muted" style="overflow-wrap:anywhere;margin:0.35rem 0;"><%= m.organization_name %> · <%= m.branch_name %></p>
             <p style="margin:0.35rem 0;">

@@ -1,0 +1,106 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var s = typeof session !== 'undefined' && session ? session : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : 'Branch';
+  var list = Array.isArray(corrections) ? corrections : [];
+  var checkInRows = Array.isArray(checkIns) ? checkIns : [];
+  var timeline = Array.isArray(entries) ? entries : [];
+  function fmt(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString();
+  }
+%>
+
+<section
+  class="bb-v204-a14"
+  data-bb-stitch-v204="BB-A14"
+  data-bb-screen="BB-A14"
+  data-bb-attendance-audit="1"
+  aria-label="Attendance History / Audit"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Attendance History / Audit',
+    subtitle: (s.title || s.serviceEventRef || 'Session') + ' · ' + branchLabel,
+    breadcrumbsHtml: '<a href="/branch-admin/attendance/sessions/' + s.id + '">Dashboard</a> <span aria-hidden="true">›</span> <span>Audit</span>'
+  }) %>
+
+  <section class="bb-v204-a14__timeline" aria-labelledby="bb-a14-timeline-heading">
+    <h2 id="bb-a14-timeline-heading">Correction timeline</h2>
+    <%- include('../partials/v204/audit-timeline', {
+      entries: timeline,
+      emptyTitle: 'No corrections yet',
+      emptyBody: 'Authorized corrections will appear here with actor, timestamp, and reason.'
+    }) %>
+  </section>
+
+  <section class="bb-v204-a14__checkins" aria-labelledby="bb-a14-checkins-heading">
+    <h2 id="bb-a14-checkins-heading">Check-ins (correct from roster)</h2>
+    <% if (!checkInRows.length) { %>
+      <%- include('../partials/v204/empty-state', { title: 'No check-ins', body: 'Nothing to correct for this session yet.' }) %>
+    <% } else { %>
+    <div class="bb-v204-a08__table-wrap">
+      <table class="bb-ba-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Checked in</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% checkInRows.forEach(function (row) { %>
+          <tr>
+            <td>
+              <strong><%= row.memberName || 'Member' %></strong>
+              <% if (row.memberNumber) { %><div class="bb-v204-a04__muted"><%= row.memberNumber %></div><% } %>
+            </td>
+            <td><code><%= row.method %></code></td>
+            <td><%= row.status %></td>
+            <td><%= fmt(row.checkedInAt) %></td>
+            <td>
+              <a href="/branch-admin/attendance/sessions/<%= s.id %>/check-ins/<%= row.id %>/correct">Correct</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+
+  <% if (list.length) { %>
+  <section aria-labelledby="bb-a14-table-heading">
+    <h2 id="bb-a14-table-heading">Correction records</h2>
+    <div class="bb-v204-a08__table-wrap">
+      <table class="bb-ba-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Member</th>
+            <th>Change</th>
+            <th>Reason</th>
+            <th>Preserved method</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% list.forEach(function (c) { %>
+          <tr>
+            <td><%= fmt(c.createdAt) %></td>
+            <td><%= c.memberName || 'Member' %></td>
+            <td><%= (c.originalValue && c.originalValue.status) || '—' %> → <%= (c.correctedValue && c.correctedValue.status) || '—' %></td>
+            <td><%= c.reason %></td>
+            <td><code><%= c.method || (c.originalValue && c.originalValue.method) || '—' %></code></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

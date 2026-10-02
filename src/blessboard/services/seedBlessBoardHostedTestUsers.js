@@ -101,7 +101,7 @@ function evaluateHostedSeedSafety(env) {
       status: STATUS.REFUSED,
       message: "refused_deployment_env",
       detail:
-        "DEPLOYMENT_ENV=testing is required (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5).",
+        "DEPLOYMENT_ENV=testing is required (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-staging).",
     };
   }
   if (!allowTestUsers) {
@@ -131,7 +131,7 @@ async function probeRuntimeIdentity(db) {
   const regs = await db.query(`
     SELECT
       to_regclass('blessboard.users')::text AS users_table,
-      to_regclass('blessboard.user_roles')::text AS user_roles_table,
+      to_regclass('blessboard.user_role_assignments')::text AS user_role_assignments_table,
       to_regclass('blessboard.organizations')::text AS blessboard_organizations_table,
       to_regclass('platform.organizations')::text AS platform_organizations_table,
       to_regclass('blessboard.churches')::text AS churches_table,
@@ -142,7 +142,7 @@ async function probeRuntimeIdentity(db) {
   const t = regs.rows[0] || {};
   const requiredOk = Boolean(
     t.users_table &&
-      t.user_roles_table &&
+      t.user_role_assignments_table &&
       t.platform_organizations_table &&
       t.churches_table &&
       t.branches_table &&
@@ -157,7 +157,7 @@ async function probeRuntimeIdentity(db) {
     currentSchema: row.current_schema || null,
     tables: {
       "blessboard.users": Boolean(t.users_table),
-      "blessboard.user_roles": Boolean(t.user_roles_table),
+      "blessboard.user_role_assignments": Boolean(t.user_role_assignments_table),
       "blessboard.organizations": Boolean(t.blessboard_organizations_table),
       "platform.organizations": Boolean(t.platform_organizations_table),
       "blessboard.churches": Boolean(t.churches_table),
@@ -285,13 +285,30 @@ async function verifyExpectedUsers(db) {
         u.display_name,
         u.email_normalized,
         u.status AS user_status,
-        ur.role_key,
-        ur.status AS role_status
+        CASE
+          WHEN r.role_key = 'platform_administrator' THEN 'platform_admin'
+          WHEN r.role_key = 'branch_administrator' THEN 'branch_admin'
+          WHEN r.role_key IN ('organisation_administrator', 'church_system_administrator')
+            THEN 'church_hq_admin'
+          ELSE r.role_key
+        END AS role_key,
+        a.status AS role_status
        FROM blessboard.users u
-       LEFT JOIN blessboard.user_roles ur
-         ON ur.user_id = u.id AND ur.status = 'active'
+       LEFT JOIN blessboard.user_role_assignments a
+         ON a.user_id = u.id
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+       LEFT JOIN blessboard.roles r ON r.id = a.role_id AND r.is_active = true
       WHERE u.email_normalized = ANY($1::text[])
-      ORDER BY u.email_normalized, ur.role_key`,
+      ORDER BY u.email_normalized,
+               CASE
+                 WHEN r.role_key = 'platform_administrator' THEN 'platform_admin'
+                 WHEN r.role_key = 'branch_administrator' THEN 'branch_admin'
+                 WHEN r.role_key IN ('organisation_administrator', 'church_system_administrator')
+                   THEN 'church_hq_admin'
+                 ELSE r.role_key
+               END`,
     [EXPECTED_EMAILS.slice()]
   );
   const countRes = await db.query(

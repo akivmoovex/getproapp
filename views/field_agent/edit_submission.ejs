@@ -25,7 +25,7 @@
             : 'The review team needs updates to this application. Edit the fields below, add a reply if helpful, then resubmit.' %>
         </p>
 
-        <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:4px solid <%= _faRejected ? 'rgba(160,60,60,0.45)' : 'rgba(180,120,0,0.5)' %>;">
+        <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:4px solid <%= _faRejected ? 'color-mix(in srgb, var(--color-danger-text) 45%, transparent)' : 'color-mix(in srgb, var(--color-warning-text) 50%, transparent)' %>;">
           <h2 class="form-step__title" style="margin-top:0;font-size:1rem;">Admin comment</h2>
           <p style="margin:0;white-space:pre-wrap;"><%= _faAdminNote || '—' %></p>
         </div>

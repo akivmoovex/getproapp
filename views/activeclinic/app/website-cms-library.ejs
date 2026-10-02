@@ -1,0 +1,75 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var items = cms.items || [];
+  var filter = cms.filter || "";
+  var types = cms.types || [];
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  function usageLabel(item) {
+    var usage = item.usage || [];
+    if (!usage.length) return "Not used on a page yet";
+    return usage.map(function (entry) { return entry.label; }).join(", ");
+  }
+%>
+<section class="ac-mw" data-ac-page-section="website-library" data-ac-mw-screen="MW09-01">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Content Library</h2>
+      <p class="ac-mw-muted">Create clinic website information once and reuse it on pages and sections. Use Public Catalogue to show or hide doctors and services. The library edits presentation and placements only — it does not create clinical records.</p>
+    </div>
+    <% if (cms.canEdit) { %>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/catalogue">Public catalogue</a>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/library/new">Add content item</a>
+    </div>
+    <% } %>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <nav class="ac-mw-filters" aria-label="Filter content library">
+    <a class="ac-mw-filters__link<%= !filter ? ' is-current' : '' %>" href="/app/settings/website/library">All</a>
+    <% types.forEach(function (type) { %>
+    <a class="ac-mw-filters__link<%= filter === type.key ? ' is-current' : '' %>" href="/app/settings/website/library?type=<%= type.key %>"><%= type.label %></a>
+    <% }) %>
+  </nav>
+  <% if (!items.length) { %>
+  <p class="ac-mw-muted">No reusable content matches this filter.</p>
+  <% } %>
+  <form id="ac-mw-library-reorder" method="post" action="/app/settings/website/library/reorder" data-ac-mw-reorder="library">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-mw-list" data-ac-mw-list="1">
+      <% items.forEach(function (item) { %>
+      <article class="ac-mw-card ac-mw-card--library" data-ac-mw-item="1" data-ac-library-id="<%= item.id %>" data-ac-library-type="<%= item.type %>" data-ac-library-source="<%= item.source %>" data-ac-library-visible="<%= item.visible === false ? '0' : '1' %>">
+        <div>
+          <% if (cms.canEdit) { %>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
+          <input type="hidden" name="itemIds" value="<%= item.id %>" data-ac-mw-order="1"/>
+          <% } %>
+        </div>
+        <div>
+          <h3><%= item.title || item.typeLabel %></h3>
+          <p class="ac-mw-card__meta"><%= item.summary || item.body || item.clinicSummary || "" %></p>
+          <p>
+            <span class="ac-mw-badge<%= item.isOperational ? ' ac-mw-badge--ops' : ' ac-mw-badge--web' %>"><%= item.sourceLabel %></span>
+            <span class="ac-mw-badge ac-mw-badge--draft"><%= item.typeLabel %></span>
+            <% if (item.featured) { %><span class="ac-mw-badge">Featured</span><% } %>
+            <% if (item.visible === false) { %><span class="ac-mw-badge ac-mw-badge--hidden">Hidden</span><% } %>
+          </p>
+          <p class="ac-mw-card__meta" data-ac-library-usage="1">Used on: <%= usageLabel(item) %></p>
+        </div>
+        <div class="ac-mw-actions">
+          <a class="ac-mw-btn" href="/app/settings/website/library/<%= item.id %>">Edit</a>
+          <% if (cms.canEdit) { %>
+          <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/library/<%= item.id %>/use">Use on page</a>
+          <% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+    <% if (cms.canEdit && items.length) { %>
+    <p><button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save content order</button></p>
+    <% } %>
+  </form>
+</section>

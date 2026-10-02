@@ -1,4 +1,4 @@
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadSharedWebsiteMedia: true, loadMediaPicker: true }) %>
 <%
   var ed = typeof editor !== 'undefined' && editor ? editor : { sections: [], serviceTimes: {} };
   var sections = Array.isArray(ed.sections) ? ed.sections : [];
@@ -272,13 +272,41 @@
             <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
           ><%= esc(inputFor(field)) %></textarea>
         </div>
+        <% } else if (field.type === 'image_url') { %>
+        <%
+          var imgInputId = 'val-' + field.key.replace(/\./g, '-');
+          var imgVal = String(inputFor(field) || '');
+          var _branchMediaList = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl)
+            ? String(websiteMediaListUrl)
+            : ((typeof mediaListUrl !== 'undefined' && mediaListUrl) ? String(mediaListUrl) : '');
+        %>
+        <div class="bb-hq-field bb-hq-field--image" data-bb-setting-image="1">
+          <p class="bb-hq-field__legend"><%= esc(field.label) %> override</p>
+          <p class="bb-hq-hint">
+            Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+          </p>
+          <%- include('../../../platform/website/partials/media-field', {
+            mediaField: {
+              idName: imgInputId + '_media_id',
+              srcName: 'value',
+              altName: imgInputId + '_alt',
+              altLabel: 'Image description',
+              mediaId: '',
+              src: imgVal,
+              alt: '',
+              emptyText: 'No image selected.'
+            },
+            mediaListUrl: _branchMediaList
+          }) %>
+          <p class="bb-hq-hint">Images are stored in the shared church media library (CDN). Raw URL entry is not used for ordinary admins.</p>
+        </div>
         <% } else { %>
         <div class="bb-hq-field">
           <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
           <input
             id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
             name="value"
-            type="<%= field.type === 'email' ? 'email' : (field.type === 'url' || field.type === 'image_url' ? 'url' : 'text') %>"
+            type="<%= field.type === 'email' ? 'email' : (field.type === 'url' ? 'url' : 'text') %>"
             maxlength="<%= field.maxLen || 200 %>"
             value="<%= esc(inputFor(field)) %>"
             autocomplete="off"
@@ -289,7 +317,7 @@
 
         <div class="bb-hq-branch-settings__field-actions">
           <button type="submit" class="bb-hq-btn" data-bb-setting-submit="override">
-            <%= field.state === 'overridden' ? 'Save override' : 'Override for this branch' %>
+            <%= field.state === 'overridden' ? 'Save override' : (field.overrideActionLabel || 'Use a different version for this branch') %>
           </button>
         </div>
       </form>
@@ -297,13 +325,13 @@
 
       <div class="bb-hq-branch-settings__field-actions">
         <% if (field.canReset && field.state === 'overridden') { %>
-        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="reset" onsubmit="return confirm('Reset this override and inherit the church default again?');">
+        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="reset" onsubmit="return confirm('Return this field to the Headquarters default? The local override will be removed.');">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
           <input type="hidden" name="action" value="reset" />
           <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
           <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
           <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
-          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset">Reset to church default</button>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset"><%= field.resetActionLabel || 'Return to Headquarters Default' %></button>
         </form>
         <% } %>
 
@@ -406,4 +434,9 @@
   </section>
 </section>
 
-<%- include('../partials/hq-shell-end') %>
+<% if (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } else if (typeof mediaListUrl !== 'undefined' && mediaListUrl) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: mediaListUrl }) %>
+<% } %>
+<%- include('../partials/hq-shell-end', { loadSharedWebsiteMedia: true, loadMediaPicker: true }) %>

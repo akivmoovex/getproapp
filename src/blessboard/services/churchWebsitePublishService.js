@@ -17,7 +17,22 @@ const {
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
+  logBlessBoardEngineBridgeFailure,
+  logBlessBoardEngineBridgeWarning,
+} = require("../../platform/website-engine/blessboardEngineBridgeLog");
+const {
+  runSoftSavepoint,
+} = require("../../platform/website/publicationTransaction");
+const {
+  buildPublishFailureResult,
+  PUBLIC_CODES,
+} = require("./websitePublishFailureDiagnostics");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -27,6 +42,10 @@ const STATUS = Object.freeze({
   FORBIDDEN: "forbidden",
   LOOKUP_ERROR: "lookup_error",
   CONFLICT: "conflict",
+  ENGINE_ERROR: "engine_error",
+  APPLY_ERROR: "apply_error",
+  PUBLISH_FAILED: "publish_failed",
+  READINESS_UNAVAILABLE: "readiness_unavailable",
 });
 
 const GAP = Object.freeze({
@@ -86,7 +105,7 @@ async function withTransaction(db, fn) {
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 /**
@@ -122,7 +141,7 @@ async function loadChurchPublishContext(client, churchId) {
  * @param {string} churchId
  * @param {string|null} branchId
  */
-async function loadContactFlags(client, churchId, branchId) {
+async function loadContactFlags(client, churchId, branchId, organizationId) {
   const settings = await settingsRepo.findChurchSettings(client, churchId);
   const branchSettings =
     branchId != null ? await settingsRepo.findBranchSettings(client, branchId) : null;
@@ -132,9 +151,32 @@ async function loadContactFlags(client, churchId, branchId) {
   const hasBranchContact =
     Boolean(branchSettings && String(branchSettings.email || "").trim()) ||
     Boolean(branchSettings && String(branchSettings.phone || "").trim());
+  let hasEngineContact = false;
+  if (organizationId) {
+    try {
+      const {
+        loadFieldOverlayMap,
+        overlayKey,
+      } = require("../website/blessboardEngineContentService");
+      const contactOverlay = await loadFieldOverlayMap(client, {
+        organizationId: String(organizationId),
+        branchId: branchId || null,
+        pageKey: "contact",
+        mode: "draft",
+        createIfMissing: false,
+      });
+      const email = contactOverlay.get(overlayKey("details", "email"));
+      const phone = contactOverlay.get(overlayKey("details", "phone"));
+      hasEngineContact =
+        Boolean(email != null && String(email).trim()) ||
+        Boolean(phone != null && String(phone).trim());
+    } catch {
+      /* non-fatal — settings contact remains the fallback */
+    }
+  }
   return {
     settings,
-    hasContact: hasChurchContact || hasBranchContact,
+    hasContact: hasChurchContact || hasBranchContact || hasEngineContact,
   };
 }
 
@@ -154,7 +196,13 @@ async function hasServiceTimesContent(client, churchId) {
             ps.section_key IN ('service_times', 'services', 'worship_times')
             OR ps.section_type IN ('service_times', 'services', 'worship_times')
           )
-          AND NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
+          AND (
+            NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
+            OR (
+              jsonb_typeof(COALESCE(ps.layout_metadata, '{}'::jsonb)->'entries') = 'array'
+              AND jsonb_array_length(COALESCE(ps.layout_metadata, '{}'::jsonb)->'entries') > 0
+            )
+          )
      ) AS has_service_times`,
     [churchId]
   );
@@ -220,7 +268,12 @@ function evaluateHostnameReadiness(ctx, domains, entitlements) {
 
   return {
     pathPublicOk,
-    publicPath: pathPublicOk ? `/c/${keyNorm.key}` : null,
+    publicPath: pathPublicOk
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: keyNorm.key,
+        })
+      : null,
     organizationKey: pathPublicOk ? keyNorm.key : null,
     domains: domains || [],
     customDomainBlocked: hasCustomWithoutEntitlement,
@@ -270,7 +323,12 @@ async function evaluatePublishReadiness(db, input) {
         gaps.push(GAP.FIRST_BRANCH);
       }
 
-      const contact = await loadContactFlags(client, churchId, ctx.first_branch_id);
+      const contact = await loadContactFlags(
+        client,
+        churchId,
+        ctx.first_branch_id,
+        ctx.organization_id
+      );
       if (!contact.hasContact) gaps.push(GAP.CONTACT_METHOD);
 
       const hasTimes = await hasServiceTimesContent(client, churchId);
@@ -335,14 +393,26 @@ async function evaluatePublishReadiness(db, input) {
         domainCount: domains.length,
       };
     });
-  } catch {
+  } catch (err) {
+    const failed = buildPublishFailureResult(err, {
+      operation: "evaluatePublishReadiness",
+      organizationId: input && input.organizationId,
+      churchId: input && input.churchId,
+      reasonHint: "readiness",
+      stageHint: "readiness",
+      skipLog: false,
+    });
     return {
       ok: false,
-      status: STATUS.LOOKUP_ERROR,
+      status: STATUS.READINESS_UNAVAILABLE,
       ready: false,
       // Contract: ready === false always includes at least one gap/issue code.
-      gaps: ["lookup_error"],
-      reason: "lookup_error",
+      gaps: [PUBLIC_CODES.READINESS_UNAVAILABLE],
+      reason: PUBLIC_CODES.READINESS_UNAVAILABLE,
+      publicCode: PUBLIC_CODES.READINESS_UNAVAILABLE,
+      engineCode: failed.engineCode,
+      failureStage: failed.failureStage,
+      message: failed.message,
     };
   }
 }
@@ -572,6 +642,27 @@ async function publishChurchWebsite(db, input) {
         }
       }
 
+      // Apply pending pencil drafts before snapshotting so HQ Publish matches
+      // ActiveClinic: ✓ saves draft, Publish makes that copy live and versions it.
+      let pendingOverlayDrafts = 0;
+      if (inner.organizationId) {
+        const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
+        const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
+        const [pendingField, pendingStructured] = await Promise.all([
+          fieldDraftRepo.countDrafts(client, { churchId, branchId }),
+          structuredDraftRepo.countStructuredDrafts(client, { churchId, branchId }),
+        ]);
+        pendingOverlayDrafts = Number(pendingField || 0) + Number(pendingStructured || 0);
+        if (pendingOverlayDrafts > 0) {
+          const { applyWebsiteDraftsInTransaction } = require("./websiteDraftApplyService");
+          await applyWebsiteDraftsInTransaction(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+          });
+        }
+      }
+
       // Narrow idempotency: rapid duplicate POSTs only when nothing new is waiting.
       // Phase 7 draft apply always forces a version even when CMS page rows stay published.
       const forcePublishVersion = Boolean(input && input.forcePublishVersion === true);
@@ -613,7 +704,7 @@ async function publishChurchWebsite(db, input) {
               [inner.organizationId]
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
-        if (draftN === 0 && approvedN === 0) {
+        if (draftN === 0 && approvedN === 0 && pendingOverlayDrafts === 0) {
           const recentRes = branchId
             ? await client.query(
                 `SELECT id, version_number, published_at, published_by
@@ -700,8 +791,26 @@ async function publishChurchWebsite(db, input) {
         });
       }
 
-      // Church-wide publish flips site flag; branch publish must not mutate main website status.
-      if (!branchId) {
+      // Church-wide and primary/HQ branch publish flip the church website flag used by
+      // the public directory. Secondary campus publishes must not force church listing.
+      let marksChurchWebsitePublished = !branchId;
+      if (branchId) {
+        const primaryCheck = await client.query(
+          `SELECT is_primary, branch_type, branch_key
+             FROM blessboard.branches
+            WHERE id = $1 AND church_id = $2
+            LIMIT 1`,
+          [branchId, churchId]
+        );
+        const branchRow = primaryCheck.rows[0] || null;
+        marksChurchWebsitePublished = Boolean(
+          branchRow &&
+            (branchRow.is_primary === true ||
+              String(branchRow.branch_type || "").toLowerCase() === "hq" ||
+              String(branchRow.branch_key || "").toLowerCase() === "hq")
+        );
+      }
+      if (marksChurchWebsitePublished) {
         const displayName = await settingsRepo.findChurchDisplayName(client, churchId);
         await settingsRepo.ensureChurchSettingsRow(client, {
           churchId,
@@ -744,13 +853,16 @@ async function publishChurchWebsite(db, input) {
         outcome: "success",
         metadata: {
           from_status: inner.websiteStatus || "draft",
-          to_status: branchId ? inner.websiteStatus || "draft" : "published",
+          to_status: marksChurchWebsitePublished
+            ? "published"
+            : inner.websiteStatus || "draft",
           count: pageUpdate.rowCount,
           field_keys: fieldKeys.length ? fieldKeys : undefined,
           source: "hq_website",
           plan_key: inner.planKey || undefined,
           website_scope: branchId ? "branch" : "church",
           branch_id: branchId || undefined,
+          marks_church_website_published: marksChurchWebsitePublished,
         },
       });
 
@@ -764,24 +876,90 @@ async function publishChurchWebsite(db, input) {
           branchId
         );
 
-        const versionSvc = require("./websitePublicationVersionService");
-        publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
-          organizationId: inner.organizationId,
-          churchId,
-          branchId,
-          actorUserId: input.actorUserId || null,
-          publishedAt: publishedAt.toISOString(),
-          sourceType: (input && input.sourceType) || "hq_edit",
-          sourceSubmissionId: (input && input.sourceSubmissionId) || null,
-          publicationNote:
-            input && input.publicationNote
-              ? String(input.publicationNote).trim().slice(0, 2000)
-              : null,
-          notifyBranchAdmins: Boolean(input && input.notifyBranchAdmins),
-          notifyHqTeam: Boolean(input && input.notifyHqTeam),
-          publishedSubmissionIds,
-          alreadyPublished: inner.websiteStatus === "published",
-        });
+        if (input && input.skipPlatformLifecycle === true) {
+          // Platform orchestrator already minted the version — projection only.
+          publicationVersion = {
+            id: input.platformVersionId || null,
+            versionNumber: input.platformVersionNumber || null,
+          };
+        } else {
+          // Canonical runtime: platform publicationService (not BB version engine).
+          const publicationService = require("../../platform/website/publicationService");
+          const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+          const {
+            ensureEngineContent,
+          } = require("../../platform/website-engine/blessboardBridge");
+          const ensured = await ensureBlessBoardWebsiteInstance(client, {
+            organizationId: inner.organizationId,
+            slug: inner.organizationKey,
+            branchId,
+            actorIdentityId: input.actorUserId || null,
+          });
+          if (!ensured || !ensured.ok || !ensured.instance) {
+            throw Object.assign(new Error("website_engine_instance_missing"), {
+              code: "WEBSITE_ENGINE_INSTANCE",
+            });
+          }
+          await ensureEngineContent(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+            actorIdentityId: input.actorUserId || null,
+            slug: inner.organizationKey,
+          });
+          const enginePublished = await publicationService.publishWebsiteDraft(client, {
+            organizationId: inner.organizationId,
+            instanceId: ensured.instance.id,
+            actorIdentityId: input.actorUserId || null,
+            grantedPermissions: ["website.publish"],
+            forceTenantPublish: true,
+            // forcePublishVersion must mint a new platform version even when draft==published
+            // (governance tests + HQ "Publish again" after approval).
+            allowEmpty: Boolean(input && input.forcePublishVersion === true),
+          });
+          if (!enginePublished.ok) {
+            throw Object.assign(new Error("website_engine_publish_failed"), {
+              code: "WEBSITE_ENGINE_PUBLISH",
+              engineCode: enginePublished.code,
+              organizationId: inner.organizationId,
+              instanceId: ensured.instance.id,
+            });
+          }
+          publicationVersion = enginePublished.version || {
+            id: null,
+            versionNumber: null,
+          };
+        }
+        // Compatibility projection must not abort the outer publish TX. Soft
+        // savepoint is the platform publication boundary (PC10 / PC10C).
+        await runSoftSavepoint(
+          client,
+          "bb_publish_engine_project",
+          async () => {
+            const {
+              projectPublishedFieldsToPages,
+            } = require("../website/blessboardEngineContentService");
+            await projectPublishedFieldsToPages(client, {
+              organizationId: inner.organizationId,
+              churchId,
+              branchId,
+              slug: inner.organizationKey,
+            });
+          },
+          {
+            onError: (projectErr) => {
+              logBlessBoardEngineBridgeWarning({
+                operation: "projectPublishedFieldsToPages",
+                organizationId: inner.organizationId,
+                churchId,
+                branchId,
+                engineCode: projectErr && projectErr.code,
+                errorClass:
+                  (projectErr && (projectErr.code || projectErr.name)) || "Error",
+              });
+            },
+          }
+        );
       } catch (versionErr) {
         // Version history is required for Phase3 — fail the publish TX.
         throw versionErr;
@@ -809,18 +987,34 @@ async function publishChurchWebsite(db, input) {
       };
     });
   } catch (err) {
-    if (err && err.code === "PARTIAL_PAGE_PUBLISH") {
-      return {
-        ok: false,
-        status: STATUS.CONFLICT,
-        reason: "partial_page_publish",
-      };
-    }
-    if (process.env.BLESSBOARD_DEBUG_PUBLISH === "1") {
-      // eslint-disable-next-line no-console
-      console.error("[publishChurchWebsite]", err && err.message, err && err.code, err && err.stack);
-    }
-    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
+    // Single structured publish_failed log (bridge already logs engine_bridge at source).
+    const failed = buildPublishFailureResult(err, {
+      operation: "publishChurchWebsite",
+      organizationId: requestedOrganizationId || (err && err.organizationId) || null,
+      churchId,
+      branchId,
+      instanceId: err && err.instanceId,
+      requestId: input && input.requestId,
+      correlationId: input && input.correlationId,
+      stageHint:
+        err && err.code === "PARTIAL_PAGE_PUBLISH"
+          ? "page_update"
+          : err && err.code === "WEBSITE_ENGINE_PUBLISH"
+            ? "engine_bridge"
+            : "publish_transaction",
+      includeStack: false,
+    });
+    return {
+      ok: false,
+      status: failed.status,
+      reason: failed.reason,
+      publicCode: failed.publicCode,
+      engineCode: failed.engineCode,
+      failureStage: failed.failureStage,
+      classification: failed.classification,
+      httpStatusHint: failed.httpStatusHint,
+      message: failed.message,
+    };
   }
 }
 
@@ -889,6 +1083,37 @@ async function unpublishChurchWebsite(db, input) {
         },
       });
 
+      if (!(input && input.skipPlatformLifecycle === true)) {
+        const publicationService = require("../../platform/website/publicationService");
+        const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+        const ensured = await ensureBlessBoardWebsiteInstance(client, {
+          organizationId: String(ctx.organization_id),
+          actorIdentityId: input.actorUserId || null,
+        });
+        if (!ensured || !ensured.ok || !ensured.instance) {
+          throw Object.assign(new Error("website_engine_unpublish_failed"), {
+            code: "WEBSITE_ENGINE_UNPUBLISH",
+            engineCode: "website_instance_not_found",
+            organizationId: String(ctx.organization_id),
+          });
+        }
+        const unpublishedEngine = await publicationService.unpublishWebsite(client, {
+          organizationId: String(ctx.organization_id),
+          instanceId: ensured.instance.id,
+          actorIdentityId: input.actorUserId || null,
+          grantedPermissions: ["website.publish"],
+          reason: "tenant_unpublish",
+        });
+        if (!unpublishedEngine || unpublishedEngine.ok === false) {
+          throw Object.assign(new Error("website_engine_unpublish_failed"), {
+            code: "WEBSITE_ENGINE_UNPUBLISH",
+            engineCode: unpublishedEngine && unpublishedEngine.code,
+            organizationId: String(ctx.organization_id),
+            instanceId: ensured.instance.id,
+          });
+        }
+      }
+
       return {
         ok: true,
         status: STATUS.OK,
@@ -896,7 +1121,17 @@ async function unpublishChurchWebsite(db, input) {
         websiteStatus: "draft",
       };
     });
-  } catch {
+  } catch (err) {
+    logBlessBoardEngineBridgeFailure({
+      operation: "unpublishChurchWebsite",
+      churchId,
+      actorIdentityId: input && input.actorUserId,
+      actorUserId: input && input.actorUserId,
+      organizationId: err && err.organizationId,
+      instanceId: err && err.instanceId,
+      engineCode: err && (err.engineCode || err.code),
+      errorClass: (err && (err.code || err.name)) || "Error",
+    });
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
   }
 }
@@ -946,10 +1181,10 @@ async function ensureInitialHomeWelcomeSection(client, fields) {
 }
 
 /**
- * First-time Foundation publish inside an existing provisioning transaction.
- * Publishes required pages + draft sections and sets website_status=published
- * so `/c/:organizationKey` is immediately usable. Skips HQ readiness gates
- * (preview ack / service-times) that block first publish after approval.
+ * First-time Foundation website initialization inside provisioning.
+ * Default path (publish !== true) seeds required pages and shared-engine
+ * drafts, leaves website_status unpublished / coming soon, and does not
+ * create a public version. Explicit HQ publish is required to go live.
  *
  * @param {{ query: Function }} client
  * @param {{
@@ -993,7 +1228,10 @@ async function publishInitialFoundationWebsite(client, input) {
         ok: true,
         status: STATUS.OK,
         alreadyPublished: true,
-        publicPath: `/c/${keyNorm.key}`,
+        publicPath: buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: keyNorm.key,
+        }),
         organizationKey: keyNorm.key,
         pageCount: n,
       };
@@ -1006,7 +1244,116 @@ async function publishInitialFoundationWebsite(client, input) {
     "Church";
 
   await ensureRequiredDraftPages(client, churchId);
+  const {
+    seedTenantOwnedWebsiteTemplateContent,
+  } = require("./seedTenantWebsiteTemplateContent");
+  await seedTenantOwnedWebsiteTemplateContent(client, {
+    churchId,
+    publicName,
+    primaryEmail: (input && input.primaryEmail) || null,
+    primaryPhone: (input && input.primaryPhone) || null,
+    address: (input && input.address) || (input && input.city) || null,
+    city: (input && input.city) || null,
+  });
   await ensureInitialHomeWelcomeSection(client, { churchId, publicName });
+
+  const publicPath = buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: keyNorm.key,
+  });
+  const wantPublish = Boolean(input && input.publish === true);
+  const alreadyPublishedStatus =
+    settings && String(settings.websiteStatus || "") === "published";
+
+  await settingsRepo.ensureChurchSettingsRow(client, {
+    churchId,
+    publicName,
+  });
+
+  if (!wantPublish && !alreadyPublishedStatus) {
+    let seedEngine = true;
+    try {
+      const revisionCol = await client.query(
+        `SELECT 1
+           FROM information_schema.columns
+          WHERE table_schema = 'blessboard'
+            AND table_name = 'public_pages'
+            AND column_name = 'revision_number'
+          LIMIT 1`
+      );
+      seedEngine = Boolean(revisionCol.rowCount);
+    } catch {
+      seedEngine = true;
+    }
+    if (seedEngine) {
+      await runSoftSavepoint(
+        client,
+        "unpublished_engine_seed",
+        async () => {
+          const {
+            seedUnpublishedEngineContent,
+          } = require("../website/blessboardEngineContentService");
+          await seedUnpublishedEngineContent(client, {
+            organizationId,
+            churchId,
+            slug: keyNorm.key,
+            actorIdentityId: (input && input.actorUserId) || null,
+          });
+        },
+        {
+          onError: (seedErr) => {
+            logBlessBoardEngineBridgeWarning({
+              operation: "seedUnpublishedEngineContent",
+              organizationId,
+              churchId,
+              actorIdentityId: input && input.actorUserId,
+              actorUserId: input && input.actorUserId,
+              engineCode: seedErr && seedErr.code,
+              errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
+            });
+          },
+        }
+      );
+    }
+    return {
+      ok: true,
+      status: STATUS.OK,
+      alreadyPublished: false,
+      unpublished: true,
+      pageCount: PUBLIC_PAGE_KEYS.length,
+      publicPath,
+      organizationKey: keyNorm.key,
+    };
+  }
+
+  await runSoftSavepoint(
+    client,
+    "initial_foundation_engine_seed",
+    async () => {
+      const {
+        seedUnpublishedEngineContent,
+      } = require("../website/blessboardEngineContentService");
+      await seedUnpublishedEngineContent(client, {
+        organizationId,
+        churchId,
+        slug: keyNorm.key,
+        actorIdentityId: (input && input.actorUserId) || null,
+      });
+    },
+    {
+      onError: (seedErr) => {
+        logBlessBoardEngineBridgeWarning({
+          operation: "seedUnpublishedEngineContent",
+          organizationId,
+          churchId,
+          actorIdentityId: input && input.actorUserId,
+          actorUserId: input && input.actorUserId,
+          engineCode: seedErr && seedErr.code,
+          errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
+        });
+      },
+    }
+  );
 
   const publishedAt = new Date();
   const pageUpdate = await client.query(
@@ -1088,19 +1435,37 @@ async function publishInitialFoundationWebsite(client, input) {
   let publicationVersionNumber = null;
   await client.query("SAVEPOINT initial_foundation_publish_version");
   try {
-    const versionSvc = require("./websitePublicationVersionService");
-    const publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
+    const publicationService = require("../../platform/website/publicationService");
+    const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+    const {
+      ensureEngineContent,
+    } = require("../../platform/website-engine/blessboardBridge");
+    const ensured = await ensureBlessBoardWebsiteInstance(client, {
       organizationId,
-      churchId,
-      actorUserId: (input && input.actorUserId) || null,
-      publishedAt: publishedAt.toISOString(),
-      sourceType: "initial_setup",
-      publicationNote: "Initial Foundation website published at registration approval",
-      publishedSubmissionIds: [],
-      alreadyPublished: false,
+      slug: keyNorm.key,
+      actorIdentityId: (input && input.actorUserId) || null,
     });
-    publicationVersionId = publicationVersion && publicationVersion.id;
-    publicationVersionNumber = publicationVersion && publicationVersion.versionNumber;
+    if (ensured && ensured.ok && ensured.instance) {
+      await ensureEngineContent(client, {
+        organizationId,
+        churchId,
+        actorIdentityId: (input && input.actorUserId) || null,
+        slug: keyNorm.key,
+        websiteStatus: "published",
+        seedPublished: true,
+      });
+      const enginePublished = await publicationService.publishWebsiteDraft(client, {
+        organizationId,
+        instanceId: ensured.instance.id,
+        actorIdentityId: (input && input.actorUserId) || null,
+        grantedPermissions: ["website.publish"],
+        forceTenantPublish: true,
+      });
+      if (enginePublished && enginePublished.ok && enginePublished.version) {
+        publicationVersionId = enginePublished.version.id;
+        publicationVersionNumber = enginePublished.version.versionNumber;
+      }
+    }
     await client.query("RELEASE SAVEPOINT initial_foundation_publish_version");
   } catch (versionErr) {
     try {
@@ -1121,7 +1486,10 @@ async function publishInitialFoundationWebsite(client, input) {
     alreadyPublished: false,
     publishedAt: publishedAt.toISOString(),
     pageCount: pageUpdate.rowCount,
-    publicPath: `/c/${keyNorm.key}`,
+    publicPath: buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: keyNorm.key,
+    }),
     organizationKey: keyNorm.key,
     publicationVersionId,
     publicationVersionNumber,

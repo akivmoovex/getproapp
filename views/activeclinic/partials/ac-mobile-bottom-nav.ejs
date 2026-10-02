@@ -1,0 +1,37 @@
+<%#
+  Stitch-aligned mobile bottom navigation (tenant browsing).
+  Hidden on booking wizard / auth flows where Stitch uses a sticky CTA instead.
+%>
+<%
+  const key = clinic && clinic.clinicKey ? clinic.clinicKey : '';
+  const pid = typeof pageId === 'string' ? pageId : '';
+  const nav = (typeof clinicWebsiteNav !== "undefined" && clinicWebsiteNav) ? clinicWebsiteNav : { bottom: [] };
+  const hide =
+    !key ||
+    /booking|book|patient|my-booking|register|login|verify|forgot|unavailable|not-found/i.test(pid);
+  function isActive(item) {
+    if (!item) return false;
+    if (item.key === 'home') return pid.indexOf('tenant-home') !== -1 || pid === 'tenant-home';
+    if (item.key === 'doctors') return pid.indexOf('doctor') !== -1 || pid.indexOf('service') !== -1;
+    if (item.key === 'book') return pid.indexOf('book') !== -1;
+    if (item.key === 'patientLogin') return pid.indexOf('patient') !== -1;
+    return false;
+  }
+  function iconFor(item) {
+    if (item.key === 'home') return '⌂';
+    if (item.key === 'doctors') return '⌕';
+    if (item.key === 'book') return '📅';
+    return '☺';
+  }
+%>
+<% if (!hide) { %>
+<nav class="acp-mobile-bottom-nav" data-ac-mobile-bottom-nav="tenant" aria-label="Clinic shortcuts" data-ac-clinic-nav="bottom">
+  <% (nav.bottom || []).forEach(function (item) { %>
+  <% const on = isActive(item); %>
+  <a class="acp-mobile-bottom-nav__item<%= on ? ' is-active' : '' %>" href="<%= item.href %>"<% if (on) { %> aria-current="page"<% } %> data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>>
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true"><%= iconFor(item) %></span>
+    <span class="acp-mobile-bottom-nav__label"><%= item.label %></span>
+  </a>
+  <% }) %>
+</nav>
+<% } %>

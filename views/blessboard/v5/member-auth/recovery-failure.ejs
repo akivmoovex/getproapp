@@ -1,0 +1,43 @@
+<%#
+  BB-M19 Recovery Failure / Lost Church ID / contact church
+%>
+<%- include('_shell-start', {
+  pageTitle: typeof pageTitle !== 'undefined' ? pageTitle : 'Recovery Failure',
+  stitchScreen: 'BB-M19',
+  churchName: typeof churchName !== 'undefined' ? churchName : '',
+  bodyClass: 'bb-v204-m19',
+  loginHref: typeof loginHref !== 'undefined' ? loginHref : '/member/login'
+}) %>
+
+<div class="bb-auth-card__intro">
+  <p class="bb-auth-step">Recovery · Pastoral help</p>
+  <h1 class="bb-auth-card__title"><%= typeof title !== 'undefined' && title ? title : 'Recovery failure &amp; pastoral care' %></h1>
+  <p class="bb-auth-card__lead">We can’t complete this recovery automatically.</p>
+</div>
+
+<div class="bb-auth-error bb-auth-error--contact-church" role="status" data-bb-recovery-failure="1">
+  <p class="bb-auth-error__title"><%= typeof title !== 'undefined' && title ? title : 'Administration required' %></p>
+  <p class="bb-auth-error__body">
+    <%= typeof message !== 'undefined' && message
+      ? message
+      : 'Please contact your church administration for help with membership or Church ID.' %>
+  </p>
+  <% if (typeof churchName !== 'undefined' && churchName) { %>
+  <p class="bb-auth-error__body" style="margin-top:0.65rem"><strong><%= churchName %></strong></p>
+  <% } %>
+</div>
+
+<p class="bb-auth-footer">
+  <span class="bb-auth-footer__links">
+    <a href="<%= loginHref || '/member/login' %>">Back to login</a>
+    <% if (typeof activateHref !== 'undefined' && activateHref) { %>
+    <a href="<%= activateHref %>">First-time activation</a>
+    <% } %>
+    <% if (typeof retryHref !== 'undefined' && retryHref) { %>
+    <a href="<%= retryHref %>">Try again</a>
+    <% } %>
+  </span>
+</p>
+<p class="bb-auth-footnote">BlessBoard does not look up lost Church IDs and will not create membership from this screen.</p>
+
+<%- include('_shell-end') %>

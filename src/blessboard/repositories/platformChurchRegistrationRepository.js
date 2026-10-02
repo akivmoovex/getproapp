@@ -37,6 +37,7 @@ const SELECT_COLUMNS = `
   organization_id, application_status, provisioning_status,
   provisioning_started_at, provisioned_at, provisioning_failed_at,
   provisioning_error_code, provisioning_error_detail,
+  last_provision_stage,
   support_requested, follow_up_status,
   assigned_support_user_id, first_contacted_at, last_contacted_at, next_follow_up_at,
   risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events,
@@ -95,6 +96,7 @@ const UUID_RE =
 
 const {
   phoneUniquenessSqlPredicate,
+  phoneOccupancyBlocksApplicant,
   DUPLICATE_PHONE_MESSAGE,
   normalizeRegistrationPhone,
 } = require("../services/normalizeRegistrationPhone");
@@ -329,7 +331,7 @@ async function findRecentRegistrationDuplicate(client, opts) {
         AND lower(church_name) = lower($2)
         AND created_at >= now() - ($3::int * interval '1 minute')
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'closed')
+          application_status IN ('submitted', 'review_required', 'provisioning', 'active')
           OR status = 'pending'
         )
       ORDER BY created_at DESC
@@ -340,24 +342,28 @@ async function findRecentRegistrationDuplicate(client, opts) {
 }
 
 /**
- * Same-email + same normalized phone within the soft window (browser retry).
+ * Same-email + same normalized phone + same church within the soft window (browser retry).
+ * Different church names must not collapse into this twin — multi-org reuse needs a new application.
  * @param {{ query: Function }} client
- * @param {{ contact_email: string, contact_phone_normalized: string, windowMinutes?: number }} opts
+ * @param {{ contact_email: string, contact_phone_normalized: string, church_name?: string, windowMinutes?: number }} opts
  */
 async function findRecentPhoneIdempotentDuplicate(client, opts) {
   const normalized = String(opts.contact_phone_normalized || "").trim();
   if (!normalized) return null;
+  const churchName = String(opts.church_name || "").trim();
+  if (!churchName) return null;
   const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 15, 1), 60);
   const r = await client.query(
     `SELECT ${PUBLIC_WRITE_SELECT_COLUMNS}
        FROM ${TARGET_RELATION}
       WHERE lower(contact_email) = lower($1)
         AND contact_phone_normalized = $2
-        AND created_at >= now() - ($3::int * interval '1 minute')
+        AND lower(church_name) = lower($3)
+        AND created_at >= now() - ($4::int * interval '1 minute')
         AND ${phoneUniquenessSqlPredicate()}
       ORDER BY created_at DESC
       LIMIT 1`,
-    [opts.contact_email, normalized, windowMinutes]
+    [opts.contact_email, normalized, churchName, windowMinutes]
   );
   return r.rows[0] || null;
 }
@@ -426,13 +432,14 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
       const phoneRetry = await findRecentPhoneIdempotentDuplicate(client, {
         contact_email: fields.contact_email,
         contact_phone_normalized: phoneNormalized,
+        church_name: fields.church_name,
         windowMinutes: opts.windowMinutes,
       });
       if (phoneRetry) {
         return { application: phoneRetry, duplicate: true };
       }
       const phoneConflict = await findActiveRegistrationByPhone(client, phoneNormalized);
-      if (phoneConflict) {
+      if (phoneOccupancyBlocksApplicant(phoneConflict, fields.contact_email)) {
         throw new DuplicateRegistrationPhoneError();
       }
     }
@@ -520,8 +527,8 @@ async function countPending(pool) {
   const r = await pool.query(
     `SELECT COUNT(*)::int AS count
        FROM ${TARGET_RELATION}
-      WHERE application_status IN ('submitted', 'duplicate_review')
-         OR (status = 'pending' AND application_status NOT IN ('closed', 'rejected', 'cancelled'))`
+      WHERE application_status IN ('submitted', 'review_required', 'provisioning')
+         OR (status = 'pending' AND application_status NOT IN ('rejected', 'active'))`
   );
   return r.rows[0]?.count || 0;
 }
@@ -595,6 +602,7 @@ async function findApplicationById(client, applicationId) {
  *   provisioningFailedAt?: Date|string|null,
  *   provisioningErrorCode?: string|null,
  *   provisioningErrorDetail?: string|null,
+ *   lastProvisionStage?: string|null,
  *   clearFailureMetadata?: boolean,
  *   legacyStatus?: string|null,
  * }} patch
@@ -626,6 +634,10 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
               WHEN $8::boolean THEN NULL
               ELSE COALESCE($11, provisioning_error_detail)
             END,
+            last_provision_stage = CASE
+              WHEN $8::boolean THEN NULL
+              ELSE COALESCE($14, last_provision_stage)
+            END,
             status = CASE WHEN $12::boolean THEN $13::text ELSE status END,
             updated_at = now()
       WHERE id = $1
@@ -644,6 +656,7 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
       !clear && patch.provisioningErrorDetail != null ? patch.provisioningErrorDetail : null,
       setLegacy,
       setLegacy ? patch.legacyStatus : null,
+      !clear && patch.lastProvisionStage != null ? patch.lastProvisionStage : null,
     ]
   );
   return r.rows[0] || null;
@@ -651,10 +664,12 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
 
 const APPLICATION_STATUSES = Object.freeze([
   "submitted",
-  "duplicate_review",
+  "provisioning",
+  "review_required",
+  "active",
   "rejected",
-  "cancelled",
-  "closed",
+  "suspended",
+  "provision_failed",
 ]);
 const PROVISIONING_STATUSES = Object.freeze([
   "not_started",
@@ -1047,7 +1062,7 @@ function buildRegistrationListWhere(filters) {
   }
   if (filters.requiresReview === true) {
     clauses.push(`(
-      a.application_status IN ('submitted', 'duplicate_review')
+      a.application_status IN ('submitted', 'review_required', 'provisioning')
       OR a.provisioning_status = 'provisioning_failed'
       OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
       OR ${EFFECTIVE_FOLLOW_UP_SQL} IN (
@@ -1060,16 +1075,16 @@ function buildRegistrationListWhere(filters) {
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
       AND a.provisioning_status IS DISTINCT FROM 'provisioning_failed'
-      AND a.application_status IN ('submitted', 'duplicate_review')
+      AND a.application_status IN ('submitted', 'review_required')
       AND COALESCE(a.selected_plan, '') IS DISTINCT FROM 'network'
       AND ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE
     )`);
   } else if (filters.queue === "phase5_new") {
     // Residual Phase 5 “New” badge: not Rejected, not Approved, not Needs Information.
     clauses.push(`(
-      a.application_status NOT IN ('rejected', 'cancelled')
+      a.application_status IS DISTINCT FROM 'rejected'
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND NOT (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+      AND NOT (a.application_status = 'active' AND a.organization_id IS NOT NULL)
       AND ${EFFECTIVE_FOLLOW_UP_SQL} NOT IN ('awaiting_customer', 'needs_help', 'self_onboarding')
     )`);
   } else if (filters.queue === "provisioning_failed") {
@@ -1078,7 +1093,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND a.application_status IS DISTINCT FROM 'rejected'
       AND (
         a.selected_plan = 'network'
         OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
@@ -1090,7 +1105,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND a.application_status IS DISTINCT FROM 'rejected'
       AND (
         a.selected_plan = 'network'
         OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
@@ -1100,16 +1115,16 @@ function buildRegistrationListWhere(filters) {
   } else if (filters.queue === "provisioned") {
     clauses.push(`(
       a.provisioning_status = 'provisioned'
-      OR (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+      OR (a.application_status = 'active' AND a.organization_id IS NOT NULL)
     )`);
   } else if (filters.queue === "rejected") {
-    clauses.push(`a.application_status IN ('rejected', 'cancelled')`);
+    clauses.push(`a.application_status = 'rejected'`);
   }
   if (filters.overdueFollowUp === true) {
     clauses.push(`(
       ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} IS NOT NULL
       AND ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} < now()
-      AND a.application_status NOT IN ('rejected', 'cancelled', 'closed')
+      AND a.application_status NOT IN ('rejected', 'active')
       AND (${ACTIVE_FOLLOW_UP_SQL})
     )`);
   }
@@ -2359,7 +2374,7 @@ async function linkApplicationToOrganization(client, applicationId, organization
   const r = await client.query(
     `UPDATE ${TARGET_RELATION}
         SET organization_id = $2,
-            application_status = 'closed',
+            application_status = 'active',
             updated_at = now()
       WHERE id = $1
         AND organization_id IS NULL
@@ -2378,9 +2393,12 @@ async function listActivePlatformAdministrators(client) {
   const r = await client.query(
     `SELECT DISTINCT u.id, u.display_name, u.email_normalized
        FROM blessboard.users u
-       INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
-      WHERE ur.role_key = 'platform_admin'
-        AND ur.status = 'active'
+       INNER JOIN blessboard.user_role_assignments a ON a.user_id = u.id
+       INNER JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE r.role_key = 'platform_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
         AND u.status = 'active'
       ORDER BY u.display_name ASC, u.email_normalized ASC`
   );
@@ -2522,6 +2540,71 @@ async function findOrganizationIdByKey(client, organizationKey) {
 }
 
 /**
+ * Resolve a provisioned organization from the public BB-* registration reference.
+ * @param {{ query: Function }} client
+ * @param {string} publicReference
+ */
+async function findProvisionedOrganizationByPublicReference(client, publicReference) {
+  const ref = String(publicReference || "").trim();
+  if (!ref) return null;
+  const r = await client.query(
+    `SELECT a.organization_id,
+            o.organization_key,
+            COALESCE(cs.website_status, 'draft') AS website_status,
+            COALESCE(
+              primary_b.branch_key,
+              hq.branch_key,
+              'hq'
+            ) AS primary_branch_key
+       FROM ${TARGET_RELATION} a
+       INNER JOIN platform.organizations o ON o.id = a.organization_id
+       LEFT JOIN blessboard.churches c ON c.organization_id = a.organization_id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+       LEFT JOIN blessboard.branches primary_b
+         ON primary_b.church_id = c.id
+        AND primary_b.is_primary = true
+        AND primary_b.status = 'active'
+       LEFT JOIN blessboard.branches hq
+         ON hq.church_id = c.id
+        AND hq.branch_type = 'hq'
+        AND hq.status = 'active'
+      WHERE a.public_registration_reference = $1
+        AND a.provisioning_status = 'provisioned'
+        AND a.organization_id IS NOT NULL
+      LIMIT 1`,
+    [ref]
+  );
+  const row = r.rows[0];
+  if (!row || !row.organization_key) return null;
+  return {
+    organizationId: String(row.organization_id),
+    organizationKey: String(row.organization_key),
+    primaryBranchKey: String(row.primary_branch_key || "hq"),
+    hqBranchKey: String(row.primary_branch_key || "hq"),
+    websitePublished: String(row.website_status || "").toLowerCase() === "published",
+  };
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {string} publicReference
+ */
+async function setPublicRegistrationReference(client, applicationId, publicReference) {
+  const id = String(applicationId || "").trim();
+  const ref = String(publicReference || "").trim();
+  if (!id || !ref) return false;
+  await client.query(
+    `UPDATE ${TARGET_RELATION}
+        SET public_registration_reference = $2,
+            updated_at = now()
+      WHERE id = $1`,
+    [id, ref]
+  );
+  return true;
+}
+
+/**
  * Single-query onboarding facts for checklist + summary (avoids N+1).
  * @param {{ query: Function }} client
  * @param {{ organizationId?: string|null, organizationKey?: string|null }} input
@@ -2656,11 +2739,18 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
        ) svc ON TRUE
        LEFT JOIN LATERAL (
          SELECT MAX(u.last_login_at) AS church_admin_last_login_at
-           FROM blessboard.user_roles ur
-           INNER JOIN blessboard.users u ON u.id = ur.user_id
-          WHERE ur.organization_id = o.id
-            AND ur.status = 'active'
-            AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+           FROM blessboard.user_role_assignments a
+           INNER JOIN blessboard.roles r ON r.id = a.role_id
+           INNER JOIN blessboard.users u ON u.id = a.user_id
+          WHERE a.organization_id = o.id
+            AND a.status = 'active'
+            AND a.revoked_at IS NULL
+            AND (a.expires_at IS NULL OR a.expires_at > now())
+            AND r.role_key IN (
+              'organisation_administrator',
+              'church_system_administrator',
+              'branch_administrator'
+            )
             AND u.status = 'active'
        ) login_stats ON TRUE
        LEFT JOIN LATERAL (
@@ -3065,6 +3155,8 @@ module.exports = {
   findApplicationIdForOrganization,
   findApplicationIdForOrganizationKey,
   findOrganizationIdByKey,
+  findProvisionedOrganizationByPublicReference,
+  setPublicRegistrationReference,
   loadOrganizationOnboardingFacts,
   replaceRegistrationDuplicateMatches,
   listRegistrationDuplicateMatches,

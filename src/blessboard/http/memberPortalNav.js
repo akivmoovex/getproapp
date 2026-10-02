@@ -71,6 +71,14 @@ const PORTAL_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "journey",
+    label: "My journey",
+    href: "/member/journey",
+    icon: "route",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "profile",
     label: "Profile",
     href: "/member/profile",

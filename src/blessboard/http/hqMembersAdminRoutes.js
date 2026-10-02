@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -23,6 +23,9 @@ const {
   getChurchMemberForManager,
   STATUS,
 } = require("../services/memberRegistrationService");
+const {
+  getStaffMemberJourneySummary,
+} = require("../services/memberJourneyWorkflowService");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -99,10 +102,7 @@ function createHqMembersAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireHqAccess = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHqAccess = createRequireBlessBoardPermission("members.view", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -145,6 +145,7 @@ function createHqMembersAdminRouter(deps) {
     }
     return {
       churchId: tenant.church.id,
+      organizationId: tenant.organization && tenant.organization.id,
       actorUserId: session.userId,
       tenant,
     };
@@ -269,6 +270,9 @@ function createHqMembersAdminRouter(deps) {
     const status = String((req.query && req.query.status) || "")
       .trim()
       .toLowerCase();
+    const portal = String((req.query && req.query.portal) || "")
+      .trim()
+      .toLowerCase();
     const branchKey = String((req.query && req.query.branch) || "")
       .trim()
       .toLowerCase();
@@ -285,15 +289,32 @@ function createHqMembersAdminRouter(deps) {
       churchId: scope.churchId,
       branchId: branchFilter.branchId,
       status: status || null,
+      portalAccessStatus: portal || null,
       q: q || null,
       limit: PAGE_LIMIT,
       offset,
     });
     if (!listed.ok) {
+      if (listed.status === STATUS.FORBIDDEN) {
+        return sendControlled(
+          req,
+          res,
+          403,
+          "You do not have permission to view members."
+        );
+      }
+      if (listed.status === STATUS.INVALID_INPUT) {
+        return sendControlled(
+          req,
+          res,
+          400,
+          "Members could not be loaded for this church."
+        );
+      }
       return sendControlled(
         req,
         res,
-        listed.status === STATUS.FORBIDDEN ? 403 : 503,
+        503,
         "Members are temporarily unavailable."
       );
     }
@@ -303,7 +324,7 @@ function createHqMembersAdminRouter(deps) {
     const html = renderHqView(
       "hq/members.ejs",
       await shellLocals(req, res, "members", {
-        pageTitle: "Member directory",
+        pageTitle: "Members",
         items: listed.items,
         total: listed.total,
         page,
@@ -311,8 +332,10 @@ function createHqMembersAdminRouter(deps) {
         limit: PAGE_LIMIT,
         q,
         statusFilter: status,
+        portalFilter: portal,
         branchFilter: branchFilter.branchKey,
         branches: branches.ok ? branches.branches : [],
+        loadGpOpsAssets: true,
       })
     );
     return res.status(200).type("html").send(html);
@@ -346,11 +369,21 @@ function createHqMembersAdminRouter(deps) {
       );
     }
 
+    const journey = await getStaffMemberJourneySummary(getPool(), {
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      branchId: scope.tenant && scope.tenant.primaryBranch ? scope.tenant.primaryBranch.id : null,
+      memberId: id,
+      tenantContext: scope.tenant,
+    });
+
     const html = renderHqView(
       "hq/member-detail.ejs",
       await shellLocals(req, res, "members", {
         pageTitle: "Member profile",
         member: loaded.member,
+        journeySummary: journey.ok ? journey.summary : null,
       })
     );
     return res.status(200).type("html").send(html);

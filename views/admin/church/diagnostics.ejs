@@ -22,7 +22,7 @@
         <% } %>
 
         <% if (diagnostics.warnings && diagnostics.warnings.length) { %>
-        <section class="card card--mb-xl" style="padding:1rem;border-left:4px solid #c0392b;">
+        <section class="card card--mb-xl" style="padding:1rem;border-left:4px solid var(--color-danger-text);">
           <h2 class="section-title section-title--flush">Warnings</h2>
           <ul>
             <% diagnostics.warnings.forEach(function (w) { %>

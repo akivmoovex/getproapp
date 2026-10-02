@@ -1,0 +1,631 @@
+{
+  "candidate": "2a2498f630676638c63f1961f0c8bf80507a15c5",
+  "acOrg": "ac-hqa-v8-muq9wn7a9a3d",
+  "bbOrg": "bb-v8qa-muq9wn7a9a3d",
+  "smoke": {
+    "acLoginPage": {
+      "status": 200,
+      "title": "Sign in · ActiveClinic",
+      "meaningful": true
+    },
+    "bbLoginPage": {
+      "status": 200,
+      "title": "Sign in · BlessBoard",
+      "meaningful": true
+    },
+    "acPublic": {
+      "status": 403,
+      "title": "Clinic unavailable · ActiveClinic",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\"/> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/> <title>Clinic unavailable · ActiveClinic</title> <meta name=\"robot"
+    },
+    "bbPublic": {
+      "status": 200,
+      "title": "V8 QA Church muq9wn7a9a3d · Coming soon",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <meta name=\"robots\" content=\"noindex, nofollow\" /> <title>V8 QA Church muq9wn7a9a3d ",
+      "url": "https://blessboard.neuniversity.org/c/bb-v8qa-muq9wn7a9a3d/hq"
+    },
+    "acLogin": {
+      "status": 200,
+      "title": "Good morning, V8 QA Clinic Admin · ActiveClinic",
+      "url": "https://activeclinic.neuniversity.org/app"
+    },
+    "bbLogin": {
+      "status": 200,
+      "title": "Church HQ · V8 QA Church muq9wn7a9a3d",
+      "url": "https://blessboard.neuniversity.org/hq"
+    },
+    "acWebsiteHub": {
+      "path": "/app/settings/website",
+      "status": 200,
+      "title": "Website Management Hub · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Website Management Hub · ActiveClinic</title> <meta name=",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website"
+    },
+    "bbWebsiteHub": {
+      "path": "/hq/website",
+      "status": 200,
+      "title": "Website · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website"
+    }
+  },
+  "acOptions": {
+    "AC_HUB": {
+      "path": "/app/settings/website",
+      "status": 200,
+      "title": "Website Management Hub · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Website Management Hub · ActiveClinic</title> <meta name=",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website",
+      "result": "PASS"
+    },
+    "AC_SETTINGS": {
+      "path": "/app/settings/website/settings",
+      "status": 200,
+      "title": "Website Settings · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Website Settings · ActiveClinic</title> <meta name=\"robot",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/settings",
+      "result": "PASS"
+    },
+    "AC_PAGES": {
+      "path": "/app/settings/website/pages",
+      "status": 200,
+      "title": "Pages · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Pages · ActiveClinic</title> <meta name=\"robots\" content=",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/pages",
+      "result": "PASS"
+    },
+    "AC_SECTIONS": {
+      "path": "/app/settings/website/sections",
+      "status": 200,
+      "title": "Sections · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Sections · ActiveClinic</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/sections",
+      "result": "PASS"
+    },
+    "AC_NAVIGATION": {
+      "path": "/app/settings/website/navigation",
+      "status": 200,
+      "title": "Navigation · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Navigation · ActiveClinic</title> <meta name=\"robots\" con",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/navigation",
+      "result": "PASS"
+    },
+    "AC_CHROME": {
+      "path": "/app/settings/website/chrome",
+      "status": 200,
+      "title": "Header &amp; Footer Settings · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Header &amp; Footer Settings · ActiveClinic</title> <meta",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/chrome",
+      "result": "PASS"
+    },
+    "AC_BRANDING": {
+      "path": "/app/settings/website/branding",
+      "status": 200,
+      "title": "Branding Settings · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Branding Settings · ActiveClinic</title> <meta name=\"robo",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/branding",
+      "result": "PASS"
+    },
+    "AC_MEDIA": {
+      "path": "/app/settings/website/media",
+      "status": 200,
+      "title": "Media library · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Media library · ActiveClinic</title> <meta name=\"robots\" ",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/media",
+      "result": "PASS"
+    },
+    "AC_LIBRARY": {
+      "path": "/app/settings/website/library",
+      "status": 200,
+      "title": "Content library · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Content library · ActiveClinic</title> <meta name=\"robots",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/library",
+      "result": "PASS"
+    },
+    "AC_SEO": {
+      "path": "/app/settings/website/seo",
+      "status": 200,
+      "title": "SEO &amp; Social Settings · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>SEO &amp; Social Settings · ActiveClinic</title> <meta na",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/seo",
+      "result": "PASS"
+    },
+    "AC_CATALOGUE": {
+      "path": "/app/settings/website/catalogue",
+      "status": 200,
+      "title": "Doctors catalogue · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Doctors catalogue · ActiveClinic</title> <meta name=\"robo",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/catalogue",
+      "result": "PASS"
+    },
+    "AC_PUBLISH": {
+      "path": "/app/settings/website/publish",
+      "status": 200,
+      "title": "Publishing · ActiveClinic",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Publishing · ActiveClinic</title> <meta name=\"robots\" con",
+      "loc": null,
+      "finalUrl": "https://activeclinic.neuniversity.org/app/settings/website/publish",
+      "result": "PASS"
+    }
+  },
+  "bbOptions": {
+    "BB_HUB": {
+      "path": "/hq/website",
+      "status": 200,
+      "title": "Website · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website",
+      "hubTileParity": true,
+      "bodyLen": 36989,
+      "result": "PASS"
+    },
+    "BB_BRANDING": {
+      "path": "/hq/website/branding",
+      "status": 200,
+      "title": "Website · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website/branding",
+      "result": "PASS"
+    },
+    "BB_SETTINGS": {
+      "path": "/hq/website/advanced",
+      "status": 200,
+      "title": "Advanced Website Feature Locked · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Advanced Website Feature Locked · V8 QA Church muq9wn7a9a3d</title> <meta nam",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website/advanced",
+      "result": "PASS"
+    },
+    "BB_PUBLISH_REVIEW": {
+      "path": "/hq/website/publish/review",
+      "status": 200,
+      "title": "Publish Website Changes · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Publish Website Changes · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robot",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website/publish/review",
+      "result": "PASS"
+    },
+    "BB_HISTORY": {
+      "path": "/hq/website/version-history",
+      "status": 200,
+      "title": "Website Version History · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website Version History · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robot",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/website/version-history",
+      "result": "PASS"
+    },
+    "BB_MEDIA": {
+      "path": "/hq/content/media",
+      "status": 200,
+      "title": "Content Library · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Content Library · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/media",
+      "result": "PASS"
+    },
+    "BB_CLASSIC_PAGES": {
+      "path": "/hq/content",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content",
+      "result": "PASS"
+    },
+    "BB_LEADERSHIP": {
+      "path": "/hq/content/pages/leadership",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/pages/leadership",
+      "result": "PASS"
+    },
+    "BB_MINISTRIES": {
+      "path": "/hq/content/pages/ministries",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/pages/ministries",
+      "result": "PASS"
+    },
+    "BB_EVENTS": {
+      "path": "/hq/content/pages/events",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/pages/events",
+      "result": "PASS"
+    },
+    "BB_SERMONS": {
+      "path": "/hq/content/pages/sermons",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/pages/sermons",
+      "result": "PASS"
+    },
+    "BB_GIVING": {
+      "path": "/hq/content/pages/giving",
+      "status": 200,
+      "title": "Website content · V8 QA Church muq9wn7a9a3d",
+      "meaningful": true,
+      "blankShell": false,
+      "unavailable": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website content · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" conte",
+      "loc": null,
+      "finalUrl": "https://blessboard.neuniversity.org/hq/content/pages/giving",
+      "result": "PASS"
+    }
+  },
+  "members": {
+    "T_M02": {
+      "status": 200,
+      "unavailable": false,
+      "meaningful": true,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Members · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin",
+      "result": "PASS"
+    },
+    "T_M02_registrations": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Registration oversight · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots"
+    },
+    "T_M13": {
+      "status": 200,
+      "unavailable": false,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Members · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin"
+    },
+    "T_M09": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Attendance · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"n"
+    },
+    "T_M10": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Requests · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noi"
+    },
+    "probe_/hq/users": {
+      "status": 503,
+      "title": "Unavailable"
+    },
+    "probe_/hq/staff-access": {
+      "status": 503,
+      "title": "Unavailable"
+    },
+    "probe_/hq/staff": {
+      "status": 503,
+      "title": "Unavailable"
+    },
+    "T_M14_staff": {
+      "status": 503,
+      "result": "FAIL",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"utf-8\"/><title>Unavailable</title></head> <body><p>This page is not yet available in BlessBoard V5.</p></body></html>"
+    },
+    "T_M14_roles": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Staff permissions · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" con"
+    },
+    "T_M15_cross": {
+      "status": 404,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Not found · BlessBoard</title> <style> :root { color-scheme: light; --violet:"
+    },
+    "T_M15_ac_cross": {
+      "status": 404,
+      "result": "PASS",
+      "title": "Clinic not found · ActiveClinic"
+    },
+    "branch_login": {
+      "status": 200,
+      "url": "https://blessboard.neuniversity.org/branch-admin"
+    },
+    "T_M14_branch_hq_deny": {
+      "status": 403,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"utf-8\"/><title>Access</title></head> <body><p>You do not have access to this site.</p></body></html>"
+    },
+    "T_M02_branch": {
+      "status": 200,
+      "unavailable": false,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Members · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin"
+    },
+    "T_M04_member_login": {
+      "status": 401,
+      "url": "https://blessboard.neuniversity.org/login",
+      "result": "FAIL",
+      "title": "Sign in · BlessBoard"
+    },
+    "church_id_surface": {
+      "hasMemberNumber": true,
+      "hasPortal": false,
+      "status": 200
+    },
+    "T_M03": {
+      "result": "NOT_RUN",
+      "reason": "create flow not automated in this probe"
+    },
+    "T_M05": {
+      "result": "NOT_RUN",
+      "reason": "recovery/OTP not automated"
+    },
+    "T_M06": {
+      "result": "NOT_RUN",
+      "reason": "lost Church ID assist not automated"
+    },
+    "T_M07": {
+      "result": "NOT_RUN",
+      "reason": "profile/block needs member id UI interaction"
+    },
+    "T_M08": {
+      "result": "NOT_RUN",
+      "reason": "dual-role not automated"
+    },
+    "T_M11": {
+      "result": "NOT_RUN",
+      "reason": "privacy portal not automated"
+    },
+    "T_M12": {
+      "result": "NOT_RUN",
+      "reason": "portal upload not automated"
+    }
+  },
+  "bbLifecycle": {
+    "DRAFT": {
+      "status": 200,
+      "result": "PASS"
+    },
+    "editHref": "/c/bb-v8qa-muq9wn7a9a3d?website_edit=1&amp;website_mode=draft",
+    "editorOpen": {
+      "status": 200,
+      "title": "V8 QA Church 1790904934231",
+      "hasViewport": true
+    },
+    "save_try_/c/bb-v8qa-muq9wn7a9a3d/website/drafts": {
+      "status": 200,
+      "snip": "{\"ok\":true,\"published\":false,\"code\":\"saved_to_draft\",\"content\":{\"id\":\"09d002a5-3489-428c-9bcc-cd579bf5a3de\",\"organizationId\":\"a2f5d17c-a38e-429d-b48b-6103ec771287\",\"instanceId\":\"1c5184d3-3fd0-4e54-a886-73dec29a26de\",\"con"
+    },
+    "SAVE": {
+      "result": "PASS"
+    },
+    "PREVIEW": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <meta name=\"robots\" content=\"noindex, nofollow\" /> <title>V8 QA Church muq9wn7a9a3d "
+    },
+    "PUBLISH_REVIEW": {
+      "status": 200,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Publish Website Changes · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robot",
+      "notReady": false
+    },
+    "PUBLISH": {
+      "status": 200,
+      "url": "https://blessboard.neuniversity.org/hq/website/publish/success?version=ee45facb-4909-461e-8f6b-c244af5df275",
+      "notReady": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website Published · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" con",
+      "result": "PASS"
+    },
+    "PUBLIC_VERIFY": {
+      "status": 200,
+      "title": "V8 QA Church 1790904934231",
+      "comingSoon": false,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>V8 QA Church 1790904934231</title> <meta name=\"descriptio",
+      "result": "PASS"
+    },
+    "UNPUBLISH": {
+      "status": 200,
+      "url": "https://blessboard.neuniversity.org/hq/website?notice=unpublished",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robots\" content=\"noin",
+      "result": "PASS"
+    },
+    "VERSION_HISTORY": {
+      "status": 200,
+      "hasVersions": true,
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Website Version History · V8 QA Church muq9wn7a9a3d</title> <meta name=\"robot",
+      "result": "PASS"
+    },
+    "OLD_VERSION_PREVIEW": {
+      "status": 200,
+      "meaningful": true,
+      "hasBanner": true,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> <title>Historical Version Preview · V8 QA Church muq9wn7a9a3d</title> <meta name=\"ro"
+    },
+    "RESTORE_AS_NEW": {
+      "result": "NOT_RUN",
+      "reason": "no restore form",
+      "status": 400
+    },
+    "REPUBLISH": {
+      "status": 200,
+      "url": "https://blessboard.neuniversity.org/hq/website/publish/success?version=ee45facb-4909-461e-8f6b-c244af5df275",
+      "notReady": false,
+      "result": "PASS"
+    },
+    "RESPONSIVE": {
+      "hasDesktopTabletMobile": true,
+      "hasFrameArch": true,
+      "has768": true,
+      "has390": true,
+      "result": "PASS"
+    }
+  },
+  "acLifecycle": {
+    "DRAFT": {
+      "status": 200,
+      "result": "PASS"
+    },
+    "editHref": "/clinics/ac-hqa-v8-muq9wn7a9a3d?website_edit=1&amp;website_mode=draft",
+    "editorOpen": {
+      "status": 200,
+      "hasViewport": true,
+      "result": "PASS"
+    },
+    "RESPONSIVE": {
+      "hasDesktopTabletMobile": true,
+      "has768": true,
+      "has390": true,
+      "result": "PASS"
+    },
+    "save_try": {
+      "status": 400,
+      "snip": "{\"ok\":false,\"code\":\"invalid_input\",\"reason\":null,\"requestId\":\"2347d592f7189ec3920aab53\",\"correlationId\":\"2347d592f7189ec3920aab53\"}"
+    },
+    "SAVE": {
+      "result": "FAIL"
+    },
+    "PREVIEW": {
+      "status": 200,
+      "result": "PASS"
+    },
+    "PUBLISH": {
+      "status": 200,
+      "url": "https://activeclinic.neuniversity.org/app/settings/website/publish?website=published",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" /> <title>Publishing · ActiveClinic</title> <meta name=\"robots\" con",
+      "result": "PASS"
+    },
+    "PUBLIC_VERIFY": {
+      "status": 200,
+      "title": "Ac Hqa V8 muq9wn7a9a3d · ActiveClinic",
+      "clinicUnavailable": false,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\"/> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/> <title>Ac Hqa V8 muq9wn7a9a3d · ActiveClinic</title> <link rel=\"ca"
+    },
+    "STAFF_PROTECTED": {
+      "status": 200,
+      "result": "PASS"
+    },
+    "UNPUBLISH": {
+      "status": 200,
+      "url": "https://activeclinic.neuniversity.org/app/settings/website?website=unpublished",
+      "result": "PASS"
+    },
+    "VERSION_HISTORY": {
+      "status": 200,
+      "result": "PASS",
+      "snip": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\"/> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/> <title>Website version history · ActiveClinic</title> <meta name=\""
+    },
+    "OLD_VERSION_PREVIEW": {
+      "status": 200,
+      "hasStitch": true,
+      "meaningful": true,
+      "result": "PASS",
+      "snip": "<div class=\"gp-we-version-preview\" data-gp-website-version-preview=\"1\" role=\"status\"> <div class=\"gp-we-version-preview__inner\"> <div class=\"gp-we-version-preview__copy\"> <p class=\"gp-we-version-preview__title\"><strong>V"
+    },
+    "RESTORE_AS_NEW": {
+      "status": 403,
+      "url": "https://activeclinic.neuniversity.org/clinics/ac-hqa-v8-muq9wn7a9a3d/website/versions/6262791a-0ccf-4446-87bc-1dc10704cad2/restore",
+      "snip": "{\"ok\":false,\"code\":\"csrf\",\"requestId\":\"9dc6b711863cc7ed4fc0d045\",\"correlationId\":\"9dc6b711863cc7ed4fc0d045\"}",
+      "result": "FAIL"
+    },
+    "REPUBLISH": {
+      "status": 200,
+      "url": "https://activeclinic.neuniversity.org/app/settings/website/publish?website=published",
+      "result": "PASS"
+    },
+    "PUBLIC_VERIFY_AFTER_REPUBLISH": {
+      "status": 200,
+      "clinicUnavailable": false,
+      "result": "PASS"
+    }
+  },
+  "acOptionsPass": "12/12",
+  "bbOptionsPass": "12/12"
+}

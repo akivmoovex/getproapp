@@ -1,0 +1,90 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var patient = catalogue.patient || {};
+  var document = catalogue.document || {};
+  var encounters = catalogue.encounters || [];
+  var types = catalogue.types || [];
+  var mode = catalogue.mode || 'create';
+  var stitch = catalogue.stitch || {};
+  var formAction = catalogue.formAction || '#';
+  var cancelHref = catalogue.cancelHref || '/app/clinical';
+  var facilityId = catalogue.facilityId || '';
+  var error = catalogue.error || null;
+  var patientLabel = patient.displayName || [patient.firstName, patient.lastName].filter(Boolean).join(' ') || 'Patient';
+  var csrfName = (typeof csrfField !== 'undefined' && csrfField) || '_csrf';
+  var csrfValue = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<section
+  class="ac-clinical-docs-form ac-ops-queue"
+  data-ac-page-section="clinical-document-form"
+  data-ac-stitch="ACN18"
+  data-ac-stitch-desktop="<%= stitch.desktop || '9b5d55cc2e8445f5bf97ef98f00cf8d3' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ee65f85e2f484eb9b147dc06c97949ad' %>"
+  data-ac-form-mode="<%= mode %>"
+  data-ac-binary-attachments="deferred"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker"><%= mode === 'edit' ? 'Edit draft' : 'New document' %></p>
+      <h2 class="ac-ops-queue__title"><%= mode === 'edit' ? 'Edit clinical document' : 'Add clinical document' %></h2>
+      <p class="ac-muted">For <%= patientLabel %><% if (patient.patientNumber) { %> · <%= patient.patientNumber %><% } %></p>
+    </div>
+  </header>
+
+  <% if (error) { %>
+  <div class="ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <form class="ac-panel ac-clinical-docs-form__panel ac-rooms-form" method="post" action="<%= formAction %>" data-ac-document-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfValue %>" />
+    <% if (facilityId) { %>
+    <input type="hidden" name="facility_id" value="<%= facilityId %>" />
+    <% } %>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Document type</span>
+      <select class="ac-input" name="document_type" required data-ac-field="document-type">
+        <% types.forEach(function (t) { %>
+        <option value="<%= t.value %>"<%= document.documentType === t.value ? ' selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Title</span>
+      <input class="ac-input" type="text" name="title" maxlength="200" required value="<%= document.title || '' %>" data-ac-field="title" />
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Encounter (optional)</span>
+      <select class="ac-input" name="encounter_id" data-ac-field="encounter">
+        <option value="">No associated encounter</option>
+        <% encounters.forEach(function (e) { %>
+        <option value="<%= e.id %>"<%= document.encounterId === e.id ? ' selected' : '' %>>
+          <%= e.encounterNumber %> (<%= e.status %>)
+        </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Document date</span>
+      <input class="ac-input" type="date" name="document_date" value="<%= document.documentDate || '' %>" data-ac-field="document-date" />
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Description / content</span>
+      <textarea class="ac-input" name="body_text" rows="10" maxlength="20000" data-ac-field="body"><%= document.bodyText || '' %></textarea>
+    </label>
+
+    <div class="ac-clinical-docs-form__attachment ac-muted" data-ac-attachment-deferred="1">
+      <p><strong>Attachment upload unavailable.</strong> Private clinical file storage is required before PHI binaries can be attached. Website/CMS media is not used.</p>
+    </div>
+
+    <div class="ac-form-actions ac-clinical-docs-form__actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= cancelHref %>">Cancel</a>
+      <button class="ac-btn ac-btn--ghost" type="submit" name="intent" value="draft" data-ac-action="save-draft">Save Draft</button>
+      <button class="ac-btn ac-btn--primary" type="submit" name="intent" value="finalize" data-ac-action="finalize">Finalize</button>
+    </div>
+  </form>
+</section>

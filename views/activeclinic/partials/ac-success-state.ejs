@@ -1,0 +1,14 @@
+<%
+  var successTitle = typeof title === 'string' && title ? title : 'Saved';
+  var successText = typeof message === 'string' && message ? message : 'Your changes were saved.';
+  var marker = typeof stateMarker === 'string' && stateMarker ? stateMarker : 'success';
+%>
+<div class="ac-success-state" data-ac-state-key="success_terminal" data-ac-success="<%= marker %>" role="status">
+  <h2 class="ac-success-state__title"><%= successTitle %></h2>
+  <p class="ac-success-state__text"><%= successText %></p>
+  <% if (typeof primaryHref === 'string' && primaryHref) { %>
+  <p class="ac-actions-row">
+    <a class="ac-btn" href="<%= primaryHref %>"><%= typeof primaryLabel === 'string' && primaryLabel ? primaryLabel : 'Continue' %></a>
+  </p>
+  <% } %>
+</div>

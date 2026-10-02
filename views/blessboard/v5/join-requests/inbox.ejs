@@ -1,0 +1,130 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var rows = Array.isArray(requests) ? requests : [];
+  var filter = typeof statusFilter !== 'undefined' ? String(statusFilter) : 'pending';
+  var c = typeof counts === 'object' && counts ? counts : {};
+  var branchLabel = typeof branchName !== 'undefined' && branchName ? branchName : (churchDisplayName || 'Branch');
+  var savedMsg = typeof saved !== 'undefined' ? String(saved) : '';
+  function filterHref(st) {
+    return '/branch-admin/join-requests' + (st && st !== 'all' ? ('?status=' + encodeURIComponent(st)) : (st === 'all' ? '?status=all' : ''));
+  }
+  function statusTone(st) {
+    var key = String(st || '').toLowerCase();
+    if (key === 'pending') return 'warning';
+    if (key === 'approved') return 'success';
+    if (key === 'rejected') return 'danger';
+    if (key === 'cancelled') return 'neutral';
+    return 'neutral';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+%>
+
+<section
+  class="bb-v204-r01"
+  data-bb-stitch-v204="BB-R01"
+  data-bb-screen="BB-R01"
+  data-bb-stitch-id="ff1bcec5a0274ca88ad46d2e889b80e8"
+  data-bb-stitch-id-mobile="bb1a2125b67f45d28eb18c1f43132dbd"
+  aria-label="Requests Inbox"
+>
+  <%- include('../partials/v204/page-header', {
+    title: 'Requests Inbox',
+    subtitle: (c.pending || 0) + ' Pending Review · ' + ((c.approved || 0) + (c.rejected || 0) + (c.cancelled || 0)) + ' Resolved',
+    breadcrumbsHtml: '<a href="/branch-admin">Administration</a> <span aria-hidden="true">›</span> <span>Requests Inbox</span>',
+    actionsHtml: '<a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/join-requests?status=pending">Sync Records</a>'
+  }) %>
+
+  <% if (savedMsg === 'approve' || savedMsg === 'approved') { %>
+  <div class="bb-v204-r01__banner" role="status">Request approved — ministry relationship created.</div>
+  <% } else if (savedMsg === 'reject' || savedMsg === 'rejected') { %>
+  <div class="bb-v204-r01__banner" role="status">Request rejected — reason recorded to audit log.</div>
+  <% } else if (savedMsg === 'cancel' || savedMsg === 'cancelled') { %>
+  <div class="bb-v204-r01__banner" role="status">Request cancelled.</div>
+  <% } %>
+
+  <div class="bb-v204-r01__meta" data-bb-r01-branch="1">
+    <span class="bb-v204-r01__branch"><%= branchLabel %></span>
+    <%- include('../partials/v204/status-chip', {
+      label: (c.pending || 0) + ' Pending',
+      tone: c.pending ? 'warning' : 'neutral'
+    }) %>
+  </div>
+
+  <nav class="bb-v204-r01__filters" aria-label="Request status filters" data-bb-r01-filters="1">
+    <a class="bb-ba-members-chip<%= filter === 'pending' ? ' is-active' : '' %>" href="<%= filterHref('pending') %>">Pending<% if (c.pending) { %> · <%= c.pending %><% } %></a>
+    <a class="bb-ba-members-chip<%= filter === 'approved' ? ' is-active' : '' %>" href="<%= filterHref('approved') %>">Approved<% if (c.approved) { %> · <%= c.approved %><% } %></a>
+    <a class="bb-ba-members-chip<%= filter === 'rejected' ? ' is-active' : '' %>" href="<%= filterHref('rejected') %>">Rejected<% if (c.rejected) { %> · <%= c.rejected %><% } %></a>
+    <a class="bb-ba-members-chip<%= filter === 'cancelled' ? ' is-active' : '' %>" href="<%= filterHref('cancelled') %>">Cancelled<% if (c.cancelled) { %> · <%= c.cancelled %><% } %></a>
+    <a class="bb-ba-members-chip<%= filter === 'all' ? ' is-active' : '' %>" href="<%= filterHref('all') %>">All Requests<% if (c.all) { %> · <%= c.all %><% } %></a>
+  </nav>
+
+  <div class="bb-v204-r01__type-bar" data-bb-r01-types="1" aria-label="Request type">
+    <span class="bb-ba-members-chip is-active">Join Ministry/Department</span>
+  </div>
+
+  <div class="bb-v204-r01__section" data-bb-r01-table="1">
+    <div class="bb-v204-r01__table-wrap">
+      <table class="bb-v204-r01__table">
+        <thead>
+          <tr>
+            <th scope="col">Member</th>
+            <th scope="col">Church ID</th>
+            <th scope="col">Branch</th>
+            <th scope="col">Request Type</th>
+            <th scope="col">Target Assignment</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!rows.length) { %>
+          <tr>
+            <td colspan="8">
+              <%- include('../partials/v204/empty-state', {
+                title: 'No requests in this view',
+                body: 'Join ministry and department requests appear here when members submit them.'
+              }) %>
+            </td>
+          </tr>
+          <% } %>
+          <% rows.forEach(function (row) { %>
+          <tr data-bb-r01-row="1" data-request-id="<%= row.id %>">
+            <td>
+              <div class="bb-v204-r01__member"><%= row.memberName || 'Member' %></div>
+            </td>
+            <td><%= row.memberNumber || '—' %></td>
+            <td><%= branchLabel %></td>
+            <td>
+              <span class="bb-v204-r01__type"><%= row.typeLabel || row.requestType %></span>
+            </td>
+            <td><%= row.targetName || '—' %></td>
+            <td><%= formatWhen(row.createdAt) %></td>
+            <td>
+              <%- include('../partials/v204/status-chip', {
+                label: row.status === 'pending' ? 'Pending Review' : (row.statusLabel || row.status),
+                tone: statusTone(row.status)
+              }) %>
+            </td>
+            <td class="bb-v204-r01__row-actions">
+              <% if (row.status === 'pending') { %>
+              <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="/branch-admin/join-requests/<%= row.id %>"><span class="bb-v204-r01__cta-full">Review Request</span><span class="bb-v204-r01__cta-short">Review</span></a>
+              <% } else { %>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/join-requests/<%= row.id %>"><span class="bb-v204-r01__cta-full">View Details</span><span class="bb-v204-r01__cta-short">Details</span></a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p class="bb-v204-r01__muted">Showing <%= rows.length %> of <%= c[filter] != null ? c[filter] : rows.length %> requests</p>
+  </div>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

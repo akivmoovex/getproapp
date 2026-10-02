@@ -1,0 +1,10 @@
+<%#
+  MF02 chrome. Sign out uses GET /logout (clears transfer cookie).
+%>
+<header class="ac-auth-mf-topbar">
+  <a class="ac-auth-mf-topbar__brand" href="/login">
+    <%- include('auth-mark') %>
+    <span>ActiveClinic</span>
+  </a>
+  <a class="ac-auth-link ac-auth-mf-topbar__out" href="/logout">Sign out</a>
+</header>

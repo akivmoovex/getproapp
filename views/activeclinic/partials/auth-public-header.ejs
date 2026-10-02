@@ -1,0 +1,16 @@
+<%#
+  Lightweight public header for auth surfaces (login, etc.).
+%>
+<header class="ac-auth-public-header" data-ac-auth-public-header="1">
+  <a class="ac-auth-public-header__brand" href="/">
+    <%- include('auth-mark') %>
+    <span class="ac-auth-public-header__name">ActiveClinic</span>
+  </a>
+  <nav class="ac-auth-public-header__nav" aria-label="Authentication">
+    <a class="ac-auth-public-header__link" href="/" data-ac-auth-home="1">
+      <span class="material-symbols-outlined" aria-hidden="true">home</span>
+      <span>Home</span>
+    </a>
+    <a class="ac-auth-public-header__link ac-auth-public-header__link--register" href="/register-clinic">Register clinic</a>
+  </nav>
+</header>

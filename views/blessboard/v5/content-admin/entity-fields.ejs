@@ -17,11 +17,28 @@
     <label for="<%= mode %>_biography">Biography</label>
     <textarea id="<%= mode %>_biography" name="biography" rows="3" maxlength="10000"><%= val('biography', 'biography', '') %></textarea>
   </div>
-  <div class="bb-ba-field">
-    <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-    <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+  <div class="bb-ba-field" data-bb-leadership-photo="1">
+    <label>Photo</label>
+    <p class="bb-ba-field__hint">
+      Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      Photos are stored in the shared church media library (CDN) and apply only to this ministry leader profile.
+    </p>
+    <% var _leaderPhotoSrc = val('image_url', 'imageUrl', ''); %>
+    <% var _leaderMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+    <%- include('../../../platform/website/partials/media-field', {
+      mediaField: {
+        idName: mode + '_image_media_id',
+        srcName: 'image_url',
+        altName: mode + '_image_alt',
+        altLabel: 'Photo description',
+        mediaId: '',
+        src: _leaderPhotoSrc,
+        alt: '',
+        emptyText: 'No photo yet — upload from computer or choose from the Content Library.'
+      },
+      mediaListUrl: _leaderMediaListUrl
+    }) %>
   </div>
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
 
 <% if (entityKind === 'ministries') { %>
@@ -52,11 +69,27 @@
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-ministries-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
-    <div class="bb-ba-field">
-      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+    <div class="bb-ba-field" data-bb-entity-photo="ministry">
+      <label>Ministry image</label>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      </p>
+      <% var _ministryImg = val('image_url', 'imageUrl', ''); %>
+      <% var _entityMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Image description',
+          mediaId: '',
+          src: _ministryImg,
+          alt: '',
+          emptyText: 'No image yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _entityMediaListUrl
+      }) %>
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
 <% } %>
 
@@ -111,20 +144,38 @@
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-events-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
-    <div class="bb-ba-field">
-      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+    <div class="bb-ba-field" data-bb-entity-photo="event">
+      <label>Event image</label>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      </p>
+      <% var _eventImg = val('image_url', 'imageUrl', ''); %>
+      <% var _eventMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Image description',
+          mediaId: '',
+          src: _eventImg,
+          alt: '',
+          emptyText: 'No image yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _eventMediaListUrl
+      }) %>
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
 <% } %>
 
 <% if (entityKind === 'sermons') { %>
   <%
-    function isoSermonField(snake, camel) {
+    function dateSermonField(snake, camel) {
       var v = val(snake, camel, '');
-      if (v && typeof v === 'object' && v.toISOString) return v.toISOString();
-      return v;
+      if (v && typeof v === 'object' && v.toISOString) return v.toISOString().slice(0, 10);
+      var s = String(v == null ? '' : v).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+      return '';
     }
   %>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_sermon_heading" data-bb-sermons-section="details">
@@ -145,12 +196,34 @@
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_preached_heading" data-bb-sermons-section="schedule">
     <h3 id="<%= mode %>_preached_heading" class="bb-ba-entities-form__section-title">Preached date</h3>
     <div class="bb-ba-field">
-      <label for="<%= mode %>_preached_at">Preached at (ISO datetime)</label>
-      <input id="<%= mode %>_preached_at" name="preached_at" type="text" required value="<%= isoSermonField('preached_at', 'preachedAt') %>" placeholder="2026-07-18T10:00:00Z" autocomplete="off" data-bb-sermons-field="preached_at" />
+      <label for="<%= mode %>_preached_at">Preached date</label>
+      <input id="<%= mode %>_preached_at" name="preached_at" type="date" required value="<%= dateSermonField('preached_at', 'preachedAt') %>" autocomplete="off" data-bb-sermons-field="preached_at" />
     </div>
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-sermons-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media &amp; resources</h3>
+    <div class="bb-ba-field" data-bb-entity-photo="sermon">
+      <label>Sermon thumbnail</label>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        Thumbnails are stored in the shared church media library (CDN).
+      </p>
+      <% var _sermonImg = val('image_url', 'imageUrl', ''); %>
+      <% var _sermonMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Thumbnail description',
+          mediaId: '',
+          src: _sermonImg,
+          alt: '',
+          emptyText: 'No thumbnail yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _sermonMediaListUrl
+      }) %>
+    </div>
     <div class="bb-ba-field">
       <label for="<%= mode %>_media_url">Media URL (HTTPS)</label>
       <input id="<%= mode %>_media_url" name="media_url" type="url" maxlength="2000" value="<%= val('media_url', 'mediaUrl', '') %>" autocomplete="off" data-bb-sermons-field="media_url" />
@@ -160,7 +233,7 @@
       <label for="<%= mode %>_resource_url">Resource URL (HTTPS or uploaded)</label>
       <input id="<%= mode %>_resource_url" name="resource_url" type="text" maxlength="2000" value="<%= val('resource_url', 'resourceUrl', '') %>" autocomplete="off" data-bb-sermons-field="resource_url" />
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public' }) %>
+    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public', allowDocuments: true }) %>
   </section>
 <% } %>
 
@@ -220,9 +293,26 @@
     <label for="<%= mode %>_button_label">Button label</label>
     <input id="<%= mode %>_button_label" name="button_label" type="text" maxlength="48" value="<%= val('button_label', 'buttonLabel', '') %>" autocomplete="off" />
   </div>
-  <div class="bb-ba-field">
-    <label for="<%= mode %>_qr_image_url">QR image URL</label>
-    <input id="<%= mode %>_qr_image_url" name="qr_image_url" type="text" maxlength="2000" value="<%= val('qr_image_url', 'qrImageUrl', '') %>" autocomplete="off" />
+  <div class="bb-ba-field" data-bb-entity-photo="giving-qr">
+    <label>QR image</label>
+    <p class="bb-ba-field__hint">
+      Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+    </p>
+    <% var _qrImg = val('qr_image_url', 'qrImageUrl', ''); %>
+    <% var _qrMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+    <%- include('../../../platform/website/partials/media-field', {
+      mediaField: {
+        idName: mode + '_qr_media_id',
+        srcName: 'qr_image_url',
+        altName: mode + '_qr_alt',
+        altLabel: 'QR description',
+        mediaId: '',
+        src: _qrImg,
+        alt: '',
+        emptyText: 'No QR image yet — upload from computer or choose from the Content Library.'
+      },
+      mediaListUrl: _qrMediaListUrl
+    }) %>
   </div>
 <% } %>
 

@@ -17,7 +17,13 @@ const {
   normalizeVanityOrganizationKey,
   VANITY_ORGANIZATION_KEYS,
 } = require("../services/organizationKeyCompat");
-const { isReservedOrganizationKey } = require("../services/organizationKey");
+const { isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  appendQuery,
+  searchFromRequest,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {{
@@ -60,7 +66,15 @@ function createVanityChurchPublicRouter(deps) {
     }
 
     const suffixPath = suffix || "";
-    const target = `/c/${vanity.key}${suffixPath}`;
+    const target = appendQuery(
+      buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: vanity.key,
+        suffix: suffixPath,
+      }),
+      searchFromRequest(req)
+    );
+    if (!target) return next();
     return res.redirect(302, target);
   }
 

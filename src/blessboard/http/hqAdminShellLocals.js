@@ -5,6 +5,7 @@
  * Network-only nav entries require FEATURE_KEYS and are omitted when not entitled.
  */
 
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -15,8 +16,17 @@ const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorization
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { HQ_ADMIN_NAV, HQ_ADMIN_MOBILE_TABS } = require("./hqAdminNav");
 const { buildHqMobileNav } = require("./adminMobileNavGroups");
+const {
+  sortNavItemsByAdminConsoleSlot,
+  groupNavItemsByAdminConsoleSlot,
+  ADMIN_CONSOLE_SHELL,
+} = require("../../platform/admin-console/adminConsoleShell");
 const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
 const { applyHqWebsiteModeNav } = require("./websiteModeAdminNav");
+const {
+  sessionHasActiveMemberAccess,
+  appendDualRoleNavItem,
+} = require("./dualRoleShellNav");
 
 /**
  * @param {import('express').Request} req
@@ -137,7 +147,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
   const isProduction = Boolean(opts.isProduction);
   const tenant = resolveTenantForAuthorization(req);
   const csrfToken = issueCsrfToken(env);
-  setCsrfCookie(res, csrfToken, { secure: isProduction });
+  setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
   const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
 
   const entitledFeatures =
@@ -156,6 +166,77 @@ async function buildHqAdminShellLocals(req, res, opts) {
   navItems = composed.navItems;
   const activeNav = composed.activeNav;
 
+  // Build permission-based nav flags (before mobile nav so filters apply)
+  let permissionNavFlags = {
+    canViewGiving: false,
+    canViewStaffAccess: false,
+    canPublishWebsite: false,
+    canEditWebsite: false,
+    canRestoreWebsite: false,
+    canViewWebsite: false,
+    canViewFinance: false,
+    canExportData: false,
+    canViewMembers: false,
+    canViewAttendance: false,
+    canViewAnnouncements: false,
+    canViewReports: false,
+    canViewPastoral: false,
+    canViewWelfare: false,
+    canViewJourney: false,
+    canViewClasses: false,
+    canViewCells: false,
+    canViewDepartments: false,
+  };
+  if (opts.getPool && session && session.userId) {
+    try {
+      permissionNavFlags = await buildPermissionNavFlags(opts.getPool(), {
+        actorUserId: session.userId,
+        tenant,
+        // HQ nav is church-wide — do not fall back to primary branch grants.
+        branchId: null,
+      });
+    } catch {
+      // fail closed
+    }
+  }
+
+  navItems = navItems.filter((item) => {
+    if (!item || !item.enabled) return false;
+    if (item.key === "giving" && !permissionNavFlags.canViewGiving) return false;
+    if (item.key === "staff-access" && !permissionNavFlags.canViewStaffAccess) return false;
+    if (
+      (item.key === "content" || item.key === "website") &&
+      !permissionNavFlags.canViewWebsite
+    ) {
+      return false;
+    }
+    if (item.key === "members" && !permissionNavFlags.canViewMembers) return false;
+    if (item.key === "attendance" && !permissionNavFlags.canViewAttendance) return false;
+    if (item.key === "announcements" && !permissionNavFlags.canViewAnnouncements) return false;
+    if (item.key === "reports" && !permissionNavFlags.canViewReports) return false;
+    if (item.key === "member-journey" && !permissionNavFlags.canViewJourney) return false;
+    if (
+      (item.key === "pastoral" || item.key === "pastoral-care") &&
+      !permissionNavFlags.canViewPastoral
+    ) {
+      return false;
+    }
+    if (item.key === "welfare" && !permissionNavFlags.canViewWelfare) return false;
+    return true;
+  });
+
+  if (sessionHasActiveMemberAccess(req)) {
+    navItems = appendDualRoleNavItem(navItems, {
+      key: "member_portal",
+      slot: "settings",
+      label: "Member portal",
+      href: "/member",
+    });
+  }
+
+  navItems = sortNavItemsByAdminConsoleSlot(navItems);
+  const navGroups = groupNavItemsByAdminConsoleSlot(navItems);
+
   const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
@@ -168,7 +249,12 @@ async function buildHqAdminShellLocals(req, res, opts) {
     branches: "Branches",
     registrations: "Registration oversight",
     members: "Member directory",
-    roles: "Staff permissions",
+    "member-journey": "Member journey",
+    cells: "Cells",
+    classes: "Classes",
+    departments: "Departments",
+    roles: "Legacy permissions",
+    "staff-access": "Users",
     settings: "Church settings",
     account: "Account",
     content: multi ? "HQ Website" : "Website",
@@ -197,10 +283,24 @@ async function buildHqAdminShellLocals(req, res, opts) {
     roleLabel: primaryHqRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,
+    navGroups,
+    adminConsoleShell: ADMIN_CONSOLE_SHELL,
     mobileNav,
     mobileTabs,
     entitledFeatures,
     websiteMode: websiteMode || null,
+    permissionNavFlags,
+    supportBanner:
+      req.platformSupportBanner && req.platformSupportBanner.visible === true
+        ? {
+            visible: true,
+            supportType: req.platformSupportBanner.supportType || "hq",
+            churchName: req.platformSupportBanner.churchName || "this church",
+            branchName: req.platformSupportBanner.branchName || null,
+            expiresAt: req.platformSupportBanner.expiresAt || null,
+            exitAction: "/hq/support/exit",
+          }
+        : null,
     ...(opts.extra || {}),
   };
 }

@@ -7,6 +7,9 @@
 const pathPosix = require("path").posix;
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { sanitizeReturnPath, normalizeHostname } = require("../../platform/services/authTransferService");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+
+const BB_HQ_DASHBOARD = postAuthDashboardPath("blessboard"); // V2.05 Task 1: BB login → /hq
 
 /**
  * Resolved tenant for login initiation (authoritative or proposed shadow).
@@ -60,9 +63,10 @@ function safePlatformAdminNextPath(raw) {
  * @returns {boolean}
  */
 function hasPlatformAdminRole(roles) {
+  const { normalizeRoleKey } = require("../services/assignBlessBoardRole");
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "platform_admin";
-    return String(r.roleKey || r.role_key || "") === "platform_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return normalizeRoleKey(key) === "platform_administrator";
   });
 }
 
@@ -92,7 +96,7 @@ function safeHqNextPath(raw) {
   const normalized = pathPosix.normalize(pathOnly);
   if (!normalized.startsWith("/") || normalized.startsWith("//")) return null;
   if (normalized.includes("..")) return null;
-  if (normalized !== "/hq" && !normalized.startsWith("/hq/")) return null;
+  if (normalized !== BB_HQ_DASHBOARD && !normalized.startsWith(`${BB_HQ_DASHBOARD}/`)) return null;
   if (normalized.startsWith("/hq-admin")) return null;
   if (normalized.length > 200) return null;
   return normalized;
@@ -104,8 +108,11 @@ function safeHqNextPath(raw) {
  */
 function hasChurchHqAdminRole(roles) {
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "church_hq_admin";
-    return String(r.roleKey || r.role_key || "") === "church_hq_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return (
+      key === "organisation_administrator" ||
+      key === "church_system_administrator"
+    );
   });
 }
 
@@ -115,8 +122,8 @@ function hasChurchHqAdminRole(roles) {
  */
 function hasBranchAdminRole(roles) {
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "branch_admin";
-    return String(r.roleKey || r.role_key || "") === "branch_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return key === "branch_administrator" || key === "branch_pastor";
   });
 }
 
@@ -167,7 +174,7 @@ function resolveApexPostLoginPath(roles, nextRaw) {
     return safePlatformAdminNextPath(nextRaw) || "/admin";
   }
   if (hasChurchHqAdminRole(roles)) {
-    return safeHqNextPath(nextRaw) || "/hq";
+    return safeHqNextPath(nextRaw) || BB_HQ_DASHBOARD;
   }
   if (hasBranchAdminRole(roles)) {
     return safeBranchAdminNextPath(nextRaw) || "/branch-admin";
@@ -185,13 +192,24 @@ function defaultTenantPostLoginPath(roles) {
   );
   const unique = [...new Set(keys.filter(Boolean))];
   const staffOrMember = unique.filter((k) =>
-    ["church_hq_admin", "branch_admin", "member", "platform_admin"].includes(k)
+    [
+      "organisation_administrator",
+      "church_system_administrator",
+      "branch_administrator",
+      "branch_pastor",
+      "member",
+      "platform_administrator",
+    ].includes(k)
   );
   if (staffOrMember.length > 1) return "/account";
-  if (unique.includes("church_hq_admin") || unique.includes("platform_admin")) {
-    return "/hq";
+  if (
+    unique.includes("organisation_administrator") ||
+    unique.includes("church_system_administrator") ||
+    unique.includes("platform_administrator")
+  ) {
+    return BB_HQ_DASHBOARD;
   }
-  if (unique.includes("branch_admin")) {
+  if (unique.includes("branch_administrator") || unique.includes("branch_pastor")) {
     return "/branch-admin";
   }
   if (unique.includes("member")) {

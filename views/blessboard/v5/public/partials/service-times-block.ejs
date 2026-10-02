@@ -24,10 +24,54 @@
   var _variant = typeof serviceTimesVariant !== 'undefined' && serviceTimesVariant ? serviceTimesVariant : 'band';
   var _visit = typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact');
   var _directions = typeof directionsHref !== 'undefined' ? directionsHref : null;
+  var _sectionKey = typeof serviceTimesSectionKey !== 'undefined' && serviceTimesSectionKey
+    ? serviceTimesSectionKey
+    : 'service_times';
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _editing = Boolean(_wa && _wa.editingMode);
 %>
+<% if (!_editing) { %>
+<section
+  class="bb-tp-service-times bb-tp-service-times--<%= _variant %> bb-tp-service-times--platform-public"
+  data-bb-home-service-times="1"
+  data-section="<%= _sectionKey %>"
+>
+  <%# Full-bleed band; shared __inner uses --bb-max like .bb-tp-container. %>
+  <div class="bb-tp-service-times__inner">
+    <%- include('../../../../platform/website/components/hours', {
+      model: {
+        heading: _heading,
+        text: null,
+        rows: _entries.map(function (entry, index) {
+          return {
+            label: entry && entry.name ? entry.name : null,
+            days: entry && entry.day ? dayLabel(entry.day) : null,
+            open: entry && entry.startTime ? formatTimeLabel(entry.startTime) : null,
+            close: entry && entry.endTime ? formatTimeLabel(entry.endTime) : null,
+            note: entry && (entry.note || entry.location) ? (entry.note || entry.location) : null,
+            displayOrder: index,
+            enabled: true
+          };
+        })
+      },
+      editEnabled: false,
+      className: 'bb-tp-platform-bridge bb-tp-service-times-platform'
+    }) %>
+    <div class="bb-tp-service-times__actions">
+      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= _visit %>">Plan Your Visit</a>
+      <% if (_directions) { %>
+      <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= _directions %>" rel="noopener noreferrer" target="_blank">Get Directions</a>
+      <% } else { %>
+      <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= _visit %>">Get Directions</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+<% } else { %>
 <section
   class="bb-tp-service-times bb-tp-service-times--<%= _variant %>"
   data-bb-home-service-times="1"
+  data-section="<%= _sectionKey %>"
   aria-labelledby="bb-tp-service-times-heading"
 >
   <div class="bb-tp-service-times__inner">
@@ -36,7 +80,6 @@
         <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
         <%= _heading %>
       </h2>
-      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
       <%- include('../../partials/structured-edit-trigger', {
         editKind: 'service_times',
         editEntityKey: 'collection',
@@ -44,7 +87,6 @@
         editLabel: 'Edit service times',
         editPayload: { entries: _entries }
       }) %>
-      <% } %>
     </header>
     <% if (_entries.length) { %>
     <ul class="bb-tp-service-times__list">
@@ -82,3 +124,4 @@
     </div>
   </div>
 </section>
+<% } %>

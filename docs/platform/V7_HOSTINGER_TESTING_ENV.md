@@ -1,0 +1,162 @@
+# V7 Hostinger testing environment variables
+
+## Required (Hostinger testing / `moovex-platform-testing`)
+
+| Variable | Required value | Notes |
+| -------- | -------------- | ----- |
+| `NODE_ENV` | `production` | **lowercase** only (`Production` is wrong) |
+| `DEPLOYMENT_ENV` | `testing` | Required for platform runtime; missing fails startup |
+| `PLATFORM_DEPLOYMENT_CODE` | `moovex-platform-testing` | Selects hostname product resolution |
+| `DATABASE_URL` | testing connection string | Must resolve DNS; never commit |
+| `DATABASE_IDENTITY_EXPECTED` | `moovex-platform-v7` | Required for platform runtime |
+| `DATABASE_IDENTITY_ENV` | `testing` | Required for platform runtime |
+| `SESSION_SECRET` | long random secret | Required |
+
+## Testing database identity
+
+Hostinger testing DB singleton:
+
+```text
+identity_key=moovex-platform-v7
+environment_code=testing
+```
+
+Local ops: copy `scripts/local/env.testing.local.example` → `.env.testing.local` and set
+`DATABASE_IDENTITY_EXPECTED=moovex-platform-v7`.
+
+Re-check:
+
+```bash
+npm run db:identity:check:testing
+```
+
+If a testing DB still reports `blessboard-platform-v5`, run the guarded migrator:
+
+```bash
+npm run db:identity:migrate-testing-to-moovex-v7 -- \
+  --confirm migrate-testing-identity-to-moovex-platform-v7
+```
+
+Never run that migrator against production.
+
+## Compatibility / optional
+
+| Variable | Role |
+| -------- | ---- |
+| `GETPRO_GIT_BRANCH` | **Deployed Git branch metadata** (e.g. `V10`). Drives the shared platform build-identity label (`V10 testing`) on BlessBoard + ActiveClinic. Prefer this on Hostinger — release trees are often detached HEAD without a reliable `.git` branch. When V11 is deployed, set `GETPRO_GIT_BRANCH=V11` (no application-code change). |
+| `GETPRO_GIT_SHA` | Optional full commit SHA override for `/healthz` and About build displays |
+| `GETPRO_PG_SSL` | Optional SSL for Postgres |
+| `PORT` | Optional listen port |
+| `BASE_DOMAIN` | Compatibility only; must not conflict with profile if set |
+| `DBURL_TEST` | Diagnostic presence probe only; not used as DB URL |
+| `SESSION_COOKIE_NAME` | Compatibility; must match profile if set (prefer omit) |
+| `EXPECTED_DATABASE_ENV` | Compatibility alias of testing/production; must match if set |
+| `BLESSBOARD_*` domain/URL vars | Compatibility; must match profile if set |
+| `GETPRO_DATABASE_URL` | **Dangerous** on V7 foundation — unused / must stay unset |
+| `CSRF_SECRET` | **Obsolete** in this codebase (not consumed) |
+
+## Public website media (Hostinger filesystem / CDN)
+
+Required on Hostinger testing for **new** BlessBoard + ActiveClinic website image uploads to leave PostgreSQL:
+
+| Variable | Example (testing) | Notes |
+| -------- | ----------------- | ----- |
+| `MEDIA_STORAGE_ROOT` | `/home/u549637099/moovex-media` | **Required** absolute directory **outside** `hbuilds/versions/…`. Contains `testing/` and (unused on testing) `production/` |
+| `MEDIA_PUBLIC_BASE_URL` | `https://blessboard.pronline.org/media` | **Required absolute https CDN base** for website image presentation. Relative `/media` is mount-only and must not appear in rendered HTML. On `moovex-platform-testing`, when this (and `MEDIA_CDN_ORIGIN`) are unset, runtime falls back to `https://blessboard.pronline.org/media` so presentation never emits relative `/media` paths. Set the hPanel value explicitly for clarity. |
+| `MEDIA_PUBLIC_MOUNT_PATH` | `/media` | Optional; Express serves `MEDIA_STORAGE_ROOT` here with immutable cache headers |
+| `MEDIA_CDN_ORIGIN` | `https://blessboard.pronline.org` | Optional alternate: when `MEDIA_PUBLIC_BASE_URL` is relative, join origin + mount for absolute CDN URLs |
+
+Storage keys (immutable):
+
+```text
+testing/blessboard/<org-id>/<media-id>.webp
+testing/activeclinic/<org-id>/<media-id>.jpg
+```
+
+Testing runtime **refuses** writes under `production/`. Do not set `MEDIA_STORAGE_ROOT` to a production tree on this deployment.
+
+When `MEDIA_STORAGE_ROOT` is unset on **`moovex-platform-testing`** / `DEPLOYMENT_ENV=testing`:
+
+- Derive `<os.homedir()>/moovex-media` (never hard-codes the Hostinger username)
+- Enable only after the path is writable, outside `hbuilds/versions/…`, and under the account home
+- Runtime reports `mediaStorageRootSource=testing_account_home_fallback` (not env=yes)
+- There is **no** silent fallback to `<cwd>/media`
+
+Production deployments **never** auto-derive a filesystem root — set `MEDIA_STORAGE_ROOT` explicitly.
+
+When `MEDIA_STORAGE_ROOT` points inside `hbuilds/versions/…` (or under an ephemeral release cwd):
+
+- Config rejects with `MEDIA_STORAGE_ROOT_NOT_PERSISTENT`
+- Media writes are refused; do not use release-tree paths
+
+Confirm via testing `/__platform/runtime` → `mediaPersistence` (`mediaStorageRootSource`, `configuredStorageRoot`, `writable`, `outsideReleaseTree`, `mirroringDisabled`).
+
+**Canonical root (testing):** `/home/u549637099/moovex-media` only. Do **not** mirror writes to `domains/pronline.org/moovex-media` (leftover files there may remain; they are not the read/write root).
+
+**CDN integrity:** origin file bytes/checksum under the canonical root are authoritative and must match `payload_bytes` (while keep-payload is in effect). Hostinger edge may transform JPEG response bodies — do **not** require CDN body checksum equality for JPEG; verify render, MIME, sensible dimensions, and origin checksum instead.
+
+Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads even when a root is configured/derived.
+
+## Dangerous if wrong
+
+| Variable | Risk |
+| -------- | ---- |
+| Unset `PLATFORM_DEPLOYMENT_CODE` | Legacy path → `getpro_sid`, `blessboard.com`, production-like fallbacks |
+| Unset `DEPLOYMENT_ENV` with platform code | Startup **refuses** (fixed) |
+| `DATABASE_URL` with bad hostname | `getaddrinfo ENOTFOUND` — replace with working testing Supabase URL |
+| `GETPRO_DATABASE_URL` | Can confuse ops; V5/V7 foundation disables fallback |
+
+## DATABASE_URL ENOTFOUND
+
+If logs show `getaddrinfo ENOTFOUND db.exoelhlxvstevtwbldyc.supabase.co`, Hostinger’s `DATABASE_URL` host is wrong or unreachable. Obtain the current connection string from the **intended testing** Supabase project and replace Hostinger `DATABASE_URL`. Do not invent URLs in git.
+
+`GETPRO_PG_SSL=no-verify` does **not** cause `ENOTFOUND` — that error is DNS resolution, before TCP/TLS.
+
+## Environment loading precedence (application)
+
+Order for `NODE_ENV=production` (Hostinger):
+
+1. **Hostinger-injected `process.env`** (and any supervisor-inherited env) — wins for every key already set
+2. **Early** `/home/u549637099/pronline/.env.production` (or other candidate) via dotenv `override: false` — fills **missing** keys only
+3. Repo `.env` — **skipped** in production
+4. Secondary production-file rescue — skipped when DB URL + `SESSION_SECRET` + `BASE_DOMAIN` already present (`mergeSkipped=yes`); does not undo early load
+
+`DATABASE_URL` effective value: host-injected if present before file merge; else filled from `.env.production` if missing; pool prefers `DATABASE_URL` over `GETPRO_DATABASE_URL`.
+
+`DBURL_TEST` is **not** used as a connection string. Presence often comes from `.env.production` early fill even when absent from hPanel.
+
+## Stale worker diagnosis
+
+If hPanel shows new V7 vars / new Supabase hostname but worker logs show old hostname + `dbUrlSource=host-injected` + unset `PLATFORM_DEPLOYMENT_CODE`:
+
+- Application bootstrap does **not** overwrite Hostinger keys
+- The running Node process still has the **old** injected `DATABASE_URL`
+- New hPanel values have not reached that worker — restart/rebuild the Node app so workers inherit the updated panel env
+
+Safe checks after redeploy:
+
+- Grep logs for `processMarker` / `dbUrlFingerprint phase=pre_file`
+- Testing-only: `GET /__platform/runtime` on `pronline.org` (blocked when `DEPLOYMENT_ENV=production`)
+
+## Unified testing deploy (V7)
+
+Hostinger testing is the **Moovex platform testing** Node app (`PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`), Git branch **`V10`** (set `GETPRO_GIT_BRANCH=V10` in hPanel), repository **getproapp**. There is **no GitHub Actions deploy** for testing. `/healthz` exposes `branch`, `gitSha`, and `environment` from the shared platform `buildIdentity` service (`GETPRO_GIT_BRANCH` / provider metadata / safe `.git` lookup; SHA from `GETPRO_GIT_SHA` or `.git/HEAD`).
+
+GitHub push does **not** update the running process instantly. Hostinger Git deploy typically catches up in a few minutes; if `/healthz` still shows an older SHA, use **hPanel → Node.js → Deploy / Restart** on the testing app only. Do not restart production.
+
+Operator sequence:
+
+```bash
+git push origin V7
+npm run db:preflight:testing
+# wait for Hostinger Git deploy, or Deploy/Restart the testing Node app in hPanel
+npm run deploy:check-testing-sha
+```
+
+`deploy:check-testing-sha` compares `origin/V7` with:
+
+- `https://activeclinic.pronline.org/healthz`
+- `https://blessboard.pronline.org/healthz`
+
+Expect `gitSha` match, `environment=testing`, `deploymentCode=moovex-platform-testing`, `schemaCompatible=true`. Start QA only after that check passes. Production hosts are refused.
+

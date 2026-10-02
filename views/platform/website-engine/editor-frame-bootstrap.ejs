@@ -1,0 +1,51 @@
+<%#
+  Frame-document bootstrap for WE01 Tablet/Mobile iframe preview.
+  Supplies save/media hooks without rendering outer editor chrome (prevents recursive shell).
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var productCode = shell.productCode || '';
+  var currentPage = shell.pageKey || 'home';
+%>
+<div
+  class="gp-website-frame-bootstrap"
+  hidden
+  aria-hidden="true"
+  data-website-chrome="1"
+  data-website-frame="1"
+  data-website-frame-bootstrap="1"
+  data-gp-website-editor="1"
+  data-product="<%= productCode %>"
+  data-page-key="<%= currentPage %>"
+  data-draft="<%= shell.draft ? '1' : '0' %>"
+  data-website-save-url="<%= shell.saveUrl || '' %>"
+  data-website-media-url="<%= shell.mediaUrl || '' %>"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
+  data-website-section-actions-url="<%= shell.sectionActionsUrl || '' %>"
+  data-website-add-section-url="<%= shell.addSectionUrl || '' %>"
+  data-website-can-add-section="<%= shell.canAddSection === false ? '0' : '1' %>"
+  data-website-add-section-empty-hint="<%= shell.addSectionEmptyHint || '' %>"
+  data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
+  data-website-exit-href="<%= shell.exitHref || '' %>"
+  data-website-max-bytes="5242880"
+  data-website-scope-key="<%= shell.websiteScopeKey || '' %>"
+  data-website-pending-count="<%= Number(shell.unpublishedCount) || 0 %>"
+  data-website-reminder-threshold="<%= (shell.changeManager && shell.changeManager.reminderThreshold) || 5 %>"
+></div>
+<script>
+(function () {
+  try {
+    document.documentElement.classList.add("gp-website-frame-document");
+    if (document.body) {
+      document.body.setAttribute("data-website-frame", "1");
+      document.body.classList.add("gp-website-frame-document");
+    } else {
+      document.addEventListener("DOMContentLoaded", function () {
+        document.body.setAttribute("data-website-frame", "1");
+        document.body.classList.add("gp-website-frame-document");
+      });
+    }
+  } catch (_e) {}
+})();
+</script>

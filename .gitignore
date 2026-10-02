@@ -8,6 +8,18 @@ node_modules/
 !.env.development.example
 !.env.production.example
 !.env.production.template
+.envrc
+
+# Copied local env files beside scripts/local examples (repo-root .env.*.local already ignored)
+scripts/local/env.*.local
+!scripts/local/env.*.local.example
+
+# Credential / TLS material
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
 data/*.sqlite
 data/*.sqlite-wal
 data/*.sqlite-shm
@@ -22,9 +34,22 @@ test-results/
 playwright-report/
 playwright/.cache/
 tmp/
+.tmp-mw-qa/
+.tmp_runtime_audit/
+
+# Shared Hostinger build-identity metadata (written at runtime by apex worker)
+.getpro/
 tests/e2e/.foundation-e2e-state.json
 
 # Runtime church announcement uploads (not fixtures)
 data/uploads/church/announcements/
 # BlessBoard V5 local media (tests / local adapter)
 data/uploads/blessboard-v5-media/
+# Hostinger public website media root (local/dev)
+data/media/
+media/testing/
+media/production/
+
+# V8 / c8 / V2.03 coverage reports (npm run test:v8:coverage, test:coverage*)
+# Root-only: do not ignore scripts/coverage/ harness sources.
+/coverage/

@@ -16,6 +16,7 @@ test("runBootstrap: skips dotenv merge when NODE_ENV=production", () => {
     assert.equal(b.dotenvSkippedForProduction, true);
     assert.equal(b.skipDotenv, true);
     assert.equal(b.dotenvKeyCount, 0);
+    assert.equal(b.repoDotenvSafety.action, "skip_repo_dotenv_production_process");
   } finally {
     if (prev !== undefined) process.env.NODE_ENV = prev;
     else delete process.env.NODE_ENV;

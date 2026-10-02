@@ -98,8 +98,8 @@
       </h2>
       <ul class="bb-tp-ministry-grid bb-tp-ministry-grid--featured">
         <% featured.forEach(function (ministry, index) { %>
-        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
-          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1" data-bb-ministry-id="<%= String(ministry.id || ('ministry-' + ministry.name)) %>">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (ministry.imageUrl) { %>
             <img
               src="<%= ministry.imageUrl %>"
@@ -108,9 +108,26 @@
               height="400"
               loading="<%= index === 0 ? 'eager' : 'lazy' %>"
               decoding="async"
+              data-bb-ministry-image="1"
             />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/entity-image-edit-trigger', {
+              editKind: 'ministry',
+              editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+              editPayload: {
+                name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+                summary: ministry.summary,
+                description: ministry.description,
+                meetingDay: ministry.meetingDay,
+                contactEmail: ministry.contactEmail,
+                imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
+                visible: true
+              }
+            }) %>
             <% } %>
           </div>
           <div class="bb-tp-ministry-card__body">
@@ -122,12 +139,13 @@
                 editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
                 editLabel: 'Edit ' + ministry.name,
                 editPayload: {
-                  name: ministry.name,
+                  name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                   summary: ministry.summary,
                   description: ministry.description,
                   meetingDay: ministry.meetingDay,
                   contactEmail: ministry.contactEmail,
                   imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                   visible: true
                 }
               }) %>
@@ -182,12 +200,29 @@
       <% } %>
       <ul class="bb-tp-ministry-grid">
         <% rest.forEach(function (ministry) { %>
-        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
-          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1" data-bb-ministry-id="<%= String(ministry.id || ('ministry-' + ministry.name)) %>">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (ministry.imageUrl) { %>
-            <img src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" />
+            <% var __mps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(ministry.imagePlacement || ministry.placement || null) : { className: '', style: '' }; %>
+            <img class="<%= __mps.className || '' %>" src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" data-bb-ministry-image="1"<% if (__mps.style) { %> style="<%= __mps.style %>"<% } %> />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/entity-image-edit-trigger', {
+              editKind: 'ministry',
+              editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+              editPayload: {
+                name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+                summary: ministry.summary,
+                description: ministry.description,
+                meetingDay: ministry.meetingDay,
+                contactEmail: ministry.contactEmail,
+                imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
+                visible: true
+              }
+            }) %>
             <% } %>
           </div>
           <div class="bb-tp-ministry-card__body">
@@ -199,12 +234,13 @@
                 editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
                 editLabel: 'Edit ' + ministry.name,
                 editPayload: {
-                  name: ministry.name,
+                  name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                   summary: ministry.summary,
                   description: ministry.description,
                   meetingDay: ministry.meetingDay,
                   contactEmail: ministry.contactEmail,
                   imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                   visible: true
                 }
               }) %>
@@ -249,14 +285,10 @@
     <div class="bb-tp-directory__sections" data-bb-ministries-sections="1">
       <% pageSections.slice(1).forEach(function (section) { %>
       <section
-        class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>"
+        class="bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>"
         data-section="<%= section.sectionKey %>"
       >
-        <% if (section.mediaUrl) { %>
-        <div class="bb-tp-content-block__media">
-          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
-        </div>
-        <% } %>
+        <%- include('./partials/content-block-media', { section: section, editPageKey: 'ministries' }) %>
         <div class="bb-tp-content-block__copy">
           <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
           <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>

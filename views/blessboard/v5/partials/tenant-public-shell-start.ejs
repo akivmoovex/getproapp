@@ -8,7 +8,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title><%= seo.title %></title>
   <meta name="description" content="<%= seo.description %>" />
   <meta name="robots" content="<%= seo.robots %>" />
@@ -17,11 +17,35 @@
   <meta property="og:title" content="<%= seo.ogTitle %>" />
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
+  <% if (seo.ogSiteName) { %>
+  <meta property="og:site_name" content="<%= seo.ogSiteName %>" />
+  <% } %>
   <% if (seo.ogImageUrl) { %>
   <meta property="og:image" content="<%= seo.ogImageUrl %>" />
+  <% if (seo.ogImageAlt) { %>
+  <meta property="og:image:alt" content="<%= seo.ogImageAlt %>" />
+  <% } %>
+  <% } %>
+  <meta name="twitter:card" content="<%= seo.twitterCard %>" />
+  <meta name="twitter:title" content="<%= seo.twitterTitle %>" />
+  <meta name="twitter:description" content="<%= seo.twitterDescription %>" />
+  <% if (seo.twitterImageUrl) { %>
+  <meta name="twitter:image" content="<%= seo.twitterImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=53' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=68' %>" />
+  <link rel="stylesheet" href="/platform/website-presentation-token-bridge.css?v=v204-qa-3" />
+  <link rel="stylesheet" href="/platform/website-presentation-components.css?v=v204-qa-3" />
+  <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
+  <link rel="stylesheet" href="<%= websiteThemeStylesheet %>" />
+  <% } %>
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v205-qa10-1" />
+  <link rel="stylesheet" href="/platform/website-media-field.css?v=v204-media-1" />
+  <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=v204-qa-3" />
+  <link rel="stylesheet" href="/platform/website-add-section.css?v=v204-qa-3" />
+  <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
+  <% } %>
 </head>
 <%
   var _isBranchMini =
@@ -31,38 +55,35 @@
   var _bodyClass = 'bb-tp-body';
   if (typeof isPreview !== 'undefined' && isPreview) _bodyClass += ' bb-tp-body--preview';
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) _bodyClass += ' bb-tp-body--admin';
-  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing';
+  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing gp-website-editor-open';
+  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode) _bodyClass += ' bb-tp-body--preview gp-website-preview-open';
   if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
+  if (typeof websiteThemeClass !== 'undefined' && websiteThemeClass) _bodyClass += ' ' + websiteThemeClass;
+  var _stackChrome = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit;
+  var _editingMode = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
 %>
 <body
   class="<%= _bodyClass %>"
+  data-product="blessboard"
   data-bb-shell="tenant-public"
   data-bb-product="blessboard-v5"
   data-bb-page="<%= pageKey %>"
+  <% if (typeof websiteThemeId !== 'undefined' && websiteThemeId) { %>data-website-theme-id="<%= websiteThemeId %>"<% } %>
+  <% if (typeof websiteThemeProduct !== 'undefined' && websiteThemeProduct) { %>data-website-theme-product="<%= websiteThemeProduct %>"<% } %>
+  <% if (typeof websiteThemeLegacyFallback !== 'undefined' && websiteThemeLegacyFallback) { %>data-website-theme-legacy="1"<% } %>
   <% if (_isBranchMini) { %>data-bb-website-scope="branch"<% } else { %>data-bb-website-scope="church"<% } %>
   <% if (typeof isPreview !== 'undefined' && isPreview) { %>data-bb-preview="1"<% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>data-bb-website-editing="1"<% } %>
+  <% if (typeof brandStyle !== 'undefined' && brandStyle) { %>style="<%= brandStyle %>"<% } %>
 >
   <a class="bb-tp-skip" href="#bb-tp-main">Skip to content</a>
 
+  <% if (_stackChrome) { %>
+  <div class="gp-website-chrome-stack" data-website-chrome-stack="1">
   <%- include('./website-admin-chrome') %>
-
-  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
-  <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
-    <div class="bb-tp-preview-banner__inner">
-      <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>
-      <span>— <%= previewMeta.bannerDetail || 'Admin preview (includes drafts). Not visible to the public unless published.' %></span>
-      <span class="bb-tp-preview-banner__links">
-        <% if (previewMeta.backHref) { %>
-        <a href="<%= previewMeta.backHref %>">Back</a>
-        <% } %>
-        <% if (previewMeta.editHref) { %>
-        <% if (previewMeta.backHref) { %> · <% } %>
-        <a href="<%= previewMeta.editHref %>">Edit page</a>
-        <% } %>
-      </span>
-    </div>
+  <% if (!_editingMode) { %>
   </div>
+  <% } %>
   <% } %>
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
@@ -150,6 +171,26 @@
       </div>
     </div>
   </header>
+  <% if (_stackChrome && _editingMode) { %>
+  </div>
+  <% } %>
+  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && (websiteAdmin.previewDraftMode || websiteAdmin.editingMode))) { %>
+  <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
+    <div class="bb-tp-preview-banner__inner">
+      <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>
+      <span>— <%= previewMeta.bannerDetail || 'Admin preview (includes drafts). Not visible to the public unless published.' %></span>
+      <span class="bb-tp-preview-banner__links">
+        <% if (previewMeta.backHref) { %>
+        <a href="<%= previewMeta.backHref %>">Back</a>
+        <% } %>
+        <% if (previewMeta.editHref) { %>
+        <% if (previewMeta.backHref) { %> · <% } %>
+        <a href="<%= previewMeta.editHref %>">Edit page</a>
+        <% } %>
+      </span>
+    </div>
+  </div>
+  <% } %>
 
   <div class="bb-tp-drawer-overlay" id="bb-tp-drawer-overlay" hidden></div>
   <aside
@@ -230,5 +271,16 @@
       <p class="bb-tp-drawer__powered">Powered by BlessBoard</p>
     </div>
   </aside>
+
+  <% if (
+    (typeof showPublicTemplateBanner !== 'undefined' && showPublicTemplateBanner) ||
+    (typeof showPublicTemplateBanner === 'undefined' &&
+      typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill &&
+      (typeof isPreview !== 'undefined' && isPreview || String(typeof websiteStatus !== 'undefined' ? websiteStatus : '') !== 'published'))
+  ) { %>
+  <div class="bb-tp-template-banner" role="status" data-bb-template-example="1">
+    Template examples — these names, events, and ministries are not this church’s published facts. Replace them in Website management.
+  </div>
+  <% } %>
 
   <main id="bb-tp-main" class="bb-tp-main" tabindex="-1" data-bb-main="1">

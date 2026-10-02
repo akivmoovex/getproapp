@@ -21,9 +21,56 @@ const STATUS = Object.freeze({
   CONFLICT: "conflict",
   LOOKUP_ERROR: "lookup_error",
   CONSTRAINT: "constraint",
+  PUBLISHED_LOCKED: "published_locked",
 });
 
 const PAGE_STATUSES = new Set(["draft", "published", "archived"]);
+
+/** Content fields whose change on a published row would alter the public site. */
+const SECTION_PUBLIC_FIELDS = Object.freeze([
+  "heading",
+  "bodyText",
+  "mediaUrl",
+  "sortOrder",
+  "sectionType",
+]);
+
+function isPublishedRow(status) {
+  return String(status == null ? "" : status).trim().toLowerCase() === "published";
+}
+
+function sameScalar(a, b) {
+  const left = a == null ? "" : String(a);
+  const right = b == null ? "" : String(b);
+  return left === right;
+}
+
+/**
+ * Draft-first invariant: ordinary editor writes must never alter a row that is
+ * already public. Seeding/provisioning and the shared publish projection pass
+ * allowPublishedWrite explicitly.
+ * @param {object} existing
+ * @param {object} fields
+ * @param {string[]} publicFields
+ */
+function mutatesPublishedContent(existing, fields, publicFields) {
+  if (!isPublishedRow(existing && existing.status)) return false;
+  return publicFields.some(
+    (key) => fields[key] !== undefined && !sameScalar(fields[key], existing[key])
+  );
+}
+
+/**
+ * True for writes originating from an interactive admin form. Those are the
+ * writes that must be draft-first; provisioning, seeding and the shared publish
+ * projection are not editor writes.
+ * @param {object} body
+ */
+function isEditorFormWrite(body) {
+  if (!body || typeof body !== "object") return false;
+  if (body.allowPublishedWrite === true) return false;
+  return body.enforcePublishConfirm === true;
+}
 const EVENT_STATUSES = new Set(["draft", "published", "cancelled", "archived"]);
 const HTML_HINT = /<\/?[a-z][\s\S]*>/i;
 
@@ -263,6 +310,14 @@ async function updatePublicPage(db, pageId, patch) {
     return await withClient(db, async (client) => {
       const existing = await repo.findPageById(client, id);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, page: null };
+      if (isEditorFormWrite(body) && mutatesPublishedContent(existing, { title }, ["title"])) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          page: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -350,6 +405,15 @@ async function createPageSection(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, section: null, reason: "status" };
   }
   if (status === "published") {
+    if (isEditorFormWrite(raw)) {
+      // A new section may not be born public through an editor form.
+      return {
+        ok: false,
+        status: STATUS.PUBLISHED_LOCKED,
+        section: null,
+        reason: "published_requires_draft",
+      };
+    }
     const conf = requirePublishConfirm(
       "draft",
       status,
@@ -434,6 +498,17 @@ async function updatePageSection(db, sectionId, patch) {
     return await withClient(db, async (client) => {
       const existing = await repo.findSectionById(client, id);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, section: null };
+      if (
+        isEditorFormWrite(body) &&
+        mutatesPublishedContent(existing, fields, SECTION_PUBLIC_FIELDS)
+      ) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          section: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (fields.status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -562,6 +637,20 @@ async function updateOwned(db, kind, id, patch, buildPatch) {
     return await withClient(db, async (client) => {
       const existing = await findFns[kind](client, rowId);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      const entityContentFields = Object.keys(built.fields).filter(
+        (key) => key !== "status" && key !== "expectedUpdatedAt" && key !== "expectedRevision"
+      );
+      if (
+        isEditorFormWrite(raw) &&
+        mutatesPublishedContent(existing, built.fields, entityContentFields)
+      ) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          item: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (built.fields.status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -729,6 +818,67 @@ function buildEventFields(raw, { partial }) {
   return { ok: true, fields };
 }
 
+/**
+ * Canonical sermon preached_at contract (REQUIRED on create).
+ * Accepts browser `type=date` (YYYY-MM-DD) and existing ISO datetimes.
+ * Rejects locale slash formats, empty, whitespace, and impossible calendar dates
+ * before they reach PostgreSQL.
+ *
+ * @param {unknown} raw
+ * @param {{ required?: boolean }} [opts]
+ * @returns {{ ok: true, value: string|null } | { ok: false, reason: string }}
+ */
+function normalizeSermonPreachedAt(raw, opts) {
+  const required = !(opts && opts.required === false);
+  if (raw == null) {
+    return required
+      ? { ok: false, reason: "preached_at" }
+      : { ok: true, value: null };
+  }
+  if (raw instanceof Date) {
+    if (Number.isNaN(raw.getTime())) {
+      return { ok: false, reason: "preached_at" };
+    }
+    return { ok: true, value: raw.toISOString() };
+  }
+  const s = String(raw).trim();
+  if (!s) {
+    return required
+      ? { ok: false, reason: "preached_at" }
+      : { ok: true, value: null };
+  }
+  // Locale formats (e.g. 18/07/2026, 07/18/2026) are never accepted.
+  if (s.includes("/")) {
+    return { ok: false, reason: "preached_at" };
+  }
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const utc = new Date(Date.UTC(year, month - 1, day));
+    if (
+      utc.getUTCFullYear() !== year ||
+      utc.getUTCMonth() !== month - 1 ||
+      utc.getUTCDate() !== day
+    ) {
+      return { ok: false, reason: "preached_at" };
+    }
+    return { ok: true, value: utc.toISOString() };
+  }
+
+  // Back-compat: full ISO-8601 datetime (must include date + time separator).
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    return { ok: false, reason: "preached_at" };
+  }
+  const parsed = new Date(s);
+  if (Number.isNaN(parsed.getTime())) {
+    return { ok: false, reason: "preached_at" };
+  }
+  return { ok: true, value: parsed.toISOString() };
+}
+
 function buildSermonFields(raw, { partial }) {
   const fields = {};
   if (!partial || raw.title !== undefined) {
@@ -744,8 +894,13 @@ function buildSermonFields(raw, { partial }) {
     else if (!partial) return { ok: false, reason: "speaker_name" };
   }
   if (!partial || raw.preachedAt !== undefined) {
-    if (raw.preachedAt == null && !partial) return { ok: false, reason: "preached_at" };
-    if (raw.preachedAt != null) fields.preachedAt = raw.preachedAt;
+    // Create: required. Update: when provided, must be a valid non-empty date.
+    const normalized = normalizeSermonPreachedAt(raw.preachedAt, {
+      required: !partial || raw.preachedAt !== undefined,
+    });
+    if (!normalized.ok) return normalized;
+    if (normalized.value != null) fields.preachedAt = normalized.value;
+    else if (!partial) return { ok: false, reason: "preached_at" };
   }
   if (raw.summary !== undefined) {
     const n = plainText(raw.summary, "summary", { required: false, max: 5000 });
@@ -951,8 +1106,12 @@ async function listAdminScoped(db, input, listFn) {
 module.exports = {
   STATUS,
   CONTENT_STATUS,
+  SECTION_PUBLIC_FIELDS,
+  mutatesPublishedContent,
+  isEditorFormWrite,
   PUBLIC_PAGE_KEYS,
   httpsMediaUrl,
+  normalizeSermonPreachedAt,
   buildLeaderFields,
   buildMinistryFields,
   buildEventFields,

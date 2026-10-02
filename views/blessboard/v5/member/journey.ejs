@@ -1,0 +1,42 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var j = typeof journey !== 'undefined' && journey ? journey : { cellName: null, classes: [], departments: [] };
+%>
+<section class="bb-member-page" data-bb-member-journey="1">
+  <header class="bb-member-page-head">
+    <h1>My journey</h1>
+    <p>Your cell, classes, and department memberships.</p>
+  </header>
+
+  <article class="bb-member-card">
+    <h2>Cell</h2>
+    <p><%= j.cellName || 'Not assigned yet' %></p>
+  </article>
+
+  <article class="bb-member-card">
+    <h2>Classes</h2>
+    <% if (!j.classes || !j.classes.length) { %>
+      <p>No class enrolments.</p>
+    <% } else { %>
+      <ul>
+        <% j.classes.forEach(function (c) { %>
+          <li><%= c.programName %> · <%= c.cohortName %> · <%= c.status %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+
+  <article class="bb-member-card">
+    <h2>Departments</h2>
+    <% if (!j.departments || !j.departments.length) { %>
+      <p>No department memberships.</p>
+    <% } else { %>
+      <ul>
+        <% j.departments.forEach(function (name) { %>
+          <li><%= name %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>
+<%- include('../partials/member-shell-end') %>

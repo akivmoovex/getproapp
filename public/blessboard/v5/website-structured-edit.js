@@ -143,16 +143,35 @@
       esc(type) +
       '" value="' +
       esc(value) +
-      '" /></label>'
+      '"' +
+      (opts.required ? " required" : "") +
+      " /></label>"
     );
   }
 
   function buildImageForm(p) {
+    var fieldName = p.fieldName || "imageUrl";
+    var hasImage = Boolean(p.imageUrl);
+    var replaceLabel = hasImage ? "Replace image" : "Upload from computer";
+    // Category B (QR) sets framing:false. Category A defaults to framing:true.
+    var framingEnabled = p.framing !== false && fieldName !== "qrImageUrl";
+    var placementJson = "";
+    try {
+      if (p.placement && typeof p.placement === "object") {
+        placementJson = JSON.stringify(p.placement);
+      } else if (p.imagePlacement && typeof p.imagePlacement === "object") {
+        placementJson = JSON.stringify(p.imagePlacement);
+      }
+    } catch (e) {
+      placementJson = "";
+    }
     var demos = demoImages()
       .map(function (d) {
         return (
           '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
           esc(d.url) +
+          '" data-bb-demo-target="' +
+          esc(fieldName) +
           '"><img src="' +
           esc(d.url) +
           '" alt="" width="72" height="54" loading="lazy" /><span>' +
@@ -162,7 +181,10 @@
       })
       .join("");
     return (
-      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-stitch-screen-mobile="Phase 7 - Media Editing - Mobile">' +
+      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-media-mode="image" data-bb-stitch-screen-mobile="Phase 7 - Media Editing - Mobile"' +
+      (framingEnabled ? ' data-bb-se-framing="1"' : "") +
+      ">" +
+      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="image">Photograph mode — saves as the section image and clears any YouTube URL for this section only (previous video is retained for restore).</p>' +
       '<div class="bb-tp-se-preview"><img data-bb-se-preview="1" src="' +
       esc(p.imageUrl || "") +
       '" alt="" width="320" height="200" /></div>' +
@@ -170,41 +192,70 @@
       '<div class="bb-tp-se-preview bb-tp-se-preview--mobile"><img data-bb-se-preview-mobile="1" src="' +
       esc(p.imageUrl || "") +
       '" alt="" /></div></div>' +
-      field("Image URL or media path", "imageUrl", p.imageUrl || "") +
+      '<input type="hidden" name="' +
+      esc(fieldName) +
+      '" value="' +
+      esc(p.imageUrl || "") +
+      '" data-bb-se-image-url="1" />' +
+      '<input type="hidden" name="placement" value="' +
+      esc(placementJson) +
+      '" data-bb-se-placement="1" />' +
+      '<input type="hidden" name="focal" value="' +
+      esc(p.focal || "center") +
+      '" data-bb-se-focal="1" />' +
       field("Alternative text", "altText", p.altText || "") +
-      field("Focal position", "focal", p.focal || "center", {
-        type: "select",
-        options: [
-          { value: "center", label: "Center" },
-          { value: "top", label: "Top" },
-          { value: "bottom", label: "Bottom" },
-          { value: "left", label: "Left" },
-          { value: "right", label: "Right" },
-        ],
-      }) +
-      '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Change photo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Media library</button>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1">Remove image</button>' +
+      (framingEnabled
+        ? '<div class="bb-tp-se-actions-row gp-we-media-field__actions">' +
+          '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-adjust="1"' +
+          (hasImage ? "" : " hidden") +
+          ">Adjust Picture</button>" +
+          "</div>"
+        : "") +
+      '<div class="bb-tp-se-actions-row gp-we-media-field__actions" data-bb-media-actions="1">' +
+      '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
+      esc(replaceLabel) +
+      '<input type="file" accept="image/*,image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="' +
+      esc(fieldName) +
+      '" /></label>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="' +
+      esc(fieldName) +
+      '">Choose from Content Library</button>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-remove-media="1" data-bb-se-remove-target="' +
+      esc(fieldName) +
+      '">Remove image</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
-      '<p class="bb-tp-se-hint">Or choose a demo image</p><div class="bb-tp-se-demos">' +
-      demos +
-      "</div></div>"
+      (demos
+        ? '<p class="bb-tp-se-hint">Optional demo soft-fill (system images)</p><div class="bb-tp-se-demos">' +
+          demos +
+          "</div>"
+        : "") +
+      "</div>"
     );
   }
 
   function buildVideoForm(p) {
+    var hasThumb = Boolean(p.thumbnailUrl);
+    var thumbLabel = hasThumb ? "Replace thumbnail" : "Add thumbnail";
     return (
-      '<div class="bb-tp-se-grid">' +
-      '<p class="bb-tp-se-hint">Video file upload is not supported. Use a YouTube or Vimeo https link.</p>' +
+      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-media-mode="youtube">' +
+      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="youtube">YouTube mode — paste an approved YouTube or Vimeo https link. The draft stores the URL only (no video download). Raw iframe HTML is not allowed. Optional thumbnail can be shown as a poster. Embeds never autoplay by default.</p>' +
       field("Video URL", "videoUrl", p.videoUrl || "", { type: "url" }) +
       field("Title", "title", p.title || "") +
-      field("Thumbnail URL", "thumbnailUrl", p.thumbnailUrl || "") +
+      '<input type="hidden" name="thumbnailUrl" value="' +
+      esc(p.thumbnailUrl || "") +
+      '" data-bb-se-image-url="1" />' +
       '<div class="bb-tp-se-preview"><img data-bb-se-preview="1" src="' +
       esc(p.thumbnailUrl || "") +
       '" alt="" width="320" height="180" /></div>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-bb-se-remove-media="1">Remove video</button>' +
+      '<div class="bb-tp-se-actions-row gp-we-media-field__actions">' +
+      '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
+      esc(thumbLabel) +
+      '<input type="file" accept="image/*,image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" /></label>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Choose from Content Library</button>' +
+      '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-remove-media="1">Remove video</button>' +
+      "</div>" +
+      '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
       "</div>"
     );
   }
@@ -297,7 +348,12 @@
 
   function buildLeaderForm(p) {
     return (
-      buildImageForm({ imageUrl: p.imageUrl || "", altText: p.displayName || "Leader photo", focal: "center" }) +
+      buildImageForm({
+        imageUrl: p.imageUrl || "",
+        altText: p.displayName || "Leader photo",
+        focal: "center",
+        placement: p.placement || p.imagePlacement || null,
+      }) +
       field("Full name", "displayName", p.displayName || "") +
       field("Role", "roleTitle", p.roleTitle || "") +
       field("Short biography", "biography", p.biography || "", { type: "textarea", rows: 4 }) +
@@ -313,7 +369,12 @@
 
   function buildMinistryForm(p) {
     return (
-      buildImageForm({ imageUrl: p.imageUrl || "", altText: p.name || "Ministry image", focal: "center" }) +
+      buildImageForm({
+        imageUrl: p.imageUrl || "",
+        altText: p.name || "Ministry image",
+        focal: "center",
+        placement: p.placement || p.imagePlacement || null,
+      }) +
       field("Ministry name", "name", p.name || "") +
       field("Short summary", "summary", p.summary || "", { type: "textarea", rows: 2 }) +
       field("Full description", "description", p.description || "", { type: "textarea", rows: 4 }) +
@@ -345,7 +406,7 @@
       if (!Number.isNaN(e.getTime())) endTime = e.toISOString().slice(11, 16);
     }
     return (
-      buildImageForm({ imageUrl: p.imageUrl || "", altText: p.title || "Event image", focal: "center" }) +
+      buildImageForm({ imageUrl: p.imageUrl, altText: p.title || "Event image", focal: "center", placement: p.placement || p.imagePlacement || null }) +
       field("Event title", "title", p.title || "") +
       field("Date", "date", date, { type: "date" }) +
       field("Start time", "startTime", startTime, { type: "time" }) +
@@ -371,10 +432,11 @@
         imageUrl: p.imageUrl || p.thumbnailUrl || "",
         altText: p.title || "Sermon thumbnail",
         focal: "center",
+        placement: p.placement || p.imagePlacement || null,
       }) +
       field("Sermon title", "title", p.title || "") +
       field("Speaker", "speakerName", p.speakerName || "") +
-      field("Date", "date", date, { type: "date" }) +
+      field("Date", "date", date, { type: "date", required: true }) +
       field("Scripture reference", "scripture", p.scripture || "") +
       field("Series", "series", p.series || p.category || "") +
       field("Description", "description", p.summary || "", { type: "textarea", rows: 4 }) +
@@ -406,12 +468,13 @@
       field("Instructions", "instructions", p.instructions || "", { type: "textarea", rows: 3 }) +
       field("External payment URL", "externalUrl", p.externalUrl || "", { type: "url" }) +
       field("Button label", "buttonLabel", p.buttonLabel || "Open published link") +
-      field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
-      '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Media library</button>' +
-      "</div>" +
-      '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
+      buildImageForm({
+        imageUrl: p.qrImageUrl || "",
+        altText: (p.label || "Giving") + " QR code",
+        fieldName: "qrImageUrl",
+        focal: "center",
+        framing: false,
+      }) +
       field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +
       field("Display order", "sortOrder", p.sortOrder != null ? p.sortOrder : 10, { type: "number" })
     );
@@ -441,8 +504,8 @@
   function titleFor(kind) {
     return (
       {
-        image: "Edit image",
-        video: "Edit video",
+        image: "Photograph",
+        video: "YouTube video",
         service_times: "Edit service times",
         leader: "Edit leadership member",
         ministry: "Edit ministry",
@@ -474,12 +537,22 @@
       if (el.type === "checkbox") return el.checked;
       return el.value;
     }
+    function readPlacement() {
+      var raw = val("placement");
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
     if (kind === "image") {
       return {
         imageUrl: val("imageUrl"),
         altText: val("altText"),
-        focal: val("focal"),
+        focal: val("focal") || "center",
         fit: "cover",
+        placement: readPlacement(),
       };
     }
     if (kind === "video") {
@@ -518,6 +591,7 @@
         roleTitle: val("roleTitle"),
         biography: val("biography"),
         imageUrl: val("imageUrl"),
+        placement: readPlacement(),
         email: val("email"),
         phone: val("phone"),
         socialUrl: val("socialUrl"),
@@ -538,6 +612,7 @@
         contactEmail: val("contactEmail"),
         joinUrl: val("joinUrl"),
         imageUrl: val("imageUrl"),
+        placement: readPlacement(),
         featured: Boolean(val("featured")),
         visible: Boolean(val("visible")),
         sortOrder: Number(val("sortOrder") || 10),
@@ -555,6 +630,7 @@
         registrationUrl: val("registrationUrl"),
         timezone: val("timezone") || "UTC",
         imageUrl: val("imageUrl"),
+        placement: readPlacement(),
         featured: Boolean(val("featured")),
         visible: Boolean(val("visible")),
       };
@@ -569,6 +645,7 @@
         description: val("description"),
         mediaUrl: val("mediaUrl"),
         imageUrl: val("imageUrl"),
+        placement: readPlacement(),
         featured: Boolean(val("featured")),
         visible: Boolean(val("visible")),
       };
@@ -613,7 +690,8 @@
       baselineJson: JSON.stringify(cfg.payload || {}),
     };
     $("[data-bb-structured-body='1']", host).innerHTML = renderForm(current.kind, cfg.payload || {});
-    $("#bb-tp-structured-editor-title", host).textContent = titleFor(current.kind);
+    $("#bb-tp-structured-editor-title", host).textContent =
+      (cfg.dialogTitle && String(cfg.dialogTitle).trim()) || titleFor(current.kind);
     setStatus("", "");
     host.hidden = false;
     document.body.classList.add("bb-tp-structured-open");
@@ -726,17 +804,58 @@
     var name = fieldName || "imageUrl";
     var input = host.querySelector('[name="' + name + '"]') || host.querySelector('[name="imageUrl"]');
     if (input) input.value = url;
-    if (name === "imageUrl" || name === "thumbnailUrl") {
+    if (name === "imageUrl" || name === "thumbnailUrl" || name === "qrImageUrl") {
       host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
         img.src = url;
+        if (window.GpUniversalImageEditor && typeof window.GpUniversalImageEditor.applyPlacementToElement === "function") {
+          var placeEl = host.querySelector("[data-bb-se-placement='1']");
+          var placement = null;
+          if (placeEl && placeEl.value) {
+            try {
+              placement = JSON.parse(placeEl.value);
+            } catch (e) {
+              placement = null;
+            }
+          }
+          window.GpUniversalImageEditor.applyPlacementToElement(img, placement);
+        }
       });
+      var adjustBtn = host.querySelector("[data-bb-se-adjust='1']");
+      if (adjustBtn) adjustBtn.hidden = false;
     }
   }
 
   var pendingUploadTarget = "imageUrl";
+  var allowedImageTypes = {
+    "image/jpeg": true,
+    "image/png": true,
+    "image/webp": true,
+    "image/gif": true,
+  };
+
+  function maxImageBytes() {
+    return Number(host && host.getAttribute("data-bb-max-image-bytes")) || 5 * 1024 * 1024;
+  }
+
+  function validateImageFile(file) {
+    if (!file) return { ok: false, reason: "Choose an image" };
+    var type = String(file.type || "").toLowerCase();
+    if (!allowedImageTypes[type]) {
+      return { ok: false, reason: "Use JPEG, PNG, WebP, or GIF" };
+    }
+    if (file.size > maxImageBytes()) {
+      return { ok: false, reason: "Image must be 5 MB or smaller" };
+    }
+    return { ok: true };
+  }
 
   function uploadFile(file, fieldName) {
     if (!host || !file) return;
+    var check = validateImageFile(file);
+    if (!check.ok) {
+      setStatus(check.reason + " Previous image kept.", "error");
+      return;
+    }
     pendingUploadTarget = fieldName || "imageUrl";
     var uploadUrl = host.getAttribute("data-bb-media-upload");
     var csrf = host.getAttribute("data-bb-csrf");
@@ -775,7 +894,19 @@
           );
           return;
         }
-        var path = result.data.deliveryPath || "";
+        var media = result.data.media || result.data.asset || {};
+        var path =
+          media.publicSrc ||
+          media.previewUrl ||
+          result.data.deliveryPath ||
+          media.deliveryPath ||
+          media.src ||
+          "";
+        if (!path) {
+          progress.textContent = "Upload failed — previous image kept.";
+          setStatus("Upload succeeded but no image URL was returned. Previous image kept.", "error");
+          return;
+        }
         applySelectedMedia(path, pendingUploadTarget);
         progress.textContent = "Upload complete — save draft to keep it.";
         setStatus("Upload ready — save draft to keep it.", "ok");
@@ -812,8 +943,16 @@
           setStatus("Could not load media library.", "error");
           return;
         }
-        var assets = (result.data.assets || []).filter(function (a) {
-          return a && String(a.mimeType || "").indexOf("image/") === 0 && a.deliveryPath;
+        var rawItems = result.data.assets || result.data.media || [];
+        var assets = rawItems.filter(function (a) {
+          if (!a) return false;
+          var mime = String(a.mimeType || a.mediaKind || a.kind || "");
+          var src = a.publicSrc || a.previewUrl || a.deliveryPath || a.src || "";
+          if (!src) return false;
+          if (mime && mime.indexOf("image/") !== 0 && mime !== "image" && mime !== "IMAGE") {
+            return false;
+          }
+          return true;
         });
         if (!assets.length) {
           panel.innerHTML =
@@ -824,13 +963,16 @@
           '<p class="bb-tp-se-hint">Choose from your media library</p><div class="bb-tp-se-demos bb-tp-se-library-grid">' +
           assets
             .map(function (a) {
+              var src = a.publicSrc || a.previewUrl || a.deliveryPath || a.src || "";
               return (
                 '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
-                esc(a.deliveryPath) +
+                esc(src) +
+                '" data-bb-demo-target="' +
+                esc(pendingUploadTarget || "imageUrl") +
                 '"><img src="' +
-                esc(a.deliveryPath) +
+                esc(src) +
                 '" alt="" width="72" height="54" loading="lazy" /><span>' +
-                esc(a.originalFilename || "Image") +
+                esc(a.originalFilename || a.title || "Image") +
                 "</span></button>"
               );
             })
@@ -853,12 +995,29 @@
       } catch (e) {
         payload = {};
       }
+      var kind = openBtn.getAttribute("data-bb-kind");
+      var entityKey = openBtn.getAttribute("data-bb-entity") || "default";
+      var newKeyPrefix = {
+        leader: "new-leader",
+        ministry: "new-ministry",
+        event: "new-event",
+        sermon: "new-sermon",
+        giving_method: "new-giving",
+        social_link: "new-social",
+      }[kind];
+      // Exact template keys only — do not remint already-unique draft member keys.
+      if (newKeyPrefix && entityKey === newKeyPrefix) {
+        entityKey =
+          newKeyPrefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+        openBtn.setAttribute("data-bb-entity", entityKey);
+      }
       openEditor({
-        kind: openBtn.getAttribute("data-bb-kind"),
-        entityKey: openBtn.getAttribute("data-bb-entity") || "default",
+        kind: kind,
+        entityKey: entityKey,
         sectionKey: openBtn.getAttribute("data-bb-section") || "",
         payload: payload,
         op: openBtn.getAttribute("data-bb-op") || "upsert",
+        dialogTitle: openBtn.getAttribute("data-bb-dialog-title") || "",
       });
       return;
     }
@@ -879,23 +1038,92 @@
     if (demo) {
       event.preventDefault();
       var url = demo.getAttribute("data-bb-demo-url");
-      applySelectedMedia(url);
+      applySelectedMedia(url, demo.getAttribute("data-bb-demo-target") || pendingUploadTarget || "imageUrl");
       return;
     }
-    if (event.target.closest("[data-bb-se-library='1']")) {
+    var adjustBtn = event.target.closest("[data-bb-se-adjust='1']");
+    if (adjustBtn) {
       event.preventDefault();
+      var api = window.GpUniversalImageEditor;
+      if (!api || typeof api.openFraming !== "function") {
+        setStatus("Image framing is unavailable. Reload the page and try again.", "error");
+        return;
+      }
+      var srcInput =
+        host.querySelector('[name="imageUrl"]') ||
+        host.querySelector("[data-bb-se-image-url='1']");
+      var src = srcInput ? String(srcInput.value || "").trim() : "";
+      if (!src) {
+        setStatus("Choose or keep an image before adjusting framing.", "error");
+        return;
+      }
+      var placeEl = host.querySelector("[data-bb-se-placement='1']");
+      var placement = null;
+      if (placeEl && placeEl.value) {
+        try {
+          placement = JSON.parse(placeEl.value);
+        } catch (e) {
+          placement = null;
+        }
+      }
+      var opened = api.openFraming({
+        src: src,
+        placement: placement,
+        allowSeparateFraming: false,
+        contentKey: "structured.image",
+        title: "Adjust Picture",
+        trigger: adjustBtn,
+        onApply: function (nextPlacement) {
+          if (placeEl) {
+            placeEl.value = nextPlacement ? JSON.stringify(nextPlacement) : "";
+          }
+          host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
+            if (typeof api.applyPlacementToElement === "function") {
+              api.applyPlacementToElement(img, nextPlacement);
+            }
+          });
+          setStatus("Framing updated — save draft to keep it.", "ok");
+        },
+      });
+      if (!opened || !opened.ok) {
+        setStatus(
+          (opened && opened.reason === "editor_busy"
+            ? "Close the other image editor first, then try Adjust Picture."
+            : "Could not open Adjust Picture."),
+          "error"
+        );
+      }
+      return;
+    }
+    var libraryBtn = event.target.closest("[data-bb-se-library='1']");
+    if (libraryBtn) {
+      event.preventDefault();
+      pendingUploadTarget = libraryBtn.getAttribute("data-bb-se-library-target") || "imageUrl";
       loadMediaLibrary();
       return;
     }
     if (event.target.closest("[data-bb-se-remove-media='1']")) {
       event.preventDefault();
-      ["imageUrl", "videoUrl", "thumbnailUrl"].forEach(function (n) {
+      var removeBtn = event.target.closest("[data-bb-se-remove-media='1']");
+      var removeTarget =
+        (removeBtn && removeBtn.getAttribute("data-bb-se-remove-target")) || "";
+      var clearNames = removeTarget
+        ? [removeTarget]
+        : ["imageUrl", "videoUrl", "thumbnailUrl", "qrImageUrl"];
+      clearNames.forEach(function (n) {
         var el = host.querySelector('[name="' + n + '"]');
         if (el) el.value = "";
       });
+      var placeClear = host.querySelector("[data-bb-se-placement='1']");
+      if (placeClear) placeClear.value = "";
       host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
         img.removeAttribute("src");
+        if (window.GpUniversalImageEditor && window.GpUniversalImageEditor.applyPlacementToElement) {
+          window.GpUniversalImageEditor.applyPlacementToElement(img, null);
+        }
       });
+      var adjustHide = host.querySelector("[data-bb-se-adjust='1']");
+      if (adjustHide) adjustHide.hidden = true;
       return;
     }
     if (event.target.closest("[data-bb-svc-add='1']") && current && current.kind === "service_times") {

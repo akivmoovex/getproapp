@@ -1,0 +1,54 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  var portal = m.portalAccessStatus || 'not_activated';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var csrfVal = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var err = typeof errorMessage !== 'undefined' ? errorMessage : null;
+  function portalLabel(s) {
+    if (s === 'active') return 'Portal Active';
+    if (s === 'blocked') return 'Blocked';
+    return 'Not Activated';
+  }
+%>
+
+<section class="bb-v204-m09" data-bb-stitch-v204="BB-M09" data-bb-screen="BB-M09" aria-label="Member Access">
+  <%- include('../partials/v204/page-header', {
+    title: 'Member Access',
+    subtitle: 'Portal access is independent of membership status.',
+    breadcrumbsHtml: '<a href="/branch-admin/members">Members</a> <span aria-hidden="true">›</span> <a href="/branch-admin/members/' + m.id + '">Profile</a> <span aria-hidden="true">›</span> <span>Access</span>'
+  }) %>
+
+  <% if (err) { %><p class="bb-ba-banner bb-ba-banner--danger" role="alert"><%= err %></p><% } %>
+
+  <section class="bb-v204-m02__section">
+    <dl class="bb-v204-m03__dl">
+      <div><dt>Member</dt><dd><%= [m.firstName, m.lastName].filter(Boolean).join(' ') || '—' %></dd></div>
+      <div><dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= m.memberNumber || '—' %></span></dd></div>
+      <div><dt>Membership status</dt><dd><%= m.status || '—' %></dd></div>
+      <div><dt>Portal status</dt><dd><%- include('../partials/v204/status-chip', { label: portalLabel(portal), tone: portal === 'blocked' ? 'danger' : (portal === 'active' ? 'success' : 'neutral') }) %></dd></div>
+    </dl>
+  </section>
+
+  <div class="bb-v204-m09__actions">
+    <% if (portal === 'blocked') { %>
+    <form method="post" action="/branch-admin/members/<%= m.id %>/access">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfVal %>" />
+      <input type="hidden" name="portal_access_status" value="active" />
+      <div class="bb-ba-field">
+        <label for="reason">Restore reason (optional)</label>
+        <textarea id="reason" name="reason" rows="2" maxlength="1000"></textarea>
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m09-restore="1">Restore Portal Access</button>
+    </form>
+    <% } else { %>
+    <a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/members/<%= m.id %>/access/block" data-bb-m09-block="1">
+      <span class="material-symbols-outlined" aria-hidden="true">block</span>
+      Block Member Access
+    </a>
+    <% } %>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/members/<%= m.id %>">Back to Profile</a>
+  </div>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

@@ -1,0 +1,16 @@
+<section
+  class="ac-mw ac-mw-history"
+  data-ac-page-section="website-history"
+  data-ac-stitch-screen="H05"
+  data-ac-stitch-screen-mobile="H05-M"
+  data-ac-version-engine="platform"
+  data-ac-restore-as-new="1"
+>
+<% if (typeof historyStylesheet === 'string' && historyStylesheet) { %>
+<link rel="stylesheet" href="<%= historyStylesheet %>"/>
+<% } %>
+<%- typeof historyHtml !== 'undefined' ? historyHtml : '' %>
+<% if (typeof historyScript === 'string' && historyScript) { %>
+<script src="<%= historyScript %>" defer></script>
+<% } %>
+</section>

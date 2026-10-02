@@ -1,0 +1,25 @@
+<%#
+  Shared operational status / segment tabs (product-neutral).
+  Locals:
+    tabs: Array<{ href, label, count?, active?, key? }>
+    ariaLabel?: string
+%>
+<%
+  var _tabs = Array.isArray(tabs) ? tabs : [];
+  var _aria = typeof ariaLabel !== 'undefined' && ariaLabel ? ariaLabel : 'Status filters';
+%>
+<nav class="gp-ops-status-tabs" data-gp-ops="status-tabs" aria-label="<%= _aria %>">
+  <% _tabs.forEach(function (tab) { %>
+  <a
+    class="gp-ops-status-tabs__tab<%= tab.active ? ' is-active' : '' %>"
+    href="<%= tab.href %>"
+    <% if (tab.key) { %>data-gp-ops-tab="<%= tab.key %>"<% } %>
+    <% if (tab.active) { %>aria-current="page"<% } %>
+  >
+    <span class="gp-ops-status-tabs__label"><%= tab.label %></span>
+    <% if (tab.count != null && tab.count !== '') { %>
+    <span class="gp-ops-status-tabs__count"><%= tab.count %></span>
+    <% } %>
+  </a>
+  <% }) %>
+</nav>

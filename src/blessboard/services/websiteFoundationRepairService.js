@@ -91,7 +91,7 @@ async function repairWebsiteFoundation(db, input) {
   try {
     return await withClient(db, async (client) => {
       const church = await client.query(
-        `SELECT c.id, c.organization_id, c.display_name, c.status
+        `SELECT c.id, c.organization_id, c.display_name, c.status, c.church_key
            FROM blessboard.churches c
           WHERE c.id = $1
           LIMIT 1`,
@@ -115,6 +115,16 @@ async function repairWebsiteFoundation(db, input) {
       const settingsCreated = !settingsBefore;
 
       const pages = await ensureMinimalDraftPages(client, churchId);
+
+      try {
+        const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+        await ensureBlessBoardWebsiteInstance(client, {
+          organizationId,
+          slug: String(row.church_key || organizationId).toLowerCase().replace(/[^a-z0-9_-]+/g, "-").slice(0, 64),
+        });
+      } catch {
+        /* adapter is non-authoritative */
+      }
 
       let onboardingCreated = false;
       if (organizationId) {

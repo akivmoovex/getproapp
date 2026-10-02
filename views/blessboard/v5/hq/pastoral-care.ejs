@@ -1,0 +1,27 @@
+<%- include('../partials/hq-shell-start') %>
+<section class="bb-hq-page" data-bb-pastoral-care="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <span>Pastoral care</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Pastoral care</h1>
+    <p class="bb-hq-page-head__lede">Confidential pastoral cases. List pages show metadata only — note bodies require case access.</p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <nav class="bb-hq-card" aria-label="Pastoral care links">
+    <h2 class="bb-hq-section-title">Quick links</h2>
+    <p class="bb-hq-lede">
+      <a href="/hq/pastoral-care/cases">Pastoral cases</a>
+    </p>
+  </nav>
+</section>
+<%- include('../partials/hq-shell-end') %>

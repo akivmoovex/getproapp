@@ -1,0 +1,57 @@
+<%
+  var canEdit = typeof websiteEdit !== 'undefined' && websiteEdit;
+  var key = contentKey;
+  var value = typeof fieldValue !== 'undefined' && fieldValue != null ? String(fieldValue) : '';
+  var fType = typeof fieldType !== 'undefined' ? String(fieldType) : 'short_text';
+  var multiline = (fType === 'long_text' || fType === 'rich_text' || fType === 'textarea' || fType === 'paragraph');
+  var fieldId = 'website-field-' + String(key).replace(/[^a-z0-9]+/gi, '-');
+  var label = typeof fieldLabel !== 'undefined' && fieldLabel ? String(fieldLabel) : ('Edit ' + String(key).split('.').pop().replace(/_/g, ' '));
+  // Escape once for attributes. Use unescaped output of escAttr —
+  // EJS escaped output of escAttr would double-escape.
+  function escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+%>
+<% if (canEdit) { %>
+<span
+  class="gp-website-editable ac-website-editable"
+  data-website-inline="1"
+  data-website-key="<%= key %>"
+  data-website-type="<%= multiline ? 'textarea' : 'text' %>"
+  data-website-value="<%- escAttr(value) %>"
+  data-website-published-value="<%- escAttr(value) %>"
+  data-website-label="<%- escAttr(label) %>"
+  data-website-input-type="<%= fType === 'email' ? 'email' : (fType === 'phone' ? 'tel' : 'text') %>"
+>
+  <span class="gp-website-editable__display ac-website-editable__display" data-website-display="1">
+    <span
+      class="gp-website-editable__value ac-website-editable__value"
+      id="<%= fieldId %>"
+      data-website-value-text="1"
+    ><%= value %></span>
+    <button
+      type="button"
+      class="gp-website-editable__pencil ac-website-editable__pencil"
+      data-website-start="1"
+      aria-label="<%- escAttr(label) %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+    </button>
+    <button
+      type="button"
+      class="gp-website-editable__history"
+      data-website-field-history-open="1"
+      aria-label="Field history"
+      title="History"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
+    </button>
+  </span>
+</span>
+<% } else { %>
+<%= value %>
+<% } %>

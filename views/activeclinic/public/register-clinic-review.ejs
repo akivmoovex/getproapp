@@ -1,0 +1,127 @@
+<% const fd = formData || {}; %>
+<% const verr = validationErrors || {}; %>
+<section
+  class="acw-page acw-register acw-register--with-aside gp-reg"
+  data-ac-page-section="register-clinic-review"
+  data-gp-product="activeclinic"
+  data-ac-acw-screen="ACW09-review"
+  data-ac-acw-step="review"
+  data-ac-mf-family="MF03"
+  data-ac-mf-screen="MF03-05"
+>
+
+  <% if (typeof error === 'string' && error) { %>
+  <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
+  <% } %>
+  <% if (verr && Object.keys(verr).length) { %>
+  <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
+    <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
+    <ul class="ac-public-validation-summary__list">
+      <% Object.keys(verr).forEach(function(field) { %>
+      <li><%= verr[field] %></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+  <% if (verr.registration_consent) { %>
+  <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
+    <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
+    <ul class="ac-public-validation-summary__list">
+      <li><a href="#registration_consent"><%= verr.registration_consent %></a></li>
+    </ul>
+  </div>
+  <% } %>
+
+  <div class="acw-register__layout">
+    <%- include('../partials/register-aside-review') %>
+    <div class="acw-register__panel gp-reg__panel">
+  <%- include('../partials/register-clinic-steps') %>
+  <h2 class="gp-reg__form-heading">Review your clinic</h2>
+  <p class="gp-reg__form-lede">Confirm the details below before creating your clinic workspace.</p>
+  <div class="acw-register-review gp-reg-review">
+    <article class="acw-register__card acw-register-review__card">
+      <header class="acw-register-review__head">
+        <h2><span class="material-symbols-outlined" aria-hidden="true">local_hospital</span> Clinic information</h2>
+        <a class="acw-register-review__edit-btn" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('clinic') : '/register-clinic?step=clinic&gpRegNav=1' %>" data-gp-registration-nav="1">
+          <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+        </a>
+      </header>
+      <dl class="acw-register-review__dl">
+        <div>
+          <dt>Clinic name</dt>
+          <dd><%= fd.clinicName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Clinic type</dt>
+          <dd><%= fd.clinicTypeLabel || fd.clinicType || '—' %></dd>
+        </div>
+        <div>
+          <dt>Country</dt>
+          <dd><%= fd.countryCode || '—' %></dd>
+        </div>
+        <% if (fd.city || fd.address) { %>
+        <div>
+          <dt>Location</dt>
+          <dd><%= [fd.address, fd.city].filter(Boolean).join(', ') || '—' %></dd>
+        </div>
+        <% } %>
+        <% if (fd.notes) { %>
+        <div>
+          <dt>Notes</dt>
+          <dd><%= fd.notes %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </article>
+
+    <article class="acw-register__card acw-register-review__card">
+      <header class="acw-register-review__head">
+        <h2><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span> Administrator</h2>
+        <a class="acw-register-review__edit-btn" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('administrator') : '/register-clinic?step=administrator&gpRegNav=1' %>" data-gp-registration-nav="1">
+          <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+        </a>
+      </header>
+      <dl class="acw-register-review__dl">
+        <div>
+          <dt>Full name</dt>
+          <dd><%= fd.contactName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Email address</dt>
+          <dd><%= fd.contactEmail || '—' %></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd><%= fd.contactPhone || '—' %></dd>
+        </div>
+        <div>
+          <dt>Administrator password</dt>
+          <dd>Set — used to sign in after registration</dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+
+  <div class="acw-register__card acw-register-review__confirm">
+    <form method="post" action="/register-clinic" class="ac-review-actions__confirm" data-ac-loading="1" data-ac-register-confirm="1" data-gp-registration-form="1" data-ac-register-step="review"<% if (verr && Object.keys(verr).length) { %> data-gp-registration-dirty="1"<% } %>>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="action" value="confirm"/>
+      <%- include('../partials/register-clinic-hidden-fields') %>
+      <%- include('../../platform/partials/registration-consent', {
+        registrationTermsHref: typeof registrationTermsHref !== 'undefined' ? registrationTermsHref : '/terms',
+        registrationPrivacyHref: typeof registrationPrivacyHref !== 'undefined' ? registrationPrivacyHref : '/privacy',
+        consentError: verr.registration_consent || verr.acceptTerms || null,
+        consentErrorField: verr.registration_consent ? 'registration_consent' : (verr.acceptTerms ? 'acceptTerms' : null),
+      }) %>
+      <div class="acw-register__actions acw-register__actions--end">
+        <button type="submit" class="ac-btn ac-btn--primary" data-loading="Creating clinic…">
+          Create clinic
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+    </form>
+  </div>
+  <p class="ac-public-note acw-register__note">Creating your clinic sets up your organisation, facility, administrator account, and website foundation immediately. You can sign in after registration. Your public clinic website starts unpublished until you customize and publish it from Website Management.</p>
+    </div>
+  </div>
+</section>

@@ -46,7 +46,7 @@ function makeFallbackBranchApp() {
   return makeBranchApp({
     kind: "branch",
     orgSlug: "demo",
-    organization: { id: 1, name: "Alpha Grace Church", status: "active" },
+    organization: { id: 1, name: "Alpha Grace Church", status: "active", data_environment: "demo" },
     branch: {
       id: 1,
       name: "Downtown Branch",
@@ -106,7 +106,7 @@ test("tenant homepage renders approved section hierarchy without fake content", 
   assert.match(res.text, /Ministry information will be available soon/);
   assert.match(res.text, /href="\/giving"/);
   assert.match(res.text, /Give Now/);
-  assert.match(res.text, /Join a Service|Join Our Next Service/);
+  assert.match(res.text, /Join a Service|Join Our Next Service|Join us this Sunday|id="visit"/);
   assert.match(res.text, /Connected Community|Digital Giving|Already a Member\?/);
   assert.doesNotMatch(res.text, /Give Online Now|Other Ways to Give|1\.2k\+/);
   assert.match(res.text, /href="\/contact"/);

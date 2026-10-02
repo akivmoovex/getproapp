@@ -1,0 +1,330 @@
+/**
+ * ActiveClinic Stitch public pages (Batch 2–4: R01–R12 + Batch 7 parity).
+ * Layout composition around shared --gp-website-* components.
+ * Product tokens enter only via the platform token bridge on body.ac-public-body.
+ * No product hex here.
+ */
+
+.ac-stitch-page {
+  width: min(100% - 2rem, var(--gp-website-max-width, 72rem));
+  margin: 0 auto;
+  padding: calc(var(--gp-website-space, 1rem) * 1.25) 0 calc(var(--gp-website-space, 1rem) * 2);
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.75);
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.ac-stitch-section {
+  min-width: 0;
+}
+
+.ac-stitch-section--hero .gp-website-pc--hero {
+  padding: calc(var(--gp-website-space, 1rem) * 1.1) 0;
+  gap: calc(var(--gp-website-space, 1rem) * 1.65);
+}
+
+.ac-stitch-page--r01 .ac-stitch-section--trust .gp-website-pc--fact-strip {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--gp-website-color-text, currentColor) 6%, transparent);
+}
+
+.ac-stitch-page--r08 .ac-public-form {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 36rem;
+  padding: 1.25rem;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: calc(var(--gp-website-radius, 0.5rem) * 1.25);
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.ac-stitch-section--trust .gp-website-pc--fact-strip {
+  margin: 0;
+  padding: calc(var(--gp-website-space, 1rem) * 0.85);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, var(--gp-website-color-surface, transparent));
+}
+
+.ac-stitch-section--conversion .gp-website-pc--cta,
+.ac-stitch-section--cta .gp-website-pc--cta,
+.ac-stitch-section--promo .gp-website-pc--cta {
+  text-align: center;
+  padding: calc(var(--gp-website-space, 1rem) * 1.5);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast);
+}
+
+.ac-stitch-section--conversion .gp-website-pc--cta .gp-website-pc__title,
+.ac-stitch-section--conversion .gp-website-pc--cta .gp-website-pc__lead,
+.ac-stitch-section--cta .gp-website-pc--cta .gp-website-pc__title,
+.ac-stitch-section--cta .gp-website-pc--cta .gp-website-pc__lead {
+  color: inherit;
+}
+
+.ac-stitch-section--conversion .gp-website-pc__btn--primary,
+.ac-stitch-section--cta .gp-website-pc__btn--primary {
+  background: var(--gp-website-color-surface, transparent);
+  color: var(--gp-website-color-primary, currentColor);
+  border-color: var(--gp-website-color-surface, transparent);
+}
+
+.ac-stitch-section--conversion .gp-website-pc__btn--secondary,
+.ac-stitch-section--cta .gp-website-pc__btn--secondary {
+  background: transparent;
+  color: var(--gp-website-color-primary-contrast);
+  border-color: color-mix(in srgb, var(--gp-website-color-primary-contrast) 65%, transparent);
+}
+
+.ac-stitch-section--visit {
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+}
+
+.ac-stitch-page--r03 .ac-service-editor-links,
+.ac-stitch-page--r04 .ac-doctor-editor-links {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* —— R04 directory toolbar —— */
+.ac-stitch-directory-toolbar {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ac-stitch-directory-search__input,
+.ac-stitch-directory-sort select {
+  width: 100%;
+  min-height: var(--gp-website-touch, 2.75rem);
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface, transparent);
+  font: inherit;
+}
+
+.ac-stitch-directory-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ac-stitch-directory-pill {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  background: var(--gp-website-color-surface, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.ac-stitch-directory-pill.is-active {
+  background: var(--gp-website-color-primary, currentColor);
+  border-color: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast);
+}
+
+.ac-stitch-directory-empty {
+  margin: 0;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.ac-stitch-page--r05 .ac-stitch-section--person-detail .gp-website-pc--person-card {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.25);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.ac-stitch-page--r05 .gp-website-pc__person-media--portrait {
+  max-width: 20rem;
+}
+
+.ac-stitch-page--r06 .ac-stitch-section--service-detail .gp-website-pc--collection-card {
+  max-width: 40rem;
+}
+
+.ac-stitch-page--r07 .ac-stitch-urgent-notice {
+  margin: 0 0 var(--gp-website-space, 1rem);
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--gp-website-color-accent, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+}
+
+.ac-stitch-page--r07 .ac-stitch-urgent-notice strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.ac-stitch-page--r07 .ac-stitch-urgent-notice p {
+  margin: 0;
+}
+
+.ac-stitch-page--r07 .ac-stitch-form-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.ac-stitch-page--r07 .ac-stitch-legal-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.ac-stitch-contact-layout {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.5);
+  min-width: 0;
+}
+
+.ac-stitch-page--r07 .ac-stitch-section--contact-aside {
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  min-width: 0;
+  padding: var(--gp-website-space, 1rem);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+}
+
+.ac-stitch-page--r07 .acp-contact-form {
+  display: grid;
+  gap: 0.85rem;
+  padding: var(--gp-website-space, 1rem);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.ac-stitch-page--r08 .acp-booking-layout {
+  min-width: 0;
+}
+
+.ac-stitch-page--r08 .ac-stitch-section--header .gp-website-pc--section-header {
+  margin-bottom: var(--gp-website-space, 1rem);
+}
+
+.ac-stitch-page--r08 .acp-choice-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.ac-stitch-page--r09 .ac-location-list,
+.ac-stitch-page--r10 .gp-website-pc__gallery-grid {
+  min-width: 0;
+}
+
+.ac-stitch-page--r10 .gp-website-pc__gallery-item img,
+.ac-stitch-page--r12 .gp-website-pc__gallery-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 100%;
+}
+
+.ac-stitch-page--r11 .ac-stitch-section--faq .gp-website-pc__faq-item summary {
+  cursor: pointer;
+}
+
+.ac-stitch-page--r12 .ac-stitch-section--module {
+  min-width: 0;
+}
+
+/* Mobile sticky book affordance when booking CTA exists in header */
+body.ac-public-body:has(.ac-public-header__cta) .ac-stitch-mobile-book {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .ac-stitch-section--visit {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .ac-stitch-page--r05 .ac-stitch-section--person-detail .gp-website-pc--person-card {
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  }
+
+  .ac-stitch-contact-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: start;
+  }
+
+  .ac-stitch-page--r09 .ac-location-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--gp-website-space, 1rem);
+  }
+
+  .ac-stitch-directory-toolbar {
+    grid-template-columns: minmax(12rem, 1.2fr) minmax(0, 2fr) auto;
+    align-items: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .ac-stitch-page {
+    width: calc(100% - 1.25rem);
+    gap: calc(var(--gp-website-space, 1rem) * 1.25);
+    padding-top: var(--gp-website-space, 1rem);
+    padding-bottom: calc(var(--gp-website-space, 1rem) * 4.5);
+  }
+
+  .ac-stitch-section--visit,
+  .ac-stitch-contact-layout,
+  .ac-stitch-page--r09 .ac-location-list {
+    grid-template-columns: 1fr;
+  }
+
+  .ac-stitch-directory-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .ac-stitch-directory-pill {
+    min-height: var(--gp-website-touch, 2.75rem);
+  }
+}
+
+/* —— Batch 5 E01/E02: WE01 affordances on the same public stitch components —— */
+
+body.ac-public-body--website-editing .ac-stitch-page {
+  overflow-x: clip;
+}
+
+body.ac-public-body--website-editing .ac-stitch-section .gp-website-editable__display {
+  max-width: 100%;
+}
+
+body.ac-public-body--website-editing .gp-website-editor-host[data-ac-stitch-editor="E01"] {
+  /* Desktop chrome host; mobile density uses shared website-inline-edit.css bottom sheet. */
+}
+
+@media (max-width: 390px) {
+  body.ac-public-body--website-editing .gp-website-editor-host[data-ac-stitch-editor-mobile="E02"] {
+    /* Marker for E02 mobile inline mode — shared engine, densified sheet styles. */
+  }
+
+  body.ac-public-body--website-editing .ac-stitch-page .gp-website-editable__pencil,
+  body.ac-public-body--website-editing .ac-stitch-page .ac-website-editable__pencil {
+    min-width: var(--gp-website-touch, 2.75rem);
+    min-height: var(--gp-website-touch, 2.75rem);
+  }
+
+  body.ac-public-body--website-editing .gp-website-field-editor__panel {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}

@@ -1,15 +1,28 @@
 "use strict";
 
 /**
- * Member portal profile read/update (low-risk fields only).
+ * Member portal profile read/update (V2.04 M21–M23).
+ * Self-editable fields only; Church ID + official branch are immutable.
+ * Phone changes stay pending until OTP verification succeeds.
  */
 
-const { normalizePhone } = require("./settingsValidation");
 const {
   requireActiveMemberForTenant,
   STATUS: ACCESS_STATUS,
 } = require("./requireActiveMemberForTenant");
-const repo = require("../repositories/memberIdentityRepository");
+const {
+  updateMemberProfile,
+  RESULT: DOMAIN_RESULT,
+} = require("./blessBoardMemberDomainService");
+const {
+  MARITAL_STATUS,
+  MEMBER_SELF_EDITABLE_FIELDS,
+} = require("./memberDomainConstants");
+const {
+  startAccountPhoneVerification,
+  completeAccountPhoneVerification,
+  STATUS: OTP_WF_STATUS,
+} = require("./phoneOtpWorkflowService");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -21,34 +34,20 @@ const STATUS = Object.freeze({
   INACTIVE_USER: ACCESS_STATUS.INACTIVE_USER,
   CONFLICT: "conflict",
   LOOKUP_ERROR: "lookup_error",
+  PHONE_VERIFICATION_REQUIRED: "phone_verification_required",
+  RATE_LIMITED: "rate_limited",
 });
-
-const HTML_RE = /[<>]/;
-const NAME_MAX = 100;
-
-/**
- * @param {{ connect?: Function, query?: Function }} db
- * @param {(client: object) => Promise<T>} fn
- * @template T
- */
-async function withClient(db, fn) {
-  if (db && typeof db.connect === "function") {
-    const client = await db.connect();
-    try {
-      return await fn(client);
-    } finally {
-      client.release();
-    }
-  }
-  return fn(db);
-}
 
 /**
  * @param {object} member
  * @param {object} membership
+ * @param {{ branchDisplayName?: string|null }} [extras]
  */
-function publicProfile(member, membership) {
+function publicProfile(member, membership, extras) {
+  const x = extras || {};
   return {
+    memberId: member.id,
+    memberNumber: member.memberNumber || null,
     preferredName: member.preferredName,
     firstName: member.firstName,
     lastName: member.lastName,
@@ -56,17 +55,28 @@ function publicProfile(member, membership) {
     emailNormalized: member.emailNormalized,
     phoneDisplay: member.phoneDisplay,
     phoneNormalized: member.phoneNormalized,
+    phonePendingDisplay: member.phonePendingDisplay || null,
+    phonePendingNormalized: member.phonePendingNormalized || null,
+    phoneVerificationRequired: Boolean(member.phoneVerificationRequired),
+    dateOfBirth: member.dateOfBirth || null,
+    occupation: member.occupation || null,
+    maritalStatus: member.maritalStatus || null,
+    numberOfChildren: member.numberOfChildren,
+    address: member.address || {},
+    nextOfKin: member.nextOfKin || {},
     membershipStatus: membership.membershipStatus,
     isPrimaryBranch: Boolean(membership.isPrimary),
+    branchId: membership.branchId || null,
+    branchDisplayName: x.branchDisplayName || null,
   };
 }
 
-/**
- * @param {{ connect?: Function, query?: Function }} db
- * @param {{ userId: string, churchId: string, branchId: string }} input
- */
-async function getMemberPortalProfile(db, input) {
-  const access = await requireActiveMemberForTenant(db, input);
+async function getMemberPortalProfile(db, input, deps) {
+  const requireAccess =
+    (deps && typeof deps.requireActiveMemberForTenant === "function"
+      ? deps.requireActiveMemberForTenant
+      : null) || requireActiveMemberForTenant;
+  const access = await requireAccess(db, input);
   if (!access.ok) {
     return {
       ok: false,
@@ -78,20 +88,30 @@ async function getMemberPortalProfile(db, input) {
   return {
     ok: true,
     status: STATUS.OK,
-    profile: publicProfile(access.member, access.membership),
+    profile: publicProfile(access.member, access.membership, {
+      branchDisplayName: input.branchDisplayName || null,
+    }),
     memberId: access.member.id,
+    member: access.member,
+    membership: access.membership,
   };
 }
 
 /**
- * Update preferred name, phone, and email display only.
- * Never changes membership, church, branch, roles, or email_normalized identity.
- * @param {{ connect?: Function, query?: Function }} db
- * @param {object} input
+ * Member self-edit via domain profile (never Church ID / official branch).
  */
-async function updateMemberPortalProfile(db, input) {
+async function updateMemberPortalProfile(db, input, deps) {
   const raw = input && typeof input === "object" ? input : {};
-  const access = await requireActiveMemberForTenant(db, {
+  const requireAccess =
+    (deps && typeof deps.requireActiveMemberForTenant === "function"
+      ? deps.requireActiveMemberForTenant
+      : null) || requireActiveMemberForTenant;
+  const updateProfile =
+    (deps && typeof deps.updateMemberProfile === "function"
+      ? deps.updateMemberProfile
+      : null) || updateMemberProfile;
+
+  const access = await requireAccess(db, {
     userId: raw.userId,
     churchId: raw.churchId,
     branchId: raw.branchId,
@@ -105,98 +125,250 @@ async function updateMemberPortalProfile(db, input) {
     };
   }
 
-  // Reject attempts to mutate privileged member fields via the profile form payload.
-  const forbiddenFormKeys = [
-    "status",
-    "membershipStatus",
-    "firstName",
-    "lastName",
-    "emailNormalized",
-    "email",
-    "role",
-    "roles",
+  // Reject attempts to mutate privileged fields via the profile form payload.
+  for (const key of [
+    "memberNumber",
+    "member_number",
     "churchIdForm",
     "branchIdForm",
-  ];
-  for (const key of forbiddenFormKeys) {
+    "officialBranchId",
+    "portalAccessStatus",
+    "status",
+    "membershipStatus",
+    "role",
+    "roles",
+  ]) {
     if (Object.prototype.hasOwnProperty.call(raw, key) && raw[key] !== undefined) {
-      return { ok: false, status: STATUS.INVALID_INPUT, reason: `immutable:${key}`, profile: null };
-    }
-  }
-
-  let preferredName = access.member.preferredName;
-  if (raw.preferredName !== undefined) {
-    const s = raw.preferredName == null ? "" : String(raw.preferredName).trim();
-    if (s && (HTML_RE.test(s) || s.length > NAME_MAX)) {
-      return { ok: false, status: STATUS.INVALID_INPUT, reason: "preferred_name", profile: null };
-    }
-    preferredName = s || null;
-  }
-
-  let emailDisplay = access.member.emailDisplay;
-  if (raw.emailDisplay !== undefined) {
-    const s = raw.emailDisplay == null ? "" : String(raw.emailDisplay).trim();
-    if (!s) {
-      emailDisplay = access.member.emailNormalized;
-    } else if (s.length > 254 || HTML_RE.test(s)) {
-      return { ok: false, status: STATUS.INVALID_INPUT, reason: "email_display", profile: null };
-    } else {
-      // Display may differ in casing/format; identity email_normalized stays fixed.
-      emailDisplay = s;
-    }
-  }
-
-  let phoneNormalized = access.member.phoneNormalized;
-  let phoneDisplay = access.member.phoneDisplay;
-  if (raw.phone !== undefined) {
-    const phoneRaw = raw.phone == null ? "" : String(raw.phone).trim();
-    if (!phoneRaw) {
-      phoneNormalized = null;
-      phoneDisplay = null;
-    } else {
-      const phone = normalizePhone(phoneRaw);
-      if (!phone.ok || !phone.value) {
-        return { ok: false, status: STATUS.INVALID_INPUT, reason: "phone", profile: null };
-      }
-      phoneNormalized = phone.value;
-      phoneDisplay = phoneRaw;
-    }
-  }
-
-  if (!access.member.emailNormalized && !phoneNormalized) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "contact_required", profile: null };
-  }
-
-  try {
-    return await withClient(db, async (client) => {
-      const updated = await repo.updateMemberProfileFields(client, {
-        memberId: access.member.id,
-        preferredName,
-        emailDisplay,
-        phoneNormalized,
-        phoneDisplay,
-      });
-      if (!updated) {
-        return { ok: false, status: STATUS.FORBIDDEN, reason: "update", profile: null };
-      }
       return {
-        ok: true,
-        status: STATUS.OK,
-        profile: publicProfile(updated, access.membership),
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        reason: `immutable:${key}`,
+        profile: null,
       };
-    });
-  } catch (err) {
-    const msg = String((err && err.message) || err || "");
-    if (/unique|duplicate/i.test(msg)) {
-      return { ok: false, status: STATUS.CONFLICT, reason: "duplicate_contact", profile: null };
     }
-    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", profile: null };
   }
+
+  const result = await updateProfile(
+    db,
+    {
+      memberId: access.member.id,
+      actorKind: "member_self",
+      actorMemberId: access.member.id,
+      actorUserId: raw.userId,
+      organizationId: raw.organizationId,
+      churchId: raw.churchId,
+      branchId: raw.branchId,
+      firstName: raw.firstName,
+      lastName: raw.lastName,
+      preferredName: raw.preferredName,
+      dateOfBirth: raw.dateOfBirth,
+      occupation: raw.occupation,
+      maritalStatus: raw.maritalStatus,
+      numberOfChildren: raw.numberOfChildren,
+      address: raw.address,
+      nextOfKin: raw.nextOfKin,
+      email: raw.emailDisplay !== undefined ? raw.emailDisplay : raw.email,
+      phone: raw.phone,
+      phoneNormalized: raw.phoneNormalized,
+      phoneDisplay: raw.phoneDisplay,
+    },
+    deps
+  );
+
+  if (!result.ok) {
+    if (
+      result.code === DOMAIN_RESULT.CHURCH_ID_IMMUTABLE ||
+      result.code === DOMAIN_RESULT.BRANCH_NOT_MEMBER_EDITABLE
+    ) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        reason: `immutable:${result.code}`,
+        profile: null,
+      };
+    }
+    if (result.code === DOMAIN_RESULT.VALIDATION_FAILED) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        reason: "validation",
+        detail: result.detail,
+        profile: null,
+      };
+    }
+    if (result.code === DOMAIN_RESULT.DUPLICATE_EMAIL) {
+      return {
+        ok: false,
+        status: STATUS.CONFLICT,
+        reason: "email_in_use",
+        detail: "email_in_use",
+        profile: null,
+      };
+    }
+    if (result.code === DOMAIN_RESULT.UNAUTHORIZED) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "unauthorized", profile: null };
+    }
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: result.code || "failed",
+      profile: null,
+    };
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    profile: publicProfile(result.member, access.membership),
+    phoneVerificationRequired: Boolean(result.phoneVerificationRequired),
+    member: result.member,
+  };
+}
+
+/**
+ * Start OTP for pending phone change (M23).
+ */
+async function startMemberPhoneVerification(db, input, env) {
+  const access = await requireActiveMemberForTenant(db, {
+    userId: input.userId,
+    churchId: input.churchId,
+    branchId: input.branchId,
+  });
+  if (!access.ok) {
+    return { ok: false, status: access.status, reason: access.reason };
+  }
+  const pending = access.member.phonePendingNormalized;
+  if (!pending) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: "no_pending_phone",
+    };
+  }
+
+  const started = await startAccountPhoneVerification(
+    db,
+    {
+      userId: input.userId,
+      phone: pending,
+      changeExisting: Boolean(access.member.phoneNormalized),
+      organizationId: input.organizationId,
+      requestIp: input.requestIp,
+      sessionFingerprint: input.sessionFingerprint,
+      country: input.country || "ZM",
+    },
+    env
+  );
+
+  if (!started.ok) {
+    if (started.status === OTP_WF_STATUS.RATE_LIMITED) {
+      return { ok: false, status: STATUS.RATE_LIMITED, reason: "rate_limited" };
+    }
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: started.reason || started.status,
+    };
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    challenge: started.challenge,
+    testCode: started.testCode || null,
+    pendingPhoneDisplay:
+      access.member.phonePendingDisplay || access.member.phonePendingNormalized,
+  };
+}
+
+/**
+ * Complete OTP and promote pending phone to verified contact.
+ */
+async function completeMemberPhoneVerification(db, input, env, deps) {
+  const requireAccess =
+    (deps && typeof deps.requireActiveMemberForTenant === "function"
+      ? deps.requireActiveMemberForTenant
+      : null) || requireActiveMemberForTenant;
+  const access = await requireAccess(db, {
+    userId: input.userId,
+    churchId: input.churchId,
+    branchId: input.branchId,
+  });
+  if (!access.ok) {
+    return { ok: false, status: access.status, reason: access.reason };
+  }
+  if (!access.member.phonePendingNormalized) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "no_pending_phone" };
+  }
+
+  const purpose = access.member.phoneNormalized ? "phone_change" : "phone_verification";
+  const completeOtp =
+    (deps && typeof deps.completeAccountPhoneVerification === "function"
+      ? deps.completeAccountPhoneVerification
+      : null) || completeAccountPhoneVerification;
+  const completed = await completeOtp(
+    db,
+    {
+      userId: input.userId,
+      verificationId: input.verificationId,
+      code: input.code,
+      purpose,
+    },
+    env
+  );
+  if (!completed.ok) {
+    if (completed.status === OTP_WF_STATUS.RATE_LIMITED) {
+      return { ok: false, status: STATUS.RATE_LIMITED, reason: "rate_limited" };
+    }
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: completed.reason || "otp_failed",
+    };
+  }
+
+  // Ensure member row matches verified user phone (pending → verified).
+  const updateProfile =
+    (deps && typeof deps.updateMemberProfile === "function"
+      ? deps.updateMemberProfile
+      : null) || updateMemberProfile;
+  const confirmed = await updateProfile(
+    db,
+    {
+      memberId: access.member.id,
+      actorKind: "member_self",
+      actorMemberId: access.member.id,
+      actorUserId: input.userId,
+      organizationId: input.organizationId,
+      churchId: input.churchId,
+      branchId: input.branchId,
+      confirmPhoneVerification: true,
+    },
+    deps
+  );
+  if (!confirmed.ok) {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: confirmed.code || "confirm_failed",
+    };
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    profile: publicProfile(confirmed.member, access.membership),
+    phoneNormalized: completed.phoneNormalized,
+  };
 }
 
 module.exports = {
   STATUS,
+  MEMBER_SELF_EDITABLE_FIELDS,
+  MARITAL_STATUS,
   getMemberPortalProfile,
   updateMemberPortalProfile,
+  startMemberPhoneVerification,
+  completeMemberPhoneVerification,
   publicProfile,
 };

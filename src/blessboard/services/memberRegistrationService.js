@@ -5,8 +5,8 @@
  * No public portal routes. No automatic account creation. No plaintext passwords.
  */
 
+const { requireActorPermission } = require("./requireActorPermission");
 const { normalizeEmail } = require("./createBlessBoardUser");
-const { normalizePhone } = require("./settingsValidation");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const repo = require("../repositories/memberIdentityRepository");
 
@@ -139,14 +139,21 @@ function parseProfileContact(input) {
   let phoneNormalized = null;
   let phoneDisplay = null;
   if (phoneRaw) {
-    const phone = normalizePhone(phoneRaw);
-    if (!phone.ok || !phone.value) return { ok: false, reason: "phone" };
-    phoneNormalized = phone.value;
-    phoneDisplay = phoneRaw;
-  }
-
-  if (!emailNormalized && !phoneNormalized) {
-    return { ok: false, reason: "contact_required" };
+    const {
+      normalizeBlessBoardPhone,
+    } = require("./normalizeBlessBoardPhone");
+    const phone = normalizeBlessBoardPhone(phoneRaw, {
+      country: input.phoneCountry || input.country,
+      phoneCountry: input.phoneCountry || input.country,
+      phoneNational: input.phoneNational,
+      defaultCountry: "ZM",
+    });
+    if (!phone.ok) return { ok: false, reason: "phone" };
+    phoneNormalized = phone.normalized;
+    phoneDisplay = phone.display || phoneRaw;
+  } else {
+    // New member registrations require phone (email remains optional).
+    return { ok: false, reason: "phone_required" };
   }
 
   return {
@@ -164,39 +171,12 @@ function parseProfileContact(input) {
 }
 
 /**
- * @param {Array<{ role_key?: string, roleKey?: string, church_id?: string, churchId?: string, branch_id?: string, branchId?: string, status?: string }>} roles
- * @param {{ churchId: string, branchId?: string|null }} scope
- */
-function actorCanManageMembers(roles, scope) {
-  const churchId = String(scope.churchId || "");
-  const branchId = scope.branchId != null ? String(scope.branchId) : null;
-  for (const role of roles || []) {
-    if (role.status && String(role.status) !== "active") continue;
-    const key = String(role.role_key || role.roleKey || "");
-    const roleChurch = role.church_id || role.churchId || null;
-    const roleBranch = role.branch_id || role.branchId || null;
-    if (key === "platform_admin") return true;
-    if (key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId) return true;
-    if (
-      key === "branch_admin" &&
-      roleChurch &&
-      String(roleChurch) === churchId &&
-      branchId &&
-      roleBranch &&
-      String(roleBranch) === branchId
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * @param {{ query: Function }} client
- * @param {{ actorUserId: string, churchId: string, branchId?: string|null }} input
+ * @param {{ actorUserId: string, churchId: string, branchId?: string|null, tenant?: object }} input
  */
 async function requireMemberManager(client, input) {
   const actorUserId = String(input.actorUserId || "").trim();
+  const churchId = String(input.churchId || "").trim();
   if (!actorUserId) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "actor_required" };
   }
@@ -204,11 +184,65 @@ async function requireMemberManager(client, input) {
   if (!user || user.status !== "active") {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "actor_inactive" };
   }
-  const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-  if (!actorCanManageMembers(roles, { churchId: input.churchId, branchId: input.branchId || null })) {
-    return { ok: false, status: STATUS.FORBIDDEN, reason: "role" };
+
+  let tenant = input.tenant;
+  if (!tenant || tenant.resolved !== true) {
+    if (!churchId) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "tenant_required" };
+    }
+    const churchRow = await client.query(
+      `SELECT c.id, c.organization_id, c.church_key, c.display_name,
+              b.id AS branch_id, b.branch_key, b.display_name AS branch_display_name
+         FROM blessboard.churches c
+         LEFT JOIN blessboard.branches b
+           ON b.church_id = c.id AND b.is_primary = true AND b.status = 'active'
+        WHERE c.id = $1
+        LIMIT 1`,
+      [churchId]
+    );
+    const row = churchRow.rows[0];
+    if (!row) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "church_not_found" };
+    }
+    tenant = {
+      resolved: true,
+      organization: { id: row.organization_id },
+      church: {
+        id: row.id,
+        key: row.church_key,
+        displayName: row.display_name || "",
+      },
+      primaryBranch: row.branch_id
+        ? {
+            id: row.branch_id,
+            key: row.branch_key,
+            displayName: row.branch_display_name || "",
+          }
+        : null,
+      hqBranch: row.branch_id
+        ? {
+            id: row.branch_id,
+            key: row.branch_key,
+            displayName: row.branch_display_name || "",
+          }
+        : null,
+    };
   }
-  return { ok: true, user };
+
+  // Use permission-based authorization (edit when acting in a branch scope).
+  const permission = input.branchId ? "members.edit" : "members.view";
+  const authz = await requireActorPermission(client, {
+    actorUserId,
+    tenant,
+    permission,
+    branchId: input.branchId || null,
+  });
+
+  if (!authz.allowed) {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: authz.reason || "permission_denied" };
+  }
+
+  return { ok: true, user, tenant };
 }
 
 /**
@@ -297,6 +331,8 @@ async function submitMemberRegistration(db, input) {
         churchId,
         branchId,
         ...profile.value,
+        intakeFormId: raw.intakeFormId || null,
+        applicationJson: raw.applicationJson || {},
       });
       return {
         ok: true,
@@ -348,12 +384,17 @@ async function reviewMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
           return { ok: false, status: gate.status, reason: gate.reason, registration: null };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -367,6 +408,20 @@ async function reviewMemberRegistration(db, input) {
           status: "under_review",
           reviewedByUserId: actorUserId,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "under_review",
+            decisionCode: "under_review",
+            decisionSummary: null,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present in older DBs */
+        }
         await client.query("COMMIT");
         return { ok: true, status: STATUS.OK, registration: updated };
       } catch (err) {
@@ -422,6 +477,7 @@ async function approveMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
@@ -434,7 +490,11 @@ async function approveMemberRegistration(db, input) {
             membership: null,
           };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -539,6 +599,20 @@ async function approveMemberRegistration(db, input) {
           reviewedAt: new Date().toISOString(),
           reviewNotes,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "approved",
+            decisionCode: "approved",
+            decisionSummary: reviewNotes,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present */
+        }
 
         await client.query("COMMIT");
         try {
@@ -630,12 +704,17 @@ async function rejectMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
           return { ok: false, status: gate.status, reason: gate.reason, registration: null };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -651,6 +730,20 @@ async function rejectMemberRegistration(db, input) {
           reviewedAt: new Date().toISOString(),
           reviewNotes,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "rejected",
+            decisionCode: "rejected",
+            decisionSummary: reviewNotes,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present */
+        }
         await client.query("COMMIT");
         return { ok: true, status: STATUS.OK, registration: updated };
       } catch (err) {
@@ -664,7 +757,7 @@ async function rejectMemberRegistration(db, input) {
 }
 
 /**
- * Link an existing login user to a member by matching email.
+ * Link an existing login user to a member by matching phone (preferred) or email.
  * Never creates users or passwords.
  */
 async function linkMemberToUser(db, input) {
@@ -673,8 +766,18 @@ async function linkMemberToUser(db, input) {
   const actorUserId = String(raw.actorUserId || "").trim();
   const userId = raw.userId != null ? String(raw.userId).trim() : "";
   const email = raw.email != null ? normalizeEmail(raw.email) : "";
+  const phoneRaw = raw.phone != null ? String(raw.phone).trim() : "";
+  let phoneNormalized = null;
+  if (phoneRaw) {
+    const { normalizeBlessBoardPhone } = require("./normalizeBlessBoardPhone");
+    const phone = normalizeBlessBoardPhone(phoneRaw, {
+      country: raw.country,
+      defaultCountry: "ZM",
+    });
+    if (phone.ok) phoneNormalized = phone.normalized;
+  }
 
-  if (!memberId || !actorUserId || (!userId && !email)) {
+  if (!memberId || !actorUserId || (!userId && !email && !phoneNormalized)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids", member: null };
   }
 
@@ -691,46 +794,66 @@ async function linkMemberToUser(db, input) {
           actorUserId,
           churchId: member.churchId,
           branchId: null,
+          tenant: input.tenant,
         });
         // HQ / platform only when branchId null — branch_admin needs a branch.
         // Allow branch_admin if they have any active branch role in this church:
         if (!gate.ok) {
-          const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-          const churchScoped = roles.some((r) => {
-            const key = String(r.role_key || "");
-            return (
-              (key === "branch_admin" || key === "church_hq_admin" || key === "platform_admin") &&
-              (key === "platform_admin" || String(r.church_id) === String(member.churchId))
-            );
+          // Fallback: check if actor has members.view permission at church level
+          const churchAuthz = await requireActorPermission(client, {
+            actorUserId,
+            tenant: input.tenant,
+            permission: "members.view",
+            branchId: null,
+            resourceContext: {
+              organizationId: input.tenant.organization.id,
+              churchId: member.churchId,
+              branchId: null,
+            },
           });
-          if (!churchScoped) {
+          if (!churchAuthz.allowed) {
             await client.query("ROLLBACK");
-            return { ok: false, status: STATUS.FORBIDDEN, reason: "role", member: null };
+            return { ok: false, status: STATUS.FORBIDDEN, reason: "permission_denied", member: null };
           }
         }
 
-        if (!member.emailNormalized) {
+        if (!member.phoneNormalized && !member.emailNormalized) {
           await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.INVALID_INPUT, reason: "member_email_required", member };
+          return { ok: false, status: STATUS.INVALID_INPUT, reason: "member_contact_required", member };
         }
 
         let user = null;
         if (userId) {
           user = await repo.findUserById(client, userId);
-        } else {
-          user = await authRepo.findUserByEmail(client, email);
+        } else if (phoneNormalized || member.phoneNormalized) {
+          user = await authRepo.findUserByPhone(
+            client,
+            phoneNormalized || member.phoneNormalized
+          );
+        } else if (email || member.emailNormalized) {
+          user = await authRepo.findUserByEmail(client, email || member.emailNormalized);
         }
         if (!user || user.status !== "active") {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.USER_NOT_FOUND, reason: "user_not_found", member };
         }
 
-        if (String(user.email_normalized) !== String(member.emailNormalized)) {
+        const memberPhone = member.phoneNormalized || null;
+        const userPhone = user.phone_normalized || null;
+        const memberEmail = member.emailNormalized || null;
+        const userEmail = user.email_normalized || null;
+
+        const phoneMatch =
+          memberPhone && userPhone && String(memberPhone) === String(userPhone);
+        const emailMatch =
+          memberEmail && userEmail && String(memberEmail) === String(userEmail);
+
+        if (!phoneMatch && !emailMatch) {
           await client.query("ROLLBACK");
           return {
             ok: false,
             status: STATUS.IDENTITY_CONFLICT,
-            reason: "email_mismatch",
+            reason: phoneMatch === false && memberPhone ? "phone_mismatch" : "email_mismatch",
             member,
           };
         }
@@ -795,6 +918,7 @@ async function listMemberRegistrations(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -901,6 +1025,10 @@ async function getMemberRegistrationForManager(db, input) {
           createdAt: registration.createdAt,
           updatedAt: registration.updatedAt,
           memberId: registration.memberId,
+          intakeFormId: registration.intakeFormId || null,
+          applicationJson: registration.applicationJson || {},
+          pastoralNotes: registration.pastoralNotes || null,
+          pastoralNotesUpdatedAt: registration.pastoralNotesUpdatedAt || null,
           branchKey,
           branchDisplayName,
           // Internal authz only — not for templates
@@ -940,6 +1068,7 @@ async function listBranchMembersForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -957,6 +1086,7 @@ async function listBranchMembersForManager(db, input) {
         branchId,
         status: raw.status,
         membershipStatus: raw.membershipStatus,
+        portalAccessStatus: raw.portalAccessStatus,
         q: raw.q,
         limit: raw.limit,
         offset: raw.offset,
@@ -968,8 +1098,10 @@ async function listBranchMembersForManager(db, input) {
         preferredName: item.preferredName,
         emailDisplay: item.emailDisplay,
         phoneDisplay: item.phoneDisplay,
+        memberNumber: item.memberNumber || null,
         status: item.status,
         membershipStatus: item.membershipStatus,
+        portalAccessStatus: item.portalAccessStatus || "not_activated",
         isPrimary: item.isPrimary,
         joinedAt: item.joinedAt,
         createdAt: item.createdAt,
@@ -984,7 +1116,12 @@ async function listBranchMembersForManager(db, input) {
         offset: listed.offset,
       };
     });
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[blessboard.members] listBranchMembersForManager failed", {
+      code: err && err.code,
+      message: err && err.message ? String(err.message).slice(0, 200) : null,
+    });
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
@@ -993,6 +1130,91 @@ async function listBranchMembersForManager(db, input) {
       total: 0,
       limit: 0,
       offset: 0,
+    };
+  }
+}
+
+/**
+ * Branch membership overview (BB18) — metrics + queue + transfers.
+ * Never includes pastoral notes or confidential fields.
+ */
+async function getBranchMembershipOverviewForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const churchId = String(raw.churchId || "").trim();
+  const branchId = String(raw.branchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  const organizationId =
+    raw.organizationId != null && String(raw.organizationId).trim()
+      ? String(raw.organizationId).trim()
+      : null;
+  const empty = {
+    ok: false,
+    status: STATUS.INVALID_INPUT,
+    reason: "scope",
+    statusCounts: { total: 0, byStatus: {} },
+    reviewQueue: { total: 0, items: [] },
+    openTransfers: { total: 0, items: [] },
+    visitorSummary: { available: false, total: 0 },
+  };
+  if (!churchId || !branchId || !actorUserId) {
+    return empty;
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId,
+        tenant: raw.tenant,
+      });
+      if (!gate.ok) {
+        return {
+          ...empty,
+          ok: false,
+          status: gate.status,
+          reason: gate.reason,
+        };
+      }
+
+      const statusCounts = await repo.countMembersByStatusForBranch(client, {
+        churchId,
+        branchId,
+      });
+      const reviewQueue = await repo.listReviewQueueForBranch(client, {
+        churchId,
+        branchId,
+        limit: 5,
+      });
+      const openTransfers = await repo.listOpenTransfersForBranch(client, {
+        churchId,
+        branchId,
+        limit: 5,
+      });
+
+      let visitorSummary = { available: false, total: 0 };
+      if (organizationId) {
+        visitorSummary = await repo.countVisitorSubmissions30d(client, {
+          organizationId,
+          branchId,
+        });
+      }
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        statusCounts,
+        reviewQueue,
+        openTransfers,
+        visitorSummary,
+      };
+    });
+  } catch {
+    return {
+      ...empty,
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: "lookup",
     };
   }
 }
@@ -1016,6 +1238,7 @@ async function getBranchMemberForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return { ok: false, status: gate.status, reason: gate.reason, member: null };
@@ -1077,6 +1300,7 @@ async function listChurchMembersForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -1089,30 +1313,13 @@ async function listChurchMembersForManager(db, input) {
           offset: 0,
         };
       }
-      // Branch admins must stay on their branch; HQ may omit branchId for church-wide.
-      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-      const isHqOrPlatform = (roles || []).some((r) => {
-        if (r.status && String(r.status) !== "active") return false;
-        const key = String(r.role_key || r.roleKey || "");
-        if (key === "platform_admin") return true;
-        const roleChurch = r.church_id || r.churchId || null;
-        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
-      });
-      if (!isHqOrPlatform && !branchId) {
-        return {
-          ok: false,
-          status: STATUS.FORBIDDEN,
-          reason: "branch_required",
-          items: [],
-          total: 0,
-          limit: 0,
-          offset: 0,
-        };
-      }
+      // Church-wide listing (branchId null) is already gated by members.view at
+      // church scope in requireMemberManager; branch-scoped callers must pass branchId.
       const listed = await repo.listMembersForChurch(client, {
         churchId,
         branchId,
         status: raw.status,
+        portalAccessStatus: raw.portalAccessStatus,
         q: raw.q,
         limit: raw.limit,
         offset: raw.offset,
@@ -1124,8 +1331,10 @@ async function listChurchMembersForManager(db, input) {
         preferredName: item.preferredName,
         emailDisplay: item.emailDisplay,
         phoneDisplay: item.phoneDisplay,
+        memberNumber: item.memberNumber || null,
         status: item.status,
         membershipStatus: item.membershipStatus,
+        portalAccessStatus: item.portalAccessStatus || "not_activated",
         isPrimary: item.isPrimary,
         joinedAt: item.joinedAt,
         createdAt: item.createdAt,
@@ -1142,7 +1351,12 @@ async function listChurchMembersForManager(db, input) {
         offset: listed.offset,
       };
     });
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[blessboard.members] listChurchMembersForManager failed", {
+      code: err && err.code,
+      message: err && err.message ? String(err.message).slice(0, 200) : null,
+    });
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
@@ -1173,20 +1387,10 @@ async function getChurchMemberForManager(db, input) {
         actorUserId,
         churchId,
         branchId: null,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return { ok: false, status: gate.status, reason: gate.reason, member: null };
-      }
-      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-      const isHqOrPlatform = (roles || []).some((r) => {
-        if (r.status && String(r.status) !== "active") return false;
-        const key = String(r.role_key || r.roleKey || "");
-        if (key === "platform_admin") return true;
-        const roleChurch = r.church_id || r.churchId || null;
-        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
-      });
-      if (!isHqOrPlatform) {
-        return { ok: false, status: STATUS.FORBIDDEN, reason: "role", member: null };
       }
       const member = await repo.findMemberInChurch(client, { memberId, churchId });
       if (!member) {
@@ -1223,7 +1427,6 @@ module.exports = {
   STATUS,
   PRIVACY_ALLOWED_PROFILE_KEYS,
   PRIVACY_FORBIDDEN_KEYS,
-  actorCanManageMembers,
   submitMemberRegistration,
   reviewMemberRegistration,
   approveMemberRegistration,
@@ -1232,6 +1435,7 @@ module.exports = {
   listMemberRegistrations,
   getMemberRegistrationForManager,
   listBranchMembersForManager,
+  getBranchMembershipOverviewForManager,
   getBranchMemberForManager,
   listChurchMembersForManager,
   getChurchMemberForManager,

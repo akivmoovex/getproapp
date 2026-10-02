@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <%#
+    SEO tags come from the shared website-engine SEO model (platform/website/seoModel).
+    `seo` is always supplied by renderPublicPage; the legacy locals remain for body use.
+  %>
+  <title><%= seo.title %></title>
+  <% if (seo.description) { %>
+  <meta name="description" content="<%= seo.description %>"/>
+  <% } %>
+  <% if (seo.canonicalUrl) { %>
+  <link rel="canonical" href="<%= seo.canonicalUrl %>"/>
+  <% } %>
+  <meta name="robots" content="<%= seo.robots %>"/>
+  <meta property="og:title" content="<%= seo.ogTitle %>"/>
+  <% if (seo.ogDescription) { %>
+  <meta property="og:description" content="<%= seo.ogDescription %>"/>
+  <% } %>
+  <meta property="og:type" content="<%= seo.ogType %>"/>
+  <% if (seo.ogUrl) { %>
+  <meta property="og:url" content="<%= seo.ogUrl %>"/>
+  <% } %>
+  <% if (seo.ogSiteName) { %>
+  <meta property="og:site_name" content="<%= seo.ogSiteName %>"/>
+  <% } %>
+  <% var shareImage = seo.ogImageUrl || ""; %>
+  <% if (shareImage) { %>
+  <meta property="og:image" content="<%= shareImage %>"/>
+  <% if (seo.ogImageAlt) { %>
+  <meta property="og:image:alt" content="<%= seo.ogImageAlt %>"/>
+  <% } %>
+  <% } %>
+  <meta name="twitter:card" content="<%= seo.twitterCard %>"/>
+  <meta name="twitter:title" content="<%= seo.twitterTitle %>"/>
+  <% if (seo.twitterDescription) { %>
+  <meta name="twitter:description" content="<%= seo.twitterDescription %>"/>
+  <% } %>
+  <% if (seo.twitterImageUrl) { %>
+  <meta name="twitter:image" content="<%= seo.twitterImageUrl %>"/>
+  <% } %>
+  <%- include('../../platform/partials/head-fonts', {
+    fontFamily: 'inter',
+    iconFont: 'subset',
+    fontAssetVersion: assetVersion
+  }) %>
+  <%- include('../../platform/partials/head-platform-colors') %>
+  <% if (shellVariant === 'platform') { %>
+  <link rel="preload" as="image" href="<%= typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg') : '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg' %>" fetchpriority="high"/>
+  <% } %>
+  <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <% if (shellVariant === 'tenant') { %>
+  <link rel="stylesheet" href="/platform/website-presentation-token-bridge.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/website-presentation-components.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-stitch-public.css?v=<%= assetVersion %>"/>
+  <% } %>
+  <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
+  <link rel="stylesheet" href="<%= websiteThemeStylesheet %>"/>
+  <% } %>
+  <% if (shellVariant === "platform") { %>
+  <link rel="stylesheet" href="/activeclinic/acw-platform.css?v=<%= assetVersion %>"/>
+  <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/location-autocomplete.css?v=<%= assetVersion %>"/>
+  <% } %>
+  <% if (typeof pageId === 'string' && (pageId === 'public-terms' || pageId === 'public-privacy')) { %>
+  <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= assetVersion %>"/>
+  <% } %>
+  <% } %>
+  <%# _needsPhoneField: registration / phone surfaces only (not public marketing homepage). %>
+  <% var _needsPhoneField = typeof chrome === 'string' && chrome === 'mf-register'; %>
+  <% if (_needsPhoneField) { %>
+  <link rel="stylesheet" href="/platform/phone-field.css?v=<%= assetVersion %>"/>
+  <% } %>
+  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/website-add-section.css?v=<%= assetVersion %>"/>
+  <meta name="csrf-token" content="<%= csrfToken %>"/>
+  <% } %>
+</head>
+<%
+  var brandStyle = "";
+  if (shellVariant === "tenant" && clinic) {
+    if (clinic.brandPrimary) {
+      brandStyle += "--acp-primary:" + clinic.brandPrimary + ";--acp-primary-strong:" + clinic.brandPrimary + ";";
+    }
+    if (clinic.brandAccent) {
+      brandStyle += "--acp-primary-hover:" + clinic.brandAccent + ";";
+    }
+  }
+  var themeClass = (typeof websiteThemeClass !== 'undefined' && websiteThemeClass) ? (' ' + websiteThemeClass) : '';
+%>
+<body
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %><%= themeClass %>"
+  data-product="activeclinic"
+  data-surface="public"
+  data-ac-product="activeclinic"
+  <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>data-gp-product="activeclinic"<% } %>
+  data-ac-shell="public"
+  data-ac-page="<%= pageId %>"
+  data-ac-public-variant="<%= shellVariant || 'platform' %>"
+  <% if (typeof websiteThemeId !== 'undefined' && websiteThemeId) { %>data-website-theme-id="<%= websiteThemeId %>"<% } %>
+  <% if (typeof websiteThemeProduct !== 'undefined' && websiteThemeProduct) { %>data-website-theme-product="<%= websiteThemeProduct %>"<% } %>
+  <% if (typeof websiteThemeLegacyFallback !== 'undefined' && websiteThemeLegacyFallback) { %>data-website-theme-legacy="1"<% } %>
+  <% if (typeof chrome === "string" && chrome) { %>data-ac-public-chrome="<%= chrome %>"<% } %>
+  <% if (typeof statePageId === "string" && statePageId) { %>data-ac-state="<%= statePageId %>"<% } %>
+  <% if (typeof statePageId === "string" && statePageId && typeof stateKey === "string" && stateKey) { %>data-ac-state-key="<%= stateKey %>"<% } %>
+  <% if (clinic && clinic.clinicKey) { %>data-pw-clinic-key="<%= clinic.clinicKey %>"<% } %>
+  <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>data-website-editing="1"<% } %>
+  <% if (brandStyle) { %>style="<%= brandStyle %>"<% } %>
+>
+  <a class="ac-public-skip" href="#ac-public-main">Skip to content</a>
+  <%- include('../partials/website-version-preview-banner') %>
+  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+  <div class="gp-website-chrome-stack" data-website-chrome-stack="1">
+    <%- include('../partials/website-editor-chrome') %>
+  </div>
+  <% } %>
+  <%- headerHtml %>
+  <main id="ac-public-main" class="ac-public-main" tabindex="-1">
+    <%- bodyHtml %>
+    <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+    <%- include('../partials/website-nav-editor') %>
+    <% } %>
+  </main>
+  <%- footerHtml %>
+  <% if (shellVariant === 'tenant' && clinic) { %>
+  <%- include('../partials/public-tenant-mobile-sticky-cta') %>
+  <%- include('../partials/ac-mobile-bottom-nav') %>
+  <% } else if (shellVariant === 'platform' && !(typeof chrome === 'string' && chrome === 'mf-register')) { %>
+  <%- include('../partials/ac-mobile-bottom-nav-platform') %>
+  <% } %>
+  <div id="ac-public-live" class="ac-sr-only" aria-live="polite"></div>
+  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit && ((typeof websiteEdit !== 'undefined' && websiteEdit) || (typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode))) { %>
+  <%- include('../../platform/website-engine/editor-overlays', { editorShell: typeof editorShell !== 'undefined' ? editorShell : {} }) %>
+  <% } %>
+  <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
+  <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
+  <% if (_needsPhoneField) { %>
+  <script src="/platform/phone-field.js?v=<%= assetVersion %>" defer></script>
+  <% } %>
+  <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
+  <script src="/platform/registration-password-rules.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/registration-consent.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/registration-form-lifecycle.js?v=<%= assetVersion %>" defer></script>
+  <% } %>
+  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+  <script src="/platform/website-lifecycle.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-inline-edit.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-change-manager-ui.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-section-actions.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-add-section.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-editor-mobile.js?v=<%= assetVersion %>" defer></script>
+  <script src="/activeclinic/website-collection-edit.js?v=<%= assetVersion %>" defer></script>
+  <% } %>
+</body>
+</html>

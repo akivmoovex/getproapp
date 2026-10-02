@@ -48,7 +48,7 @@
         <header class="admin-dashboard__header card card--mb-xl" style="padding:1rem;">
           <h1 class="admin-dashboard__title" style="margin-top:0;">Pay run #<%= run.id %>
             <% if (run.closed_at) { %>
-              <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.8rem;">Closed</span>
+              <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:var(--color-text-muted);background:color-mix(in srgb, var(--color-text-muted) 12%, transparent);font-size:0.8rem;">Closed</span>
             <% } %>
           </h1>
           <p class="admin-dashboard__subtitle muted" style="margin-bottom:0.75rem;">Read-only finance view — ledger timeline explains net paid.</p>

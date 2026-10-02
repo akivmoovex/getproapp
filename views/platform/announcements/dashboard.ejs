@@ -1,0 +1,72 @@
+<div class="mx-ann-shell" data-screen="AN01" data-stitch-desktop="AN01-D" data-stitch-mobile="AN01-M">
+  <div class="mx-ann-top">
+    <div>
+      <div class="mx-ann-brand"><%= brand.productName %> · Announcements</div>
+      <h1 class="mx-ann-title">Announcements</h1>
+      <p class="mx-ann-sub">Draft, schedule, preview, and publish tenant announcements. Visibility is evaluated at read time — no background scheduler.</p>
+    </div>
+    <% if (canManage) { %>
+      <a class="mx-ann-btn mx-ann-btn--primary" href="<%= basePath %>/new">New announcement</a>
+    <% } %>
+  </div>
+
+  <% if (scheduler && !scheduler.available) { %>
+    <div class="mx-ann-banner" role="status" data-scheduler-dependency="1">
+      Scheduled publication uses lazy evaluation (<%= scheduler.mode %>). <%= scheduler.reason %>
+    </div>
+  <% } %>
+
+  <div class="mx-ann-desktop-only mx-ann-panel">
+    <% if (!items || !items.length) { %>
+      <p class="mx-ann-empty">No announcements yet.</p>
+    <% } else { %>
+      <table class="mx-ann-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Effective</th>
+            <th>Window</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (item) { %>
+            <tr>
+              <td><strong><%= item.title %></strong></td>
+              <td><span class="mx-ann-badge mx-ann-badge--<%= item.status %>"><%= item.status %></span></td>
+              <td><span class="mx-ann-badge mx-ann-badge--<%= item.effectiveStatus %>"><%= item.effectiveStatus %></span></td>
+              <td class="mx-ann-muted">
+                <%= item.timezone || 'UTC' %>
+                <% if (item.startsAt) { %><br>from <%= new Date(item.startsAt).toISOString().slice(0,16) %>Z<% } %>
+                <% if (item.endsAt) { %><br>until <%= new Date(item.endsAt).toISOString().slice(0,16) %>Z<% } %>
+              </td>
+              <td>
+                <a href="<%= basePath %>/<%= item.id %>">Edit</a>
+                · <a href="<%= basePath %>/<%= item.id %>/preview">Preview</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="mx-ann-mobile-only mx-ann-cards">
+    <% if (!items || !items.length) { %>
+      <p class="mx-ann-empty">No announcements yet.</p>
+    <% } else { %>
+      <% items.forEach(function (item) { %>
+        <a class="mx-ann-card" href="<%= basePath %>/<%= item.id %>" style="display:block;text-decoration:none;color:inherit">
+          <div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:center">
+            <strong><%= item.title %></strong>
+            <span class="mx-ann-badge mx-ann-badge--<%= item.effectiveStatus %>"><%= item.effectiveStatus %></span>
+          </div>
+          <div class="mx-ann-muted" style="margin-top:0.35rem;font-size:0.85rem">
+            stored <%= item.status %> · <%= item.timezone || 'UTC' %>
+          </div>
+        </a>
+      <% }) %>
+    <% } %>
+  </div>
+</div>

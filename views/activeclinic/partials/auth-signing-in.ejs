@@ -1,0 +1,27 @@
+<div
+  id="ac-auth-signing-in"
+  class="ac-auth-signing-in"
+  hidden
+  data-ac-signing-in="1"
+  data-ac-auth-screen="signing-in"
+  data-ac-mf-family="MF01"
+  role="status"
+  aria-live="polite"
+  aria-busy="false"
+>
+  <div class="ac-auth-signing-in__card">
+    <%- include('auth-mark') %>
+    <p class="ac-auth-signing-in__brand">ActiveClinic</p>
+    <h1 class="ac-auth-signing-in__title">Signing you in...</h1>
+    <p class="ac-auth-signing-in__copy">Authenticating your credentials securely.</p>
+    <p class="ac-auth-signing-in__secure">
+      <span aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="11" width="14" height="10" rx="2"/>
+          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        </svg>
+      </span>
+      Secure Connection
+    </p>
+  </div>
+</div>

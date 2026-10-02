@@ -1,0 +1,14 @@
+<%#
+  BB V2.04 confirmation dialog → platform gp-ops-confirm-dialog.
+  Locals: id, title, body?, bodyHtml?, actionsHtml?, open?, labelledBy?, className?
+%>
+<%- include('../../../../platform/partials/gp-ops-confirm-dialog', {
+  id: typeof id !== 'undefined' ? id : 'bb-v204-confirm',
+  title: typeof title !== 'undefined' ? title : 'Confirm',
+  body: typeof body !== 'undefined' ? body : undefined,
+  bodyHtml: typeof bodyHtml !== 'undefined' ? bodyHtml : undefined,
+  actionsHtml: typeof actionsHtml !== 'undefined' ? actionsHtml : undefined,
+  open: typeof open !== 'undefined' ? open : false,
+  labelledBy: typeof labelledBy !== 'undefined' ? labelledBy : undefined,
+  className: typeof className !== 'undefined' ? className : undefined
+}) %>

@@ -1,0 +1,128 @@
+<%
+  var canEdit = typeof websiteEdit !== 'undefined' && websiteEdit;
+  var key = contentKey;
+  var src = typeof imageSrc !== 'undefined' && imageSrc ? imageSrc : '';
+  var alt = typeof imageAlt !== 'undefined' && imageAlt ? imageAlt : '';
+  var mediaId = typeof imageMediaId !== 'undefined' && imageMediaId ? imageMediaId : '';
+  var variant = typeof imageVariant !== 'undefined' && imageVariant ? String(imageVariant) : '';
+  var imgClass = typeof imageClassName !== 'undefined' && imageClassName ? String(imageClassName) : '';
+  var placeholderSrc = typeof imagePlaceholderSrc !== 'undefined' && imagePlaceholderSrc
+    ? String(imagePlaceholderSrc)
+    : '';
+  var imgWidth = typeof imageWidth !== 'undefined' && imageWidth ? Number(imageWidth) : 960;
+  var imgHeight = typeof imageHeight !== 'undefined' && imageHeight ? Number(imageHeight) : 600;
+  var displaySrc = src || placeholderSrc;
+  var logo = variant === 'logo' || key === 'home.logo';
+  var label = logo ? 'Edit logo' : 'Edit image';
+  var slotSeparate = logo || key === 'seo.image' ? '0' : '1';
+  var placementAttr = '';
+  var placement =
+    (typeof imagePlacement !== 'undefined' && imagePlacement) ||
+    (typeof clinic !== 'undefined' &&
+      clinic &&
+      clinic.websiteContent &&
+      clinic.websiteContent[key] &&
+      clinic.websiteContent[key].placement) ||
+    null;
+  var hasPlacement = placement && typeof placement === 'object';
+  var placedClass = imgClass;
+  var placedStyle = '';
+  if (hasPlacement) {
+    var fit = String(placement.fit || 'cover');
+    var px = Number(placement.x); if (!isFinite(px)) px = 50;
+    var py = Number(placement.y); if (!isFinite(py)) py = 50;
+    var pzoom = Number(placement.zoom); if (!isFinite(pzoom)) pzoom = 1;
+    var parts = [
+      'object-fit:' + fit,
+      'object-position:' + px + '% ' + py + '%',
+      '--gp-img-fit:' + fit,
+      '--gp-img-x:' + px + '%',
+      '--gp-img-y:' + py + '%',
+      '--gp-img-zoom:' + pzoom
+    ];
+    if (placement.mobile && typeof placement.mobile === 'object' && key !== 'home.logo') {
+      var mf = String(placement.mobile.fit || fit);
+      var mx = Number(placement.mobile.x); if (!isFinite(mx)) mx = px;
+      var my = Number(placement.mobile.y); if (!isFinite(my)) my = py;
+      var mz = Number(placement.mobile.zoom); if (!isFinite(mz)) mz = pzoom;
+      parts.push('--gp-img-mobile-fit:' + mf);
+      parts.push('--gp-img-mobile-x:' + mx + '%');
+      parts.push('--gp-img-mobile-y:' + my + '%');
+      parts.push('--gp-img-mobile-zoom:' + mz);
+    }
+    if (typeof imageAspect !== 'undefined' && imageAspect) {
+      parts.push('aspect-ratio:' + String(imageAspect));
+    } else if (!logo) {
+      parts.push('aspect-ratio:16 / 10');
+    }
+    placedStyle = parts.join(';');
+    placedClass = imgClass + ' gp-website-image--placed';
+    try {
+      placementAttr = JSON.stringify(placement).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    } catch (_pe) {
+      placementAttr = '';
+    }
+  }
+%>
+<% if (canEdit) { %>
+<div
+  class="gp-website-editable ac-website-editable ac-website-editable--image<%= variant ? ' ac-website-editable--' + variant : '' %>"
+  data-website-inline="1"
+  data-website-key="<%= key %>"
+  data-website-type="image"
+  data-website-variant="<%= logo ? 'logo' : 'image' %>"
+  data-website-label="<%= label %>"
+  data-website-media-id="<%= mediaId %>"
+  data-website-slot-separate="<%= slotSeparate %>"
+  <% if (placementAttr) { %>data-website-image-placement="<%= placementAttr %>"<% } %>
+>
+  <div class="gp-website-editable__preview ac-website-editable__preview">
+    <% if (displaySrc) { %>
+    <img
+      data-website-image="1"
+      class="<%= placedClass %>"
+      src="<%= displaySrc %>"
+      alt="<%= alt %>"
+      width="<%= imgWidth %>"
+      height="<%= imgHeight %>"
+      <% if (placedStyle) { %>style="<%= placedStyle %>"<% } %>
+    />
+    <% } else { %>
+    <div class="<%= imgClass %> ac-website-editable__empty" data-website-image="1" role="img" aria-label="<%= alt || label %>"></div>
+    <% } %>
+    <button
+      type="button"
+      class="gp-website-editable__pencil ac-website-editable__pencil"
+      data-website-start="1"
+      aria-label="<%= label %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= logo ? 'badge' : 'image' %></span>
+    </button>
+    <button
+      type="button"
+      class="gp-website-editable__history"
+      data-website-field-history-open="1"
+      aria-label="Field history"
+      title="History"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
+    </button>
+  </div>
+</div>
+<% } else if (src) { %>
+<%- include('./ac-media', {
+  src: src,
+  alt: alt,
+  className: placedClass || (typeof imageClassName !== 'undefined' ? imageClassName : 'ac-tenant-hero__image'),
+  objectFit: hasPlacement ? undefined : 'cover',
+  objectPosition: hasPlacement
+    ? undefined
+    : (typeof imagePosition !== 'undefined' ? imagePosition : 'center 42%'),
+  aspect: typeof imageAspect !== 'undefined' ? imageAspect : '16 / 10',
+  width: 960,
+  height: 600,
+  loading: typeof imageLoading !== 'undefined' ? imageLoading : 'eager',
+  fallbackSrc: '',
+  styleOverride: hasPlacement ? placedStyle : '',
+}) %>
+<% } %>

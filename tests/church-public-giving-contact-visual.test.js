@@ -207,7 +207,7 @@ test("18-23 contact form, validation, success/error, and existing protections", 
   assert.match(routeSrc, /createContactSubmissionForBranch/);
   assert.match(routeSrc, /contact\?submitted=1/);
   assert.match(routeSrc, /organization_id: ctx\.organization\.id/);
-  assert.match(routeSrc, /branch_id: ctx\.branch\.id/);
+  assert.match(routeSrc, /branch_id: contentBranchFromCtx\(ctx\)\.id/);
 
   assert.equal(validatePublicContactBody({ full_name: "", message: "hello there!!" }).ok, false);
   assert.equal(
@@ -268,7 +268,10 @@ test("26-29 desktop and mobile class markers on single responsive trees", async 
 test("30-33 active nav, member actions, and single footer attribution", async () => {
   const giving = await request(makeTenantApp()).get("/giving");
   const contact = await request(makeTenantApp()).get("/contact");
-  assert.match(giving.text, /church-nav__active[^>]*>\s*Giving|href="\/giving"[^>]*church-nav__active/);
+  assert.match(
+    giving.text,
+    /church-nav-dropdown__link--active[^>]*>\s*Giving|href="\/giving"[^>]*church-nav-dropdown__link--active|church-nav-dropdown__trigger[^>]*church-nav__active/
+  );
   assert.match(contact.text, /church-nav__active[^>]*>\s*Contact|href="\/contact"[^>]*church-nav__active/);
   assert.match(giving.text, /Member Login|\/login/);
   assert.match(giving.text, /Register as a Member|\/register/);

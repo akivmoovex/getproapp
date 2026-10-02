@@ -1,0 +1,439 @@
+/**
+ * V2.04 member portal auth (M13–M19) — Sanctuary Modern parity.
+ * Stitch suites: M15/M16, M17–M19 (390). M13/M14 follow same auth shell.
+ * Business forms/fields unchanged; presentation only.
+ */
+
+body.bb-v204-member-auth {
+  font-family: var(--bb-font-body, Inter, system-ui, sans-serif);
+  background: var(--color-background, #f8fafc);
+  color: var(--color-text-primary, #0f172a);
+  overflow-x: clip;
+}
+
+body.bb-v204-member-auth .bb-auth-layout {
+  min-height: 100dvh;
+}
+
+body.bb-v204-member-auth .bb-auth-panel {
+  background:
+    radial-gradient(720px 360px at 15% 0%, color-mix(in srgb, var(--color-brand-primary) 35%, transparent) 0%, transparent 55%),
+    linear-gradient(165deg, var(--palette-navy-700, #1e293b) 0%, var(--color-brand-primary-active, #1e293b) 55%, var(--color-brand-primary) 100%);
+}
+
+body.bb-v204-member-auth .bb-auth-main__header {
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-surface);
+}
+
+body.bb-v204-member-auth .bb-auth-brand__name {
+  font-family: var(--bb-font-sans, "Plus Jakarta Sans", system-ui, sans-serif);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+body.bb-v204-member-auth .bb-auth-card {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  box-shadow: var(--bb-shadow-sm);
+  background: var(--color-surface);
+  padding: 1.25rem 1.15rem 1.5rem;
+  max-width: 26rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+body.bb-v204-member-auth .bb-auth-card__intro {
+  margin-bottom: 1.15rem;
+}
+
+body.bb-v204-member-auth .bb-auth-card__title {
+  margin: 0 0 0.35rem;
+  font-family: var(--bb-font-sans, "Plus Jakarta Sans", system-ui, sans-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+}
+
+body.bb-v204-member-auth .bb-auth-card__lead {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+body.bb-v204-member-auth .bb-auth-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-brand-primary-light);
+  color: var(--color-brand-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.bb-v204-member-auth .bb-auth-optional {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  font-size: 0.9em;
+}
+
+body.bb-v204-member-auth .bb-auth-field {
+  margin-bottom: 0.9rem;
+}
+
+body.bb-v204-member-auth .bb-auth-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+}
+
+body.bb-v204-member-auth .bb-auth-input,
+body.bb-v204-member-auth input.bb-auth-input,
+body.bb-v204-member-auth .gp-phone-field input {
+  width: 100%;
+  min-height: 3rem;
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--bb-radius, 0.5rem);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 1rem;
+}
+
+body.bb-v204-member-auth .bb-auth-input:focus,
+body.bb-v204-member-auth .gp-phone-field input:focus {
+  outline: none;
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+body.bb-v204-member-auth .bb-auth-input--mono,
+body.bb-v204-member-auth input[name="member_number"],
+body.bb-v204-member-auth input[name="code"] {
+  font-family: var(--bb-font-mono, "JetBrains Mono", ui-monospace, monospace);
+  letter-spacing: 0.04em;
+}
+
+body.bb-v204-member-auth .bb-auth-hint,
+body.bb-v204-member-auth .bb-auth-hint-list {
+  margin: 0.4rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+body.bb-v204-member-auth .bb-auth-hint-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+body.bb-v204-member-auth .bb-auth-checklist {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: var(--color-surface-subtle);
+}
+
+body.bb-v204-member-auth .bb-auth-checklist__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+body.bb-v204-member-auth .bb-auth-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0.35rem 0;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+body.bb-v204-member-auth .bb-auth-checklist li::before {
+  content: "check";
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-size: 1.05rem;
+  color: var(--color-success-text);
+  line-height: 1.2;
+}
+
+body.bb-v204-member-auth .bb-auth-member-chip {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: color-mix(in srgb, var(--color-brand-primary-light) 55%, var(--color-surface));
+}
+
+body.bb-v204-member-auth .bb-auth-member-chip__avatar {
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--color-brand-primary);
+  color: var(--color-brand-on-primary);
+  font-family: var(--bb-font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+body.bb-v204-member-auth .bb-auth-member-chip__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+body.bb-v204-member-auth .bb-auth-member-chip__meta {
+  margin: 0.15rem 0 0;
+  font-family: var(--bb-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+body.bb-v204-member-auth .bb-auth-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0;
+}
+
+body.bb-v204-member-auth .bb-auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+body.bb-v204-member-auth .bb-auth-actions {
+  margin-top: 1.25rem;
+}
+
+body.bb-v204-member-auth .bb-auth-btn--primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: var(--bb-radius, 0.5rem);
+  background: var(--button-primary-bg, var(--color-brand-primary));
+  color: var(--button-primary-text, #fff);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+body.bb-v204-member-auth a.bb-auth-btn--primary:hover {
+  filter: brightness(1.05);
+  text-decoration: none;
+}
+
+body.bb-v204-member-auth .bb-auth-btn--primary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+body.bb-v204-member-auth .bb-auth-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+body.bb-v204-member-auth .bb-auth-error--contact-church {
+  border-color: color-mix(in srgb, var(--color-brand-primary) 35%, var(--color-border-default));
+  background: var(--color-brand-primary-light);
+  color: var(--color-text-primary);
+}
+
+body.bb-v204-member-auth .bb-auth-error--portal_blocked {
+  border-color: color-mix(in srgb, var(--color-warning-text) 40%, var(--color-border-default));
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+body.bb-v204-member-auth .bb-auth-error__title {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  font-family: var(--bb-font-sans);
+}
+
+body.bb-v204-member-auth .bb-auth-error__body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+body.bb-v204-member-auth .bb-auth-success {
+  margin: 0 0 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+body.bb-v204-member-auth .bb-auth-success__title {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  font-family: var(--bb-font-sans);
+  color: var(--color-text-primary);
+}
+
+body.bb-v204-member-auth .bb-auth-success__body {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+body.bb-v204-member-auth .bb-auth-id-card {
+  margin: 0.85rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--bb-radius, 0.5rem);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong, var(--color-border-default));
+}
+
+body.bb-v204-member-auth .bb-auth-id-card__label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+body.bb-v204-member-auth .bb-auth-id-card__value {
+  margin: 0.25rem 0 0;
+  font-family: var(--bb-font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-primary);
+}
+
+body.bb-v204-member-auth .bb-auth-footer {
+  margin-top: 1.15rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+body.bb-v204-member-auth .bb-auth-footer a {
+  color: var(--color-brand-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body.bb-v204-member-auth .bb-auth-footer a:hover {
+  text-decoration: underline;
+}
+
+body.bb-v204-member-auth .bb-auth-footnote {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+body.bb-v204-member-auth .bb-auth-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.65rem;
+}
+
+/* Desktop: keep side panel; mobile: full-bleed card */
+@media (min-width: 900px) {
+  body.bb-v204-member-auth .bb-auth-layout {
+    grid-template-columns: minmax(18rem, 0.95fr) minmax(0, 1.15fr);
+  }
+
+  body.bb-v204-member-auth .bb-auth-panel {
+    display: block;
+  }
+
+  body.bb-v204-member-auth .bb-auth-card {
+    padding: 1.75rem 1.5rem 1.85rem;
+  }
+}
+
+@media (max-width: 899px) {
+  body.bb-v204-member-auth .bb-auth-panel {
+    display: none;
+  }
+
+  body.bb-v204-member-auth .bb-auth-main__body {
+    padding: 1rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-card {
+    border-radius: var(--bb-radius-md, 0.75rem);
+    box-shadow: var(--bb-shadow-sm);
+  }
+}
+
+/* 390 critical — Stitch mobile suites */
+@media (max-width: 390px) {
+  body.bb-v204-member-auth .bb-auth-main__header {
+    padding-inline: 0.85rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-main__body {
+    padding: 0.75rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-card {
+    padding: 1rem 0.9rem 1.25rem;
+    border-radius: 0.75rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-card__title {
+    font-size: 1.35rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-btn--primary,
+  body.bb-v204-member-auth .bb-auth-input {
+    min-height: 3rem;
+  }
+
+  body.bb-v204-member-auth .bb-auth-footer__links {
+    flex-direction: column;
+    align-items: center;
+  }
+}

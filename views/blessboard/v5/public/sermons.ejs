@@ -125,7 +125,7 @@
         Latest Release
       </p>
       <article class="bb-tp-featured-sermon__card">
-        <div class="bb-tp-featured-sermon__media<%= featured.imageUrl ? '' : ' is-fallback' %>" data-bb-sermon-thumb="1">
+        <div class="bb-tp-featured-sermon__media<%= featured.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>" data-bb-sermon-thumb="1">
           <% if (featured.imageUrl) { %>
           <img
             src="<%= featured.imageUrl %>"
@@ -134,10 +134,27 @@
             height="405"
             loading="eager"
             decoding="async"
+            data-bb-sermon-image="1"
           />
           <% } else { %>
           <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
           <% } %>
+          <%- include('../partials/entity-image-edit-trigger', {
+            editKind: 'sermon',
+            editEntityKey: String(featured.id || ('sermon-' + featured.title)),
+            editPayload: {
+              title: featured.title,
+              speakerName: featured.speakerName,
+              preachedAt: featured.preachedAt,
+              summary: featured.summary,
+              scripture: featured.scripture,
+              mediaUrl: featured.mediaUrl,
+              imageUrl: featured.imageUrl,
+                placement: featured.imagePlacement || featured.placement || null,
+              featured: true,
+              visible: true
+            }
+          }) %>
         </div>
         <div class="bb-tp-featured-sermon__copy">
           <h2 class="bb-tp-featured-sermon__title">
@@ -155,6 +172,7 @@
                 scripture: featured.scripture,
                 mediaUrl: featured.mediaUrl,
                 imageUrl: featured.imageUrl,
+                placement: featured.imagePlacement || featured.placement || null,
                 featured: true,
                 visible: true
               }
@@ -253,14 +271,31 @@
         %>
         <li class="bb-tp-sermon-card" data-bb-sermon-item="1">
           <div
-            class="bb-tp-sermon-card__media<%= sermon.imageUrl ? '' : ' is-fallback' %>"
+            class="bb-tp-sermon-card__media<%= sermon.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>"
             <% if (!sermon.imageUrl) { %>role="img" aria-label="<%= thumbLabel %>"<% } %>
           >
             <% if (sermon.imageUrl) { %>
-            <img src="<%= sermon.imageUrl %>" alt="<%= thumbLabel %>" width="400" height="240" loading="lazy" decoding="async" />
+            <% var __sps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(sermon.imagePlacement || sermon.placement || null) : { className: '', style: '' }; %>
+            <img class="<%= __sps.className || '' %>" src="<%= sermon.imageUrl %>" alt="<%= thumbLabel %>" width="400" height="240" loading="lazy" decoding="async" data-bb-sermon-image="1"<% if (__sps.style) { %> style="<%= __sps.style %>"<% } %> />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-sermon-card__fallback-icon" aria-hidden="true">menu_book</span>
             <% } %>
+            <%- include('../partials/entity-image-edit-trigger', {
+              editKind: 'sermon',
+              editEntityKey: String(sermon.id || ('sermon-' + sermon.title)),
+              editPayload: {
+                title: sermon.title,
+                speakerName: sermon.speakerName,
+                preachedAt: sermon.preachedAt,
+                summary: sermon.summary,
+                scripture: sermon.scripture,
+                mediaUrl: sermon.mediaUrl,
+                imageUrl: sermon.imageUrl,
+                placement: sermon.imagePlacement || sermon.placement || null,
+                featured: false,
+                visible: true
+              }
+            }) %>
           </div>
           <div class="bb-tp-sermon-card__body">
             <h3 class="bb-tp-sermon-card__title">
@@ -278,6 +313,7 @@
                   scripture: sermon.scripture,
                   mediaUrl: sermon.mediaUrl,
                   imageUrl: sermon.imageUrl,
+                placement: sermon.imagePlacement || sermon.placement || null,
                   featured: false,
                   visible: true
                 }
@@ -365,12 +401,10 @@
     <% if (pageSections.length > 1) { %>
     <div class="bb-tp-directory__sections">
       <% pageSections.slice(1).forEach(function (section) { %>
-      <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
+      <section class="bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
         <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
         <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
-        <% if (section.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
-        <% } %>
+        <%- include('./partials/content-block-media', { section: section, editPageKey: 'sermons' }) %>
       </section>
       <% }) %>
     </div>

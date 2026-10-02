@@ -114,7 +114,7 @@ describe("blessboard forms-requests", () => {
         productTenantKey: "fr-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -151,7 +151,7 @@ describe("blessboard forms-requests", () => {
           assert.equal(assigned.ok, true, assigned.message || assigned.reason);
         }
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgA.records.organization.id,
         });
@@ -207,8 +207,8 @@ describe("blessboard forms-requests", () => {
         return approved.member.id;
       }
 
-      memberId = await provisionLinkedMember("member@fr-a.example.test", memberUser, "+15550001001");
-      memberBId = await provisionLinkedMember("member-b@fr-a.example.test", memberBUser, "+15550001002");
+      memberId = await provisionLinkedMember("member@fr-a.example.test", memberUser, "+260977001001");
+      memberBId = await provisionLinkedMember("member-b@fr-a.example.test", memberBUser, "+260977001002");
 
       privateStorageKey = `blessboard/${churchA.id}/${crypto.randomUUID()}/note.pdf`;
       const privAbs = path.join(
@@ -929,7 +929,7 @@ describe("blessboard forms-requests", () => {
     assert.match(list.text, /Fill online/);
     assert.match(list.text, /2 fields/);
     assert.doesNotMatch(list.text, /DRAFT_ONLY_FORM_SECRET/);
-    assert.doesNotMatch(list.text, /Download PDF|form builder|e-?signature|card number|cvv|Approved|Processing/i);
+    assert.doesNotMatch(list.text, /Download PDF|form builder|e-?signature|card number|\bcvv\b|Approved|Processing/i);
     assert.doesNotMatch(list.text, /javascript:/i);
 
     const searchHit = await request(app)
@@ -976,7 +976,7 @@ describe("blessboard forms-requests", () => {
     assert.match(detail.text, /data-bb-field-type="email"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="html"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="script"/);
-    assert.doesNotMatch(detail.text, /type="file"|e-?signature|card number|cvv/i);
+    assert.doesNotMatch(detail.text, /type="file"|e-?signature|card number|cvv/i);
     assert.match(detail.text, /name="_csrf"/);
     assert.doesNotMatch(detail.text, /javascript:/i);
 

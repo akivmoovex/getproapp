@@ -1,0 +1,41 @@
+<% var cms = (pageData && pageData.cms) || {}; var section = cms.section || {}; %>
+<section class="ac-mw" data-ac-page-section="website-section-settings" data-ac-mw-screen="section-settings">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Section Settings</h2>
+      <p class="ac-mw-muted"><%= section.title || section.type %></p>
+    </div>
+  </div>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/sections/<%= section.id %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Section title
+      <input type="text" name="title" maxlength="80" value="<%= section.title || '' %>"/>
+    </label>
+    <label>
+      Heading
+      <input type="text" name="heading" maxlength="160" value="<%= section.heading || '' %>"/>
+    </label>
+    <label>
+      Body
+      <textarea name="body" maxlength="4000"><%= section.body || '' %></textarea>
+    </label>
+    <label>
+      Button label
+      <input type="text" name="buttonLabel" maxlength="60" value="<%= section.button_label || '' %>"/>
+    </label>
+    <label>
+      Button URL
+      <input type="text" name="buttonUrl" maxlength="500" value="<%= section.button_url || '' %>"/>
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="visible" value="1" <%= section.visible === false ? '' : 'checked' %>/>
+      Visible on homepage
+    </label>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/sections">Discard</a>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save Changes</button>
+    </div>
+  </form>
+</section>

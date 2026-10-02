@@ -1,0 +1,239 @@
+"use strict";
+
+const { registerWebsiteTemplate } = require("../../platform/website/templateRegistry");
+const { CONTENT_TYPES } = require("../../platform/website/contentTypes");
+const {
+  registerEditableField,
+  STORAGE_KIND,
+  PRODUCT_CODE,
+} = require("../../platform/website/editableFieldSchema");
+const { PERMISSIONS } = require("../../platform/website/permissions");
+const { SNAPSHOT_KEY } = require("../../platform/website-engine/productSchemaRegistry");
+const { KEY_DEFS, VALUE_TYPES } = require("../services/websiteSettingKeyRegistry");
+const { EDITABLE_FIELDS } = require("../services/websiteInlineEditableFields");
+
+const TYPE_MAP = Object.freeze({
+  [VALUE_TYPES.SHORT_TEXT]: CONTENT_TYPES.SHORT_TEXT,
+  [VALUE_TYPES.LONG_TEXT]: CONTENT_TYPES.LONG_TEXT,
+  [VALUE_TYPES.EMAIL]: CONTENT_TYPES.EMAIL,
+  [VALUE_TYPES.PHONE]: CONTENT_TYPES.PHONE,
+  [VALUE_TYPES.URL]: CONTENT_TYPES.URL,
+  [VALUE_TYPES.IMAGE_URL]: CONTENT_TYPES.IMAGE,
+  [VALUE_TYPES.BOOLEAN]: CONTENT_TYPES.BOOLEAN,
+  [VALUE_TYPES.ENUM]: CONTENT_TYPES.ENUM,
+  [VALUE_TYPES.SOCIAL_LINKS]: CONTENT_TYPES.STRUCTURED,
+});
+
+function settingKeys() {
+  const keys = {};
+  for (const [key, def] of Object.entries(KEY_DEFS)) {
+    keys[key] = {
+      type: TYPE_MAP[def.type] || CONTENT_TYPES.SHORT_TEXT,
+      maxLen: def.maxLen,
+      enumValues: def.enumValues,
+      group: def.group,
+      hideable: def.hideable === true,
+      description: def.description,
+    };
+  }
+  return keys;
+}
+
+function inlineFieldKeys() {
+  const keys = {};
+  const fields = Array.isArray(EDITABLE_FIELDS) ? EDITABLE_FIELDS : [];
+  for (const field of fields) {
+    const fieldKey = String(field.fieldKey || "")
+      .replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`)
+      .replace(/^_/, "");
+    const key = `${field.pageKey}.${field.sectionKey}.${fieldKey}`;
+    const type =
+      field.type === "buttonUrl"
+        ? CONTENT_TYPES.URL
+        : field.type === "paragraph"
+          ? CONTENT_TYPES.LONG_TEXT
+          : field.type === "image"
+            ? CONTENT_TYPES.IMAGE
+            : field.type === "contactText" && field.fieldKey === "email"
+              ? CONTENT_TYPES.EMAIL
+              : field.type === "contactText" && field.fieldKey === "phone"
+                ? CONTENT_TYPES.PHONE
+                : CONTENT_TYPES.SHORT_TEXT;
+    keys[key] = {
+      type,
+      maxLen: field.maxLength || 500,
+      group: field.pageKey,
+      description: field.guidance || key,
+    };
+  }
+  return keys;
+}
+
+let registered = null;
+
+function registerBlessBoardWebsiteTemplate() {
+  if (!registered) {
+    registered = registerWebsiteTemplate({
+    templateId: "blessboard_church",
+    productCode: "blessboard",
+    version: 1,
+    label: "BlessBoard church website",
+    pages: [
+      { key: "home", label: "Home", mandatory: true },
+      { key: "about", label: "About", mandatory: true },
+      { key: "leadership", label: "Leadership", mandatory: false },
+      { key: "ministries", label: "Ministries", mandatory: false },
+      { key: "events", label: "Events", mandatory: false },
+      { key: "sermons", label: "Sermons", mandatory: false },
+      { key: "giving", label: "Giving", mandatory: false },
+      { key: "contact", label: "Contact", mandatory: true },
+    ],
+    keys: {
+      ...settingKeys(),
+      ...inlineFieldKeys(),
+      "home.logo": {
+        type: CONTENT_TYPES.IMAGE,
+        maxLen: 500,
+        group: "home",
+        description: "Church logo",
+      },
+      "brand.primary_color": {
+        type: CONTENT_TYPES.SHORT_TEXT,
+        maxLen: 7,
+        group: "brand",
+        inline: false,
+        description: "Primary brand colour",
+      },
+      "brand.accent_color": {
+        type: CONTENT_TYPES.SHORT_TEXT,
+        maxLen: 7,
+        group: "brand",
+        inline: false,
+        description: "Accent brand colour",
+      },
+      "site.theme_id": {
+        type: CONTENT_TYPES.ENUM,
+        enumValues: ["bb.default", "bb.contemporary-fellowship", "bb.community"],
+        group: "site",
+        inline: false,
+        description: "Public website theme id (BlessBoard collection only)",
+      },
+      "home.hero.image": {
+        type: CONTENT_TYPES.IMAGE,
+        maxLen: 500,
+        group: "home",
+        description: "Homepage hero / cover image",
+      },
+      [SNAPSHOT_KEY]: {
+        type: CONTENT_TYPES.STRUCTURED,
+        acceptObject: true,
+        maxBytes: 512000,
+        group: "cms",
+        description: "Church website publication snapshot",
+      },
+    },
+    requiredPublishKeys: [],
+    mandatoryPages: ["home", "about", "contact"],
+    defaults: {},
+  });
+  }
+  registerSnapshotEditableField();
+  registerLogoEditableField();
+  registerBrandColorEditableFields();
+  registerThemeEditableField();
+  registerSeoEditableFields();
+  return registered;
+}
+
+const DEFAULT_BLESSBOARD_LOGO_SRC = null; // Brand logo presented via CDN marketing map at render time.
+
+function registerLogoEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "home.logo",
+    type: CONTENT_TYPES.IMAGE,
+    maxLen: 500,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "home.logo" },
+    group: "home",
+    description: "Church logo",
+    inline: false,
+  });
+}
+
+function registerBrandColorEditableFields() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "brand.primary_color",
+    type: CONTENT_TYPES.SHORT_TEXT,
+    maxLen: 7,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.primary_color" },
+    group: "brand",
+    description: "Primary brand colour",
+    inline: false,
+  });
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "brand.accent_color",
+    type: CONTENT_TYPES.SHORT_TEXT,
+    maxLen: 7,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.accent_color" },
+    group: "brand",
+    description: "Accent brand colour",
+    inline: false,
+  });
+}
+
+function registerThemeEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "site.theme_id",
+    type: CONTENT_TYPES.ENUM,
+    enumValues: ["bb.default", "bb.contemporary-fellowship", "bb.community"],
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "site.theme_id" },
+    group: "site",
+    description: "Public website theme id (BlessBoard collection only)",
+    inline: false,
+  });
+}
+
+function registerSeoEditableFields() {
+  for (const [key, def] of Object.entries(KEY_DEFS)) {
+    if (!key.startsWith("seo.")) continue;
+    registerEditableField({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key,
+      type: TYPE_MAP[def.type] || CONTENT_TYPES.SHORT_TEXT,
+      maxLen: def.maxLen,
+      enumValues: def.enumValues,
+      permission: PERMISSIONS.EDIT,
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: key },
+      group: def.group || "seo",
+      description: def.description || key,
+      inline: false,
+    });
+  }
+}
+
+function registerSnapshotEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: SNAPSHOT_KEY,
+    type: CONTENT_TYPES.STRUCTURED,
+    acceptObject: true,
+    maxBytes: 512000,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: SNAPSHOT_KEY },
+    description: "Church website publication snapshot",
+  });
+}
+
+module.exports = {
+  registerBlessBoardWebsiteTemplate,
+  DEFAULT_BLESSBOARD_LOGO_SRC,
+  BLESSBOARD_TEMPLATE_ID: "blessboard_church",
+  BLESSBOARD_TEMPLATE_VERSION: 1,
+};

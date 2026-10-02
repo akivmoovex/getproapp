@@ -1,7 +1,10 @@
+<%
+  var _pageSharedMedia = typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl;
+%>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } %>
 <%
   var pageStatus = submitted && submitted.status ? submitted.status : page.status;
@@ -41,6 +44,31 @@
   data-bb-content-page-key="<%= page.pageKey %>"
   data-bb-content-page-status="<%= page.status %>"
 >
+<%
+  var editorShell = {
+    productCode: 'blessboard',
+    pageKey: page && page.pageKey ? page.pageKey : 'home',
+    draft: String(pageStatus || '') === 'draft',
+    draftLabel: String(pageStatus || '') === 'draft' ? 'Unpublished draft' : 'No unpublished changes',
+    canEdit: true,
+    canPublish: typeof canPublishWebsite !== 'undefined' ? Boolean(canPublishWebsite) : false,
+    previewHref: typeof previewPath !== 'undefined' ? previewPath : (shellKind === 'hq' ? '/hq/content/preview/' + (page && page.pageKey ? page.pageKey : 'home') : '/branch-admin/content/preview/' + (page && page.pageKey ? page.pageKey : 'home')),
+    publishHref: shellKind === 'hq' ? '/hq/website/publish/review' : '/branch-admin/website',
+    historyHref: shellKind === 'hq' ? '/hq/website/version-history' : '/branch-admin/website',
+    hubHref: shellKind === 'hq' ? '/hq/website' : '/branch-admin/website',
+    pages: [
+      { key: 'home', label: 'Home' },
+      { key: 'about', label: 'About' },
+      { key: 'leadership', label: 'Leadership' },
+      { key: 'ministries', label: 'Ministries' },
+      { key: 'events', label: 'Events' },
+      { key: 'sermons', label: 'Sermons' },
+      { key: 'giving', label: 'Giving' },
+      { key: 'contact', label: 'Contact' }
+    ]
+  };
+%>
+<%- include('../../../platform/website-engine/editor-shell') %>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
@@ -263,17 +291,26 @@
 
       <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-page-settings-heading" data-bb-page-section="settings">
         <h2 id="bb-ca-page-settings-heading" class="bb-ba-section-title">Page settings</h2>
+        <%
+          // A live page's title has no draft representation, so it is read-only
+          // here and changed through the website editor instead.
+          var pageTitleLocked = pageStatus === 'published';
+        %>
         <div class="bb-ba-field">
           <label for="title">Title</label>
           <input
             id="title"
             name="title"
             type="text"
-            required
+            <%= pageTitleLocked ? 'readonly' : 'required' %>
             maxlength="200"
             value="<%= pageTitleVal %>"
             autocomplete="off"
+            <%= pageTitleLocked ? 'aria-describedby="bb-ca-page-title-hint"' : '' %>
           />
+          <% if (pageTitleLocked) { %>
+          <p class="bb-ba-hint" id="bb-ca-page-title-hint">This page is live. Change its title in the website editor.</p>
+          <% } %>
         </div>
         <div class="bb-ba-field">
           <label for="status">Status</label>
@@ -446,22 +483,37 @@
         <textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= draft && draft.body_text ? draft.body_text : '' %></textarea>
       </div>
       <div class="bb-ba-field">
-        <label for="media_url">Media URL (HTTPS)</label>
-        <input
-          id="media_url"
-          name="media_url"
-          type="url"
-          maxlength="2000"
-          value="<%= draft && draft.media_url ? draft.media_url : '' %>"
-          placeholder="https://"
-          autocomplete="off"
-        />
+        <label>Section image</label>
+        <p class="bb-ba-field__hint">
+          Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        </p>
+        <% var _pageMediaSrc = draft && draft.media_url ? draft.media_url : ''; %>
+        <% var _pageMediaList = typeof websiteMediaListUrl !== 'undefined' ? String(websiteMediaListUrl || '') : ''; %>
+        <% if (_pageMediaList) { %>
+        <%- include('../../../platform/website/partials/media-field', {
+          mediaField: {
+            idName: 'media_media_id',
+            srcName: 'media_url',
+            altName: 'media_alt_draft',
+            altLabel: 'Image description',
+            mediaId: '',
+            src: _pageMediaSrc,
+            alt: '',
+            emptyText: 'No image selected — upload from computer or choose from the Content Library.'
+          },
+          mediaListUrl: _pageMediaList
+        }) %>
+        <% } else { %>
+        <input id="media_url" name="media_url" type="hidden" value="<%= _pageMediaSrc %>" />
         <%- include('media-upload', {
               uploadUrl: scope.basePath + '/media/upload',
               targetInputId: 'media_url',
               csrfToken: csrfToken,
-              visibility: 'public'
+              visibility: 'public',
+              currentSrc: _pageMediaSrc,
+              srcName: 'media_url'
             }) %>
+        <% } %>
       </div>
       <div class="bb-ba-page-editor__grid">
         <div class="bb-ba-field">
@@ -560,8 +612,11 @@
 })();
 </script>
 
+<% if (_pageSharedMedia) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } %>

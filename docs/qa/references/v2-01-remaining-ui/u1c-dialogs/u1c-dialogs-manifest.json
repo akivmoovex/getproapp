@@ -1,0 +1,237 @@
+{
+  "task": "U1-C",
+  "expectSha": "08c6564e",
+  "hosted": {
+    "bb": {
+      "gitSha": "08c6564e36f6",
+      "deploymentCode": "moovex-platform-v8-testing"
+    },
+    "ac": {
+      "gitSha": "08c6564e36f6",
+      "deploymentCode": "moovex-platform-v8-testing"
+    },
+    "prod": {
+      "gitSha": "03a89106e2fe",
+      "deploymentCode": "moovex-platform-production"
+    }
+  },
+  "cases": [
+    {
+      "tag": "bb-desktop1440-text",
+      "width": 1440,
+      "height": 900,
+      "kind": "text",
+      "opened": "text",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/bb-desktop1440-text.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit text",
+        "hasFraming": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 328,
+        "panelW": 512,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": false,
+        "bodyScrollWidth": 510,
+        "bodyClientWidth": 510
+      }
+    },
+    {
+      "tag": "bb-desktop1440-image",
+      "width": 1440,
+      "height": 900,
+      "kind": "image",
+      "opened": "image",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/bb-desktop1440-image.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit logo",
+        "hasFraming": true,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 704,
+        "panelW": 512,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": false,
+        "bodyScrollWidth": 510,
+        "bodyClientWidth": 510
+      }
+    },
+    {
+      "tag": "bb-mobile390-text",
+      "width": 390,
+      "height": 844,
+      "kind": "text",
+      "opened": "text",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/bb-mobile390-text.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit text",
+        "hasFraming": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 302,
+        "panelW": 390,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": false,
+        "bodyScrollWidth": 388,
+        "bodyClientWidth": 388
+      }
+    },
+    {
+      "tag": "bb-mobile390-image",
+      "width": 390,
+      "height": 844,
+      "kind": "image",
+      "opened": "image",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/bb-mobile390-image.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit logo",
+        "hasFraming": true,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 740,
+        "panelW": 390,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": false,
+        "bodyScrollWidth": 388,
+        "bodyClientWidth": 388
+      }
+    },
+    {
+      "tag": "ac-desktop1440-text",
+      "width": 1440,
+      "height": 900,
+      "kind": "text",
+      "opened": "text",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/ac-desktop1440-text.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit eyebrow",
+        "hasFraming": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 310,
+        "panelW": 512,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": true,
+        "bodyScrollWidth": 510,
+        "bodyClientWidth": 510
+      }
+    },
+    {
+      "tag": "ac-desktop1440-image",
+      "width": 1440,
+      "height": 900,
+      "kind": "image",
+      "opened": "image",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/ac-desktop1440-image.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit logo",
+        "hasFraming": true,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 704,
+        "panelW": 512,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": true,
+        "bodyScrollWidth": 510,
+        "bodyClientWidth": 510
+      }
+    },
+    {
+      "tag": "ac-mobile390-text",
+      "width": 390,
+      "height": 844,
+      "kind": "text",
+      "opened": "text",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/ac-mobile390-text.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit eyebrow",
+        "hasFraming": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 284,
+        "panelW": 390,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": true,
+        "bodyScrollWidth": 388,
+        "bodyClientWidth": 388
+      }
+    },
+    {
+      "tag": "ac-mobile390-image",
+      "width": 390,
+      "height": 844,
+      "kind": "image",
+      "opened": "image",
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1c-dialogs/ac-mobile390-image.png",
+      "metrics": {
+        "open": true,
+        "title": "Edit logo",
+        "hasFraming": true,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1c-dialogs-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1c-dialogs-1"
+        ],
+        "panelH": 740,
+        "panelW": 390,
+        "footInView": true,
+        "saveInView": true,
+        "cancelInView": true,
+        "overflowX": true,
+        "bodyScrollWidth": 388,
+        "bodyClientWidth": 388
+      }
+    }
+  ],
+  "stitchRef": "docs/qa/references/v2-01-stitch-parity/stitch/s2-edit-content-desktop__32d4fc19.png"
+}

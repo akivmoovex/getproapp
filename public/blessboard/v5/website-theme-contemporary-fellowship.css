@@ -1,0 +1,122 @@
+/**
+ * BlessBoard public theme packs (C3).
+ * Scoped under body.gp-website-theme--* so bb.default stays unchanged.
+ * Visual refs: Stitch Website Change Management Screen 6 gallery
+ * (Contemporary Fellowship card — dark slate + cyan modern sanctuary).
+ *
+ * Color architecture: theme overrides --bb-color-* / local theme vars; properties
+ * consume tokens only (V2.04 Batch 7).
+ */
+
+/* —— Contemporary Fellowship —— */
+body.bb-tp-body.gp-website-theme--bb-contemporary-fellowship {
+  --bb-color-primary: #06b6d4;
+  --bb-color-primary-hover: #0891b2;
+  --bb-color-primary-soft: rgba(6, 182, 212, 0.16);
+  --bb-color-primary-deep: #0e7490;
+  --bb-color-on-primary: #0f172a;
+  --bb-color-page: #0b1120;
+  --bb-color-surface: #111827;
+  --bb-color-surface-dim: #1e293b;
+  --bb-color-ink: #f8fafc;
+  --bb-color-muted: #cbd5e1;
+  --bb-color-border: rgba(148, 163, 184, 0.35);
+  --bb-color-focus-ring: rgba(6, 182, 212, 0.45);
+  --bb-theme-cyan-bright: #67e8f9;
+  --bb-theme-blue: #3b82f6;
+  --bb-theme-page-deep: #020617;
+  --bb-theme-page-mid: #0a0f1d;
+  --bb-gradient-page:
+    radial-gradient(1000px 480px at 10% 0%, color-mix(in srgb, var(--bb-color-primary) 18%, transparent) 0%, transparent 55%),
+    radial-gradient(900px 420px at 100% 10%, color-mix(in srgb, var(--bb-theme-blue) 12%, transparent) 0%, transparent 50%),
+    linear-gradient(180deg, var(--bb-color-surface-dim) 0%, var(--bb-color-page) 45%, var(--bb-theme-page-deep) 100%);
+  --bb-bg: var(--bb-color-page);
+  --bb-ink: var(--bb-color-ink);
+  --bb-violet: var(--bb-color-primary);
+  --bb-violet-deep: var(--bb-color-primary-hover);
+  background: var(--bb-gradient-page);
+  color: var(--bb-ink);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-header {
+  background: color-mix(in srgb, var(--bb-color-surface-dim) 92%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--bb-color-border) 90%, transparent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--bb-theme-page-deep) 45%, transparent);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-header a,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-brand,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-brand__name {
+  color: var(--bb-color-ink);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a:hover,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a[aria-current="page"] {
+  color: var(--bb-theme-cyan-bright);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero {
+  background: linear-gradient(135deg, var(--bb-color-surface-dim) 0%, var(--bb-color-surface) 55%, var(--bb-theme-page-mid) 100%);
+  color: var(--color-text-inverse);
+  min-height: clamp(18rem, 52vw, 28rem);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__title,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__lead,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__eyebrow-desktop,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__eyebrow-mobile {
+  color: var(--bb-color-ink);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__title-accent {
+  color: var(--bb-theme-cyan-bright);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__visual {
+  aspect-ratio: 21 / 9;
+  max-height: none;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--bb-theme-page-deep) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bb-theme-cyan-bright) 25%, transparent);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__img,
+body.gp-website-theme--bb-contemporary-fellowship [data-website-image-slot="home.hero.image"] img,
+body.gp-website-theme--bb-contemporary-fellowship .gp-website-image-frame {
+  object-fit: cover;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-btn,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-cta,
+body.gp-website-theme--bb-contemporary-fellowship a.bb-tp-btn--primary {
+  background: var(--bb-color-primary);
+  color: var(--bb-color-on-primary);
+  border-color: var(--bb-color-primary);
+  font-weight: 700;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-section,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-card,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-panel {
+  background: color-mix(in srgb, var(--bb-color-surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--bb-color-border) 80%, transparent);
+  color: var(--bb-color-muted);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-footer {
+  background: var(--bb-theme-page-deep);
+  color: var(--bb-color-muted);
+  border-top: 1px solid color-mix(in srgb, var(--bb-color-border) 90%, transparent);
+}
+
+@media (max-width: 390px) {
+  body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero {
+    min-height: 16rem;
+  }
+
+  body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__visual {
+    aspect-ratio: 16 / 10;
+  }
+}

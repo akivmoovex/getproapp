@@ -1,0 +1,150 @@
+{
+  "capturedAt": "2026-09-27T10:19:15.174Z",
+  "fingerprint": {
+    "host": "aws-0-eu-central-1.pooler.supabase.com",
+    "port": "5432",
+    "database": "postgres",
+    "userPrefix": "pos***"
+  },
+  "gate": {
+    "DEPLOYMENT_ENV": "testing",
+    "PLATFORM_DEPLOYMENT_CODE": "moovex-platform-testing",
+    "DATABASE_IDENTITY_EXPECTED": "moovex-platform-v7",
+    "DATABASE_IDENTITY_ENV": "testing",
+    "GETPRO_DATABASE_URL_set": false
+  },
+  "identity": {
+    "identity_key": "moovex-platform-v7",
+    "environment_code": "testing",
+    "database_instance_id": "b5979443-0e93-4222-a979-9d4d6cd2ef9b"
+  },
+  "diagnostics": {
+    "schemas": [
+      "activeclinic",
+      "blessboard",
+      "getpro",
+      "ngo",
+      "platform"
+    ],
+    "migrations": [
+      {
+        "module": "activeclinic",
+        "n": 42,
+        "max_version": "042"
+      },
+      {
+        "module": "blessboard",
+        "n": 118,
+        "max_version": "118"
+      },
+      {
+        "module": "getpro",
+        "n": 1,
+        "max_version": "001"
+      },
+      {
+        "module": "ngo",
+        "n": 1,
+        "max_version": "001"
+      },
+      {
+        "module": "platform",
+        "n": 43,
+        "max_version": "043"
+      },
+      {
+        "module": "seeds",
+        "n": 9,
+        "max_version": "009"
+      }
+    ],
+    "tableCounts": {
+      "ngo": 0,
+      "getpro": 0,
+      "activeclinic": 86,
+      "blessboard": 87,
+      "platform": 45
+    },
+    "orgCounts": {
+      "organizations": 119,
+      "churches": 38,
+      "healthcare_orgs": 66
+    },
+    "discoveredMigrations": 205,
+    "discoveredSeeds": 9,
+    "ceiling": {
+      "platform": {
+        "version": "043",
+        "filename": "043_shared_data_jobs_and_preferences.sql"
+      },
+      "blessboard": {
+        "version": "118",
+        "filename": "118_activeclinic_management_data_permissions.sql"
+      },
+      "activeclinic": {
+        "version": "042",
+        "filename": "042_patient_visit_summary_releases.sql"
+      },
+      "getpro": {
+        "version": "001",
+        "filename": "001_create_getpro_schema.sql"
+      },
+      "ngo": {
+        "version": "001",
+        "filename": "001_create_ngo_schema.sql"
+      }
+    }
+  },
+  "baseline": {
+    "strategy": {
+      "code": "B",
+      "name": "cleaned_ordered_migrations",
+      "rationale": "Existing migrator already discovers numbered SQL per module in deterministic order with checksum ledger + identity gate. Squash (A) would rewrite applied history; bootstrap-schema (C) would duplicate the ledger. Strategy B is the simplest runner-supported path."
+    },
+    "moduleOrder": [
+      "platform",
+      "blessboard",
+      "activeclinic",
+      "getpro",
+      "ngo"
+    ],
+    "ceiling": {
+      "platform": {
+        "version": "043",
+        "filename": "043_shared_data_jobs_and_preferences.sql"
+      },
+      "blessboard": {
+        "version": "118",
+        "filename": "118_activeclinic_management_data_permissions.sql"
+      },
+      "activeclinic": {
+        "version": "042",
+        "filename": "042_patient_visit_summary_releases.sql"
+      },
+      "getpro": {
+        "version": "001",
+        "filename": "001_create_getpro_schema.sql"
+      },
+      "ngo": {
+        "version": "001",
+        "filename": "001_create_ngo_schema.sql"
+      }
+    },
+    "discoveredCount": 205,
+    "seedCount": 9,
+    "historicalExceptions": 21,
+    "ownershipOrphans": 0,
+    "forwardRules": [
+      "New platform-neutral schema → db/migrations/platform/ (prefer platform.* tables).",
+      "New BlessBoard-only schema → db/migrations/blessboard/ (blessboard.*).",
+      "New ActiveClinic-only schema → db/migrations/activeclinic/ (activeclinic.*).",
+      "New ActiveClinic RBAC catalogue grants → db/migrations/activeclinic/ even when DML targets blessboard.permissions/roles.",
+      "Do not use platform_ table/filename prefixes for product-owned objects.",
+      "Cross-schema FKs to platform.identities / platform.organizations from product tables are allowed and expected.",
+      "Platform migrations may include a product name in the filename when extending platform.* catalogues (application_code, identity profile types, etc.).",
+      "Never rename, delete, or reorder already-applied migrations for organization alone.",
+      "Never mutate production to relocate historical objects."
+    ],
+    "freshBootstrapCommand": "npm run db:canonical-fresh-bootstrap"
+  }
+}

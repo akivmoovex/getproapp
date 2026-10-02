@@ -1,0 +1,47 @@
+<%#
+  AC-MW-R12 Canonical Modular Content Page — Stitch Batch 4.
+  Proof of shared platform component composition. No R12-specific framework.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const modules = Array.isArray(html.modules) ? html.modules : [];
+  const page = typeof customPage !== 'undefined' && customPage ? customPage : {};
+%>
+<section
+  class="ac-stitch-page ac-stitch-page--r12 ac-public-section ac-tenant-custom-page"
+  data-ac-page-section="tenant-custom-page"
+  data-ac-stitch-screen="R12"
+  data-ac-custom-page="<%= page.slug || '' %>"
+  data-ac-modular-page="1"
+>
+  <% if (html.header) { %>
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header %>
+  </div>
+  <% } %>
+
+  <% if (!modules.length && html.empty) { %>
+  <div class="ac-public-empty" data-ac-empty="custom-page">
+    <%- html.empty %>
+  </div>
+  <% } %>
+
+  <% modules.forEach(function (mod) { %>
+  <div class="ac-stitch-section ac-stitch-section--module" data-ac-module-component="<%= mod.component || '' %>" data-ac-module-id="<%= mod.id || '' %>">
+    <%- mod.html || '' %>
+  </div>
+  <% }) %>
+
+  <% if (html.contact) { %>
+  <div class="ac-stitch-section ac-stitch-section--contact">
+    <%- html.contact %>
+  </div>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+</section>

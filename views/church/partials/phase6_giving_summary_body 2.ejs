@@ -1,0 +1,340 @@
+<%
+  var rows = summaries || [];
+  var q = typeof searchQuery !== 'undefined' ? searchQuery : '';
+  var state = listState || (rows.length ? 'results' : 'empty');
+  var action = typeof summaryAction !== 'undefined' ? summaryAction : '/branch/giving-summary';
+  var detailBase = typeof summaryDetailBase !== 'undefined' ? summaryDetailBase : '/branch/giving-summary';
+  var canEdit = typeof canRecord !== 'undefined' ? canRecord : true;
+  var ov = overview || {};
+  var currency = ov.currencyCode || 'ZMW';
+  var money = typeof formatGivingMoney === 'function'
+    ? function (n) { return formatGivingMoney(n, currency); }
+    : (typeof formatMoney === 'function' ? formatMoney : function (n) { return String(n); });
+  var formOpen = Boolean(showForm || error);
+  var funds = ov.fundBreakdown || [];
+  function rangeHref(rangeKey) {
+    var parts = [];
+    if (rangeKey && rangeKey !== 'all') parts.push('range=' + encodeURIComponent(rangeKey));
+    if (statusFilter && statusFilter !== 'all') parts.push('status=' + encodeURIComponent(statusFilter));
+    if (q) parts.push('q=' + encodeURIComponent(q));
+    if (showBranchFilter && branchFilterId) parts.push('branch_id=' + encodeURIComponent(String(branchFilterId)));
+    return action + (parts.length ? ('?' + parts.join('&')) : '');
+  }
+  function statusHref(statusKey) {
+    var parts = [];
+    if (rangeFilter && rangeFilter !== 'all') parts.push('range=' + encodeURIComponent(rangeFilter));
+    if (monthFilter) parts.push('month=' + encodeURIComponent(monthFilter));
+    if (statusKey && statusKey !== 'all') parts.push('status=' + encodeURIComponent(statusKey));
+    if (q) parts.push('q=' + encodeURIComponent(q));
+    if (showBranchFilter && branchFilterId) parts.push('branch_id=' + encodeURIComponent(String(branchFilterId)));
+    return action + (parts.length ? ('?' + parts.join('&')) : '');
+  }
+%>
+      <div
+        class="church-p6-giving"
+        data-p6-screen="giving-summary"
+        data-list-state="<%= state %>"
+        data-responsive="desktop-mobile"
+        data-testid="giving-summary"
+        aria-busy="false"
+      >
+        <header class="church-p6-page-hero">
+          <div>
+            <p class="church-p6-page-hero__kicker church-show-mobile-only"><%= churchName %></p>
+            <h1 class="church-p6-page-hero__title">Giving Summary</h1>
+            <p class="church-p6-page-hero__subtitle">Overview of monthly giving totals for <%= churchName %>.</p>
+          </div>
+          <div class="church-p6-page-hero__actions church-show-desktop-only">
+            <% if (typeof settingsHref !== 'undefined' && settingsHref) { %>
+            <a class="church-btn church-btn--outline" href="<%= settingsHref %>">Giving settings</a>
+            <% } %>
+            <% if (canEdit) { %>
+            <a class="church-btn church-btn--primary" href="<%= action %>?new=1" data-testid="giving-record-cta">
+              <span class="material-symbols-outlined" aria-hidden="true">add</span>
+              Record offering
+            </a>
+            <% } %>
+          </div>
+        </header>
+
+        <div class="church-alert church-alert--info" role="note" data-testid="giving-mvp-note">
+          This page shows aggregate monthly giving summaries for HQ reporting. BlessBoard does not process payments or store donor gift transactions here.
+        </div>
+
+        <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+        <% if (typeof listError !== 'undefined' && listError) { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="giving-error"><%= listError %></div>
+        <% } %>
+        <% if (error) { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="giving-form-error"><%= error %></div>
+        <% } %>
+
+        <div class="church-p6-filter-chips" role="tablist" aria-label="Date range">
+          <% [
+            { key: 'all', label: 'All time' },
+            { key: 'ytd', label: 'Year to date' },
+            { key: 'current_month', label: 'This month' }
+          ].forEach(function (r) { %>
+          <a
+            class="church-p6-filter-chip <%= (rangeFilter === r.key || (!rangeFilter && r.key === 'all')) ? 'church-p6-filter-chip--active' : '' %>"
+            href="<%= rangeHref(r.key) %>"
+            role="tab"
+            aria-selected="<%= (rangeFilter === r.key || ((!rangeFilter || rangeFilter === 'all') && r.key === 'all')) ? 'true' : 'false' %>"
+          ><%= r.label %></a>
+          <% }); %>
+        </div>
+
+        <section class="church-p6-giving-overview" aria-label="Giving overview" data-testid="giving-overview">
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">volunteer_activism</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Total giving</p>
+              <p class="church-p6-attendance-stat__value" data-testid="giving-kpi-total"><%= money(ov.grandTotal || 0) %></p>
+              <p class="church-p6-attendance-stat__hint">
+                <% if (ov.mixedCurrency) { %>
+                Primary currency <%= currency %> (mixed currencies not combined)
+                <% } else { %>
+                Sum of monthly summaries in <%= currency %>
+                <% } %>
+              </p>
+              <% if (ov.yoy && ov.yoy.percentChange != null) { %>
+              <p class="church-p6-giving-trend" data-testid="giving-kpi-trend">
+                <%= ov.yoy.percentChange > 0 ? '+' : '' %><%= ov.yoy.percentChange %>% vs same month last year
+                <span class="church-sr-only">Prior total <%= money(ov.yoy.priorTotal) %>, current <%= money(ov.yoy.currentTotal) %></span>
+              </p>
+              <% } %>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">receipt_long</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Monthly summaries</p>
+              <p class="church-p6-attendance-stat__value" data-testid="giving-kpi-count"><%= ov.summaryCount || 0 %></p>
+              <p class="church-p6-attendance-stat__hint">Records in this view (not individual gifts)</p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon church-p6-attendance-stat__icon--warn" aria-hidden="true"><span class="material-symbols-outlined">pending_actions</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Pending drafts</p>
+              <p class="church-p6-attendance-stat__value" data-testid="giving-kpi-drafts"><%= ov.draftCount || 0 %></p>
+              <p class="church-p6-attendance-stat__hint">Branch drafts awaiting submit</p>
+            </div>
+          </article>
+        </section>
+
+        <form class="church-p6-toolbar church-form" method="get" action="<%= action %>" role="search" data-testid="giving-filters">
+          <div class="church-field church-field--grow">
+            <label class="church-label" for="giving-q">Search notes</label>
+            <input class="church-input" id="giving-q" name="q" type="search" value="<%= q %>" placeholder="Search summary notes" maxlength="200" autocomplete="off"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="giving-month">Month</label>
+            <input class="church-input" id="giving-month" name="month" type="month" value="<%= monthFilter || '' %>"/>
+          </div>
+          <% if (showBranchFilter && branchOptions && branchOptions.length > 1) { %>
+          <div class="church-field">
+            <label class="church-label" for="giving-branch">Branch</label>
+            <select class="church-input" id="giving-branch" name="branch_id" data-testid="giving-branch-filter">
+              <option value="">All branches</option>
+              <% branchOptions.forEach(function (b) { %>
+              <option value="<%= b.id %>" <%= Number(branchFilterId) === Number(b.id) ? 'selected' : '' %>><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <% } %>
+          <% if (statusFilter && statusFilter !== 'all') { %>
+          <input type="hidden" name="status" value="<%= statusFilter %>"/>
+          <% } %>
+          <% if (rangeFilter && rangeFilter !== 'all' && !monthFilter) { %>
+          <input type="hidden" name="range" value="<%= rangeFilter %>"/>
+          <% } %>
+          <button class="church-btn church-btn--primary" type="submit">Apply</button>
+        </form>
+
+        <div class="church-p6-filter-bar">
+          <div class="church-branch-filter-tabs" role="tablist" aria-label="Giving status">
+            <% ['all', 'draft', 'submitted'].forEach(function (s) { %>
+            <a
+              class="church-branch-filter-tab <%= (statusFilter === s || (!statusFilter && s === 'all')) ? 'church-branch-filter-tab--active' : '' %>"
+              href="<%= statusHref(s) %>"
+              role="tab"
+              aria-selected="<%= (statusFilter === s || ((!statusFilter || statusFilter === 'all') && s === 'all')) ? 'true' : 'false' %>"
+            ><%= s === 'all' ? 'All' : (typeof givingStatusLabel === 'function' ? givingStatusLabel(s) : s) %></a>
+            <% }); %>
+          </div>
+          <% if (state === 'results') { %>
+          <p class="church-p6-result-count" data-testid="giving-count">Showing <%= rows.length %> summar<%= rows.length === 1 ? 'y' : 'ies' %></p>
+          <% } %>
+        </div>
+
+        <% if (state === 'results' && funds.length) { %>
+        <section class="church-branch-panel church-p6-panel" aria-labelledby="giving-fund-heading" data-testid="giving-fund-breakdown">
+          <h2 class="church-branch-panel__title" id="giving-fund-heading">Fund allocation</h2>
+          <p class="church-p6-empty__hint" id="giving-fund-summary">
+            Text summary: total <%= money(ov.grandTotal || 0) %> across
+            <% funds.forEach(function (f, i) { %><%= i ? '; ' : '' %><%= f.label %> <%= money(f.amount) %> (<%= f.percent %>%)<% }); %>.
+          </p>
+          <ul class="church-p6-giving-funds" aria-describedby="giving-fund-summary">
+            <% funds.forEach(function (f) { %>
+            <li class="church-p6-giving-fund">
+              <div class="church-p6-giving-fund__head">
+                <strong><%= f.label %></strong>
+                <span><%= money(f.amount) %></span>
+              </div>
+              <div class="church-p6-giving-fund__bar" role="presentation">
+                <span style="width: <%= Math.min(100, f.percent) %>%"></span>
+              </div>
+              <p class="church-p6-attendance-stat__hint"><%= f.percent %>% of view total</p>
+            </li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } %>
+
+        <section class="church-branch-panel church-p6-panel" data-testid="giving-panel">
+          <div class="church-p6-attendance-panel__head">
+            <h2 class="church-branch-panel__title">Recent monthly summaries</h2>
+          </div>
+
+          <% if (state === 'empty') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="giving-empty">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">payments</span>
+            <p class="church-empty-state__body">No giving summaries yet.</p>
+            <p class="church-p6-empty__hint">Record your first monthly giving totals for HQ reporting.</p>
+            <% if (canEdit) { %>
+            <a class="church-btn church-btn--primary church-btn--sm" href="<%= action %>?new=1">Record first summary</a>
+            <% } %>
+          </div>
+          <% } else if (state === 'no_results') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="giving-no-results">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">search_off</span>
+            <p class="church-empty-state__body">No giving summaries match these filters.</p>
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= action %>">Clear filters</a>
+          </div>
+          <% } else { %>
+          <div class="church-branch-table-wrap church-show-desktop-only" data-testid="giving-table">
+            <table class="church-branch-table church-p6-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <% if (showBranchFilter) { %><th>Branch</th><% } %>
+                  <th>Tithes</th>
+                  <th>Offerings</th>
+                  <th>Building</th>
+                  <th>Missions</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (s) { %>
+                <tr>
+                  <td><span class="church-p6-date"><%= s.period_label %></span></td>
+                  <% if (showBranchFilter) { %><td><%= s.branch_name || '—' %></td><% } %>
+                  <td><%= money(s.tithes_total) %></td>
+                  <td><%= money(s.offerings_total) %></td>
+                  <td><%= money(s.building_fund_total) %></td>
+                  <td><%= money(s.missions_fund_total) %></td>
+                  <td><strong><%= money(s.grand_total) %></strong></td>
+                  <td><span class="church-status-chip church-status-chip--<%= s.status === 'draft' ? 'pending' : 'verified' %>"><%= s.status_label || s.status %></span></td>
+                  <td><a class="church-btn church-btn--ghost church-btn--sm" href="<%= detailBase %>/<%= s.id %>">View</a></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="church-p6-card-list church-show-mobile-only" data-testid="giving-cards">
+            <% rows.forEach(function (s) { %>
+            <article class="church-p6-person-card church-p6-giving-card">
+              <a class="church-p6-person-card__link" href="<%= detailBase %>/<%= s.id %>">
+                <div class="church-p6-person-card__body">
+                  <div class="church-p6-person-card__head">
+                    <strong><%= s.period_label %></strong>
+                    <span class="church-status-chip church-status-chip--<%= s.status === 'draft' ? 'pending' : 'verified' %>"><%= s.status_label || s.status %></span>
+                  </div>
+                  <p class="church-p6-person-card__contact"><% if (s.branch_name) { %><%= s.branch_name %> · <% } %><%= s.currency_code || currency %></p>
+                  <p class="church-p6-attendance-card__total"><%= money(s.grand_total) %></p>
+                </div>
+              </a>
+            </article>
+            <% }); %>
+          </div>
+          <% } %>
+        </section>
+
+        <section class="church-branch-panel church-p6-panel" data-testid="giving-transactions-gap">
+          <h2 class="church-branch-panel__title">Individual gifts &amp; donors</h2>
+          <div class="church-empty-state church-p6-empty">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">person_off</span>
+            <p class="church-empty-state__body">Donor-level gifts are not stored in this giving summary.</p>
+            <p class="church-p6-empty__hint">Payment-method breakdowns, anonymous gifts, and average gift size require a contribution ledger that this product does not provide. Use monthly fund totals above for reporting.</p>
+          </div>
+        </section>
+
+        <% if (canEdit) { %>
+        <div
+          class="church-p6-attendance-compose <%= formOpen ? 'is-open' : '' %>"
+          id="giving-compose"
+          data-testid="giving-compose"
+          <%= formOpen ? '' : 'hidden' %>
+        >
+          <div class="church-p6-attendance-compose__panel" role="dialog" aria-modal="true" aria-labelledby="giving-compose-title">
+            <div class="church-p6-attendance-compose__head">
+              <div>
+                <h2 class="church-p6-attendance-compose__title" id="giving-compose-title">Record monthly summary</h2>
+                <p class="church-p6-attendance-compose__subtitle">Enter aggregate fund totals for one calendar month.</p>
+              </div>
+              <a class="church-btn church-btn--ghost church-btn--sm" href="<%= action %>" aria-label="Close">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              </a>
+            </div>
+            <form class="church-form" method="post" action="<%= action %>" data-unsaved-guard="1" data-testid="giving-form">
+              <%- include('./csrf_field') %>
+              <div class="church-form-grid">
+                <div class="church-field church-field--full">
+                  <label class="church-label" for="period_month">Month</label>
+                  <input class="church-input" id="period_month" name="period_month" type="month" required value="<%= form.period_month || '' %>"/>
+                </div>
+                <% (givingFundFields || []).forEach(function (f) { %>
+                <div class="church-field">
+                  <label class="church-label" for="<%= f.key %>"><%= f.label %> (<%= currency %>)</label>
+                  <input class="church-input" id="<%= f.key %>" name="<%= f.key %>" type="number" min="0" step="0.01" value="<%= form[f.key] != null ? form[f.key] : 0 %>"/>
+                </div>
+                <% }); %>
+                <div class="church-field church-field--full">
+                  <label class="church-label" for="giving_notes">Notes</label>
+                  <textarea class="church-input church-input--textarea" id="giving_notes" name="notes" rows="3"><%= form.notes || '' %></textarea>
+                </div>
+              </div>
+              <div class="church-p6-attendance-compose__actions" data-testid="giving-sticky-actions">
+                <button class="church-btn church-btn--outline" type="submit" name="submit_action" value="save_draft">Save draft</button>
+                <button class="church-btn church-btn--primary" type="submit" name="submit_action" value="submit">Submit summary</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <a class="church-p6-attendance-fab church-show-mobile-only" href="<%= action %>?new=1" data-testid="giving-fab" aria-label="Record offering">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        </a>
+        <% } %>
+      </div>
+      <% if (canEdit) { %>
+      <script>
+        (function () {
+          var form = document.querySelector('[data-unsaved-guard="1"]');
+          if (!form) return;
+          var dirty = false;
+          form.addEventListener('input', function () { dirty = true; });
+          form.addEventListener('change', function () { dirty = true; });
+          form.addEventListener('submit', function () { dirty = false; });
+          window.addEventListener('beforeunload', function (e) {
+            if (!dirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+          });
+        })();
+      </script>
+      <% } %>

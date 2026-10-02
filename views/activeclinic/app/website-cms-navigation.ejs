@@ -1,0 +1,34 @@
+<% var cms = (pageData && pageData.cms) || {}; var pages = cms.navPages || []; %>
+<section class="ac-mw" data-ac-page-section="website-navigation" data-ac-mw-screen="navigation">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Navigation Manager</h2>
+      <p class="ac-mw-muted">Choose which pages appear in the public header and in which order. Booking and patient login stay protected.</p>
+    </div>
+  </div>
+  <form method="post" action="/app/settings/website/navigation" data-ac-mw-reorder="nav">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-mw-list" data-ac-mw-list="1">
+      <% pages.forEach(function (page) { %>
+      <article class="ac-mw-card" data-ac-mw-item="1">
+        <div>
+          <span class="ac-mw-grip" aria-hidden="true">⋮⋮</span>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
+          <input type="hidden" name="pageIds" value="<%= page.id %>" data-ac-mw-order="1"/>
+        </div>
+        <div>
+          <h3><%= page.nav_label || page.title %></h3>
+          <p class="ac-mw-card__meta"><code><%= page.href %></code></p>
+        </div>
+        <label class="ac-mw-check">
+          <input type="checkbox" name="inNav_<%= page.id %>" value="1" <%= page.in_nav ? 'checked' : '' %>/>
+          In navigation
+        </label>
+      </article>
+      <% }) %>
+    </div>
+    <p><button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save navigation</button></p>
+  </form>
+</section>
