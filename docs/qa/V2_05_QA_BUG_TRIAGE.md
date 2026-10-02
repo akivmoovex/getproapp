@@ -46,7 +46,7 @@ NODE_ENV=test node --test \
 | BRANCH | V5 |
 | TESTED_BASELINE_SHA | `751293ffaf72a1d964c54901c449aed221f8a69f` |
 | INTEGRATED_V5_SHA | `8d859e11906ff58e363f143b0ee26f10053acf9e` (local V2.05 commit rebased onto `origin/V5` @ `9bed844d`) |
-| INTEGRATED_TEST_SHA | _(set in follow-up docs commit to tip after this retest)_ |
+| INTEGRATED_TEST_SHA | `aeb1c49036c97d7aa3a1346049abec6a5c0b1af2` |
 | INTEGRATED_TEST_RESULT | `52` pass / `0` fail — focused: `v2-05-bb-service-times-publish`, `v2-05-password-recovery`, `v2-05-qa-defect-sweep`, `v2-05-main-flow-batch4`, `blessboard-home-service-times`, `v8-shared-auth-password-security` |
 
 ## Key files touched this sweep
