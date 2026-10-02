@@ -1,0 +1,33 @@
+<%
+  var themes = (pageData && pageData.themes) || {};
+  var galleryHtml = themes.bodyHtml || '';
+  var clinicKey = (pageData && pageData.clinicKey) || '';
+  var stylesheets = Array.isArray(themes.stylesheets) ? themes.stylesheets : [];
+  var scripts = Array.isArray(themes.scripts) ? themes.scripts : [];
+%>
+<% stylesheets.forEach(function (href) { %>
+<link rel="stylesheet" href="<%= href %>"/>
+<% }) %>
+<section
+  class="ac-settings-website ac-mw ac-mw--themes"
+  data-ac-page-section="website-themes"
+  data-ac-website-themes="1"
+  data-gp-theme-selector="ThemeSelector"
+  data-gp-live-preview="LivePreview"
+  data-stitch-screen="AC-WEB-THM-01"
+  data-stitch-screen-mobile="AC-WEB-THM-01"
+  <% if (clinicKey) { %>data-ac-website-clinic-key="<%= clinicKey %>"<% } %>
+>
+  <header class="ac-mw-hub-identity" data-ac-website-themes-identity="1">
+    <div>
+      <p class="ac-mw-hub-identity__kicker">Website · Themes</p>
+      <h2 class="ac-mw-hub-identity__title">Themes &amp; Live Preview</h2>
+      <p class="ac-mw-muted">Choose Clarity, Editorial, or Community. Theme changes are presentation-only and save to draft until you publish.</p>
+    </div>
+    <a class="ac-mw-btn" href="/app/settings/website" data-ac-website-action="back-hub">Back to Website</a>
+  </header>
+  <%- galleryHtml %>
+</section>
+<% scripts.forEach(function (src) { %>
+<script src="<%= src %>" defer></script>
+<% }) %>

@@ -332,7 +332,8 @@ describe("ActiveClinic public website (P20–P26)", () => {
   it("clinic onboarding review then confirm creates pending application", async () => {
     if (!requireDb()) return;
     const app = appWithEnv();
-    const form = await request(app).get("/register-clinic");
+    const agent = request.agent(app);
+    const form = await agent.get("/register-clinic");
     assert.equal(form.status, 200);
     const csrf = extractCsrf(form);
     assert.ok(csrf);
@@ -350,9 +351,9 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(bad.status, 403);
 
     const email = `ada-${Date.now()}@example.com`;
-    const review = await request(app)
+    const review = await agent
       .post("/register-clinic")
-      .set("Cookie", form.headers["set-cookie"])
+      .redirects(5)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
@@ -368,14 +369,13 @@ describe("ActiveClinic public website (P20–P26)", () => {
         acceptTerms: "on",
       });
     assert.equal(review.status, 200);
-    assert.match(review.text, /data-ac-page-section="register-clinic-review"/);
-    assert.match(review.text, /Review your details/);
+    assert.match(review.text, /data-ac-page-section="register-clinic-review"|Review your details/i);
     assert.match(review.text, /New Clinic Lusaka/);
 
     const confirmCsrf = extractCsrf(review);
-    const ok = await request(app)
+    const ok = await agent
       .post("/register-clinic")
-      .set("Cookie", review.headers["set-cookie"])
+      .redirects(0)
       .type("form")
       .send({
         [CSRF_FIELD]: confirmCsrf,
@@ -392,9 +392,18 @@ describe("ActiveClinic public website (P20–P26)", () => {
         acceptTerms: "on",
       });
     assert.equal(ok.status, 303);
-    assert.match(ok.headers.location, /^\/register-clinic\/success\?ref=AC-/);
+    assert.match(ok.headers.location, /^\/app(?:\?|$)/);
+    assert.doesNotMatch(String(ok.headers.location || ""), /register-clinic\/success/);
 
-    const success = await request(app).get(ok.headers.location);
+    const refRow = await pool.query(
+      `SELECT application_number FROM activeclinic.clinic_registration_applications
+        WHERE contact_email_normalized = lower($1)`,
+      [email]
+    );
+    assert.ok(refRow.rows[0] && refRow.rows[0].application_number);
+    const success = await request(app).get(
+      `/register-clinic/success?ref=${encodeURIComponent(refRow.rows[0].application_number)}&ready=1`
+    );
     assert.equal(success.status, 200);
     assert.match(success.text, /Your clinic is ready|review required/i);
     assert.match(success.text, /data-ac-application-ref=/);

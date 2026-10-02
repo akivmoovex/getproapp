@@ -496,6 +496,7 @@ const FEATURE_PARITY_MATRIX = Object.freeze([
 ]);
 
 const LIFECYCLE_STEPS = Object.freeze([
+  // V2.04 shared lifecycle
   "DRAFT",
   "SAVE",
   "PREVIEW",
@@ -506,6 +507,14 @@ const LIFECYCLE_STEPS = Object.freeze([
   "OLD_VERSION_PREVIEW",
   "RESTORE_AS_NEW",
   "REPUBLISH",
+  // V2.05 Batch 6 unified PublishWorkflow vocabulary (same engine)
+  "EDIT",
+  "SAVE_DRAFT",
+  "CHANGE_MANAGER",
+  "PUBLISH_READINESS",
+  "CONFIRM_PUBLISH",
+  "LIVE_SITE",
+  "HISTORICAL_PREVIEW",
 ]);
 
 function listSharedPlatformFeatures() {

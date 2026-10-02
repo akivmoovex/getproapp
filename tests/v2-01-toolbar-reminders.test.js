@@ -23,6 +23,7 @@ const {
   reminderCopy,
   reminderDismissTodayKey,
   reminderSuppressKey,
+  reminderSessionDismissKey,
   mayShowSavedStatus,
   saveStatusLabel,
   websiteScopeKeyFor,
@@ -89,13 +90,24 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
     assert.equal(saveStatusLabel(SAVE_STATUS.SAVING), "Saving…");
   });
 
-  it("reminder copy offers Preview Changes without publish language", () => {
+  it("reminder copy offers Review / Preview / Publish / Dismiss without forcing publish", () => {
     const copy = reminderCopy(5);
-    assert.equal(copy.previewCta, "Preview Changes");
+    assert.equal(copy.title, "You have 5 unpublished changes.");
+    assert.equal(copy.reviewChangesCta, "Review Changes");
+    assert.equal(copy.previewCta, "Preview");
+    assert.equal(copy.publishCta, "Publish");
+    assert.equal(copy.dismiss, "Dismiss");
     assert.equal(copy.keepEditingCta, "Keep Editing");
     assert.match(copy.dontShowToday, /Don't show this reminder again today/i);
     assert.match(copy.compactNav, /never automatic/i);
     assert.doesNotMatch(copy.body, /auto-?publish/i);
+  });
+
+  it("session dismiss blocks PublishNudge for the same session", () => {
+    assert.equal(reminderShouldOffer(5, { sessionDismissed: true }), false);
+    assert.equal(reminderShouldOffer(7, { sessionDismissed: true }), false);
+    assert.equal(reminderShouldOffer(5, { sessionDismissed: false }), true);
+    assert.match(reminderSessionDismissKey("ac:org:inst"), /gp_cm_publish_nudge_session_/);
   });
 
   it("respects website.publish — Publish omitted when canPublish is false", () => {
@@ -164,10 +176,16 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
     assert.doesNotMatch(chrome, /org-switcher|select-organization/i);
 
     assert.match(reminder, /data-website-publishing-reminder/);
-    assert.match(reminder, /Preview Changes/);
+    assert.match(reminder, /data-gp-publish-nudge="PublishNudge"/);
+    assert.match(reminder, /Review Changes/);
+    assert.match(reminder, /Preview/);
+    assert.match(reminder, /Publish/);
+    assert.match(reminder, /Dismiss/);
     assert.match(reminder, /Keep Editing/);
     assert.match(reminder, /Don't show this reminder again today/);
     assert.match(reminder, /data-website-reminder-preview/);
+    assert.match(reminder, /data-website-reminder-review/);
+    assert.match(reminder, /data-website-reminder-session-key/);
     assert.doesNotMatch(reminder, /confirm_publish|name="makePublic"|type="submit"/i);
     assert.doesNotMatch(reminder, /org-switcher|select-organization/i);
 
@@ -182,13 +200,16 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
     assert.match(uiJs, /gp:website-save-error/);
     assert.match(uiJs, /Never show "Drafts saved"/);
     assert.match(uiJs, /Preview only — never submit publish/);
+    assert.match(uiJs, /sessionDismiss/);
+    assert.match(uiJs, /dismissedThisSession/);
+    assert.match(uiJs, /clearReminderDismissal/);
     assert.match(inline, /gp:website-save-start/);
     assert.match(inline, /pendingChangeCount/);
     assert.match(inline, /Do not locally invent pending counts/);
 
     assert.match(css, /max-width:\s*430px/);
-    assert.match(css, /#004357/);
-    assert.match(css, /#ffdcc3/);
+    assert.match(css, /--gp-cm-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(css, /--gp-cm-tertiary-fixed:\s*var\(--color-warning-bg\)/);
     assert.match(css, /\.gp-website-editable__history\s*\{[\s\S]*?min-height:\s*var\(--gp-website-touch/);
     assert.match(css, /status-row:not\(:has\(\[data-website-pending-pill\]/);
     assert.doesNotMatch(css, /Autosaved|auto-save/i);

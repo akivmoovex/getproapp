@@ -27,7 +27,9 @@ const {
   publish: publishProductWebsite,
   unpublish: unpublishProductWebsite,
   PERMISSIONS: WEBSITE_PERMISSIONS,
-} = require("../../platform/website/publicationOrchestrator");
+} = require("../../platform/website/publishWorkflow");
+// Batch 6: PublishWorkflow wraps publicationOrchestrator (single shared engine).
+require("../../platform/website/publicationOrchestrator");
 const { PRODUCT } = require("../../platform/registration/constants");
 
 const WEBSITE_PRODUCT_CODE = PRODUCT.BLESSBOARD;
@@ -78,6 +80,11 @@ const {
   presentBlessBoardHqWebsiteSettingsUx,
   loadWebsiteManagementSummary,
 } = require("../../platform/website/websiteManagementPresentation");
+const { loadWebsiteThemeState } = require("../../platform/website/websiteThemeService");
+const {
+  buildWebsiteManagementHub,
+  defaultBbWebsiteHubPaths,
+} = require("../../platform/website/websiteManagementHub");
 
 /**
  * @param {string} relativePath
@@ -273,8 +280,29 @@ function createChurchWebsiteAdminRouter(deps) {
     const actions = website.actions || (website.ux && website.ux.actions) || {};
     const allowPublish = Boolean(flags && flags.canPublishWebsite);
     if (allowPublish) {
-      actions.publishPath = "/hq/website/publish";
-      actions.unpublishPath = actions.unpublishPath || "/hq/website/unpublish";
+      // Batch 6 PublishWorkflow: review (GET) vs confirm (POST) must stay distinct.
+      const {
+        buildPublishWorkflowPaths,
+        ENTRY,
+      } = require("../../platform/website/publishWorkflow");
+      const workflow = buildPublishWorkflowPaths({
+        productCode: "blessboard",
+        entry: ENTRY.ADMIN_CONSOLE,
+        canPublish: true,
+        organizationKey:
+          (website && (website.organizationKey || website.slug)) ||
+          (opts && opts.organizationKey) ||
+          null,
+        branchKey: (opts && opts.branchKey) || null,
+        scope: (opts && opts.scope) || null,
+      });
+      actions.publishReviewPath = workflow.reviewPath;
+      actions.publishConfirmPath = workflow.confirmPath;
+      // Forms POST to confirmPath; navigation tiles use reviewPath.
+      actions.publishPath = workflow.confirmPath || "/hq/website/publish";
+      actions.publishReviewHref = workflow.reviewPath || "/hq/website/publish/review";
+      actions.unpublishPath =
+        actions.unpublishPath || workflow.unpublishPath || "/hq/website/unpublish";
     }
     if (opts && opts.needsFoundationRepair) {
       actions.retry = actions.retry || "#website-setup-retry";
@@ -373,11 +401,44 @@ function createChurchWebsiteAdminRouter(deps) {
       }
     }
     applyHubPublishPostPath(website, flags, opts);
+    let themeState = null;
+    if (organizationId) {
+      try {
+        themeState = await loadWebsiteThemeState(getPool(), {
+          organizationId,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          preferDraft: true,
+        });
+        if (themeState && themeState.ok !== true) themeState = null;
+      } catch {
+        themeState = null;
+      }
+    }
+    const managementHub = buildWebsiteManagementHub({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      paths: defaultBbWebsiteHubPaths({
+        actions: (website && website.actions) || (website && website.ux && website.ux.actions) || {},
+      }),
+      capabilities: {
+        canEdit: Boolean(website && website.canEdit),
+        canPublish: Boolean(website && website.canPublish),
+      },
+      liveThemeId: themeState && themeState.publishedThemeId,
+      draftThemeId: themeState && themeState.draftThemeId,
+      draftChangesCount: Number(website && website.unpublishedCount) || 0,
+      unpublishedChanges: Boolean(website && website.unpublishedChanges),
+      lastPublishedLabel: website && website.lastPublishedLabel,
+      liveAvailable: Boolean(website && website.liveAvailable),
+      exists: Boolean(website && website.exists),
+      publicUrl: (website && (website.publicUrl || website.publicPath)) || null,
+      publishReady: Boolean(website && website.canPublish && website.exists),
+    });
     const html = renderHqView(
       "hq/website-management.ejs",
       await shellLocals(req, res, {
         website,
         websiteUx: website.ux || website,
+        managementHub,
         needsFoundationRepair: Boolean(opts.needsFoundationRepair),
         foundationGaps: opts.foundationGaps || [],
         notice: opts.notice || null,

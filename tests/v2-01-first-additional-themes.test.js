@@ -29,8 +29,8 @@ describe("V2_01 first additional website themes", () => {
   it("registers Contemporary Fellowship and Family Wellness Mint as selectable renderers", () => {
     const bb = listSelectableThemesForProduct(PRODUCT_CODE.BLESSBOARD);
     const ac = listSelectableThemesForProduct(PRODUCT_CODE.ACTIVECLINIC);
-    assert.equal(bb.length, 2);
-    assert.equal(ac.length, 2);
+    assert.equal(bb.length, 3);
+    assert.equal(ac.length, 3);
     const fellowship = getTheme(BB_CONTEMPORARY_FELLOWSHIP_ID, PRODUCT_CODE.BLESSBOARD);
     const mint = getTheme(AC_FAMILY_WELLNESS_MINT_ID, PRODUCT_CODE.ACTIVECLINIC);
     assert.equal(fellowship.hasWorkingRenderer, true);

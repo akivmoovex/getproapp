@@ -31,6 +31,26 @@
     } catch (_e) {}
   }
 
+  function sessionGet(key) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function sessionSet(key, value) {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch (_e) {}
+  }
+
+  function sessionRemove(key) {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch (_e) {}
+  }
+
   function pendingPillLabel(n) {
     var count = Number(n) || 0;
     if (count === 1) return "1 unpublished change";
@@ -41,6 +61,17 @@
     if (!canPublish) return null;
     var count = Number(n) || 0;
     return count > 0 ? "Publish (" + count + ")" : "Publish";
+  }
+
+  function clearReminderDismissal(root) {
+    var el = root || reminderEls();
+    if (!el) return;
+    var dayKey = el.getAttribute("data-website-reminder-dismiss-key");
+    var suppressKey = el.getAttribute("data-website-reminder-suppress-key");
+    var sessionKey = el.getAttribute("data-website-reminder-session-key");
+    if (dayKey) storageRemove(dayKey);
+    if (suppressKey) storageRemove(suppressKey);
+    if (sessionKey) sessionRemove(sessionKey);
   }
 
   function setSaveStatus(status, labelOverride) {
@@ -119,16 +150,24 @@
         " unpublished changes";
     }
     if (draftShort) draftShort.textContent = "Draft • " + n + " changes";
-    if (badge) badge.textContent = n + " pending edits";
+    if (badge) badge.textContent = pendingPillLabel(n);
 
+    var title = $("[data-website-reminder-title]");
+    if (title) {
+      title.textContent =
+        "You have " + n + " unpublished change" + (n === 1 ? "" : "s") + ".";
+    }
     var body = $("[data-website-reminder-body]");
     if (body) {
       body.textContent =
-        "You have " +
-        n +
-        " saved change" +
-        (n === 1 ? "" : "s") +
-        " waiting to go live. Your visitors are still seeing the previous version. Would you like to preview your updates?";
+        "Review and publish when you are ready. Your visitors still see the live site until you publish.";
+    }
+    // Successful publication (or discard-to-zero) resets session / day suppress so
+    // the next streak of meaningful saves can offer PublishNudge again.
+    if (n < 1) {
+      clearReminderDismissal(reminder);
+      hideNavReminder();
+      closeReminder({ suppress: false });
     }
     return n;
   }
@@ -144,6 +183,11 @@
   function dismissedToday(root) {
     var key = root && root.getAttribute("data-website-reminder-dismiss-key");
     return Boolean(key && storageGet(key) === "1");
+  }
+
+  function dismissedThisSession(root) {
+    var key = root && root.getAttribute("data-website-reminder-session-key");
+    return Boolean(key && sessionGet(key) === "1");
   }
 
   function suppressedCount(root) {
@@ -164,6 +208,8 @@
       if (isBusy()) return false;
       if (count < threshold) return false;
       if (dismissedToday(root)) return false;
+      // Session dismiss: do not reappear after every edit once dismissed this session.
+      if (dismissedThisSession(root)) return false;
       var suppressed = suppressedCount(root);
       if (suppressed != null && suppressed === count) return false;
     }
@@ -185,6 +231,10 @@
       var suppressKey = root.getAttribute("data-website-reminder-suppress-key");
       if (suppressKey) storageSet(suppressKey, String(count));
     }
+    if (opts && opts.sessionDismiss) {
+      var sessionKey = root.getAttribute("data-website-reminder-session-key");
+      if (sessionKey) sessionSet(sessionKey, "1");
+    }
     root.hidden = true;
     document.documentElement.classList.remove("gp-cm-reminder-open");
   }
@@ -198,6 +248,7 @@
     var count = Number(root.getAttribute("data-website-pending-count")) || 0;
     if (count < threshold) return;
     if (dismissedToday(root)) return;
+    if (dismissedThisSession(root)) return;
     var label = $("[data-website-nav-reminder-label]", bar);
     if (label) {
       label.textContent =
@@ -241,8 +292,11 @@
     var dismiss = $("[data-website-reminder-dismiss]", root);
     var backdrop = $("[data-website-reminder-backdrop]", root);
     var preview = $("[data-website-reminder-preview]", root);
+    var review = $("[data-website-reminder-review]", root);
+    var publish = $("[data-website-reminder-publish]", root);
     function dismissSoft() {
-      closeReminder({ suppress: true, dismissToday: true });
+      // Session dismiss: do not repeatedly appear after every edit this session.
+      closeReminder({ suppress: true, dismissToday: true, sessionDismiss: true });
     }
     if (keep) keep.addEventListener("click", dismissSoft);
     if (dismiss) dismiss.addEventListener("click", dismissSoft);
@@ -250,7 +304,19 @@
     if (preview) {
       preview.addEventListener("click", function () {
         // Preview only — never submit publish.
-        closeReminder({ suppress: true, dismissToday: true });
+        closeReminder({ suppress: true, dismissToday: true, sessionDismiss: true });
+      });
+    }
+    if (review) {
+      review.addEventListener("click", function () {
+        closeReminder({ suppress: true, dismissToday: true, sessionDismiss: true });
+        openPanel(true);
+      });
+    }
+    if (publish) {
+      publish.addEventListener("click", function () {
+        // Navigate to publish review — never auto-submit publish from the nudge.
+        closeReminder({ suppress: true, dismissToday: true, sessionDismiss: true });
       });
     }
   }

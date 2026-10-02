@@ -35,6 +35,12 @@ const {
   loadActiveClinicWebsiteSettingsScreen,
 } = require("../services/loadActiveClinicSettingsScreens");
 const cmsService = require("../website/clinicWebsiteCmsService");
+const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
+const { loadWebsiteThemeState } = require("../../platform/website/websiteThemeService");
+const {
+  buildWebsiteManagementHub,
+  defaultAcWebsiteHubPaths,
+} = require("../../platform/website/websiteManagementHub");
 const {
   loadDepartmentsSettingsScreen,
   createDepartment,
@@ -272,6 +278,37 @@ function registerActiveClinicSettingsRoutes(app, deps) {
               req.activeClinicAuth.organization.name)) ||
           clinicKey ||
           "Clinic website";
+        let themeState = null;
+        try {
+          themeState = await loadWebsiteThemeState(getPool(), {
+            organizationId: req.activeClinicAuth.organization.id,
+            productCode: PRODUCT_CODE.ACTIVECLINIC,
+            preferDraft: true,
+          });
+          if (themeState && themeState.ok !== true) themeState = null;
+        } catch (_themeErr) {
+          themeState = null;
+        }
+        const managementHub = buildWebsiteManagementHub({
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          paths: defaultAcWebsiteHubPaths({
+            clinicKey,
+            actions: (website && website.actions) || (website && website.ux && website.ux.actions) || {},
+          }),
+          capabilities: {
+            canEdit: Boolean(website && website.canEdit),
+            canPublish: Boolean(website && website.canPublish),
+          },
+          liveThemeId: themeState && themeState.publishedThemeId,
+          draftThemeId: themeState && themeState.draftThemeId,
+          draftChangesCount: Number(website && website.unpublishedCount) || 0,
+          unpublishedChanges: Boolean(website && website.unpublishedChanges),
+          lastPublishedLabel: website && website.lastPublishedLabel,
+          liveAvailable: Boolean(website && website.liveAvailable),
+          exists: Boolean(website && website.exists),
+          publicUrl: (website && (website.publicUrl || website.publicPath)) || null,
+          publishReady: Boolean(website && website.canPublish && website.exists),
+        });
         return await renderShell(req, res, {
           activeNav: "website",
           content: "app/settings-website-content.ejs",
@@ -288,6 +325,7 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           pageData: {
             website,
             hub,
+            managementHub,
             clinicKey,
             clinicLabel,
             // Management hub only — do not mount Studio/MW editor chrome (cmsNav).

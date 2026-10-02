@@ -37,7 +37,16 @@ const {
   PRODUCT_CODE,
   buildPublicWebsiteEditPath,
   buildPublicWebsiteHistoryPath,
+  buildPublicWebsitePreviewPath,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteStylesPath,
 } = require("../../platform/website/publicWebsiteUrl");
+const {
+  loadThemeGalleryPresentation,
+  THEME_GALLERY_STYLESHEET,
+  THEME_GALLERY_SCRIPT,
+} = require("../../platform/website/websiteThemeHttp");
+const { HISTORY_STYLESHEET } = require("../../platform/website/renderWebsiteHistory");
 
 function clinicKeyFromAuth(auth) {
   return (
@@ -171,6 +180,76 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
   function breadcrumbs(items) {
     return [{ label: "Home", href: "/app" }, { label: "Website", href: "/app/settings/website" }].concat(items || []);
   }
+
+  app.get(
+    "/app/settings/website/themes",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    async (req, res, next) => {
+      try {
+        const clinicKey = clinicKeyFromAuth(req.activeClinicAuth);
+        const organizationId = req.activeClinicAuth.organization.id;
+        const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(getPool(), {
+          organizationId,
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+        });
+        if (!instance) {
+          return deny(res, 404, "Themes", "Website instance was not found.");
+        }
+        const csrfToken = issuePageCsrf(res, req);
+        const editHref = buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinicKey,
+        });
+        const previewHrefBase = buildPublicWebsitePreviewPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinicKey,
+        });
+        const basePath = buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinicKey,
+        });
+        const presentation = await loadThemeGalleryPresentation(getPool(), {
+          organizationId,
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          instance,
+          siteLabel: clinicProfileName(req) || clinicKey,
+          backHref: "/app/settings/website",
+          backLabel: "Back to Website",
+          editHref,
+          previewHrefBase,
+          themeApiUrl: `${basePath}/website/theme`,
+          stylesHref: buildPublicWebsiteStylesPath({
+            product: PRODUCT_CODE.ACTIVECLINIC,
+            organizationKey: clinicKey,
+          }),
+          csrfField: CSRF_FIELD,
+          csrfToken,
+        });
+        return renderShell(req, res, {
+          content: "app/settings-website-themes.ejs",
+          cmsActive: "themes",
+          pageHeader: {
+            title: "Themes & Live Preview",
+            description: "Select Clarity, Editorial, or Community. Draft only until publish.",
+            actions: [],
+          },
+          breadcrumbs: breadcrumbs([{ label: "Themes" }]),
+          pageData: {
+            clinicKey,
+            themes: {
+              bodyHtml: presentation.bodyHtml,
+              page: presentation.page,
+              stylesheets: [HISTORY_STYLESHEET, THEME_GALLERY_STYLESHEET],
+              scripts: [THEME_GALLERY_SCRIPT],
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
 
   app.get(
     "/app/settings/website/pages",

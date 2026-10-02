@@ -1,0 +1,58 @@
+/**
+ * ActiveClinic Community presentation theme (V2.05).
+ * Presentation-only CSS pack — does not alter content, media, or sections.
+ */
+
+body.ac-public-body.gp-website-theme--ac-community {
+  --acp-primary: #9a3412;
+  --acp-primary-strong: #7c2d12;
+  --acp-primary-hover: #c2410c;
+  --acp-primary-soft: #ffedd5;
+  --acp-surface: #fff7ed;
+  --acp-surface-elevated: #ffffff;
+  --acp-ink: #1c1917;
+  --acp-muted: #57534e;
+  --acp-border: #fdba74;
+  --color-brand-primary: var(--acp-primary);
+  --color-brand-primary-hover: var(--acp-primary-hover);
+  --color-brand-primary-active: var(--acp-primary-strong);
+  --color-brand-primary-light: var(--acp-primary-soft);
+  --color-background: var(--acp-surface);
+  --color-surface: var(--acp-surface-elevated);
+  --color-text-primary: var(--acp-ink);
+  --color-text-secondary: var(--acp-muted);
+  --color-border-default: var(--acp-border);
+  background:
+    linear-gradient(180deg, var(--acp-surface) 0%, var(--acp-surface-elevated) 48%, var(--acp-primary-soft) 100%);
+  color: var(--acp-ink);
+}
+
+body.gp-website-theme--ac-community .ac-public-header {
+  background: color-mix(in srgb, var(--acp-surface) 94%, transparent);
+  border-bottom: 1px solid var(--acp-border);
+}
+
+body.gp-website-theme--ac-community .ac-public-brand__mark {
+  background: linear-gradient(135deg, var(--acp-primary), #fdba74);
+}
+
+body.gp-website-theme--ac-community .ac-public-nav__cta,
+body.gp-website-theme--ac-community .ac-public-nav__login,
+body.gp-website-theme--ac-community .ac-public-btn,
+body.gp-website-theme--ac-community a.ac-public-btn--primary {
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
+  color: var(--color-text-inverse);
+}
+
+body.gp-website-theme--ac-community .ac-public-hero {
+  background: linear-gradient(180deg, var(--acp-surface) 0%, var(--acp-surface-elevated) 70%);
+  border-radius: 1.25rem;
+}
+
+body.gp-website-theme--ac-community .ac-public-card,
+body.gp-website-theme--ac-community .acp-card,
+body.gp-website-theme--ac-community .ac-public-panel {
+  background: var(--acp-surface-elevated);
+  border-color: var(--acp-border);
+}

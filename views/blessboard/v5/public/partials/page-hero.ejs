@@ -60,6 +60,10 @@
       : { className: '', style: '' };
   var _showPrimary = Boolean(_primaryLabel || (_canInline && typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary));
   var _showSecondary = Boolean(_secondaryLabel || (_canInline && typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary));
+  var _videoUrl = (_meta && _meta.videoUrl) ? String(_meta.videoUrl) : '';
+  var _videoEmbed = (typeof presentVideoEmbed === 'function' && _videoUrl)
+    ? presentVideoEmbed(_videoUrl, { title: (_meta && _meta.videoTitle) || _heading || 'Video' })
+    : null;
 %>
 <header class="bb-tp-page-hero<%= typeof heroClass !== 'undefined' && heroClass ? ' ' + heroClass : '' %>" data-bb-page-hero="1">
   <div class="bb-tp-page-hero__inner">
@@ -189,7 +193,47 @@
       </div>
       <% } %>
     </div>
-    <% if (_media || _canInline) { %>
+    <% if (_videoEmbed && _videoEmbed.embedUrl) { %>
+    <div class="bb-tp-page-hero__visual bb-tp-page-hero__visual--video" data-gp-video-embed="1" data-gp-video-embed-editor="VideoEmbedEditor">
+      <div class="bb-tp-page-hero__video-frame">
+        <iframe
+          class="bb-tp-page-hero__video-iframe"
+          src="<%= _videoEmbed.embedUrl %>"
+          title="<%= _videoEmbed.title || 'Video' %>"
+          loading="lazy"
+          allow="<%= _videoEmbed.allow %>"
+          referrerpolicy="<%= _videoEmbed.referrerPolicy %>"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <% if (_canInline) { %>
+      <div class="bb-tp-edit-media-wrap">
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-image',
+          editSectionKey: _sectionKey,
+          editLabel: 'Use photograph (clears YouTube for this section)',
+          editPayload: {
+            imageUrl: _media || '',
+            altText: _mediaAlt || '',
+            videoUrl: ''
+          }
+        }) %>
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'video',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-video',
+          editSectionKey: _sectionKey,
+          editLabel: 'Edit YouTube video',
+          editPayload: {
+            videoUrl: _videoUrl || '',
+            title: (_meta && _meta.videoTitle) || '',
+            thumbnailUrl: _media || ''
+          }
+        }) %>
+      </div>
+      <% } %>
+    </div>
+    <% } else if (_media || _canInline) { %>
     <div class="bb-tp-page-hero__visual">
       <% if (_canInline) { %>
       <%- include('../../partials/editable-image', {
@@ -205,6 +249,17 @@
         imagePlacement: _placement
       }) %>
       <div class="bb-tp-edit-media-wrap">
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-image',
+          editSectionKey: _sectionKey,
+          editLabel: 'Use photograph (clears YouTube for this section)',
+          editPayload: {
+            imageUrl: _media || '',
+            altText: _mediaAlt || '',
+            videoUrl: ''
+          }
+        }) %>
         <%- include('../../partials/structured-edit-trigger', {
           editKind: 'video',
           editEntityKey: _pageKey + '-' + _sectionKey + '-video',

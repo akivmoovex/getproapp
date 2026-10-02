@@ -51,7 +51,7 @@
     draft: String(pageStatus || '') === 'draft',
     draftLabel: String(pageStatus || '') === 'draft' ? 'Unpublished draft' : 'No unpublished changes',
     canEdit: true,
-    canPublish: typeof canPublishWebsite !== 'undefined' ? canPublishWebsite : true,
+    canPublish: typeof canPublishWebsite !== 'undefined' ? Boolean(canPublishWebsite) : false,
     previewHref: typeof previewPath !== 'undefined' ? previewPath : (shellKind === 'hq' ? '/hq/content/preview/' + (page && page.pageKey ? page.pageKey : 'home') : '/branch-admin/content/preview/' + (page && page.pageKey ? page.pageKey : 'home')),
     publishHref: shellKind === 'hq' ? '/hq/website/publish/review' : '/branch-admin/website',
     historyHref: shellKind === 'hq' ? '/hq/website/version-history' : '/branch-admin/website',

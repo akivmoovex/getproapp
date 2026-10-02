@@ -239,7 +239,7 @@
     var thumbLabel = hasThumb ? "Replace thumbnail" : "Add thumbnail";
     return (
       '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-media-mode="youtube">' +
-      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="youtube">YouTube mode — paste an approved YouTube or Vimeo https link. Optional thumbnail is shown as the section photograph until shared YouTube embed (V2-MEDIA-01) ships. Video files are not uploaded.</p>' +
+      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="youtube">YouTube mode — paste an approved YouTube or Vimeo https link. The draft stores the URL only (no video download). Raw iframe HTML is not allowed. Optional thumbnail can be shown as a poster. Embeds never autoplay by default.</p>' +
       field("Video URL", "videoUrl", p.videoUrl || "", { type: "url" }) +
       field("Title", "title", p.title || "") +
       '<input type="hidden" name="thumbnailUrl" value="' +

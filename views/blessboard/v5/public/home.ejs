@@ -169,11 +169,31 @@
   }
   var editingHome =
     typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
+  var homeVideoUrl = (hero && hero.layoutMetadata && hero.layoutMetadata.videoUrl) || '';
+  var homeVideoEmbed =
+    typeof presentVideoEmbed === 'function' && homeVideoUrl
+      ? presentVideoEmbed(homeVideoUrl, {
+          title: (hero && hero.layoutMetadata && hero.layoutMetadata.videoTitle) || heroHeading || 'Video',
+        })
+      : null;
 %>
 
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
   <section class="bb-tp-hero bb-tp-hero--phase7" aria-label="Welcome" data-bb-home-hero="1" data-section="hero">
-    <div class="bb-tp-hero__media-plane<%= heroMedia ? ' has-media' : '' %>" aria-hidden="<%= heroMedia ? 'false' : 'true' %>">
+    <div class="bb-tp-hero__media-plane<%= (homeVideoEmbed && homeVideoEmbed.embedUrl) || heroMedia ? ' has-media' : '' %>" aria-hidden="<%= (homeVideoEmbed && homeVideoEmbed.embedUrl) || heroMedia ? 'false' : 'true' %>">
+      <% if (homeVideoEmbed && homeVideoEmbed.embedUrl) { %>
+      <div class="bb-tp-hero__video-frame" data-gp-video-embed="1" data-gp-video-embed-editor="VideoEmbedEditor">
+        <iframe
+          class="bb-tp-hero__video-iframe"
+          src="<%= homeVideoEmbed.embedUrl %>"
+          title="<%= homeVideoEmbed.title || 'Video' %>"
+          loading="lazy"
+          allow="<%= homeVideoEmbed.allow %>"
+          referrerpolicy="<%= homeVideoEmbed.referrerPolicy %>"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <% } else { %>
       <%- include('../partials/editable-image', {
         editPageKey: 'home',
         editSectionKey: 'hero',
@@ -188,15 +208,16 @@
           null
       }) %>
       <div class="bb-tp-hero__scrim"></div>
-      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <% } %>
+      <% if (editingHome) { %>
       <div class="bb-tp-edit-media-wrap bb-tp-edit-media-wrap--hero">
         <%- include('../partials/structured-edit-trigger', {
           editKind: 'video',
           editEntityKey: 'home-hero-video',
           editSectionKey: 'hero',
-          editLabel: 'Edit hero YouTube video',
+          editLabel: homeVideoEmbed ? 'Edit hero YouTube video' : 'Edit hero YouTube video',
           editPayload: {
-            videoUrl: (hero && hero.layoutMetadata && hero.layoutMetadata.videoUrl) || '',
+            videoUrl: homeVideoUrl || '',
             title: (hero && hero.layoutMetadata && hero.layoutMetadata.videoTitle) || '',
             thumbnailUrl: heroMedia || ''
           }

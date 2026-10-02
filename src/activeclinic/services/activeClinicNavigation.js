@@ -13,13 +13,16 @@
  * Reports: no coherent landing route — omitted from nav.
  */
 
-/** Stitch shell groups (P01 Shared Application Shell). Only implemented modules are listed. */
-const NAV_GROUPS = Object.freeze([
-  { key: "daily_work", label: "Daily work" },
-  { key: "clinical_services", label: "Clinical services" },
-  { key: "operations", label: "Operations" },
-  { key: "management", label: "Management" },
-]);
+const {
+  ADMIN_CONSOLE_SLOTS,
+  groupNavItemsByAdminConsoleSlot,
+  sortNavItemsByAdminConsoleSlot,
+} = require("../../platform/admin-console/adminConsoleShell");
+
+/** Canonical Admin Console slot labels (V2.05). */
+const NAV_GROUPS = Object.freeze(
+  ADMIN_CONSOLE_SLOTS.map((s) => ({ key: s.key, label: s.label }))
+);
 
 /** Persistent Check-in CTA (Batch 2 shell) — real reception route only. */
 const CHECK_IN_PERMISSION = "activeclinic.reception.check_in";
@@ -60,7 +63,16 @@ const NAV_ITEMS = Object.freeze([
     href: "/app",
     permission: "activeclinic.access",
     icon: "home",
-    group: "daily_work",
+    slot: "dashboard",
+  },
+  // Admin Console rule: Website is second (after Dashboard) when permitted.
+  {
+    key: "website",
+    label: "Website",
+    href: "/app/settings/website",
+    anyOf: ["website.view", "website.edit"],
+    icon: "language",
+    slot: "website",
   },
   {
     key: "patients",
@@ -69,7 +81,7 @@ const NAV_ITEMS = Object.freeze([
     // List entry uses patient.search; view alone is not enough for the directory.
     permission: "activeclinic.patient.search",
     icon: "personal_injury",
-    group: "daily_work",
+    slot: "people",
   },
   {
     key: "appointments",
@@ -77,7 +89,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/appointments",
     permission: "activeclinic.appointment.view",
     icon: "event",
-    group: "daily_work",
+    slot: "operations",
   },
   {
     key: "reception",
@@ -85,7 +97,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/reception",
     permission: "activeclinic.reception.view",
     icon: "desk",
-    group: "daily_work",
+    slot: "operations",
   },
   {
     key: "booking_requests",
@@ -93,7 +105,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/booking-requests",
     permission: "activeclinic.patient.search",
     icon: "event_available",
-    group: "daily_work",
+    slot: "operations",
   },
   {
     key: "clinical",
@@ -101,7 +113,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/clinical",
     permission: "activeclinic.encounter.view",
     icon: "medical_services",
-    group: "daily_work",
+    slot: "operations",
   },
   {
     key: "clinical_follow_up",
@@ -109,7 +121,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/clinical/follow-up",
     permission: "activeclinic.encounter.view",
     icon: "event_repeat",
-    group: "daily_work",
+    slot: "operations",
   },
   {
     key: "pharmacy",
@@ -117,7 +129,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/pharmacy",
     permission: "activeclinic.pharmacy.view",
     icon: "medication",
-    group: "clinical_services",
+    slot: "operations",
   },
   {
     key: "diagnostics",
@@ -130,7 +142,7 @@ const NAV_ITEMS = Object.freeze([
       "activeclinic.diagnostics.view",
     ],
     icon: "biotech",
-    group: "clinical_services",
+    slot: "operations",
   },
   {
     key: "billing",
@@ -138,7 +150,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/billing",
     permission: "activeclinic.billing.view",
     icon: "receipt",
-    group: "operations",
+    slot: "operations",
   },
   {
     key: "cashier",
@@ -147,7 +159,7 @@ const NAV_ITEMS = Object.freeze([
     // Module entry requires opening sessions — not payment.view alone.
     permission: "activeclinic.cashier.open_session",
     icon: "payments",
-    group: "operations",
+    slot: "operations",
   },
   {
     key: "services",
@@ -155,7 +167,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/services",
     anyOf: ["website.view", "website.edit"],
     icon: "catalog",
-    group: "operations",
+    slot: "content",
   },
   {
     key: "practitioners",
@@ -163,7 +175,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/practitioners",
     permission: "activeclinic.staff.view",
     icon: "stethoscope",
-    group: "operations",
+    slot: "people",
   },
   {
     key: "staff",
@@ -171,7 +183,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/staff",
     permission: "activeclinic.staff.view",
     icon: "groups",
-    group: "operations",
+    slot: "people",
   },
   {
     key: "facilities",
@@ -184,7 +196,7 @@ const NAV_ITEMS = Object.freeze([
       "activeclinic.facility.archive",
     ],
     icon: "apartment",
-    group: "management",
+    slot: "locations",
   },
   {
     key: "rooms",
@@ -197,7 +209,7 @@ const NAV_ITEMS = Object.freeze([
       "activeclinic.facility.archive",
     ],
     icon: "meeting_room",
-    group: "management",
+    slot: "locations",
   },
   {
     key: "performance",
@@ -205,7 +217,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/performance",
     permission: "activeclinic.performance.view",
     icon: "monitoring",
-    group: "management",
+    slot: "reports",
   },
   {
     key: "data",
@@ -213,7 +225,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/data",
     anyOf: ["activeclinic.data.import", "activeclinic.data.export"],
     icon: "import_export",
-    group: "management",
+    slot: "reports",
   },
   {
     key: "access",
@@ -221,15 +233,7 @@ const NAV_ITEMS = Object.freeze([
     href: "/app/access",
     permission: "activeclinic.staff.assign_access",
     icon: "admin_panel_settings",
-    group: "management",
-  },
-  {
-    key: "website",
-    label: "Website",
-    href: "/app/settings/website",
-    anyOf: ["website.view", "website.edit"],
-    icon: "language",
-    group: "management",
+    slot: "access",
   },
   {
     key: "settings",
@@ -238,7 +242,7 @@ const NAV_ITEMS = Object.freeze([
     // Account self-service is always on the overview; cards remain permission-aware.
     permission: "activeclinic.access",
     icon: "settings",
-    group: "management",
+    slot: "settings",
   },
 ]);
 
@@ -322,10 +326,8 @@ function buildActiveClinicNavigation(permissions, activeKey, options) {
         : options.activeDepartmentTypes;
     items = filterNavItemsByDepartments(items, types);
   }
-  const groups = NAV_GROUPS.map((g) => ({
-    ...g,
-    items: items.filter((item) => item.group === g.key),
-  })).filter((g) => g.items.length > 0);
+  items = sortNavItemsByAdminConsoleSlot(items);
+  const groups = groupNavItemsByAdminConsoleSlot(items);
 
   const mobileBottom = buildMobileBottomNavItems(items, activeKey);
 
@@ -370,6 +372,7 @@ function matchActiveNavKey(pathname) {
 module.exports = {
   NAV_ITEMS,
   NAV_GROUPS,
+  ADMIN_CONSOLE_SLOTS,
   CHECK_IN_PERMISSION,
   CHECK_IN_HREF,
   PATIENT_SEARCH_PERMISSION,

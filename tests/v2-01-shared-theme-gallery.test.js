@@ -31,12 +31,14 @@ describe("V2_01 shared website theme gallery", () => {
   it("lists only product-filtered themes with working renderers", () => {
     const bb = listSelectableThemesForProduct(PRODUCT_CODE.BLESSBOARD);
     const ac = listSelectableThemesForProduct(PRODUCT_CODE.ACTIVECLINIC);
-    assert.equal(bb.length, 2);
-    assert.equal(ac.length, 2);
+    assert.equal(bb.length, 3);
+    assert.equal(ac.length, 3);
     assert.ok(bb.some((t) => t.id === BB_DEFAULT_ID));
     assert.ok(bb.some((t) => t.id === "bb.contemporary-fellowship"));
+    assert.ok(bb.some((t) => t.id === "bb.community"));
     assert.ok(ac.some((t) => t.id === AC_DEFAULT_ID));
     assert.ok(ac.some((t) => t.id === "ac.family-wellness-mint"));
+    assert.ok(ac.some((t) => t.id === "ac.community"));
     assert.equal(bb.every((t) => t.hasWorkingRenderer), true);
     assert.equal(
       listThemesForProduct(PRODUCT_CODE.BLESSBOARD).some((t) => t.id === AC_DEFAULT_ID),
@@ -55,7 +57,7 @@ describe("V2_01 shared website theme gallery", () => {
       editHref: "/c/demo?website_edit=1",
       csrfToken: "tok",
     });
-    assert.equal(page.themes.length, 2);
+    assert.equal(page.themes.length, 3);
     assert.equal(page.themes[0].isDraft, true);
     assert.equal(page.themes[0].isLive, true);
     assert.match(page.themes[0].previewHref, new RegExp(THEME_PREVIEW_QUERY));
@@ -88,14 +90,16 @@ describe("V2_01 shared website theme gallery", () => {
     const bbHtml = renderWebsiteThemeGalleryPage(bbPage);
     const acHtml = renderWebsiteThemeGalleryPage(acPage);
     assert.match(bbHtml, /data-gp-website-theme-gallery/);
-    assert.match(bbHtml, /BlessBoard Classic/);
+    assert.match(bbHtml, /Clarity/);
     assert.match(bbHtml, /Preview/);
-    assert.match(bbHtml, /Selected in draft|Choose for draft/);
+    assert.match(bbHtml, /Applied to draft|Apply to draft/);
     assert.doesNotMatch(bbHtml, /ac\.default/);
-    assert.match(acHtml, /ActiveClinic Classic/);
+    assert.match(acHtml, /Clarity/);
     assert.doesNotMatch(acHtml, /bb\.default/);
-    assert.match(bbHtml, /Contemporary Fellowship/);
-    assert.match(acHtml, /Family Wellness Mint/);
+    assert.match(bbHtml, /Editorial/);
+    assert.match(acHtml, /Editorial/);
+    assert.match(bbHtml, /Community/);
+    assert.match(acHtml, /Community/);
     assert.doesNotMatch(bbHtml, /data-theme-gallery-single/);
     assert.doesNotMatch(acHtml, /data-theme-gallery-single/);
     assert.match(bbHtml, /Website Options/);

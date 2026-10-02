@@ -219,7 +219,9 @@ async function runActiveClinicFlow() {
     .send({ [CSRF_FIELD]: csrf || "", action: "confirm", ...payload });
   out.Register = ok(`POST /register-clinic → ${confirm.status} ${confirm.headers.location || ""}`);
   assert.equal(confirm.status, 303, confirm.text && confirm.text.slice(0, 400));
-  assert.match(String(confirm.headers.location || ""), /\/register-clinic\/success\?ref=AC-/);
+  assert.match(String(confirm.headers.location || ""), /^\/app(?:\?|$)/);
+  assert.doesNotMatch(String(confirm.headers.location || ""), /register-clinic\/success/);
+  assert.doesNotMatch(String(confirm.headers.location || ""), /\/app\/settings\/website/);
 
   const appRow = await pool.query(
     `SELECT status, provisioning_status, organization_id, administrator_password_hash

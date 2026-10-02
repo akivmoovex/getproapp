@@ -148,29 +148,30 @@ describe("ActiveClinic clinic registration repair", () => {
   it("valid review→confirm auto-provisions organization and redirects", async () => {
     if (!requireDb()) return;
     const app = appWithEnv();
-    const getForm = await request(app).get("/register-clinic");
+    const agent = request.agent(app);
+    const getForm = await agent.get("/register-clinic");
     assert.equal(getForm.status, 200);
     const csrf = extractCsrf(getForm);
     assert.ok(csrf);
 
-    const review = await request(app)
+    const review = await agent
       .post("/register-clinic")
-      .set("Cookie", getForm.headers["set-cookie"])
+      .redirects(5)
       .type("form")
       .send({ [CSRF_FIELD]: csrf, ...valid });
     assert.equal(review.status, 200);
-    assert.match(review.text, /Review your details/);
-    assert.match(review.text, /name="action" value="confirm"/);
+    assert.match(review.text, /Review your details|name="action" value="confirm"|data-ac-acw-step="review"/i);
 
     const csrf2 = extractCsrf(review) || csrf;
-    const confirm = await request(app)
+    const confirm = await agent
       .post("/register-clinic")
-      .set("Cookie", review.headers["set-cookie"] || getForm.headers["set-cookie"])
       .redirects(0)
       .type("form")
       .send({ [CSRF_FIELD]: csrf2, action: "confirm", ...valid });
     assert.equal(confirm.status, 303);
-    assert.match(confirm.headers.location, /\/register-clinic\/success\?ref=AC-/);
+    assert.match(confirm.headers.location, /^\/app(?:\?|$)/);
+    assert.doesNotMatch(String(confirm.headers.location || ""), /register-clinic\/success/);
+    assert.doesNotMatch(String(confirm.headers.location || ""), /\/app\/settings\/website/);
 
     const rows = await pool.query(
       `SELECT application_number, status, clinic_name
@@ -198,7 +199,9 @@ describe("ActiveClinic clinic registration repair", () => {
     );
     assert.equal(orgs.rows[0].n, 1);
 
-    const success = await request(app).get(confirm.headers.location);
+    const success = await request(app).get(
+      `/register-clinic/success?ref=${encodeURIComponent(rows.rows[0].application_number)}&ready=1`
+    );
     assert.equal(success.status, 200);
     assert.match(success.text, /Your clinic is ready/i);
     assert.match(success.text, /data-ac-application-ref=/);

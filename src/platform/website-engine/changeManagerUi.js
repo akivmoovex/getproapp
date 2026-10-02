@@ -57,31 +57,42 @@ function reminderShouldOffer(unpublishedCount, opts) {
   if (opts && opts.saving) return false;
   if (opts && opts.uploading) return false;
   if (opts && opts.dismissedForToday) return false;
+  if (opts && opts.sessionDismissed) return false;
   if (opts && opts.suppressedUntilCountChanges && opts.lastShownAtCount === n) {
     return false;
   }
   return true;
 }
 
+function reminderSessionDismissKey(websiteScopeKey) {
+  const scope = String(websiteScopeKey || "website")
+    .trim()
+    .replace(/[^a-zA-Z0-9:_-]/g, "_")
+    .slice(0, 120) || "website";
+  return `gp_cm_publish_nudge_session_${scope}`;
+}
+
 function reminderCopy(unpublishedCount) {
   const n = normalizePendingCount(unpublishedCount);
   return {
-    title: "Your website is taking shape!",
-    pendingBadge: `${n} pending edits`,
-    pendingBadgeSuffix: "saved to draft",
-    bodyLead: `You have ${n} saved change${n === 1 ? "" : "s"} waiting to go live.`,
+    // V2.05 Batch 5 PublishNudge — continuous unpublished mutation count.
+    title: `You have ${n} unpublished change${n === 1 ? "" : "s"}.`,
+    pendingBadge: `${n} unpublished changes`,
+    pendingBadgeSuffix: "waiting to go live",
+    bodyLead: `You have ${n} unpublished change${n === 1 ? "" : "s"}.`,
     body:
-      `You have ${n} saved change${n === 1 ? "" : "s"} waiting to go live. ` +
-      "Your visitors are still seeing the previous version. Would you like to preview your updates?",
+      "Review and publish when you are ready. Your visitors still see the live site until you publish.",
     peaceOfMind:
       "Your drafts are securely saved and won't go live until you publish them.",
-    previewCta: "Preview Changes",
+    reviewChangesCta: "Review Changes",
+    previewCta: "Preview",
+    publishCta: "Publish",
     keepEditingCta: "Keep Editing",
     dontShowToday: "Don't show this reminder again today",
     dismiss: "Dismiss",
     compactNav:
       `${n} unpublished changes — preview when you are ready. Publishing is never automatic.`,
-    safeDraftBadge: "BlessBoard & ActiveClinic v2.03 • SafeDraft Protection",
+    safeDraftBadge: "BlessBoard & ActiveClinic • SafeDraft Protection",
   };
 }
 
@@ -183,15 +194,20 @@ function applyChangeManagerToolbar(shell, facts) {
     showUnpublishedPanel: true,
     unpublishedChangesUrl: base.unpublishedChangesUrl || null,
     reminder: {
+      pattern: "PublishNudge",
       threshold: REMINDER_THRESHOLD,
       enabled: unpublishedCount >= REMINDER_THRESHOLD,
       websiteScopeKey,
       dismissTodayKey: reminderDismissTodayKey(websiteScopeKey),
       suppressKey: reminderSuppressKey(websiteScopeKey),
+      sessionDismissKey: reminderSessionDismissKey(websiteScopeKey),
       copy,
       previewHref: base.previewHref || null,
-      // Preview CTA must never submit publish.
+      publishHref: canPublish ? base.publishHref || base.publishPath || null : null,
+      reviewHref: base.unpublishedChangesUrl || base.historyHref || null,
+      // Preview / Publish CTAs never auto-submit publish.
       previewOnly: true,
+      forcesPublish: false,
     },
   };
   if (base.labels) {
@@ -223,6 +239,7 @@ module.exports = {
   reminderCopy,
   reminderDismissTodayKey,
   reminderSuppressKey,
+  reminderSessionDismissKey,
   mayShowSavedStatus,
   saveStatusLabel,
   websiteScopeKeyFor,

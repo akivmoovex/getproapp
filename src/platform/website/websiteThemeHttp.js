@@ -121,6 +121,15 @@ async function loadThemeGalleryPresentation(db, input) {
     error: input.error,
     compatibility: input.compatibility || null,
   });
+  const stitchScreen =
+    String(input.productCode || "").toLowerCase() === "activeclinic"
+      ? "AC-WEB-THM-01"
+      : String(input.productCode || "").toLowerCase() === "blessboard"
+        ? "BB-WEB-THM-01"
+        : null;
+  page.stitchScreen = stitchScreen;
+  page.presentationOnly = true;
+  page.livePreviewWidths = { desktop: 1440, tablet: 768, mobile: 390 };
   return { page, bodyHtml: renderWebsiteThemeGalleryPage(page) };
 }
 

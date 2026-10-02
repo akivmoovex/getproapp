@@ -43,7 +43,7 @@ describe("V2.04 website editor real iframe viewport", () => {
     assert.match(chrome, /data-website-viewport-frame="1"/);
     assert.match(js, /enterFrameViewport/);
     assert.match(js, /setViewportMode/);
-    assert.match(js, /VIEWPORT_WIDTHS = \{ tablet: 768, mobile: 390 \}/);
+    assert.match(js, /VIEWPORT_WIDTHS = \{ desktop: 1440, tablet: 768, mobile: 390 \}/);
   });
 
   // B. iframe URL construction
@@ -168,7 +168,7 @@ describe("V2.04 website editor real iframe viewport", () => {
   });
 
   // K. no duplicated editor chrome
-  it("K: frame request skips outer viewport chrome; desktop stays same-document", () => {
+  it("K: frame request skips outer viewport chrome; desktop stays same-document at 1440", () => {
     assert.equal(usesIframeViewport("desktop"), false);
     assert.equal(usesIframeViewport("tablet"), true);
     assert.equal(usesIframeViewport("mobile"), true);
@@ -176,7 +176,7 @@ describe("V2.04 website editor real iframe viewport", () => {
       mode: "desktop",
     });
     assert.equal(desktop.ok, true);
-    assert.equal(desktop.width, null);
+    assert.equal(desktop.width, 1440);
     assert.doesNotMatch(desktop.path, /website_frame=/);
     assert.equal(isWebsiteFrameRequest({ website_frame: "1" }), true);
     assert.equal(isWebsiteFrameRequest({ website_edit: "1" }), false);

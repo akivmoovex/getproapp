@@ -59,9 +59,10 @@
   class="ac-dashboard ac-dashboard--b2"
   data-ac-page-section="home"
   data-ac-dashboard="<%= mode %>"
-  data-ac-stitch="AC-B2-01"
-  data-ac-stitch-desktop="<%= stitch.desktop || 'ed2ef3ac64d44c398f177d1b58ffc430' %>"
-  data-ac-stitch-mobile="<%= stitch.mobile || '2cb0ef951e1e40418cc7272d1392b26d' %>"
+  data-ac-stitch="<%= (stitch && stitch.code) || 'AC-B2-01' %>"
+  data-ac-stitch-screen="AC-ADM-01"
+  data-ac-stitch-desktop="<%= stitch.desktop || '11f37ed2bd054346ae93d7ca7a2fe5dc' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'f262fbc48ccc4541ab3c80292e051bf7' %>"
 >
   <header class="ac-dashboard-hero" data-ac-dashboard-card="welcome">
     <div class="ac-dashboard-hero__text">

@@ -69,11 +69,11 @@
       if (isDraft) {
         btn.disabled = true;
         btn.setAttribute("aria-disabled", "true");
-        btn.textContent = "Selected in draft";
+        btn.textContent = "Applied to draft";
       } else {
         btn.disabled = false;
         btn.removeAttribute("aria-disabled");
-        btn.textContent = "Select Theme";
+        btn.textContent = "Apply to draft";
       }
       var badges = card.querySelector(".gp-we-theme-card__labels");
       if (!badges) return;
@@ -148,14 +148,51 @@
     }
   }
 
+  function setViewportMode(root, mode) {
+    var group = $(root, "[data-website-viewport-group]");
+    if (!group) return;
+    var next = mode === "tablet" || mode === "mobile" ? mode : "desktop";
+    root.setAttribute("data-gp-live-preview-mode", next);
+    group.querySelectorAll("[data-website-viewport]").forEach(function (btn) {
+      var on = btn.getAttribute("data-website-viewport") === next;
+      btn.classList.toggle("is-current", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    // Preview links open draft at the requested canvas width when supported.
+    root.querySelectorAll("[data-theme-preview]").forEach(function (link) {
+      var href = link.getAttribute("href");
+      if (!href) return;
+      try {
+        var u = new URL(href, window.location.origin);
+        if (next === "desktop") {
+          u.searchParams.delete("website_viewport");
+        } else {
+          u.searchParams.set("website_viewport", next);
+        }
+        link.setAttribute("href", u.pathname + (u.search || "") + (u.hash || ""));
+      } catch (_) {
+        /* keep original href */
+      }
+    });
+  }
+
   function bind(root) {
     root.addEventListener("click", function (ev) {
+      var viewportBtn =
+        ev.target && ev.target.closest
+          ? ev.target.closest("[data-website-viewport]")
+          : null;
+      if (viewportBtn && root.contains(viewportBtn)) {
+        setViewportMode(root, viewportBtn.getAttribute("data-website-viewport"));
+        return;
+      }
       var btn = ev.target && ev.target.closest ? ev.target.closest("[data-theme-select]") : null;
       if (!btn || !root.contains(btn) || btn.disabled) return;
       var themeId = btn.getAttribute("data-theme-id");
       if (!themeId) return;
       selectTheme(root, themeId, btn);
     });
+    setViewportMode(root, "desktop");
   }
 
   document.querySelectorAll("[data-gp-website-theme-gallery]").forEach(bind);

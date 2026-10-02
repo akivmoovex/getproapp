@@ -104,7 +104,8 @@ const REGISTER_PATH = "/register-church";
 const CONTACT_PATH = "/contact";
 const REGISTER_SUCCESS_PATH = "/register-church/success";
 const ACCOUNT_PATH = "/account";
-const HQ_PATH = "/hq";
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+const HQ_PATH = postAuthDashboardPath("blessboard"); // V2.05 Task 1: BB → /hq
 const LOGIN_PATH = "/login";
 /** Approved public verify path from PHASE2_033 / message builder. */
 const EMAIL_VERIFY_PATH_PREFIX = "/register/email-verification";

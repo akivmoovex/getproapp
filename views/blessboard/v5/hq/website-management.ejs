@@ -3,6 +3,9 @@
   var hubWebsite = (typeof website !== 'undefined' && website) ? website : {};
   var ux = (typeof websiteUx !== 'undefined' && websiteUx) ? websiteUx : (hubWebsite.ux || hubWebsite);
   var actions = (ux.actions || hubWebsite.actions) || {};
+  var managementHubModel = (typeof managementHub !== 'undefined' && managementHub) ? managementHub : null;
+  var hubStatus = (managementHubModel && managementHubModel.status) || null;
+  var hubModules = (managementHubModel && Array.isArray(managementHubModel.modules)) ? managementHubModel.modules : [];
   var statusKey = hubWebsite.statusKey || ux.state || '';
   var lastUpdated = ux.lastEditedLabel || hubWebsite.lastEditedLabel || '';
   var draftStatus = hubWebsite.unpublishedChanges
@@ -20,6 +23,9 @@
   data-bb-website-exists="<%= hubWebsite.exists ? '1' : '0' %>"
   data-bb-website-draft-state="1"
   data-bb-viewport="responsive"
+  data-gp-website-management-hub="WebsiteManagementHub"
+  data-stitch-screen="BB-WEB-ADM-01"
+  data-stitch-screen-mobile="BB-WEB-ADM-01"
   aria-label="Website"
 >
   <header class="bb-hq-page-head">
@@ -108,6 +114,48 @@
       <p class="bb-wm-muted">A simple control center for your church website. Check status, then open the part you need.</p>
     </div>
   </div>
+
+  <% if (managementHubModel && managementHubModel.publishNudge) { %>
+  <%- include('../../../platform/website-engine/publish-nudge', { publishNudge: managementHubModel.publishNudge }) %>
+  <% } %>
+
+  <% if (hubStatus) { %>
+  <div
+    class="bb-wm-hub-metrics"
+    data-bb-website-v205-status="1"
+    data-gp-website-hub-status="1"
+    data-gp-unpublished-change-count="<%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %>"
+  >
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Current live theme</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-live-theme="1"><%= hubStatus.liveThemeLabel %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Draft theme</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-draft-theme="1"><%= hubStatus.draftThemeLabel %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Unpublished changes</p>
+      <p
+        class="bb-wm-hub-metric__value"
+        data-bb-website-draft-changes-count="1"
+        data-gp-continuous-unpublished-count="1"
+      ><%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Last published</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-last-published-status="1"><%= hubStatus.lastPublishedLabel %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Publish readiness</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-publish-readiness="1"><%= hubStatus.publishReadiness %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Domain / site status</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-domain-status="1"><%= hubStatus.domainStatus %></p>
+    </article>
+  </div>
+  <% } %>
 
   <div class="bb-wm-hub-metrics" data-bb-website-status="1" data-bb-phase4-website-status="1">
     <article class="bb-wm-hub-metric">
@@ -217,6 +265,16 @@
   </div>
 
   <h2 class="bb-wm-hub-access__title">Manage your website</h2>
+  <% if (hubModules.length) { %>
+  <div class="bb-wm-hub-tiles" data-gp-website-hub-modules="1">
+    <% hubModules.forEach(function (mod) { %>
+    <a class="bb-wm-hub-tile" href="<%= mod.href %>" data-bb-website-action="<%= mod.key %>" data-gp-website-hub-module="<%= mod.key %>">
+      <h3><%= mod.label %></h3>
+      <p><%= mod.description %></p>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
   <div class="bb-wm-hub-tiles">
     <% if (actions.editWebsite) { %>
     <a class="bb-wm-hub-tile" href="<%= actions.editWebsite %>" data-bb-website-action="edit">
@@ -236,8 +294,8 @@
       <p>Open the live public website visitors see today.</p>
     </a>
     <% } %>
-    <% if (hubWebsite.canPublish && actions.publishPath) { %>
-    <a class="bb-wm-hub-tile" href="<%= actions.publishPath %>" data-bb-website-action="publish-review">
+    <% if (hubWebsite.canPublish && (actions.publishReviewHref || actions.publishPath)) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.publishReviewHref || '/hq/website/publish/review' %>" data-bb-website-action="publish-review">
       <h3>Publish / Unpublish</h3>
       <p>Review readiness, publish your draft, or take the site offline while keeping your content.</p>
     </a>
@@ -285,6 +343,7 @@
     </a>
     <% } %>
   </div>
+  <% } %>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

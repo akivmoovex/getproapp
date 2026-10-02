@@ -6,9 +6,21 @@
  */
 
 const HQ_ADMIN_NAV = Object.freeze([
-  { key: "home", label: "Dashboard", href: "/hq", icon: "dashboard", enabled: true, nav: true },
+  { key: "home",
+    slot: "dashboard", label: "Dashboard", href: "/hq", icon: "dashboard", enabled: true, nav: true },
+  // Admin Console rule: Website is second (after Dashboard).
+  {
+    key: "content",
+    slot: "website",
+    label: "Website",
+    href: "/hq/website",
+    icon: "language",
+    enabled: true,
+    nav: true,
+  },
   {
     key: "branches",
+    slot: "locations",
     label: "Branches",
     href: "/hq/branches",
     icon: "apartment",
@@ -17,6 +29,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "registrations",
+    slot: "people",
     label: "Registrations",
     href: "/hq/registrations",
     icon: "how_to_reg",
@@ -25,6 +38,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "members",
+    slot: "people",
     label: "Members",
     href: "/hq/members",
     icon: "badge",
@@ -33,6 +47,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "member-journey",
+    slot: "people",
     label: "Member journey",
     href: "/hq/member-journey",
     icon: "route",
@@ -41,6 +56,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "staff-access",
+    slot: "people",
     label: "Users",
     href: "/hq/settings/staff-access",
     icon: "group",
@@ -49,6 +65,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "roles",
+    slot: "access",
     label: "Legacy permissions",
     href: "/hq/roles",
     icon: "security",
@@ -57,6 +74,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "settings",
+    slot: "settings",
     label: "Settings",
     href: "/hq/settings",
     icon: "settings",
@@ -64,15 +82,8 @@ const HQ_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
-    key: "content",
-    label: "Website",
-    href: "/hq/website",
-    icon: "language",
-    enabled: true,
-    nav: true,
-  },
-  {
     key: "broadcasts",
+    slot: "content",
     label: "Broadcasts",
     href: "/hq/broadcasts",
     icon: "campaign",
@@ -81,6 +92,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "announcements",
+    slot: "content",
     label: "Announcements",
     href: "/hq/announcements",
     icon: "newspaper",
@@ -89,6 +101,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "participation",
+    slot: "operations",
     label: "Participation",
     href: "/hq/participation",
     icon: "groups",
@@ -97,6 +110,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "attendance",
+    slot: "operations",
     label: "Attendance",
     href: "/hq/attendance",
     icon: "fact_check",
@@ -105,6 +119,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "giving",
+    slot: "operations",
     label: "Giving",
     href: "/hq/giving",
     icon: "payments",
@@ -113,6 +128,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "resources",
+    slot: "content",
     label: "Resources",
     href: "/hq/resources",
     icon: "menu_book",
@@ -121,6 +137,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "forms",
+    slot: "content",
     label: "Forms",
     href: "/hq/forms",
     icon: "description",
@@ -129,6 +146,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "requests",
+    slot: "operations",
     label: "Requests",
     href: "/hq/requests",
     icon: "inbox",
@@ -137,6 +155,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "reports",
+    slot: "reports",
     label: "Reports",
     href: "/hq/reports",
     icon: "analytics",
@@ -145,6 +164,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "executive",
+    slot: "reports",
     label: "Executive",
     href: "/hq/reports/executive",
     icon: "monitoring",
@@ -155,6 +175,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "audit",
+    slot: "reports",
     label: "Audit",
     href: "/hq/audit",
     icon: "history",
@@ -163,6 +184,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "governance",
+    slot: "access",
     label: "Governance",
     href: "/hq/audit/governance",
     icon: "policy",
@@ -173,6 +195,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "account",
+    slot: "settings",
     label: "Account",
     href: "/hq/account",
     icon: "person",

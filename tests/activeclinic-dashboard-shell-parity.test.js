@@ -153,6 +153,7 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
     assert.match(html, /data-ac-dashboard="ready"/);
     assert.match(html, /data-ac-dashboard-card="welcome"/);
     assert.match(html, /data-ac-stitch="AC-B2-01"/);
+    assert.match(html, /data-ac-stitch-screen="AC-ADM-01"/);
     assert.match(html, /Active facilities/);
     assert.match(html, /Clinic setup/);
     assert.match(html, /1 of 3 required items complete/);

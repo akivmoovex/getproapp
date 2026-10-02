@@ -349,6 +349,17 @@ html.gp-cm-reminder-open {
   overflow: hidden;
 }
 
+/* PublishNudge secondary action row (editor reminder) */
+.gp-cm-reminder__actions {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 520px) {
+  .gp-cm-reminder__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (min-width: 720px) {
   .gp-cm-reminder {
     align-items: center;

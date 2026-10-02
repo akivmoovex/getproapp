@@ -1519,6 +1519,24 @@ html {
   object-position: center 40%;
 }
 
+.bb-tp-page-hero__video-frame,
+.bb-tp-hero__video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.bb-tp-page-hero__video-iframe,
+.bb-tp-hero__video-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .bb-tp-page-hero__fallback {
   min-height: 12rem;
   height: 100%;

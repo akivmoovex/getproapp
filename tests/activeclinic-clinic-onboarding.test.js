@@ -275,7 +275,8 @@ describe("ActiveClinic public clinic onboarding", () => {
     };
     const { confirm } = await submitClinic(payload);
     assert.equal(confirm.status, 303);
-    assert.match(confirm.headers.location, /\/register-clinic\/success\?ref=AC-/);
+    assert.match(confirm.headers.location, /^\/app(?:\?|$)/);
+    assert.doesNotMatch(String(confirm.headers.location || ""), /register-clinic\/success/);
 
     const row = await pool.query(
       `SELECT * FROM activeclinic.clinic_registration_applications
@@ -400,6 +401,10 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactName: "Dup Admin",
       contactEmail: email,
       contactPhone: phone,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "1 Cairo Road",
+      countryCode: "ZM",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
       acceptTerms: "on",
@@ -455,6 +460,10 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactName: "Admin A",
       contactEmail: `a-${stamp}@clinic.example`,
       contactPhone: nextPhone(),
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "1 Cairo Road",
+      countryCode: "ZM",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
       acceptTerms: "on",
@@ -464,6 +473,10 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactName: "Admin B",
       contactEmail: `b-${stamp}@clinic.example`,
       contactPhone: nextPhone(),
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "2 Cairo Road",
+      countryCode: "ZM",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
       acceptTerms: "on",

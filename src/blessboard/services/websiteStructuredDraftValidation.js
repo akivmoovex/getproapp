@@ -50,18 +50,31 @@ const MEDIA_ASSET_PATH_RE = new RegExp(
 const WEBSITE_ENGINE_MEDIA_PATH_RE =
   /^\/(?:c|clinics)\/[^/]+\/website\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const VIDEO_HOST_ALLOWLIST = Object.freeze(
-  new Set([
-    "youtube.com",
-    "www.youtube.com",
-    "m.youtube.com",
-    "youtu.be",
-    "www.youtu.be",
-    "vimeo.com",
-    "www.vimeo.com",
-    "player.vimeo.com",
-  ])
-);
+const {
+  validateVideoEmbedUrl,
+} = require("../../platform/website/videoEmbedEditor");
+
+/**
+ * External video URL allowlist (YouTube / Vimeo) or empty.
+ * Rejects raw iframe HTML and uploaded video files. Shared VideoEmbedEditor owns URL rules.
+ * @param {string} raw
+ */
+function validateVideoUrl(raw) {
+  if (raw != null && raw !== "") {
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("/") && MEDIA_ASSET_PATH_RE.test(trimmed)) {
+      return {
+        ok: false,
+        error: "Video file upload is not supported. Paste a YouTube or Vimeo link.",
+      };
+    }
+  }
+  const checked = validateVideoEmbedUrl(raw);
+  if (!checked.ok) {
+    return { ok: false, error: checked.error || "Enter a valid YouTube or Vimeo link." };
+  }
+  return { ok: true, value: checked.value };
+}
 
 function mapError(code, message, status = 400) {
   const err = new Error(message);
@@ -78,6 +91,23 @@ function sanitizePlain(raw, max) {
   if (value.length > max) return { ok: false, error: `Keep this under ${max} characters.` };
   return { ok: true, value };
 }
+
+/**
+ * External video URL allowlist (YouTube / Vimeo) or empty — see validateVideoUrl above.
+ * @deprecated use validateVideoUrl; keep host set for tests that import allowlist shape via source.
+ */
+const VIDEO_HOST_ALLOWLIST = Object.freeze(
+  new Set([
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "youtu.be",
+    "www.youtu.be",
+    "vimeo.com",
+    "www.vimeo.com",
+    "player.vimeo.com",
+  ])
+);
 
 /**
  * Safe image URL: https, /_bb/media/:uuid, shared website-engine media delivery
@@ -113,42 +143,6 @@ function validateImageUrl(raw) {
   } catch {
     return { ok: false, error: "Enter a valid image link." };
   }
-}
-
-/**
- * External video URL allowlist (YouTube / Vimeo) or empty.
- * @param {string} raw
- */
-function validateVideoUrl(raw) {
-  if (raw == null || raw === "") return { ok: true, value: "" };
-  const plain = sanitizePlain(raw, 2000);
-  if (!plain.ok) return plain;
-  const value = plain.value;
-  if (value.startsWith("/") && MEDIA_ASSET_PATH_RE.test(value)) {
-    // Uploaded video files are not supported; media assets are images/PDF only.
-    return {
-      ok: false,
-      error: "Video file upload is not supported. Paste a YouTube or Vimeo link.",
-    };
-  }
-  let parsed;
-  try {
-    parsed = new URL(value);
-  } catch {
-    return { ok: false, error: "Enter a valid YouTube or Vimeo link." };
-  }
-  if (parsed.protocol !== "https:") {
-    return { ok: false, error: "Video links must use https." };
-  }
-  const host = String(parsed.hostname || "").toLowerCase();
-  if (!VIDEO_HOST_ALLOWLIST.has(host)) {
-    return { ok: false, error: "Only YouTube and Vimeo links are supported." };
-  }
-  // Block javascript: already handled by URL parser; reject query-embedded HTML.
-  if (/[<>"]/.test(value)) {
-    return { ok: false, error: "Video link contains invalid characters." };
-  }
-  return { ok: true, value: parsed.toString() };
 }
 
 /**

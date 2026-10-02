@@ -38,6 +38,10 @@ function renderView(relativePath, data) {
         const { renderPlacementStyle } = require("../../platform/website/imagePlacement");
         return renderPlacementStyle(placement, opts || {});
       },
+      presentVideoEmbed: (url, opts) => {
+        const { presentVideoEmbed } = require("../../platform/website/videoEmbedEditor");
+        return presentVideoEmbed(url, opts);
+      },
     },
     data || {}
   );

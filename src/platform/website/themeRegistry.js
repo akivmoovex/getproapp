@@ -16,8 +16,10 @@ const THEME_CONTENT_KEY = "site.theme_id";
 
 const BB_DEFAULT_ID = "bb.default";
 const BB_CONTEMPORARY_FELLOWSHIP_ID = "bb.contemporary-fellowship";
+const BB_COMMUNITY_ID = "bb.community";
 const AC_DEFAULT_ID = "ac.default";
 const AC_FAMILY_WELLNESS_MINT_ID = "ac.family-wellness-mint";
+const AC_COMMUNITY_ID = "ac.community";
 
 function slotMapFromRegistry(overrides) {
   const out = {};
@@ -85,12 +87,13 @@ const BLESSBOARD_THEMES = Object.freeze([
   Object.freeze({
     id: BB_DEFAULT_ID,
     productCode: PRODUCT_CODE.BLESSBOARD,
-    displayName: "BlessBoard Classic",
-    description: "Current BlessBoard church public website appearance.",
+    displayName: "Clarity",
+    presentationFamily: "clarity",
+    description: "Clarity — clean classic BlessBoard church public website appearance.",
     preview: Object.freeze({
       swatchPrimary: "#6c5ce7",
       swatchAccent: "#5341cd",
-      label: "Default",
+      label: "Clarity",
     }),
     engineTemplateId: "blessboard_church",
     isDefault: true,
@@ -111,12 +114,13 @@ const BLESSBOARD_THEMES = Object.freeze([
   Object.freeze({
     id: BB_CONTEMPORARY_FELLOWSHIP_ID,
     productCode: PRODUCT_CODE.BLESSBOARD,
-    displayName: "Contemporary Fellowship",
-    description: "Modern dark sanctuary with cyan accents and an ultra-wide hero.",
+    displayName: "Editorial",
+    presentationFamily: "editorial",
+    description: "Editorial — modern dark sanctuary with cyan accents and an ultra-wide hero.",
     preview: Object.freeze({
       swatchPrimary: "#06b6d4",
       swatchAccent: "#0f172a",
-      label: "Contemporary",
+      label: "Editorial",
     }),
     engineTemplateId: "blessboard_church",
     isDefault: false,
@@ -135,18 +139,46 @@ const BLESSBOARD_THEMES = Object.freeze([
       shell: "blessboard_tenant_public",
     }),
   }),
+  Object.freeze({
+    id: BB_COMMUNITY_ID,
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    displayName: "Community",
+    presentationFamily: "community",
+    description: "Community — warm light fellowship presentation. Presentation only; content unchanged.",
+    preview: Object.freeze({
+      swatchPrimary: "#c2410c",
+      swatchAccent: "#fef3c7",
+      label: "Community",
+    }),
+    engineTemplateId: "blessboard_church",
+    isDefault: false,
+    hasWorkingRenderer: true,
+    cssClass: "gp-website-theme--bb-community",
+    stylesheetHref: "/blessboard/v5/website-theme-community.css?v=v205-thm-1",
+    pages: BB_PAGES,
+    sectionTypes: sectionTypesFromDefs(BLESSBOARD_SECTION_TYPES),
+    imageSlots: SHARED_IMAGE_SLOTS,
+    styling: Object.freeze({
+      tokenPack: "blessboard-community",
+      preservesBrandColorOverrides: true,
+    }),
+    layout: Object.freeze({
+      shell: "blessboard_tenant_public",
+    }),
+  }),
 ]);
 
 const ACTIVECLINIC_THEMES = Object.freeze([
   Object.freeze({
     id: AC_DEFAULT_ID,
     productCode: PRODUCT_CODE.ACTIVECLINIC,
-    displayName: "ActiveClinic Classic",
-    description: "Current ActiveClinic clinic public website appearance.",
+    displayName: "Clarity",
+    presentationFamily: "clarity",
+    description: "Clarity — clean classic ActiveClinic clinic public website appearance.",
     preview: Object.freeze({
       swatchPrimary: "#006068",
       swatchAccent: "#0f766e",
-      label: "Default",
+      label: "Clarity",
     }),
     engineTemplateId: "activeclinic_clinic",
     isDefault: true,
@@ -167,12 +199,13 @@ const ACTIVECLINIC_THEMES = Object.freeze([
   Object.freeze({
     id: AC_FAMILY_WELLNESS_MINT_ID,
     productCode: PRODUCT_CODE.ACTIVECLINIC,
-    displayName: "Family Wellness Mint",
-    description: "Soft mint family-care surfaces with gentle green accents.",
+    displayName: "Editorial",
+    presentationFamily: "editorial",
+    description: "Editorial — soft mint family-care surfaces with gentle green accents.",
     preview: Object.freeze({
       swatchPrimary: "#006c4a",
       swatchAccent: "#68dba9",
-      label: "Wellness",
+      label: "Editorial",
     }),
     engineTemplateId: "activeclinic_clinic",
     isDefault: false,
@@ -185,6 +218,33 @@ const ACTIVECLINIC_THEMES = Object.freeze([
     imageSlots: AC_MINT_IMAGE_SLOTS,
     styling: Object.freeze({
       tokenPack: "activeclinic-family-wellness-mint",
+      preservesBrandColorOverrides: true,
+    }),
+    layout: Object.freeze({
+      shell: "activeclinic_public_tenant",
+    }),
+  }),
+  Object.freeze({
+    id: AC_COMMUNITY_ID,
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    displayName: "Community",
+    presentationFamily: "community",
+    description: "Community — warm welcoming clinic presentation. Presentation only; content unchanged.",
+    preview: Object.freeze({
+      swatchPrimary: "#9a3412",
+      swatchAccent: "#fdba74",
+      label: "Community",
+    }),
+    engineTemplateId: "activeclinic_clinic",
+    isDefault: false,
+    hasWorkingRenderer: true,
+    cssClass: "gp-website-theme--ac-community",
+    stylesheetHref: "/activeclinic/website-theme-community.css?v=v205-thm-1",
+    pages: pagesFromSectionDefs(ACTIVECLINIC_SECTION_TYPES),
+    sectionTypes: sectionTypesFromDefs(ACTIVECLINIC_SECTION_TYPES),
+    imageSlots: SHARED_IMAGE_SLOTS,
+    styling: Object.freeze({
+      tokenPack: "activeclinic-community",
       preservesBrandColorOverrides: true,
     }),
     layout: Object.freeze({
@@ -243,6 +303,7 @@ function listThemesForProduct(productCode) {
     displayName: t.displayName,
     description: t.description,
     preview: t.preview,
+    presentationFamily: t.presentationFamily || null,
     isDefault: t.isDefault === true,
     engineTemplateId: t.engineTemplateId,
     hasWorkingRenderer: t.hasWorkingRenderer === true,
@@ -280,8 +341,10 @@ module.exports = {
   THEME_CONTENT_KEY,
   BB_DEFAULT_ID,
   BB_CONTEMPORARY_FELLOWSHIP_ID,
+  BB_COMMUNITY_ID,
   AC_DEFAULT_ID,
   AC_FAMILY_WELLNESS_MINT_ID,
+  AC_COMMUNITY_ID,
   BLESSBOARD_THEMES,
   ACTIVECLINIC_THEMES,
   themesForProduct,

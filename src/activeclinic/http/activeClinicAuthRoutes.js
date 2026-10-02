@@ -47,6 +47,9 @@ const {
   renderPlatformAdminLanding,
 } = require("./renderActiveClinicAuth");
 const { resolveLoginIdentifierFromBody } = require("../../platform/auth/resolveLoginIdentifier");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+
+const AC_APP_DASHBOARD = postAuthDashboardPath("activeclinic"); // V2.05 Task 1: AC login → /app
 const {
   buildLoginModeHrefs,
   resolveLoginModeQuery,
@@ -72,10 +75,10 @@ function clientIp(req) {
 
 function safeNextPath(raw) {
   const s = String(raw == null ? "" : raw).trim();
-  if (!s.startsWith("/") || s.startsWith("//")) return "/app";
-  if (s.includes("://") || s.includes("\\")) return "/app";
-  if (s.length > 200) return "/app";
-  return s === "/" ? "/app" : s;
+  if (!s.startsWith("/") || s.startsWith("//")) return AC_APP_DASHBOARD;
+  if (s.includes("://") || s.includes("\\")) return AC_APP_DASHBOARD;
+  if (s.length > 200) return AC_APP_DASHBOARD;
+  return s === "/" ? AC_APP_DASHBOARD : s;
 }
 
 async function activeClinicPostLoginPath(db, result, requestedNext, deploymentCode) {
@@ -151,7 +154,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
       if (req.activeClinicAuth.mustChangePassword) {
         return res.redirect(303, "/account/change-password");
       }
-      return res.redirect(303, "/app");
+      return res.redirect(303, AC_APP_DASHBOARD);
     }
     const csrfToken = issuePageCsrf(res, req);
     let notice = null;
@@ -385,7 +388,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
       const dest = await activeClinicPostLoginPath(
         getPool(),
         completed,
-        "/app",
+        AC_APP_DASHBOARD,
         deployment.code
       );
       return res.redirect(303, dest);
@@ -490,7 +493,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
           getPool,
         });
       }
-      return res.redirect(303, "/app");
+      return res.redirect(303, AC_APP_DASHBOARD);
     } catch (err) {
       return next(err);
     }

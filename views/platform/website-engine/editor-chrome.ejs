@@ -44,7 +44,7 @@
     </div>
     <div class="gp-website-publish-success__actions">
       <% if (shell.publishSuccessUrl) { %>
-      <a class="gp-website-editor__btn gp-website-editor__btn--primary" href="<%= shell.publishSuccessUrl %>" rel="noopener">View website</a>
+      <a class="gp-website-editor__btn gp-website-editor__btn--primary" href="<%= shell.publishSuccessUrl %>" rel="noopener" data-website-open-live="1">Open Live Website</a>
       <button type="button" class="gp-website-editor__btn gp-website-editor__btn--ghost" data-website-copy-published-url="1" data-copy-url="<%= shell.publishSuccessUrl %>" aria-label="Copy website URL">Copy URL</button>
       <% } %>
     </div>
@@ -70,6 +70,13 @@
   data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
   data-website-exit-href="<%= shell.exitHref || '' %>"
   data-website-max-bytes="5242880"
+  data-gp-inline-text-editor="InlineTextEditor"
+  data-gp-image-editor="ImageEditor"
+  data-gp-media-picker="MediaPicker"
+  data-gp-section-manager="SectionManager"
+  data-gp-video-embed-editor="VideoEmbedEditor"
+  data-gp-save-bar="SaveBar"
+  data-gp-website-content-editing="WebsiteContentEditing"
   data-stitch-project="<%= (shell.changeManager && shell.changeManager.stitchProjectId) || '12538817760086591589' %>"
   data-stitch-edit="WE01-01"
   data-website-scope-key="<%= shell.websiteScopeKey || '' %>"
@@ -118,6 +125,7 @@
         type="button"
         class="gp-website-editor__viewport-btn is-current"
         data-website-viewport="desktop"
+        data-website-viewport-width="1440"
         aria-pressed="true"
         title="Desktop"
       >
@@ -182,12 +190,17 @@
         <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
         <input type="hidden" name="confirm_publish" value="1"/>
         <input type="hidden" name="makePublic" value="1"/>
+        <% if (shell.backToEditHref) { %>
+        <input type="hidden" name="returnTo" value="<%= shell.backToEditHref %>"/>
+        <% } %>
+        <input type="hidden" name="publish_entry" value="website_editor"/>
         <button
           type="submit"
           class="gp-website-editor__btn gp-website-editor__btn--primary"
           data-website-engine-publish="1"
           data-bb-review-publish="1"
           data-website-publish-label="1"
+          data-gp-publish-workflow="PublishWorkflow"
         ><%= (shell.changeManager && shell.changeManager.publishLabel) || labels.publish || 'Publish' %></button>
       </form>
       <% } %>

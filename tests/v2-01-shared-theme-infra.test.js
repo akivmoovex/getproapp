@@ -36,8 +36,8 @@ describe("V2_01 shared website theme infrastructure", () => {
   it("isolates BB and AC theme collections (no cross-product exposure)", () => {
     const bb = listThemesForProduct(PRODUCT_CODE.BLESSBOARD);
     const ac = listThemesForProduct(PRODUCT_CODE.ACTIVECLINIC);
-    assert.equal(bb.length, 2);
-    assert.equal(ac.length, 2);
+    assert.equal(bb.length, 3);
+    assert.equal(ac.length, 3);
     assert.ok(bb.some((t) => t.id === BB_DEFAULT_ID));
     assert.ok(ac.some((t) => t.id === AC_DEFAULT_ID));
     assert.equal(getTheme(AC_DEFAULT_ID, PRODUCT_CODE.BLESSBOARD), null);
@@ -45,10 +45,12 @@ describe("V2_01 shared website theme infrastructure", () => {
     assert.deepEqual(enumValuesForProduct(PRODUCT_CODE.BLESSBOARD), [
       BB_DEFAULT_ID,
       "bb.contemporary-fellowship",
+      "bb.community",
     ]);
     assert.deepEqual(enumValuesForProduct(PRODUCT_CODE.ACTIVECLINIC), [
       AC_DEFAULT_ID,
       "ac.family-wellness-mint",
+      "ac.community",
     ]);
   });
 
@@ -184,7 +186,7 @@ describe("V2_01 shared website theme infrastructure", () => {
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION\s*=\s*"[^"]+"/
+      /ASSET_VERSION\s*=\s*(?:"[^"]+"|V204_BROWSER_ASSET_VERSION)/
     );
   });
 });

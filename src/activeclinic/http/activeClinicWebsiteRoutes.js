@@ -38,7 +38,10 @@ const publicationService = require("../../platform/website-engine").publicationS
 const {
   publish: publishProductWebsite,
   unpublish: unpublishProductWebsite,
-} = require("../../platform/website/publicationOrchestrator");
+  buildPublishSuccessRedirect,
+  safePublishReturnTo,
+  ENTRY,
+} = require("../../platform/website/publishWorkflow");
 const submissionService = require("../../platform/website/submissionService");
 const { PRODUCT } = require("../../platform/registration/constants");
 const mediaService = require("../../platform/website/mediaService");
@@ -127,12 +130,14 @@ function wantsJson(req) {
   return false;
 }
 
-function settingsPublishReturnTo(raw) {
-  const value = String(raw || "").trim();
-  if (value === "/app/settings" || value === "/app/settings/website" || value === "/app/settings/website/publish") {
-    return value;
-  }
-  return null;
+function settingsPublishReturnTo(raw, clinicKey) {
+  return (
+    safePublishReturnTo(raw, {
+      productCode: "activeclinic",
+      organizationKey: clinicKey,
+      clinicKey,
+    }) || null
+  );
 }
 
 function actorId(req) {
@@ -705,10 +710,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         });
         if (!availability || availability.ok !== true) {
           if (wantsHtml(req)) {
-            const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+            const returnTo = settingsPublishReturnTo(
+              req.body && req.body.returnTo,
+              clinic.clinicKey
+            );
             const errCode = (availability && availability.code) || "availability_failed";
             if (returnTo) {
-              return res.redirect(303, `${returnTo}?website=published_content&error=${encodeURIComponent(errCode)}`);
+              return res.redirect(303, `${returnTo}${returnTo.includes("?") ? "&" : "?"}website=published_content&error=${encodeURIComponent(errCode)}`);
             }
             return res.redirect(
               303,
@@ -731,20 +739,18 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         }
       }
       if (wantsHtml(req)) {
-        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
-        if (returnTo) {
-          return res.redirect(303, `${returnTo}?website=published`);
-        }
-        return res.redirect(
-          303,
-          appendQuery(
-            buildPublicWebsiteHistoryPath({
-              product: PRODUCT_CODE.ACTIVECLINIC,
-              organizationKey: clinic.clinicKey,
-            }),
-            { notice: "published" }
-          )
-        );
+        const entry =
+          String((req.body && req.body.publish_entry) || "").trim() === "website_editor"
+            ? ENTRY.WEBSITE_EDITOR
+            : ENTRY.ADMIN_CONSOLE;
+        const redirectTo = buildPublishSuccessRedirect({
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+          clinicKey: clinic.clinicKey,
+          returnTo: req.body && req.body.returnTo,
+          entry,
+        });
+        return res.redirect(303, redirectTo);
       }
       return json(res, 200, {
         ok: true,
@@ -792,7 +798,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return json(res, 400, { ok: false, code: unpublished.code });
       }
       if (wantsHtml(req)) {
-        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo, clinic.clinicKey);
         return res.redirect(303, `${returnTo || "/app/settings/website"}?website=unpublished`);
       }
       return json(res, 200, { ok: true, code: "unpublished", instance: unpublished.instance || null });

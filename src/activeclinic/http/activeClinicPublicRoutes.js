@@ -36,6 +36,8 @@ const {
 const {
   issueAuthenticatedSessionCookie,
 } = require("../../platform/session/sharedSessionSecurity");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+const AC_APP_DASHBOARD = postAuthDashboardPath("activeclinic"); // V2.05 Task 1: AC register → /app
 const {
   buildRegistrationSuccessRedirect,
 } = require("../../platform/registration/registrationSuccessPresentation");
@@ -1102,7 +1104,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
               });
             }
           } catch {
-            /* session is optional; administrator can still sign in */
+            /* session best-effort; unauthenticated /app will require sign-in */
           }
         }
         clearRegistrationTransaction(res, {
@@ -1110,11 +1112,10 @@ function registerActiveClinicPublicRoutes(app, deps) {
           productCode: PRODUCT.ACTIVECLINIC,
           clearDraft: clearRegistrationDraft,
         });
-        return res.redirect(303, buildRegistrationSuccessRedirect({
-          productCode: "activeclinic",
-          reference: ref,
-          ready: true,
-        }));
+        // Canonical post-registration landing: Admin Console Dashboard (/app).
+        // Do not route newly registered admins to Website Management.
+        // Auto-login is best-effort; /app requires auth when cookie missing.
+        return res.redirect(303, AC_APP_DASHBOARD);
       } catch (err) {
         const classified = classifyRegistrationError(err);
         logClinicApplicationFailed({

@@ -7,6 +7,9 @@
 const pathPosix = require("path").posix;
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { sanitizeReturnPath, normalizeHostname } = require("../../platform/services/authTransferService");
+const { postAuthDashboardPath } = require("../../platform/auth/postAuthDashboard");
+
+const BB_HQ_DASHBOARD = postAuthDashboardPath("blessboard"); // V2.05 Task 1: BB login → /hq
 
 /**
  * Resolved tenant for login initiation (authoritative or proposed shadow).
@@ -93,7 +96,7 @@ function safeHqNextPath(raw) {
   const normalized = pathPosix.normalize(pathOnly);
   if (!normalized.startsWith("/") || normalized.startsWith("//")) return null;
   if (normalized.includes("..")) return null;
-  if (normalized !== "/hq" && !normalized.startsWith("/hq/")) return null;
+  if (normalized !== BB_HQ_DASHBOARD && !normalized.startsWith(`${BB_HQ_DASHBOARD}/`)) return null;
   if (normalized.startsWith("/hq-admin")) return null;
   if (normalized.length > 200) return null;
   return normalized;
@@ -171,7 +174,7 @@ function resolveApexPostLoginPath(roles, nextRaw) {
     return safePlatformAdminNextPath(nextRaw) || "/admin";
   }
   if (hasChurchHqAdminRole(roles)) {
-    return safeHqNextPath(nextRaw) || "/hq";
+    return safeHqNextPath(nextRaw) || BB_HQ_DASHBOARD;
   }
   if (hasBranchAdminRole(roles)) {
     return safeBranchAdminNextPath(nextRaw) || "/branch-admin";
@@ -204,7 +207,7 @@ function defaultTenantPostLoginPath(roles) {
     unique.includes("church_system_administrator") ||
     unique.includes("platform_administrator")
   ) {
-    return "/hq";
+    return BB_HQ_DASHBOARD;
   }
   if (unique.includes("branch_administrator") || unique.includes("branch_pastor")) {
     return "/branch-admin";

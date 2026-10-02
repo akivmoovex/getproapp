@@ -1273,6 +1273,7 @@ async function attachWebsiteAdminChrome(opts) {
         organizationKey: orgKey,
         scope: editorScope,
       }) || null,
+    openLiveWebsiteLabel: "Open Live Website",
     discardPath,
     unpublishedChangesUrl,
     fieldHistoryUrl,

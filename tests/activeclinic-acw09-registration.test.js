@@ -134,6 +134,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
   it("walks clinic → administrator → review → success on the existing engine", async () => {
     requireDb();
     const server = app();
+    const agent = request.agent(server);
     const stamp = uniq("acw09");
     const payload = {
       clinicName: `ACW09 Clinic ${stamp}`,
@@ -149,13 +150,12 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       passwordConfirm: PASSWORD,
     };
 
-    const step1 = await request(server).get("/register-clinic").set("Host", AC_HOST);
-    const cookie = csrfCookie(step1);
+    const step1 = await agent.get("/register-clinic").set("Host", AC_HOST);
     const csrf1 = extractCsrf(step1.text);
-    const step2 = await request(server)
+    const step2 = await agent
       .post("/register-clinic")
       .set("Host", AC_HOST)
-      .set("Cookie", cookie)
+      .redirects(5)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf1,
@@ -174,10 +174,10 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(step2.text, /Administrator name/);
 
     const csrf2 = extractCsrf(step2.text);
-    const review = await request(server)
+    const review = await agent
       .post("/register-clinic")
       .set("Host", AC_HOST)
-      .set("Cookie", csrfCookie(step2) || cookie)
+      .redirects(5)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf2,
@@ -193,10 +193,9 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(review.text, /name="registration_consent"/);
 
     const csrf3 = extractCsrf(review.text);
-    const confirm = await request(server)
+    const confirm = await agent
       .post("/register-clinic")
       .set("Host", AC_HOST)
-      .set("Cookie", csrfCookie(review) || cookie)
       .redirects(0)
       .type("form")
       .send({
@@ -208,12 +207,18 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
         phone_national: payload.contactPhone.replace("+260", ""),
       });
     assert.equal(confirm.status, 303, confirm.text.slice(0, 400));
-    assert.match(String(confirm.headers.location || ""), /\/register-clinic\/success\?ref=AC-/);
-    assert.match(String(confirm.headers.location || ""), /ready=1/);
+    assert.match(String(confirm.headers.location || ""), /^\/app(?:\?|$)/);
+    assert.doesNotMatch(String(confirm.headers.location || ""), /register-clinic\/success/);
+    assert.doesNotMatch(String(confirm.headers.location || ""), /\/app\/settings\/website/);
 
-    const success = await request(server)
-      .get(confirm.headers.location)
-      .set("Host", AC_HOST);
+    const refRow = await pool.query(
+      `SELECT application_number FROM activeclinic.clinic_registration_applications
+        WHERE contact_email_normalized = lower($1)`,
+      [payload.contactEmail]
+    );
+    assert.ok(refRow.rows[0] && refRow.rows[0].application_number);
+    const successPath = `/register-clinic/success?ref=${encodeURIComponent(refRow.rows[0].application_number)}&ready=1`;
+    const success = await agent.get(successPath).set("Host", AC_HOST);
     assert.equal(success.status, 200);
     assert.match(success.text, /data-ac-acw-screen="ACW09-success"/);
     assert.match(success.text, /data-ac-sign-in="1"/);
@@ -222,10 +227,9 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(success.text, /Website Management/);
     assert.doesNotMatch(success.text, /under review by our onboarding team/i);
 
-    const dup = await request(server)
+    const dup = await agent
       .post("/register-clinic")
       .set("Host", AC_HOST)
-      .set("Cookie", csrfCookie(review) || cookie)
       .type("form")
       .send({
         [CSRF_FIELD]: csrf3,
@@ -235,13 +239,15 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
         phone_country: "ZM",
         phone_national: payload.contactPhone.replace("+260", ""),
       });
-    // Duplicate confirm must not create a second clinic: either 400 conflict or
-    // idempotent 303 back to the same success reference.
+    // Duplicate confirm must not create a second clinic: either 400 conflict,
+    // CSRF reject after draft clear, or idempotent 303 to dashboard.
     if (dup.status === 400) {
       assert.match(dup.text, /already|recently submitted/i);
+    } else if (dup.status === 403) {
+      assert.match(dup.text, /csrf|forbidden|Register your clinic/i);
     } else {
       assert.equal(dup.status, 303, dup.text.slice(0, 400));
-      assert.match(String(dup.headers.location || ""), /\/register-clinic\/success\?ref=AC-/);
+      assert.match(String(dup.headers.location || ""), /^\/app(?:\?|$)/);
     }
     const appCount = await pool.query(
       `SELECT count(*)::int AS n
@@ -426,21 +432,19 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       await overflowOf("review");
       await page.check("#registration_consent");
       await Promise.all([
-        page.waitForURL(/\/register-clinic\/success/),
+        page.waitForURL(/\/app(?:\?|$|\/)/),
         page.click(".ac-review-actions__confirm button[type=submit]"),
       ]);
-      await overflowOf("success");
-      assert.match(await page.content(), /Sign in/);
+      await overflowOf("dashboard");
+      assert.match(await page.content(), /data-ac-stitch-screen="AC-ADM-01"|ac-dashboard|data-ac-page-section="home"/i);
 
-      await context.clearCookies();
-      await page.click("[data-ac-sign-in='1']");
-      await page.waitForURL(/\/login/);
-      await page.waitForSelector("#login_email, input[name=login_email]");
-      const identifierSel = (await page.$("#login_email")) ? "#login_email" : "input[name=login_email]";
-      await page.fill(identifierSel, email);
-      await page.fill("input[type=password]", PASSWORD);
-      await page.click("button[type=submit]");
-      await page.waitForURL(/\/app/);
+      // Success receipt remains available by deep-link (not the post-reg landing).
+      const successRes = await page.goto(`${baseUrl}/register-clinic/success?ready=1`, {
+        waitUntil: "load",
+      });
+      assert.ok(successRes && successRes.status() < 500);
+      await overflowOf("success receipt");
+
       const hubRes = await page.goto(`${baseUrl}/app/settings/website`, { waitUntil: "load" });
       assert.ok(hubRes && hubRes.status() < 400, `hub ${hubRes && hubRes.status()}`);
       await overflowOf("website hub");

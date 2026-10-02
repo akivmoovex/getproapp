@@ -3,11 +3,12 @@
  * Pencil → Stitch dialog (desktop E01) / bottom sheet (mobile E02) → Save draft (never publish).
  * SHARED_EDITOR_ENGINE_COUNT must remain 1 — do not add a product-local editor.
  *
- * Responsive preview (V2.04): Desktop stays same-document. Tablet (768) / Mobile (390)
- * load a same-origin iframe with website_frame=1 so public @media rules evaluate correctly.
+ * Responsive preview (V2.04 / V2.05): Desktop 1440 stays same-document.
+ * Tablet (768) / Mobile (390) load a same-origin iframe with website_frame=1
+ * so public @media rules evaluate correctly. One iframe engine only.
  */
 (function () {
-  var VIEWPORT_WIDTHS = { tablet: 768, mobile: 390 };
+  var VIEWPORT_WIDTHS = { desktop: 1440, tablet: 768, mobile: 390 };
   var VIEWPORT_MSG_SOURCE = "gp-website-editor";
   var currentViewportMode = "desktop";
   var viewportFrameBound = false;

@@ -230,7 +230,8 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
   });
   let outClinic = resolved.ok ? resolved.clinic : clinic;
   const instance = resolved.instance || null;
-  const unpublishedCount = (resolved.resolved && resolved.resolved.unpublishedCount) || 0;
+  const unpublishedCountRaw = (resolved.resolved && resolved.resolved.unpublishedCount) || 0;
+  let unpublishedCount = unpublishedCountRaw;
   let websiteWorkflowStatus = unpublishedCount > 0 ? "draft" : "live";
   let websiteReviewNote = "";
   let websiteSubmittedAtLabel = "";
@@ -297,6 +298,38 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
   const brandingHref = actionUrls.websiteStylesUrl;
   const hubHref = "/app/settings/website";
   const canPublishNow = canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted";
+  const {
+    detectPublishSuccessFromQuery,
+    buildPostPublishState,
+    buildPublishWorkflowPaths,
+    ENTRY,
+  } = require("../../platform/website/publishWorkflow");
+  const successDetect = detectPublishSuccessFromQuery(req && req.query);
+  const workflowPaths = buildPublishWorkflowPaths({
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: outClinic && outClinic.clinicKey,
+    clinicKey: outClinic && outClinic.clinicKey,
+    canPublish: canPublishNow,
+    canEdit,
+    entry: ENTRY.WEBSITE_EDITOR,
+    pageKey,
+  });
+  const liveWebsitePath = buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: outClinic && outClinic.clinicKey,
+  });
+  const postPublish = successDetect.publishSuccess
+    ? buildPostPublishState({
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: outClinic && outClinic.clinicKey,
+        clinicKey: outClinic && outClinic.clinicKey,
+        paths: workflowPaths,
+        livePath: liveWebsitePath,
+      })
+    : null;
+  if (postPublish) {
+    unpublishedCount = 0;
+  }
   const moreItems = [];
   moreItems.push({
     id: "settings",
@@ -419,6 +452,8 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     previewHref: actionUrls.websitePreviewUrl,
     backToEditHref: actionUrls.websiteEditUrl,
     publishPath: actionUrls.websitePublishUrl,
+    publishSuccess: Boolean(postPublish && postPublish.publishSuccess),
+    publishSuccessUrl: (postPublish && postPublish.publishSuccessUrl) || liveWebsitePath || null,
     discardPath: actionUrls.websiteDiscardUrl,
     unpublishedChangesUrl: actionUrls.websiteUnpublishedChangesUrl,
     fieldHistoryUrl: actionUrls.websiteFieldHistoryUrl,

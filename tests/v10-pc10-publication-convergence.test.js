@@ -92,15 +92,18 @@ describe("PC10 platform publication convergence", () => {
     );
   });
 
-  it("HTTP publish/unpublish entry points use publicationOrchestrator (PL04)", () => {
+  it("HTTP publish/unpublish entry points use publicationOrchestrator (PL04) via PublishWorkflow facade", () => {
     const bbEditor = read("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
     const bbAdmin = read("src/blessboard/http/churchWebsiteAdminRoutes.js");
     const acRoutes = read("src/activeclinic/http/activeClinicWebsiteRoutes.js");
     const draftPublish = read("src/blessboard/services/websiteDraftPublishService.js");
     const changeSub = read("src/blessboard/services/websiteChangeSubmissionService.js");
-    assert.match(bbEditor, /publicationOrchestrator/);
-    assert.match(bbAdmin, /publicationOrchestrator/);
-    assert.match(acRoutes, /publicationOrchestrator/);
+    const workflow = read("src/platform/website/publishWorkflow.js");
+    assert.match(workflow, /publicationOrchestrator/);
+    assert.match(workflow, /PublishWorkflow/);
+    assert.match(bbEditor, /publicationOrchestrator|publishWorkflow/);
+    assert.match(bbAdmin, /publicationOrchestrator|publishWorkflow/);
+    assert.match(acRoutes, /publicationOrchestrator|publishWorkflow/);
     assert.match(draftPublish, /publicationOrchestrator/);
     assert.match(changeSub, /publicationOrchestrator/);
     assert.doesNotMatch(bbEditor, /require\([^\)]*churchWebsitePublishService/);

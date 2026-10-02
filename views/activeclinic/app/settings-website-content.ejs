@@ -3,6 +3,9 @@
   var ux = website.ux || website;
   var actions = (ux.actions || website.actions) || {};
   var hub = (pageData && pageData.hub) || {};
+  var managementHub = (pageData && pageData.managementHub) || null;
+  var hubStatus = (managementHub && managementHub.status) || null;
+  var hubModules = (managementHub && Array.isArray(managementHub.modules)) ? managementHub.modules : [];
   var statusKey = website.statusKey || (ux && ux.state) || '';
   var lastUpdated = ux.lastEditedLabel || website.lastEditedLabel || '';
   var draftStatus = website.unpublishedChanges
@@ -27,6 +30,9 @@
   data-ac-website-exists="<%= website.exists ? '1' : '0' %>"
   data-ac-website-draft-state="1"
   data-ac-website-hub="1"
+  data-gp-website-management-hub="WebsiteManagementHub"
+  data-stitch-screen="AC-WEB-ADM-01"
+  data-stitch-screen-mobile="AC-WEB-ADM-01"
   data-ac-mw-screen="MW10-01"
   data-ac-mw-screen-mobile="MW10-02"
   data-ac-stitch-screen="H01"
@@ -48,7 +54,9 @@
 
   <nav class="ac-mw-hub-manage-nav" aria-label="Website management areas" data-ac-website-hub-nav="1">
     <a class="ac-mw-nav__link is-current" href="/app/settings/website" data-ac-website-hub-nav-item="overview">Overview</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/pages" data-ac-website-hub-nav-item="pages" data-ac-website-action="pages-nav">Pages</a>
     <a class="ac-mw-nav__link" href="/app/settings/website/sections" data-ac-website-hub-nav-item="sections" data-ac-website-action="sections-nav">Sections</a>
+    <a class="ac-mw-nav__link" href="/app/settings/website/themes" data-ac-website-hub-nav-item="themes" data-ac-website-action="themes-nav">Themes</a>
     <a class="ac-mw-nav__link" href="/app/settings/website/media" data-ac-website-hub-nav-item="media" data-ac-website-action="media-nav">Media</a>
     <% if (actions.history) { %>
     <a class="ac-mw-nav__link" href="<%= actions.history %>" data-ac-website-hub-nav-item="history" data-ac-website-action="history-nav">History</a>
@@ -57,6 +65,48 @@
     <a class="ac-mw-nav__link ac-mw-nav__link--edit" href="<%= actions.editWebsite %>" data-ac-website-hub-nav-item="edit" data-ac-website-action="edit-nav">Edit Website</a>
     <% } %>
   </nav>
+
+  <% if (managementHub && managementHub.publishNudge) { %>
+  <%- include('../../platform/website-engine/publish-nudge', { publishNudge: managementHub.publishNudge }) %>
+  <% } %>
+
+  <% if (hubStatus) { %>
+  <div
+    class="ac-mw-hub-metrics"
+    data-ac-website-v205-status="1"
+    data-gp-website-hub-status="1"
+    data-gp-unpublished-change-count="<%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %>"
+  >
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Current live theme</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-live-theme="1"><%= hubStatus.liveThemeLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Draft theme</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-draft-theme="1"><%= hubStatus.draftThemeLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Unpublished changes</p>
+      <p
+        class="ac-mw-hub-metric__value"
+        data-ac-website-draft-changes-count="1"
+        data-gp-continuous-unpublished-count="1"
+      ><%= Number(hubStatus.continuousUnpublishedCount != null ? hubStatus.continuousUnpublishedCount : hubStatus.draftChangesCount) || 0 %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Last published</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-last-published-status="1"><%= hubStatus.lastPublishedLabel %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Publish readiness</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-publish-readiness="1"><%= hubStatus.publishReadiness %></p>
+    </article>
+    <article class="ac-mw-hub-metric">
+      <p class="ac-mw-hub-metric__label">Domain / site status</p>
+      <p class="ac-mw-hub-metric__value" data-ac-website-domain-status="1"><%= hubStatus.domainStatus %></p>
+    </article>
+  </div>
+  <% } %>
 
   <% if (!website.liveAvailable) { %>
   <section class="ac-mw-firstuse" data-ac-mf-family="MF06" data-ac-mf-screen="MF06-03" data-ac-website-firstuse="1">
@@ -94,7 +144,7 @@
         <h3>Preview and publish</h3>
         <p>Publishing is optional. Preview first, then make the site public when you are ready.</p>
         <% if (actions.publishPath && website.canPublish) { %>
-        <a class="ac-mw-btn" href="/app/settings/website/publish">Review publish</a>
+        <a class="ac-mw-btn" href="/app/settings/website/publish" data-ac-website-action="publish-review" data-gp-publish-workflow="PublishWorkflow">Review publish</a>
         <% } else { %>
         <a class="ac-mw-btn" href="<%= actions.preview || '/app/settings/website' %>">Preview</a>
         <% } %>
@@ -258,6 +308,16 @@
   </section>
 
   <h3 class="ac-mw-hub-access__title">Manage your website</h3>
+  <% if (hubModules.length) { %>
+  <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01" data-gp-website-hub-modules="1">
+    <% hubModules.forEach(function (mod) { %>
+    <a class="ac-mw-hub-tile" href="<%= mod.href %>" data-ac-website-action="<%= mod.key %>" data-gp-website-hub-module="<%= mod.key %>">
+      <h3><%= mod.label %></h3>
+      <p><%= mod.description %></p>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
   <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01">
     <a class="ac-mw-hub-tile" href="/app/settings/website/pages" data-ac-website-action="pages" data-ac-stitch-hub-link="H02">
       <h3>Pages</h3>
@@ -310,4 +370,5 @@
       <p>Reuse website copy, photos, and placements. Show or hide doctors and services in Public Catalogue.</p>
     </a>
   </div>
+  <% } %>
 </section>

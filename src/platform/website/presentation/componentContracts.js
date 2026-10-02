@@ -466,13 +466,28 @@ function validateGallery(raw) {
 
 function validateVideo(raw) {
   if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_video" };
+  const {
+    validateVideoEmbedUrl,
+    buildVideoEmbedPresentation,
+  } = require("../videoEmbedEditor");
+  const urlRaw = raw.url != null ? raw.url : raw.videoUrl;
+  const checked = validateVideoEmbedUrl(urlRaw);
+  if (!checked.ok) {
+    return { ok: false, code: checked.code || "invalid_video_url", error: checked.error };
+  }
+  const embed = checked.value
+    ? buildVideoEmbedPresentation(checked.value, { title: asTrimmedString(raw.title, 160) || "Video" })
+    : null;
   return {
     ok: true,
     value: {
       type: PRESENTATION_COMPONENT_TYPES.VIDEO,
       title: asTrimmedString(raw.title, 160),
-      url: asTrimmedString(raw.url, 500),
+      url: checked.value || null,
+      embedUrl: embed && embed.embedUrl ? embed.embedUrl : null,
+      provider: embed && embed.provider ? embed.provider : null,
       poster: raw.poster == null ? null : raw.poster,
+      autoplay: false,
     },
   };
 }

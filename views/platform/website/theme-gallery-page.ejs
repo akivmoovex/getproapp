@@ -6,11 +6,17 @@
   class="gp-we-theme-gallery"
   data-gp-website-theme-gallery="1"
   data-gp-we-screen="theme-gallery"
+  data-gp-theme-selector="ThemeSelector"
+  data-gp-live-preview="LivePreview"
+  data-gp-responsive-viewport="ResponsiveViewport"
+  data-stitch-screen="<%= page.stitchScreen || '' %>"
+  data-stitch-screen-mobile="<%= page.stitchScreen || '' %>"
   data-product="<%= page.productCode %>"
   data-theme-api="<%= page.themeApiUrl %>"
   data-csrf-field="<%= page.csrfField %>"
   data-csrf-token="<%= page.csrfToken %>"
   data-edit-href="<%= page.editHref || '' %>"
+  data-presentation-only="<%= page.presentationOnly ? '1' : '0' %>"
 >
   <header class="gp-we-theme-gallery__head">
     <div>
@@ -27,6 +33,41 @@
 
   <p class="gp-we-theme-gallery__intro"><%= page.intro %></p>
   <p class="gp-we-theme-gallery__safety" role="note"><%= page.safetyNote %></p>
+
+  <div
+    class="gp-we-theme-gallery__viewport"
+    data-website-viewport-group="1"
+    data-website-viewport-architecture="iframe"
+    data-gp-live-preview-viewports="1"
+    role="group"
+    aria-label="Live preview size"
+  >
+    <span class="gp-we-theme-gallery__viewport-label">Live preview</span>
+    <button
+      type="button"
+      class="gp-we-theme-gallery__viewport-btn is-current"
+      data-website-viewport="desktop"
+      data-website-viewport-width="1440"
+      aria-pressed="true"
+      title="Desktop 1440"
+    >Desktop 1440</button>
+    <button
+      type="button"
+      class="gp-we-theme-gallery__viewport-btn"
+      data-website-viewport="tablet"
+      data-website-viewport-width="768"
+      aria-pressed="false"
+      title="Tablet 768"
+    >Tablet 768</button>
+    <button
+      type="button"
+      class="gp-we-theme-gallery__viewport-btn"
+      data-website-viewport="mobile"
+      data-website-viewport-width="390"
+      aria-pressed="false"
+      title="Mobile 390"
+    >Mobile 390</button>
+  </div>
 
   <% if (page.notice) { %>
   <p class="gp-we-theme-gallery__notice" role="status" data-theme-gallery-notice="1"><%= page.notice %></p>
@@ -100,7 +141,7 @@
             data-theme-select="1"
             data-theme-id="<%= theme.id %>"
             <%= theme.isDraft ? 'disabled aria-disabled="true"' : '' %>
-          ><%= theme.isDraft ? 'Selected in draft' : 'Choose for draft' %></button>
+          ><%= theme.isDraft ? 'Applied to draft' : 'Apply to draft' %></button>
         </div>
       </div>
     </article>

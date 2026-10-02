@@ -57,14 +57,15 @@
   data-ac-nav-source="registry"
 >
   <% groups.forEach(function (group) { %>
-  <div class="ac-nav-group" data-ac-nav-group="<%= group.key %>">
+  <div class="ac-nav-group" data-ac-nav-group="<%= group.key %>" data-gp-admin-console-slot="<%= group.key %>">
     <p class="ac-nav-group-label"><%= group.label %></p>
     <% (group.items || []).forEach(function (item) { %>
     <a
       href="<%= item.href %>"
-      class="ac-nav-item<%= item.current ? ' is-active' : '' %>"
+      class="ac-nav-item gp-admin-console__nav-item<%= item.current ? ' is-active' : '' %>"
       <% if (item.current) { %>aria-current="page"<% } %>
       data-ac-nav-key="<%= item.key %>"
+      data-gp-admin-console-slot="<%= item.slot || group.key %>"
     >
       <%- include('nav-icon', { name: item.icon }) %>
       <span><%= item.label %></span>

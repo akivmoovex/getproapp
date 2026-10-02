@@ -512,8 +512,9 @@ async function loadActiveClinicDashboardHome(db, input) {
     mode,
     stitch: {
       code: "AC-B2-01",
-      desktop: "ed2ef3ac64d44c398f177d1b58ffc430",
-      mobile: "2cb0ef951e1e40418cc7272d1392b26d",
+      screen: "AC-ADM-01",
+      desktop: "11f37ed2bd054346ae93d7ca7a2fe5dc",
+      mobile: "f262fbc48ccc4541ab3c80292e051bf7",
     },
     greeting,
     dateLine,

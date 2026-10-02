@@ -16,6 +16,11 @@ const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorization
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { HQ_ADMIN_NAV, HQ_ADMIN_MOBILE_TABS } = require("./hqAdminNav");
 const { buildHqMobileNav } = require("./adminMobileNavGroups");
+const {
+  sortNavItemsByAdminConsoleSlot,
+  groupNavItemsByAdminConsoleSlot,
+  ADMIN_CONSOLE_SHELL,
+} = require("../../platform/admin-console/adminConsoleShell");
 const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
 const { applyHqWebsiteModeNav } = require("./websiteModeAdminNav");
 const {
@@ -223,10 +228,14 @@ async function buildHqAdminShellLocals(req, res, opts) {
   if (sessionHasActiveMemberAccess(req)) {
     navItems = appendDualRoleNavItem(navItems, {
       key: "member_portal",
+      slot: "settings",
       label: "Member portal",
       href: "/member",
     });
   }
+
+  navItems = sortNavItemsByAdminConsoleSlot(navItems);
+  const navGroups = groupNavItemsByAdminConsoleSlot(navItems);
 
   const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>
@@ -274,6 +283,8 @@ async function buildHqAdminShellLocals(req, res, opts) {
     roleLabel: primaryHqRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,
+    navGroups,
+    adminConsoleShell: ADMIN_CONSOLE_SHELL,
     mobileNav,
     mobileTabs,
     entitledFeatures,

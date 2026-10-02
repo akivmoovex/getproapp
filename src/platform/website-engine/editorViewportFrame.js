@@ -21,9 +21,17 @@ const VIEWPORT_MODE = Object.freeze({
   MOBILE: "mobile",
 });
 
-const VIEWPORT_FRAME_WIDTHS = Object.freeze({
+/** Canonical preview widths (Desktop stays same-document; tablet/mobile use iframe). */
+const VIEWPORT_WIDTHS = Object.freeze({
+  [VIEWPORT_MODE.DESKTOP]: 1440,
   [VIEWPORT_MODE.TABLET]: 768,
   [VIEWPORT_MODE.MOBILE]: 390,
+});
+
+/** Widths applied when the iframe engine is active. */
+const VIEWPORT_FRAME_WIDTHS = Object.freeze({
+  [VIEWPORT_MODE.TABLET]: VIEWPORT_WIDTHS[VIEWPORT_MODE.TABLET],
+  [VIEWPORT_MODE.MOBILE]: VIEWPORT_WIDTHS[VIEWPORT_MODE.MOBILE],
 });
 
 const VIEWPORT_MESSAGE_SOURCE = "gp-website-editor";
@@ -101,7 +109,7 @@ function buildEditorViewportFramePath(pathOrUrl, opts) {
       path: withoutWebsiteFrameQuery(
         withEditorNavigationQuery(search ? `${pathname}${search}` : pathname)
       ),
-      width: null,
+      width: VIEWPORT_WIDTHS[VIEWPORT_MODE.DESKTOP],
       mode: VIEWPORT_MODE.DESKTOP,
     };
   }
@@ -140,7 +148,7 @@ function isSameOriginFrameUrl(parentOrigin, frameUrl) {
 
 function viewportWidthForMode(mode) {
   const key = String(mode || "").toLowerCase();
-  return VIEWPORT_FRAME_WIDTHS[key] || null;
+  return VIEWPORT_WIDTHS[key] || VIEWPORT_FRAME_WIDTHS[key] || null;
 }
 
 function usesIframeViewport(mode) {
@@ -152,6 +160,7 @@ module.exports = {
   WEBSITE_FRAME_QUERY_KEY,
   WEBSITE_FRAME_QUERY,
   VIEWPORT_MODE,
+  VIEWPORT_WIDTHS,
   VIEWPORT_FRAME_WIDTHS,
   VIEWPORT_MESSAGE_SOURCE,
   VIEWPORT_MESSAGE_TYPES,

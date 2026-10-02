@@ -104,7 +104,9 @@ const {
 const {
   publish: publishProductWebsite,
   PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
-} = require("../../platform/website/publicationOrchestrator");
+} = require("../../platform/website/publishWorkflow");
+// Batch 6: PublishWorkflow wraps publicationOrchestrator (single shared engine).
+require("../../platform/website/publicationOrchestrator");
 const { PRODUCT } = require("../../platform/registration/constants");
 const {
   findOrganizationByKey,
