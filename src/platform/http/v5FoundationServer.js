@@ -79,6 +79,9 @@ const { createMemberPortalRouter } = require("../../blessboard/http/memberPortal
 const {
   createMemberPortalAuthRouter,
 } = require("../../blessboard/http/memberPortalAuthRoutes");
+const {
+  createPathMemberTenantMiddleware,
+} = require("../../blessboard/http/pathMemberTenantMiddleware");
 const { createAnnouncementAdminRouter } = require("../../blessboard/http/announcementAdminRoutes");
 const { createAnnouncementMemberRouter } = require("../../blessboard/http/announcementMemberRoutes");
 const { createBroadcastAdminRouter } = require("../../blessboard/http/broadcastAdminRoutes");
@@ -801,6 +804,27 @@ function createV5FoundationApp(options) {
     createMemberPortalRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  // Path-scoped member portal for apex hosts where product host === churchHostDomain
+  // (V8 testing). Enables /c/:organizationKey/member/* without tenant DNS.
+  app.use(
+    "/c/:organizationKey",
+    createPathMemberTenantMiddleware({ getPool }),
+    createMemberPortalAuthRouter({
+      getPool,
+      isApexHost: () => false,
+      env,
+    })
+  );
+  app.use(
+    "/c/:organizationKey",
+    createPathMemberTenantMiddleware({ getPool }),
+    createMemberPortalRouter({
+      getPool,
+      isApexHost: () => false,
       env,
       sendUnavailable,
     })

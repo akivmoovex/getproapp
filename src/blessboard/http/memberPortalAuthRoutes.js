@@ -14,6 +14,7 @@ const {
 } = require("../../platform/http/v5Csrf");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { createRejectApex } = require("./rejectApex");
 const {
   issueAuthenticatedSessionCookie,
 } = require("../../platform/session/sharedSessionSecurity");
@@ -42,14 +43,15 @@ function createMemberPortalAuthRouter(deps) {
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
 
-  const router = express.Router();
+  const router = express.Router({ mergeParams: true });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      return res.status(404).type("text").send("Not found.");
-    }
-    return next();
-  }
+  // V8 / testing: product host is also churchHostDomain — allow session-scoped
+  // tenant (dual-role) and unauthenticated path-mounted /c/:org/member/* flows.
+  const rejectApex = createRejectApex({
+    isApexHost,
+    mode: "unlessTenant",
+    notFoundMessage: "Not found.",
+  });
 
   function csrfLocals(req, res) {
     const token = issueCsrfToken(req, res, env);

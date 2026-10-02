@@ -27,6 +27,10 @@ const {
 } = require("./websiteSystemStateHttp");
 const { createRequireAnyBlessBoardPermission } = require("./requireBlessBoardShellAccess");
 const { buildPermissionNavFlags } = require("./permissionNavLocals");
+const {
+  buildPublicWebsiteHistoryPath,
+  PRODUCT_CODE,
+} = require("../../platform/website/publicWebsiteUrl");
 
 function renderHqView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -146,6 +150,19 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       branchId: null,
     });
     return flags.canRestoreWebsite === true;
+  }
+
+  function engineHistoryPathForTenant(tenant) {
+    const orgKey =
+      (tenant &&
+        tenant.organization &&
+        (tenant.organization.key || tenant.organization.organizationKey)) ||
+      null;
+    if (!orgKey) return null;
+    return buildPublicWebsiteHistoryPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: orgKey,
+    });
   }
 
   function stripRestoreActions(recent) {
@@ -432,6 +449,12 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         versionId: req.params.versionId,
       });
       if (!result.ok) {
+        // Engine-published / draft_source rows fail classic prepare — send to
+        // engine history (restore-as-new surface used by the HQ hub).
+        const engineHistory = engineHistoryPathForTenant(tenant);
+        if (engineHistory) {
+          return res.redirect(302, engineHistory);
+        }
         if (result.status === versionSvc.STATUS.NOT_FOUND) {
           return sendControlled(req, res, 404, "Version not found.");
         }

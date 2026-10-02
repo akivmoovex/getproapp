@@ -344,12 +344,13 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
     assert.deepEqual(second.pagesCreated, []);
   });
 
-  it("member portal remains unavailable on apex", async () => {
+  it("member portal allows apex when session tenant is resolved (unlessTenant)", async () => {
     requireDb();
-    const res = await request(app)
+    // Unauthenticated apex passes rejectApex (unlessTenant) then membership gate.
+    const anon = await request(app)
       .get("/member")
       .set("Host", APEX)
       .set("Accept", "text/plain");
-    assert.equal(res.status, 503);
+    assert.equal(anon.status, 401);
   });
 });

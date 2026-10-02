@@ -47,6 +47,7 @@ const {
   resolveBlessBoardFormPhone,
   blessBoardPhoneFieldLocals,
 } = require("../services/resolveBlessBoardFormPhone");
+const { createRejectApex } = require("./rejectApex");
 
 const DASHBOARD_PREVIEW_LIMIT = 3;
 
@@ -345,18 +346,17 @@ function createMemberPortalRouter(deps) {
   const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
-  const router = express.Router();
+  const router = express.Router({ mergeParams: true });
   const requireMember = createRequireActiveMember({ getPool });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      if (typeof sendUnavailable === "function") {
-        return sendUnavailable(req, res);
-      }
-      return res.status(503).type("text").send("Unavailable");
-    }
-    return next();
-  }
+  const rejectApex = createRejectApex({
+    isApexHost,
+    mode: "unlessTenant",
+    sendUnavailable:
+      typeof sendUnavailable === "function"
+        ? sendUnavailable
+        : (req, res) => res.status(503).type("text").send("Unavailable"),
+  });
 
   /**
    * @param {import('express').Request} req

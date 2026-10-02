@@ -571,7 +571,9 @@ function createBranchRegistrationAdminRouter(deps) {
     const scope = hostScope(req, res);
     if (!scope) return;
     const tenant = resolveTenantForAuthorization(req);
-    const branches = await listBlessBoardBranches(getPool(), scope.churchId);
+    const branches = await listBlessBoardBranches(getPool(), scope.churchId, {
+      includeIds: true,
+    });
     const formModel = await buildAddMemberFormModel(getPool(), {
       churchId: scope.churchId,
       defaultBranchId: scope.branchId,
@@ -612,6 +614,12 @@ function createBranchRegistrationAdminRouter(deps) {
     if (!parsed.values.branchId) {
       parsed.values.branchId = scope.branchId;
       parsed.branchId = scope.branchId;
+      // Empty select values (missing branch UUID options) must not keep a stale
+      // "Assigned branch is required" error after the workspace default applies.
+      parsed.fieldErrors = (parsed.fieldErrors || []).filter(
+        (err) => !(err && err.field === "branch_id")
+      );
+      parsed.ok = (parsed.fieldErrors || []).length === 0;
     }
     if (parsed.branchId && parsed.branchId !== scope.branchId) {
       parsed.ok = false;
@@ -852,7 +860,9 @@ function createBranchRegistrationAdminRouter(deps) {
 
   async function renderAddMemberForm(req, res, scope, tenant, opts) {
     const options = opts || {};
-    const branches = await listBlessBoardBranches(getPool(), scope.churchId);
+    const branches = await listBlessBoardBranches(getPool(), scope.churchId, {
+      includeIds: true,
+    });
     const formModel = await buildAddMemberFormModel(getPool(), {
       churchId: scope.churchId,
       defaultBranchId: scope.branchId,

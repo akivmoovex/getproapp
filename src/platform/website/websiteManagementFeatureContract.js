@@ -274,12 +274,14 @@ const BB_WEBSITE_OPTIONS = Object.freeze([
   {
     featureId: "BB_HISTORY",
     label: "Version history",
-    route: "/hq/website/version-history",
+    route: "/c/:organizationKey/website/history",
     template: null,
     marker: /history|version/,
     shell: "bb-hq",
     status: "FULL",
     sharedFeature: "WM_HISTORY",
+    // Registered as `${pathPrefix}/website/history` on blessboardWebsiteEditorRoutes.
+    routeProbe: "/website/history",
   },
   {
     featureId: "BB_MEDIA",

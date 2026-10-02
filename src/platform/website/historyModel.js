@@ -75,7 +75,9 @@ function mapVersionRow(version, input) {
     changeCount: Number(row.changeCount) || 0,
     previewHref,
     restoreHref,
-    canRestore: Boolean(input.canRestore && !isLive && restoreHref),
+    // Restore-as-new copies any published snapshot (including live) into draft.
+    // Live stays unchanged until republish — matches engine restore API.
+    canRestore: Boolean(input.canRestore && restoreHref),
   };
 }
 
@@ -134,7 +136,7 @@ function buildHistoryView(input) {
     hasVersions: publishedRows.length > 0,
     emptyMessage: "No published versions yet. Publish the website to create version 1.",
     intro:
-      "Public visitors see the current published version only. Restore copies a historical version into a new draft. The live website does not change until you publish.",
+      "Public visitors see the current published version only. Restore copies a published version into a new draft (including the live version). The live website does not change until you publish.",
     restoreConfirmTitle: "Restore as new draft?",
     restoreConfirmBody:
       "This copies the selected version into your draft. The live published website stays unchanged until you publish.",
