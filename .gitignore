@@ -35,6 +35,7 @@ playwright-report/
 playwright/.cache/
 tmp/
 .tmp-mw-qa/
+.tmp_runtime_audit/
 
 # Shared Hostinger build-identity metadata (written at runtime by apex worker)
 .getpro/
