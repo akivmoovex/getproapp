@@ -48,6 +48,7 @@ const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
 const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
 const { presentEditorShell, buildEditorPages } = require("../../platform/website-engine/editorShell");
 const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { isWebsiteFrameRequest } = require("../../platform/website-engine/editorViewportFrame");
 const {
   describeAddSectionAvailability,
 } = require("../../platform/website/sectionRegistry");
@@ -270,9 +271,11 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
   }
   if (!websiteReviewNote && websiteModerationNote) websiteReviewNote = websiteModerationNote;
   const websiteEdit = !isVersionPreview && canEdit && editRequested && !websiteEditLocked;
+  const websiteFrameMode = websiteEdit && isWebsiteFrameRequest(req.query);
   const linkQuery = clinicWebsiteLinkQuery({
     websiteEdit,
     previewDraftMode,
+    websiteFrameMode,
     previewVersionId: isVersionPreview && previewVersion ? previewVersion.id : "",
   });
   outClinic = applyWebsiteLinkQuery(outClinic, linkQuery);
@@ -486,6 +489,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     websitePreviewVersion: previewVersion,
     websitePreviewRestoreUrl: restoreUrl,
     websiteEdit,
+    websiteFrameMode,
     websitePreviewDraftMode: previewDraftMode,
     websiteCanEdit: canEdit,
     websiteCanSubmit: canSubmit && !websitePublishLocked,

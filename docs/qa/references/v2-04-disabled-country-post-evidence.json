@@ -1,0 +1,122 @@
+{
+  "bb": {
+    "enabledInUi": [
+      "ZM",
+      "AU",
+      "BW",
+      "BI",
+      "CA",
+      "SZ",
+      "KE",
+      "LS",
+      "MW",
+      "MZ",
+      "NA",
+      "NZ",
+      "RW",
+      "ZA",
+      "TZ",
+      "UG",
+      "GB",
+      "US",
+      "ZW"
+    ],
+    "hasFR": false,
+    "formGet": {
+      "status": 200,
+      "csrf": true
+    },
+    "fieldNames": [
+      "viewport",
+      "description",
+      "_csrf",
+      "company_website",
+      "church_name",
+      "country",
+      "city",
+      "locationId",
+      "branch_name",
+      "branch_count",
+      "selected_plan",
+      "message",
+      "organization_key",
+      "branch_key_preview",
+      "action"
+    ],
+    "post": {
+      "status": 400,
+      "loc": null,
+      "successPath": false,
+      "text": "Register Your Church · BlessBoard Skip to content BlessBoard UNKNOWN testing Home Features For Churches Pricing Directory Contact Sign In Register Your Church Menu Menu close Home Features For Churches Pricing Directory Contact Sign In Register Your Church Demo Only Join BlessBoard Nurture Your Community. BlessBoard helps congregations publish a church website, engage verified members, and administer branch and HQ operations on GetPro. verified Unified ministry tools — public site, member portal",
+      "rejectish": true
+    }
+  },
+  "ac": {
+    "enabledInUi": [
+      "ZM",
+      "AU",
+      "BW",
+      "BI",
+      "CA",
+      "SZ",
+      "KE",
+      "LS",
+      "MW",
+      "MZ",
+      "NA",
+      "NZ",
+      "RW",
+      "ZA",
+      "TZ",
+      "UG",
+      "GB",
+      "US",
+      "ZW"
+    ],
+    "hasFR": false,
+    "formGet": {
+      "status": 200,
+      "csrf": true
+    },
+    "fieldNames": [
+      "viewport",
+      "robots",
+      "twitter:card",
+      "twitter:title",
+      "_csrf",
+      "action",
+      "clinicName",
+      "clinicType",
+      "countryCode",
+      "city",
+      "locationId",
+      "address",
+      "notes"
+    ],
+    "post": {
+      "status": 400,
+      "loc": null,
+      "successPath": false,
+      "text": "Administrator details · ActiveClinic Skip to content medical_services ActiveClinic Need help? Please fix the following Select a valid country. Enter an administrator name (2–120 characters). Enter an administrator email address. Enter an administrator phone number. Administrator account Secure access for your clinic team The administrator you create here will manage staff, settings, and day-to-day clinic operations after registration. lock Secure sign-in — use email or phone with a strong password. badge Staff management — invite and manage clinic team members. admin_panel_settings Role-based ",
+      "rejectish": true
+    }
+  },
+  "executedAt": "2026-10-02T01:42:00Z",
+  "tip": "7dbe945d6c93",
+  "verdict": {
+    "DISABLED_COUNTRY_POST": "PASS",
+    "bb": {
+      "status": 400,
+      "frInUi": false,
+      "tenantCreated": false,
+      "notes": "Forged FR POST rejected; slug probe 404"
+    },
+    "ac": {
+      "status": 400,
+      "frInUi": false,
+      "tenantCreated": false,
+      "messageIncludes": "Select a valid country.",
+      "notes": "Forged FR POST rejected; slug probe 404"
+    }
+  }
+}

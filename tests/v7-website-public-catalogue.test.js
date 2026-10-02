@@ -344,7 +344,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .set("Cookie", cookie);
     assert.equal(doctorsPage.status, 200, doctorsPage.text.slice(0, 300));
     assert.match(doctorsPage.text, re(doctorName));
-    assert.match(doctorsPage.text, /Needs profile information|Show on website|Hidden from website|Visible on website/);
+    assert.match(doctorsPage.text, /Incomplete|Published|Hidden|Show on website|Hide from website/);
     assert.match(doctorsPage.text, re(`data-ac-catalogue-id="${doctor.id}"`));
     const start = doctorsPage.text.indexOf("data-ac-page-section=\"website-catalogue\"");
     const end = doctorsPage.text.indexOf("</section>", start);
@@ -356,7 +356,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     const shownDoctors = await request(app)
       .get("/app/settings/website/catalogue?tab=doctors")
       .set("Cookie", cookie);
-    assert.match(shownDoctors.text, /Visible on website/);
+    assert.match(shownDoctors.text, /Published|data-ac-catalogue-visible="1"/);
     assert.match(
       shownDoctors.text,
       new RegExp(`data-ac-catalogue-id="${doctor.id}"[^>]*data-ac-catalogue-visible="1"`)
@@ -1091,7 +1091,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .get("/app/settings/website/catalogue?tab=doctors")
       .set("Cookie", cookie);
     assert.match(catalogue.text, re(name));
-    assert.match(catalogue.text, /Add doctor profile/);
+    assert.match(catalogue.text, /Add doctor/);
     assert.match(catalogue.text, re(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/edit`));
 
     const editPage = await request(app)

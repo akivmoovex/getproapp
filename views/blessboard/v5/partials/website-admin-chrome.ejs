@@ -46,7 +46,11 @@
     </div>
   </div>
   <% } else { %>
-  <% if (wa.previewDraftMode && wa.editorShell) { %>
+  <% if (wa.frameMode && wa.editingMode && wa.editorShell) { %>
+  <%- include('../../../platform/website-engine/editor-frame-bootstrap', {
+    editorShell: wa.editorShell
+  }) %>
+  <% } else if (wa.previewDraftMode && wa.editorShell) { %>
   <div
     class="gp-website-editor-host gp-website-editor-host--preview"
     data-bb-admin-mode="preview"

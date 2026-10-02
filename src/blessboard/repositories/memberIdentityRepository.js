@@ -5,6 +5,14 @@
  * No binary data; no sensitive category fields.
  */
 
+function isUndefinedColumnError(err) {
+  return Boolean(
+    err &&
+      (String(err.code || "") === "42703" ||
+        /column .* does not exist/i.test(String(err.message || "")))
+  );
+}
+
 function mapMember(row) {
   if (!row) return null;
   return {
@@ -565,6 +573,17 @@ async function listRegistrations(client, input) {
  * }} input
  */
 async function listMembersForBranch(client, input) {
+  try {
+    return await listMembersForBranchCore(client, input, true);
+  } catch (err) {
+    if (isUndefinedColumnError(err)) {
+      return await listMembersForBranchCore(client, input, false);
+    }
+    throw err;
+  }
+}
+
+async function listMembersForBranchCore(client, input, withV204Columns) {
   const churchId = String(input.churchId || "").trim();
   const branchId = String(input.branchId || "").trim();
   const status =
@@ -576,7 +595,9 @@ async function listMembersForBranch(client, input) {
       ? String(input.membershipStatus).trim().toLowerCase()
       : null;
   const portalAccessStatus =
-    input.portalAccessStatus != null && String(input.portalAccessStatus).trim()
+    withV204Columns &&
+    input.portalAccessStatus != null &&
+    String(input.portalAccessStatus).trim()
       ? String(input.portalAccessStatus).trim().toLowerCase()
       : null;
   const qRaw = input.q != null ? String(input.q).trim() : "";
@@ -606,14 +627,17 @@ async function listMembersForBranch(client, input) {
     } = require("../services/phoneFirstIdentityHelpers");
     const search = prepareIdentitySearchQuery(q);
     const like = search.like;
-    // Use normalized phone equality when query looks like a phone.
+    const memberNumberClause = withV204Columns
+      ? ` OR lower(COALESCE(m.member_number, '')) LIKE $${search.phoneNormalized ? i + 1 : i}`
+      : "";
     if (search.phoneNormalized) {
       where.push(
         `(m.phone_normalized = $${i}
           OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
           OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1})`
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}${
+          withV204Columns ? ` OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1}` : ""
+        })`
       );
       params.push(search.phoneNormalized, like);
       i += 2;
@@ -621,12 +645,14 @@ async function listMembersForBranch(client, input) {
       where.push(
         `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
           OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
-          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}
-          OR lower(COALESCE(m.member_number, '')) LIKE $${i})`
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}${
+          withV204Columns ? ` OR lower(COALESCE(m.member_number, '')) LIKE $${i}` : ""
+        })`
       );
       params.push(like);
       i += 1;
     }
+    void memberNumberClause;
   }
 
   const whereSql = where.join(" AND ");
@@ -641,11 +667,18 @@ async function listMembersForBranch(client, input) {
 
   params.push(limit);
   params.push(offset);
-  const { rows } = await client.query(
-    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+  const selectCols = withV204Columns
+    ? `m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
             m.member_number, m.status, m.portal_access_status, m.created_at, m.updated_at,
-            mb.membership_status, mb.is_primary, mb.joined_at
+            mb.membership_status, mb.is_primary, mb.joined_at`
+    : `m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            NULL::text AS member_number, m.status, 'not_activated'::text AS portal_access_status,
+            m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at`;
+  const { rows } = await client.query(
+    `SELECT ${selectCols}
        FROM blessboard.members m
        INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
       WHERE ${whereSql}
@@ -715,6 +748,17 @@ async function findMemberOnBranch(client, input) {
  * }} input
  */
 async function listMembersForChurch(client, input) {
+  try {
+    return await listMembersForChurchCore(client, input, true);
+  } catch (err) {
+    if (isUndefinedColumnError(err)) {
+      return await listMembersForChurchCore(client, input, false);
+    }
+    throw err;
+  }
+}
+
+async function listMembersForChurchCore(client, input, withV204Columns) {
   const churchId = String(input.churchId || "").trim();
   const branchId =
     input.branchId != null && String(input.branchId).trim()
@@ -738,7 +782,9 @@ async function listMembersForChurch(client, input) {
     params.push(branchId);
   }
   const portalAccessStatus =
-    input.portalAccessStatus != null && String(input.portalAccessStatus).trim()
+    withV204Columns &&
+    input.portalAccessStatus != null &&
+    String(input.portalAccessStatus).trim()
       ? String(input.portalAccessStatus).trim().toLowerCase()
       : null;
 
@@ -756,14 +802,14 @@ async function listMembersForChurch(client, input) {
     } = require("../services/phoneFirstIdentityHelpers");
     const search = prepareIdentitySearchQuery(q);
     const like = search.like;
-    // Use normalized phone equality when query looks like a phone.
     if (search.phoneNormalized) {
       where.push(
         `(m.phone_normalized = $${i}
           OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
           OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}
-          OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1})`
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1}${
+          withV204Columns ? ` OR lower(COALESCE(m.member_number, '')) LIKE $${i + 1}` : ""
+        })`
       );
       params.push(search.phoneNormalized, like);
       i += 2;
@@ -771,8 +817,9 @@ async function listMembersForChurch(client, input) {
       where.push(
         `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
           OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
-          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}
-          OR lower(COALESCE(m.member_number, '')) LIKE $${i})`
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i}${
+          withV204Columns ? ` OR lower(COALESCE(m.member_number, '')) LIKE $${i}` : ""
+        })`
       );
       params.push(like);
       i += 1;
@@ -801,12 +848,20 @@ async function listMembersForChurch(client, input) {
 
   params.push(limit);
   params.push(offset);
-  const { rows } = await client.query(
-    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+  const selectCols = withV204Columns
+    ? `m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
             m.member_number, m.status, m.portal_access_status, m.created_at, m.updated_at,
             mb.membership_status, mb.is_primary, mb.joined_at,
-            b.branch_key, b.display_name AS branch_display_name
+            b.branch_key, b.display_name AS branch_display_name`
+    : `m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            NULL::text AS member_number, m.status, 'not_activated'::text AS portal_access_status,
+            m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at,
+            b.branch_key, b.display_name AS branch_display_name`;
+  const { rows } = await client.query(
+    `SELECT ${selectCols}
        FROM blessboard.members m
        ${joinSql}
        LEFT JOIN blessboard.branches b ON b.id = mb.branch_id

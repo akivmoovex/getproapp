@@ -141,7 +141,7 @@ async function loadChurchPublishContext(client, churchId) {
  * @param {string} churchId
  * @param {string|null} branchId
  */
-async function loadContactFlags(client, churchId, branchId) {
+async function loadContactFlags(client, churchId, branchId, organizationId) {
   const settings = await settingsRepo.findChurchSettings(client, churchId);
   const branchSettings =
     branchId != null ? await settingsRepo.findBranchSettings(client, branchId) : null;
@@ -151,9 +151,32 @@ async function loadContactFlags(client, churchId, branchId) {
   const hasBranchContact =
     Boolean(branchSettings && String(branchSettings.email || "").trim()) ||
     Boolean(branchSettings && String(branchSettings.phone || "").trim());
+  let hasEngineContact = false;
+  if (organizationId) {
+    try {
+      const {
+        loadFieldOverlayMap,
+        overlayKey,
+      } = require("../website/blessboardEngineContentService");
+      const contactOverlay = await loadFieldOverlayMap(client, {
+        organizationId: String(organizationId),
+        branchId: branchId || null,
+        pageKey: "contact",
+        mode: "draft",
+        createIfMissing: false,
+      });
+      const email = contactOverlay.get(overlayKey("details", "email"));
+      const phone = contactOverlay.get(overlayKey("details", "phone"));
+      hasEngineContact =
+        Boolean(email != null && String(email).trim()) ||
+        Boolean(phone != null && String(phone).trim());
+    } catch {
+      /* non-fatal — settings contact remains the fallback */
+    }
+  }
   return {
     settings,
-    hasContact: hasChurchContact || hasBranchContact,
+    hasContact: hasChurchContact || hasBranchContact || hasEngineContact,
   };
 }
 
@@ -173,7 +196,13 @@ async function hasServiceTimesContent(client, churchId) {
             ps.section_key IN ('service_times', 'services', 'worship_times')
             OR ps.section_type IN ('service_times', 'services', 'worship_times')
           )
-          AND NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
+          AND (
+            NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
+            OR (
+              jsonb_typeof(COALESCE(ps.layout_metadata, '{}'::jsonb)->'entries') = 'array'
+              AND jsonb_array_length(COALESCE(ps.layout_metadata, '{}'::jsonb)->'entries') > 0
+            )
+          )
      ) AS has_service_times`,
     [churchId]
   );
@@ -294,7 +323,12 @@ async function evaluatePublishReadiness(db, input) {
         gaps.push(GAP.FIRST_BRANCH);
       }
 
-      const contact = await loadContactFlags(client, churchId, ctx.first_branch_id);
+      const contact = await loadContactFlags(
+        client,
+        churchId,
+        ctx.first_branch_id,
+        ctx.organization_id
+      );
       if (!contact.hasContact) gaps.push(GAP.CONTACT_METHOD);
 
       const hasTimes = await hasServiceTimesContent(client, churchId);

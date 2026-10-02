@@ -1,14 +1,25 @@
 # V2.04 Manual QA — Results Record
 
-**Mode:** RESULT INGESTION (no application code).  
+**Mode:** RESULT INGESTION (no application code; no deploy).  
 **Date:** 2026-10-02  
-**Scenarios:** `docs/qa/V2_04_FINAL_MANUAL_QA_5_SCENARIOS.md`  
-**Input:** Hosted QA resume on fresh disposable tenant `ac-hqa-v8-muq9wn7a9a3d` (frozen tip `7dbe945d…`).
+**Frozen candidate:** `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`  
+**Hosted tip verified:** BB+AC `gitSha=7dbe945d6c93`, `branch=V4` / `V4 testing`  
+**Tenants:** BB `bb-v8qa-muq9wn7a9a3d` · AC `ac-hqa-v8-muq9wn7a9a3d`
 
 ### Ingestion finding
 
-RB-QA-01/02/04 remain **NOT_RUN**.  
-**Hosted AC resume (2026-10-02):** After QA tenant re-provision, authenticated invite + C01/C02/E03 + public smoke/privacy executed on `activeclinic.neuniversity.org` @ SHA `7dbe945d6c93`. **RB-QA-03=PASS**, **RB-QA-05=PASS**. Evidence: `docs/qa/references/v2-04-ac-hosted-qa-resume-evidence.json`. Production untouched. No new product defects.
+Final-3 manual blockers executed on hosted tip.  
+**RB-QA-04=PASS** (disabled-country POST + engine true-stale on BB+AC).  
+**RB-QA-01=OPEN** (Members pack blocked by `/hq/members` **503**).  
+**RB-QA-02=OPEN** (BB publish readiness `not_ready`; AC public clinic **403** after publish).  
+Prior closed: **RB-QA-03=PASS**, **RB-QA-05=PASS**, **RB-ID-01=PASS**.
+
+Evidence refs:
+- `docs/qa/references/v2-04-bb-members-scenario-probe-evidence.json`
+- `docs/qa/references/v2-04-bb-website-lifecycle-evidence.json`
+- `docs/qa/references/v2-04-bb-true-stale-engine-evidence.json`
+- `docs/qa/references/v2-04-ac-website-lifecycle-evidence.json`
+- `docs/qa/references/v2-04-disabled-country-post-evidence.json`
 
 ---
 
@@ -16,67 +27,125 @@ RB-QA-01/02/04 remain **NOT_RUN**.
 
 | QA_ID | RESULT | TESTER_EVIDENCE | DEFECT_ID | NOTES |
 |-------|--------|-----------------|-----------|-------|
-| RB-QA-01 | NOT_RUN | None supplied in session | — | Members FEATURE QA pack (T-M02–T-M15) not executed / not reported |
-| RB-QA-02 | NOT_RUN | None supplied in session | — | AC+BB website lifecycle hosted not executed / not reported |
-| RB-QA-03 | **PASS** | Invite origin neuniversity; fresh-browser activation; token reuse 400; C01/C02 desktop+mobile Stitch; E03 media controls; public services/doctors/contact/pricing; pricing edit preserves `website_edit`/`website_mode`; service persist reload OK | — | Clinic `ac-hqa-v8-muq9wn7a9a3d` |
-| RB-QA-04 | NOT_RUN | None supplied in session | — | Geo + concurrency hosted not executed / not reported |
-| RB-QA-05 | **PASS** | Public `/services` + `/doctors` bodies allowlist-clean (no PHI/admin identifiers in catalogue content). Clinic footer shows org public contact from provision (approved clinic contact, not staff private field leak) | — | Spot-check on `ac-hqa-v8-muq9wn7a9a3d` |
+| RB-QA-01 | **OPEN** | T-M02–T-M15 matrix below; `/hq/members` + `/branch-admin/members` → **503** “Members are temporarily unavailable.” | DEF-BB-MEMBERS-503 | Cannot FEATURE-close Members pack |
+| RB-QA-02 | **OPEN** | BB: draft/save/preview OK; publish → `error=not_ready` (contact/details/status checklist); public stays Coming soon; no published versions. AC: draft/save/preview/publish/unpublish/republish/restore OK; public `/clinics/...` → **403 Clinic unavailable**. Engine true-stale PASS both. | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | Lifecycle not fully proven |
+| RB-QA-03 | **PASS** | Prior hosted resume | — | Unchanged |
+| RB-QA-04 | **PASS** | BB+AC forged `FR` registration POST **400**; AC text includes “Select a valid country.”; slug probes **404**. Engine stale: first save 200, stale second **409** `conflict/stale_draft_revision` on BB+AC; newer retained. | — | Classic BB `/hq/content/api/inline-field` lacks `expectedUpdatedAt` (silent overwrite) — engine path is canonical concurrency surface |
+| RB-QA-05 | **PASS** | Prior hosted resume | — | Unchanged |
 
-### Failures
+### Failures / new defects from this execution
 
-| QA_ID | Severity | Summary |
-|-------|----------|---------|
-| — | — | None from this resume for RB-QA-03/05 |
-
-### Severity / new release blockers from this ingestion
-
-| Item | Value |
-|------|-------|
-| FAIL count | 0 (for executed RB-QA-03/05) |
-| NEW_RELEASE_BLOCKERS | 0 |
-| MANUAL_QA_REMAINING | 3 (01/02/04 NOT_RUN) |
+| ID | Severity | Summary |
+|----|----------|---------|
+| DEF-BB-MEMBERS-503 | **P0** | HQ/branch members list returns 503; blocks T-M02/T-M13 and dependent member admin flows |
+| DEF-BB-WEB-PUBLISH-NOT-READY | **P0** | Publish readiness remains `not_ready` after contact + service-times + settings fills; public never leaves Coming soon; version history has no published versions |
+| DEF-AC-PUBLIC-403 | **P0** | After website publish (`notice=published`), unauthenticated `/clinics/{key}` (+ services/doctors/contact) returns **403 Clinic unavailable** |
+| DEF-BB-INLINE-STALE-SILENT | P2 | Classic inline-field dual-session overwrite without revision token (engine path correctly 409) |
 
 ---
 
-### Executed evidence summary (RB-QA-03 / RB-QA-05)
+## RB-QA-01 — BlessBoard Members scenarios (T-M02–T-M15)
 
-| Check | Result |
-|-------|--------|
-| INVITE_ORIGIN | PASS — `activeclinic.neuniversity.org` (no pronline) |
-| FRESH_BROWSER_ACTIVATION | PASS — activate → login → session |
-| TOKEN_REUSE_REJECTED | PASS — reused token GET **400** |
-| HOSTED_C01_DESKTOP | PASS — Stitch C01, breadcrumb/banner/stats/table, Add/Edit, Contact clinic price |
-| HOSTED_C01_MOBILE | PASS — C01-M cards + sticky; no horizontal overflow @390–624px |
-| HOSTED_C02_DESKTOP | PASS — Stitch C02, staff lookup, Complete/Edit profile |
-| HOSTED_C02_MOBILE | PASS — C02-M cards + sticky |
-| HOSTED_E03 | PASS — Upload / Content Library / Adjust / Remove; library modal opens |
-| AC_PUBLIC_SITE_SMOKE | PASS |
-| AC_PUBLIC_PRIVACY | PASS |
+| TEST_ID | RESULT | EVIDENCE |
+|---------|--------|----------|
+| T-M02 | **FAIL** | Staff HQ `/hq/members` → **503** Members temporarily unavailable. Registrations oversight **200** but member create/list path blocked. |
+| T-M03 | **NOT_RUN** | Blocked by members 503 / no Church ID create surface |
+| T-M04 | **FAIL** | Visitor + member applicant login → **401**. No activation/login success path on provisioned member personas. |
+| T-M05 | **NOT_RUN** | Recovery/OTP not exercised (no activated member session) |
+| T-M06 | **NOT_RUN** | Lost Church ID admin-assisted path not exercised |
+| T-M07 | **FAIL** | Member profile/block requires members admin; `/hq/members` 503. Member journey page loads (**200**) but profile/block/unblock not executed. |
+| T-M08 | **NOT_RUN** | Dual-role journey not executed (no dual-role member session) |
+| T-M09 | **NOT_RUN** | Attendance page **200**; manual/QR/duplicate/correction flows not executed |
+| T-M10 | **NOT_RUN** | Requests page **200**; approve/reject/self-approve not executed |
+| T-M11 | **NOT_RUN** | Member privacy spot-check not executed (no member portal session) |
+| T-M12 | **NOT_RUN** | Member portal upload attempt not executed (`/member` 503 earlier; `/member/register` V5 unavailable) |
+| T-M13 | **FAIL** | Admin search `/hq/members?q=test` → **503** |
+| T-M14 | **PASS** | Multi-admin: HQ + reviewer login OK; staff-access + roles **200**. Branch admin **403** on `/hq/members` (“no access”). Scoped HQ denial evidenced. |
+| T-M15 | **PASS** | Cross-tenant: BB `/c/{AC_ORG_KEY}/hq` → **404** Not found. AC `/clinics/{BB_ORG_KEY}` → **404**. |
+
+**Counts:** PASS=2 · FAIL=4 · NOT_RUN=8  
+Cells deferred functionality was not treated as failure.
+
+---
+
+## RB-QA-02 — Shared website lifecycle
+
+### BlessBoard
+
+| Step | Result | Evidence |
+|------|--------|----------|
+| DRAFT open | PASS | Editor draft chrome; unpublished changes include engine keys |
+| SAVE | PASS | Engine `POST .../hq/website/drafts` `home.hero.heading` → 200 `saved_to_draft` |
+| PREVIEW | PASS | Draft preview shows stamped heading |
+| PUBLISH | **FAIL** | `POST /hq/website/publish` → `error=not_ready` (details/contact/status checklist remains Needs Attention despite fills) |
+| PUBLIC VERIFY | **FAIL** | `/c/{org}/hq` remains Coming soon |
+| UNPUBLISH | PARTIAL | `POST /hq/website/unpublish` → `notice=unpublished` (site already unpublished) |
+| VERSION HISTORY | **FAIL** | “No published versions yet” after attempted publish |
+| RESTORE-AS-NEW | **NOT_RUN** | No published version ids to restore |
+| REPUBLISH | **FAIL** | Same `not_ready` |
+| TRUE STALE | **PASS** | Two HQ sessions; B save 200; A stale save **409** `stale_draft_revision`; draft retains newer |
+
+**BB_WEBSITE_LIFECYCLE=FAIL**
+
+### ActiveClinic
+
+| Step | Result | Evidence |
+|------|--------|----------|
+| DRAFT/SAVE | PASS | `home.hero.title` draft save 200 |
+| PREVIEW | PASS | Draft stamp visible when authenticated |
+| PUBLISH | PASS | `POST /clinics/.../website/publish` → `history?notice=published` |
+| PUBLIC VERIFY | **FAIL** | Unauthenticated `/clinics/{key}` **403 Clinic unavailable** (also services/doctors/contact) |
+| UNPUBLISH | PASS | `POST .../website/unpublish` → `website=unpublished` |
+| VERSION HISTORY | PASS | History HTML lists versions |
+| RESTORE-AS-NEW | PASS | `POST .../versions/{id}/restore` → `notice=restored_draft` |
+| REPUBLISH | PASS | Publish again → `notice=published` |
+| TRUE STALE | **PASS** | B 200; A **409** `stale_draft_revision`; newer retained |
+| Cross-tenant | PASS | BB org key on AC → 404 |
+
+**AC_WEBSITE_LIFECYCLE=FAIL** (public verify broken)  
+**TRUE_STALE_WEBSITE=PASS**
+
+---
+
+## RB-QA-04 — Disabled country + concurrency
+
+### A. Disabled country POST
+
+| Product | Result | Evidence |
+|---------|--------|----------|
+| BB `/register-church` forged `country=FR` | PASS | HTTP **400**; FR not in enabled UI list; no success redirect; slug probe 404 |
+| AC `/register-clinic` forged `countryCode=FR` | PASS | HTTP **400**; “Select a valid country.”; no success; slug probe 404 |
+
+**DISABLED_COUNTRY_POST=PASS**
+
+### B. True stale concurrency
+
+| Product | Result | Evidence |
+|---------|--------|----------|
+| BB engine drafts | PASS | 200 then **409** `conflict/stale_draft_revision` |
+| AC engine drafts | PASS | 200 then **409** `conflict/stale_draft_revision` |
+
+**TRUE_STALE_CONCURRENCY=PASS**
+
+---
 
 ```
 MANUAL_QA_INPUT=5
-MANUAL_QA_PASS=2
+MANUAL_QA_PASS=3
 MANUAL_QA_FAIL=0
 MANUAL_QA_BLOCKED=0
-MANUAL_QA_NOT_RUN=3
-MANUAL_QA_OPEN=0
-MANUAL_QA_REMAINING=3
-NEW_RELEASE_BLOCKERS=0
-NEW_DEFECTS=0
+MANUAL_QA_NOT_RUN=0
+MANUAL_QA_OPEN=2
+MANUAL_QA_REMAINING=2
+NEW_RELEASE_BLOCKERS=2
+NEW_DEFECTS=3
 FROZEN_CANDIDATE=7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b
 HOSTED_SHA_MATCH=PASS
-AC_INVITE_ORIGIN=PASS
-AC_INVITE_FRESH_BROWSER=PASS
-AC_INVITE_REUSE_REJECTED=PASS
-HOSTED_C01_DESKTOP=PASS
-HOSTED_C01_MOBILE=PASS
-HOSTED_C02_DESKTOP=PASS
-HOSTED_C02_MOBILE=PASS
-HOSTED_E03=PASS
-AC_PUBLIC_SITE_SMOKE=PASS
-AC_PUBLIC_PRIVACY=PASS
+RB_QA_01=OPEN
+RB_QA_02=OPEN
 RB_QA_03=PASS
+RB_QA_04=PASS
 RB_QA_05=PASS
-REMAINING_BLOCKERS=3
-FINAL=V2_04_AC_HOSTED_QA_RESUMED
+REMAINING_BLOCKERS=2
+FINAL=V2_04_FINAL_MANUAL_QA_BLOCKERS_EXECUTED
 ```

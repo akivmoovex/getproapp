@@ -18,7 +18,9 @@
     shell.csrfField = typeof csrfField !== 'undefined' ? csrfField : (shell.csrfField || '_csrf');
   }
 %>
-<% if (typeof websiteEdit !== 'undefined' && websiteEdit && shell) { %>
+<% if (typeof websiteEdit !== 'undefined' && websiteEdit && shell && typeof websiteFrameMode !== 'undefined' && websiteFrameMode) { %>
+<%- include('../../platform/website-engine/editor-frame-bootstrap', { editorShell: shell }) %>
+<% } else if (typeof websiteEdit !== 'undefined' && websiteEdit && shell) { %>
 <div
   class="gp-website-editor-host"
   data-clinic-key="<%= clinic && clinic.clinicKey %>"

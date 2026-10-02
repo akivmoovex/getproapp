@@ -47,9 +47,10 @@ const {
   publicBrandStyle,
 } = require("../../platform/website/branding");
 const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
-const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, withWebsiteFrameQuery, withoutWebsiteFrameQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
 const { getPendingChangeSummary } = require("../../platform/website/websiteChangeManagerService");
 const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { isWebsiteFrameRequest } = require("../../platform/website-engine/editorViewportFrame");
 const { PERMISSIONS } = require("../../platform/website/permissions");
 
 const EDIT_QUERY = "website_edit";
@@ -365,9 +366,13 @@ function canShowWebsiteEditChrome(input) {
 /**
  * @param {string} path
  * @param {boolean} editing
+ * @param {boolean} [frameMode]
  */
-function withEditQuery(path, editing) {
-  return editing ? withEditorNavigationQuery(path) : withoutEditorNavigationQuery(path);
+function withEditQuery(path, editing, frameMode) {
+  let next = editing ? withEditorNavigationQuery(path) : withoutEditorNavigationQuery(path);
+  if (editing && frameMode) next = withWebsiteFrameQuery(next);
+  else next = withoutWebsiteFrameQuery(next);
+  return next;
 }
 
 function withPreviewQuery(path) {
@@ -489,6 +494,7 @@ async function attachWebsiteAdminChrome(opts) {
     tenant && tenant.organization ? tenant.organization.id : authz.organizationId;
 
   const editingMode = String(req.query[EDIT_QUERY] || "") === "1";
+  const frameMode = editingMode && isWebsiteFrameRequest(req.query);
   const previewDraftMode =
     String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase() ===
     "draft";
@@ -869,20 +875,21 @@ async function attachWebsiteAdminChrome(opts) {
   if (editingMode && Array.isArray(model.navItems)) {
     model.navItems = model.navItems.map((item) => ({
       ...item,
-      href: withEditQuery(item.href, true),
+      href: withEditQuery(item.href, true, frameMode),
     }));
-    model.homeHref = withEditQuery(model.homeHref || model.pathPrefix || "/", true);
+    model.homeHref = withEditQuery(model.homeHref || model.pathPrefix || "/", true, frameMode);
     model.visitHref = withEditQuery(
       model.visitHref || `${model.pathPrefix || ""}/contact`,
-      true
+      true,
+      frameMode
     );
     if (model.giveHref) {
-      model.giveHref = withEditQuery(model.giveHref, true);
+      model.giveHref = withEditQuery(model.giveHref, true, frameMode);
     }
     const priorHrefFor = typeof model.hrefFor === "function" ? model.hrefFor.bind(model) : null;
     model.hrefFor = function hrefForEdit(pagePath) {
       const base = priorHrefFor ? priorHrefFor(pagePath) : String(pagePath || "/");
-      return withEditQuery(base, true);
+      return withEditQuery(base, true, frameMode);
     };
 
     function mapNavTree(items) {
@@ -890,7 +897,7 @@ async function attachWebsiteAdminChrome(opts) {
       return items.map((item) => {
         const next = {
           ...item,
-          href: item.href ? withEditQuery(item.href, true) : item.href,
+          href: item.href ? withEditQuery(item.href, true, frameMode) : item.href,
         };
         if (Array.isArray(item.children)) {
           next.children = mapNavTree(item.children);
@@ -908,7 +915,7 @@ async function attachWebsiteAdminChrome(opts) {
         ctaItem: model.navigation.ctaItem
           ? {
               ...model.navigation.ctaItem,
-              href: withEditQuery(model.navigation.ctaItem.href, true),
+              href: withEditQuery(model.navigation.ctaItem.href, true, frameMode),
             }
           : null,
       };
@@ -1291,6 +1298,7 @@ async function attachWebsiteAdminChrome(opts) {
   model.websiteAdmin = {
     canEdit: true,
     editingMode,
+    frameMode,
     previewDraftMode: previewDraftMode && !editingMode,
     status,
     showDemoNotice: usedPublicDemoFill,

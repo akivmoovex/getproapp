@@ -57,10 +57,10 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
-| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
+| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **OPEN** (2026-10-02 hosted @ `7dbe945d…`: T-M02/T-M04/T-M07/T-M13 **FAIL**; T-M14/T-M15 **PASS**; 8 **NOT_RUN**) | `/hq/members` **503** blocks Church ID / profile / search FEATURE proof | Fix members list/manager gate on TESTING; re-run T-M02–T-M15 | RB-ID-01 **PASS**; DEF-BB-MEMBERS-503 | NO |
+| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **OPEN** (2026-10-02): BB publish `not_ready` / Coming soon; AC publish/unpublish/restore OK but public **403 Clinic unavailable**; true-stale **PASS** both | Full DRAFT→…→REPUBLISH + public verify not proven on both products | Fix BB publish readiness + AC public availability; re-run lifecycle | RB-ID-01 **PASS**; DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | NO |
 | RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **PASS** (2026-10-02 hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke) | — | — | RB-ID-01 **PASS** | — |
-| RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
+| ~~RB-QA-04~~ | SHARED | Geography + concurrency hosted | MANUAL_QA | **PASS** (2026-10-02 @ `7dbe945d…`): forged FR POST **400** BB+AC; engine true-stale **409** `stale_draft_revision` BB+AC | — | — | RB-ID-01 **PASS** | — |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **PASS** (2026-10-02: public services/doctors bodies allowlist-clean on `ac-hqa-v8-muq9wn7a9a3d`; footer org public contact only) | — | — | RB-PROD-07 **CLOSED** | — |
 
 ### E. RELEASE IDENTITY
@@ -78,12 +78,12 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 | **A. ENGINEERING** | — (Wave3 closed) | **0** |
 | **B. PRODUCT** | — (Wave2 closed) | **0** |
 | **C. AUTOMATED TEST** | — (Wave3 closed) | **0** |
-| **D. MANUAL QA** | RB-QA-01, RB-QA-02, RB-QA-04 (RB-QA-03/05 **PASS**) | **3** |
+| **D. MANUAL QA** | RB-QA-01, RB-QA-02 (RB-QA-03/04/05 **PASS**) | **2** |
 | **E. RELEASE IDENTITY** | RB-ID-01 (**PASS** on tip `7dbe945d6c93`) | **0** open |
 | **Closed Wave1** | RB-ENG-03, RB-ENG-04 | **2** |
 | **Closed Wave2** | RB-PROD-01…08, RB-ENG-01, RB-ENG-02 | **10** |
 | **Closed Wave3** | RB-ENG-05, RB-TEST-01…07 | **8** |
-| **Total remaining unique** | | **3** |
+| **Total remaining unique** | | **2** |
 
 ### Editor P1 → blocker map
 
@@ -104,20 +104,22 @@ Roadmap **Phase 5** product adapters / branding and all **P2** items are **not**
 |-----|-----|----------|
 | — | — | RB-QA-03/05 closed on hosted resume |
 
-**FASTEST_CLOSABLE_NOW = 0** among remaining.  
-**Still open MANUAL_QA:** RB-QA-01 (Members pack), RB-QA-02 (website lifecycle), RB-QA-04 (geo + concurrency).
+**FASTEST_CLOSABLE_NOW = 0** among remaining (both need product fixes before re-QA).  
+**Still open MANUAL_QA:** RB-QA-01 (Members pack), RB-QA-02 (website lifecycle).  
+~~RB-QA-04~~ **PASS** (disabled-country + true-stale).
 
 ---
 
 ## Minimum path to `READY_FOR_PRODUCTION_QA=YES`
 
-1. **RB-ID-01** — fix BB+AC branch label (not UNKNOWN), then re-verify; sheet already captured for SHA/env/DB/About=2.04.  
+1. ~~**RB-ID-01**~~ **PASS** on tip `7dbe945d…`.  
 2. ~~RB-PROD-01…08 + RB-ENG-01/02~~ **CLOSED Wave2**.  
 3. ~~RB-ENG-05 + RB-TEST-01…07~~ **CLOSED Wave3**.  
-4. Execute **RB-QA-01** (Members FEATURE QA) + **RB-QA-02** (website lifecycle) + **RB-QA-04** (geo / concurrency).  
-5. ~~**RB-QA-05**~~ **PASS** (2026-10-02 public PHI spot-check). ~~**RB-QA-03**~~ **PASS** (invite + C01/C02/E03 hosted).
+4. Fix **DEF-BB-MEMBERS-503** → re-run **RB-QA-01** (T-M02–T-M15).  
+5. Fix **DEF-BB-WEB-PUBLISH-NOT-READY** + **DEF-AC-PUBLIC-403** → re-run **RB-QA-02**.  
+6. ~~**RB-QA-04**~~ **PASS**. ~~**RB-QA-05**~~ **PASS**. ~~**RB-QA-03**~~ **PASS**.
 
-Until that set is closed (or Product **explicitly waives** a subset in writing), readiness stays **NO**.
+Until RB-QA-01 + RB-QA-02 close (or Product **explicitly waives** in writing), readiness stays **NO**.
 
 ### Wave1 closure note (2026-10-02)
 
@@ -128,7 +130,8 @@ Until that set is closed (or Product **explicitly waives** a subset in writing),
 
 - Early session: RB-QA-01…05 lacked evidence → classified NOT_RUN/OPEN.
 - **Hosted AC resume (same day):** after disposable tenant re-provision, **RB-QA-03=PASS** and **RB-QA-05=PASS** on tip `7dbe945d…` / clinic `ac-hqa-v8-muq9wn7a9a3d`.
-- MANUAL_QA_REMAINING=3 (01/02/04) · NEW_RELEASE_BLOCKERS=0 · READY_FOR_PRODUCTION_QA still **NO**.
+- **Final-3 hosted execution (same day, tip `7dbe945d…`):** **RB-QA-04=PASS**; **RB-QA-01=OPEN** (members 503); **RB-QA-02=OPEN** (BB publish not_ready; AC public 403). Evidence under `docs/qa/references/v2-04-*-evidence.json` + `V2_04_MANUAL_QA_RESULTS_RECORD.md`.
+- MANUAL_QA_REMAINING=2 (01/02) · NEW_DEFECTS=3 · READY_FOR_PRODUCTION_QA still **NO**.
 
 ### Wave6 build-identity verification note (2026-10-02, READ-ONLY)
 
@@ -233,30 +236,23 @@ BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_ID
 ---
 
 ```
-REMAINING_RELEASE_BLOCKERS=3
+REMAINING_RELEASE_BLOCKERS=2
 ENGINEERING=0
 PRODUCT=0
 AUTOMATED_TEST=0
-MANUAL_QA=3
+MANUAL_QA=2
 BUILD_IDENTITY=0
 NEW_APPLICATION_CANDIDATE=7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b
 HOSTED_SHA=7dbe945d6c93
 HOSTED_SHA_MATCH=PASS
 BRANCH_IDENTITY=PASS
 RB_ID_01=PASS
-AC_INVITE_ORIGIN=PASS
-AC_INVITE_FRESH_BROWSER=PASS
-AC_INVITE_REUSE_REJECTED=PASS
-HOSTED_C01_DESKTOP=PASS
-HOSTED_C01_MOBILE=PASS
-HOSTED_C02_DESKTOP=PASS
-HOSTED_C02_MOBILE=PASS
-HOSTED_E03=PASS
-AC_PUBLIC_SITE_SMOKE=PASS
-AC_PUBLIC_PRIVACY=PASS
+RB_QA_01=OPEN
+RB_QA_02=OPEN
 RB_QA_03=PASS
+RB_QA_04=PASS
 RB_QA_05=PASS
 PRODUCTION_UNTOUCHED=YES
-NEW_DEFECTS=0
-FINAL=V2_04_AC_HOSTED_QA_RESUMED
+NEW_DEFECTS=3
+FINAL=V2_04_FINAL_MANUAL_QA_BLOCKERS_EXECUTED
 ```

@@ -359,3 +359,37 @@ PRODUCT_SPECIFIC_CAUSE=NO
 CODE_FIX_REQUIRED=YES
 RECOMMENDED_ARCHITECTURE=A
 FINAL=V2_04_WEBSITE_EDITOR_MOBILE_RESPONSIVE_AUDIT_COMPLETE
+
+---
+
+## 11. Implementation evidence (Architecture A — post-fix)
+
+| Field | Value |
+|-------|--------|
+| **Date implemented** | 2026-10-02 |
+| **Architecture** | `IFRAME_REAL_VIEWPORT` |
+| **Desktop** | Same-document (unchanged) |
+| **Tablet** | Same-origin iframe @ **768px** |
+| **Mobile** | Same-origin iframe @ **390px** |
+| **Frame flag** | `website_frame=1` |
+| **Shared helpers** | `src/platform/website-engine/editorViewportFrame.js` |
+| **Frame bootstrap** | `views/platform/website-engine/editor-frame-bootstrap.ejs` (no outer chrome) |
+| **JS bridge** | `public/platform/website-inline-edit.js` — `setViewportMode` / postMessage |
+| **CSS** | Obsolete `max-width:390/768` pinch **removed**; `.gp-website-viewport-stage` added |
+| **BB wiring** | `attachWebsiteAdminChrome` `frameMode` + `website-admin-chrome.ejs` |
+| **AC wiring** | `attachActiveClinicWebsiteChrome` `websiteFrameMode` + `website-editor-chrome.ejs` |
+| **Tests** | `tests/v2-04-website-editor-real-viewport.test.js` (A–L) |
+| **Verification doc** | `docs/qa/V2_04_WEBSITE_EDITOR_REAL_VIEWPORT_VERIFICATION.md` |
+
+### Before → After
+
+| Concern | Before (audit) | After (A) |
+|---------|----------------|-----------|
+| `@media` reference | Parent browser window | **Iframe CSS viewport** (390 / 768) |
+| Tablet/Mobile mechanism | Body class + main `max-width` | Real iframe `src` of draft edit URL |
+| Recursive chrome | N/A | Prevented via `website_frame=1` → bootstrap only |
+| Competing systems | Pinch CSS only | Pinch **removed**; iframe stage only |
+| Editor functions | Same-doc | Parent chrome + frame bootstrap + postMessage dirty/save |
+
+ARCHITECTURE=IFRAME_REAL_VIEWPORT
+IMPLEMENTATION_STATUS=COMPLETE

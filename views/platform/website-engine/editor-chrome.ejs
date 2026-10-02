@@ -107,7 +107,13 @@
         <%= shell.draftLabel || '' %>
       </span>
     </div>
-    <div class="gp-website-editor__viewport" data-website-viewport-group="1" role="group" aria-label="Preview size">
+    <div
+      class="gp-website-editor__viewport"
+      data-website-viewport-group="1"
+      data-website-viewport-architecture="iframe"
+      role="group"
+      aria-label="Preview size"
+    >
       <button
         type="button"
         class="gp-website-editor__viewport-btn is-current"
@@ -122,6 +128,7 @@
         type="button"
         class="gp-website-editor__viewport-btn"
         data-website-viewport="tablet"
+        data-website-viewport-width="768"
         aria-pressed="false"
         title="Tablet"
       >
@@ -132,6 +139,7 @@
         type="button"
         class="gp-website-editor__viewport-btn"
         data-website-viewport="mobile"
+        data-website-viewport-width="390"
         aria-pressed="false"
         title="Mobile"
       >
@@ -472,6 +480,21 @@
       </a>
     </div>
     <% } %>
+  </div>
+
+  <div
+    class="gp-website-viewport-stage"
+    data-website-viewport-stage="1"
+    hidden
+  >
+    <div class="gp-website-viewport-stage__frame-wrap" data-website-viewport-frame-wrap="1">
+      <iframe
+        class="gp-website-viewport-stage__frame"
+        data-website-viewport-frame="1"
+        title="Responsive website preview"
+        referrerpolicy="same-origin"
+      ></iframe>
+    </div>
   </div>
 </div>
 <script>

@@ -320,7 +320,9 @@ function clinicWebsiteLinkQuery(options) {
     return { website_preview_version: String(opts.previewVersionId) };
   }
   if (opts.websiteEdit) {
-    return { website_edit: "1", website_mode: "draft" };
+    const q = { website_edit: "1", website_mode: "draft" };
+    if (opts.websiteFrameMode) q.website_frame = "1";
+    return q;
   }
   if (opts.previewDraftMode) {
     return { website_mode: "draft" };

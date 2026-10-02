@@ -136,7 +136,7 @@ describe("BB+AC P0 overflow fixtures", () => {
     const html = shell(
       `<body class="ac-app-body ac-app-body--mw">
         <div class="ac-content"><section class="ac-mw" data-ac-website-hub="1">
-          <div class="ac-mw-editor ac-mw-nav"><header class="ac-mw-editor__top"><a class="ac-mw-editor__brand" href="#">Clinic Editor</a></header></div>
+          <div class="ac-mw-editor"><header class="ac-mw-editor__top"><a class="ac-mw-editor__brand" href="#">Clinic Editor</a></header></div>
           <section class="ac-mw-firstuse">
             <article class="ac-mw-firstuse__welcome">
               <p class="ac-mw-muted" data-ac-website-firstuse-url="1">Public URL: <code>https://activeclinic.pronline.org/clinics/activeclinic-demo</code> <span>(not live yet)</span></p>

@@ -75,12 +75,12 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | ~~RB-TEST-05~~ | BB | FR-20 admin search | AUTOMATED_TEST | P1 | — | — | — | ~~Scoped search~~ | **CLOSED Wave3** — church_id scope + admin q wiring | — | — | **4 CLOSED** |
 | ~~RB-TEST-06~~ | BB | AC-25 member_id history | AUTOMATED_TEST | P1 | — | — | — | ~~member_id history~~ | **CLOSED Wave3** — attendance keyed by member_id; number swap preserves id | — | — | **4 CLOSED** |
 | ~~RB-TEST-07~~ | PLATFORM | Shared editor matrix (A4) | AUTOMATED_TEST | P1 | ENG-03/04 CLOSED | — | — | ~~Shared matrix~~ | **CLOSED Wave3** — AC+BB adapter + wave suite matrix lock | — | — | **4 CLOSED** |
-| RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID capture; prefer ENG-01/02 | NO | RB-ID-01 (capture); RB-ENG-01/02 preferred | Execute T-M02–T-M15-class on TESTING | FEATURE_QA note: Members pack PASS/FAIL by scenario | LARGE | HIGH | 5 |
-| RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID capture; prefer TEST-07 | NO | RB-ID-01 (capture); prefer RB-TEST-07 | Publish/unpublish/version/restore/true-stale on AC+BB tip | Hosted lifecycle QA note bound to SHA | MEDIUM | MEDIUM | 5 |
+| RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID-01 **PASS** | NO | DEF-BB-MEMBERS-503 | Fix members 503; re-run T-M02–T-M15 | FEATURE_QA note: 2 PASS / 4 FAIL / 8 NOT_RUN @ `7dbe945d…` | LARGE | HIGH | 5 OPEN |
+| RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID-01 **PASS** | NO | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | Fix BB publish readiness + AC public 403; re-run lifecycle | Hosted lifecycle OPEN; true-stale PASS | MEDIUM | MEDIUM | 5 OPEN |
 | RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | — | — | RB-ID-01 **PASS** | Hosted invite + C01/C02/E03 + public smoke | **PASS** 2026-10-02 (`ac-hqa-v8-muq9wn7a9a3d`) | SMALL | LOW | 3 |
-| RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 3 |
+| ~~RB-QA-04~~ | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID-01 **PASS** | — | — | Disabled-country POST + repeat-edit stale on AC+BB | **PASS** 2026-10-02 FR reject + engine 409 | SMALL | LOW | 5 CLOSED |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | — | — | Spot-check doctor/services pages vs allowlist | **PASS** 2026-10-02 allowlist clean | SMALL | MEDIUM | 3 |
-| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | Apex `GETPRO_GIT_BRANCH=V4` + shared metadata file + Hostinger redeploy | NO | Live BB+AC UNKNOWN until redeploy of shared-metadata fix | Redeploy testing app → re-probe About+healthz (BB/AC expect `shared.build-identity`) | BB+AC `branch=V4` / `V4 testing` | SMALL | HIGH | 6 OPEN — code fixed |
+| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | Apex `GETPRO_GIT_BRANCH=V4` + shared metadata file + Hostinger redeploy | — | — | Live tip matches freeze | **PASS** BB+AC `V4` / `shared.build-identity` @ `7dbe945d…` | SMALL | HIGH | 6 CLOSED |
 
 ---
 
@@ -122,22 +122,22 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 
 **Next:** Wave 5 Manual QA (after identity capture) + Wave 6 identity formal close.
 
-### WAVE 5 — MANUAL QA — INGESTION (2026-10-02)
+### WAVE 5 — MANUAL QA — EXECUTED (2026-10-02)
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-QA-01 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-02 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-03 | **PASS** | Hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke (`docs/qa/references/v2-04-ac-hosted-qa-resume-evidence.json`) |
-| RB-QA-04 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-01 | **OPEN** | T-M02–T-M15: PASS=2 FAIL=4 NOT_RUN=8; `/hq/members` **503** (`v2-04-bb-members-scenario-probe-evidence.json`) |
+| RB-QA-02 | **OPEN** | BB publish `not_ready` / Coming soon; AC publish/restore OK but public **403**; true-stale PASS (`v2-04-*-website-lifecycle-evidence.json`) |
+| RB-QA-03 | **PASS** | Hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite + C01/C02/E03 + public smoke |
+| RB-QA-04 | **PASS** | Forged FR POST **400** BB+AC; engine stale **409** BB+AC (`v2-04-disabled-country-post-evidence.json`, true-stale evidence) |
 | RB-QA-05 | **PASS** | Public services/doctors allowlist spot-check PASS on same clinic |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
-**MANUAL_QA_REMAINING=3** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0**.
+**MANUAL_QA_REMAINING=2** · **NEW_DEFECTS=3** · **REMAINING_BLOCKERS=2**.
 
-**Prerequisite:** TESTING identity **PASS**; **NEW_APPLICATION_CANDIDATE=`7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`** (CASE A freeze 2026-10-02).
+**Prerequisite:** TESTING identity **PASS**; **NEW_APPLICATION_CANDIDATE=`7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`**.
 
-**Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website lifecycle + geo/concurrency still outstanding (01/02/04).
+**Still outstanding:** Members pack (01) + website lifecycle public/publish proof (02). Geo/concurrency closed.
 
 ### WAVE 6 — RELEASE IDENTITY — SHARED BUILD METADATA FIX (2026-10-02)
 
@@ -211,11 +211,11 @@ WAVE4_BLOCKED=0
 WAVE5_MANUAL=5
 WAVE6_BUILD_IDENTITY=1
 DEPENDENCY_CHAINS=6
-INDEPENDENT_FAST_CLOSURES=2
-REMAINING_BLOCKERS=3
+INDEPENDENT_FAST_CLOSURES=0
+REMAINING_BLOCKERS=2
 ENGINEERING_REMAINING=0
 AUTOMATED_TEST_REMAINING=0
-MANUAL_QA_REMAINING=3
+MANUAL_QA_REMAINING=2
 BUILD_IDENTITY_REMAINING=0
 BB_SHA_MATCH=PASS
 AC_SHA_MATCH=PASS
@@ -225,7 +225,10 @@ UNKNOWN_LABEL_FOUND=NO
 STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
 RB_ID_01=PASS
+RB_QA_01=OPEN
+RB_QA_02=OPEN
 RB_QA_03=PASS
+RB_QA_04=PASS
 RB_QA_05=PASS
 HUB_BRANCH=V4
 BB_BRANCH=V4
@@ -234,6 +237,6 @@ BRANCH_SOURCE_ALL=PASS
 SHA_PARITY=PASS
 HOSTINGER_SUBDOMAIN_ENV_SUPPORTED=NO
 SHARED_BUILD_IDENTITY_SOURCE=.getpro/build-identity.json
-NEW_DEFECTS=0
-FINAL=V2_04_AC_HOSTED_QA_RESUMED
+NEW_DEFECTS=3
+FINAL=V2_04_FINAL_MANUAL_QA_BLOCKERS_EXECUTED
 ```

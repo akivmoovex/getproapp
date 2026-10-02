@@ -136,6 +136,12 @@
         >This clinic is still finishing setup<% if (shell.failedStage) { %> (<%= shell.failedStage.replace(/_/g, ' ') %>)<% } %>. You can keep editing website content. Publishing may be limited until setup completes.</p>
         <% } %>
 
+        <%
+          var _mwShell = (typeof websiteCmsShell !== 'undefined' && websiteCmsShell)
+            || (shell && shell.websiteCmsShell)
+            || (shell && shell.pageData && shell.pageData.cmsNav);
+        %>
+        <% if (!_mwShell) { %>
         <header class="ac-page-header">
           <div>
             <h1><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %></h1>
@@ -153,6 +159,7 @@
           </div>
           <% } %>
         </header>
+        <% } %>
 
         <%- body %>
       </main>

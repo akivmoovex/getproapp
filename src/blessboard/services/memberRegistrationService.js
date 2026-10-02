@@ -1116,7 +1116,12 @@ async function listBranchMembersForManager(db, input) {
         offset: listed.offset,
       };
     });
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[blessboard.members] listBranchMembersForManager failed", {
+      code: err && err.code,
+      message: err && err.message ? String(err.message).slice(0, 200) : null,
+    });
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
@@ -1346,7 +1351,12 @@ async function listChurchMembersForManager(db, input) {
         offset: listed.offset,
       };
     });
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[blessboard.members] listChurchMembersForManager failed", {
+      code: err && err.code,
+      message: err && err.message ? String(err.message).slice(0, 200) : null,
+    });
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,

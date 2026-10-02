@@ -2,30 +2,303 @@
  * Shared website field editor (ActiveClinic + BlessBoard) — Wave 2 / V2.04 Batch 5.
  * Pencil → Stitch dialog (desktop E01) / bottom sheet (mobile E02) → Save draft (never publish).
  * SHARED_EDITOR_ENGINE_COUNT must remain 1 — do not add a product-local editor.
+ *
+ * Responsive preview (V2.04): Desktop stays same-document. Tablet (768) / Mobile (390)
+ * load a same-origin iframe with website_frame=1 so public @media rules evaluate correctly.
  */
 (function () {
+  var VIEWPORT_WIDTHS = { tablet: 768, mobile: 390 };
+  var VIEWPORT_MSG_SOURCE = "gp-website-editor";
+  var currentViewportMode = "desktop";
+  var viewportFrameBound = false;
+
+  function isFrameDocument() {
+    return (
+      (document.body && document.body.getAttribute("data-website-frame") === "1") ||
+      document.documentElement.classList.contains("gp-website-frame-document") ||
+      /(?:\?|&)website_frame=1(?:&|$)/.test(String(window.location.search || ""))
+    );
+  }
+
+  function buildViewportFramePath(mode) {
+    var u = new URL(window.location.href);
+    u.searchParams.set("website_edit", "1");
+    u.searchParams.set("website_mode", "draft");
+    if (mode === "desktop") {
+      u.searchParams.delete("website_frame");
+    } else {
+      u.searchParams.set("website_frame", "1");
+    }
+    return u.pathname + (u.search ? u.search : "");
+  }
+
+  function ensureViewportStage() {
+    var stage = document.querySelector("[data-website-viewport-stage]");
+    if (stage) return stage;
+    var host = document.querySelector(".gp-website-editor-host") || document.querySelector("[data-website-chrome]");
+    stage = document.createElement("div");
+    stage.className = "gp-website-viewport-stage";
+    stage.setAttribute("data-website-viewport-stage", "1");
+    stage.hidden = true;
+    stage.innerHTML =
+      '<div class="gp-website-viewport-stage__frame-wrap" data-website-viewport-frame-wrap="1">' +
+      '<iframe class="gp-website-viewport-stage__frame" data-website-viewport-frame="1" title="Responsive website preview" referrerpolicy="same-origin"></iframe>' +
+      "</div>";
+    if (host && host.parentNode) {
+      host.parentNode.insertBefore(stage, host.nextSibling);
+    } else {
+      document.body.appendChild(stage);
+    }
+    return stage;
+  }
+
+  function setViewportButtons(mode) {
+    document.querySelectorAll("[data-website-viewport]").forEach(function (other) {
+      var on = other.getAttribute("data-website-viewport") === mode;
+      other.classList.toggle("is-current", on);
+      other.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function chromeOffsetPx() {
+    var toolbar = document.querySelector(".gp-website-editor__toolbar");
+    var host = document.querySelector(".gp-website-editor-host");
+    var h = 0;
+    if (toolbar) h = Math.max(h, toolbar.getBoundingClientRect().bottom);
+    if (host) h = Math.max(h, host.getBoundingClientRect().bottom);
+    return Math.max(72, Math.round(h));
+  }
+
+  function exitFrameViewport() {
+    var stage = document.querySelector("[data-website-viewport-stage]");
+    var frame = stage && stage.querySelector("[data-website-viewport-frame]");
+    document.body.classList.remove("gp-website-viewport-frame-active");
+    document.body.classList.remove("gp-website-viewport-mobile");
+    document.body.classList.remove("gp-website-viewport-tablet");
+    document.body.style.removeProperty("--gp-editor-chrome-offset");
+    document.body.style.removeProperty("--gp-viewport-frame-width");
+    if (stage) {
+      stage.hidden = true;
+      stage.classList.remove("is-active");
+    }
+    if (frame) {
+      try {
+        frame.removeAttribute("src");
+      } catch (_e) {}
+    }
+    currentViewportMode = "desktop";
+  }
+
+  function enterFrameViewport(mode) {
+    var width = VIEWPORT_WIDTHS[mode];
+    if (!width) return;
+    var stage = ensureViewportStage();
+    var frame = stage.querySelector("[data-website-viewport-frame]");
+    if (!frame) return;
+    var path = buildViewportFramePath(mode);
+    // Same-origin only: never assign absolute cross-origin URLs.
+    if (!path || path.charAt(0) !== "/") return;
+
+    document.body.classList.add("gp-website-viewport-frame-active");
+    document.body.classList.toggle("gp-website-viewport-mobile", mode === "mobile");
+    document.body.classList.toggle("gp-website-viewport-tablet", mode === "tablet");
+    document.body.style.setProperty("--gp-editor-chrome-offset", chromeOffsetPx() + "px");
+    document.body.style.setProperty("--gp-viewport-frame-width", width + "px");
+
+    stage.hidden = false;
+    stage.classList.add("is-active");
+    stage.setAttribute("data-website-viewport-mode", mode);
+    frame.style.width = width + "px";
+    frame.setAttribute("data-website-viewport-width", String(width));
+
+    var nextSrc = path;
+    try {
+      var cur = frame.getAttribute("src") || "";
+      if (cur !== nextSrc) frame.setAttribute("src", nextSrc);
+    } catch (_e2) {
+      frame.setAttribute("src", nextSrc);
+    }
+    currentViewportMode = mode;
+    bindViewportFrameMessages();
+  }
+
+  function setViewportMode(mode) {
+    var next = mode === "tablet" || mode === "mobile" ? mode : "desktop";
+    setViewportButtons(next);
+    if (next === "desktop") exitFrameViewport();
+    else enterFrameViewport(next);
+    try {
+      window.dispatchEvent(
+        new CustomEvent("gp-website-viewport-changed", { detail: { mode: next, width: VIEWPORT_WIDTHS[next] || null } })
+      );
+    } catch (_e3) {}
+  }
+
+  function postToParent(type, extra) {
+    if (!isFrameDocument() || window.parent === window) return;
+    var payload = { source: VIEWPORT_MSG_SOURCE, type: type };
+    if (extra && typeof extra === "object") {
+      Object.keys(extra).forEach(function (k) {
+        payload[k] = extra[k];
+      });
+    }
+    try {
+      window.parent.postMessage(payload, window.location.origin);
+    } catch (_e4) {}
+  }
+
+  function bindViewportFrameMessages() {
+    if (viewportFrameBound) return;
+    viewportFrameBound = true;
+    window.addEventListener("message", function (ev) {
+      if (ev.origin !== window.location.origin) return;
+      var data = ev.data;
+      if (!data || data.source !== VIEWPORT_MSG_SOURCE) return;
+      if (isFrameDocument()) {
+        if (data.type === "VIEWPORT_CHANGED") return;
+        if (data.type === "SAVE_REQUEST") {
+          var saveBtn = document.querySelector("[data-website-save], [data-website-dialog-save]");
+          if (saveBtn) saveBtn.click();
+        }
+        return;
+      }
+      // Parent shell receiving frame events
+      if (data.type === "DIRTY_STATE_CHANGED" || data.type === "EDITOR_READY" || data.type === "CONTENT_CHANGED") {
+        var pill = document.querySelector("[data-website-pending-pill]");
+        var countEls = document.querySelectorAll("[data-website-pending-count]");
+        if (typeof data.pendingCount === "number") {
+          countEls.forEach(function (el) {
+            el.setAttribute("data-website-pending-count", String(data.pendingCount));
+          });
+          if (pill) {
+            pill.setAttribute("data-website-pending-count", String(data.pendingCount));
+            if (data.pendingCount > 0) {
+              pill.hidden = false;
+              pill.classList.remove("is-empty");
+            }
+          }
+        }
+        var saveStatus = document.querySelector("[data-website-save-status-label]");
+        if (saveStatus && data.saveLabel) saveStatus.textContent = data.saveLabel;
+      }
+      if (data.type === "NAVIGATE" && data.path && String(data.path).charAt(0) === "/") {
+        try {
+          var clean = String(data.path).replace(/([?&])website_frame=1(&|$)/, function (_, a, b) {
+            return b === "&" ? a : "";
+          });
+          window.history.replaceState({}, "", clean);
+        } catch (_e5) {}
+      }
+    });
+  }
+
+  function preserveFrameOnInternalNav() {
+    if (!isFrameDocument()) return;
+    document.addEventListener(
+      "click",
+      function (ev) {
+        var a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+        if (!a) return;
+        var href = a.getAttribute("href") || "";
+        if (!href || href.charAt(0) === "#" || /^(mailto:|tel:|javascript:)/i.test(href)) return;
+        if (a.target && a.target !== "_self") return;
+        var abs;
+        try {
+          abs = new URL(href, window.location.origin);
+        } catch (_e6) {
+          return;
+        }
+        if (abs.origin !== window.location.origin) return;
+        // Keep edit + frame context for in-product public pages.
+        abs.searchParams.set("website_edit", "1");
+        abs.searchParams.set("website_mode", "draft");
+        abs.searchParams.set("website_frame", "1");
+        var next = abs.pathname + abs.search + abs.hash;
+        if (next !== href) {
+          ev.preventDefault();
+          window.location.assign(next);
+        }
+      },
+      true
+    );
+  }
+
+  function interceptParentRailWhileFramed() {
+    document.addEventListener(
+      "click",
+      function (ev) {
+        if (isFrameDocument()) return;
+        if (currentViewportMode === "desktop") return;
+        var a = ev.target && ev.target.closest ? ev.target.closest("[data-website-page-rail] a[href], [data-website-page-sheet] a[href]") : null;
+        if (!a) return;
+        var href = a.getAttribute("href") || "";
+        if (!href || href.charAt(0) === "#") return;
+        var abs;
+        try {
+          abs = new URL(href, window.location.origin);
+        } catch (_e7) {
+          return;
+        }
+        if (abs.origin !== window.location.origin) return;
+        ev.preventDefault();
+        abs.searchParams.set("website_edit", "1");
+        abs.searchParams.set("website_mode", "draft");
+        abs.searchParams.set("website_frame", "1");
+        var frame = document.querySelector("[data-website-viewport-frame]");
+        if (frame) frame.setAttribute("src", abs.pathname + abs.search);
+        try {
+          abs.searchParams.delete("website_frame");
+          window.history.replaceState({}, "", abs.pathname + abs.search);
+        } catch (_e8) {}
+      },
+      true
+    );
+  }
+
   function bindEditorShell() {
     document.querySelectorAll("[data-website-engine-page-select]").forEach(function (sel) {
       sel.addEventListener("change", function () {
         var opt = sel.options[sel.selectedIndex];
         var href = opt && opt.getAttribute("data-href");
-        if (href) window.location.assign(href);
+        if (!href) return;
+        if (!isFrameDocument() && (currentViewportMode === "tablet" || currentViewportMode === "mobile")) {
+          var abs;
+          try {
+            abs = new URL(href, window.location.origin);
+          } catch (_e9) {
+            window.location.assign(href);
+            return;
+          }
+          abs.searchParams.set("website_edit", "1");
+          abs.searchParams.set("website_mode", "draft");
+          abs.searchParams.set("website_frame", "1");
+          var frame = document.querySelector("[data-website-viewport-frame]");
+          if (frame) {
+            frame.setAttribute("src", abs.pathname + abs.search);
+            return;
+          }
+        }
+        window.location.assign(href);
       });
     });
     document.querySelectorAll("[data-website-viewport]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var mode = btn.getAttribute("data-website-viewport");
-        document.body.classList.toggle("gp-website-viewport-mobile", mode === "mobile");
-        document.body.classList.toggle("gp-website-viewport-tablet", mode === "tablet");
-        document.querySelectorAll("[data-website-viewport]").forEach(function (other) {
-          var on = other === btn;
-          other.classList.toggle("is-current", on);
-          other.setAttribute("aria-pressed", on ? "true" : "false");
-        });
+        if (isFrameDocument()) return;
+        var mode = btn.getAttribute("data-website-viewport") || "desktop";
+        setViewportMode(mode);
       });
     });
     bindMoreMenu();
     bindPageSheet();
+    bindViewportFrameMessages();
+    interceptParentRailWhileFramed();
+    preserveFrameOnInternalNav();
+    if (isFrameDocument()) {
+      postToParent("EDITOR_READY", {
+        pendingCount: Number((document.querySelector("[data-website-pending-count]") || {}).getAttribute &&
+          document.querySelector("[data-website-pending-count]").getAttribute("data-website-pending-count")) || 0,
+      });
+    }
   }
 
   function bindMoreMenu() {
@@ -138,6 +411,19 @@
     );
     if (chrome) chrome.setAttribute("data-draft", "1");
     // Do not locally invent pending counts — Change Manager UI uses server counts.
+    if (typeof postToParent === "function") {
+      postToParent("DIRTY_STATE_CHANGED", {
+        pendingCount:
+          payload.pendingChangeCount != null ? Number(payload.pendingChangeCount) : undefined,
+        dirty: true,
+        saveLabel: "Saved to draft",
+      });
+      postToParent("CONTENT_CHANGED", {
+        pendingCount:
+          payload.pendingChangeCount != null ? Number(payload.pendingChangeCount) : undefined,
+      });
+      postToParent("SAVE_RESULT", { ok: true, pendingCount: payload.pendingChangeCount });
+    }
   }
 
   function markSaveStart() {

@@ -2,10 +2,12 @@
   Shared website editor overlays — rendered at document body level so fixed
   dialogs/menus are not trapped inside gp-website-chrome-stack (z-index 60).
   BlessBoard tenant shell + ActiveClinic public shell include this partial.
+  Wrapper class keeps overlays visible when Tablet/Mobile iframe stage is active.
 %>
 <%
   var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
 %>
+<div class="gp-website-editor-overlays" data-website-editor-overlays="1">
 <%- include('./field-editor-host') %>
 <%- include('./add-section-picker', { editorShell: shell }) %>
 <%- include('./section-action-menu', { editorShell: shell }) %>
@@ -13,3 +15,4 @@
 <%- include('./publishing-reminder', { editorShell: shell }) %>
 <%- include('./unpublished-changes-panel', { editorShell: shell }) %>
 <%- include('./field-history-restore', { editorShell: shell }) %>
+</div>

@@ -9,15 +9,15 @@
     return active === key ? " is-current" : "";
   }
 %>
-<div class="ac-mw-editor ac-mw-nav" data-ac-website-cms-nav="1" data-ac-mw-editor="1">
+<div class="ac-mw-editor" data-ac-website-cms-nav="1" data-ac-mw-editor="1">
   <header class="ac-mw-editor__top">
     <a class="ac-mw-editor__brand" href="<%= base %>">Clinic Editor</a>
     <nav class="ac-mw-editor__tabs" aria-label="Website editor">
-      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('pages') %>" href="<%= base %>/pages" data-ac-mw-nav="pages">Pages</a>
-      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('sections') %>" href="<%= base %>/sections" data-ac-mw-nav="sections">Sections</a>
-      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('media') %>" href="<%= base %>/media" data-ac-mw-nav="media">Assets</a>
+      <a class="ac-mw-editor__tab<%= tabCurrent('pages') %>" href="<%= base %>/pages" data-ac-mw-nav="pages">Pages</a>
+      <a class="ac-mw-editor__tab<%= tabCurrent('sections') %>" href="<%= base %>/sections" data-ac-mw-nav="sections">Sections</a>
+      <a class="ac-mw-editor__tab<%= tabCurrent('media') %>" href="<%= base %>/media" data-ac-mw-nav="media">Assets</a>
       <% if (cmsNav.historyHref) { %>
-      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('history') %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">History</a>
+      <a class="ac-mw-editor__tab<%= tabCurrent('history') %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">History</a>
       <% } %>
     </nav>
     <div class="ac-mw-editor__top-actions">

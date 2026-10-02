@@ -1,0 +1,102 @@
+{
+  "product": "AC",
+  "tip": "7dbe945d6c93",
+  "clinic": "ac-hqa-v8-muq9wn7a9a3d",
+  "steps": {
+    "public_/clinics/ac-hqa-v8-muq9wn7a9a3d": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "public_/clinics/ac-hqa-v8-muq9wn7a9a3d/services": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "public_/clinics/ac-hqa-v8-muq9wn7a9a3d/doctors": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "public_/clinics/ac-hqa-v8-muq9wn7a9a3d/contact": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "publishPageText": "Publishing · ActiveClinic Skip to content Ac Hqa V8 muq9wn7a9a3d ActiveClinic HMS ⌖ Ac Hqa V8 muq9wn7a9a3d – Main Switch facility Daily work Dashboard Patients Appointments Reception Booking requests Clinical Follow-up Clinical services Pharmacy Diagnostics Operations Billing Services Practitioners Staff Management Facilities Rooms &amp; Spaces Performance Import &amp; export Roles &amp; access Website Settings Platform Public site V V8 QA Clinic Admin ActiveClinic Organization Administrator Ac Hqa V8 muq9wn7a9a3d Ac Hqa V8 muq9wn7a9a3d – Main Change password Switch facility Sign out Menu ActiveClinic Ac Hqa V8 muq9wn7a9a3d · Ac Hqa V8 muq9wn7a9a3d – Main V V8 QA Clinic Admin Change password Switch facility Sign out Home Website Publishing Search patients Notifications Notifications No new",
+    "publishFormAction": "/clinics/ac-hqa-v8-muq9wn7a9a3d/website/publish",
+    "publishPost": {
+      "status": 303,
+      "loc": "/clinics/ac-hqa-v8-muq9wn7a9a3d/website/history?notice=published",
+      "body": "See Other. Redirecting to /clinics/ac-hqa-v8-muq9wn7a9a3d/website/history?notice=published"
+    },
+    "publicAfterPublish_/clinics/ac-hqa-v8-muq9wn7a9a3d": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "publicAfterPublish_/clinics/ac-hqa-v8-muq9wn7a9a3d/services": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "history": {
+      "status": 200,
+      "ct": "text/html; charset=utf-8",
+      "text": "Website version history · ActiveClinic Skip to content Website Temporary website. Policy: Organisation publishes. This is a temporary website. Edit website Edit Preview Preview Website management Manage Clinic line +260979016540 Hours Example hours (Template example — replace with your clinic’s information.) Mon–Thu 08:00–17:00 Fri 08:00–16:00 Sat 09:00–12:00 Sun Closed Location Lusaka A Ac Hqa V8 muq9wn7a9a3d About Clinic Services Our Doctors Contact Book Appointment Open menu ☰ Close About Cli",
+      "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\"/>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/>\n  \n  <title>Website version history · ActiveClinic</title>\n  \n  \n  <meta name=\"robots\" content=\"noindex, nofollow\"/>\n  <meta property=\"og:title\" content=\"Website version history · ActiveClinic\"/>\n  \n  <meta property=\"og:type\" content=\"website"
+    },
+    "websiteSettings": "Website Management Hub · ActiveClinic Skip to content Ac Hqa V8 muq9wn7a9a3d ActiveClinic HMS ⌖ Ac Hqa V8 muq9wn7a9a3d – Main Switch facility Daily work Dashboard Patients Appointments Reception Booking requests Clinical Follow-up Clinical services Pharmacy Diagnostics Operations Billing Services Practitioners Staff Management Facilities Rooms &amp; Spaces Performance Import &amp; export Roles &amp; access Website Settings Platform Public site V V8 QA Clinic Admin ActiveClinic Organization Admin",
+    "unpubFormAction": null,
+    "unpublish": {
+      "status": 303,
+      "loc": "/app/settings/website?website=unpublished",
+      "body": "See Other. Redirecting to /app/settings/website?website=unpublished"
+    },
+    "publicAfterUnpublish": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "republish": {
+      "status": 303,
+      "loc": "/clinics/ac-hqa-v8-muq9wn7a9a3d/website/history?notice=published",
+      "action": "/clinics/ac-hqa-v8-muq9wn7a9a3d/website/publish"
+    },
+    "publicAfterRepublish": {
+      "status": 403,
+      "snip": "Clinic unavailable · ActiveClinic Skip to content Open menu ☰ health_and_safety ActiveClinic UNKNOWN testing Find a Clinic For Clinics For Patients About Contact Login Register You"
+    },
+    "staleBase": {
+      "status": 200,
+      "ok": true,
+      "expected": "2026-10-02T01:41:34.781Z"
+    },
+    "staleB": {
+      "status": 200,
+      "ok": true,
+      "code": "saved_to_draft",
+      "updatedAt": "2026-10-02T01:41:35.082Z"
+    },
+    "staleA": {
+      "status": 409,
+      "ok": false,
+      "code": "conflict",
+      "reason": "stale_draft_revision",
+      "body": "{\"ok\":false,\"code\":\"conflict\",\"reason\":\"stale_draft_revision\",\"requestId\":\"0f195c1c8b5a75621d7d56d1\",\"correlationId\":\"0f195c1c8b5a75621d7d56d1\"}"
+    },
+    "staleContent": {
+      "hasBase": false,
+      "hasNewer": true,
+      "hasStale": false
+    },
+    "history2": {
+      "status": 200,
+      "text": "Website version history · ActiveClinic Skip to content Website Temporary website. Policy: Organisation publishes. This is a temporary website. Edit website Edit Preview Preview Website management Manage Clinic line +260979016540 Hours Example hours (Template example — replace with your clinic’s information.) Mon–Thu 08:00–17:00 Fri 08:00–16:00 Sat 09:00–12:00 Sun Closed Location Lusaka A Ac Hqa V8 muq9wn7a9a3d About Clinic Services Our Doctors Contact Book Appointment Open menu ☰ Close About Cli",
+      "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\"/>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"/>\n  \n  <title>Website version history · ActiveClinic</title>\n  \n  \n  <meta name=\"robots\" content=\"noindex, nofollow\"/>\n  <meta property=\"og:title\" content=\"Website version history · ActiveClinic\"/>\n  \n  <meta property=\"og:type\" content=\"website"
+    }
+  },
+  "summary": {
+    "draftSave": true,
+    "publish": "PASS (notice=published)",
+    "publicVerify": "FAIL (403 Clinic unavailable)",
+    "unpublish": "PASS",
+    "restore": "PASS (notice=restored_draft)",
+    "republish": "PASS",
+    "trueStale": "PASS (409 stale_draft_revision)",
+    "AC_WEBSITE_LIFECYCLE": "FAIL"
+  }
+}

@@ -128,32 +128,34 @@ async function validateWebsitePublication(db, opts) {
     const hasFatalReadinessGap = (readiness.gaps || []).some((g) =>
       fatalGapKeys.has(String(g))
     );
+    const gaps = readiness.gaps || [];
+    const readinessEvaluated = Boolean(readiness && readiness.ok);
     const readyOk = Boolean(
-      readiness &&
-        readiness.ok &&
+      readinessEvaluated &&
         (readiness.ready || (opts.relaxReadinessGaps && !hasFatalReadinessGap))
     );
+    // Each check keys off its own gap — do not cascade global !ready into unrelated checks.
     checks.push({
       key: "required_content",
       label: "Required content complete",
-      ok: readyOk && !(readiness.gaps || []).includes("required_pages"),
+      ok: readinessEvaluated && !gaps.includes("required_pages"),
     });
     checks.push({
       key: "contact",
       label: "Contact information present",
       ok:
-        (readyOk && !(readiness.gaps || []).includes("contact_method")) ||
+        (readinessEvaluated && !gaps.includes("contact_method")) ||
         Boolean(opts.relaxReadinessGaps),
     });
     checks.push({
       key: "tenant_active",
       label: "Tenant is active",
-      ok: readyOk && !(readiness.gaps || []).includes("website_suspended"),
+      ok: readinessEvaluated && !gaps.includes("website_suspended"),
     });
     checks.push({
       key: "draft_exists",
       label: "Draft website content exists",
-      ok: Boolean(readiness && readiness.ok),
+      ok: readinessEvaluated,
     });
     checks.push({
       key: "permission",

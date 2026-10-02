@@ -15,6 +15,9 @@ const {
 } = require("../../activeclinic/website/activeClinicWebsiteResolver");
 const { renderPublicPage } = require("../../activeclinic/http/renderActiveClinicPublic");
 const { buildClinicWebsiteNav } = require("../../activeclinic/website/activeClinicClinicWebsiteNav");
+const {
+  buildActiveClinicStitchPublicPage,
+} = require("../../activeclinic/website/activeClinicStitchPublicPages");
 const { getWebsiteTemplate } = require("./templateRegistry");
 const { presentValue } = require("./reviewDiff");
 const { escapeHtml } = require("./safeValues");
@@ -70,6 +73,15 @@ async function renderActiveClinicHistorical(db, input) {
   const label =
     input.label ||
     `Governance preview of published version v${versionNumber} — not a live publication`;
+  const nav = buildClinicWebsiteNav(resolved.clinic, { env: process.env });
+  const websitePresentation = buildActiveClinicStitchPublicPage({
+    template: "tenant/home",
+    clinic: resolved.clinic,
+    doctors: resolved.clinic.doctors || [],
+    services: resolved.clinic.services || [],
+    websiteEdit: false,
+    navItems: nav && nav.desktop,
+  });
   const html = renderPublicPage({
     pageId: "governance-version-preview",
     pageTitle: label,
@@ -78,7 +90,9 @@ async function renderActiveClinicHistorical(db, input) {
     robots: "noindex, nofollow",
     locals: {
       clinic: resolved.clinic,
-      clinicWebsiteNav: buildClinicWebsiteNav(resolved.clinic, { env: process.env }),
+      clinicWebsiteNav: nav,
+      websitePresentation,
+      websitePresentationWired: Boolean(websitePresentation && websitePresentation.wired),
       websiteCanEdit: false,
       websiteCanSubmit: false,
       websiteCanPublish: false,

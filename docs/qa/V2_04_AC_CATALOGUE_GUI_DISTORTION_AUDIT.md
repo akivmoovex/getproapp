@@ -255,3 +255,69 @@ SHARED_FIX_LIKELY=YES
 CODE_FIX_REQUIRED=YES
 FINAL=V2_04_AC_CATALOGUE_GUI_DISTORTION_AUDIT_COMPLETE
 ```
+
+---
+
+## 11. Implementation (post-fix)
+
+| Field | Value |
+|-------|--------|
+| **Date** | 2026-10-02 |
+| **Deploy** | **Not deployed** (code + tests only) |
+| **Tests** | `tests/v2-04-ac-catalogue-gui-shell-fix.test.js` (10/10) |
+
+### Before DOM / class structure
+
+```html
+<div class="ac-mw-editor ac-mw-nav" data-ac-website-cms-nav="1" data-ac-mw-editor="1">
+  <header class="ac-mw-editor__top">…</header>
+  <aside class="ac-mw-editor__rail">…</aside>
+</div>
+```
+
+- Root inherited `.ac-mw-nav { display: flex }` → horizontal row on desktop.
+- Editor tabs also carried `ac-mw-nav__link` (pill styles on dark header).
+- Mobile re-enabled `.ac-topbar` under `--mw` → dual header stack.
+- Staff `.ac-page-header` still rendered (CSS-hidden) above Clinic Editor.
+
+### After DOM / class structure
+
+```html
+<div class="ac-mw-editor" data-ac-website-cms-nav="1" data-ac-mw-editor="1">
+  <header class="ac-mw-editor__top">…</header>
+  <aside class="ac-mw-editor__rail">…</aside>
+</div>
+```
+
+- `.ac-mw-editor { display: block }` at all breakpoints (float left-rail contract restored).
+- Tabs use only `ac-mw-editor__tab` (no pill-link class).
+- `.ac-mw-nav:not(.ac-mw-editor)` scopes legacy pill-strip flex to non-editor roots.
+- Rail / content offset share `--ac-mw-rail-width: 14.5rem` and `--ac-mw-content-offset: 15.5rem`.
+- Mobile ≤899px: `margin-left: 0` on content; rail unfloated / stacked.
+- Dual shell: staff `ac-page-header` omitted when MW shell active; topbar stays hidden under `--mw` (no mobile re-show). Staff session/nav retained via bottom nav + editor “Back to clinic app”.
+
+### CSS scope correction
+
+| Change | File |
+|--------|------|
+| Remove `ac-mw-nav` from Clinic Editor root | `views/activeclinic/partials/website-cms-nav.ejs` |
+| Scope `.ac-mw-nav` flex; editor block + rail vars | `public/activeclinic/website-cms.css` |
+| Skip staff page-header under MW | `views/activeclinic/layouts/app-shell.ejs` |
+
+### Desktop / mobile verification
+
+| Check | Status |
+|-------|--------|
+| Desktop header full-width sticky | PASS (block + `__top` flex row) |
+| Desktop rail left | PASS (`float: left` + width var) |
+| Content offset matches rail | PASS (`--ac-mw-content-offset`) |
+| Mobile content offset cleared | PASS (`margin-left: 0` ≤899px) |
+| No dual staff page-header | PASS (not rendered under MW) |
+| returnTo unchanged | PASS (no parser/route edits) |
+| Services / Doctors shared chrome | PASS (same nav partial) |
+
+ROOT_CAUSE_FIXED=YES
+NAV_CLASS_COLLISION_REMOVED=YES
+DUPLICATE_SHELL_RESOLVED=YES
+CSS_SCOPE_LEAK_RESOLVED=YES
+FINAL=V2_04_AC_CATALOGUE_GUI_DISTORTION_FIXED

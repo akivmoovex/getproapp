@@ -685,7 +685,16 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         });
       }
       let availability = null;
-      if (req.body && (req.body.makePublic === "1" || req.body.makePublic === true || req.body.make_public === "1")) {
+      // Tenant Publish must also go live: content publish alone leaves website_published=false
+      // and anonymous public routes return 403 Clinic unavailable.
+      const makePublicRaw =
+        req.body && (req.body.makePublic != null ? req.body.makePublic : req.body.make_public);
+      const wantsPublic =
+        makePublicRaw == null ||
+        makePublicRaw === "1" ||
+        makePublicRaw === true ||
+        makePublicRaw === 1;
+      if (wantsPublic) {
         availability = await setClinicWebsiteAvailability(getPool(), {
           organizationKey: clinic.clinicKey,
           public: true,
@@ -694,6 +703,32 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           reason: "organisation_admin_publish",
           env,
         });
+        if (!availability || availability.ok !== true) {
+          if (wantsHtml(req)) {
+            const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+            const errCode = (availability && availability.code) || "availability_failed";
+            if (returnTo) {
+              return res.redirect(303, `${returnTo}?website=published_content&error=${encodeURIComponent(errCode)}`);
+            }
+            return res.redirect(
+              303,
+              appendQuery(
+                buildPublicWebsiteHistoryPath({
+                  product: PRODUCT_CODE.ACTIVECLINIC,
+                  organizationKey: clinic.clinicKey,
+                }),
+                { notice: "published_content", error: errCode }
+              )
+            );
+          }
+          return json(res, 200, {
+            ok: true,
+            code: "published_content_not_live",
+            version: published.version || null,
+            changedKeys: published.changedKeys || [],
+            availability,
+          });
+        }
       }
       if (wantsHtml(req)) {
         const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);

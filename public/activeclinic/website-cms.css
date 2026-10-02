@@ -8,10 +8,14 @@
   --ac-mw-border: var(--ac-border);
   --ac-mw-surface: var(--ac-surface);
   --ac-mw-soft: var(--ac-bg);
+  /* Clinic Editor left rail + content offset (single source of truth). */
+  --ac-mw-rail-width: 14.5rem;
+  --ac-mw-content-offset: 15.5rem;
   font-family: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   color: var(--ac-mw-ink);
 }
-.ac-mw-nav {
+/* Legacy/hub pill-tab strip only — never apply to Clinic Editor chrome. */
+.ac-mw-nav:not(.ac-mw-editor) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -555,7 +559,7 @@
   .ac-mw { overflow-x: clip; max-width: 100%; }
   .ac-mw-card { grid-template-columns: 1fr; }
   .ac-mw-head { flex-direction: column; }
-  .ac-mw-nav { gap: 0.4rem; }
+  .ac-mw-nav:not(.ac-mw-editor) { gap: 0.4rem; }
   .ac-mw-nav__link { min-height: 2.75rem; }
   .ac-mw-hub-metrics,
   .ac-mw-hub-tiles { grid-template-columns: 1fr; }
@@ -603,6 +607,13 @@
 .ac-app-body--mw .ac-content {
   background: var(--color-background);
   overflow-x: clip;
+  max-width: 100%;
+}
+/* Clinic Editor shell: block layout so the floated left rail is not flex-row squeezed.
+   Do not reuse .ac-mw-nav (pill strip) on this root. */
+.ac-mw-editor {
+  display: block;
+  margin: 0;
   max-width: 100%;
 }
 .ac-mw-editor__top {
@@ -674,12 +685,13 @@
   position: sticky;
   top: 3.5rem;
   z-index: 30;
-  width: 14.5rem;
+  width: var(--ac-mw-rail-width, 14.5rem);
   float: left;
   min-height: calc(100vh - 3.5rem);
   padding: 1.1rem 0.85rem 1.5rem;
   background: var(--color-surface-subtle);
   border-right: 1px solid var(--ac-mw-border);
+  box-sizing: border-box;
 }
 .ac-app-body--mw .ac-mw {
   overflow-x: clip;
@@ -690,7 +702,7 @@
   margin-left: 0;
 }
 .ac-app-body--mw .ac-mw > *:not(.ac-mw-editor):not(dialog) {
-  margin-left: 15.5rem;
+  margin-left: var(--ac-mw-content-offset, 15.5rem);
 }
 .ac-app-body--mw .ac-mw-editor + .ac-mw-head {
   padding-top: 1.5rem;
@@ -793,9 +805,7 @@
   text-align: center;
 }
 @media (max-width: 899px) {
-  /* The editor chrome shares a flex row with the tools rail (the element also
-     carries .ac-mw-nav). On narrow screens that squeezes the sticky header
-     below its own content width and the trailing action clips. Stack them. */
+  /* Stack Clinic Editor chrome on narrow screens; clear desktop rail offset. */
   .ac-mw-editor {
     display: block;
   }
@@ -843,9 +853,8 @@
   .ac-mw-editor__tabs {
     display: none;
   }
-  .ac-app-body--mw .ac-topbar {
-    display: flex;
-  }
+  /* Keep staff topbar hidden under Clinic Editor — avoid dual mobile headers.
+     Staff session/nav remains via bottom nav + editor "Back to clinic app". */
 }
 
 .ac-mw-firstuse {
@@ -983,7 +992,7 @@
   .ac-mw-head {
     flex-direction: column;
   }
-  .ac-mw-nav {
+  .ac-mw-nav:not(.ac-mw-editor) {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

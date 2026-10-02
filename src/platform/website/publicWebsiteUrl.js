@@ -323,6 +323,10 @@ const PREVIEW_NAV_QUERY = Object.freeze({
   website_mode: "draft",
 });
 
+const WEBSITE_FRAME_QUERY = Object.freeze({
+  website_frame: "1",
+});
+
 /**
  * Canonical editor navigation query. BlessBoard and ActiveClinic must use both
  * `website_edit=1` and `website_mode=draft` so draft context survives page changes.
@@ -335,6 +339,10 @@ function withPreviewNavigationQuery(path) {
   return appendQuery(path, PREVIEW_NAV_QUERY);
 }
 
+function withWebsiteFrameQuery(path) {
+  return appendQuery(path, WEBSITE_FRAME_QUERY);
+}
+
 function withoutEditorNavigationQuery(path) {
   if (path == null || path === "") return path == null ? null : "";
   const { pathname, search } = splitPathAndSearch(path);
@@ -342,6 +350,17 @@ function withoutEditorNavigationQuery(path) {
   const params = new URLSearchParams(search.slice(1));
   params.delete("website_edit");
   params.delete("website_mode");
+  const serialized = params.toString();
+  return serialized ? `${pathname}?${serialized}` : pathname;
+}
+
+function withoutWebsiteFrameQuery(path) {
+  if (path == null || path === "") return path == null ? null : "";
+  const { pathname, search } = splitPathAndSearch(path);
+  if (!search) return pathname;
+  const params = new URLSearchParams(search.slice(1));
+  params.delete("website_frame");
+  params.delete("websiteFrame");
   const serialized = params.toString();
   return serialized ? `${pathname}?${serialized}` : pathname;
 }
@@ -769,9 +788,12 @@ module.exports = {
   buildPublicOrganizationWebsiteUrl,
   EDITOR_NAV_QUERY,
   PREVIEW_NAV_QUERY,
+  WEBSITE_FRAME_QUERY,
   withEditorNavigationQuery,
   withPreviewNavigationQuery,
+  withWebsiteFrameQuery,
   withoutEditorNavigationQuery,
+  withoutWebsiteFrameQuery,
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteInstancePath,

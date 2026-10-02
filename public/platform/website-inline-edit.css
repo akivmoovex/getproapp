@@ -570,23 +570,97 @@ body.gp-website-field-editing .bb-tp-main {
   height: 4.5rem;
   object-fit: cover;
 }
-body.gp-website-viewport-mobile .bb-tp-main,
-body.gp-website-viewport-mobile .ac-tenant-main,
-body.gp-website-viewport-mobile [data-bb-home],
-body.gp-website-viewport-mobile .ac-tenant-home,
-body.gp-website-viewport-mobile #ac-public-main {
-  max-width: 390px;
-  margin-left: auto;
-  margin-right: auto;
+/* Obsolete same-document max-width pinch removed — Tablet/Mobile use real iframe viewports.
+   See docs/qa/V2_04_WEBSITE_EDITOR_REAL_VIEWPORT_VERIFICATION.md */
+
+/* —— Real iframe responsive viewport stage (shared BB + AC) —— */
+.gp-website-viewport-stage {
+  display: none;
 }
-body.gp-website-viewport-tablet .bb-tp-main,
-body.gp-website-viewport-tablet .ac-tenant-main,
-body.gp-website-viewport-tablet [data-bb-home],
-body.gp-website-viewport-tablet .ac-tenant-home,
-body.gp-website-viewport-tablet #ac-public-main {
-  max-width: 768px;
-  margin-left: auto;
-  margin-right: auto;
+.gp-website-viewport-stage.is-active {
+  display: flex;
+  position: fixed;
+  top: var(--gp-editor-chrome-offset, 7.5rem);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  justify-content: center;
+  align-items: stretch;
+  padding: 0.75rem 0.5rem 1rem;
+  background: color-mix(in srgb, var(--color-text-primary, #1a1a1a) 6%, var(--color-surface, #f4f4f5));
+  overflow: auto;
+}
+.gp-website-viewport-stage__frame-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.gp-website-viewport-stage__frame {
+  display: block;
+  width: var(--gp-viewport-frame-width, 390px);
+  max-width: 100%;
+  height: 100%;
+  min-height: 24rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-text-primary, #111) 12%, transparent),
+    0 12px 32px color-mix(in srgb, var(--color-text-primary, #111) 18%, transparent);
+}
+body.gp-website-viewport-frame-active {
+  overflow: hidden;
+}
+/*
+ * Hide same-document public canvas while iframe preview is active.
+ * Keep editor chrome stack + body-level overlays (Change Manager, field dialogs).
+ * Do NOT use body > * visibility — chrome/header share stacks on BlessBoard.
+ */
+body.gp-website-viewport-frame-active #bb-tp-main,
+body.gp-website-viewport-frame-active .bb-tp-header,
+body.gp-website-viewport-frame-active .bb-tp-footer,
+body.gp-website-viewport-frame-active #bb-tp-drawer,
+body.gp-website-viewport-frame-active .bb-tp-drawer,
+body.gp-website-viewport-frame-active #ac-public-main,
+body.gp-website-viewport-frame-active .ac-public-header,
+body.gp-website-viewport-frame-active .ac-public-footer,
+body.gp-website-viewport-frame-active [data-ac-public-header],
+body.gp-website-viewport-frame-active [data-ac-public-footer],
+body.gp-website-viewport-frame-active .ac-tenant-mobile-sticky,
+body.gp-website-viewport-frame-active .acp-mobile-bottom-nav {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.gp-website-viewport-frame-active .gp-website-chrome-stack,
+body.gp-website-viewport-frame-active .gp-website-editor-host,
+body.gp-website-viewport-frame-active .gp-website-viewport-stage,
+body.gp-website-viewport-frame-active .gp-website-editor-overlays,
+body.gp-website-viewport-frame-active .gp-cm-panel,
+body.gp-website-viewport-frame-active .gp-cm-reminder,
+body.gp-website-viewport-frame-active .gp-cm-history,
+body.gp-website-viewport-frame-active [data-website-field-editor],
+body.gp-website-viewport-frame-active [data-website-structured] {
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+/* Frame document: no outer toolbar — unwrap chrome-stack so public header/layout parity holds */
+html.gp-website-frame-document,
+body.gp-website-frame-document {
+  min-width: 0;
+}
+body.gp-website-frame-document .gp-website-chrome-stack {
+  display: contents;
+}
+body.gp-website-frame-document.bb-tp-body--editing,
+body.gp-website-frame-document.ac-public-body--website-editing {
+  scroll-padding-top: 0;
+  scroll-padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.gp-website-frame-bootstrap {
+  display: none !important;
 }
 .gp-website-engine-hub {
   display: grid;

@@ -274,7 +274,7 @@ describe("blessboard church website preview and publish", () => {
     const rec = await provisionPlan("foundation");
 
     // Remove contact and service-times copy to force readiness gaps.
-    // New-tenant templates may already seed service times.
+    // New-tenant templates may already seed service times and engine contact drafts.
     await pool.query(
       `UPDATE blessboard.church_settings
           SET primary_email = NULL, primary_phone = NULL
@@ -282,14 +282,54 @@ describe("blessboard church website preview and publish", () => {
       [rec.churchId]
     );
     await pool.query(
+      `UPDATE blessboard.branch_settings
+          SET email = NULL, phone = NULL
+        WHERE branch_id IN (
+          SELECT id FROM blessboard.branches WHERE church_id = $1
+        )`,
+      [rec.churchId]
+    );
+    await pool.query(
       `UPDATE blessboard.page_sections ps
-          SET body_text = NULL
+          SET body_text = NULL,
+              layout_metadata = COALESCE(ps.layout_metadata, '{}'::jsonb) - 'entries'
          FROM blessboard.public_pages pp
         WHERE pp.id = ps.page_id
           AND pp.church_id = $1
           AND (
             ps.section_key IN ('service_times', 'services', 'worship_times')
             OR ps.section_type IN ('service_times', 'services', 'worship_times')
+          )`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE platform.website_content wc
+          SET draft_value = NULL, published_value = NULL
+         FROM platform.website_instances wi
+         JOIN platform.organizations o ON o.id = wi.organization_id
+         JOIN blessboard.churches c ON c.organization_id = o.id
+        WHERE wc.instance_id = wi.id
+          AND c.id = $1
+          AND wc.content_key IN (
+            'contact.details.email',
+            'contact.details.phone',
+            'bb.contact.details.email',
+            'bb.contact.details.phone'
+          )`,
+      [rec.churchId]
+    );
+    // Also clear any locator-style contact keys that match details/email|phone.
+    await pool.query(
+      `UPDATE platform.website_content wc
+          SET draft_value = NULL, published_value = NULL
+         FROM platform.website_instances wi
+         JOIN platform.organizations o ON o.id = wi.organization_id
+         JOIN blessboard.churches c ON c.organization_id = o.id
+        WHERE wc.instance_id = wi.id
+          AND c.id = $1
+          AND (
+            wc.content_key ILIKE '%contact%details%email%'
+            OR wc.content_key ILIKE '%contact%details%phone%'
           )`,
       [rec.churchId]
     );
