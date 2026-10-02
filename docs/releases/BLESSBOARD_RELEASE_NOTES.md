@@ -3,8 +3,60 @@
 Customer-facing BlessBoard release notes. Runtime Release Notes Center reads structured
 equivalents from `src/platform/release-notes/releaseNotesCatalog.js` (`productNarratives`).
 
-**Frozen V2.04 application candidate:** `c16c791f9a4d102aa213debb3f4f0975c258c487`  
-(Hosted repository tip may be a later docs-only descendant; do not redefine the application candidate.)
+---
+
+## Version 2.05
+
+**Title:** BlessBoard 2.05
+
+A major administration and website-management update that brings church operations, website editing and publishing into one consistent Admin Console.
+
+### New Admin Console
+
+- Dashboard is now the default landing page after church registration or administrator login.
+- Consistent management navigation for Dashboard, Website, Content, People, Operations, Locations, Media, Reports, Access and Settings.
+- HQ and branch-aware administration with role-based access.
+
+### Website Management
+
+- Website Management is now a primary Admin Console section.
+- View website status, unpublished changes, theme, domain and publishing readiness.
+- Edit the church website without leaving the administration experience.
+- Desktop, tablet and mobile previews.
+
+### Website Editing
+
+- Edit text and images.
+- Add, edit, reorder and remove website sections.
+- Manage website media.
+- Support YouTube video content where available.
+- Save work as draft before publishing.
+
+### Themes & Live Preview
+
+- Three presentation themes:
+  - Clarity
+  - Editorial
+  - Community
+- Preview the same church content in different visual styles.
+- Theme changes affect presentation only and do not duplicate church content.
+
+### Publishing
+
+- Review unpublished changes before publishing.
+- Publish from Website Management or the website editor.
+- Publish reminder after multiple meaningful unpublished changes.
+- Existing version history, historical preview, unpublish and restore-as-new workflow retained.
+
+### Content & Branch Management
+
+- Foundation for HQ and branch-scoped content management.
+- Administration structure supports articles, news, announcements and activities.
+- Branch-aware website and content scope.
+
+### Known limitations
+
+- YouTube embedding support is being completed across all public website presentation paths.
 
 ---
 

@@ -2,9 +2,9 @@
 
 **Center route (after deploy):** `/release-notes` on the testing QA hub  
 **Catalog source of truth (runtime):** `src/platform/release-notes/releaseNotesCatalog.js`  
-**Branch:** `V4` (current product line **2.04**)  
-**Last audit:** 2026-09-30  
-**Latest packet:** [`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md)  
+**Branch:** `V5` (current product line **2.05**)  
+**Last audit:** 2026-10-02  
+**Latest packet:** [`V2_05_RELEASE_NOTES.md`](./V2_05_RELEASE_NOTES.md)  
 **Rule:** Evidence only — no invented PASS / RELEASED. Incomplete history → `UNVERIFIED` or `DOCUMENTATION PENDING`.
 
 Related existing packets are **not deleted**. This file is the index + structured summary.
@@ -41,7 +41,7 @@ Related existing packets are **not deleted**. This file is the index + structure
 | Path | Purpose |
 |------|---------|
 | `/release-notes` | Overview + filters |
-| `/release-notes/:version` | Version details (`1.0` … `2.04`) |
+| `/release-notes/:version` | Version details (`1.0` … `2.05`) |
 | `/release-notes/:version/bugs` | Bugs & regression |
 | `/release-notes/:version/qa` | QA checklist |
 | `/release-notes/:version/share` | Public sanitized share summary |

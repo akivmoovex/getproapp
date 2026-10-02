@@ -63,22 +63,23 @@ const JUSTIFIED_RAW = new Set([
 ]);
 
 describe("V2.04 release hardening", () => {
-  it("VERSION: shared V8 About scheme is 2.04 for BB and AC", () => {
-    assert.equal(VERSION_BASE_V8, "2.04");
-    assert.equal(PRODUCT_VERSION_V8, "2.04");
+  it("VERSION: shared V8 About scheme is 2.05 for BB and AC", () => {
+    assert.equal(VERSION_BASE_V8, "2.05");
+    assert.equal(PRODUCT_VERSION_V8, "2.05");
     const scheme = resolveVersionScheme(V8_ENV);
     assert.equal(scheme.platformLine, "v8");
-    assert.equal(scheme.productVersion, "2.04");
+    assert.equal(scheme.productVersion, "2.05");
     const info = getApplicationBuildInfo({ env: V8_ENV });
-    assert.equal(info.productVersion, "2.04");
-    assert.equal(info.version, "2.04");
-    assert.equal(info.productVersionLabel, "Version 2.04");
+    assert.equal(info.productVersion, "2.05");
+    assert.equal(info.version, "2.05");
+    assert.equal(info.productVersionLabel, "Version 2.05");
     assert.equal(info.build, "f72485104ca8");
   });
 
-  it("RELEASE NOTES: catalog includes 2.04 packet", () => {
+  it("RELEASE NOTES: catalog includes 2.04 history and current 2.05 packet", () => {
     assert.ok(VERSION_ORDER.includes("2.04"));
-    assert.equal(VERSION_ORDER[VERSION_ORDER.length - 1], "2.04");
+    assert.ok(VERSION_ORDER.includes("2.05"));
+    assert.equal(VERSION_ORDER[VERSION_ORDER.length - 1], "2.05");
     const v204 = VERSIONS.find((v) => v.version === "2.04");
     assert.ok(v204);
     assert.match(v204.summary, /Stitch|website|2\.04/i);

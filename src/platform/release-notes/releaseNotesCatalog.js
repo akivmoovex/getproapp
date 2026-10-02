@@ -37,6 +37,7 @@ const VERSION_ORDER = Object.freeze([
   "2.02",
   "2.03",
   "2.04",
+  "2.05",
 ]);
 
 /**
@@ -3009,6 +3010,309 @@ const VERSIONS = Object.freeze([
       "docs/qa/V2_04_QA_01_SHARED_REGISTRATION_LOCATION.md",
       "docs/qa/V2_04_WEBSITE_PLATFORMIZATION_OVERNIGHT_HANDOFF.md",
       "docs/qa/V2_04_BB_PLATFORM_ENGINE_MIGRATION.md",
+    ],
+  }),
+
+  Object.freeze({
+    version: "2.05",
+    summary:
+      "V2.05 on branch V5 delivers a unified Admin Console with dashboard-first landing, integrated Website Management, live responsive previews, presentation themes (Clarity, Editorial, Community), draft change management, and streamlined publishing for BlessBoard and ActiveClinic. Testing/QA stage on V5 — not production-released.",
+    releaseDate: "2026-10-02",
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus:
+      "TESTING on branch V5 (moovex-platform-v8-testing / neuniversity). V2.05 QA stage. Production UNTOUCHED. Not production-released.",
+    qaVerification:
+      "IN DEVELOPMENT / V5 QA stage. About Version 2.05 and Release Notes Center 2.05 product narratives covered by local contracts. Not a HOSTED QA PASS or production RELEASED certificate.",
+    acceptanceCriteria: [
+      "About Version 2.05 on BlessBoard and ActiveClinic (shared applicationBuildInfo V8 scheme)",
+      "Release Notes Center lists 2.05; BlessBoard host shows What's new for BlessBoard; ActiveClinic host shows What's new for ActiveClinic",
+      "Prior versions 2.03 and 2.04 remain in the catalog and continue to render",
+      "Build SHA and environment/branch identity remain separate from product version",
+      "No production RELEASED claim for 2.05",
+    ],
+    pendingDevelopment: [
+      "Complete YouTube embedding across all public website presentation paths",
+      "Hosted V5 QA closure and release freeze (separate authorization)",
+      "Production promotion of the V2.05 candidate (separate authorization)",
+    ],
+    knownIssues: [
+      "YouTube embedding support is being completed across all public website presentation paths.",
+      "V2.05 remains in V5 testing/QA — not certified for production promotion by this catalog entry",
+    ],
+    documentationGaps: [
+      "Customer-facing BlessBoard narrative: docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      "Customer-facing ActiveClinic narrative: docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+    ],
+    architectureWork: {
+      title: "Unified Admin Console on V5",
+      body:
+        "BlessBoard and ActiveClinic share Admin Console navigation, Website Management, themes, draft/publish workflows, and responsive previews while keeping product-specific organization, branch/location, and content scopes. Existing website version history, unpublish, and restore-as-new remain on the shared platform lifecycle.",
+      items: [
+        "Dashboard-first post-registration and administrator login landing",
+        "Website Management as a primary Admin Console section",
+        "Three presentation themes: Clarity, Editorial, Community",
+        "Unified publish path for Admin Console and website editor",
+        "HQ/branch (BlessBoard) and organization/location (ActiveClinic) administration foundations",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro:
+          "A major administration and website-management update that brings church operations, website editing and publishing into one consistent Admin Console.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "New Admin Console",
+            items: Object.freeze([
+              "Dashboard is now the default landing page after church registration or administrator login.",
+              "Consistent management navigation for Dashboard, Website, Content, People, Operations, Locations, Media, Reports, Access and Settings.",
+              "HQ and branch-aware administration with role-based access.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Website Management",
+            items: Object.freeze([
+              "Website Management is now a primary Admin Console section.",
+              "View website status, unpublished changes, theme, domain and publishing readiness.",
+              "Edit the church website without leaving the administration experience.",
+              "Desktop, tablet and mobile previews.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Website Editing",
+            items: Object.freeze([
+              "Edit text and images.",
+              "Add, edit, reorder and remove website sections.",
+              "Manage website media.",
+              "Support YouTube video content where available.",
+              "Save work as draft before publishing.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Themes & Live Preview",
+            items: Object.freeze([
+              "Three presentation themes: Clarity, Editorial and Community.",
+              "Preview the same church content in different visual styles.",
+              "Theme changes affect presentation only and do not duplicate church content.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Publishing",
+            items: Object.freeze([
+              "Review unpublished changes before publishing.",
+              "Publish from Website Management or the website editor.",
+              "Publish reminder after multiple meaningful unpublished changes.",
+              "Existing version history, historical preview, unpublish and restore-as-new workflow retained.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Content & Branch Management",
+            items: Object.freeze([
+              "Foundation for HQ and branch-scoped content management.",
+              "Administration structure supports articles, news, announcements and activities.",
+              "Branch-aware website and content scope.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Known limitations",
+            items: Object.freeze([
+              "YouTube embedding support is being completed across all public website presentation paths.",
+            ]),
+          }),
+        ]),
+        source: "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro:
+          "A major administration and website-management update that unifies clinic operations, website editing and publishing in one consistent Admin Console.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "New Admin Console",
+            items: Object.freeze([
+              "Dashboard is now the default landing page after clinic registration or staff administrator login.",
+              "Consistent navigation for Dashboard, Website, Content, People, Operations, Locations, Media, Reports, Access and Settings.",
+              "Organization and clinic-location aware administration.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Website Management",
+            items: Object.freeze([
+              "Website is now a primary Admin Console section.",
+              "View website status, draft changes, current theme, domain and publish readiness.",
+              "Desktop, tablet and mobile live preview.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Website Editing",
+            items: Object.freeze([
+              "Edit text and images.",
+              "Add, edit, reorder and remove sections.",
+              "Manage clinic media.",
+              "Support YouTube video content where available.",
+              "Save as draft before publication.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Themes & Live Preview",
+            items: Object.freeze([
+              "Three presentation themes: Clarity, Editorial and Community.",
+              "Switch presentation without altering underlying services, doctors, locations or content.",
+              "Preview at desktop, tablet and mobile widths.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Publishing",
+            items: Object.freeze([
+              "Review changes before publication.",
+              "Publish through Admin Console Website Management or the website editor.",
+              "Publish reminder after multiple meaningful unpublished changes.",
+              "Version history, historical preview, unpublish and restore-as-new preserved.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Organization & Location Management",
+            items: Object.freeze([
+              "Administration structure supports organization/HQ and clinic-location contexts.",
+              "Location-scoped permissions and website/content management foundations.",
+              "Content structure supports articles, clinic news, announcements and activities.",
+            ]),
+          }),
+          Object.freeze({
+            title: "Known limitations",
+            items: Object.freeze([
+              "YouTube embedding support is being completed across all public website presentation paths.",
+            ]),
+          }),
+        ]),
+        source: "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+      }),
+    }),
+    features: [
+      Object.freeze({
+        id: "F-2.05-ABOUT-01",
+        name: "About Version 2.05 (shared)",
+        description:
+          "BlessBoard and ActiveClinic About pages show product Version 2.05 with a separate Git build SHA via the shared applicationBuildInfo V8 scheme.",
+        workflow: "Open /about on BlessBoard and ActiveClinic testing hosts",
+        expectedBehavior: "Version 2.05 + real build SHA; production catalogue profile remains 1.3",
+        products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
+        featureType: "release_metadata",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.05-ABOUT-01"],
+        sources: [
+          "src/platform/build/applicationBuildInfo.js",
+          "docs/releases/V2_05_RELEASE_NOTES.md",
+        ],
+        publicSafe: true,
+      }),
+      Object.freeze({
+        id: "F-2.05-RNC-01",
+        name: "Release Notes Center Version 2.05 product narratives",
+        description:
+          "Release Notes Center serves Version 2.05 with product-specific What's new narratives for BlessBoard and ActiveClinic hosts. Prior 2.03 and 2.04 entries remain available.",
+        workflow: "Open /release-notes/2.05 on BlessBoard and ActiveClinic hosts",
+        expectedBehavior:
+          "BB host shows What's new for BlessBoard; AC host shows What's new for ActiveClinic; no cross-product narrative leak; 2.03/2.04 still render",
+        products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
+        featureType: "release_metadata",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.05-RNC-01"],
+        sources: [
+          "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+          "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+          "docs/releases/V2_05_RELEASE_NOTES.md",
+        ],
+        publicSafe: true,
+      }),
+      Object.freeze({
+        id: "F-2.05-ADMIN-01",
+        name: "Unified Admin Console (dashboard-first)",
+        description:
+          "Dashboard is the default landing after registration or administrator login. Consistent Admin Console navigation covers Dashboard, Website, Content, People, Operations, Locations, Media, Reports, Access and Settings, with HQ/branch and organization/location awareness.",
+        workflow: "Register or sign in as administrator → land on Admin Console Dashboard → navigate console sections",
+        expectedBehavior: "Dashboard-first landing; console sections available per role and context",
+        products: [PRODUCTS.BB, PRODUCTS.AC],
+        featureType: "administration",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.NOT_TESTED,
+        testCaseIds: ["TC-2.05-ADMIN-01"],
+        sources: ["docs/releases/V2_05_RELEASE_NOTES.md"],
+        publicSafe: true,
+      }),
+      Object.freeze({
+        id: "F-2.05-WEB-01",
+        name: "Website Management, themes and publishing",
+        description:
+          "Website Management is a primary Admin Console section with status, draft changes, themes (Clarity, Editorial, Community), responsive previews, draft save, publish reminder, and retained version history / unpublish / restore-as-new.",
+        workflow: "Open Website Management → edit draft → preview themes/devices → publish from hub or editor",
+        expectedBehavior: "Draft and publish workflows remain singular; themes change presentation only",
+        products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
+        featureType: "website",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.NOT_TESTED,
+        testCaseIds: ["TC-2.05-WEB-01"],
+        sources: ["docs/releases/V2_05_RELEASE_NOTES.md"],
+        publicSafe: true,
+      }),
+    ],
+    bugs: [],
+    qaChecklist: [
+      Object.freeze({
+        id: "TC-2.05-ABOUT-01",
+        featureOrBugId: "F-2.05-ABOUT-01",
+        product: PRODUCTS.SHARED,
+        objective: "BB and AC About render Version 2.05",
+        prerequisites: "V8 deployment profile",
+        steps: ["GET blessboard /about", "GET activeclinic /about"],
+        expectedResult: "Version 2.05 + Git build; no stale 2.04 current-version label",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "tests/v8-about-version-2.test.js; tests/v2-05-release-notes-about.test.js",
+      }),
+      Object.freeze({
+        id: "TC-2.05-RNC-01",
+        featureOrBugId: "F-2.05-RNC-01",
+        product: PRODUCTS.SHARED,
+        objective: "Release Notes Center serves 2.05 with product isolation; 2.03/2.04 history retained",
+        prerequisites: "Catalog includes 2.05 productNarratives",
+        steps: [
+          "GET blessboard /release-notes/2.05",
+          "GET activeclinic /release-notes/2.05",
+          "GET /release-notes/2.03 and /release-notes/2.04",
+        ],
+        expectedResult:
+          "What's new for BlessBoard on BB host; What's new for ActiveClinic on AC host; 2.03 and 2.04 still render",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "tests/v2-05-release-notes-about.test.js",
+      }),
+      Object.freeze({
+        id: "TC-2.05-ADMIN-01",
+        featureOrBugId: "F-2.05-ADMIN-01",
+        product: PRODUCTS.SHARED,
+        objective: "Dashboard-first Admin Console landing (V5 QA)",
+        prerequisites: "V5 testing build",
+        steps: ["Register/login as BB and AC administrator", "Confirm dashboard landing"],
+        expectedResult: "Admin Console Dashboard is the default landing",
+        status: STATUS.NOT_TESTED,
+        evidence: "V5 QA stage — hosted verification pending",
+      }),
+      Object.freeze({
+        id: "TC-2.05-WEB-01",
+        featureOrBugId: "F-2.05-WEB-01",
+        product: PRODUCTS.SHARED,
+        objective: "Website Management themes and publishing (V5 QA)",
+        prerequisites: "V5 testing build",
+        steps: ["Open Website Management", "Preview themes", "Publish draft"],
+        expectedResult: "Website management, themes and publish paths available",
+        status: STATUS.NOT_TESTED,
+        evidence: "V5 QA stage — hosted verification pending",
+      }),
+    ],
+    sources: [
+      "docs/releases/V2_05_RELEASE_NOTES.md",
+      "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+      "src/platform/build/applicationBuildInfo.js",
     ],
   }),
 ]);
