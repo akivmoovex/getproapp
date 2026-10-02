@@ -3,12 +3,13 @@
 | Field | Value |
 |-------|--------|
 | **Doc ID** | `V2_04_AC_SERVICES_DOCTORS_CONTACT_AUDIT` |
-| **Mode** | **READ-ONLY** — no application code, Stitch, DB, or deploy changes |
+| **Mode** | Audit + **FIX PACK APPLIED** (2026-10-02) |
 | **Date** | 2026-10-02 |
 | **Scope** | BUG 1–4 (Manage Public Catalogue, Manage Doctors, Contact UX, Pricing edit-mode CTA) |
 | **Stitch project** | `8888814012921999511` — *ActiveClinic Design System Foundation* (76 screen instances / 75 screens listed) |
-| **Primary code tree** | `Documents/DocumentsAkiv/.../getpro` @ `ad76b4b777db` |
-| **Evidence sources** | `docs/design/stitch-exports/`, `docs/design/ACTIVECLINIC_*STITCH*`, `docs/activeclinic/stitch/*`, live Stitch `list_screens`, AC public/CMS routes & views |
+| **Primary code tree** | `Documents/DocumentsAkiv/.../getpro` |
+| **Evidence sources** | `docs/design/stitch-exports/`, `docs/design/ACTIVECLINIC_*STITCH*`, live Stitch screens, AC public/CMS routes & views |
+| **Fix pack tests** | `tests/v2-04-ac-public-site-management-fix.test.js` |
 
 **Constraints observed:** no second booking/contact/pricing domain proposed; management must use canonical operational catalogues (services → `appointment_service_types`; doctors → staff public profiles).
 
@@ -187,7 +188,7 @@ RECOMMENDED_ACTION:
 | `applyWebsiteLinkQuery` | Stamps every `clinic.publicPagePaths.*` + `publicBasePath` |
 | `buildClinicWebsiteNav` / `withSurfaceQuery` | Nav hrefs use `appendQuery` |
 | `withEditorNavigationQuery` / `EDITOR_NAV_QUERY` (`publicWebsiteUrl.js`) | Canonical editor query pair |
-| **pricing.ejs CTAs** | **Bypass all of the above** — literal `/clinics/:key/contact` and `/services` |
+| **pricing.ejs CTAs** | Uses `clinic.publicPagePaths.contact` / `.services` (edit-stamped via `applyWebsiteLinkQuery`) |
 
 Expected: internal public-site navigation in edit mode preserves `?website_edit=1&website_mode=draft`.
 
@@ -195,22 +196,76 @@ Expected: internal public-site navigation in edit mode preserves `?website_edit=
 
 ## Cross-bug architecture notes
 
-1. **OPERATIONAL vs website JSON (Bugs 1–2):** Management must continue to edit **OPERATIONAL_DATA** through `/app/settings/website/catalogue` (canonical service + public-profile writers). Website content keys only cover intros/empty copy (`services.intro`, `doctors.intro`, …) via WE01.
+1. **OPERATIONAL vs website JSON (Bugs 1–2):** Management continues to edit **OPERATIONAL_DATA** through `/app/settings/website/catalogue` (canonical service + public-profile writers). Website content keys only cover intros/empty copy (`services.intro`, `doctors.intro`, …) via WE01.
 2. **No domain duplication:** Do not add parallel booking, contact, or pricing engines. Fix hrefs and catalogue entry points only.
-3. **Stitch exports folder** is nearly empty for this scope; rely on live project IDs + design matrices until exports are refreshed.
-4. **Hub vs catalogue chrome:** Catalogue still uses `websiteCmsShell` + `website-cms-nav` (MW Studio). Hub was cleaned in AC-WEB-EDITOR-01; catalogue was explicitly left as CMS sub-page — may still *feel* blank if users expect the public WE01 canvas.
+3. **Stitch exports:** C01/C02/E03 PNGs + screen map under `docs/design/stitch-exports/` (project `8888814012921999511`). Earlier “no dedicated manage screens” finding is **superseded**.
+4. **Hub vs catalogue chrome:** Hub remains management-only (AC-WEB-EDITOR-01). Catalogue is CMS sub-page with **C01/C02 Stitch structure** (not WE01 public canvas).
 
 ---
 
-## End markers
+## Fix pack status (2026-10-02)
+
+| Bug | Status | Change |
+|-----|--------|--------|
+| BUG 1 Services manage | **FIXED** | `manageHref` → `?tab=services` + returnTo; GET alias `/catalogue/services`; edit-gated Manage CTA; operational `appointment_service_types` |
+| BUG 2 Doctors manage | **FIXED** | `manageHref` → `?tab=doctors` + returnTo; GET alias `/catalogue/doctors`; edit-gated Manage Doctors; staff public profiles |
+| BUG 3 Contact R07 | **FIXED** | Urgent notice, form heading, legal note, Stitch R07 markers; operational contact + inquiry form retained |
+| BUG 4 Pricing edit links | **FIXED** | `pricing.ejs` uses `publicPagePaths` (no hardcoded query; clean public URLs when not editing) |
+
+**Tests:** `tests/v2-04-ac-public-site-management-fix.test.js` (+ related AC stitch/catalogue coverage) **9/9** focused pack; broader focused AC website suite **65/65**.
+
+### True C01/C02 Stitch parity (2026-10-02) — supersedes contract-only PASS
+
+Earlier “SERVICES_STITCH_PARITY=PASS / DOCTORS_STITCH_PARITY=PASS” from manage-route fix packs meant **functional/contract** parity only (generic CMS). That was **misleading for visual Stitch**.
+
+| Screen | IDs | Implementation |
+|--------|-----|----------------|
+| C01 Services Desktop/Mobile | `d64d1134…` / `9fc7495d…` | `website-cms-catalogue.ejs` + `website-cms.css` markers `data-ac-stitch-screen="C01"` |
+| C02 Doctors Desktop/Mobile | `9a9ba9d9…` / `d772e512…` | same template tab=doctors · `data-ac-stitch-screen="C02"` |
+| E03 Image Editor | `c37072ac…` / `09401aea…` | Doctor (and service) catalogue forms: shared media-field with `framingEnabled:true` + Adjust Picture |
+
+**Preserved:** `appointment_service_types` / staff public profiles · existing catalogue routes/writes · RBAC · public privacy allowlist · no second domain.
+
+**Focused:** `tests/v2-04-ac-catalogue-c01-c02-stitch-parity.test.js` **11/11**. Hosted visual sign-off remains under **RB-QA-03**.
+
+### Application candidate freeze (2026-10-02)
+
+| Field | Value |
+|-------|--------|
+| BRANCH | `V4` |
+| PREVIOUS_HOSTED_SHA | `554d37406ef5` |
+| NEW_APPLICATION_CANDIDATE_SHA | `33e5c29612942e1484086432214b733f353f8601` |
+| Commit | `Ver 2.04 AC C01/C02/E03 catalogue Stitch parity.` |
+| C01 / C02 / E03 | YES / YES / YES |
+| FOCUSED_TESTS | **11/11** |
+| Deploy | **NOT deployed** (candidate freeze only; no Cursor deploy; production untouched) |
+
+**Included in candidate:** catalogue list/forms + `website-cms.css` C01/C02 block + catalogue CMS route preview/returnTo aliases + parity test + Stitch screen map/PNGs.  
+**Excluded from candidate:** build-identity shared-metadata work, public-site management / Contact R07 dirty tree, `.tmp_*` artifacts.
 
 ```
-SERVICES_STITCH_FOUND=YES
-DOCTORS_STITCH_FOUND=YES
-CONTACT_STITCH_FOUND=YES
-SERVICES_IMPLEMENTATION_GAP=YES
-DOCTORS_IMPLEMENTATION_GAP=YES
-CONTACT_DESIGN_REVISION_NEEDED=YES
-EDIT_MODE_LINK_BUG_ROOT_CAUSE=pricing.ejs hardcodes /contact and /services without publicPagePaths or EDITOR_NAV_QUERY, dropping website_edit=1&website_mode=draft
-FINAL=V2_04_AC_PUBLIC_SITE_MANAGEMENT_AUDIT_COMPLETE
+C01_DESKTOP_IMPLEMENTED=YES
+C01_MOBILE_IMPLEMENTED=YES
+C02_DESKTOP_IMPLEMENTED=YES
+C02_MOBILE_IMPLEMENTED=YES
+C01_TOKENS=PASS
+C02_TOKENS=PASS
+E03_CATALOGUE_INTEGRATION=PASS
+SERVICES_STITCH_PARITY=PASS
+DOCTORS_STITCH_PARITY=PASS
+FOCUSED_TESTS=11/11
+NEW_APPLICATION_CANDIDATE_SHA=33e5c29612942e1484086432214b733f353f8601
+FINAL=AC_C01_C02_TRUE_STITCH_PARITY_COMPLETE
+```
+
+```
+SERVICES_MANAGE=PASS
+DOCTORS_MANAGE=PASS
+CONTACT_R07_PARITY=PASS
+PRICING_EDIT_MODE_LINKS=PASS
+SERVICES_RBAC=PASS
+DOCTORS_RBAC=PASS
+PUBLIC_FIELD_PRIVACY=PASS
+FOCUSED_TESTS=65/65
+FINAL=V2_04_AC_PUBLIC_SITE_MANAGEMENT_FIX_PACK_COMPLETE
 ```

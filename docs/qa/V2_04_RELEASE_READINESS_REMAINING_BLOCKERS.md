@@ -59,15 +59,15 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
 | RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
 | RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
-| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Hub management-only + editor path need hosted confirmation post-fix | Manual hub (no fake canvas) + Edit Website + draft/publish smoke | RB-ID-01 | NO |
+| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **FAIL** (hosted probe on `554d37406ef5`; C01/C02 now frozen as app candidate `33e5c29612942e1484086432214b733f353f8601` — not yet deployed) | Hub/editor + C01/C02 visual not FEATURE-proven on hosted tip | Deploy candidate `33e5c296…` to neuniversity testing → authenticated catalogue visual vs Stitch C01/C02/E03 | RB-ID-01 | NO |
 | RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
-| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence); policy CLOSED Wave2 | Public pages need manual hygiene sign-off vs allowlist | Spot-check doctor/services pages vs allowlist | RB-PROD-07 **CLOSED** | YES (after identity capture preferred) |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **FAIL** (probe 2026-10-02: no discoverable public clinic doctors/services HTML; E03 auth-gated) | Public pages need hygiene sign-off vs allowlist | Spot-check published clinicKey doctors/services + catalogue E03 after deploy | RB-PROD-07 **CLOSED** | YES (after identity + sample clinic) |
 
 ### E. RELEASE IDENTITY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **OPEN** — post-restart hosted verify 2026-10-02: hub `/healthz` `branch=V4` `displayLabel=V4 testing`; **BB+AC still `UNKNOWN testing`** (About+healthz). HOSTED_SHA=`75531602725a` (= tip; ≥ app `7c957101`). ENV=testing · deploy=`moovex-platform-v8-testing` · About Version=2.04 · no V9/V10. `branchSource` not exposed on hosted tip. SHA_MATCH PASS; BRANCH FAIL on product hosts | FEATURE QA cannot bind while BB+AC remain UNKNOWN | Confirm `GETPRO_GIT_BRANCH=V4` is set on **BlessBoard and ActiveClinic Hostinger apps** (not hub-only) → restart those workers → re-verify | Hub env alone insufficient | NO |
+| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **OPEN / code fixed — hosted pending redeploy** — Hostinger model: subdomain workers **cannot** have separate env; only apex has `GETPRO_GIT_BRANCH=V4`. Shared fix: `.getpro/build-identity.json` seeded by apex, read by BB/AC. Focused **10/10 PASS**. Live still apex V4 / BB+AC UNKNOWN until Hostinger redeploy of this tip. SHA=`554d37406ef5` · ENV=testing · deploy=`moovex-platform-v8-testing` · no V9/V10 · production untouched | FEATURE QA bind needs live BB+AC `V4 testing` after redeploy | Redeploy/restart testing Hostinger app (apex env already set) → re-verify About+healthz on BB+AC | Do not require per-subdomain env | NO (until live verify) |
 
 ---
 
@@ -132,6 +132,62 @@ Until that set is closed (or Product **explicitly waives** a subset in writing),
 
 ### Wave6 build-identity verification note (2026-10-02, READ-ONLY)
 
+#### Hostinger subdomain model + shared metadata fix
+
+**Constraint:** Hostinger subdomains do **not** support separate env vars. `GETPRO_GIT_BRANCH=V4` is apex-only (`neuniversity.org`). LiteSpeed spawns one lsnode PID per hostname on the **same** hbuild tree — shared SHA/filesystem, **not** shared `process.env`.
+
+**Root cause:** Branch identity was per-process env (+ detached git → UNKNOWN). Apex PASS; BB/AC UNKNOWN despite identical deploy.
+
+**Code fix:** Shared `.getpro/build-identity.json` (authority: env → shared file → git → UNKNOWN). Apex seeds; BB/AC read. Focused tests **10/10 PASS**. See `V2_04_BUILD_IDENTITY_UNKNOWN_FIX.md`.
+
+**Live (pre-redeploy of this fix):**
+
+| Field | BlessBoard testing | ActiveClinic testing | Hub |
+|-------|--------------------|----------------------|-----|
+| HOST | blessboard.neuniversity.org | activeclinic.neuniversity.org | neuniversity.org |
+| BRANCH | UNKNOWN | UNKNOWN | V4 |
+| BRANCH_SOURCE | unknown | unknown | GETPRO_GIT_BRANCH |
+| ENVIRONMENT | testing | testing | testing |
+| FULL_SHA | `554d37406ef5` | `554d37406ef5` | `554d37406ef5` |
+| HEALTHZ_LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
+| DEPLOYMENT_CODE | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
+
+**Post-redeploy expect:** BB/AC `branch=V4` · `branchSource=shared.build-identity` · labels `V4 testing`. Production untouched. BUILD_IDENTITY_REMAINING=1 until live verify.
+
+#### Prior RB-ID-01 final Hostinger env recheck (same day, FAIL under wrong Topology-B assumption)
+
+| Field | BlessBoard testing | ActiveClinic testing | Hub |
+|-------|--------------------|----------------------|-----|
+| HOST | blessboard.neuniversity.org | activeclinic.neuniversity.org | neuniversity.org |
+| VERSION | 2.04 | 2.04 | — |
+| BRANCH | UNKNOWN | UNKNOWN | V4 |
+| BRANCH_SOURCE | unknown | unknown | GETPRO_GIT_BRANCH |
+| ENVIRONMENT | testing | testing | testing |
+| FULL_SHA | `554d37406ef5` | `554d37406ef5` | `554d37406ef5` |
+| ABOUT_LABEL | UNKNOWN testing | UNKNOWN testing | (hub `/about` 404; healthz authoritative) |
+| HEALTHZ_LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
+| DEPLOYMENT_CODE | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
+
+**Prior verdict:** Expected BB/AC `BRANCH=V4` via per-subdomain env → **impossible on Hostinger**. SHA_PARITY PASS. Production untouched.
+
+#### Prior RB-ID-01 close attempt (same day, same FAIL pattern)
+
+| Field | BlessBoard testing | ActiveClinic testing | Hub |
+|-------|--------------------|----------------------|-----|
+| HOST | blessboard.neuniversity.org | activeclinic.neuniversity.org | neuniversity.org |
+| VERSION | 2.04 | 2.04 | — |
+| BRANCH | UNKNOWN | UNKNOWN | V4 |
+| BRANCH_SOURCE | unknown | unknown | GETPRO_GIT_BRANCH |
+| ENVIRONMENT | testing | testing | testing |
+| FULL_SHA | `554d37406ef5` | `554d37406ef5` | `554d37406ef5` |
+| ABOUT_LABEL | UNKNOWN testing | UNKNOWN testing | — |
+| HEALTHZ_LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
+| DEPLOYMENT_CODE | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
+
+**Prior verdict:** Required BB/AC labels → **FAIL**. Topology B: product Hostinger apps still missing live `GETPRO_GIT_BRANCH` (or workers not restarted).
+
+#### Prior sheet (earlier same day, SHA `75531602725a`)
+
 | Field | BB | AC | Hub |
 |-------|----|----|-----|
 | VERSION | 2.04 | 2.04 | — |
@@ -142,8 +198,7 @@ Until that set is closed (or Product **explicitly waives** a subset in writing),
 | DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
 | displayLabel | UNKNOWN testing | UNKNOWN testing | V4 testing |
 
-**Post-restart re-verify (same day):** Operator reported Hostinger restart with `GETPRO_GIT_BRANCH=V4`. Live probe: **hub PASS**; **BB+AC still FAIL** (`UNKNOWN testing` on About + healthz). Same SHA on all three hosts → Topology B / per-app env: BB+AC workers still lack live `GETPRO_GIT_BRANCH` (or not restarted). No V9/V10. Production untouched.  
-SHA_MATCH BB/AC=PASS (tip `75531602725a` ≥ app candidate `7c957101`). BUILD_IDENTITY_REMAINING=1.
+**Earlier post-restart re-verify:** Operator reported Hostinger restart with `GETPRO_GIT_BRANCH=V4`. Live probe: **hub PASS**; **BB+AC still FAIL**. Same pattern as close attempt above.
 
 ### Prior Wave6 note (earlier same day)
 
@@ -157,6 +212,14 @@ BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_ID
 - **RB-ENG-05 CLOSED:** Add Member gender/baptism optionalized (presentation-only; not schema-backed; not required).  
 - **RB-TEST-01…07 CLOSED:** focused suite `tests/v2-04-wave3-eng-test-closures.test.js` (+ M01/M02 ENG-05 asserts).  
 - No IMPLEMENTATION_DEFECT stoppers found in this wave.
+
+### AC public-site management fix pack (2026-10-02)
+
+- **CLOSED eng defects (not release-registry IDs):** Services/Doctors manage blank screens (broken `/catalogue/services|doctors` manageHref), Contact R07 parity (urgent/legal/form heading), Pricing edit-mode CTA query drop.  
+- Canonical operational catalogue retained (`appointment_service_types` + staff public profiles); no second domains.  
+- Evidence: `docs/qa/V2_04_AC_SERVICES_DOCTORS_CONTACT_AUDIT.md`; focused suite `tests/v2-04-ac-public-site-management-fix.test.js` + related AC website tests **65/65 PASS**.  
+- **True C01/C02 Stitch parity (same day):** catalogue list renders Stitch structure (`data-ac-stitch-screen=C01|C02`), desktop table + mobile cards + sticky bar; doctor photo forms wire shared E03 media-field framing. Screen map: `docs/design/stitch-exports/AC_MW_C01_C02_E03_SCREEN_MAP.md`. Focused **11/11** (`tests/v2-04-ac-catalogue-c01-c02-stitch-parity.test.js`). Prior contract-only “STITCH_PARITY=PASS” superseded. Hosted visual sign-off still via **RB-QA-03** / **RB-QA-05**.
+- **C01/C02/E03 application candidate frozen (same day):** SHA `33e5c29612942e1484086432214b733f353f8601` on `V4` (previous hosted tip `554d37406ef5`). **Not deployed** from Cursor; production untouched. Ready for operator Hostinger testing deploy + RB-QA-03/05 re-run.
 
 ### Wave2 closure note (2026-10-02)
 
@@ -185,5 +248,13 @@ UNKNOWN_LABEL_FOUND=YES
 STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
 BUILD_IDENTITY_REMAINING=1
-FINAL=V2_04_HOSTED_BUILD_IDENTITY_VERIFIED
+RB_ID_01=FAIL
+HUB_BRANCH=V4
+BB_BRANCH=OTHER
+AC_BRANCH=OTHER
+BRANCH_SOURCE_ALL=OTHER
+SHA_PARITY=PASS
+HOSTINGER_SUBDOMAIN_ENV_SUPPORTED=NO
+SHARED_BUILD_IDENTITY_SOURCE=.getpro/build-identity.json
+FINAL=V2_04_SHARED_BUILD_IDENTITY_FIXED
 ```

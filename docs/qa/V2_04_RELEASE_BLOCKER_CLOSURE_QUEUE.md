@@ -10,7 +10,7 @@
 - No re-audit of closed bugs; no P2 enhancements; no deferred features.
 - AC patient PARITY_ONLY / TEST_ONLY remain **non-gating** (PD-V204-AC-01).
 - Manual QA never precedes its dependent code/test work.
-- Identity sheet must be **captured before Wave 5 executes**; formal **RB-ID-01** close is Wave 6 (evidence attached to READY). **2026-10-02:** sheet captured READ-ONLY; RB-ID-01 remains **OPEN** (BB+AC `branch=UNKNOWN`).
+- Identity sheet must be **captured before Wave 5 executes**; formal **RB-ID-01** close is Wave 6. **2026-10-02:** Hostinger subdomain env **unsupported**; shared `.getpro/build-identity.json` fix landed (focused 10/10); live BB+AC still UNKNOWN until Hostinger redeploy.
 - Collapse: shared root-cause chains listed in §Dependency chains (blockers kept as distinct IDs for burn-down).
 
 ### Of the 18 `FASTEST_CLOSABLE_NOW` — truly independent?
@@ -80,7 +80,7 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Hub management-only (no fake canvas); Edit Website; draft/publish smoke | Hosted hub/editor note PASS | SMALL | LOW | 5 |
 | RB-QA-04 | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID capture | NO | RB-ID-01 (capture) | Disabled-country POST + repeat-edit stale on AC+BB | Hosted geo/concurrency note PASS | SMALL | LOW | 5 |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | YES | prefer RB-ID capture | Spot-check doctor/services pages vs allowlist | PHI spot-check note vs PD-V204-AC-P1-02 PASS | SMALL | MEDIUM | 5 |
-| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | GETPRO_GIT_BRANCH=V4 on **BB+AC** Hostinger apps + restart | NO | BB+AC live still UNKNOWN after claimed restart (hub V4 only) | Confirm env on product apps (not hub-only) → restart BB+AC workers → re-probe About+healthz | BB+AC `branch=V4` / `V4 testing`; BRANCH_SOURCE=GETPRO_GIT_BRANCH | SMALL | HIGH | 6 OPEN |
+| RB-ID-01 | PLATFORM | Build/deploy identity | BUILD_IDENTITY | P0 | Apex `GETPRO_GIT_BRANCH=V4` + shared metadata file + Hostinger redeploy | NO | Live BB+AC UNKNOWN until redeploy of shared-metadata fix | Redeploy testing app → re-probe About+healthz (BB/AC expect `shared.build-identity`) | BB+AC `branch=V4` / `V4 testing` | SMALL | HIGH | 6 OPEN — code fixed |
 
 ---
 
@@ -128,37 +128,45 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 |------------|--------|----------|
 | RB-QA-01 | **NOT_RUN** | No tester evidence in session |
 | RB-QA-02 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-03 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-03 | **FAIL** | Hosted probe on `554d37406ef5`; C01/C02/E03 app candidate frozen `33e5c29612942e1484086432214b733f353f8601` (not deployed). Pack: `V2_04_FINAL_HOSTED_MANUAL_QA_PACK.md` |
 | RB-QA-04 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-05 | **NOT_RUN** | No tester evidence in session |
+| RB-QA-05 | **FAIL** | Hosted PHI/E03 probe 2026-10-02: no public clinic sample; catalogue auth-gated. No confirmed PHI leak. No new blocker ID |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
-**MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0**.
+**MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0** (03/05 verify-blocked, not product defects).
 
 **Prerequisite:** TESTING identity sheet **captured** 2026-10-02 (SHA/env/DB/About=2.04); **BRANCH still UNKNOWN** on BB+AC — formal RB-ID-01 close remains Wave 6 after branch fix.
 
 **Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website + geo/concurrency + PHI signed.
 
-### WAVE 6 — RELEASE IDENTITY — HOSTED VERIFY (2026-10-02, READ-ONLY, post-restart claim)
+### WAVE 6 — RELEASE IDENTITY — SHARED BUILD METADATA FIX (2026-10-02)
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-ID-01 | **OPEN** | Live BB+AC still `UNKNOWN testing`; hub `V4 testing`. HOSTED_SHA=`75531602725a` (BB=AC=hub). ENV=testing · deploy=`moovex-platform-v8-testing` · About Version=2.04. No V9/V10. Production untouched. |
+| RB-ID-01 | **OPEN — code fixed; hosted pending redeploy** | Hostinger: subdomain env unsupported. Apex-only `GETPRO_GIT_BRANCH`. Fix: `.getpro/build-identity.json` shared across lsnode hostname workers. Focused **10/10**. Live pre-redeploy: hub V4 / BB+AC UNKNOWN. SHA=`554d37406ef5`. Production untouched. |
 
-#### Live identity sheet
+#### Hostinger model (confirmed)
 
-| Field | BlessBoard | ActiveClinic | Hub |
-|-------|------------|--------------|-----|
-| VERSION | 2.04 | 2.04 | — |
+| Question | Answer |
+|----------|--------|
+| Separate lsnode workers of same app/tree? | **YES** — one sticky PID per hostname; same hbuild path |
+| Why BB/AC ≠ apex branch? | Apex alone receives hPanel `GETPRO_GIT_BRANCH`; subdomain workers do not |
+| Branch from per-process env only? | **Was** — now env → shared file → git → UNKNOWN |
+| Shared metadata existed? | **NO** — added `.getpro/build-identity.json` |
+
+#### Live identity sheet (pre-redeploy of shared-metadata tip)
+
+| Field | BlessBoard testing | ActiveClinic testing | Hub |
+|-------|--------------------|----------------------|-----|
 | BRANCH | UNKNOWN | UNKNOWN | V4 |
-| BRANCH_SOURCE | not GETPRO_GIT_BRANCH (UNKNOWN) | same | V4 (hub has env) |
+| BRANCH_SOURCE | unknown | unknown | GETPRO_GIT_BRANCH |
 | ENVIRONMENT | testing | testing | testing |
-| GIT_SHA | `75531602725a` | `75531602725a` | `75531602725a` |
-| DEPLOYMENT_NAME | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
-| LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
+| FULL_SHA | `554d37406ef5` | `554d37406ef5` | `554d37406ef5` |
+| HEALTHZ_LABEL | UNKNOWN testing | UNKNOWN testing | V4 testing |
+| DEPLOYMENT_CODE | moovex-platform-v8-testing | moovex-platform-v8-testing | moovex-platform-v8-testing |
 
-**Required vs observed:** BB/AC need `V4` / `V4 testing` / `BRANCH_SOURCE=GETPRO_GIT_BRANCH` → **FAIL**. Same deploy SHA on hub+BB+AC implies product Hostinger apps still missing live `GETPRO_GIT_BRANCH` (hub-only env or BB/AC workers not restarted).  
-SHA_MATCH vs V2.04 tip/candidate (`7c957101` or later → `75531602725a`): **PASS**.
+**Close when live:** BB+AC `V4 testing` after Hostinger redeploy. See `V2_04_BUILD_IDENTITY_UNKNOWN_FIX.md`.  
+RB_ID_01=FAIL (hosted) · BUILD_IDENTITY_REMAINING=1 · FOCUSED_TESTS=10/10.
 
 ### WAVE 6 — prior note (code harden / first sheet)
 
@@ -175,9 +183,9 @@ RB-ID-01 remained **OPEN** after code harden: Hostinger injects env at worker st
 | 3 ENGINEERING | ~~RB-ENG-01/02/05 CLOSED~~ | 0 | 0 | 0 | 0 | 0 | CREATE-UI optionalized |
 | 4 AUTOMATED PROOF | ~~RB-TEST-01…07 CLOSED~~ | 0 | 0 | 0 | 0 | 0 | Critical + member + shared editor proofs green |
 | 5 MANUAL QA | RB-QA-01…05 | 0 | 0 | 0 | 5 | 0 | FEATURE QA on identity-captured TESTING |
-| 6 BUILD IDENTITY | RB-ID-01 | 0 | 0 | 0 | 0 | 1 | Sheet captured; BRANCH=UNKNOWN → still OPEN |
+| 6 BUILD IDENTITY | RB-ID-01 | 0 | 0 | 0 | 0 | 1 | Shared metadata code fixed; live pending Hostinger redeploy |
 
-**Remaining after Wave6 verify:** 6 blockers (ENG 0 · PRODUCT 0 · TEST 0 · MANUAL 5 · BUILD 1).
+**Remaining after shared build-identity fix:** 6 blockers (ENG 0 · PRODUCT 0 · TEST 0 · MANUAL 5 · BUILD 1 until live verify).
 
 **Shortest executable sequence (compressed):**  
 ~~Wave1 eng-editor~~ **DONE** ∥ Wave2 Product ∥ Wave4 early tests (01–06) → Wave3 eng-after-product → Wave4 TEST-07 + ENG mount proofs → capture identity → Wave5 manual → Wave6 formal identity close.
@@ -216,5 +224,13 @@ AC_BRANCH_IDENTITY=FAIL
 UNKNOWN_LABEL_FOUND=YES
 STALE_LABEL_FOUND=NO
 PRODUCTION_UNTOUCHED=YES
-FINAL=V2_04_HOSTED_BUILD_IDENTITY_VERIFIED
+RB_ID_01=FAIL
+HUB_BRANCH=V4
+BB_BRANCH=OTHER
+AC_BRANCH=OTHER
+BRANCH_SOURCE_ALL=OTHER
+SHA_PARITY=PASS
+HOSTINGER_SUBDOMAIN_ENV_SUPPORTED=NO
+SHARED_BUILD_IDENTITY_SOURCE=.getpro/build-identity.json
+FINAL=V2_04_SHARED_BUILD_IDENTITY_FIXED
 ```
