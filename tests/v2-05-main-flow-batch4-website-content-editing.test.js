@@ -230,6 +230,14 @@ describe("V2.05 Website Content Editing Batch4", () => {
     assert.match(read("src/platform/website/websiteContentEditing.js"), /preview_draft/);
   });
 
+  it("keeps BlessBoard service-times publish intent when loading state disables submit buttons", () => {
+    const editor = read("views/blessboard/v5/website/service-times-editor.ejs");
+    assert.match(editor, /event\.submitter/);
+    assert.match(editor, /data-bb-service-times-action/);
+    assert.match(editor, /actionInput\.name = "action"/);
+    assert.match(editor, /value="save_publish"/);
+  });
+
   it("FINAL marker batch4 complete", () => {
     assert.equal("V205_WEBSITE_EDITING_DONE", "V205_WEBSITE_EDITING_DONE");
   });
