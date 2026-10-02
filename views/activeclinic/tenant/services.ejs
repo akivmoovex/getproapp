@@ -9,6 +9,7 @@
   const serviceList = Array.isArray(services) ? services : [];
   const procedureList = Array.isArray(procedures) ? procedures : [];
   const servicesReturnTo = '/clinics/' + clinic.clinicKey + '/services?website_edit=1&website_mode=draft';
+  const servicesManageHref = '/app/settings/website/catalogue?tab=services&returnTo=' + encodeURIComponent(servicesReturnTo);
 %>
 <section class="ac-stitch-page ac-stitch-page--r03 ac-public-section" data-ac-page-section="tenant-services" data-ac-stitch-screen="R03">
   <div class="ac-stitch-section ac-stitch-section--header">
@@ -18,7 +19,7 @@
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
     <%- html.empty || '' %>
-    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=services', label: 'Manage public catalogue', note: 'Create and publish clinic services from the shared public catalogue.', manageKind: 'services' }) %>
+    <%- include('../partials/website-operational-affordance', { href: servicesManageHref, label: 'Manage Public Catalogue', note: 'Create and publish clinic services from the shared public catalogue.', manageKind: 'services' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } %>
@@ -54,7 +55,7 @@
   <% } %>
 
   <% if (serviceList.length || procedureList.length) { %>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=services', label: 'Manage public catalogue', note: 'Edit service details and images in the shared public catalogue.', manageKind: 'services' }) %>
+  <%- include('../partials/website-operational-affordance', { href: servicesManageHref, label: 'Manage Public Catalogue', note: 'Edit service details and images in the shared public catalogue.', manageKind: 'services' }) %>
   <% } %>
 
   <% if (html.cta) { %>

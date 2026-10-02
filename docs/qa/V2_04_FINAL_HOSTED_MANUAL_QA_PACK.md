@@ -164,11 +164,11 @@ Hub screenshot; editor URL after Edit Website; Manage destination URLs (services
 
 ```
 RESULT=FAIL
-TESTER=Cursor hosted probe (read-only)
+TESTER=Cursor post-deploy verify (read-only)
 DATE=2026-10-02
-EVIDENCE=https://activeclinic.neuniversity.org/app/settings/website/catalogue?tab=services → HTTP 303 Location=/login (x-ac-auth-decision=redirect_login; no session). Same for ?tab=doctors. Hosted /healthz gitSha=554d37406ef5. Hosted /activeclinic/website-cms.css has hub H0x stitch rules only — no AC-MW-C01/C02 catalogue block (that CSS + catalogue.ejs stitch markers are local dirty / undeployed). Cannot render C01/C02 desktop table/mobile cards/sticky bar or E03 against Stitch IDs without (1) deploy of C01/C02 tip and (2) authenticated website.edit session.
+EVIDENCE=POST-DEPLOY ABORT: AC_SHA=554d37406ef5 ≠ candidate 33e5c29612942e1484086432214b733f353f8601 (About+healthz). HUB_SHA=554d37406ef5 BB_SHA=554d37406ef5. Authenticated C01/C02/E03 catalogue checks NOT_RUN. Unauthenticated 303→/login not counted as product failure.
 DEFECT_ID=
-NOTES=Not a new product defect ID — verification blocked: tip not deployed + auth wall. Hosted visual PASS impossible this probe. Re-run after Hostinger deploy of C01/C02 tip with tester login.
+NOTES=Deploy prerequisite unmet. No new product defect. Re-run after Hostinger testing deploy of 33e5c296….
 ```
 
 ---
@@ -247,11 +247,11 @@ PHI spot-check note vs PD-V204-AC-P1-02; public URLs + redacted screenshots/HTML
 
 ```
 RESULT=FAIL
-TESTER=Cursor hosted probe (read-only)
+TESTER=Cursor post-deploy verify (read-only)
 DATE=2026-10-02
-EVIDENCE=Public PHI spot-check against live public doctors/services HTML not completed: no discoverable published clinic public URLs from AC apex (home has no /clinics/… links; demo keys 404). Catalogue management privacy/E03 path not reachable without auth (same 303→/login as RB-QA-03). Hosted tip SHA=554d37406ef5.
+EVIDENCE=POST-DEPLOY ABORT with RB-QA-03: AC still on 554d37406ef5; candidate 33e5c296… not live. PHI/E03 authenticated checks NOT_RUN.
 DEFECT_ID=
-NOTES=Folded C01/C02 hosted attempt into this pack. No new release blocker minted — failure mode is missing deploy/auth/public clinic sample for probe, not a confirmed PHI leak. Re-run with known published clinicKey + C01 tip.
+NOTES=No new defect. Re-run after deploy + published clinicKey + admin session.
 ```
 
 ---
@@ -266,17 +266,24 @@ NOTES=Folded C01/C02 hosted attempt into this pack. No new release blocker minte
 | RB-QA-04 | NOT_RUN |
 | RB-QA-05 | FAIL (hosted public PHI/C01 fold — no public clinic sample + auth) |
 
-### C01/C02 hosted visual probe (2026-10-02, READ-ONLY)
+### Post-deploy verify candidate 33e5c296 (2026-10-02, READ-ONLY) — ABORTED
 
-| Check | Result |
-|-------|--------|
-| Hosted SHA | `554d37406ef5` (AC/BB/hub) |
-| C01/C02 code on Hostinger tip | **NO** — frozen locally as `33e5c296…`; not yet deployed |
-| `/catalogue?tab=services\|doctors` | **303 → /login** (no session) |
-| HOSTED_C01_DESKTOP/MOBILE | **FAIL** (not renderable) |
-| HOSTED_C02_DESKTOP/MOBILE | **FAIL** (not renderable) |
-| HOSTED_E03 | **FAIL** (not renderable) |
-| NEW_DEFECTS | **0** (deploy/auth gap, not product defect ID) |
+| Host | SHA | BRANCH | BRANCH_SOURCE | displayLabel |
+|------|-----|--------|---------------|--------------|
+| Hub `neuniversity.org` | `554d37406ef5` | V4 | GETPRO_GIT_BRANCH | V4 testing |
+| AC `activeclinic.neuniversity.org` | `554d37406ef5` | UNKNOWN | unknown | UNKNOWN testing |
+| BB `blessboard.neuniversity.org` | `554d37406ef5` | UNKNOWN | unknown | UNKNOWN testing |
+
+| Gate | Result |
+|------|--------|
+| Expected candidate | `33e5c29612942e1484086432214b733f353f8601` |
+| AC_SHA_MATCH | **FAIL** → abort functional QA |
+| HUB/BB_SHA_MATCH | **FAIL** (same tip `554d37406ef5`) |
+| `/.getpro/build-identity.json` | not publicly served / not resolving on BB+AC |
+| HOSTED_C01/C02/E03 | **NOT_RUN** |
+| NEW_DEFECTS | **0** |
+
+
 
 No tester evidence supplied for this pack. Source posture: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md` / remaining blockers (2026-10-02).
 
@@ -285,20 +292,22 @@ No tester evidence supplied for this pack. Source posture: `docs/qa/V2_04_MANUAL
 ```
 QA_SCENARIOS=5
 BOUND_BRANCH=V4
-BOUND_BB_SHA=554d37406ef5
-BOUND_AC_SHA=554d37406ef5
+LIVE_HUB_SHA=554d37406ef5
+LIVE_AC_SHA=554d37406ef5
+LIVE_BB_SHA=554d37406ef5
 APPLICATION_CANDIDATE_SHA=33e5c29612942e1484086432214b733f353f8601
-PREVIOUS_HOSTED_SHA=554d37406ef5
-HOSTED_C01_DESKTOP=FAIL
-HOSTED_C01_MOBILE=FAIL
-HOSTED_C02_DESKTOP=FAIL
-HOSTED_C02_MOBILE=FAIL
-HOSTED_E03=FAIL
-RB_QA_03_EVIDENCE_ADDED=YES
-RB_QA_05_EVIDENCE_ADDED=YES
+HUB_SHA_MATCH=FAIL
+AC_SHA_MATCH=FAIL
+BB_SHA_MATCH=FAIL
+HUB_BRANCH=V4
+AC_BRANCH=OTHER
+BB_BRANCH=OTHER
+RB_ID_01=FAIL
+HOSTED_C01=NOT_RUN
+HOSTED_C02=NOT_RUN
+HOSTED_E03=NOT_RUN
+RB_QA_03=OPEN
+RB_QA_05=OPEN
 NEW_DEFECTS=0
-CURRENT_NOT_RUN=3
-CURRENT_FAIL=2
-READY_FOR_HOSTED_DEPLOY=YES
-FINAL=V2_04_AC_C01_C02_CANDIDATE_FROZEN
+FINAL=V2_04_POST_DEPLOY_VERIFY_COMPLETE
 ```

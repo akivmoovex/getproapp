@@ -652,7 +652,7 @@ function buildActiveClinicStitchPublicPage(input) {
       })
     );
     html.services = sections.servicesPreview && sections.servicesPreview.ok
-      ? renderOk("collection_grid", sections.servicesPreview.value)
+      ? renderOk("collection_grid", sections.servicesPreview.value, withEdit(editEnabled, {}))
       : "";
     html.doctorsHeading = renderOk(
       "section_header",
@@ -667,7 +667,7 @@ function buildActiveClinicStitchPublicPage(input) {
       })
     );
     html.doctors = sections.doctorsPreview && sections.doctorsPreview.ok
-      ? renderOk("person_grid", sections.doctorsPreview.value)
+      ? renderOk("person_grid", sections.doctorsPreview.value, withEdit(editEnabled, {}))
       : "";
     html.conversion = sections.conversion && sections.conversion.ok
       ? renderOk("cta", sections.conversion.value)
@@ -784,13 +784,13 @@ function buildActiveClinicStitchPublicPage(input) {
       withEdit(editEnabled, EDIT_KEYS.servicesIntro)
     );
     html.services = servicesCollection && servicesCollection.ok
-      ? renderOk("collection_grid", servicesCollection.value)
+      ? renderOk("collection_grid", servicesCollection.value, withEdit(editEnabled, {}))
       : "";
     html.proceduresHeading = procedureCollection && procedureCollection.ok && procedureCollection.value.items.length
       ? renderOk("section_header", { title: "Procedures & diagnostics", lead: null })
       : "";
     html.procedures = procedureCollection && procedureCollection.ok
-      ? renderOk("collection_grid", procedureCollection.value)
+      ? renderOk("collection_grid", procedureCollection.value, withEdit(editEnabled, {}))
       : "";
     html.empty =
       !services.length && !procedures.length || editEnabled
@@ -825,7 +825,7 @@ function buildActiveClinicStitchPublicPage(input) {
       withEdit(editEnabled, EDIT_KEYS.doctorsIntro)
     );
     html.doctors = doctorsCollection && doctorsCollection.ok
-      ? renderOk("person_grid", doctorsCollection.value)
+      ? renderOk("person_grid", doctorsCollection.value, withEdit(editEnabled, {}))
       : "";
     html.empty =
       !doctors.length || editEnabled

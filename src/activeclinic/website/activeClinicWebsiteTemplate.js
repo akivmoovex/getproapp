@@ -100,6 +100,7 @@ const KEYS = {
   "contact.eyebrow": { type: T.SHORT_TEXT, maxLen: 80, group: "contact", description: "Contact eyebrow" },
   "contact.page_title": { type: T.SHORT_TEXT, maxLen: 160, group: "contact", description: "Contact page title" },
   "contact.aside_heading": { type: T.SHORT_TEXT, maxLen: 120, group: "contact", description: "Contact aside heading" },
+  "contact.form_heading": { type: T.SHORT_TEXT, maxLen: 160, group: "contact", description: "Contact inquiry form heading" },
   "about.eyebrow": { type: T.SHORT_TEXT, maxLen: 80, group: "about", description: "About eyebrow" },
   "pricing.page_title": { type: T.SHORT_TEXT, maxLen: 120, group: "pricing", description: "Pricing page title" },
   "pricing.intro": { type: T.LONG_TEXT, maxLen: 1000, group: "pricing", description: "Pricing page intro" },

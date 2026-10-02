@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ActiveClinic - Manage Public Doctors</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed": "#00210d",
+            "tertiary": "#004a23",
+            "on-primary-fixed": "#001f23",
+            "secondary-fixed": "#cbe6ff",
+            "surface-variant": "#d7e5ed",
+            "surface": "#f4faff",
+            "primary-container": "#006068",
+            "on-secondary": "#ffffff",
+            "inverse-on-surface": "#e5f3fb",
+            "surface-tint": "#136870",
+            "primary-fixed": "#a6eff8",
+            "on-primary-fixed-variant": "#004f56",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#253239",
+            "on-error-container": "#93000a",
+            "primary": "#00474d",
+            "on-error": "#ffffff",
+            "surface-bright": "#f4faff",
+            "on-background": "#101d23",
+            "primary-fixed-dim": "#8ad2db",
+            "surface-container-low": "#e8f6fe",
+            "tertiary-container": "#006432",
+            "outline-variant": "#bec8ca",
+            "on-secondary-fixed-variant": "#004b71",
+            "on-tertiary-fixed-variant": "#005228",
+            "secondary-container": "#7cc5fe",
+            "on-primary-container": "#90d8e1",
+            "inverse-primary": "#8ad2db",
+            "on-surface-variant": "#3f484a",
+            "error-container": "#ffdad6",
+            "secondary": "#006495",
+            "surface-container-highest": "#d7e5ed",
+            "on-tertiary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#101d23",
+            "surface-dim": "#cedce4",
+            "error": "#ba1a1a",
+            "surface-container-high": "#dceaf3",
+            "outline": "#6f797a",
+            "on-secondary-container": "#00517b",
+            "secondary-fixed-dim": "#90cdff",
+            "background": "#f4faff",
+            "tertiary-fixed": "#9bf6b2",
+            "tertiary-fixed-dim": "#80d998",
+            "on-secondary-fixed": "#001e30",
+            "surface-container": "#e2f0f8",
+            "on-tertiary-container": "#85df9d"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin-mobile": "1.25rem",
+            "margin": "2rem",
+            "space-md": "1rem",
+            "gutter": "2rem",
+            "space-xs": "0.25rem",
+            "gutter-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "caption": ["Inter"],
+            "headline-h4": ["Inter"],
+            "display-hero": ["Inter"],
+            "label": ["Inter"],
+            "body-large": ["Inter"],
+            "body-base": ["Inter"],
+            "headline-h1": ["Inter"],
+            "body-small": ["Inter"],
+            "headline-h2": ["Inter"],
+            "display-hero-mobile": ["Inter"],
+            "headline-h3": ["Inter"]
+          },
+          "fontSize": {
+            "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-h4": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "display-hero": ["52px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label": ["13px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+            "body-large": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-h1": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-small": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-h2": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "display-hero-mobile": ["38px", { "lineHeight": "46px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "headline-h3": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #bec8ca;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col font-body-base text-body-base antialiased select-none">
+<!-- Interactive State Simulator Control Bar -->
+<aside aria-label="Interactive State Simulator" class="bg-inverse-surface text-inverse-on-surface px-6 py-2 flex items-center justify-between z-50 text-caption font-caption border-b border-outline">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 font-semibold text-primary-fixed">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+        Interactive State Simulator:
+      </span>
+<div class="flex items-center gap-1.5 overflow-x-auto">
+<button class="state-pill px-3 py-1 rounded bg-primary-container text-on-primary font-medium transition-colors" id="btn-state-active" onclick="switchState('active')">
+          Active List (Default)
+        </button>
+<button class="state-pill px-3 py-1 rounded bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-medium transition-colors" id="btn-state-add" onclick="switchState('add')">
+          Add / Select Practitioner Modal
+        </button>
+<button class="state-pill px-3 py-1 rounded bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-medium transition-colors" id="btn-state-edit" onclick="switchState('edit')">
+          Edit Public Profile Modal
+        </button>
+<button class="state-pill px-3 py-1 rounded bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-medium transition-colors" id="btn-state-remove" onclick="switchState('remove')">
+          Remove Confirmation
+        </button>
+<button class="state-pill px-3 py-1 rounded bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-medium transition-colors" id="btn-state-empty" onclick="switchState('empty')">
+          Empty State
+        </button>
+<button class="state-pill px-3 py-1 rounded bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-medium transition-colors" id="btn-state-loading" onclick="switchState('loading')">
+          Loading / Error State
+        </button>
+</div>
+</div>
+<div class="flex items-center gap-2 text-outline-variant">
+<span>Route: <span class="font-mono text-primary-fixed">/app/settings/website/catalogue?tab=doctors</span></span>
+<span class="text-outline-variant">|</span>
+<span>Screen ID: AC-MW-C02</span>
+</div>
+</aside>
+<!-- TopNavBar (Shared Component Execution) -->
+<header class="flex justify-between items-center w-full px-6 h-18 sticky top-0 z-40 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex items-center gap-8">
+<!-- Brand Logo -->
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">local_hospital</span>
+</div>
+<span class="text-headline-h3 font-headline-h3 font-semibold text-primary dark:text-inverse-primary tracking-tight">ActiveClinic</span>
+</div>
+<!-- Facility Selector -->
+<div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/60 hover:bg-surface-container transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-primary">apartment</span>
+<span class="text-label font-label text-on-surface font-medium">ActiveClinic Melbourne Central</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</div>
+<!-- Search Bar -->
+<div class="relative w-72 xl:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface rounded-lg text-body-small font-body-small border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent text-on-surface placeholder:text-on-surface-variant/70" placeholder="Search patients, staff, doctors..." type="text"/>
+</div>
+</div>
+<!-- Navigation Links & Trailing User Actions -->
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-on-surface dark:hover:text-inverse-on-surface text-body-small font-body-small" href="#">Patients</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-on-surface dark:hover:text-inverse-on-surface text-body-small font-body-small" href="#">Schedule</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-on-surface dark:hover:text-inverse-on-surface text-body-small font-body-small" href="#">Billing</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-on-surface dark:hover:text-inverse-on-surface text-body-small font-body-small" href="#">Clinical Records</a>
+<!-- Active Tab: Website Management -->
+<a class="text-primary dark:text-inverse-primary font-semibold border-b-2 border-primary dark:border-inverse-primary pb-1 text-body-small font-body-small flex items-center gap-1.5" href="#">
+<span>Website Management</span>
+<span class="bg-secondary-fixed text-on-secondary-fixed text-caption font-caption font-semibold px-1.5 py-0.5 rounded-full">v2.04</span>
+</a>
+</nav>
+<div class="h-6 w-px bg-outline-variant hidden md:block"></div>
+<!-- Trailing Action Cluster -->
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors relative" title="Notifications">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-error"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors" title="Help &amp; Documentation">
+<span class="material-symbols-outlined text-[22px]">help</span>
+</button>
+<!-- Profile Avatar & Details -->
+<div class="flex items-center gap-3 pl-2 border-l border-outline-variant/60 cursor-pointer">
+<img alt="Dr. Sarah Jenkins profile avatar" class="w-9 h-9 rounded-full object-cover border border-outline-variant shadow-sm" data-alt="Professional clinical headshot of Dr. Sarah Jenkins, an experienced senior female physician wearing a teal clinical blazer against a neutral, softly blurred modern hospital background. The lighting is clean, bright, and natural, conveying utmost clinical authority and approachable warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPdRR4cqdrFmQ6N4RyX7Zuq9eJH1D-18TnIMlsY1XEAZF6UR04N9eSHz4lUp6WIh_Tqad8VozD2IRZJa_9H0EpfCY4cF6CeMpKxD2buJPNAPr-wlM36XNhqWghtuMuxqgxOri-6DJSz2Blj55Bl_pjTWngDB7GpwggXSWlZLj3DLQbY_ZibMQnC9FxuEYub2_rfDZDuKFr2XRMXHk-akhriNOhAPNaa4zXO0pMopjr22L91UNhATLx"/>
+<div class="hidden xl:block text-left">
+<p class="text-label font-label text-on-surface font-semibold leading-tight">Dr. Sarah Jenkins</p>
+<p class="text-caption font-caption text-on-surface-variant">General Practitioner (GP)</p>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Worksurface Layout -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto px-6 py-6 flex flex-col gap-6">
+<!-- Breadcrumb & Header Section -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-caption font-caption text-on-surface-variant mb-1">
+<span class="hover:text-primary cursor-pointer">Settings</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer">Public Website</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">Doctors Catalogue</span>
+</nav>
+<div class="flex items-center gap-3">
+<h1 class="text-headline-h1 font-headline-h1 text-on-surface tracking-tight">Doctors</h1>
+<span class="bg-surface-container text-on-surface-variant border border-outline-variant/70 text-caption font-caption font-medium px-2.5 py-1 rounded-full">
+            Live Catalogue
+          </span>
+</div>
+<p class="text-body-small font-body-small text-on-surface-variant mt-0.5">
+          Manage the healthcare professionals displayed on your public clinic website.
+        </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3">
+<a class="h-12 px-4 rounded-lg border border-primary-container text-primary-container font-medium hover:bg-surface-container-low transition-colors flex items-center gap-2 text-body-small font-body-small" href="https://example.com" target="_blank">
+<span>Preview Doctors page</span>
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</a>
+<button class="h-12 px-5 rounded-lg bg-primary-container hover:bg-[#004D54] text-on-primary font-medium transition-all shadow-sm flex items-center gap-2 text-body-small font-body-small" onclick="switchState('add')">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Add doctor</span>
+</button>
+</div>
+</section>
+<!-- Source of Truth Operational Banner -->
+<div class="bg-surface-container-low border border-secondary-fixed p-4 rounded-xl flex items-start justify-between gap-4 shadow-sm">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-[24px] mt-0.5" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<div>
+<p class="text-body-small font-body-small text-on-surface font-medium">
+            Clinical Credentialing &amp; Public Visibility Sync
+          </p>
+<p class="text-caption font-caption text-on-surface-variant mt-0.5">
+            These practitioner profiles are displayed on your public clinic website. Operational staff accounts and clinical credentials remain managed under Clinic Administration.
+          </p>
+</div>
+</div>
+<a class="text-primary font-medium text-caption font-caption flex items-center gap-1 hover:underline whitespace-nowrap self-center" href="#">
+<span>View Public Doctors page</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<!-- Status Summary KPI Cards (Bento Style) -->
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-label font-label text-on-surface-variant font-medium">Published Doctors</span>
+<span class="text-headline-h1 font-headline-h1 text-on-surface mt-1 font-semibold">8</span>
+<span class="text-caption font-caption text-tertiary flex items-center gap-1 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            Visible on clinic web directory
+          </span>
+</div>
+<div class="w-12 h-12 rounded-xl bg-tertiary-fixed/30 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-label font-label text-on-surface-variant font-medium">Hidden Doctors</span>
+<span class="text-headline-h1 font-headline-h1 text-on-surface mt-1 font-semibold">2</span>
+<span class="text-caption font-caption text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+            Unpublished or in draft mode
+          </span>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container-high text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[26px]">visibility_off</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-label font-label text-on-surface-variant font-medium">Total Profiles</span>
+<span class="text-headline-h1 font-headline-h1 text-on-surface mt-1 font-semibold">10</span>
+<span class="text-caption font-caption text-secondary flex items-center gap-1 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            1 pending headshot review
+          </span>
+</div>
+<div class="w-12 h-12 rounded-xl bg-secondary-fixed/30 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[26px]">group</span>
+</div>
+</div>
+</section>
+<!-- Main Content State Switcher Container -->
+<div class="flex flex-col gap-4" id="content-container">
+<!-- DEFAULT STATE: Active List View -->
+<section class="flex flex-col gap-4" id="view-active-list">
+<!-- Filter & Search Toolbar -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+<div class="flex flex-1 items-center gap-3 w-full">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-surface rounded-lg text-body-small font-body-small border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" placeholder="Filter by doctor name, specialty, or department..." type="text"/>
+</div>
+<!-- Specialty Filter -->
+<select class="h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+<option>All Specialties</option>
+<option>General Practice</option>
+<option>Cardiology</option>
+<option>Dermatology</option>
+<option>Paediatrics</option>
+<option>Orthopaedics</option>
+</select>
+<!-- Status Filter -->
+<select class="h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+<option>All Statuses</option>
+<option>Published</option>
+<option>Hidden</option>
+<option>Incomplete</option>
+</select>
+</div>
+<div class="text-caption font-caption text-on-surface-variant whitespace-nowrap self-end md:self-center">
+            Showing <span class="font-semibold text-on-surface">6</span> of <span class="font-semibold text-on-surface">10</span> practitioner profiles
+          </div>
+</div>
+<!-- Doctor Management Table -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant text-label font-label text-on-surface-variant">
+<th class="py-3.5 px-4 font-semibold">Practitioner &amp; Photo</th>
+<th class="py-3.5 px-4 font-semibold">Specialty &amp; Department</th>
+<th class="py-3.5 px-4 font-semibold">Public Bio Summary</th>
+<th class="py-3.5 px-4 font-semibold">Public Status</th>
+<th class="py-3.5 px-4 font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-small font-body-small">
+<!-- Row 1: Dr. Marcus Vance -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Dr. Marcus Vance portrait" class="w-12 h-12 rounded-full object-cover border border-outline-variant/70 shadow-sm" data-alt="A distinguished senior male general practitioner in his late 40s wearing a clean white medical coat and navy shirt, smiling with quiet confidence in a bright modern medical consultation suite. Soft diffuse studio lighting with neutral cool background tones, highlighting trust, experience, and healthcare professionalism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9bvKZvwuu5bsvXy8HC4oHSyJ0l9wtzzSV7NGhx3EM7Ren0s535cnNhxd5JNFh0VLmmhILZnNmjBcD5tXPsbYjs0TfAA2BZgrJe58GkA8EWz2IkofMdyCQOVSO8nX0f8mmlyLHUL5ZZl6b05J9zt4PR3Wgr3E3hz92gqjoKP9fy67ZNRKctmYe-Seo22ponZDjrZ5HgBpaUXeFqrhckwtLYNHY7sqWW3fKjFxxZ4S6i3noWhxOQGxm"/>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. Marcus Vance</p>
+<p class="text-caption font-caption text-on-surface-variant">Senior General Practitioner (MBBS, FRACGP)</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">General Practice</span>
+<span class="text-caption font-caption text-on-surface-variant">Family Medicine Dept</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="line-clamp-2 text-on-surface-variant text-caption font-caption">
+                      Specialising in preventative medicine, men's cardiovascular health, and long-term chronic disease management for local Melbourne families.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-[#EDF7F1] text-[#1B7A43]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1B7A43]"></span>
+                      Published
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface flex items-center gap-1 text-caption font-caption font-medium transition-colors" onclick="switchState('edit')" title="Edit public profile">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+<!-- Quick Toggle -->
+<label class="relative inline-flex items-center cursor-pointer" title="Quick toggle visibility">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Dr. Sarah Jenkins -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Dr. Sarah Jenkins headshot" class="w-12 h-12 rounded-full object-cover border border-outline-variant/70 shadow-sm" data-alt="Close-up professional portrait of Dr. Sarah Jenkins, an expert female cardiologist in a crisp clinical blazer with stethoscope casually placed, standing in an illuminated, modern cardiac diagnostics corridor. Balanced daylight ambiance, gentle cool teals and crisp whites, expressing supreme clinical accuracy and warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg5Cjc4uExspkZDzpIOKWVFiiI2G0DkBrEoQPJz1zh_4gUqdwKNVyHy17AuLsKZd4Io5DlyyUxp6H32BHM6Q1ANEw4g88GVZM9Xdf2vorvjkJUB8ZposSZdT9daaMEbeKYHudwXMBA1YoBjPVxp8csYQuAPUjoE-EX6zcgZuMH8RzSLJ42oS0ATJLZxdJYG_YMaXibN7fLfaMBm_03cyX3Xtqz9v40NueAh3_8PERxoMLndGLv_PFU"/>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. Sarah Jenkins</p>
+<p class="text-caption font-caption text-on-surface-variant">Cardiologist &amp; Physician (MBBS, FRACP, FCSANZ)</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Cardiology</span>
+<span class="text-caption font-caption text-on-surface-variant">Internal Medicine Dept</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="line-clamp-2 text-on-surface-variant text-caption font-caption">
+                      Lead investigator in clinical echocardiography with over fifteen years consulting on adult congenital heart health and preventive cardiology.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-[#EDF7F1] text-[#1B7A43]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1B7A43]"></span>
+                      Published
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface flex items-center gap-1 text-caption font-caption font-medium transition-colors" onclick="switchState('edit')" title="Edit public profile">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Dr. Elena Vance -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Dr. Elena Vance portrait" class="w-12 h-12 rounded-full object-cover border border-outline-variant/70 shadow-sm" data-alt="Portrait of Dr. Elena Vance, a consultant dermatologist with dark hair tied back, wearing a minimalist modern medical coat in an airy Scandinavian-inspired clinical skin clinic. Soft natural daylight floods the space, highlighting clean skin textures, professional composure, and calming restorative atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5_PatCf4t0hZMq7T5TLD94Im-0F3t80LT-sm3g-d_YyjGhp8z4HD0MdhGqCQdM4OgRr0_F54ZnWZPF3dytVe_jSFZv0o-f90IMJb9tp79BNZkEWG3BaE9FhVtlMD8jdxyOFMUQT2Kb-sG41LHIHdUJ1Robu2QVzdEOhT1tQ7RBH5Idp36-Q130wVsDqswmQFT8dnrwVIrOBlqehhGOoWvI-0EdoUXjj6pN1RPZZjncHIul19L1odK"/>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. Elena Vance</p>
+<p class="text-caption font-caption text-on-surface-variant">Consultant Dermatologist (FACD, MD)</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Dermatology</span>
+<span class="text-caption font-caption text-on-surface-variant">Skin &amp; Phototherapy Clinic</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="line-clamp-2 text-on-surface-variant text-caption font-caption">
+                      Dedicated to comprehensive skin surveillance, early melanoma detection, medical phototherapy, and inflammatory dermatological treatments.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-[#EDF7F1] text-[#1B7A43]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1B7A43]"></span>
+                      Published
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface flex items-center gap-1 text-caption font-caption font-medium transition-colors" onclick="switchState('edit')" title="Edit public profile">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Dr. David Chen -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Dr. David Chen photo" class="w-12 h-12 rounded-full object-cover border border-outline-variant/70 shadow-sm" data-alt="Friendly male paediatric specialist Dr. David Chen in a navy scrub top with an approachable warm smile in a brightly lit, cheerful pediatric medical room. Pristine white aesthetic with gentle cyan accents, clinical clarity, and child-safe high-standard healthcare vibes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtlQbHTp1RPg-MF283bBbpajxOKrtns6yWocuJaL_6DFM28w_Bj8UecBQMF7-239jpBlVkMqxsuSi8Eh4mdddFzd8_atSYHrY68PsM_CqwLBZdcvtCvhvIGyYNdf7gAhr3bsWJi-CZOZdv2ZkFwBK58nbjmAQaD6xtkQvnHCvcsYbip-J6mkD_1fM5ejsQ1CGD8UHbtKco-rRZ98JV120MUvG1Wn79kwhs1GFmToPrpgDIS-8jZV-7"/>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. David Chen</p>
+<p class="text-caption font-caption text-on-surface-variant">Paediatric Specialist (BMedSci, FRACP)</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Paediatrics</span>
+<span class="text-caption font-caption text-on-surface-variant">Child Health Dept</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="line-clamp-2 text-on-surface-variant text-caption font-caption">
+                      Providing holistic child growth monitoring, newborn wellness, adolescent development diagnostics, and family-first developmental support.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-[#EDF7F1] text-[#1B7A43]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1B7A43]"></span>
+                      Published
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface flex items-center gap-1 text-caption font-caption font-medium transition-colors" onclick="switchState('edit')" title="Edit public profile">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Dr. Amira Patel (Hidden) -->
+<tr class="hover:bg-surface-container/50 transition-colors opacity-85">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Dr. Amira Patel profile photo" class="w-12 h-12 rounded-full object-cover border border-outline-variant/70 shadow-sm" data-alt="Headshot of Dr. Amira Patel, a physician in preventative medicine wearing formal medical attire, photographed in an architectural wellness medical center with soft daylight and clean slate-teal interiors. High contrast, professional focus, and composed clinical authority." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj9lIYw2SzyxqaE-mIMDdoRECRDE7FepNS8bh-RvnIW-Sdc0992qaKe-AtnOLyFntiz9LFG5AmoJHniwd1iW3iXX_eDfdV3jcD7w68rpeXPKu8WuIU_9MuOQjXyZsb63j2vy95WtNOhc5IJmOqfZruxhCvXqrlpe7eMpAIegA9qJIDKZ7CShY5-0VcFMHxu0DZFFU5J-yObiJFjlppTItZhvTWHyonqIdOAaPBOZINNd9qaY8ZjNKu"/>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. Amira Patel</p>
+<p class="text-caption font-caption text-on-surface-variant">Preventative &amp; Lifestyle Physician</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Preventative Health</span>
+<span class="text-caption font-caption text-on-surface-variant">Metabolic Wellness Unit</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="line-clamp-2 text-on-surface-variant text-caption font-caption">
+                      Pioneering lifestyle intervention therapies, cardiometabolic risk reversal, and personalized nutritional guidance for executives.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-surface-container-high text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                      Hidden
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface flex items-center gap-1 text-caption font-caption font-medium transition-colors" onclick="switchState('edit')" title="Edit public profile">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Dr. Lucas Meyer (Incomplete) -->
+<tr class="hover:bg-surface-container/50 transition-colors bg-surface-container-low/20">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[24px]">no_accounts</span>
+</div>
+<div>
+<p class="font-semibold text-on-surface text-body-base font-body-base leading-tight">Dr. Lucas Meyer</p>
+<p class="text-caption font-caption text-on-surface-variant">Orthopaedic Surgeon (FRACS)</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Orthopaedics</span>
+<span class="text-caption font-caption text-on-surface-variant">Musculoskeletal Surgery</span>
+</div>
+</td>
+<td class="py-4 px-4 max-w-xs xl:max-w-md">
+<p class="text-outline text-caption font-caption italic">
+                      Awaiting public biography submission and approved clinical photo.
+                    </p>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-caption font-semibold bg-amber-100 text-amber-900">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                      Incomplete
+                    </span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg bg-surface-container border border-outline-variant text-primary font-medium hover:bg-surface-container-high flex items-center gap-1 text-caption font-caption transition-colors" onclick="switchState('edit')" title="Complete profile">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>Complete</span>
+</button>
+<label class="relative inline-flex items-center cursor-not-allowed opacity-50" title="Cannot publish incomplete profile">
+<input class="sr-only peer" disabled="" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant rounded-full"></div>
+</label>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="switchState('remove')" title="Remove options">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Footer -->
+<div class="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-caption font-caption text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 font-medium text-tertiary">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                ActiveClinic Website Sync: Realtime Live (Melbourne Central)
+              </span>
+</div>
+<div class="flex items-center gap-4">
+<span>Rows per page: <strong>10</strong></span>
+<span>Page 1 of 1</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded text-outline-variant cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="p-1 rounded text-outline-variant cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- EMPTY STATE VIEW (Hidden by default) -->
+<section class="hidden bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-12 text-center shadow-sm" id="view-empty-state">
+<div class="max-w-md mx-auto flex flex-col items-center">
+<div class="w-16 h-16 rounded-2xl bg-surface-container-low text-primary flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-[36px]">group_off</span>
+</div>
+<h3 class="text-headline-h3 font-headline-h3 text-on-surface font-semibold">No doctors are displayed yet</h3>
+<p class="text-body-small font-body-small text-on-surface-variant mt-2 mb-6">
+            Choose clinic practitioners and create their public profiles for your website. You can selectively publish, customize public bios, and arrange specialty order.
+          </p>
+<button class="h-12 px-6 rounded-lg bg-primary-container text-on-primary font-medium hover:bg-[#004D54] transition-colors flex items-center gap-2 text-body-small font-body-small" onclick="switchState('add')">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>+ Add doctor</span>
+</button>
+</div>
+</section>
+<!-- LOADING / ERROR STATE VIEW (Hidden by default) -->
+<section class="hidden flex flex-col gap-6" id="view-loading-error">
+<!-- Loading Skeleton Preview -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 shadow-sm flex flex-col gap-4 animate-pulse">
+<div class="flex items-center justify-between">
+<div class="h-5 w-48 bg-surface-container-high rounded"></div>
+<div class="h-5 w-24 bg-surface-container-high rounded"></div>
+</div>
+<div class="h-12 bg-surface-container-low rounded-lg w-full"></div>
+<div class="space-y-3 pt-2">
+<div class="h-14 bg-surface-container rounded-lg"></div>
+<div class="h-14 bg-surface-container rounded-lg"></div>
+<div class="h-14 bg-surface-container rounded-lg"></div>
+</div>
+</div>
+<!-- Simulated Error Alert -->
+<div class="bg-error-container/40 border border-error/20 p-5 rounded-xl flex items-start gap-4">
+<span class="material-symbols-outlined text-error text-[24px]">error</span>
+<div class="flex-1">
+<h4 class="text-body-base font-body-base font-semibold text-on-error-container">Sync Service Interrupted</h4>
+<p class="text-caption font-caption text-on-error-container/80 mt-1">
+              ActiveClinic public CDN edge was unable to flush profile cache for Melbourne Central. Last synced 4 minutes ago. Changes made now will queue safely.
+            </p>
+<div class="mt-3 flex items-center gap-3">
+<button class="px-3 py-1.5 rounded-lg bg-error text-on-error font-medium text-caption font-caption hover:opacity-90 transition-opacity" onclick="switchState('active')">
+                Retry Sync Connection
+              </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant font-medium text-caption font-caption hover:bg-surface-container transition-colors" onclick="switchState('active')">
+                Dismiss Alert
+              </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- MODAL 1: Add / Select Practitioner Modal -->
+<div class="hidden fixed inset-0 z-50 bg-inverse-surface/50 backdrop-blur-sm flex items-center justify-center p-4" id="modal-add-practitioner">
+<div class="bg-surface-container-lowest rounded-xl max-w-2xl w-full border border-outline-variant shadow-xl overflow-hidden flex flex-col max-h-[921px]">
+<!-- Header -->
+<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[22px]">person_add</span>
+<h3 class="text-headline-h4 font-headline-h4 text-on-surface font-semibold">Add Practitioner to Website</h3>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg" onclick="closeModals()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Content -->
+<div class="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+<p class="text-body-small font-body-small text-on-surface-variant">
+          Select an active practitioner from Melbourne Central staff records. This creates or links their public directory profile without duplicating user credentials.
+        </p>
+<!-- Search Practitioner in Clinic -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-surface rounded-lg text-body-small font-body-small border border-outline-variant text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" placeholder="Search by staff name, clinical role, or provider number..." type="text" value="Dr."/>
+</div>
+<!-- Practitioner Radio List -->
+<div class="border border-outline-variant/70 rounded-xl divide-y divide-outline-variant/40 overflow-hidden">
+<label class="flex items-center justify-between p-3.5 hover:bg-surface-container-low/60 cursor-pointer transition-colors bg-surface-container-low/30">
+<div class="flex items-center gap-3">
+<input checked="" class="w-4 h-4 text-primary-container focus:ring-primary-container border-outline" name="practitioner_select" type="radio"/>
+<div class="w-10 h-10 rounded-full bg-secondary-fixed/40 text-secondary flex items-center justify-center font-semibold text-body-small font-body-small">
+                NW
+              </div>
+<div>
+<p class="font-semibold text-on-surface text-body-small font-body-small">Dr. Nathan Wong</p>
+<p class="text-caption font-caption text-on-surface-variant">Endocrinologist • Facility: Melbourne Central</p>
+</div>
+</div>
+<span class="text-caption font-caption text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">Not on website</span>
+</label>
+<label class="flex items-center justify-between p-3.5 hover:bg-surface-container-low/60 cursor-pointer transition-colors">
+<div class="flex items-center gap-3">
+<input class="w-4 h-4 text-primary-container focus:ring-primary-container border-outline" name="practitioner_select" type="radio"/>
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed/40 text-tertiary flex items-center justify-center font-semibold text-body-small font-body-small">
+                RT
+              </div>
+<div>
+<p class="font-semibold text-on-surface text-body-small font-body-small">Dr. Rachel Taylor</p>
+<p class="text-caption font-caption text-on-surface-variant">General Practitioner • Facility: Melbourne Central</p>
+</div>
+</div>
+<span class="text-caption font-caption text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">Not on website</span>
+</label>
+<label class="flex items-center justify-between p-3.5 hover:bg-surface-container-low/60 cursor-pointer transition-colors opacity-60">
+<div class="flex items-center gap-3">
+<input class="w-4 h-4 text-outline border-outline" disabled="" name="practitioner_select" type="radio"/>
+<div class="w-10 h-10 rounded-full bg-outline-variant/50 text-on-surface-variant flex items-center justify-center font-semibold text-body-small font-body-small">
+                SJ
+              </div>
+<div>
+<p class="font-semibold text-on-surface text-body-small font-body-small">Dr. Sarah Jenkins</p>
+<p class="text-caption font-caption text-on-surface-variant">Cardiologist • Linked Profile ID #PUB-082</p>
+</div>
+</div>
+<span class="text-caption font-caption text-tertiary bg-tertiary-fixed/30 px-2 py-0.5 rounded font-medium">Already Linked</span>
+</label>
+</div>
+<div class="bg-surface-container-low p-3.5 rounded-lg border border-outline-variant/60 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5">info</span>
+<p class="text-caption font-caption text-on-surface-variant">
+            Linking will import standard public credentials. You will be able to review biography, adjust public contact flags, and preview the physician page before publishing.
+          </p>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-end gap-3">
+<button class="h-11 px-4 rounded-lg border border-outline hover:bg-surface-container text-on-surface text-body-small font-body-small font-medium transition-colors" onclick="closeModals()">
+          Cancel
+        </button>
+<button class="h-11 px-5 rounded-lg bg-primary-container text-on-primary hover:bg-[#004D54] text-body-small font-body-small font-medium transition-colors flex items-center gap-2" onclick="switchState('edit')">
+<span>Link Practitioner &amp; Edit Profile</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MODAL 2: Edit Public Profile Modal / Drawer -->
+<div class="hidden fixed inset-0 z-50 bg-inverse-surface/50 backdrop-blur-sm flex items-center justify-center p-4" id="modal-edit-profile">
+<div class="bg-surface-container-lowest rounded-xl max-w-3xl w-full border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[942px]">
+<!-- Header -->
+<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
+<h3 class="text-headline-h4 font-headline-h4 text-on-surface font-semibold">Edit Public Practitioner Profile</h3>
+</div>
+<p class="text-caption font-caption text-on-surface-variant">Dr. Marcus Vance (Staff ID: STF-MEL-109)</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg" onclick="closeModals()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Privacy Guardrail Notice -->
+<div class="bg-surface-container-low border-b border-outline-variant/60 px-6 py-2.5 flex items-center gap-2 text-caption font-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[18px]">lock</span>
+<span>
+<strong>Privacy Guardrail:</strong> Only approved public information is shown on the clinic website. Never exposes private phone, personal email, staff ID, login credentials, or clinical records.
+        </span>
+</div>
+<!-- Form Body -->
+<div class="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+<!-- Photo Selector Cluster -->
+<div class="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl bg-surface border border-outline-variant/70">
+<img alt="Practitioner photo preview" class="w-20 h-20 rounded-full object-cover border-2 border-primary-container shadow-sm" data-alt="Close up photographic studio portrait of a doctor in medical attire with warm balanced lighting, clinical accuracy, and high quality resolution for clinic staff directory." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAczDVB5L75i1GCXXxEqKhYQKERUb-fQ_J6rMB31XWYzkbskCe0J5LmD0dKNcw71i7jz27NuRoUOvLvTg_OmWiK_TWQnYA4m6g06w8QOGiqkrqtKtWPKHQWJGSCHoASD_IiZldgCZcP8D3BsUtKJI2MWoYUWGOpqtfimCCyLHLUjB5YQQBgolaJ2bsFv-nWLDspdK6iX_IXHm3rdLYR1emEYS2keH9kXW2QIY1D80OnWS1xi2fhaz7U"/>
+<div class="flex flex-col gap-2 flex-1 text-center sm:text-left">
+<div>
+<p class="font-semibold text-body-small font-body-small text-on-surface">Website Display Photograph</p>
+<p class="text-caption font-caption text-on-surface-variant">Recommended size: 600x600px square or 4:5 ratio JPG/PNG. Max 5MB.</p>
+</div>
+<div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-caption font-caption font-medium text-on-surface flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">upload</span>
+                Upload from computer
+              </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-caption font-caption font-medium text-on-surface flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">photo_library</span>
+                Choose from Image Library
+              </button>
+<button class="px-2 py-1.5 rounded-lg text-error hover:bg-error-container text-caption font-caption font-medium transition-colors">
+                Remove
+              </button>
+</div>
+</div>
+</div>
+<!-- Form Inputs Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Public Display Name</label>
+<input class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" type="text" value="Dr. Marcus Vance"/>
+</div>
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Professional Title / Post-nominals</label>
+<input class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" type="text" value="Senior General Practitioner (MBBS, FRACGP)"/>
+</div>
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Specialty</label>
+<select class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none">
+<option selected="">General Practice / Family Medicine</option>
+<option>Cardiology / Specialist Medicine</option>
+<option>Dermatology</option>
+<option>Paediatrics</option>
+</select>
+</div>
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Department Tag</label>
+<input class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" type="text" value="Primary Care &amp; Preventive Health"/>
+</div>
+</div>
+<!-- Short Biography -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="block text-label font-label text-on-surface font-semibold">Short Biography</label>
+<span class="text-caption font-caption text-on-surface-variant">142 / 280 characters</span>
+</div>
+<textarea class="w-full p-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" rows="3">Specialising in preventative medicine, men's cardiovascular health, and long-term chronic disease management for local Melbourne families.</textarea>
+</div>
+<!-- Qualifications & Languages -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Languages Spoken</label>
+<input class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" type="text" value="English, Cantonese"/>
+</div>
+<div>
+<label class="block text-label font-label text-on-surface mb-1 font-semibold">Public Qualifications</label>
+<input class="w-full h-11 px-3 bg-surface border border-outline-variant rounded-lg text-body-small font-body-small text-on-surface focus:ring-2 focus:ring-primary-container focus:outline-none" type="text" value="University of Melbourne, Monash Fellowship"/>
+</div>
+</div>
+<!-- Visibility Toggle -->
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<div>
+<p class="font-semibold text-body-small font-body-small text-on-surface">Publish Profile to Website Immediately</p>
+<p class="text-caption font-caption text-on-surface-variant">Profile will appear in search results and directory lists instantly.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between">
+<button class="text-body-small font-body-small font-medium text-on-surface-variant hover:text-on-surface" onclick="closeModals()">
+          Cancel
+        </button>
+<div class="flex items-center gap-3">
+<button class="h-11 px-4 rounded-lg border border-outline hover:bg-surface-container text-on-surface text-body-small font-body-small font-medium transition-colors" onclick="closeModals()">
+            Save draft
+          </button>
+<button class="h-11 px-5 rounded-lg bg-primary-container text-on-primary hover:bg-[#004D54] text-body-small font-body-small font-medium transition-colors" onclick="closeModals()">
+            Save and publish
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL 3: Remove Confirmation Modal -->
+<div class="hidden fixed inset-0 z-50 bg-inverse-surface/50 backdrop-blur-sm flex items-center justify-center p-4" id="modal-remove-confirm">
+<div class="bg-surface-container-lowest rounded-xl max-w-md w-full border border-outline-variant shadow-xl overflow-hidden p-6 flex flex-col gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined text-[26px]">visibility_off</span>
+</div>
+<div>
+<h3 class="text-headline-h4 font-headline-h4 text-on-surface font-semibold">Remove Dr. Lucas Meyer from public website?</h3>
+<p class="text-body-small font-body-small text-on-surface-variant mt-2 leading-relaxed">
+          This will unpublish their profile from the public directory. The practitioner's staff user account, clinical schedule, and appointments remain active and unaffected.
+        </p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/60 text-caption font-caption text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+<span>Clinical credentialing files are retained under Administration.</span>
+</div>
+<div class="flex items-center justify-end gap-3 mt-2">
+<button class="h-11 px-4 rounded-lg border border-outline hover:bg-surface-container text-on-surface text-body-small font-body-small font-medium transition-colors" onclick="closeModals()">
+          Cancel
+        </button>
+<button class="h-11 px-4 rounded-lg bg-error text-on-error hover:opacity-90 text-body-small font-body-small font-medium transition-opacity" onclick="closeModals()">
+          Remove from Website
+        </button>
+</div>
+</div>
+</div>
+<!-- Vanilla JS Interactive State Switcher -->
+<script>
+    function switchState(stateName) {
+      // Hide all main containers & modals first
+      document.getElementById('view-active-list').classList.add('hidden');
+      document.getElementById('view-empty-state').classList.add('hidden');
+      document.getElementById('view-loading-error').classList.add('hidden');
+      document.getElementById('modal-add-practitioner').classList.add('hidden');
+      document.getElementById('modal-edit-profile').classList.add('hidden');
+      document.getElementById('modal-remove-confirm').classList.add('hidden');
+
+      // Reset pill styles
+      document.querySelectorAll('.state-pill').forEach(btn => {
+        btn.classList.remove('bg-primary-container', 'text-on-primary');
+        btn.classList.add('bg-surface-container-highest/20', 'text-inverse-on-surface');
+      });
+
+      // Highlight active simulator pill
+      const targetPill = document.getElementById(`btn-state-${stateName}`);
+      if (targetPill) {
+        targetPill.classList.add('bg-primary-container', 'text-on-primary');
+        targetPill.classList.remove('bg-surface-container-highest/20', 'text-inverse-on-surface');
+      }
+
+      // Render selected state
+      if (stateName === 'active') {
+        document.getElementById('view-active-list').classList.remove('hidden');
+      } else if (stateName === 'empty') {
+        document.getElementById('view-empty-state').classList.remove('hidden');
+      } else if (stateName === 'loading') {
+        document.getElementById('view-loading-error').classList.remove('hidden');
+      } else if (stateName === 'add') {
+        document.getElementById('view-active-list').classList.remove('hidden');
+        document.getElementById('modal-add-practitioner').classList.remove('hidden');
+      } else if (stateName === 'edit') {
+        document.getElementById('view-active-list').classList.remove('hidden');
+        document.getElementById('modal-edit-profile').classList.remove('hidden');
+      } else if (stateName === 'remove') {
+        document.getElementById('view-active-list').classList.remove('hidden');
+        document.getElementById('modal-remove-confirm').classList.remove('hidden');
+      }
+    }
+
+    function closeModals() {
+      switchState('active');
+    }
+  </script>
+</body></html>

@@ -210,12 +210,12 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     const doctors = read("views/activeclinic/tenant/doctors.ejs");
     const services = read("views/activeclinic/tenant/services.ejs");
     assert.match(doctors, /\/app\/settings\/website\/catalogue\?tab=doctors/);
-    assert.match(doctors, /Manage public doctors/);
+    assert.match(doctors, /Manage Doctors/);
     assert.match(doctors, /media picker|Content Library|Upload from computer/i);
     assert.match(doctors, /website-library-placements/);
     assert.match(doctors, /data-ac-edit-doctor="1"/);
     assert.match(services, /\/app\/settings\/website\/catalogue\?tab=services/);
-    assert.match(services, /Manage public catalogue/);
+    assert.match(services, /Manage Public Catalogue/);
     assert.match(services, /data-ac-edit-service="1"/);
     assert.match(services, /Edit service/);
   });

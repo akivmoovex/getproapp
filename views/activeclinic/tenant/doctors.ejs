@@ -9,6 +9,7 @@
   const list = Array.isArray(profiles) ? profiles : [];
   const editingDoctors = typeof websiteEdit !== 'undefined' && websiteEdit;
   const doctorsReturnTo = '/clinics/' + clinic.clinicKey + '/doctors?website_edit=1&website_mode=draft';
+  const doctorsManageHref = '/app/settings/website/catalogue?tab=doctors&returnTo=' + encodeURIComponent(doctorsReturnTo);
   const specialtySet = {};
   list.forEach(function (d) {
     const s = d && (d.specialty || d.title) ? String(d.specialty || d.title).trim() : '';
@@ -24,7 +25,7 @@
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
     <%- html.empty || '' %>
-    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Publish clinician profiles from the public catalogue. Photos use the shared media picker.', manageKind: 'doctors' }) %>
+    <%- include('../partials/website-operational-affordance', { href: doctorsManageHref, label: 'Manage Doctors', note: 'Publish clinician profiles from the public catalogue. Photos use the shared media picker.', manageKind: 'doctors' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } else if (html.doctors) { %>
@@ -80,7 +81,7 @@
     <% }) %>
   </ul>
   <% } %>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use Upload from computer or Choose from Content Library on each doctor profile.', manageKind: 'doctors' }) %>
+  <%- include('../partials/website-operational-affordance', { href: doctorsManageHref, label: 'Manage Doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use Upload from computer or Choose from Content Library on each doctor profile.', manageKind: 'doctors' }) %>
   <% } %>
 
   <% if (html.cta) { %>

@@ -116,7 +116,8 @@ function buildActiveClinicWebsiteTemplateContent(input) {
     "doctors.examples": exampleClinicians(),
     "contact.eyebrow": "Contact",
     "contact.page_title": interpolate("Contact {clinicName}", name),
-    "contact.aside_heading": "Clinic contact",
+    "contact.aside_heading": "Clinic Direct Contact",
+    "contact.form_heading": "Send a Direct Message",
     "contact.intro": interpolate(
       `Contact {clinicName} for appointments and enquiries. Staff review messages during business hours. This form does not send SMS or email confirmation.`,
       name

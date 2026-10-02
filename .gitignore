@@ -35,6 +35,9 @@ playwright-report/
 playwright/.cache/
 tmp/
 .tmp-mw-qa/
+
+# Shared Hostinger build-identity metadata (written at runtime by apex worker)
+.getpro/
 tests/e2e/.foundation-e2e-state.json
 
 # Runtime church announcement uploads (not fixtures)

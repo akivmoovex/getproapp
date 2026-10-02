@@ -461,6 +461,23 @@ function adaptActiveClinicServiceToCard(service, opts) {
   );
 }
 
+/**
+ * Canonical public-catalogue manage URL (operational doctors/services).
+ * Uses ?tab= list route — bare /catalogue/doctors|/services have no GET handlers.
+ */
+function catalogueManageHref(tab, clinic) {
+  const kind = String(tab || "").trim() === "services" ? "services" : "doctors";
+  const params = new URLSearchParams({ tab: kind });
+  const clinicKey = clinic && clinic.clinicKey ? String(clinic.clinicKey).trim() : "";
+  if (clinicKey) {
+    params.set(
+      "returnTo",
+      `/clinics/${clinicKey}/${kind}?website_edit=1&website_mode=draft`
+    );
+  }
+  return `/app/settings/website/catalogue?${params.toString()}`;
+}
+
 function adaptActiveClinicDoctorsCollection(input) {
   const clinic = asObject(input && input.clinic);
   const content = contentBag(clinic, input && input.content);
@@ -484,7 +501,7 @@ function adaptActiveClinicDoctorsCollection(input) {
       heading: pick(content, "doctors.empty_heading", clinic.doctorsEmptyHeading),
       body: pick(content, "doctors.empty_body", clinic.doctorsEmptyBody),
     },
-    manageHref: "/app/settings/website/catalogue/doctors",
+    manageHref: catalogueManageHref("doctors", clinic),
     items,
   });
 }
@@ -512,7 +529,7 @@ function adaptActiveClinicServicesCollection(input) {
       heading: pick(content, "services.empty_heading", clinic.servicesEmptyHeading),
       body: pick(content, "services.empty_body", clinic.servicesEmptyBody),
     },
-    manageHref: "/app/settings/website/catalogue/services",
+    manageHref: catalogueManageHref("services", clinic),
     items,
   });
 }
@@ -801,6 +818,7 @@ module.exports = {
   adaptActiveClinicFaqCollection,
   adaptActiveClinicGallery,
   adaptActiveClinicPromoCta,
+  catalogueManageHref,
   countMappedUniversalFields,
   buildActiveClinicWebsitePresentation,
 };

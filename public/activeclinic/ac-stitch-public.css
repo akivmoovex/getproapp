@@ -154,6 +154,34 @@
   max-width: 40rem;
 }
 
+.ac-stitch-page--r07 .ac-stitch-urgent-notice {
+  margin: 0 0 var(--gp-website-space, 1rem);
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--gp-website-color-accent, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+}
+
+.ac-stitch-page--r07 .ac-stitch-urgent-notice strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.ac-stitch-page--r07 .ac-stitch-urgent-notice p {
+  margin: 0;
+}
+
+.ac-stitch-page--r07 .ac-stitch-form-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.ac-stitch-page--r07 .ac-stitch-legal-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--gp-website-color-muted, inherit);
+}
+
 .ac-stitch-contact-layout {
   display: grid;
   gap: calc(var(--gp-website-space, 1rem) * 1.5);

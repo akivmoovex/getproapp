@@ -436,6 +436,23 @@ function runBootstrap() {
     dotenvSkippedForProduction: isProduction,
   });
 
+  // Hostinger: apex worker has GETPRO_GIT_BRANCH; subdomain lsnode workers share
+  // the hbuild tree but not apex env. Seed shared filesystem metadata so BB/AC
+  // resolve the same deployment branch label without per-subdomain env.
+  try {
+    const {
+      seedSharedBuildIdentityFromEnv,
+    } = require("../platform/runtime/buildIdentity");
+    seedSharedBuildIdentityFromEnv({ appRoot, env: process.env });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[getpro] shared build-identity seed skipped: ${
+        err && err.message ? String(err.message).slice(0, 160) : "error"
+      }`
+    );
+  }
+
   _bootstrapSingleton = {
     appRoot,
     envPath,

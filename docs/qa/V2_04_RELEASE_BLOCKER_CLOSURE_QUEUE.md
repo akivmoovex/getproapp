@@ -128,9 +128,9 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 |------------|--------|----------|
 | RB-QA-01 | **NOT_RUN** | No tester evidence in session |
 | RB-QA-02 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-03 | **FAIL** | Hosted probe on `554d37406ef5`; C01/C02/E03 app candidate frozen `33e5c29612942e1484086432214b733f353f8601` (not deployed). Pack: `V2_04_FINAL_HOSTED_MANUAL_QA_PACK.md` |
+| RB-QA-03 | **OPEN** | Post-deploy ABORT: live tip `554d37406ef5` ≠ candidate `33e5c296…`; HOSTED_C01/C02/E03=NOT_RUN |
 | RB-QA-04 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-05 | **FAIL** | Hosted PHI/E03 probe 2026-10-02: no public clinic sample; catalogue auth-gated. No confirmed PHI leak. No new blocker ID |
+| RB-QA-05 | **OPEN** | Post-deploy ABORT with RB-QA-03; PHI/E03 NOT_RUN |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
 **MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0** (03/05 verify-blocked, not product defects).
@@ -143,7 +143,7 @@ Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-ID-01 | **OPEN — code fixed; hosted pending redeploy** | Hostinger: subdomain env unsupported. Apex-only `GETPRO_GIT_BRANCH`. Fix: `.getpro/build-identity.json` shared across lsnode hostname workers. Focused **10/10**. Live pre-redeploy: hub V4 / BB+AC UNKNOWN. SHA=`554d37406ef5`. Production untouched. |
+| RB-ID-01 | **FAIL/OPEN — hosted still UNKNOWN on BB+AC** | Post-deploy verify 2026-10-02: tip still `554d37406ef5` (candidate `33e5c296…` not live). Hub V4/`GETPRO_GIT_BRANCH`/`V4 testing`; BB+AC UNKNOWN/`unknown`/`UNKNOWN testing`. Shared metadata fix not live on Hostinger. |
 
 #### Hostinger model (confirmed)
 

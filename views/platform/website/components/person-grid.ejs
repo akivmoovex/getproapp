@@ -23,7 +23,7 @@
     <% }) %>
   </ul>
   <% } %>
-  <% if (c.manageHref) { %>
-  <a class="gp-website-pc__link" href="<%= c.manageHref %>">Manage</a>
+  <% if (typeof editEnabled !== 'undefined' && editEnabled && c.manageHref) { %>
+  <a class="gp-website-pc__link" href="<%= c.manageHref %>" data-ac-website-manage="doctors">Manage Doctors</a>
   <% } %>
 </section>

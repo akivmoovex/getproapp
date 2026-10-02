@@ -7,9 +7,18 @@
  * Branch is never hard-coded as V9/V10/V4 in application constants; it comes from
  * deployment metadata (preferred) or a safe Git lookup.
  *
- * Authoritative branch: live `process.env.GETPRO_GIT_BRANCH` when present.
- * Hostinger hPanel env changes require a worker restart/redeploy before the
- * running Node process can observe the new value (no in-process hot reload).
+ * Authority order (Hostinger-aware):
+ * 1. explicit GETPRO_GIT_BRANCH (live process.env) when present
+ * 2. other explicit env branch keys (GIT_BRANCH, GITHUB_REF_NAME, …)
+ * 3. shared deployment build-identity metadata file under app root
+ *    (`.getpro/build-identity.json`) — seeds subdomain lsnode workers that
+ *    share the Hostinger hbuild tree but do not receive apex hPanel env
+ * 4. git branch if genuinely available (attached HEAD)
+ * 5. UNKNOWN only if no authoritative source exists
+ *
+ * Hostinger constraint: subdomains do not have separate env configuration.
+ * Only the apex Node app receives GETPRO_GIT_BRANCH. Separate per-hostname
+ * lsnode workers must share identity via the filesystem metadata file.
  */
 
 const fs = require("fs");
@@ -19,8 +28,23 @@ const { execFileSync } = require("child_process");
 const { getDeploymentEnvMode } = require("../config/deploymentEnv");
 const { resolveDeploymentConfiguration } = require("../config/deploymentProfiles");
 const { readGitShaShort } = require("../../startup/startupProcessMarker");
+const {
+  BRANCH_SOURCE: SHARED_BRANCH_SOURCE,
+  writeSharedBuildIdentityMetadata,
+  readSharedBuildIdentityMetadata,
+} = require("./sharedBuildIdentityMetadata");
 
 const UNKNOWN_BRANCH = "UNKNOWN";
+
+/**
+ * Same app root as bootstrap (`src/startup/bootstrap.js` → repo root). Prefer this
+ * over `process.cwd()` so Hostinger lsnode workers resolve the shared metadata
+ * file under the common hbuild tree even if cwd differs.
+ * @returns {string}
+ */
+function resolveDefaultAppRoot() {
+  return path.join(__dirname, "..", "..", "..");
+}
 
 /** Explicit deployment/build metadata, preferred over repository Git. */
 const BRANCH_ENV_KEYS = Object.freeze([
@@ -162,6 +186,34 @@ function resolveGitShaFull(options) {
 }
 
 /**
+ * Persist env-resolved branch into shared metadata so sibling hostname workers
+ * (BB/AC subdomains) can read the same deployment identity.
+ * @param {{
+ *   appRoot?: string,
+ *   branch: string,
+ *   source: string,
+ *   gitShaShort?: string|null,
+ *   environment?: string|null,
+ *   deploymentCode?: string|null,
+ * }} payload
+ */
+function persistSharedBuildIdentityFromResolvedEnv(payload) {
+  if (!payload || !payload.branch) return;
+  // Only seed shared metadata from explicit env (not from git or shared itself).
+  if (!payload.source || payload.source === "unknown") return;
+  if (payload.source === SHARED_BRANCH_SOURCE) return;
+  if (String(payload.source).startsWith("git.")) return;
+  writeSharedBuildIdentityMetadata({
+    appRoot: payload.appRoot,
+    branch: payload.branch,
+    gitShaShort: payload.gitShaShort || null,
+    environment: payload.environment || null,
+    deploymentCode: payload.deploymentCode || null,
+    writtenFrom: payload.source,
+  });
+}
+
+/**
  * @param {{
  *   appRoot?: string,
  *   env?: NodeJS.ProcessEnv,
@@ -179,6 +231,7 @@ function resolveGitShaFull(options) {
 function getBuildIdentity(options) {
   const opts = options || {};
   const env = opts.env || process.env;
+  const appRoot = opts.appRoot || resolveDefaultAppRoot();
   const deployment = resolveDeploymentConfiguration(env);
   const environment = getDeploymentEnvMode(env);
   const deploymentCode =
@@ -186,24 +239,41 @@ function getBuildIdentity(options) {
     String(env.PLATFORM_DEPLOYMENT_CODE || "").trim() ||
     null;
 
-  const fromEnv = resolveBranchFromEnv(env);
-  const fromGit = fromEnv ? null : resolveBranchFromGit(opts.appRoot);
-  const branchResolved = fromEnv || fromGit;
-  const branch = branchResolved ? branchResolved.branch : UNKNOWN_BRANCH;
-  const branchSource = branchResolved ? branchResolved.source : "unknown";
-
-  const shaResolved = resolveGitShaFull(opts);
+  const shaResolved = resolveGitShaFull({ ...opts, appRoot });
   let gitSha = shaResolved.gitSha;
   let gitShaShort = null;
   if (gitSha) {
     gitShaShort = gitSha.slice(0, 12);
   } else {
-    const short = readGitShaShort(opts.appRoot);
+    const short = readGitShaShort(appRoot);
     if (short && !/unavailable/i.test(short)) {
       gitShaShort = short.slice(0, 12);
       gitSha = gitShaShort;
     }
   }
+
+  const fromEnv = resolveBranchFromEnv(env);
+  if (fromEnv) {
+    persistSharedBuildIdentityFromResolvedEnv({
+      appRoot,
+      branch: fromEnv.branch,
+      source: fromEnv.source,
+      gitShaShort,
+      environment,
+      deploymentCode,
+    });
+  }
+
+  const fromShared = fromEnv
+    ? null
+    : readSharedBuildIdentityMetadata({
+        appRoot,
+        expectedGitShaShort: gitShaShort,
+      });
+  const fromGit = fromEnv || fromShared ? null : resolveBranchFromGit(appRoot);
+  const branchResolved = fromEnv || fromShared || fromGit;
+  const branch = branchResolved ? branchResolved.branch : UNKNOWN_BRANCH;
+  const branchSource = branchResolved ? branchResolved.source : "unknown";
 
   const displayLabel = `${branch} ${environment}`;
 
@@ -215,6 +285,19 @@ function getBuildIdentity(options) {
     environment,
     deploymentCode,
     displayLabel,
+  });
+}
+
+/**
+ * Bootstrap hook: when this worker has GETPRO_GIT_BRANCH (typically apex),
+ * seed the shared metadata file for sibling hostname workers.
+ * @param {{ appRoot?: string, env?: NodeJS.ProcessEnv }} [options]
+ */
+function seedSharedBuildIdentityFromEnv(options) {
+  const opts = options || {};
+  getBuildIdentity({
+    ...opts,
+    appRoot: opts.appRoot || resolveDefaultAppRoot(),
   });
 }
 
@@ -239,10 +322,13 @@ module.exports = {
   BRANCH_ENV_KEYS,
   SHA_ENV_KEYS,
   normalizeBranch,
+  resolveDefaultAppRoot,
   resolveAuthoritativeGitBranchFromProcessEnv,
   resolveBranchFromEnv,
   resolveBranchFromGit,
   resolveGitShaFull,
   getBuildIdentity,
+  seedSharedBuildIdentityFromEnv,
+  persistSharedBuildIdentityFromResolvedEnv,
   toPublicBuildIdentityDiagnostics,
 };

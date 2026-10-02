@@ -61,7 +61,9 @@ GETPRO_GIT_BRANCH=V4
 
 `GETPRO_GIT_BRANCH` is deployment metadata for the shared platform build-identity label (e.g. `V4 testing` on BlessBoard + ActiveClinic About and `/healthz`). Hostinger release trees may be detached HEAD — prefer this env over relying on `.git`.
 
-**Important:** Changing `GETPRO_GIT_BRANCH` in hPanel does **not** update a running Node worker. Restart or redeploy the testing worker(s) after setting it. Set the variable on **every** testing app that serves hub / BB / AC (Topology B). Without it in the live process, labels correctly show `UNKNOWN testing` (not a hard-coded branch).
+**Hostinger subdomain constraint:** Subdomains do **not** have separate env configuration. Set `GETPRO_GIT_BRANCH=V4` on the **apex** `neuniversity.org` app only. Per-hostname lsnode workers share the hbuild tree; the platform seeds `.getpro/build-identity.json` from apex so BB/AC resolve the same branch without per-subdomain env.
+
+**Important:** Changing `GETPRO_GIT_BRANCH` in hPanel does **not** update a running Node worker. Restart or redeploy after setting it (apex is enough for branch seeding). Without env **and** without the shared metadata file, labels correctly show `UNKNOWN testing` (not a hard-coded branch).
 
 **Fail closed if:** `DEPLOYMENT_ENV=production`, `DATABASE_IDENTITY_ENV=production`, missing required keys, or jobs enabled.
 
