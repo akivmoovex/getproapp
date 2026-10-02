@@ -155,12 +155,16 @@ describe("shared website section lifecycle (BUG-007)", () => {
     assert.equal(custom[0].canRemove, true);
   });
 
-  it("AC home template wires unique section ids and cms.section field keys", () => {
-    const home = read("views/activeclinic/tenant/home.ejs");
-    assert.match(home, /data-ac-section-id="<%= section\.id %>"/);
-    assert.match(home, /cms\.section\.' \+ section\.id \+ '\.heading/);
-    assert.match(home, /cms\.section\.' \+ section\.id \+ '\.body/);
-    assert.match(home, /cms\.section\.' \+ section\.id \+ '\.image/);
+  it("AC CMS section chrome wires unique section ids and cms.section field keys", () => {
+    // Public stitch home composes sections via presentation HTML; section ids and
+    // cms.section.* field keys live on the CMS sections chrome + shared action service.
+    const cmsSections = read("views/activeclinic/app/website-cms-sections.ejs");
+    const sectionSvc = read("src/activeclinic/website/activeClinicSectionActionService.js");
+    const js = read("public/platform/website-section-actions.js");
+    assert.match(cmsSections, /data-ac-section-id="<%= section\.id %>"/);
+    assert.match(sectionSvc, /data-ac-section-id/);
+    assert.match(sectionSvc, /parseCmsSectionFieldKey|cms\.section/);
+    assert.match(js, /data-ac-section-id/);
   });
 
   it("BB draft add then remove updates the section model", () => {

@@ -2,7 +2,7 @@
 
 **Branch:** `V5`  
 **TESTED_BASELINE_SHA:** `751293ffaf72a1d964c54901c449aed221f8a69f` (QA01–QA09 sweep; 68 PASS / 0 FAIL on that baseline working tree)  
-**INTEGRATED_V5_SHA:** `8d859e11906ff58e363f143b0ee26f10053acf9e`  
+**INTEGRATED_V5_SHA:** `b27b61f0520ff0c094a8389e5683e15f5591f307` (QA10/11/12 product tip on V5; see tip commit message for docs/test evidence)  
 **Scope:** Authoritative V2.05 QA defect register. QA01–QA09 are the original defect sweep; QA10–QA12 are manual QA findings added 2 Oct 2026. No V2.03/V2.04 historical pass results are used as proof of current behavior.
 
 > Historical note: Do not treat the baseline 68-pass result as evidence against a later integrated SHA unless tests were re-run at that SHA.
@@ -20,9 +20,9 @@
 | QA07 | BB Platform | P2 | Open / product gap | Public announcements require `published` (+ schedule window) **and** `public` audience; church site hides branch-only items. No public attendance surface. Stitch AN/attendance rows still PARTIAL; T-M09 NOT_RUN historically. | No safe product change in this sweep (workflow ambiguity, not a single code bug). | Existing announcement/attendance suites; no draft→public E2E | **OPEN** | Manual: draft → publish + public audience → public page; attendance admin only |
 | QA08 | BB Platform | P2 | Open (coverage) | Regression/manual gaps: RB-QA-01 NOT_RUN scenarios, FR sanity matrix, mobile companions PARTIAL — not a single reproducible app bug. | No code change this sweep. | Wave3/security/member-portal suites exist but do not close NOT_RUN manual pack | **OPEN** | Run remaining members/security/mobile manual scenarios |
 | QA09 | AC + BB | P2 | Covered by suite | Forgot/reset password recovery audited earlier on V5; enumeration-safe routes + product isolation. | Prior recovery work (passwordReset* + views) retained in working tree. | `tests/v2-05-password-recovery.test.js` | **FIXED** (suite green) | Spot-check AC + BB forgot → email/SMS path on hosted |
-| QA10 | BB Website | P2 / Major | Yes (manual QA) | Inline Public Website image-upload control is visible but does not respond to click. The same image can be selected/uploaded when entering **Edit Entire Section**, so the failure is isolated to the direct/inline media interaction path rather than upload storage itself. | **OPEN — no fix recorded yet.** Inspect inline media control event binding, overlay/z-index/pointer target, hidden file-input association, and parity with the working Edit Entire Section media field. | No dedicated regression test recorded yet. Add browser/DOM contract coverage for direct inline image control opening the file input and retaining existing Edit Entire Section behavior. | **OPEN** | Reproduce on desktop and mobile; click the direct image icon, select a local image, save draft, preview, publish, and verify public image. |
+| QA10 | BB Website | P2 / Major | Yes (manual QA + code) | BB hero decorative scrim/copy overlay captured pointer events above shared editable-image pencil. Direct clicks failed; Edit Entire Section worked via programmatic `pencil.click()`. | `pointer-events:none` on `.bb-tp-hero__scrim` (+ editor overlay/media-plane hit-target rules in `website-inline-edit.css`); reuse existing WE01 field-editor/media flow. | `tests/v2-05-qa10-inline-image-upload.test.js`, `tests/v2-05-qa-defect-sweep.test.js` | **FIXED** | Spot-check desktop + mobile: direct image icon → file picker → draft → preview → publish |
 | QA11 | BB Auth / Account | P2 / Major | Yes (manual QA + code) | Member/profile email change updated only `blessboard.members.email_*`; login/forgot-password read `blessboard.users.email_normalized`, so old email kept working. | Atomically sync linked `blessboard.users` login email in `updateMemberProfile` (duplicate rejection + verified_at clear); portal maps `email_in_use`. | `tests/v2-05-qa11-email-change-login-identity.test.js` (+ recovery/auth suites) | **FIXED** | Spot-check hosted: change email, sign out, new login OK / old denied / phone OK / forgot-password to new |
-| QA12 | BB Website | P2 / Major | Yes (manual QA / screenshot) | A section immediately above the sermon/banner content (shown as **“Full library”** in the supplied QA screenshot) has no visible section editing/removal controls. The surrounding website editor exposes edit controls, but this section cannot be edited or removed from the public-page editing flow. | **OPEN — no fix recorded yet.** Identify the section key/type and ensure it participates in the same editability contract as other public-page sections: edit control, section settings/content editing where applicable, remove/hide action where product rules allow, permissions, draft persistence, preview, and publish. | No dedicated regression test recorded yet. Extend website-editor section-contract coverage to assert editable/removable controls for this section and public output after draft/publish. | **OPEN** | Verify on the affected Sermons/Public Website page at desktop and 390px: edit text/content, hide/remove section if supported, save draft, preview, publish, and confirm live page. |
+| QA12 | BB Website | P2 / Major | Yes (manual QA / screenshot) | Home “Full library” teaser came from soft-fill without a real `page_sections` row (`sermons_intro`), so sectionManifest/SectionManager had no section for editor chrome. | Soft stub participates as `sectionKey=sermons_intro` with canEdit/canHide; canRemove only for normal freeform types; draft apply materializes CMS row on publish/hide when stub lacked a row. | `tests/v2-05-qa12-sermons-intro-section-editability.test.js`, `tests/shared-website-section-lifecycle.test.js` | **FIXED** | Verify Full library section edit/hide on home at desktop + 390px; draft → preview → publish |
 
 ## New manual QA findings — 2 Oct 2026
 
@@ -33,7 +33,9 @@
 - **Observed:** Clicking the image-upload icon directly on the public website editor produces no response.
 - **Control comparison:** **Edit Entire Section** can select and upload an image successfully.
 - **Expected:** The direct inline image icon opens the operating-system file selector and completes the same supported upload flow.
-- **Status:** **OPEN**
+- **Root cause:** BB hero decorative scrim/copy overlay captured pointer events above the shared editable-image pencil.
+- **Fix:** `b27b61f0520ff0c094a8389e5683e15f5591f307` — `pointer-events:none` on `.bb-tp-hero__scrim` + editor media-plane hit-target rules; shared WE01 upload path unchanged.
+- **Status:** **FIXED** (V5) — regression suite `tests/v2-05-qa10-inline-image-upload.test.js`.
 
 ### QA11 — Email change does not update login identity
 - **Bug type:** Functional / Authentication identity consistency
@@ -41,16 +43,19 @@
 - **Severity:** P2 / Major
 - **Observed:** The application confirms the new email was saved, but login with the new email is denied while the old email still authenticates.
 - **Expected:** After a successful email change, the new email is the active login identifier and the old email is no longer accepted.
-- **Status:** **FIXED** (V5) — profile email change now updates linked `blessboard.users` login identity atomically; regression suite `tests/v2-05-qa11-email-change-login-identity.test.js`.
+- **Fix:** `2a8906b69639235066d3bdb5da1e53ebb84045aa` — profile email change updates linked `blessboard.users` login identity atomically.
+- **Status:** **FIXED** (V5) — regression suite `tests/v2-05-qa11-email-change-login-identity.test.js`.
 - **Security QA note:** Also verify password recovery destination/identifier, duplicate-email rejection, active sessions, and tenant/product isolation after the fix.
 
 ### QA12 — Public-page section lacks edit/remove tools
 - **Bug type:** Functional / Website editor UI
-- **Feature:** Public Website — section editing
+- **Feature:** Public Website — section editing (`sermons_intro` / “Full library”)
 - **Severity:** P2 / Major
 - **Observed:** The section immediately above the sermon/banner card, shown as **“Full library”** in the QA screenshot, has no usable edit or remove controls.
 - **Expected:** Every user-manageable public section should expose the approved editing affordance and, where the product permits it, hide/remove controls, with changes flowing through draft → preview → publish.
-- **Status:** **OPEN**
+- **Root cause:** Soft-fill teaser had no `page_sections` row, so sectionManifest could not attach editor chrome.
+- **Fix:** `15cba0be38aa9cbaadc9ceedd0e5d1d848b4882e` — soft stub as `sermons_intro` (canEdit/canHide; canRemove only for freeform); publish/hide materializes CMS row when needed.
+- **Status:** **FIXED** (V5) — regression suite `tests/v2-05-qa12-sermons-intro-section-editability.test.js`.
 
 ## Website main-flow suite (QA01–QA04)
 
@@ -76,9 +81,12 @@ NODE_ENV=test node --test \
 |---|---|
 | BRANCH | V5 |
 | TESTED_BASELINE_SHA | `751293ffaf72a1d964c54901c449aed221f8a69f` |
-| INTEGRATED_V5_SHA | `8d859e11906ff58e363f143b0ee26f10053acf9e` (local V2.05 commit rebased onto `origin/V5` @ `9bed844d`) |
-| INTEGRATED_TEST_SHA | `aeb1c49036c97d7aa3a1346049abec6a5c0b1af2` |
-| INTEGRATED_TEST_RESULT | `52` pass / `0` fail — focused: `v2-05-bb-service-times-publish`, `v2-05-password-recovery`, `v2-05-qa-defect-sweep`, `v2-05-main-flow-batch4`, `blessboard-home-service-times`, `v8-shared-auth-password-security` |
+| QA10_FIX_SHA | `b27b61f0520ff0c094a8389e5683e15f5591f307` |
+| QA11_FIX_SHA | `2a8906b69639235066d3bdb5da1e53ebb84045aa` |
+| QA12_FIX_SHA | `15cba0be38aa9cbaadc9ceedd0e5d1d848b4882e` |
+| INTEGRATED_V5_SHA | V5 tip after `fix(v2.05): close QA10 QA11 QA12 website and identity defects` (product fixes @ `b27b61f0` / `2a8906b6` / `15cba0be`) |
+| INTEGRATED_TEST_SHA | product tip `b27b61f0520ff0c094a8389e5683e15f5591f307` + local docs/test-retarget (136 focused / 75 main-flow pass) |
+| INTEGRATED_TEST_RESULT | Focused QA10/11/12 pack: `136` pass / `0` fail; V2.05 main-flow batch/task pack: `75` pass / `0` fail |
 
 ## Key files touched this sweep
 
@@ -94,16 +102,16 @@ NODE_ENV=test node --test \
 ## P1 / P2 summary
 
 - **P1 blockers remaining:** none from QA01–QA04 after fixes (QA01 not a bug). Device retest still required for QA03.  
-- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps), QA10 (direct inline image upload), QA12 (section edit/remove controls). QA05 remains a partial fix pending hosted confirmation if 503 persists after schema deploy. QA11 email-change login identity is **FIXED**.
+- **P2 open:** QA07 (visibility/workflow), QA08 (manual/regression gaps). QA05 remains a partial fix pending hosted confirmation if 503 persists after schema deploy. QA10 (inline image hit target), QA11 (email login identity), and QA12 (`sermons_intro` editability) are **FIXED**.
 
 
 ## Current QA status snapshot
 
 | Category | IDs |
 |---|---|
-| **FIXED** | QA02, QA03, QA04, QA06, QA09, QA11 |
+| **FIXED** | QA02, QA03, QA04, QA06, QA09, QA10, QA11, QA12 |
 | **PARTIAL_FIX / hosted confirmation** | QA05 |
-| **OPEN** | QA07, QA08, QA10, QA12 |
+| **OPEN** | QA07, QA08 |
 | **NOT_A_BUG** | QA01 |
 
-**Release note:** The previously recorded automated results do not prove QA10–QA12 because these are newly reported manual findings and dedicated regression coverage has not yet been added.
+**Release note:** QA10–QA12 fixes and dedicated regression suites are integrated on V5; hosted spot-checks remain for image click, email-change login, and sermons_intro section chrome.
