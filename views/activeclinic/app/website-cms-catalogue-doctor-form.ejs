@@ -10,7 +10,14 @@
   var linkableStaff = Array.isArray(cms.linkableStaff) ? cms.linkableStaff : [];
   var returnTo = cms.returnTo || "";
 %>
-<section class="ac-mw" data-ac-page-section="website-catalogue-doctor-form" data-ac-mw-screen="catalogue-doctor-form">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-catalogue-doctor-form"
+  data-ac-mw-screen="catalogue-doctor-form"
+  data-ac-stitch-screen="C02"
+  data-ac-stitch-surface="C02-form"
+  data-ac-stitch-editor="E03"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
@@ -84,7 +91,9 @@
         src: image.src || "",
         alt: image.alt || "",
         emptyText: "No public photograph selected.",
-        framingEnabled: false
+        framingEnabled: true,
+        contentKey: "catalogue.doctor.photo",
+        allowSeparateFraming: true
       }
     }) %>
     <label class="ac-mw-check">

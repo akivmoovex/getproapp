@@ -10,7 +10,13 @@
   var categoryValue = service.category || service.publicSummary || "";
   var returnTo = cms.returnTo || "";
 %>
-<section class="ac-mw" data-ac-page-section="website-catalogue-service-form" data-ac-mw-screen="catalogue-service-form">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-catalogue-service-form"
+  data-ac-mw-screen="catalogue-service-form"
+  data-ac-stitch-screen="C01"
+  data-ac-stitch-surface="C01-form"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
@@ -61,7 +67,9 @@
         mediaId: image.mediaId || "",
         src: image.src || "",
         alt: image.alt || "",
-        framingEnabled: false
+        framingEnabled: true,
+        contentKey: "catalogue.service.image",
+        allowSeparateFraming: true
       }
     }) %>
     <label class="ac-mw-check">

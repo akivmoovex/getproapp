@@ -1318,11 +1318,16 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
         const loaded = await catalogueService.loadCatalogue(getPool(), cmsInput(req));
         if (!loaded.ok) return deny(res, 403, "Public catalogue", slugErrorMessage(loaded.code));
         const tab = String(req.query.tab || "doctors").trim() === "services" ? "services" : "doctors";
+        const returnTo = sanitizeCatalogueReturnTo(req.query && req.query.returnTo);
+        const clinicKey = cmsInput(req).clinicKey;
+        const previewHref = clinicKey
+          ? `/clinics/${encodeURIComponent(clinicKey)}/${tab === "services" ? "services" : "doctors"}`
+          : "";
         return renderShell(req, res, {
           content: "app/website-cms-catalogue.ejs",
           cmsActive: "catalogue",
           pageHeader: {
-            title: "Public catalogue",
+            title: tab === "services" ? "Services catalogue" : "Doctors catalogue",
             description: "Choose which doctors and services appear on your clinic website.",
           },
           breadcrumbs: breadcrumbs([{ label: "Public catalogue" }]),
@@ -1334,6 +1339,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
               canEdit: loaded.canEdit,
               emptyDoctors: loaded.emptyDoctors,
               emptyServices: loaded.emptyServices,
+              clinicKey,
+              previewHref,
+              returnTo,
               saved: String(req.query.saved || "") === "1",
               error: String(req.query.error || "") === "1" ? slugErrorMessage(req.query.code) : "",
             },
@@ -1342,6 +1350,31 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       } catch (err) {
         return next(err);
       }
+    }
+  );
+
+  // Compat aliases: presentation historically linked /catalogue/doctors|/services without ?tab=.
+  app.get(
+    "/app/settings/website/catalogue/doctors",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    (req, res) => {
+      const returnTo = sanitizeCatalogueReturnTo(req.query && req.query.returnTo);
+      const qs = new URLSearchParams({ tab: "doctors" });
+      if (returnTo) qs.set("returnTo", returnTo);
+      return res.redirect(302, `/app/settings/website/catalogue?${qs.toString()}`);
+    }
+  );
+
+  app.get(
+    "/app/settings/website/catalogue/services",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    (req, res) => {
+      const returnTo = sanitizeCatalogueReturnTo(req.query && req.query.returnTo);
+      const qs = new URLSearchParams({ tab: "services" });
+      if (returnTo) qs.set("returnTo", returnTo);
+      return res.redirect(302, `/app/settings/website/catalogue?${qs.toString()}`);
     }
   );
 
@@ -1389,14 +1422,22 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       if (!result.ok) {
         const status = result.code === "forbidden" ? 403 : result.code === "not_found" ? 404 : 303;
         if (status === 303) {
-          return res.redirect(
-            303,
-            `/app/settings/website/catalogue?tab=${tab}&error=1&code=${encodeURIComponent(result.code || "")}`
-          );
+          const returnTo = sanitizeCatalogueReturnTo(req.body && req.body.returnTo);
+          const qs = new URLSearchParams({
+            tab,
+            error: "1",
+            code: String(result.code || ""),
+          });
+          if (returnTo) qs.set("returnTo", returnTo);
+          return res.redirect(303, `/app/settings/website/catalogue?${qs.toString()}`);
         }
         return deny(res, status, "Public catalogue", slugErrorMessage(result.code));
       }
-      return res.redirect(303, `/app/settings/website/catalogue?tab=${tab}&saved=1`);
+      {
+        const returnTo = sanitizeCatalogueReturnTo(req.body && req.body.returnTo);
+        if (returnTo) return res.redirect(303, returnTo);
+        return res.redirect(303, `/app/settings/website/catalogue?tab=${tab}&saved=1`);
+      }
     } catch (err) {
       return next(err);
     }
