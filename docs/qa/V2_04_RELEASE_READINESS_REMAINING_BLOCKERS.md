@@ -1,8 +1,10 @@
 # V2.04 Release Readiness — Remaining Blockers Only
 
-**Mode:** READ-ONLY (no code changes).  
+**Mode:** TESTING migration gate + readiness update (no app deploy; PRODUCTION untouched).  
 **Date:** 2026-10-02  
 **Question:** What still prevents `READY_FOR_PRODUCTION_QA=YES`?
+
+**TESTING migration gate:** BB **119–120 APPLIED** (plus platform 046–047, BB 121–122). App candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` = **READY_FOR_HOSTED_DEPLOY=YES**. RB-QA-01/02 remain OPEN until post-deploy manual retest.
 
 ### Excluded (by instruction)
 
@@ -57,8 +59,8 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **OPEN** (2026-10-02 hosted @ `7dbe945d…`: T-M02/T-M04/T-M07/T-M13 **FAIL**; T-M14/T-M15 **PASS**; 8 **NOT_RUN**) | `/hq/members` **503** blocks Church ID / profile / search FEATURE proof | Fix members list/manager gate on TESTING; re-run T-M02–T-M15 | RB-ID-01 **PASS**; DEF-BB-MEMBERS-503 | NO |
-| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **OPEN** (2026-10-02): BB publish `not_ready` / Coming soon; AC publish/unpublish/restore OK but public **403 Clinic unavailable**; true-stale **PASS** both | Full DRAFT→…→REPUBLISH + public verify not proven on both products | Fix BB publish readiness + AC public availability; re-run lifecycle | RB-ID-01 **PASS**; DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | NO |
+| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **OPEN** — engineering + TESTING schema ready; **not closed**. Pre-fix: T-M02/T-M04/T-M07/T-M13 **FAIL**; T-M14/T-M15 **PASS**. **TESTING migration gate 2026-10-02:** BB **119–120 APPLIED** (`member_number`, `portal_access_status` present; primary list SELECT OK; fallback not required). App candidate `600d1c07…` READY_FOR_HOSTED_DEPLOY; awaiting deploy + T-M02–T-M15 retest | Hosted FEATURE proof still incomplete until deploy + retest | Deploy `600d1c07…` to TESTING; re-run T-M02–T-M15 | RB-ID-01; DEF-BB-MEMBERS-503; TESTING mig 119–120 **done** | NO |
+| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **OPEN** — engineering ready; **not closed**. Pre-fix: BB `not_ready`; AC public **403**. Candidate `600d1c07…` fixes publish readiness + AC go-live; TESTING DB aligned. Awaiting hosted deploy + full lifecycle retest | Full DRAFT→…→REPUBLISH + public verify not yet proven on new candidate | Deploy `600d1c07…`; re-run BB+AC lifecycle | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | NO |
 | RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **PASS** (2026-10-02 hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke) | — | — | RB-ID-01 **PASS** | — |
 | ~~RB-QA-04~~ | SHARED | Geography + concurrency hosted | MANUAL_QA | **PASS** (2026-10-02 @ `7dbe945d…`): forged FR POST **400** BB+AC; engine true-stale **409** `stale_draft_revision` BB+AC | — | — | RB-ID-01 **PASS** | — |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **PASS** (2026-10-02: public services/doctors bodies allowlist-clean on `ac-hqa-v8-muq9wn7a9a3d`; footer org public contact only) | — | — | RB-PROD-07 **CLOSED** | — |
@@ -104,19 +106,23 @@ Roadmap **Phase 5** product adapters / branding and all **P2** items are **not**
 |-----|-----|----------|
 | — | — | RB-QA-03/05 closed on hosted resume |
 
-**FASTEST_CLOSABLE_NOW = 0** among remaining (both need product fixes before re-QA).  
+**FASTEST_CLOSABLE_NOW = 0** among remaining MANUAL_QA (need hosted deploy of `600d1c07…` then retest).  
 **Still open MANUAL_QA:** RB-QA-01 (Members pack), RB-QA-02 (website lifecycle).  
-~~RB-QA-04~~ **PASS** (disabled-country + true-stale).
+~~RB-QA-04~~ **PASS** (disabled-country + true-stale).  
+**SCHEMA_GATE:** TESTING BB 119–120 **APPLIED**; fallback query **not** required.
 
 ---
 
 ## Minimum path to `READY_FOR_PRODUCTION_QA=YES`
 
-1. ~~**RB-ID-01**~~ **PASS** on tip `7dbe945d…`.  
+1. ~~**RB-ID-01**~~ **PASS** on prior tip; re-verify after deploy of `600d1c07…`.  
 2. ~~RB-PROD-01…08 + RB-ENG-01/02~~ **CLOSED Wave2**.  
 3. ~~RB-ENG-05 + RB-TEST-01…07~~ **CLOSED Wave3**.  
-4. Fix **DEF-BB-MEMBERS-503** → re-run **RB-QA-01** (T-M02–T-M15).  
-5. Fix **DEF-BB-WEB-PUBLISH-NOT-READY** + **DEF-AC-PUBLIC-403** → re-run **RB-QA-02**.  
+4. ~~TESTING BB 119–120 schema gap~~ **CLOSED 2026-10-02** (migrations applied; primary members SELECT OK).  
+5. **Deploy** app candidate `600d1c07…` to TESTING (not done in migration gate).  
+6. Re-run **RB-QA-01** (T-M02–T-M15) — do not close until FEATURE pack passes.  
+7. Re-run **RB-QA-02** full BB+AC website lifecycle — do not close until PASS.  
+8. ~~RB-QA-03 / ~~RB-QA-04~~ / ~~RB-QA-05~~ already **PASS** on prior tip; spot-check after deploy.  
 6. ~~**RB-QA-04**~~ **PASS**. ~~**RB-QA-05**~~ **PASS**. ~~**RB-QA-03**~~ **PASS**.
 
 Until RB-QA-01 + RB-QA-02 close (or Product **explicitly waives** in writing), readiness stays **NO**.
