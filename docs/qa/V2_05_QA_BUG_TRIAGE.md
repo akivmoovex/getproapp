@@ -1,8 +1,11 @@
 # V2.05 / V5 — QA Document Defect Sweep
 
 **Branch:** `V5`  
-**HEAD at triage write:** `751293ffaf72a1d964c54901c449aed221f8a69f` (working tree includes sweep fixes below)  
+**TESTED_BASELINE_SHA:** `751293ffaf72a1d964c54901c449aed221f8a69f` (QA01–QA09 sweep; 68 PASS / 0 FAIL on that baseline working tree)  
+**INTEGRATED_V5_SHA:** `8d859e11906ff58e363f143b0ee26f10053acf9e`  
 **Scope:** Authoritative defect list QA01–QA09 only. No V2.03/V2.04 historical pass results used as proof of current behavior.
+
+> Historical note: Do not treat the baseline 68-pass result as evidence against a later integrated SHA unless tests were re-run at that SHA.
 
 ## Triage table
 
@@ -20,7 +23,7 @@
 
 ## Website main-flow suite (QA01–QA04)
 
-Executed on V5 working tree (current sweep):
+Executed against **TESTED_BASELINE_SHA** `751293ff…` working tree (pre-remote-integration sweep):
 
 ```text
 NODE_ENV=test node --test \
@@ -34,7 +37,17 @@ NODE_ENV=test node --test \
   tests/v2-05-main-flow-batch6-unified-publish-workflow.test.js
 ```
 
-**Result:** `68` pass / `0` fail (suites: defect-sweep contracts, Service Times publish, password recovery, main-flow batches 1/3/4/5/6).
+**Baseline Result:** `68` pass / `0` fail (suites: defect-sweep contracts, Service Times publish, password recovery, main-flow batches 1/3/4/5/6).
+
+## Integration metadata (post-rebase)
+
+| Field | Value |
+|---|---|
+| BRANCH | V5 |
+| TESTED_BASELINE_SHA | `751293ffaf72a1d964c54901c449aed221f8a69f` |
+| INTEGRATED_V5_SHA | `8d859e11906ff58e363f143b0ee26f10053acf9e` (local V2.05 commit rebased onto `origin/V5` @ `9bed844d`) |
+| INTEGRATED_TEST_SHA | _(set in follow-up docs commit to tip after this retest)_ |
+| INTEGRATED_TEST_RESULT | `52` pass / `0` fail — focused: `v2-05-bb-service-times-publish`, `v2-05-password-recovery`, `v2-05-qa-defect-sweep`, `v2-05-main-flow-batch4`, `blessboard-home-service-times`, `v8-shared-auth-password-security` |
 
 ## Key files touched this sweep
 

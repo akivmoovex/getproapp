@@ -681,11 +681,18 @@ describe("blessboard home service times (Prompt 50)", () => {
     assert.doesNotMatch(res.text, /overflow-x:\s*scroll/);
     assert.match(res.text, /bb-hq-nav|data-bb-hq|bb-hq-shell/i);
 
-    // Regression: disabling submit buttons during the submit event removes
-    // their name/value from form serialization unless the clicked action is
-    // copied to a hidden field first.
-    assert.match(res.text, /event\.submitter/);
-    assert.match(res.text, /data-bb-service-times-action/);
-    assert.match(res.text, /actionInput\.name = "action"/);
+    // Dedicated website Service Times editor (save_draft / save_publish) preserves
+    // the clicked action before disabling submit controls. Content-admin /pages/home
+    // embeds a lighter editor without that dual-action submit path.
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const dedicatedEditor = fs.readFileSync(
+      path.join(__dirname, "..", "views", "blessboard", "v5", "website", "service-times-editor.ejs"),
+      "utf8"
+    );
+    assert.match(dedicatedEditor, /event\.submitter/);
+    assert.match(dedicatedEditor, /data-bb-service-times-action/);
+    assert.match(dedicatedEditor, /actionInput\.name = "action"/);
+    assert.match(dedicatedEditor, /value="save_publish"/);
   });
 });
