@@ -93,4 +93,13 @@ describe("V2.05 QA defect sweep contracts", () => {
     assert.match(pw, /ActiveClinic|AC /);
     assert.match(pw, /enumeration-safe/);
   });
+
+  it("QA10: direct inline image upload regression suite exists", () => {
+    const qa10 = read("tests/v2-05-qa10-inline-image-upload.test.js");
+    assert.match(qa10, /data-website-start/);
+    assert.match(qa10, /home\.hero\.image|data-bb-section/);
+    assert.match(qa10, /data-website-file/);
+    assert.match(qa10, /pointer-events:\s*none/);
+    assert.match(qa10, /Edit Entire Section|focusSectionEdit|data-bb-se-upload/);
+  });
 });

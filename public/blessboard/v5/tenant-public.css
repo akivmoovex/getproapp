@@ -4825,6 +4825,8 @@ html {
 .bb-tp-hero__scrim {
   position: absolute;
   inset: 0;
+  /* Decorative only — never intercept inline image / media edit hits (QA10). */
+  pointer-events: none;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--bb-color-ink) 28%, transparent) 0%, color-mix(in srgb, var(--bb-color-ink) 62%, transparent) 55%, color-mix(in srgb, var(--bb-color-ink) 88%, transparent) 100%);
 }

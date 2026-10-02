@@ -1395,19 +1395,45 @@ body.gp-website-editor-open .bb-tp-features-panel {
   }
 }
 
-/* BlessBoard phase-7 hero stacks copy above the media plane; keep overlay copy tappable. */
+/*
+ * BlessBoard phase-7 hero: copy overlay sits above the media plane.
+ * Keep the overlay shell pointer-events:none so the direct inline image
+ * affordance (data-website-start on editable-image) remains hittable, while
+ * re-enabling taps on overlay text/CTA controls. QA10 regression.
+ */
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay {
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable,
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable {
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__display,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable__display,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__pencil,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable__pencil,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__history,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay a,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay button {
   pointer-events: auto;
 }
 
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable {
+/* Decorative scrim must never steal clicks from the inline image pencil. */
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__scrim {
+  pointer-events: none;
+}
+
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .ac-website-editable {
   position: relative;
-  z-index: auto;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable__pencil,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .ac-website-editable__pencil,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable__history,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .bb-tp-edit-media-wrap {
+  pointer-events: auto;
 }
 
 /* —— Wave 2 field editor (Stitch EDIT-02/03/04) —— */
