@@ -3,6 +3,7 @@
 /**
  * Seeds 004–006 stay checksum-stable for testing. Seed 007 retires testing-only
  * catalogue rows only when platform.database_identity.environment_code=production.
+ * Seed 011 repairs catalogues when 007/008 were applied before identity existed.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -182,5 +183,103 @@ describe("production catalogue seed hygiene", () => {
       `SELECT 1 FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
     );
     assert.equal(absent.rowCount, 0);
+  });
+
+  it("seed 011 is production-gated and repairs AC + moovex production rows", () => {
+    const sql = fs.readFileSync(
+      path.join(ROOT, "db/seeds/011_production_catalogue_after_identity.sql"),
+      "utf8"
+    );
+    assert.match(sql, /env_code IS DISTINCT FROM 'production'/);
+    assert.match(sql, /activeclinic-org-production/);
+    assert.match(sql, /moovex-platform-production/);
+    assert.match(sql, /activeclinic-org-v6/);
+    assert.match(sql, /bootstrap:foundation/);
+  });
+
+  it("seed 011 repairs catalogue after 007/008 no-op before identity (prod race)", async () => {
+    requireDb();
+    // Simulate fresh migrate: testing catalogue + no identity effects from 007/008.
+    // Clear production rows first so activeclinic.org can return to v6.
+    await pool.query(
+      `DELETE FROM platform.deployments
+        WHERE deployment_code IN ('activeclinic-org-production', 'moovex-platform-production')`
+    );
+    await pool.query(`DELETE FROM platform.database_identity`);
+    await pool.query(
+      `UPDATE platform.deployments
+          SET status = 'active',
+              canonical_domain = 'activeclinic.org',
+              session_cookie_name = 'activeclinic_org_sid',
+              environment_code = 'testing',
+              updated_at = now()
+        WHERE deployment_code = 'activeclinic-org-v6'`
+    );
+
+    const sql007 = fs.readFileSync(
+      path.join(ROOT, "db/seeds/007_production_catalogue_hygiene.sql"),
+      "utf8"
+    );
+    const sql008 = fs.readFileSync(
+      path.join(ROOT, "db/seeds/008_moovex_platform_production_deployment.sql"),
+      "utf8"
+    );
+    const sql011 = fs.readFileSync(
+      path.join(ROOT, "db/seeds/011_production_catalogue_after_identity.sql"),
+      "utf8"
+    );
+
+    // Seeds recorded as applied while identity missing → no-op (historic race).
+    await pool.query(sql007);
+    await pool.query(sql008);
+    let missing = await pool.query(
+      `SELECT deployment_code FROM platform.deployments
+        WHERE deployment_code IN ('activeclinic-org-production', 'moovex-platform-production')`
+    );
+    assert.equal(missing.rowCount, 0);
+
+    // Identity arrives after seeds (bootstrap order before fix).
+    await pool.query(
+      `INSERT INTO platform.database_identity
+         (id, database_instance_id, environment_code, database_name, host_fingerprint, identity_key)
+       VALUES (1, gen_random_uuid(), 'production', 'foundation', 'local-rehearsal', 'moovex-platform-v7')
+       ON CONFLICT (id) DO UPDATE SET
+         environment_code = 'production',
+         identity_key = 'moovex-platform-v7'`
+    );
+
+    // Re-running 007/008 would work if invoked, but migrate will not; 011 must repair.
+    await pool.query(sql011);
+    await pool.query(sql011);
+
+    const acProd = await pool.query(
+      `SELECT status, canonical_domain, environment_code
+         FROM platform.deployments WHERE deployment_code = 'activeclinic-org-production'`
+    );
+    assert.equal(acProd.rowCount, 1);
+    assert.equal(acProd.rows[0].status, "active");
+    assert.equal(acProd.rows[0].canonical_domain, "activeclinic.org");
+    assert.equal(acProd.rows[0].environment_code, "production");
+
+    const moovex = await pool.query(
+      `SELECT status, environment_code, session_cookie_name
+         FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
+    );
+    assert.equal(moovex.rowCount, 1);
+    assert.equal(moovex.rows[0].status, "active");
+    assert.equal(moovex.rows[0].environment_code, "production");
+    assert.equal(moovex.rows[0].session_cookie_name, "moovex_platform_production_sid");
+
+    const v6 = await pool.query(
+      `SELECT status, canonical_domain FROM platform.deployments
+        WHERE deployment_code = 'activeclinic-org-v6'`
+    );
+    assert.equal(v6.rowCount, 1);
+    assert.equal(v6.rows[0].status, "retired");
+    assert.ok(String(v6.rows[0].canonical_domain).includes("__testing_not_for_production__"));
+
+    await pool.query(
+      `UPDATE platform.database_identity SET environment_code = 'testing'`
+    );
   });
 });

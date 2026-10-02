@@ -111,9 +111,12 @@ async function bootstrapFoundation(opts = {}) {
   try {
     await pool.query("SELECT 1 AS ok");
 
-    const migrateSummary = await migrate({ pool });
+    // Migrations first (creates platform.database_identity), then identity:init,
+    // then seeds. Production-gated seeds 007/008/011 no-op without identity and
+    // would otherwise be permanently skipped if seeds ran before identity.
+    const migrationSummary = await migrate({ pool, phase: "migrations" });
     log(
-      `[db:bootstrap:foundation] migrate applied=${migrateSummary.applied.length} skipped=${migrateSummary.skipped.length} seeds_applied=${migrateSummary.seedsApplied.length} seeds_skipped=${migrateSummary.seedsSkipped.length}`
+      `[db:bootstrap:foundation] migrations applied=${migrationSummary.applied.length} skipped=${migrationSummary.skipped.length}`
     );
 
     const identityResult = await ensureDatabaseIdentity(pool, {
@@ -127,11 +130,22 @@ async function bootstrapFoundation(opts = {}) {
         code: identityResult.code,
         errors: [identityResult.message],
         host_fingerprint: inputs.hostFingerprint,
-        migrate: migrateSummary,
+        migrate: migrationSummary,
         identity: identityResult,
       };
     }
     log(`[db:bootstrap:foundation] identity result=${identityResult.result}`);
+
+    const seedSummary = await migrate({ pool, phase: "seeds" });
+    log(
+      `[db:bootstrap:foundation] seeds applied=${seedSummary.seedsApplied.length} skipped=${seedSummary.seedsSkipped.length}`
+    );
+    const migrateSummary = {
+      applied: migrationSummary.applied,
+      skipped: migrationSummary.skipped,
+      seedsApplied: seedSummary.seedsApplied,
+      seedsSkipped: seedSummary.seedsSkipped,
+    };
 
     const verify = await verifyFoundation(pool, { identityKey: inputs.identityKey });
     if (!verify.ok) {
