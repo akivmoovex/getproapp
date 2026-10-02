@@ -36,3 +36,18 @@ Deep mutation integration remains in `tests/activeclinic-website-cms.test.js` an
 ## Counts (contract suite)
 
 See END markers from the consolidation run.
+
+## Final hosted RC retest (2026-10-02)
+
+HOSTED_SHA_MATCH=PASS vs required `2a2498f630676638c63f1961f0c8bf80507a15c5` (Hub/AC/BB `2a2498f63067` / V4).
+
+| Surface | Result |
+|---------|--------|
+| AC Website Management options | **12/12** PASS (hub→publish; meaningful content; no blank shell) |
+| BB Website Management options | **12/12** PASS |
+| BB hub tile parity | **PASS** (`data-bb-website-action` branding + library + settings present) |
+| AC lifecycle (DRAFT…REPUBLISH) | **PASS** incl. public 200 + restore-as-new + responsive 768/390 |
+| BB lifecycle | **PASS** publish/public/unpublish/republish/version preview/responsive; **FAIL** restore-as-new |
+| Automated local contract | unchanged coverage source for registry/parity |
+
+Evidence: `docs/qa/references/v2-04-final-hosted-rc-retest-evidence.json`.

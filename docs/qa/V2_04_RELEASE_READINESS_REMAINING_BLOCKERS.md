@@ -1,12 +1,14 @@
 # V2.04 Release Readiness — Remaining Blockers Only
 
-**Mode:** TESTING migration gate + readiness update (no app deploy; PRODUCTION untouched).  
+**Mode:** Final hosted RC retest ingestion (QA-only; no app code; no migrations; PRODUCTION untouched).  
 **Date:** 2026-10-02  
 **Question:** What still prevents `READY_FOR_PRODUCTION_QA=YES`?
 
-**TESTING migration gate:** BB **119–120 APPLIED** (plus platform 046–047, BB 121–122). App candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` = **READY_FOR_HOSTED_DEPLOY=YES**. RB-QA-01/02 remain OPEN until post-deploy manual retest.
-**Post-deploy SHA gate (2026-10-02):** Hosted Hub/AC/BB = `7ae27d6631e6` / branch **V4**. Required exact candidate `600d1c07…` → **HOSTED_SHA_MATCH=FAIL**. Functional RB-QA-01/02 retest **NOT RUN**. RB-QA-01/02 remain **OPEN**. PRODUCTION untouched. No closed blockers reopened.
-**Hosted tip one-commit reconciliation (2026-10-02):** intervening commit DOC_ONLY; APPLICATION_DELTA=NO; freeze NEW_APPLICATION_CANDIDATE=`7ae27d6631e6cd46332491d3b9315969aeb6f279`. Redeploy not required. Rerun final blocker QA against hosted tip `7ae27d6631e6`.
+**Final hosted RC retest (2026-10-02) — EXECUTED:** Hub/AC/BB `gitSha=2a2498f63067` / `branch=V4` matches candidate `2a2498f630676638c63f1961f0c8bf80507a15c5`. HOSTED_SHA_MATCH=PASS · HOSTED_BRANCH_PARITY=PASS · POST_DEPLOY_SMOKE=PASS · AC/BB Website Management options **12/12**. **RB-QA-01=OPEN** (Members PASS=4 FAIL=3 NOT_RUN=7). **RB-QA-02=OPEN** (AC lifecycle PASS; BB restore-as-new FAIL). Cleared on tip: members 503, BB publish `not_ready`, AC public 403. New defects: DEF-BB-ADD-MEMBER-BRANCH-ID, DEF-BB-MEMBER-PORTAL-ROUTES, DEF-BB-WEBSITE-RESTORE. RB-QA-03/04/05 / RB-ID-01 unchanged PASS. **RELEASE_READY=NO**.
+
+**TESTING migration gate:** BB **119–122** + platform **046–047** applied earlier; PENDING_MIGRATIONS=0 (not re-applied this QA run).
+**Prior STOP notes:** superseded by EXECUTED retest above (previous hosted tips `551526ac…` / `7ae27d66…`).
+
 
 
 
@@ -63,8 +65,8 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **OPEN** — engineering + TESTING schema ready; **not closed**. Pre-fix: T-M02/T-M04/T-M07/T-M13 **FAIL**; T-M14/T-M15 **PASS**. **TESTING migration gate 2026-10-02:** BB **119–120 APPLIED** (`member_number`, `portal_access_status` present; primary list SELECT OK; fallback not required). App candidate `7ae27d6631e6…` READY_FOR_HOSTED_DEPLOY; awaiting deploy + T-M02–T-M15 retest | Hosted FEATURE proof still incomplete until deploy + retest | Deploy/retest `7ae27d6631e6…` to TESTING; re-run T-M02–T-M15 | RB-ID-01; DEF-BB-MEMBERS-503; TESTING mig 119–120 **done** | NO |
-| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **OPEN** — engineering ready; **not closed**. Pre-fix: BB `not_ready`; AC public **403**. Candidate `600d1c07…` fixes publish readiness + AC go-live; TESTING DB aligned. Awaiting hosted deploy + full lifecycle retest | Full DRAFT→…→REPUBLISH + public verify not yet proven on new candidate | Deploy/retest `7ae27d6631e6…`; re-run BB+AC lifecycle | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | NO |
+| RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **OPEN** — hosted `@2a2498f63067`: T-M02/T-M13 **PASS** (503 cleared); T-M14/T-M15 **PASS**; T-M03/T-M04/T-M08 **FAIL**; 7 NOT_RUN. New: empty `branch_id` options; `/member/login` 404; `/member` 503 | FEATURE pack incomplete | Fix DEF-BB-ADD-MEMBER-BRANCH-ID + DEF-BB-MEMBER-PORTAL-ROUTES; re-run T-M02–T-M15 | RB-ID-01 **PASS** | NO |
+| RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **OPEN** — hosted `@2a2498f63067`: AC lifecycle **PASS** (incl. public 200 + restore); BB publish/public/unpublish/republish/preview **PASS**; BB restore-as-new **FAIL** | BB restore not proven | Fix DEF-BB-WEBSITE-RESTORE; re-prove BB restore-as-new | — | NO |
 | RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **PASS** (2026-10-02 hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite origin/fresh activate/reuse; C01/C02 desktop+mobile; E03; public smoke) | — | — | RB-ID-01 **PASS** | — |
 | ~~RB-QA-04~~ | SHARED | Geography + concurrency hosted | MANUAL_QA | **PASS** (2026-10-02 @ `7dbe945d…`): forged FR POST **400** BB+AC; engine true-stale **409** `stale_draft_revision` BB+AC | — | — | RB-ID-01 **PASS** | — |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **PASS** (2026-10-02: public services/doctors bodies allowlist-clean on `ac-hqa-v8-muq9wn7a9a3d`; footer org public contact only) | — | — | RB-PROD-07 **CLOSED** | — |

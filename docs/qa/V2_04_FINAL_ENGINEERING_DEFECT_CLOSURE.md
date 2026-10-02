@@ -1,7 +1,25 @@
 # V2.04 Final Engineering Defect Closure
 
-**Candidate status:** frozen app candidate `7ae27d6631e6cd46332491d3b9315969aeb6f279` (`7ae27d6631e6`) — reconciled from previous `600d1c07cfea3b287455226ab50d623809fa2ea8` via DOC_ONLY tip commit. **READY for final blocker retest against hosted tip.** **Do not close RB-QA-01 / RB-QA-02** until that retest PASSes.  
+**Candidate status:** hosted tip = frozen candidate `2a2498f630676638c63f1961f0c8bf80507a15c5` (`2a2498f63067`) on Hub/AC/BB · branch **V4**. **Do not close RB-QA-01 / RB-QA-02** until remaining hosted FAIL/NOT_RUN scenarios PASS.  
 **Preserved packs:** Real Responsive Editor Viewport (12/12), AC Catalogue GUI shell fix (10/10).
+
+## Final hosted RC retest (2026-10-02) — EXECUTED
+
+| Item | Result |
+|------|--------|
+| Required SHA | `2a2498f630676638c63f1961f0c8bf80507a15c5` |
+| Hosted Hub/AC/BB | `2a2498f63067` / **V4** |
+| HOSTED_SHA_MATCH | **PASS** |
+| HOSTED_BRANCH_PARITY | **PASS** |
+| POST_DEPLOY_SMOKE | **PASS** |
+| AC/BB Website Management options | **12/12** / **12/12** (BB hub tile parity OK) |
+| RB-QA-01 | **OPEN** — PASS=4 FAIL=3 NOT_RUN=7 |
+| RB-QA-02 | **OPEN** — AC lifecycle PASS; BB restore-as-new FAIL |
+| Cleared on tip | DEF-BB-MEMBERS-503 · DEF-BB-WEB-PUBLISH-NOT-READY · DEF-AC-PUBLIC-403 |
+| New hosted defects | DEF-BB-ADD-MEMBER-BRANCH-ID · DEF-BB-MEMBER-PORTAL-ROUTES · DEF-BB-WEBSITE-RESTORE |
+| TESTING migrations | unchanged this run (platform 047 / BB 122 / pending 0) |
+| PRODUCTION | **UNTOUCHED** |
+| RELEASE_READY | **NO** |
 
 ## TESTING DB migration gate (2026-10-02)
 
@@ -28,6 +46,23 @@ Verified columns on `blessboard.members` after apply: `member_number` (text, NUL
 **120:** widens `members_status_check`; additive `portal_access_status NOT NULL DEFAULT 'not_activated'` + CHECK; `platform_person_id` (+ optional FK/index); profile/address/next-of-kin/phone-pending columns; RBAC permissions `members.block` / `members.manage_church_id`; backfill portal status from `user_id`/`suspended`; rebuilds contact uniqueness indexes for expanded live statuses.
 
 
+
+
+## Final hosted release-candidate retest (2026-10-02) — EXECUTED (supersedes STOP below)
+
+See table in header. Prior STOP at `551526acfb0a` is historical only.
+
+## Final hosted release-candidate retest (2026-10-02) — STOPPED (historical)
+
+| Item | Result |
+|------|--------|
+| Required SHA | `2a2498f630676638c63f1961f0c8bf80507a15c5` |
+| Hosted Hub/AC/BB | `551526acfb0a` (`551526acfb0a827ae820dcbc0ccbb9eda737d540`) |
+| HOSTED_SHA_MATCH | **FAIL** |
+| HOSTED_BRANCH_PARITY | **PASS** |
+| Functional QA | **NOT RUN** (later executed after deploy) |
+| Gap | Hosted tip was DOC_ONLY parent; missing consolidation commit `2a2498f6` |
+| READY_FOR_HOSTED_DEPLOY (integrity) | YES — subsequently deployed |
 
 ## Hosted tip one-commit reconciliation (2026-10-02)
 
@@ -69,9 +104,12 @@ Note: `600d1c07` is an ancestor of hosted `7ae27d66`, but this retest pack requi
 |--------|------------|---------------|-------|--------|------------------------|
 | AC Website Admin blank/disturbed pages | Shared Clinic Editor chrome: `ac-mw-editor` + `ac-mw-nav` flex collision hid/pushed content | `views/activeclinic/partials/website-cms-nav.ejs`, `public/activeclinic/website-cms.css` (preserved) + blank-page tests | `v2-04-ac-website-admin-blank-page.test.js`, catalogue shell tests | FIXED (shared root) | YES — hosted `/app/settings/website/*` |
 | AC historical version preview blank | `renderActiveClinicHistorical` never built Stitch `websitePresentation` | `src/platform/website/governanceVersionPreview.js` | `v2-04-final-engineering-defect-pack.test.js` | FIXED | YES — `/clinics/{key}/website/versions/{id}` |
-| BB Members 503 | List queries require `member_number` / `portal_access_status`; undefined column → swallowed LOOKUP_ERROR → 503 | `memberIdentityRepository.js` (retry without V2.04 cols), `memberRegistrationService.js` (log) | contract + members schema suite | FIXED in code; **TESTING schema now has 119–120** | YES — T-M02–T-M15 after app deploy |
-| BB publish `not_ready` | Readiness ignored engine `contact.details.*`; checklist cascaded global `readyOk`; service_times ignored `layout_metadata.entries` | `churchWebsitePublishService.js`, `websitePublicationValidationService.js`, publish test setup | `blessboard-church-website-publish.test.js` | FIXED | YES — full BB lifecycle |
-| AC public 403 Clinic unavailable | Content publish succeeded without guaranteeing `setClinicWebsiteAvailability` / ignored failure | `activeClinicWebsiteRoutes.js` | defect-pack contract + availability suite | FIXED | YES — AC SAVE→PUBLISH→PUBLIC VERIFY |
+| BB Members 503 | List queries require `member_number` / `portal_access_status`; undefined column → swallowed LOOKUP_ERROR → 503 | `memberIdentityRepository.js` (retry without V2.04 cols), `memberRegistrationService.js` (log) | contract + members schema suite | FIXED in code + TESTING schema; **hosted list PASS** @ `2a2498f63067` | Remaining: create/portal defects block full T-M pack |
+| BB publish `not_ready` | Readiness ignored engine `contact.details.*`; checklist cascaded global `readyOk`; service_times ignored `layout_metadata.entries` | `churchWebsitePublishService.js`, `websitePublicationValidationService.js`, publish test setup | `blessboard-church-website-publish.test.js` | FIXED — **hosted publish/public PASS** | YES — restore still open |
+| AC public 403 Clinic unavailable | Content publish succeeded without guaranteeing `setClinicWebsiteAvailability` / ignored failure | `activeClinicWebsiteRoutes.js` | defect-pack contract + availability suite | FIXED — **hosted public 200** after publish | — |
+| BB Add Member branch_id empty | Hosted form options all `value=""` → cannot satisfy required branch | (QA-found; no app change this run) | — | **OPEN** DEF-BB-ADD-MEMBER-BRANCH-ID | YES |
+| BB member portal routes | `/member/login`+`/activate` 404; `/member` 503 V5 unavailable | (QA-found; no app change this run) | — | **OPEN** DEF-BB-MEMBER-PORTAL-ROUTES | YES |
+| BB website restore-as-new | HQ restore prepare rejects listed published versions (“cannot be restored”) | (QA-found; no app change this run) | — | **OPEN** DEF-BB-WEBSITE-RESTORE | YES |
 
 ## Regression packs run (local)
 
@@ -90,8 +128,8 @@ Note: `600d1c07` is an ancestor of hosted `7ae27d66`, but this retest pack requi
 - TESTING now has BB **119–122** + platform **046–047**. Fallback members query is **not** required on TESTING.
 - Cells remain deferred per V2.04 decision (RB-QA-01).
 - True-stale / RB-QA-04 / DISABLED_COUNTRY_POST not reopened.
-- **App not deployed in this gate.** Hosted tip may still be older SHA until deploy of `600d1c07…`.
-- RB-QA-01 / RB-QA-02 remain **OPEN** pending hosted manual retest after deploy.
+- Hosted tip **matches** candidate `2a2498f63067…` (SHA gate PASS).
+- RB-QA-01 / RB-QA-02 remain **OPEN** on remaining create/portal/restore defects (not prior 503/not_ready/403).
 
 ## Candidate contents
 

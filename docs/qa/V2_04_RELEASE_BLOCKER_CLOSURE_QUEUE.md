@@ -75,8 +75,8 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | ~~RB-TEST-05~~ | BB | FR-20 admin search | AUTOMATED_TEST | P1 | — | — | — | ~~Scoped search~~ | **CLOSED Wave3** — church_id scope + admin q wiring | — | — | **4 CLOSED** |
 | ~~RB-TEST-06~~ | BB | AC-25 member_id history | AUTOMATED_TEST | P1 | — | — | — | ~~member_id history~~ | **CLOSED Wave3** — attendance keyed by member_id; number swap preserves id | — | — | **4 CLOSED** |
 | ~~RB-TEST-07~~ | PLATFORM | Shared editor matrix (A4) | AUTOMATED_TEST | P1 | ENG-03/04 CLOSED | — | — | ~~Shared matrix~~ | **CLOSED Wave3** — AC+BB adapter + wave suite matrix lock | — | — | **4 CLOSED** |
-| RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID-01 **PASS** | NO | DEF-BB-MEMBERS-503 | Fix members 503; re-run T-M02–T-M15 | FEATURE_QA note: 2 PASS / 4 FAIL / 8 NOT_RUN @ `7dbe945d…` | LARGE | HIGH | 5 OPEN |
-| RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID-01 **PASS** | NO | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | Fix BB publish readiness + AC public 403; re-run lifecycle | Hosted lifecycle OPEN; true-stale PASS | MEDIUM | MEDIUM | 5 OPEN |
+| RB-QA-01 | BB | Members FEATURE QA | MANUAL_QA | P0 | RB-ID-01 **PASS** | NO | DEF-BB-ADD-MEMBER-BRANCH-ID; DEF-BB-MEMBER-PORTAL-ROUTES | Fix create branch_id + member portal routes; re-run T-M02–T-M15 | FEATURE_QA @ `2a2498f63067`: PASS=4 FAIL=3 NOT_RUN=7 | LARGE | HIGH | 5 OPEN |
+| RB-QA-02 | PLATFORM | Website lifecycle hosted | MANUAL_QA | P1 | RB-ID-01 **PASS** | NO | DEF-BB-WEBSITE-RESTORE | Fix BB restore-as-new; confirm AC remains PASS | AC lifecycle PASS; BB restore FAIL @ `2a2498f63067` | MEDIUM | MEDIUM | 5 OPEN |
 | RB-QA-03 | AC | Hub + editor smoke | MANUAL_QA | P1 | — | — | RB-ID-01 **PASS** | Hosted invite + C01/C02/E03 + public smoke | **PASS** 2026-10-02 (`ac-hqa-v8-muq9wn7a9a3d`) | SMALL | LOW | 3 |
 | ~~RB-QA-04~~ | PLATFORM | Geo + concurrency hosted | MANUAL_QA | P1 | RB-ID-01 **PASS** | — | — | Disabled-country POST + repeat-edit stale on AC+BB | **PASS** 2026-10-02 FR reject + engine 409 | SMALL | LOW | 5 CLOSED |
 | RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | P1 | RB-PROD-07 **CLOSED** | — | — | Spot-check doctor/services pages vs allowlist | **PASS** 2026-10-02 allowlist clean | SMALL | MEDIUM | 3 |
@@ -126,14 +126,44 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-QA-01 | **OPEN** | T-M02–T-M15: PASS=2 FAIL=4 NOT_RUN=8; `/hq/members` **503** (`v2-04-bb-members-scenario-probe-evidence.json`) |
-| RB-QA-02 | **OPEN** | BB publish `not_ready` / Coming soon; AC publish/restore OK but public **403**; true-stale PASS (`v2-04-*-website-lifecycle-evidence.json`) |
+| RB-QA-01 | **OPEN** | Hosted `@2a2498f63067`: PASS=4 FAIL=3 NOT_RUN=7; members 503 cleared; create/portal blockers remain (`v2-04-final-hosted-rc-*-evidence.json`) |
+| RB-QA-02 | **OPEN** | Hosted `@2a2498f63067`: AC lifecycle PASS; BB publish/public PASS; BB restore-as-new FAIL |
 | RB-QA-03 | **PASS** | Hosted resume on `ac-hqa-v8-muq9wn7a9a3d` @ `7dbe945d…`: invite + C01/C02/E03 + public smoke |
 | RB-QA-04 | **PASS** | Forged FR POST **400** BB+AC; engine stale **409** BB+AC (`v2-04-disabled-country-post-evidence.json`, true-stale evidence) |
 | RB-QA-05 | **PASS** | Public services/doctors allowlist spot-check PASS on same clinic |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
 
+
+
+### WAVE 5e — FINAL HOSTED RELEASE-CANDIDATE RETEST — **EXECUTED** (2026-10-02)
+
+| Check | Result |
+|-------|--------|
+| Required | `2a2498f630676638c63f1961f0c8bf80507a15c5` |
+| Hosted Hub/AC/BB | `2a2498f63067` / **V4** |
+| HOSTED_SHA_MATCH | **PASS** |
+| HOSTED_BRANCH_PARITY | **PASS** |
+| POST_DEPLOY_SMOKE | **PASS** |
+| AC/BB Website options | **12/12** / **12/12** |
+| RB-QA-01 | **OPEN** (PASS=4 FAIL=3 NOT_RUN=7) |
+| RB-QA-02 | **OPEN** (AC PASS; BB restore FAIL) |
+| RB-QA-03/04/05 / RB-ID-01 | not reopened |
+| PRODUCTION | **UNTOUCHED** |
+| RELEASE_READY | **NO** |
+
+Evidence: `docs/qa/references/v2-04-final-hosted-rc-*-evidence.json` · Record: `V2_04_MANUAL_QA_RESULTS_RECORD.md`.
+
+### WAVE 5d — FINAL HOSTED RELEASE-CANDIDATE RETEST — **STOPPED** (2026-10-02)
+
+| Check | Result |
+|-------|--------|
+| Required | `2a2498f630676638c63f1961f0c8bf80507a15c5` |
+| Hosted Hub/AC/BB | `551526acfb0a` |
+| HOSTED_SHA_MATCH | **FAIL** |
+| HOSTED_BRANCH_PARITY | **PASS** (V4) |
+| Functional QA | **NOT RUN** (superseded by WAVE 5e) |
+| RB-QA-01 / RB-QA-02 | remain **OPEN** |
 
 ### WAVE 5c — HOSTED TIP ONE-COMMIT RECONCILIATION — **CASE A** (2026-10-02)
 
