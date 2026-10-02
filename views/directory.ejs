@@ -1,6 +1,8 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
+<% var _db = typeof brandHtmlDataBrand !== 'undefined' ? String(brandHtmlDataBrand).trim() : ''; %>
+<% var _dbAttr = (_db === 'getpro' || _db === 'proonline') ? (' data-brand="' + _db + '"') : ''; %>
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>"<%- _dbAttr %>>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -12,7 +14,9 @@
       ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
       ogType: typeof ogType !== 'undefined' && ogType ? ogType : 'website',
       noindex: typeof noindex !== 'undefined' && noindex,
-      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : [],
+      brandHtmlDataBrand: typeof brandHtmlDataBrand !== 'undefined' ? brandHtmlDataBrand : '',
+      brandProductName: _bn
     }) %>
     <% if (typeof jsonLdDirectory !== 'undefined' && jsonLdDirectory) { %>
     <script type="application/ld+json"><%- jsonLdDirectory %></script>

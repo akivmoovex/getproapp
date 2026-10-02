@@ -75,6 +75,7 @@ const {
 const { renderBlessBoardAdminHostNotFound } = require("./src/church/requireBlessBoardApexHost");
 const { createAttachChurchContext } = require("./src/church/attachChurchContext");
 const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
+const { assertBlessBoardDatabaseIdentityOrExit } = require("./src/startup/blessBoardOrgDbGate");
 const { runBootstrapWithAdvisoryLock } = require("./src/startup/runBootstrapWithAdvisoryLock");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");

@@ -7,9 +7,13 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 /**
  * Visual snapshots: flat names under tests/__screenshots__ (no OS suffix) so one baseline
  * can be updated per release. Cross-OS font AA may still differ — use tolerant thresholds.
+ *
+ * Scope is intentionally only the public UI visual specs — not the repo's node:test suites
+ * (*.test.js) which share the tests/ directory.
  */
 module.exports = defineConfig({
   testDir: "./tests",
+  testMatch: ["ui.spec.js", "brand-home-stability.spec.js"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -46,7 +50,11 @@ module.exports = defineConfig({
       HOST: "127.0.0.1",
       BASE_DOMAIN: "local.test",
       GETPRO_HTML_DATA_BRAND: "getpro",
+      APP_BRAND: "getpro",
       NODE_ENV: "test",
+      GETPRO_TEST_DB: "1",
+      GETPRO_PG_SSL: process.env.GETPRO_PG_SSL || "off",
+      GETPRO_DB_MISSING_EXIT_DELAY_MS: process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS || "0",
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "playwright-ci-admin-password",
       SESSION_SECRET: process.env.SESSION_SECRET || "playwright-ci-session-secret",
       TRUST_PROXY: "1",
