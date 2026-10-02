@@ -259,6 +259,7 @@ function sanitizeLayoutMetadata(meta) {
         location: e.location != null ? normalizePlainTextEntities(e.location).slice(0, 200) : "",
         note: e.note != null ? normalizePlainTextEntities(e.note).slice(0, 200) : "",
         enabled: e.enabled !== false,
+        primary: e.primary === true,
         sortOrder: Number.isFinite(Number(e.sortOrder)) ? Number(e.sortOrder) : 0,
       }));
   }
@@ -2140,6 +2141,11 @@ async function loadTenantPublicPageModel(db, input) {
     previewMeta,
     seo,
     usedPublicDemoFill,
+    // Public visitors on a published site should not see the soft-fill warning banner.
+    // Preview / unpublished still show it so editors know sample content is active.
+    showPublicTemplateBanner: Boolean(
+      usedPublicDemoFill && (isPreview || String(websiteStatus || "") !== "published")
+    ),
     websiteAdmin: null,
     church: churchView,
     branch: branchView,

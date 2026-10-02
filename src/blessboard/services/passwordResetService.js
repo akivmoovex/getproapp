@@ -48,7 +48,7 @@ const STATUS = Object.freeze({
 });
 
 const NEUTRAL_MESSAGE =
-  "If an eligible account exists for that email, we have sent password reset instructions.";
+  "If an eligible account exists for that phone or email, we have sent password reset instructions when email delivery is available.";
 
 function generateRawToken() {
   const rawToken = crypto.randomBytes(32).toString("base64url");

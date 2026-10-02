@@ -295,10 +295,26 @@ function createHqMembersAdminRouter(deps) {
       offset,
     });
     if (!listed.ok) {
+      if (listed.status === STATUS.FORBIDDEN) {
+        return sendControlled(
+          req,
+          res,
+          403,
+          "You do not have permission to view members."
+        );
+      }
+      if (listed.status === STATUS.INVALID_INPUT) {
+        return sendControlled(
+          req,
+          res,
+          400,
+          "Members could not be loaded for this church."
+        );
+      }
       return sendControlled(
         req,
         res,
-        listed.status === STATUS.FORBIDDEN ? 403 : 503,
+        503,
         "Members are temporarily unavailable."
       );
     }

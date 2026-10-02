@@ -143,8 +143,45 @@ async function buildPublicationSnapshot(client, churchId, branchId) {
         mediaUrl: s.mediaUrl,
         sortOrder: s.sortOrder,
         status: s.status,
+        // Service times (and other structured sections) persist entries in
+        // layout_metadata — omitting it made published snapshots diverge from
+        // live public_pages for service_times_v1 while heading/body fields worked.
+        layoutMetadata:
+          s.layoutMetadata && typeof s.layoutMetadata === "object" ? s.layoutMetadata : null,
       })),
     });
+  }
+  const serviceTimeRefs = [];
+  for (const page of pages) {
+    for (const section of page.sections || []) {
+      const key = String(section.sectionKey || "");
+      const type = String(section.sectionType || "");
+      const isServiceTimes =
+        key === "service_times" ||
+        key === "services" ||
+        key === "worship_times" ||
+        type === "service_times" ||
+        type === "services" ||
+        type === "worship_times";
+      if (!isServiceTimes) continue;
+      const meta =
+        section.layoutMetadata && typeof section.layoutMetadata === "object"
+          ? section.layoutMetadata
+          : null;
+      const entries = meta && Array.isArray(meta.entries) ? meta.entries : [];
+      for (const entry of entries) {
+        if (!entry || typeof entry !== "object") continue;
+        serviceTimeRefs.push({
+          pageKey: page.pageKey,
+          sectionKey: section.sectionKey,
+          name: entry.name || null,
+          day: entry.day || null,
+          startTime: entry.startTime || null,
+          endTime: entry.endTime || null,
+          enabled: entry.enabled !== false,
+        });
+      }
+    }
   }
   return {
     themeKey: "default",
@@ -152,7 +189,7 @@ async function buildPublicationSnapshot(client, churchId, branchId) {
     pageKeys: pages.map((p) => p.pageKey),
     pages,
     navigation: [],
-    serviceTimeRefs: [],
+    serviceTimeRefs,
     contactDetailRefs: [],
     branchContentRefs: [],
     entities: {
@@ -972,6 +1009,12 @@ async function applySnapshotPageToDraft(client, churchId, snapshotPage, branchId
     if (sec.mediaUrl != null && String(sec.mediaUrl).length > 0) {
       patch.mediaUrl = sec.mediaUrl;
     }
+    if (Object.prototype.hasOwnProperty.call(sec, "layoutMetadata")) {
+      patch.layoutMetadata =
+        sec.layoutMetadata && typeof sec.layoutMetadata === "object"
+          ? sec.layoutMetadata
+          : null;
+    }
     if (existing) {
       await publicContentRepo.updateSection(client, existing.id, patch);
     } else {
@@ -984,6 +1027,7 @@ async function applySnapshotPageToDraft(client, churchId, snapshotPage, branchId
         mediaUrl: patch.mediaUrl || null,
         sortOrder: patch.sortOrder,
         status: "draft",
+        layoutMetadata: patch.layoutMetadata != null ? patch.layoutMetadata : null,
       });
     }
   }
@@ -1520,10 +1564,15 @@ async function loadGrowthPreviousWebsitePreview(db, opts) {
       sections: Array.isArray(page.sections)
         ? page.sections.map((sec) => ({
             sectionKey: sec.sectionKey,
+            sectionType: sec.sectionType || null,
             heading: sec.heading || null,
             bodyText: sec.bodyText || null,
             mediaUrl: sec.mediaUrl || null,
             status: sec.status || null,
+            layoutMetadata:
+              sec.layoutMetadata && typeof sec.layoutMetadata === "object"
+                ? sec.layoutMetadata
+                : null,
           }))
         : [],
     }));

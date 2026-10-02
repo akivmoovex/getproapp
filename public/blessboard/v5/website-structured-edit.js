@@ -214,7 +214,7 @@
       '<div class="bb-tp-se-actions-row gp-we-media-field__actions" data-bb-media-actions="1">' +
       '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
       esc(replaceLabel) +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="' +
+      '<input type="file" accept="image/*,image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="' +
       esc(fieldName) +
       '" /></label>' +
       '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="' +
@@ -251,7 +251,7 @@
       '<div class="bb-tp-se-actions-row gp-we-media-field__actions">' +
       '<label class="gp-we-media-field__btn gp-we-media-field__btn--primary bb-tp-se-change-photo" data-bb-upload-from-computer="1">' +
       esc(thumbLabel) +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" /></label>' +
+      '<input type="file" accept="image/*,image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" /></label>' +
       '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Choose from Content Library</button>' +
       '<button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-bb-se-remove-media="1">Remove video</button>' +
       "</div>" +

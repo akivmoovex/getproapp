@@ -272,7 +272,12 @@
     </div>
   </aside>
 
-  <% if (typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill) { %>
+  <% if (
+    (typeof showPublicTemplateBanner !== 'undefined' && showPublicTemplateBanner) ||
+    (typeof showPublicTemplateBanner === 'undefined' &&
+      typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill &&
+      (typeof isPreview !== 'undefined' && isPreview || String(typeof websiteStatus !== 'undefined' ? websiteStatus : '') !== 'published'))
+  ) { %>
   <div class="bb-tp-template-banner" role="status" data-bb-template-example="1">
     Template examples — these names, events, and ministries are not this church’s published facts. Replace them in Website management.
   </div>

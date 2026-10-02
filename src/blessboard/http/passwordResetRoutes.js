@@ -100,7 +100,8 @@ function createPasswordResetRouter(opts) {
     }
 
     let emailForReset = emailRaw;
-    // Phone path: look up account and deliver via email when present (no OTP/SMS).
+    // Phone-first: resolve account by phone, then deliver reset via email when present.
+    // Apex staff recovery does not send SMS/OTP (member portal recovery is separate).
     if (!emailForReset && phoneResolved.e164) {
       try {
         const byPhone = await authRepo.findUserByPhone(

@@ -1024,7 +1024,7 @@
       "<span>" +
       (hasCurrent ? "Replace image" : "Upload from computer") +
       "</span>" +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-website-file="1" />' +
+      '<input type="file" accept="image/*,image/jpeg,image/png,image/webp,image/gif" data-website-file="1" />' +
       "</label>" +
       (mediaUrl
         ? '<button type="button" class="gp-website-field-editor__link-btn" data-website-library="1">Choose from Image Library</button>'

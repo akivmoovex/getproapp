@@ -489,10 +489,26 @@ function createBranchRegistrationAdminRouter(deps) {
         branchId: scope.branchId,
         reason: listed.reason,
       });
+      if (listed.status === STATUS.FORBIDDEN) {
+        return sendLoginUnavailable(
+          req,
+          res,
+          403,
+          "You do not have permission to view members."
+        );
+      }
+      if (listed.status === STATUS.INVALID_INPUT) {
+        return sendLoginUnavailable(
+          req,
+          res,
+          400,
+          "Members could not be loaded for this branch."
+        );
+      }
       return sendLoginUnavailable(
         req,
         res,
-        listed.status === STATUS.FORBIDDEN ? 403 : 503,
+        503,
         "Members are temporarily unavailable."
       );
     }

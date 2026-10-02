@@ -95,6 +95,8 @@ function safeAssignError(reason) {
       return "An identical active assignment already exists.";
     case "last_hq_admin":
       return "This role cannot be removed because the church must have at least one active Church HQ Administrator.";
+    case "branch_required":
+      return "Select a branch when inviting a branch admin.";
     default:
       return "This assignment could not be completed.";
   }
@@ -258,13 +260,24 @@ function createHqStaffAccessRouter(deps) {
         churchId: scope.churchId,
         tenantContext: scope.tenant,
       });
-      const branches = await listBlessBoardBranches(getPool(), scope.churchId);
+      const branches = await listBlessBoardBranches(getPool(), scope.churchId, {
+        includeIds: true,
+      });
       const placement = String(req.query.placement || "hq").toLowerCase() === "branch" ? "branch" : "hq";
       const phoneLocals = blessBoardPhoneFieldLocals({
         env,
         selectedCountry: String(req.query.phone_country || ""),
         nationalValue: String(req.query.phone_national || ""),
       });
+      const inviteErrorRaw = String(req.query.error || "");
+      let inviteError = inviteErrorRaw;
+      if (inviteErrorRaw === "branch_required") {
+        inviteError = "Select a branch when inviting a branch admin.";
+      } else if (inviteErrorRaw === "phone") {
+        inviteError = "Enter a valid phone number.";
+      } else if (inviteErrorRaw === "invite_failed") {
+        inviteError = "This invitation could not be completed.";
+      }
       const html = renderV5Ejs(
         "hq/staff-access-invite.ejs",
         await shellLocals(req, res, {
@@ -288,7 +301,7 @@ function createHqStaffAccessRouter(deps) {
           },
           ...phoneLocals,
           notice: String(req.query.notice || ""),
-          error: String(req.query.error || ""),
+          error: inviteError,
         })
       );
       return res.status(200).type("html").send(html);

@@ -244,6 +244,7 @@ function createHqRoleAdminRouter(deps) {
     if (errorCode === "inactive") error = "That user account is inactive or suspended.";
     if (errorCode === "limit") error = "Staff account limit reached for this organization. Upgrade to invite another administrator.";
     if (errorCode === "invalid") error = "Check the email, role, and branch selections.";
+    if (errorCode === "branch") error = "Select a branch when assigning a branch admin.";
     if (errorCode === "already") error = "That user already has this role.";
     return renderRolesPage(req, res, scope, { notice, error });
   });
@@ -281,6 +282,8 @@ function createHqRoleAdminRouter(deps) {
         error = "That user already has this role.";
       } else if (result.reason === "role_escalation" || result.status === INVITE_STATUS.FORBIDDEN) {
         error = "That role cannot be invited from your account.";
+      } else if (result.reason === "branch_required") {
+        error = "Select a branch when inviting a branch admin.";
       } else if (result.status === INVITE_STATUS.NOT_FOUND) {
         error = "Branch was not found or is inactive.";
       }
@@ -355,6 +358,7 @@ function createHqRoleAdminRouter(deps) {
       else if (result.reason === "self_escalation") error = "self";
       else if (result.reason === "user_inactive") error = "inactive";
       else if (result.status === STATUS.LIMIT_EXCEEDED) error = "limit";
+      else if (result.reason === "branch_required") error = "branch";
       else if (result.status === STATUS.NOT_FOUND) error = "not_found";
       else if (result.status === STATUS.FORBIDDEN) error = "forbidden";
       return res.redirect(303, `/hq/roles?error=${error}`);
