@@ -1,6 +1,6 @@
 # V2.04 Final Engineering Defect Closure
 
-**Candidate status:** app candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` — **READY_FOR_HOSTED_DEPLOY=YES** (TESTING DB migration gate complete). **Do not close RB-QA-01 / RB-QA-02** until hosted manual retest after deploy.  
+**Candidate status:** app candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` — **READY_FOR_HOSTED_DEPLOY was YES** after TESTING migration gate; **post-deploy SHA gate FAIL** vs exact `600d1c07…` (hosted `7ae27d66…`). **Do not close RB-QA-01 / RB-QA-02** until hosted manual retest after deploy.  
 **Preserved packs:** Real Responsive Editor Viewport (12/12), AC Catalogue GUI shell fix (10/10).
 
 ## TESTING DB migration gate (2026-10-02)
@@ -26,6 +26,23 @@ Verified columns on `blessboard.members` after apply: `member_number` (text, NUL
 **119:** additive `members.member_number TEXT NULL`; length CHECK; unique index `(church_id, lower(trim(member_number)))` for live statuses.
 
 **120:** widens `members_status_check`; additive `portal_access_status NOT NULL DEFAULT 'not_activated'` + CHECK; `platform_person_id` (+ optional FK/index); profile/address/next-of-kin/phone-pending columns; RBAC permissions `members.block` / `members.manage_church_id`; backfill portal status from `user_id`/`suspended`; rebuilds contact uniqueness indexes for expanded live statuses.
+
+
+## Post-deploy final blocker retest (2026-10-02) — STOPPED
+
+| Item | Result |
+|------|--------|
+| Required hosted SHA | `600d1c07cfea3b287455226ab50d623809fa2ea8` |
+| Actual Hub/AC/BB SHA | `7ae27d6631e6` (`7ae27d6631e6cd46332491d3b9315969aeb6f279`) |
+| HOSTED_SHA_MATCH | **FAIL** |
+| HOSTED_BRANCH_PARITY | **PASS** (V4) |
+| Functional QA | **NOT RUN** (gate stop) |
+| RB-QA-01 / RB-QA-02 | remain **OPEN** |
+| TESTING migrations | unchanged this run (122 / pending 0) |
+| PRODUCTION | **UNTOUCHED** |
+| READY_FOR_HOSTED_DEPLOY (prior) | still valid for candidate tree; hosted tip is **not** exact requested SHA |
+
+Note: `600d1c07` is an ancestor of hosted `7ae27d66`, but this retest pack required exact SHA match.
 
 ## Defect table
 

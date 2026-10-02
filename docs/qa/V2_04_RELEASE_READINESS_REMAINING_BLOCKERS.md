@@ -5,6 +5,8 @@
 **Question:** What still prevents `READY_FOR_PRODUCTION_QA=YES`?
 
 **TESTING migration gate:** BB **119–120 APPLIED** (plus platform 046–047, BB 121–122). App candidate `600d1c07cfea3b287455226ab50d623809fa2ea8` = **READY_FOR_HOSTED_DEPLOY=YES**. RB-QA-01/02 remain OPEN until post-deploy manual retest.
+**Post-deploy SHA gate (2026-10-02):** Hosted Hub/AC/BB = `7ae27d6631e6` / branch **V4**. Required exact candidate `600d1c07…` → **HOSTED_SHA_MATCH=FAIL**. Functional RB-QA-01/02 retest **NOT RUN**. RB-QA-01/02 remain **OPEN**. PRODUCTION untouched. No closed blockers reopened.
+
 
 ### Excluded (by instruction)
 

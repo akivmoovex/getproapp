@@ -132,7 +132,23 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 | RB-QA-04 | **PASS** | Forged FR POST **400** BB+AC; engine stale **409** BB+AC (`v2-04-disabled-country-post-evidence.json`, true-stale evidence) |
 | RB-QA-05 | **PASS** | Public services/doctors allowlist spot-check PASS on same clinic |
 
-Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
+Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
+
+### WAVE 5b — POST-DEPLOY FINAL BLOCKER RETEST — **STOPPED** (2026-10-02)
+
+| Check | Result |
+|-------|--------|
+| Required candidate | `600d1c07cfea3b287455226ab50d623809fa2ea8` |
+| HUB/AC/BB hosted SHA | `7ae27d6631e6` |
+| HOSTED_SHA_MATCH | **FAIL** |
+| HOSTED_BRANCH_PARITY | **PASS** (V4) |
+| Functional RB-QA-01/02 | **NOT RUN** |
+| RB-QA-01 / RB-QA-02 | remain **OPEN** |
+| RB-QA-03/04/05 / RB-ID-01 | not reopened |
+
+**Action:** Redeploy exact `600d1c07…` (or Product accepts hosted tip that contains it and re-gates) then re-run this pack.
+
+  
 **MANUAL_QA_REMAINING=2** · **NEW_DEFECTS=3** · **REMAINING_BLOCKERS=2**.
 
 **Prerequisite:** TESTING identity **PASS**; **NEW_APPLICATION_CANDIDATE=`7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`**.

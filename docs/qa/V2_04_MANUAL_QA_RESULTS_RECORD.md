@@ -2,11 +2,25 @@
 
 **Mode:** RESULT INGESTION (no application code; no deploy).  
 **Date:** 2026-10-02  
-**Frozen candidate:** `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`  
-**Hosted tip verified:** BB+AC `gitSha=7dbe945d6c93`, `branch=V4` / `V4 testing`  
+**Requested post-deploy candidate:** `600d1c07cfea3b287455226ab50d623809fa2ea8`  
+**Hosted tip (SHA gate):** Hub/AC/BB `gitSha=7ae27d6631e6`, `branch=V4` / About `V4 testing`  
+**Prior frozen tip on record:** `7dbe945d6c9315cbe6c6a45c7a64ee354a2fe22b`  
 **Tenants:** BB `bb-v8qa-muq9wn7a9a3d` · AC `ac-hqa-v8-muq9wn7a9a3d`
 
-### Ingestion finding
+### Post-deploy SHA gate — **STOP** (2026-10-02)
+
+| Host | SHA | BRANCH |
+|------|-----|--------|
+| `neuniversity.org` | `7ae27d6631e6` | V4 |
+| `activeclinic.neuniversity.org` | `7ae27d6631e6` | V4 |
+| `blessboard.neuniversity.org` | `7ae27d6631e6` | V4 |
+
+- **HOSTED_SHA_MATCH=FAIL** vs required exact `600d1c07cfea3b287455226ab50d623809fa2ea8`
+- **HOSTED_BRANCH_PARITY=PASS** (all V4)
+- `600d1c07` is an ancestor of hosted tip `7ae27d66` (one later commit), but gate requires exact SHA
+- **Steps 2–6 functional QA NOT RUN**
+
+### Prior ingestion finding (older tip; unchanged)
 
 Final-3 manual blockers executed on hosted tip.  
 **RB-QA-04=PASS** (disabled-country POST + engine true-stale on BB+AC).  
@@ -27,8 +41,8 @@ Evidence refs:
 
 | QA_ID | RESULT | TESTER_EVIDENCE | DEFECT_ID | NOTES |
 |-------|--------|-----------------|-----------|-------|
-| RB-QA-01 | **OPEN** | T-M02–T-M15 matrix below; `/hq/members` + `/branch-admin/members` → **503** “Members are temporarily unavailable.” | DEF-BB-MEMBERS-503 | Cannot FEATURE-close Members pack |
-| RB-QA-02 | **OPEN** | BB: draft/save/preview OK; publish → `error=not_ready` (contact/details/status checklist); public stays Coming soon; no published versions. AC: draft/save/preview/publish/unpublish/republish/restore OK; public `/clinics/...` → **403 Clinic unavailable**. Engine true-stale PASS both. | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | Lifecycle not fully proven |
+| RB-QA-01 | **OPEN** | Post-deploy retest **STOP** (SHA gate). Prior: T-M02–T-M15; `/hq/members` **503** | DEF-BB-MEMBERS-503 | Exact `600d1c07…` not hosted; functional suite not re-run |
+| RB-QA-02 | **OPEN** | Post-deploy retest **STOP** (SHA gate). Prior: BB `not_ready`; AC public **403** | DEF-BB-WEB-PUBLISH-NOT-READY; DEF-AC-PUBLIC-403 | Exact `600d1c07…` not hosted; lifecycle not re-run |
 | RB-QA-03 | **PASS** | Prior hosted resume | — | Unchanged |
 | RB-QA-04 | **PASS** | BB+AC forged `FR` registration POST **400**; AC text includes “Select a valid country.”; slug probes **404**. Engine stale: first save 200, stale second **409** `conflict/stale_draft_revision` on BB+AC; newer retained. | — | Classic BB `/hq/content/api/inline-field` lacks `expectedUpdatedAt` (silent overwrite) — engine path is canonical concurrency surface |
 | RB-QA-05 | **PASS** | Prior hosted resume | — | Unchanged |
@@ -63,7 +77,8 @@ Evidence refs:
 | T-M14 | **PASS** | Multi-admin: HQ + reviewer login OK; staff-access + roles **200**. Branch admin **403** on `/hq/members` (“no access”). Scoped HQ denial evidenced. |
 | T-M15 | **PASS** | Cross-tenant: BB `/c/{AC_ORG_KEY}/hq` → **404** Not found. AC `/clinics/{BB_ORG_KEY}` → **404**. |
 
-**Counts:** PASS=2 · FAIL=4 · NOT_RUN=8  
+**Counts (prior tip):** PASS=2 · FAIL=4 · NOT_RUN=8  
+**This post-deploy attempt:** PASS=0 · FAIL=0 · NOT_RUN=14 (SHA gate stop)  
 Cells deferred functionality was not treated as failure.
 
 ---
