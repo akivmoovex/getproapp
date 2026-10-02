@@ -279,7 +279,7 @@ NOTES=No new defect. Re-run after deploy + published clinicKey + admin session.
 | Expected candidate | `33e5c29612942e1484086432214b733f353f8601` |
 | AC_SHA_MATCH | **FAIL** → abort functional QA |
 | HUB/BB_SHA_MATCH | **FAIL** (same tip `554d37406ef5`) |
-| `/.getpro/build-identity.json` | not publicly served / not resolving on BB+AC |
+| Re-probe | Confirmed again same session (still undeployed) |
 | HOSTED_C01/C02/E03 | **NOT_RUN** |
 | NEW_DEFECTS | **0** |
 

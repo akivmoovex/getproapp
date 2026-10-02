@@ -128,14 +128,14 @@ Secondary Product freezes (RB-PROD-03/04/05, RB-PROD-06/08) unlock claim complet
 |------------|--------|----------|
 | RB-QA-01 | **NOT_RUN** | No tester evidence in session |
 | RB-QA-02 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-03 | **OPEN** | Post-deploy ABORT: live tip `554d37406ef5` ≠ candidate `33e5c296…`; HOSTED_C01/C02/E03=NOT_RUN |
+| RB-QA-03 | **OPEN** | Final hosted verify: live `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; HOSTED_C01/C02/E03 + invite FAIL/not executed on expected tip |
 | RB-QA-04 | **NOT_RUN** | No tester evidence in session |
-| RB-QA-05 | **OPEN** | Post-deploy ABORT with RB-QA-03; PHI/E03 NOT_RUN |
+| RB-QA-05 | **OPEN** | Final hosted verify abort with RB-QA-03; PHI NOT_RUN |
 
 Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.  
 **MANUAL_QA_REMAINING=5** · **NEW_RELEASE_BLOCKERS=0** · **NEW_DEFECTS=0** (03/05 verify-blocked, not product defects).
 
-**Prerequisite:** TESTING identity sheet **captured** 2026-10-02 (SHA/env/DB/About=2.04); **BRANCH still UNKNOWN** on BB+AC — formal RB-ID-01 close remains Wave 6 after branch fix.
+**Prerequisite:** TESTING identity sheet **captured**; **RB-ID-01 PASS** on live tip `4a7cf4beb6c2` (V4 + shared.build-identity). Final candidate `1b2aa5b7…` not yet hosted.
 
 **Expected when run:** FEATURE_QA notes bound to tip SHA; Members + website + geo/concurrency + PHI signed.
 
@@ -143,7 +143,7 @@ Record: `docs/qa/V2_04_MANUAL_QA_RESULTS_RECORD.md`.
 
 | BLOCKER_ID | RESULT | Evidence |
 |------------|--------|----------|
-| RB-ID-01 | **FAIL/OPEN — hosted still UNKNOWN on BB+AC** | Post-deploy verify 2026-10-02: tip still `554d37406ef5` (candidate `33e5c296…` not live). Hub V4/`GETPRO_GIT_BRANCH`/`V4 testing`; BB+AC UNKNOWN/`unknown`/`UNKNOWN testing`. Shared metadata fix not live on Hostinger. |
+| RB-ID-01 | **PASS** (live tip `4a7cf4beb6c2`) | Hub/AC/BB `V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity`. Final app candidate `1b2aa5b7…` still undeployed (SHA gate separate). |
 
 #### Hostinger model (confirmed)
 

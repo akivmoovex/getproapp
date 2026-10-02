@@ -59,15 +59,15 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
 | RB-QA-01 | BB | Members FEATURE QA pack | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | In-scope MUST Members pack never FEATURE-QA’d | Execute BB Members scenarios (T-M02–T-M15 class) on identity-bound TESTING | RB-ID-01; prefer RB-ENG-01/02 after wire | NO |
 | RB-QA-02 | SHARED | Website lifecycle beyond sanity | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Publish / unpublish / version / restore / true-stale not FEATURE-proven on hosted tip | Manual lifecycle on **AC + BB** (`7c957101` or later tip) | RB-ID-01 | NO |
-| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **OPEN/FAIL** (post-deploy 2026-10-02: AC_SHA=`554d37406ef5` ≠ candidate `33e5c296…`; C01/C02/E03 NOT_RUN) | Hub/editor + C01/C02 visual not FEATURE-proven on hosted tip | Deploy `33e5c296…` → authenticated catalogue visual vs Stitch | RB-ID-01 | NO |
+| RB-QA-03 | AC | Hub + public/editor regression | MANUAL_QA | **OPEN** (final hosted verify 2026-10-02: live SHA `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; C01/C02/E03 + invite origin not verified on expected tip) | Hub/editor + C01/C02 visual not FEATURE-proven on **candidate** tip | Deploy `1b2aa5b7…` → authenticated catalogue + invite origin smoke | RB-ID-01 **PASS** on live tip | NO |
 | RB-QA-04 | SHARED | Geography + concurrency hosted | MANUAL_QA | **NOT_RUN** (ingestion 2026-10-02; no evidence) | Disabled-country POST + true stale not reconfirmed on tip | Hosted QA-03-class + repeat-edit conflict on AC+BB | RB-ID-01 | NO |
-| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **OPEN/FAIL** (post-deploy abort: candidate undeployed; PHI/E03 NOT_RUN) | Public pages need hygiene sign-off vs allowlist | Spot-check after deploy of `33e5c296…` + published clinicKey | RB-PROD-07 **CLOSED** | YES (after identity + sample clinic) |
+| RB-QA-05 | AC | Public PHI spot-check | MANUAL_QA | **OPEN** (final hosted verify abort: candidate `1b2aa5b7…` undeployed; PHI NOT_RUN) | Public pages need hygiene sign-off vs allowlist | Spot-check after deploy of `1b2aa5b7…` + published clinicKey | RB-PROD-07 **CLOSED** | YES (after sample clinic) |
 
 ### E. RELEASE IDENTITY
 
 | BLOCKER_ID | PRODUCT | AREA | TYPE | CURRENT_STATUS | WHY_RELEASE_BLOCKED | MINIMUM_ACTION_TO_CLOSE | DEPENDENCY | CAN_CLOSE_NOW |
 |------------|---------|------|------|----------------|---------------------|-------------------------|------------|---------------|
-| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **FAIL/OPEN** (post-deploy 2026-10-02): Hub `V4`/`GETPRO_GIT_BRANCH`/`V4 testing`; BB+AC still `UNKNOWN`/`unknown`/`UNKNOWN testing` on tip `554d37406ef5`. Shared `.getpro/build-identity.json` not resolving on BB+AC (public path 404/503; shared-metadata tip not live). Candidate `33e5c296…` also not deployed. | FEATURE QA bind needs live BB+AC `V4 testing` | Redeploy tip containing shared build-identity fix **and** C01 candidate (or sequential) → re-verify About+healthz on BB+AC | Apex env already set | NO |
+| RB-ID-01 | SHARED | Build / deployment identity | BUILD_IDENTITY | **PASS** (hosted 2026-10-02 on tip `4a7cf4beb6c2`): Hub/AC/BB all `branch=V4` / `V4 testing`; Hub `GETPRO_GIT_BRANCH`; AC+BB `shared.build-identity`; no UNKNOWN. Note: tip ≠ final app candidate `1b2aa5b7…` (invite-origin fix still undeployed). | — (identity labels OK on current tip) | Keep verifying after each Hostinger redeploy | Apex env + shared metadata | YES (identity); redeploy still needed for candidate SHA |
 
 ---
 
@@ -79,7 +79,7 @@ Under **PD-V204-AC-01**, remaining patient **PARITY_ONLY** (~27) and **TEST_ONLY
 | **B. PRODUCT** | — (Wave2 closed) | **0** |
 | **C. AUTOMATED TEST** | — (Wave3 closed) | **0** |
 | **D. MANUAL QA** | RB-QA-01…05 | **5** |
-| **E. RELEASE IDENTITY** | RB-ID-01 | **1** |
+| **E. RELEASE IDENTITY** | RB-ID-01 (**PASS** on tip `4a7cf4beb6c2`) | **0** open |
 | **Closed Wave1** | RB-ENG-03, RB-ENG-04 | **2** |
 | **Closed Wave2** | RB-PROD-01…08, RB-ENG-01, RB-ENG-02 | **10** |
 | **Closed Wave3** | RB-ENG-05, RB-TEST-01…07 | **8** |
@@ -232,29 +232,27 @@ BB_SHA_MATCH=PASS · AC_SHA_MATCH=PASS · BRANCH_IDENTITY=FAIL · ENVIRONMENT_ID
 ---
 
 ```
-REMAINING_RELEASE_BLOCKERS=6
+REMAINING_RELEASE_BLOCKERS=5
 ENGINEERING=0
 PRODUCT=0
 AUTOMATED_TEST=0
 MANUAL_QA=5
-BUILD_IDENTITY=1
-FASTEST_CLOSABLE_NOW=1
+BUILD_IDENTITY=0
+FASTEST_CLOSABLE_NOW=0
 READY_FOR_PRODUCTION_QA=NO
-BB_SHA_MATCH=PASS
-AC_SHA_MATCH=PASS
-BB_BRANCH_IDENTITY=FAIL
-AC_BRANCH_IDENTITY=FAIL
-UNKNOWN_LABEL_FOUND=YES
-STALE_LABEL_FOUND=NO
-PRODUCTION_UNTOUCHED=YES
-BUILD_IDENTITY_REMAINING=1
-RB_ID_01=FAIL
+EXPECTED_CANDIDATE=1b2aa5b7fd60ebff791aafeabed762abe520ee25
+LIVE_TIP=4a7cf4beb6c2
+HOSTED_SHA_MATCH=FAIL
+BRANCH_IDENTITY=PASS
+RB_ID_01=PASS
 HUB_BRANCH=V4
-BB_BRANCH=OTHER
-AC_BRANCH=OTHER
-BRANCH_SOURCE_ALL=OTHER
-SHA_PARITY=PASS
-HOSTINGER_SUBDOMAIN_ENV_SUPPORTED=NO
-SHARED_BUILD_IDENTITY_SOURCE=.getpro/build-identity.json
-FINAL=V2_04_SHARED_BUILD_IDENTITY_FIXED
+AC_BRANCH=V4
+BB_BRANCH=V4
+HUB_BRANCH_SOURCE=GETPRO_GIT_BRANCH
+AC_BRANCH_SOURCE=shared.build-identity
+BB_BRANCH_SOURCE=shared.build-identity
+PRODUCTION_UNTOUCHED=YES
+RB_QA_03=OPEN
+RB_QA_05=OPEN
+FINAL=V2_04_FINAL_HOSTED_CANDIDATE_VERIFIED
 ```

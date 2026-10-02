@@ -7,8 +7,8 @@
 
 ### Ingestion finding
 
-RB-QA-01/02/04 remain **NOT_RUN** (no tester evidence).  
-RB-QA-03/05 updated from **hosted read-only probe** (2026-10-02): catalogue auth wall + tip `554d37406ef5` without C01/C02 Stitch UI → **FAIL** (verify-blocked). No PASS from source inspection. No new product defect IDs.
+RB-QA-01/02/04 remain **NOT_RUN**.  
+**Final hosted candidate verify (2026-10-02)** against `1b2aa5b7…`: live tip is `4a7cf4beb6c2` → **HOSTED_SHA_MATCH=FAIL**. Branch identity **PASS** (RB-ID-01). RB-QA-03/05 remain **OPEN** (invite origin + C01/C02/E03 + PHI not executed on expected candidate). Production untouched (`activeclinic.org` / `blessboard.com` still `03a89106e2fe` production).
 
 ---
 
@@ -18,16 +18,16 @@ RB-QA-03/05 updated from **hosted read-only probe** (2026-10-02): catalogue auth
 |-------|--------|-----------------|-----------|-------|
 | RB-QA-01 | NOT_RUN | None supplied in session | — | Members FEATURE QA pack (T-M02–T-M15) not executed / not reported |
 | RB-QA-02 | NOT_RUN | None supplied in session | — | AC+BB website lifecycle hosted not executed / not reported |
-| RB-QA-03 | FAIL | Post-deploy verify 2026-10-02 ABORT: AC_SHA=554d37406ef5 ≠ 33e5c296…; C01/C02/E03 NOT_RUN | — | OPEN until candidate deployed + auth visual |
+| RB-QA-03 | OPEN | Final hosted verify 2026-10-02: live `4a7cf4beb6c2` ≠ candidate `1b2aa5b7…`; C01/C02/E03 + invite NOT_RUN on expected tip | — | Deploy candidate then auth catalogue + invite smoke |
 | RB-QA-04 | NOT_RUN | None supplied in session | — | Geo + concurrency hosted not executed / not reported |
-| RB-QA-05 | FAIL | Post-deploy verify ABORT with RB-QA-03 (candidate undeployed) | — | OPEN; PHI/E03 NOT_RUN |
+| RB-QA-05 | OPEN | Final hosted verify abort with RB-QA-03 (candidate undeployed); PHI NOT_RUN | — | Re-run after `1b2aa5b7…` deploy + published clinicKey |
 
 ### Failures
 
 | QA_ID | Severity | Summary |
 |-------|----------|---------|
-| RB-QA-03 | VERIFY_BLOCKED | Cannot render C01/C02 on Hostinger tip `554d37406ef5` without deploy of catalogue Stitch UI + authenticated website.edit session |
-| RB-QA-05 | VERIFY_BLOCKED | No public clinic sample found for PHI HTML check; management E03 path auth-gated |
+| RB-QA-03 | VERIFY_BLOCKED | Expected candidate `1b2aa5b7…` not live (hosted `4a7cf4beb6c2`); authenticated C01/C02/E03 + invite origin not run |
+| RB-QA-05 | VERIFY_BLOCKED | Same SHA gate; public PHI spot-check not run |
 
 ### Severity / new release blockers from this ingestion
 
@@ -42,11 +42,16 @@ RB-QA-03/05 updated from **hosted read-only probe** (2026-10-02): catalogue auth
 ```
 MANUAL_QA_INPUT=5
 MANUAL_QA_PASS=0
-MANUAL_QA_FAIL=2
+MANUAL_QA_FAIL=0
 MANUAL_QA_BLOCKED=0
 MANUAL_QA_NOT_RUN=3
+MANUAL_QA_OPEN=2
 MANUAL_QA_REMAINING=5
 NEW_RELEASE_BLOCKERS=0
-HOSTED_C01_C02_PROBE=FAIL
-FINAL=V2_04_AC_C01_C02_HOSTED_VERIFIED
+HOSTED_CANDIDATE=1b2aa5b7fd60ebff791aafeabed762abe520ee25
+LIVE_TIP=4a7cf4beb6c2
+HOSTED_SHA_MATCH=FAIL
+BRANCH_IDENTITY=PASS
+RB_ID_01=PASS
+FINAL=V2_04_FINAL_HOSTED_CANDIDATE_VERIFIED
 ```
