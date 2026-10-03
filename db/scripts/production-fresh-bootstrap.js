@@ -7,7 +7,10 @@
  */
 const { Pool } = require("pg");
 const { migrate, statusReadOnly } = require("./lib/migrator");
-const { checkDatabaseIdentity, readIdentityRow } = require("./lib/databaseIdentity");
+const {
+  checkDatabaseIdentity,
+  ensureDatabaseIdentity,
+} = require("./lib/databaseIdentity");
 const { verifyCanonicalFreshSchema } = require("./lib/canonicalMigrationBaseline");
 const backupService = require("../../src/services/church/churchBackupVerificationService");
 
@@ -66,7 +69,14 @@ async function run({ pool: suppliedPool, env = process.env } = {}) {
       reset: "executing",
     }));
     await resetApplicationSchemas(db);
-    await migrate({ pool: db, phase: "all" });
+    await migrate({ pool: db, phase: "migrations" });
+    const initialized = await ensureDatabaseIdentity(db, {
+      connectionString: env.DATABASE_URL,
+      identityKey: EXPECTED_IDENTITY,
+      environmentCode: EXPECTED_ENVIRONMENT,
+    });
+    if (!initialized.ok) throw new Error("production_identity_initialization_failed");
+    await migrate({ pool: db, phase: "seeds" });
     await assertProductionTarget(db);
     const verify = await verifyCanonicalFreshSchema(db);
     const status = await statusReadOnly({ pool: db });
