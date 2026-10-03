@@ -163,6 +163,14 @@ test("apex header lockup and actions preserve responsive hierarchy", async () =>
     css,
     /\.church-body--apex \.church-header--apex \.church-nav--apex,[\s\S]*?\.church-body--apex \.church-header--apex \.church-header__actions\s*\{[^}]*flex-wrap:\s*nowrap/s
   );
+  assert.match(
+    css,
+    /@media \(max-width: 899px\)[\s\S]*?\.church-body--apex \.church-header--apex \.church-nav--apex,[\s\S]*?\.church-body--apex \.church-header--apex \.church-header__actions\s*\{\s*display:\s*none/s
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 899px\)[\s\S]*?\.church-body--apex \.church-menu-btn\s*\{\s*display:\s*inline-flex/s
+  );
   assert.match(css, /--church-getpro-orange:\s*var\(--color-brand-accent\)/i);
   assert.match(res.text, /class="church-header__admin-link"[^>]*>Church Admin Login</);
   assert.match(
