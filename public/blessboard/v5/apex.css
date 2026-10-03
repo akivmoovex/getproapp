@@ -948,7 +948,7 @@ ul.bb-apex-features {
 @media (max-width: 899px) {
   .bb-apex-header__actions .bb-apex-btn--header,
   .bb-apex-nav__logout--header {
-    display: none;
+    display: none !important;
   }
 
   .bb-apex-brand__name {
