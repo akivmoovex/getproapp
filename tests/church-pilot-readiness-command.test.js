@@ -15,7 +15,6 @@ const {
 } = require("../src/services/church/churchPilotOperationalReadinessService");
 const { isPgConfigured, getPgPool } = require("../src/db/pg/pool");
 const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
-const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
 
 test("redactSecrets strips connection strings and password-like tokens", () => {
   const raw =
@@ -64,7 +63,6 @@ test(
   { skip: !isPgConfigured() },
   async () => {
     const pool = getPgPool();
-    await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
     const prevSecret = process.env.SESSION_SECRET;
     process.env.SESSION_SECRET = "y".repeat(40);

@@ -9,9 +9,11 @@ const announcementsRepo = require("../db/pg/church/announcementsRepo");
 const eventsRepo = require("../db/pg/church/eventsRepo");
 const ministriesRepo = require("../db/pg/church/ministriesRepo");
 const ministryLeadersRepo = require("../db/pg/church/ministryLeadersRepo");
-const tenantsRepo = require("../db/pg/tenantsRepo");
+const { findOrganizationByKey } = require("../blessboard/repositories/blessBoardCatalogueRepository");
 
 const SAMPLE_ORG_SLUG = "kafuebaptist";
+/** Legacy church_organizations.platform_tenant_id integer scope (not public.tenants). */
+const LEGACY_PLATFORM_TENANT_SCOPE_ID = 1;
 const SAMPLE_BRANCH_ADMIN_EMAIL = "pastor.kafue@example.com";
 const SAMPLE_HQ_ADMIN_EMAIL = "hq.kafue@example.com";
 const SAMPLE_MINISTRY_LEADER_EMAIL = "youth.leader@example.com";
@@ -162,8 +164,13 @@ async function seedChurchSampleOrganizationIfMissing(pool) {
   let org = await organizationsRepo.findOrganizationBySlug(pool, SAMPLE_ORG_SLUG);
 
   if (!org) {
-    const zmTenant = await tenantsRepo.getBySlug(pool, "zm");
-    const platformTenantId = zmTenant && zmTenant.id ? zmTenant.id : 4;
+    // V2.05: resolve via platform.organizations; do not query/recreate public.tenants.
+    const reg = await pool.query(`SELECT to_regclass('platform.organizations') AS reg`);
+    if (!reg.rows[0] || !reg.rows[0].reg) {
+      throw new Error("platform.organizations is required for BlessBoard tenant/org resolution");
+    }
+    await findOrganizationByKey(pool, SAMPLE_ORG_SLUG).catch(() => null);
+    const platformTenantId = LEGACY_PLATFORM_TENANT_SCOPE_ID;
 
     org = await organizationsRepo.createOrganization(pool, {
       platform_tenant_id: platformTenantId,

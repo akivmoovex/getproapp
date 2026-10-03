@@ -9,7 +9,7 @@ const ministriesRepo = require("../db/pg/church/ministriesRepo");
 const websiteContentRepo = require("../db/pg/church/websiteContentRepo");
 const sermonsRepo = require("../db/pg/church/sermonsRepo");
 const resourcesRepo = require("../db/pg/church/resourcesRepo");
-const tenantsRepo = require("../db/pg/tenantsRepo");
+const { findOrganizationByKey } = require("../blessboard/repositories/blessBoardCatalogueRepository");
 const { hashBranchAdminPassword } = require("../church/branchAdminAuth");
 const { getChurchHostDomain, isTestingDeployment } = require("../church/blessBoardEnv");
 const {
@@ -19,6 +19,37 @@ const {
 
 const DEMO_ORG_SLUG = "demo";
 const DEMO_HOST_SLUG = "demo";
+
+/**
+ * Legacy church_organizations.platform_tenant_id is an integer scope column.
+ * V2.05 production uses platform.organizations for tenant/org identity (UUID keys).
+ * Do not query or recreate the removed legacy tenants table.
+ */
+const LEGACY_PLATFORM_TENANT_SCOPE_ID = 1;
+
+/**
+ * Resolve tenant/org via platform.organizations (current contract).
+ * Returns a stable legacy integer scope id for church_* rows.
+ * @param {import("pg").Pool} pool
+ * @param {string} organizationKey
+ */
+async function resolveLegacyPlatformTenantScopeId(pool, organizationKey) {
+  const reg = await pool.query(`SELECT to_regclass('platform.organizations') AS reg`);
+  if (!reg.rows[0] || !reg.rows[0].reg) {
+    throw new Error("platform.organizations is required for BlessBoard tenant/org resolution");
+  }
+  // Lookup is authoritative for V2.05; missing demo platform org is allowed (church seed is independent).
+  await findOrganizationByKey(pool, organizationKey);
+  return LEGACY_PLATFORM_TENANT_SCOPE_ID;
+}
+
+function isUniqueViolation(err) {
+  return (
+    err &&
+    (err.code === "23505" ||
+      /duplicate key value|unique constraint/i.test(String(err.message || "")))
+  );
+}
 
 function demoContactEmail(hostSlug) {
   const domain = getChurchHostDomain() || "blessboard.com";
@@ -348,18 +379,20 @@ async function seedChurchDemoOrganizationIfMissing(pool, slug = DEMO_ORG_SLUG) {
   let org = await organizationsRepo.findOrganizationBySlug(pool, entry.slug);
 
   if (!org) {
-    const demoTenant = await tenantsRepo.getBySlug(pool, "demo");
-    const globalTenant = await tenantsRepo.getBySlug(pool, "global");
-    const platformTenantId =
-      (demoTenant && demoTenant.id) || (globalTenant && globalTenant.id) || 1;
-
-    org = await organizationsRepo.createOrganization(pool, {
-      platform_tenant_id: platformTenantId,
-      slug: entry.slug,
-      name: entry.name,
-      status: "active",
-      data_environment: entry.dataEnvironment,
-    });
+    const platformTenantId = await resolveLegacyPlatformTenantScopeId(pool, entry.slug);
+    try {
+      org = await organizationsRepo.createOrganization(pool, {
+        platform_tenant_id: platformTenantId,
+        slug: entry.slug,
+        name: entry.name,
+        status: "active",
+        data_environment: entry.dataEnvironment,
+      });
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      org = await organizationsRepo.findOrganizationBySlug(pool, entry.slug);
+      if (!org) throw err;
+    }
   } else if (String(org.data_environment || "") !== entry.dataEnvironment) {
     await pool.query(
       `UPDATE public.church_organizations
@@ -372,21 +405,27 @@ async function seedChurchDemoOrganizationIfMissing(pool, slug = DEMO_ORG_SLUG) {
 
   let branch = await branchesRepo.findBranchByHostSlug(pool, entry.hostSlug);
   if (!branch) {
-    branch = await branchesRepo.createBranch(pool, {
-      organization_id: org.id,
-      slug: entry.branchSlug,
-      host_slug: entry.hostSlug,
-      name: entry.branchName,
-      status: "active",
-      city: "Lusaka",
-      country: "Zambia",
-      pastor_name: "Rev. Demo Pastor",
-      contact_email: demoContactEmail(entry.hostSlug),
-      contact_phone: "+260 97 000 0000",
-      welcome_message: `Welcome to ${entry.name} — a sample church site powered by BlessBoard. Explore our public pages and register as a member to try the portal.`,
-      service_times: "Sunday Worship · 10:00 AM\nMidweek Prayer · Wednesday 6:30 PM",
-      location_text: "123 BlessBoard Avenue, Demo City",
-    });
+    try {
+      branch = await branchesRepo.createBranch(pool, {
+        organization_id: org.id,
+        slug: entry.branchSlug,
+        host_slug: entry.hostSlug,
+        name: entry.branchName,
+        status: "active",
+        city: "Lusaka",
+        country: "Zambia",
+        pastor_name: "Rev. Demo Pastor",
+        contact_email: demoContactEmail(entry.hostSlug),
+        contact_phone: "+260 97 000 0000",
+        welcome_message: `Welcome to ${entry.name} — a sample church site powered by BlessBoard. Explore our public pages and register as a member to try the portal.`,
+        service_times: "Sunday Worship · 10:00 AM\nMidweek Prayer · Wednesday 6:30 PM",
+        location_text: "123 BlessBoard Avenue, Demo City",
+      });
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      branch = await branchesRepo.findBranchByHostSlug(pool, entry.hostSlug);
+      if (!branch) throw err;
+    }
   }
 
   await seedDemoPublicContentIfMissing(pool, org, branch);
