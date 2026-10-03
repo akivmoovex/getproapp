@@ -8,13 +8,11 @@
 CREATE TABLE IF NOT EXISTS public.church_organization_account_managers (
   organization_id BIGINT PRIMARY KEY
     REFERENCES public.church_organizations (id) ON DELETE CASCADE,
-  primary_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
-  backup_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
+  -- Integer admin ids are soft references (no FK to public.admin_users; absent on V2.05).
+  primary_admin_user_id INTEGER,
+  backup_admin_user_id INTEGER,
   status TEXT NOT NULL DEFAULT 'active',
-  assigned_by_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
+  assigned_by_admin_user_id INTEGER,
   assigned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   internal_note TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -41,8 +39,8 @@ CREATE INDEX IF NOT EXISTS idx_church_org_account_managers_backup
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.church_platform_support_access (
   id BIGSERIAL PRIMARY KEY,
-  support_admin_user_id INTEGER NOT NULL
-    REFERENCES public.admin_users (id) ON DELETE RESTRICT,
+  -- Soft admin ids (no FK to public.admin_users; absent on V2.05 platform DBs).
+  support_admin_user_id INTEGER NOT NULL,
   organization_id BIGINT NOT NULL
     REFERENCES public.church_organizations (id) ON DELETE CASCADE,
   branch_id BIGINT
@@ -52,13 +50,11 @@ CREATE TABLE IF NOT EXISTS public.church_platform_support_access (
   requested_scope TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  approved_by_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
+  approved_by_admin_user_id INTEGER,
   approved_at TIMESTAMPTZ,
   expires_at TIMESTAMPTZ,
   revoked_at TIMESTAMPTZ,
-  revoked_by_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
+  revoked_by_admin_user_id INTEGER,
   rejection_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -98,8 +94,7 @@ CREATE TABLE IF NOT EXISTS public.church_platform_support_access_events (
   organization_id BIGINT NOT NULL
     REFERENCES public.church_organizations (id) ON DELETE CASCADE,
   event_type TEXT NOT NULL,
-  actor_admin_user_id INTEGER
-    REFERENCES public.admin_users (id) ON DELETE SET NULL,
+  actor_admin_user_id INTEGER,
   action_summary TEXT NOT NULL DEFAULT '',
   church_visible BOOLEAN NOT NULL DEFAULT true,
   metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,

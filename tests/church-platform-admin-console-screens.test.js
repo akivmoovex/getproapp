@@ -9,7 +9,6 @@ const request = require("supertest");
 
 const { isPgConfigured, getPgPool } = require("../src/db/pg/pool");
 const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
-const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
 const platformUsersRepo = require("../src/db/pg/church/platformUsersRepo");
 const auditLogsRepo = require("../src/db/pg/church/auditLogsRepo");
 const { parseAuditFilters } = require("../src/church/auditLogFormatting");
@@ -101,7 +100,6 @@ test(
       t.skip(`PostgreSQL unreachable (${e.code || e.message})`);
       return;
     }
-    await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
 
     const app = makeApp(ROLES.SUPER_ADMIN);

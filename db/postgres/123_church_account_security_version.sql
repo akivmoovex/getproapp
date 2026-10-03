@@ -15,8 +15,14 @@ ALTER TABLE public.church_hq_admins
 ALTER TABLE public.church_ministry_leaders
   ADD COLUMN IF NOT EXISTS security_version INTEGER NOT NULL DEFAULT 1;
 
-ALTER TABLE public.admin_users
-  ADD COLUMN IF NOT EXISTS security_version INTEGER NOT NULL DEFAULT 1;
+-- public.admin_users is a legacy GetPro table; absent on V2.05 platform/blessboard DBs.
+DO $$
+BEGIN
+  IF to_regclass('public.admin_users') IS NOT NULL THEN
+    ALTER TABLE public.admin_users
+      ADD COLUMN IF NOT EXISTS security_version INTEGER NOT NULL DEFAULT 1;
+  END IF;
+END $$;
 
 ALTER TABLE public.church_members
   DROP CONSTRAINT IF EXISTS church_members_security_version_positive;
@@ -38,7 +44,12 @@ ALTER TABLE public.church_ministry_leaders
 ALTER TABLE public.church_ministry_leaders
   ADD CONSTRAINT church_ministry_leaders_security_version_positive CHECK (security_version >= 1);
 
-ALTER TABLE public.admin_users
-  DROP CONSTRAINT IF EXISTS admin_users_security_version_positive;
-ALTER TABLE public.admin_users
-  ADD CONSTRAINT admin_users_security_version_positive CHECK (security_version >= 1);
+DO $$
+BEGIN
+  IF to_regclass('public.admin_users') IS NOT NULL THEN
+    ALTER TABLE public.admin_users
+      DROP CONSTRAINT IF EXISTS admin_users_security_version_positive;
+    ALTER TABLE public.admin_users
+      ADD CONSTRAINT admin_users_security_version_positive CHECK (security_version >= 1);
+  END IF;
+END $$;

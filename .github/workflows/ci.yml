@@ -25,6 +25,25 @@ jobs:
       (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'v2')) ||
       (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'v2'))
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: getpro_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d getpro_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GETPRO_TEST_DB: "1"
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_ci
+      GETPRO_PG_SSL: "off"
+      GETPRO_DB_MISSING_EXIT_DELAY_MS: "0"
     steps:
       - uses: actions/checkout@v4
 
@@ -60,6 +79,11 @@ jobs:
         env:
           CI: true
         run: npm run lint:components:ci
+
+      - name: Prepare Playwright test database
+        run: |
+          npm run test:db:schema
+          node scripts/seed-playwright-visual-fixtures.js
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

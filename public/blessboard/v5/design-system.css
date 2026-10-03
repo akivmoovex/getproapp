@@ -1269,6 +1269,8 @@ html.bb-ds-modal-open body {
 .bb-hq-sidebar .bb-platform-brand__subtitle--demo,
 .bb-ba-sidebar .bb-platform-brand__subtitle--demo,
 .bb-mp-sidebar .bb-platform-brand__subtitle--demo {
+  /* Demo badge on dark navy — no direct V2.04 palette equivalent for #fcd34d */
+  /* stylelint-disable-next-line color-no-hex */
   color: #fcd34d;
 }
 
@@ -1309,16 +1311,16 @@ html.bb-ds-modal-open body {
   min-width: var(--bb-touch-min, 2.75rem);
   min-height: var(--bb-touch-min, 2.75rem);
   padding: 0.55rem;
-  border: 1px solid var(--bb-line, #d9e4e9);
+  border: 1px solid var(--bb-line);
   border-radius: 0.5rem;
-  background: #fff;
-  color: var(--bb-ink, #131d21);
+  background: white;
+  color: var(--bb-ink);
   font: inherit;
   cursor: pointer;
 }
 .bb-shell-burger:hover,
 .bb-shell-burger:focus-visible {
-  background: var(--bb-color-primary-soft, #efeaff);
+  background: var(--bb-color-primary-soft);
   color: var(--bb-color-primary);
   outline: none;
 }

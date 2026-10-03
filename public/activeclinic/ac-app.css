@@ -494,7 +494,6 @@ body.ac-drawer-open .ac-drawer {
 }
 .ac-facility-chip__pin { color: var(--ac-primary); }
 .ac-context-link {
-  display: block;
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
   font-weight: 600;

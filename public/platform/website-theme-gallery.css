@@ -290,7 +290,7 @@
 .gp-we-theme-gallery__viewport-btn {
   appearance: none;
   border: 1px solid var(--color-border-default);
-  background: var(--color-surface, #fff);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   border-radius: 0.4rem;
   padding: 0.35rem 0.65rem;
@@ -302,9 +302,9 @@
 
 .gp-we-theme-gallery__viewport-btn.is-current,
 .gp-we-theme-gallery__viewport-btn[aria-pressed="true"] {
-  border-color: var(--color-primary, #0f766e);
-  color: var(--color-primary, #0f766e);
-  background: var(--color-background, #f8fafc);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-background);
 }
 
 @media (max-width: 390px) {

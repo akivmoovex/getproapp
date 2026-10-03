@@ -1,15 +1,15 @@
 <%
   var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
-    productVersion: "1.3",
-    version: "1.03.(unavailable)",
+    productVersion: "2.06",
+    version: "2.06",
     build: "(unavailable)",
     available: false,
     environmentLabel: "Production",
     environment: "production",
-    platformLine: "v7"
+    platformLine: "v8"
   };
   var envIsTesting = bi.environment === "testing";
-  var productLabel = bi.productVersion || "1.3";
+  var productLabel = bi.productVersion || "2.06";
   var isV8About = bi.platformLine === "v8";
   var versionDisplay = isV8About
     ? (bi.productVersionLabel || ("Version " + productLabel))

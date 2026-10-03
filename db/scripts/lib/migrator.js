@@ -231,9 +231,20 @@ async function createPool(opts = {}) {
 }
 
 /**
- * @param {{ pool?: import('pg').Pool, connectionString?: string }} [opts]
+ * @param {{
+ *   pool?: import('pg').Pool,
+ *   connectionString?: string,
+ *   phase?: "all"|"migrations"|"seeds",
+ * }} [opts]
+ *   phase=migrations — schema migrations only (for bootstrap before identity:init).
+ *   phase=seeds — seeds only (for bootstrap after identity so production-gated seeds see env).
+ *   phase=all (default) — migrations then seeds.
  */
 async function migrate(opts = {}) {
+  const phase = String(opts.phase || "all").trim().toLowerCase();
+  if (!["all", "migrations", "seeds"].includes(phase)) {
+    throw new Error(`[db:migrate] Invalid phase=${phase}. Expected all|migrations|seeds.`);
+  }
   const { pool, owned } = await createPool(opts);
   const client = await pool.connect();
   const summary = {
@@ -250,18 +261,22 @@ async function migrate(opts = {}) {
     await assertMigrateIdentityGate(pool, process.env);
     await ensureMigrationLedger(pool);
 
-    const migrations = discoverMigrations();
-    for (const file of migrations) {
-      const result = await applyOne(client, file);
-      if (result === "applied") summary.applied.push(`${file.module}/${file.filename}`);
-      else summary.skipped.push(`${file.module}/${file.filename}`);
+    if (phase === "all" || phase === "migrations") {
+      const migrations = discoverMigrations();
+      for (const file of migrations) {
+        const result = await applyOne(client, file);
+        if (result === "applied") summary.applied.push(`${file.module}/${file.filename}`);
+        else summary.skipped.push(`${file.module}/${file.filename}`);
+      }
     }
 
-    const seeds = discoverSeeds();
-    for (const file of seeds) {
-      const result = await applyOne(client, file);
-      if (result === "applied") summary.seedsApplied.push(file.filename);
-      else summary.seedsSkipped.push(file.filename);
+    if (phase === "all" || phase === "seeds") {
+      const seeds = discoverSeeds();
+      for (const file of seeds) {
+        const result = await applyOne(client, file);
+        if (result === "applied") summary.seedsApplied.push(file.filename);
+        else summary.seedsSkipped.push(file.filename);
+      }
     }
 
     return summary;

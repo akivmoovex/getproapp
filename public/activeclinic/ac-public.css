@@ -3295,7 +3295,7 @@ a.ac-public-utility__value:focus-visible {
   color: var(--acp-primary-strong, var(--acp-primary));
 }
 .ac-public-utility__item--phone .ac-public-utility__label {
-  color: var(--ac-status-danger, #b42318);
+  color: var(--ac-status-danger);
 }
 
 /* Batch 7 finalization — mobile sticky book/call (above bottom nav) */
@@ -3333,7 +3333,7 @@ a.ac-public-utility__value:focus-visible {
   }
   .ac-tenant-mobile-sticky__btn--book {
     background: var(--acp-primary);
-    color: #fff;
+    color: white;
   }
   body[data-website-editing="1"] .ac-tenant-mobile-sticky {
     display: none;

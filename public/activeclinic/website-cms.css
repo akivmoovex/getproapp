@@ -11,7 +11,7 @@
   /* Clinic Editor left rail + content offset (single source of truth). */
   --ac-mw-rail-width: 14.5rem;
   --ac-mw-content-offset: 15.5rem;
-  font-family: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  font-family: Inter, "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
   color: var(--ac-mw-ink);
 }
 /* Legacy/hub pill-tab strip only — never apply to Clinic Editor chrome. */
@@ -1182,10 +1182,10 @@
   --ac-c-ink: var(--ac-mw-ink, var(--ac-ink));
   --ac-c-muted: var(--ac-mw-muted, var(--ac-muted));
   --ac-c-border: var(--ac-mw-border, var(--ac-border));
-  --ac-c-ok-bg: color-mix(in srgb, var(--color-success-text, #1b7a43) 12%, white);
-  --ac-c-ok-fg: var(--color-success-text, #1b7a43);
-  --ac-c-warn-bg: color-mix(in srgb, var(--color-warning-text, #9a6700) 14%, white);
-  --ac-c-warn-fg: var(--color-warning-text, #9a6700);
+  --ac-c-ok-bg: color-mix(in srgb, var(--color-success-text) 12%, white);
+  --ac-c-ok-fg: var(--color-success-text);
+  --ac-c-warn-bg: color-mix(in srgb, var(--color-warning-text) 14%, white);
+  --ac-c-warn-fg: var(--color-warning-text);
   --ac-c-hidden-bg: color-mix(in srgb, var(--ac-c-muted) 14%, white);
   --ac-c-banner-bg: color-mix(in srgb, var(--ac-c-primary) 8%, white);
   padding-bottom: 5.5rem;
@@ -1483,7 +1483,7 @@
   border-color: color-mix(in srgb, var(--ac-c-primary) 30%, transparent);
   color: var(--ac-c-primary-strong);
 }
-.ac-mw-c-icon-btn--danger { color: var(--color-danger-text, #b42318); }
+.ac-mw-c-icon-btn--danger { color: var(--color-danger-text); }
 .ac-mw-c-cards { display: none; gap: 0.75rem; }
 .ac-mw-c-card {
   display: grid;

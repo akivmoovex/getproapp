@@ -1,15 +1,19 @@
 {
-  "extends": ["stylelint-config-standard"],
+  "extends": [
+    "stylelint-config-standard"
+  ],
   "ignoreFiles": [
     "public/design-system.css",
-    "public/ds-framework.css"
+    "public/ds-framework.css",
+    "public/build/**",
+    "public/build/**/*.css"
   ],
-  "plugins": ["./stylelint-plugins/getpro-no-ancestor-system-class.mjs"],
+  "plugins": [
+    "./stylelint-plugins/getpro-no-ancestor-system-class.mjs"
+  ],
   "rules": {
     "getpro/no-ancestor-before-system-class": true,
-
     "max-nesting-depth": 2,
-
     "color-no-hex": [
       true,
       {
@@ -17,14 +21,12 @@
         "message": "Prefer CSS variables / theme tokens instead of hex (token sources use overrides)."
       }
     ],
-
     "color-hex-length": null,
     "no-duplicate-selectors": null,
     "declaration-block-single-line-max-declarations": null,
     "selector-not-notation": null,
     "declaration-property-value-keyword-no-deprecated": null,
     "property-no-deprecated": null,
-
     "selector-max-id": null,
     "selector-class-pattern": null,
     "custom-property-pattern": null,
@@ -55,14 +57,33 @@
   },
   "overrides": [
     {
-      "files": ["public/theme.css", "public/theme-colors.css"],
+      "files": [
+        "public/theme.css",
+        "public/theme-colors.css",
+        "public/platform/theme/**/*.css",
+        "public/**/*tokens*.css",
+        "public/**/website-theme-*.css",
+        "public/blessboard/v5/bb-urp.css",
+        "public/blessboard/v5/write-maintenance.css",
+        "public/blessboard/v5/design-tokens.css",
+        "public/blessboard/v5/apex.css",
+        "public/activeclinic/acw-platform.css",
+        "public/platform/website-presentation-token-bridge.css",
+        "public/platform/website-add-section.css",
+        "public/platform/website-library.css",
+        "public/church/church.css",
+        "public/blessboard/v5/hq-admin.css"
+      ],
       "rules": {
         "color-no-hex": null,
         "color-hex-length": null
       }
     },
     {
-      "files": ["public/styles.css", "public/m3-modal.css"],
+      "files": [
+        "public/styles.css",
+        "public/m3-modal.css"
+      ],
       "rules": {
         "max-nesting-depth": null,
         "color-no-hex": null

@@ -51,7 +51,7 @@
   max-height: min(90vh, 40rem);
   background: var(--bb-color-surface);
   color: var(--bb-color-ink);
-  box-shadow: var(--bb-shadow-md));
+  box-shadow: var(--bb-shadow-md);
   font-family: var(--bb-font-sans, "Hanken Grotesk", system-ui, sans-serif);
 }
 .bb-media-picker-dialog::backdrop {
@@ -752,7 +752,7 @@
   width: min(26rem, calc(100% - 1.5rem));
   max-width: calc(100vw - 1.5rem);
   background: var(--bb-color-surface);
-  box-shadow: var(--bb-shadow-md));
+  box-shadow: var(--bb-shadow-md);
   font-family: var(--bb-font-sans, "Hanken Grotesk", system-ui, sans-serif);
 }
 .bb-media-confirm::backdrop {

@@ -690,7 +690,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
 }
 .bb-pa-dash-stat--link:hover {
   border-color: var(--bb-color-primary);
-  box-shadow: var(--bb-shadow-sm));
+  box-shadow: var(--bb-shadow-sm);
 }
 .bb-pa-dash-stat--link:focus-visible {
   outline: 2px solid var(--bb-color-primary);

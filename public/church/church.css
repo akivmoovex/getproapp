@@ -85,7 +85,7 @@
 
 .church-body {
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--church-navy);
   background: var(--church-surface);
   line-height: 1.5;
@@ -14931,7 +14931,7 @@ html:has(> body.church-body--apex) {
   --bb-apex-header-height: 80px;
   --bb-apex-section-pad-desktop: 120px;
   --bb-apex-section-pad-mobile: 64px;
-  font-family: "Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--bb-apex-text);
   background: var(--bb-apex-surface);
   overflow-x: hidden;

@@ -18,6 +18,8 @@
       var srvBr = window.__GETPRO_SERVER_BRAND__;
       if (srvBr === "getpro" || srvBr === "proonline") {
         d.setAttribute("data-brand", srvBr);
+      } else if (d.getAttribute("data-brand") === "getpro" || d.getAttribute("data-brand") === "proonline") {
+        /* Preserve SSR data-brand when server brand was omitted from the include scope. */
       } else if (br === "getpro") d.setAttribute("data-brand", "getpro");
       else if (br === "proonline") d.setAttribute("data-brand", "proonline");
       else d.removeAttribute("data-brand");

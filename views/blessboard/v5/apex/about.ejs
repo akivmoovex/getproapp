@@ -3,13 +3,13 @@
 %>
 <%
   var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
-    productVersion: "1.3",
-    version: "1.03.(unavailable)",
+    productVersion: "2.06",
+    version: "2.06",
     build: "(unavailable)",
     available: false,
     environmentLabel: "Production",
     environment: "production",
-    platformLine: "v7"
+    platformLine: "v8"
   };
   var envIsTesting = bi.environment === "testing";
   var isV8About = bi.platformLine === "v8";
@@ -104,7 +104,7 @@
             </p>
             <p class="bb-about-v11__meta-foot">
               <span class="material-symbols-outlined" aria-hidden="true">sync_saved_locally</span>
-              Release <%= bi.productVersion || "1.3" %>
+              Release <%= bi.productVersion || "2.06" %>
             </p>
           </div>
 

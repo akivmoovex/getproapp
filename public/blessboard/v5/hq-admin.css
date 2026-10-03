@@ -540,7 +540,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 
 .bb-hq-dash-stat--link:hover {
   border-color: var(--bb-color-primary);
-  box-shadow: var(--bb-shadow-sm));
+  box-shadow: var(--bb-shadow-sm);
 }
 
 .bb-hq-dash-stat--link:focus-visible {
