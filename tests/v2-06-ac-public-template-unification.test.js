@@ -48,6 +48,12 @@ const PAGES = [
     forbidden: [/acw-only-mobile/, /acw-search--compact/, /data-ac-directory-search-mobile/],
     cta: [/Search Directory/],
   },
+  {
+    file: "views/activeclinic/public/clinic-website.ejs",
+    canonical: /Your Clinic, Branded and Online/,
+    forbidden: [/Branded Clinic Websites, Effortlessly/, /100% Brandable/, /Ready to Elevate Your Practice/],
+    cta: [/Start Building Your Site/, /Register Your Clinic/],
+  },
 ];
 
 describe("V2.06 AC public template unification", () => {

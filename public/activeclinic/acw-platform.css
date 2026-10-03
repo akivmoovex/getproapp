@@ -1468,20 +1468,40 @@ body.ac-public-body--mf-register .ac-public-main {
     padding: 0 1rem;
   }
 
+  /*
+   * Mobile registration actions stay in document flow (not sticky/fixed).
+   * Sticky bottom actions were overlapping country/city on ~375–390 viewports.
+   */
   .acw-register {
-    padding: 1.25rem 1rem 6.5rem;
+    padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .acw-register__card {
+    overflow: visible;
+    padding-bottom: 1.25rem;
+  }
+
+  .acw-register__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  .acw-register__form .acw-register__grid {
+    min-width: 0;
   }
 
   .acw-register__actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 4;
+    position: static;
+    z-index: auto;
     flex-direction: column-reverse;
-    margin: 0 -1.5rem -1.5rem;
-    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-    background: var(--acp-surface);
+    flex-shrink: 0;
+    margin: 1.25rem 0 0;
+    padding: 1rem 0 0;
+    background: transparent;
     border-top: 1px solid var(--acp-border);
-    box-shadow: 0 -10px 25px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    box-shadow: none;
   }
 
   .acw-register__actions .ac-btn,
@@ -1496,7 +1516,7 @@ body.ac-public-body--mf-register .ac-public-main {
 
 @media (max-width: 390px) {
   .acw-register {
-    padding: 1rem 0.85rem 6.5rem;
+    padding: 1rem 0.85rem calc(2rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
