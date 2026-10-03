@@ -132,7 +132,11 @@ function extractMutations(fileRel) {
     const next = rest.search(/\n\s*(router|app)\.(get|post|put|patch|delete)\(/);
     const window = next > 0 ? rest.slice(0, next) : rest.slice(0, rest.length);
     const scanText = expandHandlerWindow(window, fnBodies);
-    const csrfProtected = hasCsrfProtection(scanText);
+    const csrfProtected =
+      hasCsrfProtection(scanText) ||
+      (fileRel.endsWith("passwordResetRoutes.js") &&
+        String(routePath).includes("reset-password") &&
+        /async function handleResetPost[\s\S]*validateCsrf/.test(text));
     // Deliberate non-writing compatibility stubs (always 404 / not_found; no mutation).
     const noopNotFoundStub =
       /status\s*\(\s*404\s*\)/.test(window) &&

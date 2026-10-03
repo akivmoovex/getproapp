@@ -1422,6 +1422,62 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__scrim {
   pointer-events: none;
 }
 
+/*
+ * V2.06 BB editor-only: keep chrome/template warning above hero canvas so
+ * titles and route hints cannot paint through the editor bar. Public/draft
+ * preview (no editor chrome) is unchanged.
+ */
+body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack {
+  z-index: calc(var(--gp-we-z-toolbar) - 1);
+  background: var(--gp-we-surface, var(--color-surface));
+}
+
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-template-banner {
+  position: relative;
+  z-index: calc(var(--gp-we-z-toolbar) - 2);
+  background: var(--bb-color-surface-dim, var(--color-surface-subtle));
+}
+
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-page-hero {
+  isolation: isolate;
+  z-index: var(--gp-we-z-canvas);
+  overflow: hidden;
+}
+
+/* Stronger hero scrim + lead contrast on bright images (editor only). */
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__scrim {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bb-color-ink) 40%, transparent) 0%,
+      color-mix(in srgb, var(--bb-color-ink) 72%, transparent) 55%,
+      color-mix(in srgb, var(--bb-color-ink) 92%, transparent) 100%
+    );
+}
+
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__lead,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__lead [data-website-value-text] {
+  color: var(--color-text-inverse);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--bb-color-ink) 55%, transparent);
+}
+
+/* Keep buttonUrl editable via pencil; hide raw path text so routes do not bleed. */
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero [data-bb-field="buttonUrl"] .bb-tp-se-hint,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero [data-bb-field="secondaryButtonUrl"] .bb-tp-se-hint,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-page-hero [data-bb-field="buttonUrl"] .bb-tp-se-hint,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-page-hero [data-bb-field="secondaryButtonUrl"] .bb-tp-se-hint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable,
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .ac-website-editable {
   position: relative;
@@ -2440,7 +2496,8 @@ body.gp-website-lifecycle-open {
     padding-top: var(--gp-we-toolbar-h);
     min-height: var(--gp-we-bb-chrome-h);
     box-sizing: border-box;
-    z-index: var(--gp-we-z-tenant-header-editor);
+    /* Above hero canvas/editables so titles cannot paint through the bar. */
+    z-index: calc(var(--gp-we-z-toolbar) - 1);
     pointer-events: none;
   }
 

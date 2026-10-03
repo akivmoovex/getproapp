@@ -1,5 +1,5 @@
 <article class="acw-page" data-ac-page-section="public-for-patients" data-ac-acw-screen="ACW05">
-  <section class="acw-hero acw-hero--split acw-only-desktop">
+  <section class="acw-hero acw-hero--split">
     <div>
       <h1>Take control of your healthcare journey.</h1>
       <p class="acw-hero__lede">ActiveClinic connects you with healthcare providers in your area. Discover clinics, book appointments, and manage your care with ease.</p>
@@ -21,26 +21,7 @@
     </div>
   </section>
 
-  <section class="acw-hero acw-hero--mobile acw-only-mobile">
-    <h1>Your Health, Guided by Data.</h1>
-    <p class="acw-hero__lede">Experience high-fidelity healthcare on the go. Find specialized clinics, manage appointments, and access your health records securely from anywhere.</p>
-    <div class="acw-hero__media">
-      <%- include('../partials/ac-media', {
-        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW05-02-For-Patients-Mobile-1.jpg') : ''),
-        alt: 'Modern healthcare clinic',
-        className: 'acp-hero__image',
-        objectFit: 'cover',
-        width: 780,
-        height: 480,
-        loading: 'eager',
-      }) %>
-    </div>
-    <p class="ac-public-actions">
-      <a class="ac-btn ac-btn--primary acw-btn-icon" href="/clinics"><span class="material-symbols-outlined" aria-hidden="true">search</span> Find a Clinic Near You</a>
-    </p>
-  </section>
-
-  <section class="acw-section acw-only-desktop">
+  <section class="acw-section">
     <header class="acw-section-header">
       <h2>How ActiveClinic Works for You</h2>
     </header>
@@ -63,7 +44,7 @@
     </div>
   </section>
 
-  <section class="acw-section acw-section--band acw-only-desktop">
+  <section class="acw-section acw-section--band">
     <div class="acw-section__inner acw-split">
       <div>
         <h2>Your Personal Patient Portal</h2>
@@ -85,29 +66,6 @@
           loading: 'lazy',
         }) %>
       </div>
-    </div>
-  </section>
-
-  <section class="acw-section acw-only-mobile">
-    <header class="acw-section-header">
-      <h2>Manage Your Care</h2>
-    </header>
-    <div class="acw-grid">
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">location_on</span></span>
-        <h3>Discover Clinics</h3>
-        <p>Locate highly-rated medical facilities based on your specific needs, location, and insurance.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span></span>
-        <h3>Book Instantly</h3>
-        <p>Schedule, reschedule, or cancel appointments with just a few taps. Real-time availability.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">description</span></span>
-        <h3>Secure Records</h3>
-        <p>Access your lab results, prescriptions, and medical history with enterprise-grade security.</p>
-      </article>
     </div>
   </section>
 </article>

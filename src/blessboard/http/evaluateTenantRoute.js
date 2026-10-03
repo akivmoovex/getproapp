@@ -166,7 +166,44 @@ function evaluateTenantRoute(input) {
   }
 
   // Non-public paths: attach tenant for authorization; do not drive public HTML.
+  // Host-scoped editor/publish APIs (/website/drafts, /website/publish, …) are not
+  // public surfaces, but still need authoritative tenant context so
+  // loadBlessBoardTenantRouting attaches req.blessBoardTenantContext.
   if (!isPublicPath) {
+    if (mode === "authoritative") {
+      const hostname =
+        (platform && platform.hostname) ||
+        (resolution && resolution.domain && resolution.domain.hostname) ||
+        null;
+      const allowlistDecision = decideAuthoritativeHostAllowlist(
+        input.authoritativeHostAllowlist,
+        hostname
+      );
+      if (
+        allowlistDecision === ALLOWLIST_DECISION.DENY_EMPTY ||
+        allowlistDecision === ALLOWLIST_DECISION.DENY
+      ) {
+        return {
+          outcome: OUTCOME.SKIP,
+          reason:
+            allowlistDecision === ALLOWLIST_DECISION.DENY_EMPTY
+              ? "authoritative_allowlist_empty"
+              : "authoritative_host_not_allowlisted",
+          httpStatus: 200,
+          tenant,
+          authoritative: false,
+          allowlistDecision,
+        };
+      }
+      return {
+        outcome: OUTCOME.SKIP,
+        reason: "non_tenant_path",
+        httpStatus: 200,
+        tenant,
+        authoritative: true,
+        allowlistDecision: ALLOWLIST_DECISION.ALLOW,
+      };
+    }
     return {
       outcome: OUTCOME.SKIP,
       reason: "non_tenant_path",

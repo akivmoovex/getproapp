@@ -656,6 +656,59 @@ function createMoovexPlatformRuntimeApp(options) {
     }
   });
 
+  // Testing-only: obtain BlessBoard password-reset URL from QA delivery outbox / token metadata.
+  app.get("/__platform/qa/blessboard-password-reset-delivery", async (req, res) => {
+    const {
+      isPlatformRuntimeDiagnosticsEndpointAllowed,
+    } = require("../../startup/platformRuntimeSnapshot");
+    if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+      return res.status(404).json({ ok: false, code: "not_found" });
+    }
+    if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+      return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+    }
+    if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+      return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
+    }
+    const identifier = String(req.query.identifier || "").trim();
+    if (!identifier) {
+      return res.status(400).json({ ok: false, code: "identifier_required" });
+    }
+    try {
+      const {
+        lookupTestingPasswordResetDelivery,
+      } = require("../../blessboard/services/passwordResetService");
+      const pool = (opts.getPool || getPgPool)();
+      const result = await lookupTestingPasswordResetDelivery(pool, {
+        identifier,
+        email: identifier,
+        env,
+      });
+      if (!result.ok) {
+        return res.status(result.code === "delivery_not_found" ? 404 : 400).json(result);
+      }
+      return res.status(200).json({
+        ok: true,
+        channel: result.channel,
+        resetUrl: result.resetUrl,
+        expiresAt: result.expiresAt,
+        host: (() => {
+          try {
+            return new URL(result.resetUrl).hostname;
+          } catch {
+            return null;
+          }
+        })(),
+      });
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        code: (err && err.code) || "lookup_failed",
+        message: err && err.message ? String(err.message).slice(0, 160) : "unknown",
+      });
+    }
+  });
+
   app.use(
     createLoadPlatformRequestContext({
       env,

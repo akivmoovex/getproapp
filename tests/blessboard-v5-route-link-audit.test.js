@@ -143,7 +143,9 @@ function collectRegisteredPathPatterns() {
     "src/platform/http/platformRegistrationAdminRoutes.js",
     "src/platform/http/platformWebsiteAdminRoutes.js",
     "src/activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes.js",
+    "src/activeclinic/http/activeClinicPlatformAdminContactInquiryRoutes.js",
     "src/blessboard/http/apexMarketingRoutes.js",
+    "src/blessboard/http/contactSubmissionsAdminRoutes.js",
     "src/blessboard/http/inviteAcceptRoutes.js",
     "src/blessboard/http/tenantRegistrationRoutes.js",
     "src/blessboard/http/publicMediaRoutes.js",
@@ -158,6 +160,8 @@ function collectRegisteredPathPatterns() {
     "src/blessboard/http/branchAdminRoutes.js",
     "src/blessboard/http/branchRegistrationAdminRoutes.js",
     "src/blessboard/http/memberPortalRoutes.js",
+    "src/blessboard/http/memberPortalAuthRoutes.js",
+    "src/blessboard/http/attendanceSessionAdminRoutes.js",
     "src/blessboard/http/announcementMemberRoutes.js",
     "src/blessboard/http/memberNotificationRoutes.js",
     "src/blessboard/http/broadcastAdminRoutes.js",
@@ -265,6 +269,16 @@ function collectRegisteredPathPatterns() {
       ]
     );
   }
+
+  // V2.05 tenant contact inbox (variant paths via ternary — expand for static audit)
+  expand(
+    [...hqBranch("/hq/contact-submissions"), ...ba("/branch-admin/contact-submissions")],
+    [
+      { method: "get", suffix: "" },
+      { method: "get", suffix: "/:id" },
+      { method: "post", suffix: "/:id/status" },
+    ]
+  );
 
   const contentEntities = [
     "leadership",

@@ -123,6 +123,8 @@ ${expiresLabel ? `<p style="font-size:13px;color:#5c566e">This link expires on $
       subject,
       text,
       html,
+      resetUrl,
+      templateKey: "blessboard_password_reset",
     });
     const accepted = Boolean(
       result &&

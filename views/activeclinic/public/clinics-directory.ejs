@@ -11,23 +11,22 @@
   %>
   <header class="acw-directory-hero">
     <div class="acw-directory-hero__inner">
-      <h1 class="acw-only-desktop">Find Your Care</h1>
-      <h1 class="acw-only-mobile">Find a Clinic</h1>
-      <p class="acw-directory-lede acw-only-desktop">Search our network of verified healthcare professionals to find the right clinic for your needs.</p>
+      <h1>Find Your Care</h1>
+      <p class="acw-directory-lede">Search our network of verified healthcare professionals to find the right clinic for your needs.</p>
 
-      <form class="acw-search acw-search--desktop" method="get" action="/clinics" role="search" data-ac-directory-search="1">
+      <form class="acw-search" method="get" action="/clinics" role="search" data-ac-directory-search="1">
         <div class="acw-search__field">
           <label for="q">Clinic name</label>
           <div class="acw-search__control">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
-            <input id="q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic Name or Keyword"/>
+            <input id="q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic Name or Keyword" autocomplete="organization"/>
           </div>
         </div>
         <div class="acw-search__field">
           <label for="location">Location</label>
           <div class="acw-search__control">
             <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-            <input id="location" name="location" type="search" value="<%= locVal %>" placeholder="City, Zip, or Neighborhood"/>
+            <input id="location" name="location" type="search" value="<%= locVal %>" placeholder="City, Zip, or Neighborhood" autocomplete="address-level2"/>
           </div>
         </div>
         <div class="acw-search__field">
@@ -39,26 +38,16 @@
         </div>
         <% if (provVal) { %><input type="hidden" name="province" value="<%= provVal %>"/><% } %>
         <% if (cityVal) { %><input type="hidden" name="city" value="<%= cityVal %>"/><% } %>
-        <button type="submit" class="ac-btn ac-btn--primary acw-search__submit">
-          <span>Search Directory</span>
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-        </button>
-      </form>
-
-      <form class="acw-search acw-search--compact" method="get" action="/clinics" role="search" data-ac-directory-search-mobile="1">
-        <label class="ac-sr-only" for="q-mobile">Search clinics</label>
-        <div class="acw-search__control acw-search__control--grow">
-          <span class="material-symbols-outlined" aria-hidden="true">search</span>
-          <input id="q-mobile" name="q" type="search" value="<%= qVal %>" placeholder="Search clinics, specialties..."/>
+        <div class="acw-search__actions">
+          <button type="submit" class="ac-btn ac-btn--primary acw-search__submit">
+            <span>Search Directory</span>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </button>
+          <button type="button" class="acw-search__filter-btn" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            <span class="ac-sr-only">Filters</span>
+          </button>
         </div>
-        <% if (locVal) { %><input type="hidden" name="location" value="<%= locVal %>"/><% } %>
-        <% if (svcVal) { %><input type="hidden" name="service" value="<%= svcVal %>"/><% } %>
-        <% if (provVal) { %><input type="hidden" name="province" value="<%= provVal %>"/><% } %>
-        <% if (cityVal) { %><input type="hidden" name="city" value="<%= cityVal %>"/><% } %>
-        <button type="button" class="acw-search__filter-btn" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
-          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-          <span class="ac-sr-only">Filters</span>
-        </button>
       </form>
     </div>
   </header>

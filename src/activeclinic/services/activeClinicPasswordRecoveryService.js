@@ -313,6 +313,7 @@ async function requestActiveClinicPasswordReset(db, input) {
         recordTestingDelivery(
           {
             templateKey: TEMPLATE.PASSWORD_RESET,
+            productKey: "activeclinic",
             recipient: eligible.identity.emailNormalized || null,
             identifierType: identifier.kind,
             identifierNormalized: identifier.normalized,
@@ -709,6 +710,7 @@ async function lookupTestingPasswordResetDelivery(db, input) {
 
   const memory = findLatestTestingDelivery({
     identifierNormalized: identifier.normalized,
+    productKey: "activeclinic",
   });
   if (memory && memory.resetUrl) {
     return {

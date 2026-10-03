@@ -555,6 +555,24 @@
       editSectionKey: 'sermons_intro'
     }) %>
     <% var sermon = teasers.sermons[0]; %>
+    <%
+      var _homeSermonKey = String(sermon.id || ('sermon-' + (sermon.title || 'home')));
+      var _homeSermonSeries = sermon.series || sermon.category || '';
+      var _homeSermonPayload = {
+        title: sermon.title || '',
+        speakerName: sermon.speakerName || '',
+        preachedAt: sermon.preachedAt || '',
+        summary: sermon.summary || '',
+        scripture: sermon.scripture || '',
+        series: _homeSermonSeries,
+        category: _homeSermonSeries,
+        mediaUrl: sermon.mediaUrl || '',
+        imageUrl: sermon.imageUrl || '',
+        placement: sermon.imagePlacement || sermon.placement || null,
+        featured: true,
+        visible: true
+      };
+    %>
     <article class="bb-tp-sermon-feature" data-bb-sermon-feature="1" data-bb-sermon-id="<%= sermon.id || '' %>">
       <div class="bb-tp-sermon-feature__media<%= sermon.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
         <% if (sermon.imageUrl) { %>
@@ -566,29 +584,30 @@
         <% } %>
         <%- include('../partials/entity-image-edit-trigger', {
           editKind: 'sermon',
-          editEntityKey: String(sermon.id || ('sermon-' + (sermon.title || 'home'))),
-          editPayload: {
-            title: sermon.title || '',
-            speakerName: sermon.speakerName || '',
-            preachedAt: sermon.preachedAt || '',
-            summary: sermon.summary || '',
-            scripture: sermon.scripture || '',
-            mediaUrl: sermon.mediaUrl || '',
-            imageUrl: sermon.imageUrl || '',
-            placement: sermon.imagePlacement || sermon.placement || null,
-            featured: true,
-            visible: true
-          }
+          editEntityKey: _homeSermonKey,
+          editPayload: _homeSermonPayload
         }) %>
       </div>
       <div class="bb-tp-sermon-feature__copy">
-        <% if (sermon.category) { %><p class="bb-tp-eyebrow"><%= sermon.category %></p><% } %>
+        <% if (_homeSermonSeries) { %><p class="bb-tp-eyebrow" data-bb-sermon-series="1"><%= _homeSermonSeries %></p><% } %>
         <h3 class="bb-tp-sermon-feature__title"><%= sermon.title %></h3>
         <p class="bb-tp-sermon-feature__meta">
           <%= sermon.speakerName %><% if (sermon.preachedAt) { %> · <%= formatDate(sermon.preachedAt) %><% } %>
         </p>
         <% if (sermon.summary) { %><p class="bb-tp-body"><%= sermon.summary %></p><% } %>
         <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/sermons') %>">Watch or listen</a>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <div class="bb-tp-sermon-feature__edit-actions">
+          <%- include('../partials/structured-edit-trigger', {
+            editKind: 'sermon',
+            editEntityKey: _homeSermonKey,
+            editLabel: 'Edit details',
+            editDialogTitle: 'Edit details',
+            editButtonText: 'Edit details',
+            editPayload: _homeSermonPayload
+          }) %>
+        </div>
+        <% } %>
       </div>
     </article>
   </section>

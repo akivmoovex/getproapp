@@ -80,6 +80,25 @@ async function findByTokenHash(db, tokenHash) {
 }
 
 /**
+ * Latest active (unconsumed, unexpired) token for a user/purpose — testing delivery lookup.
+ * @param {{ query: Function }} db
+ * @param {{ userId: string, purpose: string }} input
+ */
+async function findLatestActiveTokenForUserPurpose(db, input) {
+  const res = await db.query(
+    `SELECT * FROM blessboard.user_action_tokens
+      WHERE user_id = $1
+        AND purpose = $2
+        AND consumed_at IS NULL
+        AND expires_at > now()
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [input.userId, input.purpose]
+  );
+  return mapToken(res.rows[0] || null);
+}
+
+/**
  * @param {{ query: Function }} db
  * @param {string} tokenId
  */
@@ -147,6 +166,7 @@ module.exports = {
   insertActionToken,
   consumeActiveTokensForUserPurpose,
   findByTokenHash,
+  findLatestActiveTokenForUserPurpose,
   markConsumed,
   consumeRateLimitSlot,
 };

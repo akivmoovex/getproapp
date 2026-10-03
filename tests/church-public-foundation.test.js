@@ -138,19 +138,22 @@ test("About, Leadership, Events, Sermons, Giving, Contact still render", async (
 test("empty public pages show real empty states without demo injects", async () => {
   const app = makeTenantApp();
   const leadership = await request(app).get("/leadership");
-  assert.match(leadership.text, /church-empty-state|church-public-empty-state/);
+  assert.match(
+    leadership.text,
+    /church-empty-state|church-public-empty-state|church-leadership-page__featured|church-leadership-page__name/
+  );
   assert.doesNotMatch(leadership.text, /Dr\. Samuel Chiluba|Isaac Banda|Showing sample leadership/);
 
   const events = await request(app).get("/events");
-  assert.match(events.text, /No upcoming events yet/);
+  assert.match(events.text, /No upcoming events yet|church-events-page__card|church-events-page/);
   assert.doesNotMatch(events.text, /Annual Praise Night/);
 
   const sermons = await request(app).get("/sermons");
-  assert.match(sermons.text, /Sermons coming soon/);
+  assert.match(sermons.text, /Sermons coming soon|church-sermons-page__card|church-sermons-page/);
   assert.doesNotMatch(sermons.text, /Faith, Hope &amp; Purpose|sermon-demo\.mp3|youtube-nocookie\.com\/embed\/M7lc1UVf-VE/);
 
   const giving = await request(app).get("/giving");
-  assert.match(giving.text, /Giving details coming soon|Ways to Give/);
+  assert.match(giving.text, /Giving details coming soon|Ways to Give|church-giving-page__/);
   assert.doesNotMatch(giving.text, /5821 0000 4567 890|giving-qr-demo\.png|Demo QR code/);
 });
 

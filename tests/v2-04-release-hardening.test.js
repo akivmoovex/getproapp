@@ -63,16 +63,16 @@ const JUSTIFIED_RAW = new Set([
 ]);
 
 describe("V2.04 release hardening", () => {
-  it("VERSION: shared V8 About scheme is 2.05 for BB and AC", () => {
-    assert.equal(VERSION_BASE_V8, "2.05");
-    assert.equal(PRODUCT_VERSION_V8, "2.05");
+  it("VERSION: shared V8 About scheme is 2.06 for BB and AC", () => {
+    assert.equal(VERSION_BASE_V8, "2.06");
+    assert.equal(PRODUCT_VERSION_V8, "2.06");
     const scheme = resolveVersionScheme(V8_ENV);
     assert.equal(scheme.platformLine, "v8");
-    assert.equal(scheme.productVersion, "2.05");
+    assert.equal(scheme.productVersion, "2.06");
     const info = getApplicationBuildInfo({ env: V8_ENV });
-    assert.equal(info.productVersion, "2.05");
-    assert.equal(info.version, "2.05");
-    assert.equal(info.productVersionLabel, "Version 2.05");
+    assert.equal(info.productVersion, "2.06");
+    assert.equal(info.version, "2.06");
+    assert.equal(info.productVersionLabel, "Version 2.06");
     assert.equal(info.build, "f72485104ca8");
   });
 

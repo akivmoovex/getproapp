@@ -34,22 +34,37 @@ const ENV_KEYS = [
   "BLESSBOARD_PUBLIC_URL",
   "CHURCH_HOST_DOMAIN",
   "BLESSBOARD_CANONICAL_REDIRECT",
+  // Authoritative prod profile must not override env-driven isolation defaults.
+  "PLATFORM_DEPLOYMENT_CODE",
 ];
 
-async function withEnv(overrides, fn) {
+function withEnv(overrides, fn) {
   const prev = {};
   for (const key of ENV_KEYS) prev[key] = process.env[key];
+  // Env-driven isolation cases assume no authoritative deployment profile.
+  if (!Object.prototype.hasOwnProperty.call(overrides, "PLATFORM_DEPLOYMENT_CODE")) {
+    delete process.env.PLATFORM_DEPLOYMENT_CODE;
+  }
   for (const [key, value] of Object.entries(overrides)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
-  try {
-    return await fn();
-  } finally {
+  const restore = () => {
     for (const key of ENV_KEYS) {
       if (prev[key] === undefined) delete process.env[key];
       else process.env[key] = prev[key];
     }
+  };
+  try {
+    const result = fn();
+    if (result && typeof result.then === "function") {
+      return Promise.resolve(result).finally(restore);
+    }
+    restore();
+    return result;
+  } catch (err) {
+    restore();
+    throw err;
   }
 }
 

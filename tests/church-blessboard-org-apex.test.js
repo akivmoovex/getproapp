@@ -24,6 +24,13 @@ const { getSubdomain, isBlessBoardProductHost } = require("../src/platform/host"
 const churchRoutes = require("../src/routes/church");
 const { BLESSBOARD_NAME } = require("../src/church/branding");
 const { createAttachChurchContext } = require("../src/church/attachChurchContext");
+const {
+  withoutAuthoritativeDeploymentProfile,
+  withoutAuthoritativeDeploymentProfileAsync,
+} = require("./helpers/blessBoardDomainTestEnv");
+const {
+  getAuthoritativeDomainConfig,
+} = require("../src/platform/config/deploymentProfiles");
 
 function makeReq(hostHeader, opts = {}) {
   const { trustProxy = true, xForwardedHost } = opts;
@@ -73,39 +80,66 @@ function makeApexChurchApp() {
   return app;
 }
 
-test("default apex set includes .com and .org hosts", () => {
-  const prev = process.env.BLESSBOARD_APEX_DOMAINS;
-  delete process.env.BLESSBOARD_APEX_DOMAINS;
+test("unprofiled default apex set includes .com and .org hosts", () => {
+  withoutAuthoritativeDeploymentProfile(() => {
+    const prev = process.env.BLESSBOARD_APEX_DOMAINS;
+    delete process.env.BLESSBOARD_APEX_DOMAINS;
+    try {
+      const set = getBlessBoardApexDomainSet();
+      assert.equal(set.has("blessboard.com"), true);
+      assert.equal(set.has("www.blessboard.com"), true);
+      assert.equal(set.has("blessboard.org"), true);
+      assert.equal(set.has("www.blessboard.org"), true);
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+    } finally {
+      if (prev !== undefined) process.env.BLESSBOARD_APEX_DOMAINS = prev;
+    }
+  });
+});
+
+test("blessboard-com-production profile apex is .com only (registered production truth)", () => {
+  const prevCode = process.env.PLATFORM_DEPLOYMENT_CODE;
+  const prevEnv = process.env.DEPLOYMENT_ENV;
+  process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-com-production";
+  process.env.DEPLOYMENT_ENV = "production";
   try {
+    const cfg = getAuthoritativeDomainConfig();
+    assert.ok(cfg);
+    assert.equal(cfg.canonicalDomain, "blessboard.com");
+    assert.deepEqual(cfg.apexDomains, ["blessboard.com", "www.blessboard.com"]);
     const set = getBlessBoardApexDomainSet();
     assert.equal(set.has("blessboard.com"), true);
     assert.equal(set.has("www.blessboard.com"), true);
-    assert.equal(set.has("blessboard.org"), true);
-    assert.equal(set.has("www.blessboard.org"), true);
+    assert.equal(set.has("blessboard.org"), false);
     assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
   } finally {
-    if (prev !== undefined) process.env.BLESSBOARD_APEX_DOMAINS = prev;
+    if (prevCode === undefined) delete process.env.PLATFORM_DEPLOYMENT_CODE;
+    else process.env.PLATFORM_DEPLOYMENT_CODE = prevCode;
+    if (prevEnv === undefined) delete process.env.DEPLOYMENT_ENV;
+    else process.env.DEPLOYMENT_ENV = prevEnv;
   }
 });
 
 test("blessboard.org and www.blessboard.org are apex, not tenants", () => {
-  assert.equal(isBlessBoardApexDomain("blessboard.org"), true);
-  assert.equal(isBlessBoardApexDomain("www.blessboard.org"), true);
-  assert.equal(isBlessBoardApexHost(makeReq("blessboard.org")), true);
-  assert.equal(isBlessBoardApexHost(makeReq("www.blessboard.org")), true);
-  assert.equal(getBlessBoardChurchSlug("blessboard.org"), null);
-  assert.equal(getBlessBoardChurchSlug("www.blessboard.org"), null);
-  assert.equal(getBlessBoardChurchSlug("demo.blessboard.org"), null);
-  assert.deepEqual(parseChurchHostFromDedicatedDomain("blessboard.org"), {
-    kind: "vertical-apex",
-    host: "blessboard.org",
+  withoutAuthoritativeDeploymentProfile(() => {
+    assert.equal(isBlessBoardApexDomain("blessboard.org"), true);
+    assert.equal(isBlessBoardApexDomain("www.blessboard.org"), true);
+    assert.equal(isBlessBoardApexHost(makeReq("blessboard.org")), true);
+    assert.equal(isBlessBoardApexHost(makeReq("www.blessboard.org")), true);
+    assert.equal(getBlessBoardChurchSlug("blessboard.org"), null);
+    assert.equal(getBlessBoardChurchSlug("www.blessboard.org"), null);
+    assert.equal(getBlessBoardChurchSlug("demo.blessboard.org"), null);
+    assert.deepEqual(parseChurchHostFromDedicatedDomain("blessboard.org"), {
+      kind: "vertical-apex",
+      host: "blessboard.org",
+    });
+    assert.deepEqual(parseChurchHostFromDedicatedDomain("www.blessboard.org"), {
+      kind: "vertical-apex",
+      host: "www.blessboard.org",
+    });
+    assert.equal(parseChurchHostFromDedicatedDomain("demo.blessboard.org"), null);
+    assert.equal(isBlessBoardHost("demo.blessboard.org"), false);
   });
-  assert.deepEqual(parseChurchHostFromDedicatedDomain("www.blessboard.org"), {
-    kind: "vertical-apex",
-    host: "www.blessboard.org",
-  });
-  assert.equal(parseChurchHostFromDedicatedDomain("demo.blessboard.org"), null);
-  assert.equal(isBlessBoardHost("demo.blessboard.org"), false);
 });
 
 test("www.blessboard.com is apex not a tenant slug", () => {
@@ -150,37 +184,41 @@ test("getproapp.org and unknown hosts are not BlessBoard product hosts", () => {
 });
 
 test("canonical redirect: blessboard.org preserves path and query", async () => {
-  const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
-  process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
-  try {
-    const app = makeRedirectApp();
-    const res = await request(app)
-      .get("/pricing?ref=test")
-      .set("Host", "blessboard.org")
-      .set("X-Forwarded-Proto", "https");
-    assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "https://blessboard.com/pricing?ref=test");
-  } finally {
-    if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
-    else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
-  }
+  await withoutAuthoritativeDeploymentProfileAsync(async () => {
+    const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
+    process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
+    try {
+      const app = makeRedirectApp();
+      const res = await request(app)
+        .get("/pricing?ref=test")
+        .set("Host", "blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 301);
+      assert.equal(res.headers.location, "https://blessboard.com/pricing?ref=test");
+    } finally {
+      if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
+      else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
+    }
+  });
 });
 
 test("canonical redirect: www.blessboard.org preserves path and query", async () => {
-  const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
-  process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
-  try {
-    const app = makeRedirectApp();
-    const res = await request(app)
-      .get("/about?utm=1")
-      .set("Host", "www.blessboard.org")
-      .set("X-Forwarded-Proto", "https");
-    assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "https://blessboard.com/about?utm=1");
-  } finally {
-    if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
-    else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
-  }
+  await withoutAuthoritativeDeploymentProfileAsync(async () => {
+    const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
+    process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
+    try {
+      const app = makeRedirectApp();
+      const res = await request(app)
+        .get("/about?utm=1")
+        .set("Host", "www.blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 301);
+      assert.equal(res.headers.location, "https://blessboard.com/about?utm=1");
+    } finally {
+      if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
+      else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
+    }
+  });
 });
 
 test("canonical redirect: blessboard.com does not redirect-loop", async () => {
@@ -220,21 +258,23 @@ test("blessboard.com serves BlessBoard apex homepage", async () => {
 });
 
 test("blessboard.org serves BlessBoard apex when redirects disabled", async () => {
-  const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
-  process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
-  try {
-    const app = makeApexChurchApp();
-    const res = await request(app)
-      .get("/")
-      .set("Host", "blessboard.org")
-      .set("X-Forwarded-Proto", "https");
-    assert.equal(res.status, 200);
-    assert.match(res.text, new RegExp(BLESSBOARD_NAME));
-    assert.doesNotMatch(res.text, /platform fallback/);
-  } finally {
-    if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
-    else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
-  }
+  await withoutAuthoritativeDeploymentProfileAsync(async () => {
+    const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
+    process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
+    try {
+      const app = makeApexChurchApp();
+      const res = await request(app)
+        .get("/")
+        .set("Host", "blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 200);
+      assert.match(res.text, new RegExp(BLESSBOARD_NAME));
+      assert.doesNotMatch(res.text, /platform fallback/);
+    } finally {
+      if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
+      else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
+    }
+  });
 });
 
 test("www.blessboard.com is not resolved as a church tenant by attachChurchContext", async () => {

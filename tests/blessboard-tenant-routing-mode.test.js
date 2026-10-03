@@ -205,6 +205,46 @@ describe("evaluateTenantRoute policy", () => {
     assert.equal(d.allowlistDecision, "deny");
   });
 
+  it("authoritative non-public /website/* keeps authoritative tenant for host editor APIs", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/website/drafts",
+      platformHostContext: { ...basePlatform, hostname: "demo.blessboard.org" },
+      blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "hosts",
+        hosts: ["demo.blessboard.org"],
+        hostSet: new Set(["demo.blessboard.org"]),
+        invalidEntryCount: 0,
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.SKIP);
+    assert.equal(d.reason, "non_tenant_path");
+    assert.equal(d.authoritative, true);
+    assert.ok(d.tenant && d.tenant.resolved);
+    assert.equal(d.allowlistDecision, "allow");
+  });
+
+  it("authoritative non-public /website/* denies unlisted host (no editor API context)", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/website/drafts",
+      platformHostContext: { ...basePlatform, hostname: "other.blessboard.org" },
+      blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "hosts",
+        hosts: ["demo.blessboard.org"],
+        hostSet: new Set(["demo.blessboard.org"]),
+        invalidEntryCount: 0,
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.SKIP);
+    assert.equal(d.authoritative, false);
+    assert.equal(d.reason, "authoritative_host_not_allowlisted");
+  });
+
   it("authoritative estate token * allows any resolved host", () => {
     const d = evaluateTenantRoute({
       routingMode: "authoritative",

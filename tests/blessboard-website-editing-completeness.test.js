@@ -213,7 +213,8 @@ describe("website editing completeness — giving methods", () => {
         instructions: "Use published details only.",
         externalUrl: "https://example.org/give",
         buttonLabel: "Give online",
-        qrImageUrl: "/church/images/tenant-public/home-desktop-hero.jpg",
+        // Disposable local media path (no CDN / marketing-map dependency).
+        qrImageUrl: "/_bb/media/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
         visible: true,
         sortOrder: 10,
       },
@@ -268,9 +269,12 @@ describe("website editing completeness — settings-surface discovery", () => {
   });
 
   it("non-edit chrome has no features panel markup when not editing", () => {
-    // Panel is nested under editingMode branch in chrome partial.
-    const editingBlock = chrome.split("wa.editingMode")[2] || chrome;
-    assert.match(editingBlock, /data-bb-features-panel/);
+    const viewBar = chrome.match(
+      /!wa\.editingMode && !wa\.previewDraftMode[\s\S]*?<\/div>\s*<% } else { %>/
+    );
+    assert.ok(viewBar, "expected view-mode admin bar block");
+    assert.doesNotMatch(viewBar[0], /data-bb-features-panel/);
+    assert.match(chrome, /data-bb-features-panel/);
     assert.match(chrome, /!wa\.editingMode/);
   });
 

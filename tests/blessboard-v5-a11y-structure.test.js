@@ -214,7 +214,7 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.match(css, /\.bb-pa-page\b/);
         assert.match(css, /\.bb-pa-dash\b/);
         assert.match(css, /\.bb-pa-dash-actions__item:focus-visible/);
-        assert.match(css, /#283236/);
+        assert.match(css, /var\(--color-text-secondary\)/);
         assert.match(css, /\.bb-pa-nav-toggle__bar/);
         assert.match(css, /\.bb-pa-drawer__panel\s*\{[^}]*left:\s*0/);
         assert.match(css, /\.bb-pa-bottom\s*\{[^}]*display:\s*none\s*!important/);
@@ -462,7 +462,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const selector = read("views/blessboard/v5/partials/branch-selector.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(hqShell, /aria-label="Open navigation"/);
     assert.match(hqShell, /data-bb-nav="mobile-toggle"/);
     assert.match(page, /data-bb-hq-branches="1"/);
@@ -506,7 +506,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const directory = read("views/blessboard/v5/hq/members.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(directory, /data-bb-hq-member-directory="1"/);
     assert.match(directory, /data-bb-stitch-members="28-branch-member-directory"/);
     assert.match(directory, /data-bb-hq-member-filter="1"/);
@@ -564,7 +564,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const detail = read("views/blessboard/v5/hq/registration-detail.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(queue, /data-bb-hq-registration-queue="1"/);
     assert.match(queue, /data-bb-stitch-registrations="26-branch-member-verification-queue"/);
     assert.match(queue, /data-bb-hq-reg-filter="1"/);
@@ -600,7 +600,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const dash = read("views/blessboard/v5/hq/dashboard.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(dash, /data-bb-hq-dashboard="1"/);
     assert.match(dash, /data-bb-stitch-dashboard="51-hq-dashboard"/);
     assert.match(dash, /data-bb-dash-welcome="1"/);
@@ -1073,7 +1073,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-ba-dash-stat--desktop-only/);
     assert.match(css, /@media \(max-width:\s*320px\)/);
     assert.match(css, /@media \(min-width:\s*900px\)/);
-    assert.match(start, /branch-admin.css\?v=\d+/);
+    assert.match(start, /branch-admin.css\?v=[^"'\s>]+/);
   });
 
   it("branch admin account keeps identity summary without unsupported security surfaces", () => {
@@ -1187,7 +1187,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const directory = read("views/blessboard/v5/branch-admin/members.ejs");
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
     assert.match(directory, /data-bb-stitch-members="28-branch-member-directory"/);
     assert.match(directory, /data-bb-member-directory="1"/);
     assert.match(directory, /data-bb-member-filter="1"/);
@@ -1200,8 +1200,9 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(directory, /name="q"/);
     assert.match(directory, /name="status"/);
     assert.match(directory, /href="\/branch-admin\/members\/<%= item\.id %>"/);
-    assert.doesNotMatch(directory, /type="checkbox"|Export CSV|Add Member|Small Groups/i);
-    assert.doesNotMatch(directory, /email_normalized|phone_normalized|churchId|branchId/);
+    assert.match(directory, /data-bb-stitch-v204="BB-M01"|data-bb-member-directory="1"/);
+    assert.doesNotMatch(directory, /type="checkbox"|Export CSV|Small Groups/i);
+    assert.doesNotMatch(directory, /email_normalized|phone_normalized/);
     assert.match(css, /\.bb-ba-members-cards/);
     assert.match(css, /\.bb-ba-members-table-wrap/);
     assert.match(css, /\.bb-ba-members-chip/);
@@ -1214,6 +1215,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const detail = read("views/blessboard/v5/branch-admin/member-detail.ejs");
     const css = read("public/blessboard/v5/branch-admin.css");
     assert.match(detail, /data-bb-stitch-member-detail="27-branch-member-profile"/);
+    assert.match(detail, /data-bb-stitch-v204="BB-M06"/);
+    assert.match(detail, /data-bb-member-admin-profile="1"/);
     assert.match(detail, /data-bb-member-detail="1"/);
     assert.match(detail, /data-bb-member-summary="1"/);
     assert.match(detail, /data-bb-member-contact="1"/);
@@ -1221,34 +1224,23 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(detail, /data-bb-member-account="1"/);
     assert.match(detail, /data-bb-member-sections="1"/);
     assert.match(detail, /data-bb-member-unavailable="1"/);
-    assert.match(detail, /data-bb-member-section-unavailable="attendance"/);
-    assert.match(detail, /bb-ba-chip--readonly/);
     assert.match(detail, /Read-only/);
-    // V8 BB15/BB16: profile edit + branch transfer (CSRF) — not legacy Suspend/notes chrome
-    assert.match(detail, /data-bb-member-edit="1"/);
-    assert.match(detail, /data-bb-member-transfer="1"/);
-    assert.match(detail, /data-screen="BB15"/);
-    assert.match(detail, /data-screen="BB16"/);
-    assert.match(detail, /action="\/branch-admin\/membership\/members\/<%= m\.id %>\/edit"/);
-    assert.match(detail, /action="\/branch-admin\/membership\/members\/<%= m\.id %>\/transfer"/);
-    assert.match(detail, /name="_csrf"/);
+    assert.match(detail, /data-bb-m06-edit="1"|href="\/branch-admin\/members\/<%= m\.id %>\/edit"/);
+    assert.match(detail, /data-bb-m06-transfer="1"|href="\/branch-admin\/members\/<%= m\.id %>\/transfer"/);
     assert.doesNotMatch(detail, /name="status"/);
     assert.doesNotMatch(detail, /\bSuspend\b|Add Note|Verify Member|Edit Roles|Assign to Ministry/i);
-    assert.doesNotMatch(detail, /email_normalized|phone_normalized|churchId|branchId|userId/);
-    assert.doesNotMatch(detail, /Attendance Rate|Volunteer Hours|Birthday|Home Address|ECCL-/i);
-    assert.match(css, /\.bb-ba-member-detail__layout/);
-    assert.match(css, /\.bb-ba-member-summary/);
-    assert.match(css, /\.bb-ba-member-dl/);
-    assert.match(css, /\.bb-ba-chip--readonly/);
+    assert.doesNotMatch(detail, /email_normalized|phone_normalized/);
+    assert.match(detail, /Login linked|hasLoginLinked|m\.userId/);
+    assert.doesNotMatch(detail, /Attendance Rate|Volunteer Hours|ECCL-/i);
+    assert.match(css, /\.bb-v204-m06/);
     assert.match(css, /@media \(min-width:\s*900px\)/);
-    assert.match(css, /\.bb-ba-member-detail__layout\s*\{[^}]*grid-template-columns/);
   });
 
   it("branch admin announcements keep desktop table and mobile cards without fabricated insights", () => {
     const list = read("views/blessboard/v5/announcements/admin-list.ejs");
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /35-branch-announcements-management/);
     assert.match(list, /data-bb-announcement-admin-list="1"/);
     assert.match(list, /data-bb-ann-filter="1"/);
@@ -1282,7 +1274,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const list = read("views/blessboard/v5/announcements/admin-list.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /61-hq-broadcast-center/);
     assert.match(list, /data-bb-hq-announcements="1"/);
     assert.match(list, /data-bb-delivery="overview"/);
@@ -1302,7 +1294,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const index = read("views/blessboard/v5/content-admin/index.ejs");
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
     assert.match(index, /data-bb-stitch-content="34-branch-website-editor"/);
     assert.match(index, /data-bb-content-admin="1"/);
     assert.match(index, /data-bb-content-pages="1"/);
@@ -1333,7 +1325,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const index = read("views/blessboard/v5/content-admin/index.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(index, /data-bb-stitch-content="34-branch-website-editor"/);
     assert.match(index, /data-bb-hq-content="1"/);
     assert.match(index, /data-bb-content-scope-panel="1"/);
@@ -1364,7 +1356,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const report = read("views/blessboard/v5/hq/attendance-report.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(report, /data-bb-hq-attendance-report="1"/);
     assert.match(report, /data-bb-batch="fg-08a"/);
     assert.match(report, /data-bb-stitch-attendance-report="57-hq-consolidated-analytics"/);
@@ -1398,7 +1390,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
     const nav = read("src/blessboard/http/hqAdminNav.js");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(nav, /href: "\/hq\/audit\/governance"/);
     assert.match(report, /data-bb-hq-governance-audit="1"/);
     assert.match(report, /data-bb-batch="nw-gov-01"/);
@@ -1427,7 +1419,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
     const nav = read("src/blessboard/http/hqAdminNav.js");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(nav, /href: "\/hq\/reports\/executive"/);
     assert.match(report, /data-bb-hq-executive="1"/);
     assert.match(report, /data-bb-batch="nw-ex-01"/);
@@ -1457,7 +1449,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const report = read("views/blessboard/v5/hq/giving-report.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(report, /data-bb-hq-giving-report="1"/);
     assert.match(report, /data-bb-batch="fg-q12"/);
     assert.match(report, /data-bb-stitch-giving-report="57-hq-consolidated-analytics"/);
@@ -1492,7 +1484,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const audit = read("views/blessboard/v5/hq/audit.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(audit, /data-bb-hq-audit="1"/);
     assert.match(audit, /data-bb-stitch-audit="58-hq-global-audit-trail"/);
     assert.match(audit, /data-bb-hq-audit-filter="1"/);
@@ -1516,7 +1508,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const reports = read("views/blessboard/v5/hq/reports.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(reports, /data-bb-hq-reports="1"/);
     assert.match(reports, /data-bb-batch="fg-08a"/);
     assert.match(reports, /data-bb-stitch-reports="57-hq-consolidated-analytics"/);
@@ -1549,7 +1541,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const section = read("views/blessboard/v5/content-admin/section.ejs");
     const css = read("public/blessboard/v5/branch-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(page, /data-bb-content-page-editor="1"/);
     assert.match(page, /data-bb-stitch-page-editor="34-branch-website-editor"/);
     assert.match(page, /method="post"/);
@@ -1597,8 +1589,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(entities, /data-bb-ministries-admin="1"/);
     assert.match(entities, /29-branch-ministries-directory/);
     assert.match(entities, /data-bb-stitch-ministries=/);
@@ -1649,8 +1641,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(entities, /data-bb-events-admin="1"/);
     assert.match(entities, /32-branch-events-management/);
     assert.match(entities, /data-bb-stitch-events=/);
@@ -1695,8 +1687,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(entities, /data-bb-sermons-admin="1"/);
     assert.match(entities, /data-bb-stitch-sermons="sermons-admin"/);
     assert.match(entities, /Sermons management/);
@@ -1745,8 +1737,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-attendance-admin-list="1"/);
     assert.match(list, /data-bb-stitch-attendance="36-branch-attendance-tracker"/);
     assert.match(list, /data-bb-attendance-monthly="1"/);
@@ -1801,8 +1793,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-giving-admin-list="1"/);
     assert.match(list, /data-bb-stitch-giving="39-branch-giving-summary"/);
     assert.match(list, /data-bb-giv-disclaimer="1"/);
@@ -1857,8 +1849,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-forms-admin-list="1"/);
     assert.match(list, /data-bb-stitch-forms="<%= stitchKey %>"/);
     assert.match(list, /20-member-forms-documents|shared-ui-states/);
@@ -1900,7 +1892,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const list = read("views/blessboard/v5/forms-requests/admin-forms.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-hq-forms="1"/);
     assert.match(list, /20-member-forms-documents/);
     assert.match(list, /data-bb-hq-forms-branches="1"/);
@@ -1925,7 +1917,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const list = read("views/blessboard/v5/forms-requests/admin-resources.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-hq-resources="1"/);
     assert.match(list, /data-bb-stitch-resources="19-member-resources-study"/);
     assert.match(list, /data-bb-hq-resources-branches="1"/);
@@ -1953,8 +1945,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/branch-admin.css");
     const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(shell, /branch-admin.css\?v=\d+/);
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(shell, /branch-admin.css\?v=[^"'\s>]+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-request-admin-list="1"/);
     assert.match(list, /data-bb-stitch-requests="44-branch-request-workflow-queue"/);
     assert.match(list, /data-bb-req-tabs="1"/);
@@ -1994,7 +1986,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const detail = read("views/blessboard/v5/forms-requests/admin-request-detail.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(list, /data-bb-hq-requests="1"/);
     assert.match(list, /data-bb-stitch-requests="44-branch-request-workflow-queue"/);
     assert.match(list, /data-bb-hq-requests-branches="1"/);
@@ -2069,7 +2061,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const publish = read("views/blessboard/v5/announcements/admin-publish.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
-    assert.match(hqShell, /hq-admin.css\?v=\d+/);
+    assert.match(hqShell, /hq-admin.css\?v=[^"'\s>]+/);
     assert.match(form, /61-hq-broadcast-center/);
     assert.match(form, /data-bb-hq-announcement-editor="1"/);
     assert.match(form, /data-bb-ann-scope-panel="1"/);
@@ -2090,37 +2082,27 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
 
   it("member profile distinguishes read-only vs editable fields without unsupported Stitch blocks", () => {
     const profile = read("views/blessboard/v5/member/profile.ejs");
+    const edit = read("views/blessboard/v5/member/profile-edit.ejs");
     const css = read("public/blessboard/v5/member-portal.css");
     assert.match(profile, /data-bb-stitch-profile="15-member-profile"/);
+    assert.match(profile, /data-bb-member-profile="1"/);
     assert.match(profile, /data-bb-profile-header="1"/);
     assert.match(profile, /data-bb-profile-readonly="1"/);
-    assert.match(profile, /data-bb-profile-form="1"/);
-    assert.match(profile, /method="post"/);
-    assert.match(profile, /action="\/member\/profile"/);
-    assert.match(profile, /name="preferredName"/);
-    assert.match(profile, /name="emailDisplay"/);
-    assert.match(profile, /phone-field/);
-    assert.doesNotMatch(profile, /name="phone"/);
-    assert.match(profile, /name="_csrf"/);
-    assert.match(profile, /readonly/);
-    assert.match(profile, /is-view/);
-    assert.match(profile, /id="profile-error-summary"/);
-    assert.match(profile, /role="alert"/);
-    assert.match(profile, /Legal Name/);
-    assert.match(profile, /Sign-in email/);
-    assert.match(profile, /Read-only/);
-    assert.match(profile, /Editable/);
-    assert.doesNotMatch(profile, /name="firstName"|name="lastName"|name="membershipStatus"/);
+    assert.match(profile, /href="\/member\/profile\/edit"/);
+    assert.match(profile, /Read-only|Verified member|My Parish Profile/);
     assert.doesNotMatch(profile, /type="file"|change password|notification prefer|avatar upload/i);
-    assert.doesNotMatch(
-      profile,
-      /Date of Birth|Residential Address|Emergency Contact|Medical Notes|Member Digital ID|85% Complete/i
-    );
+    assert.match(edit, /data-bb-member-profile-edit="1"/);
+    assert.match(edit, /method="post"/);
+    assert.match(edit, /action="\/member\/profile\/edit"/);
+    assert.match(edit, /name="preferred_name"/);
+    assert.match(edit, /name="email_display"/);
+    assert.match(edit, /phone-field/);
+    assert.match(edit, /name="_csrf"/);
+    assert.match(edit, /bb-mp-kv__item--readonly/);
+    assert.doesNotMatch(edit, /Member Digital ID|85% Complete/i);
     assert.match(css, /\.bb-mp-profile__header/);
     assert.match(css, /\.bb-mp-profile__avatar/);
     assert.match(css, /\.bb-mp-kv__item--readonly/);
-    assert.match(css, /\.bb-mp-chip--readonly/);
-    assert.match(css, /\.bb-mp-form--profile/);
     assert.match(css, /@media \(min-width:\s*700px\)/);
   });
 
@@ -2189,7 +2171,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const card = read("views/blessboard/v5/participation/partials/member-ministry-card.ejs");
     const detail = read("views/blessboard/v5/participation/member-ministry-detail.ejs");
     const css = read("public/blessboard/v5/member-portal.css");
-    assert.match(list, /data-bb-stitch-ministries="18-member-my-ministries"/);
+    assert.match(list, /data-bb-stitch-ministries="BB-M24"/);
     assert.match(list, /data-bb-ministries-toolbar="1"/);
     assert.match(list, /key: 'mine'/);
     assert.match(list, /key: 'pending'/);

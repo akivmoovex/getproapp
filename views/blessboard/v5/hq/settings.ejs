@@ -130,6 +130,7 @@
     <div class="bb-hq-field">
       <label for="primaryEmail">Contact email</label>
       <input id="primaryEmail" name="primaryEmail" type="email" maxlength="254" value="<%= settings.primaryEmail || '' %>" autocomplete="email" />
+      <p class="bb-hq-hint">Public organization contact address for the website and communications. This is not your admin login email.</p>
     </div>
     <div class="bb-hq-field">
       <label for="primaryPhone">Contact phone</label>
@@ -177,6 +178,7 @@
     <div class="bb-hq-field">
       <label for="branchEmail">Branch email</label>
       <input id="branchEmail" name="email" type="email" maxlength="254" value="<%= bval('email') %>" />
+      <p class="bb-hq-hint">Branch contact address shown on public pages. This is not used for administrator sign-in.</p>
     </div>
     <%- include('../partials/phone-field', {
       id: 'branchPhone',

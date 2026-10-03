@@ -302,10 +302,14 @@ describe("ActiveClinic clinic directory repair", () => {
     });
     assert.match(html, /data-ac-acw-screen="ACW02"/);
     assert.match(html, /Find Your Care/);
-    assert.match(html, /Find a Clinic/);
+    assert.equal((html.match(/<h1[^>]*>Find Your Care<\/h1>/g) || []).length, 1);
+    assert.doesNotMatch(html, /acw-only-mobile|acw-search--compact|data-ac-directory-search-mobile/);
     assert.match(html, /data-ac-directory-search="1"/);
-    assert.match(html, /data-ac-directory-search-mobile="1"/);
+    assert.match(html, /name="q"/);
+    assert.match(html, /name="location"/);
+    assert.match(html, /name="service"/);
     assert.match(html, /data-ac-filter-drawer/);
+    assert.match(html, /data-ac-filter-open/);
     assert.match(html, /View Clinic/);
     assert.match(html, /href="\/clinics\/demo-centre"/);
     assert.match(html, /data-ac-clinic-card-link="1"/);
@@ -324,10 +328,10 @@ describe("ActiveClinic clinic directory repair", () => {
       path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
       "utf8"
     );
-    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--desktop/);
-    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--compact/);
+    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search\s*\{/);
+    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search__actions/);
     assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-clinic-card__link/);
-    assert.match(css, /@media \(max-width: 767px\)[\s\S]*acw-search--desktop[\s\S]*display:\s*none/);
+    assert.match(css, /@media \(max-width: 767px\)[\s\S]*acw-search__filter-btn[\s\S]*display:\s*inline-flex/);
   });
 
   it("directory card href resolves to clinic detail for published tenant", async () => {

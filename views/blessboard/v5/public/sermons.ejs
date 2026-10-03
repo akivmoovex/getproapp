@@ -139,6 +139,7 @@
           <% } else { %>
           <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
           <% } %>
+          <% var _featuredSeries = featured.series || featured.category || ''; %>
           <%- include('../partials/entity-image-edit-trigger', {
             editKind: 'sermon',
             editEntityKey: String(featured.id || ('sermon-' + featured.title)),
@@ -148,6 +149,7 @@
               preachedAt: featured.preachedAt,
               summary: featured.summary,
               scripture: featured.scripture,
+              category: _featuredSeries,
               mediaUrl: featured.mediaUrl,
               imageUrl: featured.imageUrl,
                 placement: featured.imagePlacement || featured.placement || null,
@@ -170,6 +172,7 @@
                 preachedAt: featured.preachedAt,
                 summary: featured.summary,
                 scripture: featured.scripture,
+                category: _featuredSeries,
                 mediaUrl: featured.mediaUrl,
                 imageUrl: featured.imageUrl,
                 placement: featured.imagePlacement || featured.placement || null,
@@ -179,8 +182,8 @@
             }) %>
             <% } %>
           </h2>
-          <% if (featured.category) { %>
-          <p class="bb-tp-sermon-card__category"><%= featured.category %></p>
+          <% if (_featuredSeries) { %>
+          <p class="bb-tp-sermon-card__category" data-bb-sermon-series="1"><%= _featuredSeries %></p>
           <% } %>
           <% if (featured.speakerName || featured.preachedAt || featured.scripture) { %>
           <p class="bb-tp-meta bb-tp-featured-sermon__meta">

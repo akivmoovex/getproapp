@@ -50,15 +50,15 @@ const V8_ENV = Object.freeze({
 });
 
 describe("V2.04 Batch 8 final local release freeze", () => {
-  it("BB and AC About version scheme is shared 2.05", () => {
-    assert.equal(VERSION_BASE_V8, "2.05");
-    assert.equal(PRODUCT_VERSION_V8, "2.05");
+  it("BB and AC About version scheme is shared 2.06", () => {
+    assert.equal(VERSION_BASE_V8, "2.06");
+    assert.equal(PRODUCT_VERSION_V8, "2.06");
     const scheme = resolveVersionScheme(V8_ENV);
     assert.equal(scheme.platformLine, "v8");
-    assert.equal(scheme.productVersion, "2.05");
+    assert.equal(scheme.productVersion, "2.06");
     const info = getApplicationBuildInfo({ env: V8_ENV });
-    assert.equal(info.productVersion, "2.05");
-    assert.equal(info.productVersionLabel, "Version 2.05");
+    assert.equal(info.productVersion, "2.06");
+    assert.equal(info.productVersionLabel, "Version 2.06");
     assert.ok(VERSION_ORDER.includes("2.04"));
     assert.ok(VERSION_ORDER.includes("2.05"));
   });

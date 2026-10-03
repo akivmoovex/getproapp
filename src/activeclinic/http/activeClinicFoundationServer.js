@@ -81,6 +81,9 @@ const {
   registerActiveClinicBookingLinkageRoutes,
 } = require("./activeClinicBookingLinkageRoutes");
 const {
+  registerActiveClinicContactInquiryRoutes,
+} = require("./activeClinicContactInquiryRoutes");
+const {
   registerActiveClinicClinicalRoutes,
 } = require("./activeClinicClinicalRoutes");
 const {
@@ -304,6 +307,7 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicAppointmentRoutes(app, { getPool, env, isProduction });
   registerActiveClinicReceptionRoutes(app, { getPool, env, isProduction });
   registerActiveClinicBookingLinkageRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicContactInquiryRoutes(app, { getPool, env, isProduction });
   registerActiveClinicClinicalRoutes(app, { getPool, env, isProduction });
   const {
     registerActiveClinicClinicalDocumentRoutes,

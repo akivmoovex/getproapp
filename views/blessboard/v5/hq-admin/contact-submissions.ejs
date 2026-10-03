@@ -1,0 +1,60 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = submissions || [];
+  var sf = statusFilter || '';
+  var statuses = ['new', 'read', 'resolved'];
+%>
+<section class="bb-hq-page" data-bb-contact-submissions="1">
+  <h1>Contact Submissions</h1>
+  <p class="bb-hq-hint">Public contact form submissions from your church website.</p>
+
+  <% if (typeof saved === "string" && saved === "status") { %>
+    <div class="bb-hq-notice" role="status">Status updated.</div>
+  <% } %>
+
+  <form method="get" action="<%= basePath %>" class="bb-hq-filters bb-hq-form">
+    <label class="bb-hq-field">Status
+      <select name="status">
+        <option value="" <%= sf === '' ? 'selected' : '' %>>All</option>
+        <% statuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= sf === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit" class="bb-hq-btn">Filter</button>
+  </form>
+
+  <% if (!rows.length) { %>
+    <p class="bb-hq-hint">No contact submissions.</p>
+  <% } else { %>
+  <table class="bb-hq-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Message</th>
+        <th>Submitted</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(function (sub) { %>
+      <tr data-bb-contact-row="<%= sub.id %>">
+        <td><%= sub.fullName %></td>
+        <td class="bb-hq-hint"><%= sub.email || '—' %></td>
+        <td class="bb-hq-hint"><%= sub.phone || '—' %></td>
+        <td><%= (sub.message || '').slice(0, 60) %><%= (sub.message || '').length > 60 ? '…' : '' %></td>
+        <td><%= sub.createdAt ? new Date(sub.createdAt).toISOString().slice(0, 10) : '—' %></td>
+        <td><span class="bb-hq-chip" data-bb-status="<%= sub.status %>"><%= sub.status %></span></td>
+        <td>
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= basePath %>/<%= sub.id %>">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+<%- include('../partials/hq-shell-end') %>

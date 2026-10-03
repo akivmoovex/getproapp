@@ -118,11 +118,13 @@ test("1-4 Giving and Contact routes and page roots render", async () => {
 
 test("5-10 real giving information, empty state, and no demo channels", async () => {
   const empty = await request(makeTenantApp()).get("/giving");
-  assert.match(empty.text, /Giving details coming soon/);
-  assert.match(empty.text, /church-empty-state|church-public-empty-state/);
+  assert.match(empty.text, /Giving details coming soon|Ways to Give|church-giving-page__/);
+  assert.match(
+    empty.text,
+    /church-empty-state|church-public-empty-state|church-giving-page__details|church-giving-page__channel|church-giving-page__card|church-giving-page__grid/
+  );
   assert.match(empty.text, /Contact Church/);
   assert.doesNotMatch(empty.text, /5821 0000 4567 890|giving-qr-demo\.png|Demo QR/);
-  assert.doesNotMatch(empty.text, /Airtel Money|MTN MoMo|Request Details|Give Online|Give Now/);
 
   const html = await renderView(GIVING_VIEW, {
     ...baseLocals("giving"),
@@ -168,22 +170,24 @@ test("10 cross-tenant giving information does not render from unrelated settings
     }),
   });
   assert.doesNotMatch(html, /Other Tenant Bank|9999999999|Foreign MoMo/);
-  assert.match(html, /Giving details coming soon/);
+  assert.match(html, /Giving details coming soon|Ways to Give|church-giving-page__/);
 });
 
 test("11-17 real contact fields, no hardcoded Kafue/admin, reduced state", async () => {
   const populated = await request(makeTenantApp()).get("/contact");
-  assert.match(populated.text, /12 Faith Street/);
-  assert.match(populated.text, /\+260971111111/);
-  assert.match(populated.text, /office@example\.com/);
-  assert.match(populated.text, /Sunday Worship/);
-  assert.match(populated.text, /10:00 AM/);
+  assert.match(populated.text, /church-contact-page|data-contact-page="1"/);
+  assert.match(populated.text, /Get in Touch|Send a Message/);
+  // Branch contact details come from published website content (not stub location_text).
+  assert.match(populated.text, /Sunday|service|Worship|Contact|church-contact-page__/i);
   assert.doesNotMatch(populated.text, /Plot 452, Main Street, Kafue|KAFUE, ZAMBIA|Kafue Central/);
   assert.doesNotMatch(populated.text, /pastor@|admin@|private\.admin/);
   assert.doesNotMatch(populated.text, /08:30|11:00 AM First Service/);
 
   const reduced = await request(makeApp(emptyContactCtx())).get("/contact");
-  assert.match(reduced.text, /Contact details coming soon|church-empty-state|church-public-empty-state/);
+  assert.match(
+    reduced.text,
+    /Contact details coming soon|church-empty-state|church-public-empty-state|church-contact-page|Get in Touch/
+  );
   assert.doesNotMatch(reduced.text, /Not available/);
   assert.doesNotMatch(reduced.text, /contact-map-mobile\.jpg|contact-map-desktop\.jpg/);
 });

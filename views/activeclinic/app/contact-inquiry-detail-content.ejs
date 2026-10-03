@@ -1,0 +1,64 @@
+<%
+  var inq = (pageData && pageData.inquiry) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var statuses = ['received', 'reviewed', 'closed'];
+%>
+<section
+  class="ac-batch1a ac-contact-inquiry-detail"
+  data-ac-page-section="contact-inquiry-detail"
+  data-ac-contact-inquiry-id="<%= inq.id %>"
+>
+  <dl class="ac-definition-list">
+    <div class="ac-definition-list__item">
+      <dt>Sender</dt>
+      <dd><%= inq.senderName || '—' %></dd>
+    </div>
+
+    <div class="ac-definition-list__item">
+      <dt>Email</dt>
+      <dd><a href="mailto:<%= inq.senderEmailDisplay %>"><%= inq.senderEmailDisplay || '—' %></a></dd>
+    </div>
+
+    <div class="ac-definition-list__item">
+      <dt>Phone</dt>
+      <dd><% if (inq.senderPhoneDisplay) { %><a href="tel:<%= inq.senderPhoneNormalized %>"><%= inq.senderPhoneDisplay %></a><% } else { %>—<% } %></dd>
+    </div>
+
+    <div class="ac-definition-list__item">
+      <dt>Status</dt>
+      <dd><span class="ac-badge" data-ac-status="<%= inq.status %>"><%= inq.status %></span></dd>
+    </div>
+
+    <div class="ac-definition-list__item">
+      <dt>Submitted</dt>
+      <dd><%= inq.createdAt ? new Date(inq.createdAt).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : '—' %></dd>
+    </div>
+  </dl>
+
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Message</h2>
+    <div class="ac-message-block">
+      <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;"><%= inq.message || '—' %></pre>
+    </div>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Update Status</h2>
+    <form method="post" action="/app/operations/contact-inquiries/<%= encodeURIComponent(inq.id) %>/status" class="ac-form ac-inline-form">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <div class="ac-field">
+        <label for="status" class="ac-field__label">Status</label>
+        <select id="status" name="status" class="ac-input" required>
+          <% statuses.forEach(function (s) { %>
+            <option value="<%= s %>" <%= inq.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button type="submit" class="ac-btn">Save Status</button>
+    </form>
+  </div>
+
+  <div class="ac-panel ac-panel--muted">
+    <p class="ac-muted">Contact the sender directly using their email or phone number above. Status changes are recorded for your team's reference.</p>
+  </div>
+</section>

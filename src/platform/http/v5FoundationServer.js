@@ -103,6 +103,7 @@ const {
 } = require("../../blessboard/http/attendanceCorrectionAdminRoutes");
 const { createGivingAdminRouter } = require("../../blessboard/http/givingAdminRoutes");
 const { createFormsRequestsAdminRouter } = require("../../blessboard/http/formsRequestsAdminRoutes");
+const { createContactSubmissionsAdminRouter } = require("../../blessboard/http/contactSubmissionsAdminRoutes");
 const { createFormsRequestsMemberRouter } = require("../../blessboard/http/formsRequestsMemberRoutes");
 const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes");
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
@@ -267,6 +268,13 @@ function isUnavailableAppPath(p) {
   // V5 branch-admin shell is registered explicitly; only other /branch* legacy paths are blocked here.
   if (pathOnly === "/branch-admin" || pathOnly.startsWith("/branch-admin/")) return false;
   if (pathOnly === "/auth/callback") return false;
+  // Classic contact inbox stays reachable so it can redirect into V5 Admin Console.
+  if (
+    pathOnly === "/branch/contact-submissions" ||
+    pathOnly.startsWith("/branch/contact-submissions/")
+  ) {
+    return false;
+  }
   if (pathOnly.startsWith("/branch")) return true;
   if (pathOnly.startsWith("/client") || pathOnly.startsWith("/company") || pathOnly.startsWith("/provider")) {
     return true;
@@ -999,6 +1007,33 @@ function createV5FoundationApp(options) {
       variant: "branch",
     })
   );
+  app.use(
+    createContactSubmissionsAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "hq",
+    })
+  );
+  app.use(
+    createContactSubmissionsAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "branch",
+    })
+  );
+  // Classic branch contact inbox → V5 Admin Console (keep old URLs compatible).
+  app.get("/branch/contact-submissions", (req, res) => {
+    const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+    return res.redirect(302, `/branch-admin/contact-submissions${qs}`);
+  });
+  app.get("/branch/contact-submissions/:submissionId", (req, res) => {
+    const id = encodeURIComponent(String(req.params.submissionId || ""));
+    return res.redirect(302, `/branch-admin/contact-submissions/${id}`);
+  });
   const {
     registerBlessBoardSharedFormRoutes,
   } = require("../../blessboard/http/registerBlessBoardSharedFormRoutes");

@@ -791,6 +791,45 @@ async function publishChurchWebsite(db, input) {
         });
       }
 
+      // Service-times editors may persist entries on draft page_sections while the
+      // home page is published. Public resolvers only read published sections, so
+      // promote scoped service-times sections with the page publish (BB-only).
+      if (branchId) {
+        await client.query(
+          `UPDATE blessboard.page_sections ps
+              SET status = 'published',
+                  updated_at = now()
+             FROM blessboard.public_pages pp
+            WHERE ps.page_id = pp.id
+              AND pp.church_id = $1
+              AND pp.branch_id = $2
+              AND pp.page_key = 'home'
+              AND ps.status = 'draft'
+              AND (
+                ps.section_key IN ('service_times', 'services', 'worship_times')
+                OR ps.section_type IN ('service_times', 'services', 'worship_times')
+              )`,
+          [churchId, branchId]
+        );
+      } else {
+        await client.query(
+          `UPDATE blessboard.page_sections ps
+              SET status = 'published',
+                  updated_at = now()
+             FROM blessboard.public_pages pp
+            WHERE ps.page_id = pp.id
+              AND pp.church_id = $1
+              AND pp.branch_id IS NULL
+              AND pp.page_key = 'home'
+              AND ps.status = 'draft'
+              AND (
+                ps.section_key IN ('service_times', 'services', 'worship_times')
+                OR ps.section_type IN ('service_times', 'services', 'worship_times')
+              )`,
+          [churchId]
+        );
+      }
+
       // Church-wide and primary/HQ branch publish flip the church website flag used by
       // the public directory. Secondary campus publishes must not force church listing.
       let marksChurchWebsitePublished = !branchId;

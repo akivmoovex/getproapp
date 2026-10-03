@@ -6,8 +6,7 @@
  */
 
 const {
-  issueCsrfToken,
-  setCsrfCookie,
+  issueOrReuseCsrfToken,
 } = require("../../platform/http/v5Csrf");
 const {
   authorize,
@@ -782,11 +781,11 @@ async function attachWebsiteAdminChrome(opts) {
     accessRestricted: false,
   });
 
-  const csrfToken = issueCsrfToken(env);
-  setCsrfCookie(res, csrfToken, {
+  // Viewport iframe (website_frame=1) must not rotate the CSRF cookie — parent
+  // chrome publish/discard forms still hold the outer page token.
+  const csrfToken = issueOrReuseCsrfToken(req, res, env, {
     secure: String((env && env.NODE_ENV) || "") === "production",
-    env,
-    req,
+    reuseExisting: Boolean(frameMode),
   });
 
   const {

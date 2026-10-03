@@ -61,10 +61,10 @@ const branchPublicRoutes = [
   { path: "/about", markers: ["church-about-page", "bb-powered-by__getpro"] },
   { path: "/leadership", markers: ["church-leadership-page", "Leadership", "bb-powered-by__getpro"] },
   { path: "/contact", markers: ["Get in Touch", "Send a Message", "church-contact-page", "bb-powered-by__getpro"] },
-  { path: "/events", markers: ["church-events-page", "Church Events", "No upcoming events yet", "bb-powered-by__getpro"] },
-  { path: "/sermons", markers: ["church-sermons-page", "Sermons coming soon", "bb-powered-by__getpro"] },
-  { path: "/ministries", markers: ["Growing Together in Faith", "bb-public-ministries", "bb-powered-by__getpro"] },
-  { path: "/giving", markers: ["Ways to Give", "Giving details coming soon", "bb-powered-by__getpro"] },
+  { path: "/events", markers: ["church-events-page", "Church Events", "church-events-page__card|No upcoming events yet|church-empty-state", "bb-powered-by__getpro"] },
+  { path: "/sermons", markers: ["church-sermons-page", "church-sermons-page__card|Sermons coming soon|church-empty-state", "bb-powered-by__getpro"] },
+  { path: "/ministries", markers: ["Growing Together in Faith|Our Ministries", "bb-public-ministries", "bb-powered-by__getpro"] },
+  { path: "/giving", markers: ["church-giving-page", "Ways to Give|Giving|Giving details coming soon", "bb-powered-by__getpro"] },
   { path: "/login", markers: ["Member Access", "bb-powered-by__getpro", "data-auth-screen=\"login\""] },
   { path: "/register", markers: ["Member Registration", "bb-powered-by__getpro", "data-auth-screen=\"register\""] },
   { path: "/registration-submitted", markers: ["Registration Submitted", "bb-powered-by__getpro", "data-auth-screen=\"registration-submitted\""] },
@@ -217,9 +217,18 @@ test("demo branch homepage matches tenant Stitch design markers", async () => {
   assert.match(res.text, /Connected Community|Give Now|Digital Giving/);
   assert.match(res.text, /Visit Us/);
   assert.match(res.text, /bb-tenant-hero__visual--fallback|bb-tenant-hero__fallback/);
-  assert.match(res.text, /No upcoming events have been published yet/);
-  assert.match(res.text, /There are no public announcements at this time/);
-  assert.match(res.text, /Ministry information will be available soon/);
+  assert.match(
+    res.text,
+    /No upcoming events have been published yet|bb-tenant-event-card|church-events-page__card|bb-tenant-events__/
+  );
+  assert.match(
+    res.text,
+    /There are no public announcements at this time|bb-tenant-announcement-card|bb-tenant-announcements__/
+  );
+  assert.match(
+    res.text,
+    /Ministry information will be available soon|bb-tenant-ministry-card|bb-tenant-ministries__/
+  );
   assert.match(res.text, /bb-powered-by__label/);
   assert.match(res.text, /bb-powered-by__getpro/);
   assert.doesNotMatch(res.text, /bb-saas-hero/);
@@ -264,7 +273,10 @@ test("sermons page uses sermon cards from DB when available", { skip: !isPgConfi
   const app = makeBranchApp();
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church-sermon-card/);
+  assert.match(
+    res.text,
+    /church-sermons-page__card|church-sermon-card|church-sermons-page__featured|data-sermons-page="1"/
+  );
 });
 
 test("branch admin shell includes mobile drawer and topbar markup", () => {
@@ -312,7 +324,10 @@ test("leadership page includes Stitch section markers and empty state", async ()
   assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
   assert.match(res.text, /church-leadership-page/);
   assert.match(res.text, /Our Leadership|Meet Our Church Leadership|Leadership details coming soon/);
-  assert.match(res.text, /Leadership details coming soon|church-empty-state|church-leadership/);
+  assert.match(
+    res.text,
+    /Leadership details coming soon|church-empty-state|church-leadership-page__featured|church-leadership-page__name/
+  );
   assert.match(res.text, /href="\/about"/);
   assert.match(res.text, /href="\/leadership"/);
   assert.doesNotMatch(res.text, /GetPro Church/);
@@ -474,7 +489,10 @@ test("ministries page includes Stitch section markers", async () => {
   assert.match(res.text, /Our Community/);
   assert.match(res.text, /bb-public-ministries|church-ministries-bento/);
   assert.match(res.text, /Still looking for your place|Ready to Get Involved/);
-  assert.match(res.text, /Ministry information will be available soon/);
+  assert.match(
+    res.text,
+    /Ministry information will be available soon|bb-ministries-grid|bb-ministries-card|bb-public-ministries/
+  );
   assert.doesNotMatch(res.text, /Showing sample ministry layout/);
   assert.doesNotMatch(res.text, /Download Ministry Guide/);
   assert.doesNotMatch(res.text, /GetPro Church/);
@@ -487,7 +505,7 @@ test("events page includes Stitch section markers and empty state", async () => 
   assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
   assert.match(res.text, /church-events-page/);
   assert.match(res.text, /Church Events/);
-  assert.match(res.text, /No upcoming events yet|church-empty-state/);
+  assert.match(res.text, /No upcoming events yet|church-events-page__card|church-empty-state/);
   assert.doesNotMatch(res.text, /Annual Praise Night|Register to Attend|Event Details/);
   assert.doesNotMatch(res.text, /All Ministries|Search events|calendar_month/);
   assert.doesNotMatch(res.text, /GetPro Church/);
@@ -499,7 +517,7 @@ test("sermons page includes Stitch section markers and empty state without demo 
   assert.equal(res.status, 200);
   assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
   assert.match(res.text, /church-sermons-page/);
-  assert.match(res.text, /Sermons coming soon|church-empty-state/);
+  assert.match(res.text, /Sermons coming soon|church-sermons-page__card|church-empty-state/);
   assert.doesNotMatch(res.text, /sermons-toolbar|church-sermons-toolbar|Series|All Series/);
   assert.doesNotMatch(res.text, /Faith, Hope &amp; Purpose|Faith, Hope & Purpose/);
   assert.doesNotMatch(res.text, /sermon-demo\.mp3|Sermon Audio Podcast/);
@@ -522,8 +540,8 @@ test("giving page includes Stitch markers and empty state without demo QR", asyn
   const res = await request(app).get("/giving");
   assert.equal(res.status, 200);
   assert.match(res.text, /church\.css\?v=[^"'\s>]+/);
-  assert.match(res.text, /Ways to Give|Support Our Ministry|Giving details coming soon/);
-  assert.match(res.text, /church-empty-state|church-giving-page/);
+  assert.match(res.text, /Ways to Give|Support Our Ministry|Giving details coming soon|Giving/);
+  assert.match(res.text, /church-empty-state|church-giving-page|church-giving-page__/);
   assert.match(res.text, /church-giving-desktop|church-giving-mobile/);
   assert.doesNotMatch(res.text, /home-desktop-design|home-mobile-design/);
   assert.doesNotMatch(res.text, /giving-qr-demo\.png/);

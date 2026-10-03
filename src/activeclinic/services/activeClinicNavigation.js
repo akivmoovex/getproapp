@@ -108,6 +108,18 @@ const NAV_ITEMS = Object.freeze([
     slot: "operations",
   },
   {
+    key: "contact_inquiries",
+    label: "Contact inquiries",
+    href: "/app/operations/contact-inquiries",
+    anyOf: [
+      "activeclinic.reception.view",
+      "activeclinic.patient.search",
+      "website.view",
+    ],
+    icon: "mail",
+    slot: "operations",
+  },
+  {
     key: "clinical",
     label: "Clinical",
     href: "/app/clinical",
@@ -350,6 +362,7 @@ function matchActiveNavKey(pathname) {
   if (path.startsWith("/app/appointments")) return "appointments";
   if (path.startsWith("/app/reception")) return "reception";
   if (path.startsWith("/app/booking-requests")) return "booking_requests";
+  if (path.startsWith("/app/operations/contact-inquiries")) return "contact_inquiries";
   if (path.startsWith("/app/clinical/follow-up")) return "clinical_follow_up";
   if (path.startsWith("/app/clinical")) return "clinical";
   if (path.startsWith("/app/pharmacy")) return "pharmacy";

@@ -16,6 +16,9 @@ const {
   getBlessBoardApexDomainSet,
   getChurchHostDomain,
 } = require("../src/church/blessBoardEnv");
+const {
+  withoutAuthoritativeDeploymentProfileAsync,
+} = require("./helpers/blessBoardDomainTestEnv");
 
 const ENV_KEYS = [
   "BLESSBOARD_CANONICAL_DOMAIN",
@@ -27,20 +30,23 @@ const ENV_KEYS = [
 ];
 
 async function withEnv(overrides, fn) {
-  const prev = {};
-  for (const key of ENV_KEYS) prev[key] = process.env[key];
-  for (const [key, value] of Object.entries(overrides)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
-  try {
-    return await fn();
-  } finally {
-    for (const key of ENV_KEYS) {
-      if (prev[key] === undefined) delete process.env[key];
-      else process.env[key] = prev[key];
+  // Env-driven .org / dual-TLD matrix must ignore prod-safe runner profile.
+  return withoutAuthoritativeDeploymentProfileAsync(async () => {
+    const prev = {};
+    for (const key of ENV_KEYS) prev[key] = process.env[key];
+    for (const [key, value] of Object.entries(overrides)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
     }
-  }
+    try {
+      return await fn();
+    } finally {
+      for (const key of ENV_KEYS) {
+        if (prev[key] === undefined) delete process.env[key];
+        else process.env[key] = prev[key];
+      }
+    }
+  });
 }
 
 function makeRedirectApp() {

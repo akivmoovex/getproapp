@@ -1471,22 +1471,30 @@ ul.bb-apex-features {
 
 .bb-apex-directory-search__row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.65rem;
   padding: 0.65rem 0.85rem;
   border-radius: var(--bb-radius-md, 0.75rem);
   background: var(--color-surface);
   border: 1px solid var(--bb-color-border);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .bb-apex-directory-search__row input {
-  flex: 1 1 12rem;
+  flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
   border: 0;
   font: inherit;
   background: transparent;
   outline: none;
+}
+
+.bb-apex-directory-search__row .bb-apex-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .bb-apex-directory-search__row .material-symbols-outlined {
@@ -2656,11 +2664,42 @@ ul.bb-apex-features {
   }
 }
 
+/* Directory search: stack Search on its own row below ~tablet so the
+   field stays usable and the button does not wrap beside a clipped input. */
+@media (max-width: 480px) {
+  .bb-apex-directory-search__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0.65rem;
+  }
+
+  .bb-apex-directory-search__row .material-symbols-outlined {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .bb-apex-directory-search__row input {
+    grid-column: 2;
+    grid-row: 1;
+    flex: unset;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .bb-apex-directory-search__row .bb-apex-btn {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 374px) {
   .bb-apex-mkt-hero__cta .bb-apex-btn,
   .bb-apex-features__cta .bb-apex-btn,
-  .bb-apex-register__actions .bb-apex-btn,
-  .bb-apex-directory-search__row .bb-apex-btn {
+  .bb-apex-register__actions .bb-apex-btn {
     width: 100%;
   }
 

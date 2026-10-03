@@ -75,13 +75,13 @@ function makeBlessBoardApexApp(envOverrides) {
 }
 
 describe("V2.05 About + release notes", () => {
-  it("shared V8 product version is 2.05 with separate build identity", () => {
-    assert.equal(VERSION_BASE_V8, "2.05");
-    assert.equal(PRODUCT_VERSION_V8, "2.05");
+  it("shared V8 product version is 2.06 with separate build identity", () => {
+    assert.equal(VERSION_BASE_V8, "2.06");
+    assert.equal(PRODUCT_VERSION_V8, "2.06");
     const info = getApplicationBuildInfo({ env: V8_ENV });
-    assert.equal(info.productVersion, "2.05");
-    assert.equal(info.productVersionLabel, "Version 2.05");
-    assert.equal(info.version, "2.05");
+    assert.equal(info.productVersion, "2.06");
+    assert.equal(info.productVersionLabel, "Version 2.06");
+    assert.equal(info.version, "2.06");
     assert.equal(info.build, "a1b2c3d4e5f6");
     assert.equal(info.version.includes(info.build), false);
     assert.equal(info.environment, "testing");
@@ -104,25 +104,25 @@ describe("V2.05 About + release notes", () => {
     assert.match(v205.qaVerification, /not a .*production RELEASED/i);
   });
 
-  it("BlessBoard About shows 2.05, build identity, and no stale 2.04 current label", async () => {
+  it("BlessBoard About shows 2.06, build identity, and no stale 2.05 current label", async () => {
     const app = makeBlessBoardApexApp(V8_ENV);
     try {
       const res = await request(app).get("/about");
       assert.equal(res.status, 200);
       assert.match(res.text, /data-product="BlessBoard"/);
-      assert.match(res.text, /Version 2\.05/);
-      assert.match(res.text, /Release 2\.05/);
+      assert.match(res.text, /Version 2\.06/);
+      assert.match(res.text, /Release 2\.06/);
       assert.match(res.text, /a1b2c3d4e5f6/);
       assert.match(res.text, /unified Admin Console/i);
-      assert.doesNotMatch(res.text, /Release 2\.04/);
-      assert.doesNotMatch(res.text, /v2\.4 Ready/);
-      assert.doesNotMatch(res.text, /Version 2\.04/);
+      assert.doesNotMatch(res.text, /Release 2\.05/);
+      assert.doesNotMatch(res.text, /v2\.05 Ready/);
+      assert.doesNotMatch(res.text, /Version 2\.05/);
     } finally {
       app.__restoreEnv();
     }
   });
 
-  it("ActiveClinic About shows 2.05, build identity, and no stale 2.04 current label", async () => {
+  it("ActiveClinic About shows 2.06, build identity, and no stale 2.05 current label", async () => {
     const {
       createActiveClinicFoundationApp,
     } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -142,12 +142,12 @@ describe("V2.05 About + release notes", () => {
       .set("Host", "activeclinic.neuniversity.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /data-product="ActiveClinic"/);
-    assert.match(res.text, /Version 2\.05/);
-    assert.match(res.text, /Enterprise v2\.05/);
+    assert.match(res.text, /Version 2\.06/);
+    assert.match(res.text, /Enterprise v2\.06/);
     assert.match(res.text, /a1b2c3d4e5f6/);
     assert.match(res.text, /unified Admin Console/i);
-    assert.doesNotMatch(res.text, /Enterprise v2\.04/);
-    assert.doesNotMatch(res.text, /Version 2\.04/);
+    assert.doesNotMatch(res.text, /Enterprise v2\.05/);
+    assert.doesNotMatch(res.text, /Version 2\.05/);
   });
 
   it("BlessBoard 2.05 release notes render What's new for BlessBoard", async () => {

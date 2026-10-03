@@ -249,6 +249,28 @@ test("HQ publish confirmation token remains distinct from church CSRF", () => {
 });
 
 test("representative Branch/HQ forms include CSRF field partial", () => {
+  // Thin page shells (attendance_tracker / giving_summary) include body partials
+  // that own the form CSRF field — assert the include chain, not a missing string
+  // on the wrapper alone.
+  const wrapperIncludes = [
+    [
+      "views/church/branch-admin/attendance_tracker.ejs",
+      /phase6_attendance_tracker_body/,
+      "views/church/partials/phase6_attendance_tracker_body.ejs",
+    ],
+    [
+      "views/church/branch-admin/giving_summary.ejs",
+      /phase6_giving_summary_body/,
+      "views/church/partials/phase6_giving_summary_body.ejs",
+    ],
+  ];
+  for (const [wrapper, includeRe, bodyRel] of wrapperIncludes) {
+    const wrapText = fs.readFileSync(path.join(__dirname, "..", wrapper), "utf8");
+    assert.match(wrapText, includeRe, `${wrapper} must include CSRF-bearing body`);
+    const bodyText = fs.readFileSync(path.join(__dirname, "..", bodyRel), "utf8");
+    assert.match(bodyText, /csrf_field/, bodyRel);
+  }
+
   const forms = [
     "views/church/branch-admin/member_profile.ejs",
     "views/church/branch-admin/request_detail.ejs",

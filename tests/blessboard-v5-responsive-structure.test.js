@@ -124,7 +124,7 @@ describe("blessboard v5 responsive structure — viewport CSS hygiene", () => {
     const tokens = read("public/blessboard/v5/design-tokens.css");
     assert.match(tokens, /--bb-bp-md:\s*768px/);
     assert.match(tokens, /--bb-bp-lg:\s*900px/);
-    assert.match(tokens, /699\/700|shell drawer\/nav:\s*899\/900/);
+    assert.match(tokens, /Breakpoints \(documented; media queries use literals\)/);
     assert.match(read("public/blessboard/v5/apex.css"), /@media \(min-width:\s*768px\)/);
     assert.match(read("public/blessboard/v5/member-portal.css"), /@media \(min-width:\s*900px\)/);
     assert.match(read("public/blessboard/v5/member-portal.css"), /@media \(max-width:\s*699px\)/);

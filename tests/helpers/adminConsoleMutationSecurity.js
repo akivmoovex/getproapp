@@ -9,13 +9,39 @@ const assert = require("node:assert/strict");
 const {
   CSRF_FIELD,
   CSRF_COOKIE,
+  getCsrfCookieName,
   issueCsrfToken,
 } = require("../../src/platform/http/v5Csrf");
 const {
   CSRF_COOKIE_ACTIVECLINIC_ORG,
+  hasAuthoritativeDeploymentProfile,
+  getDeploymentProfile,
 } = require("../../src/platform/config/deploymentProfiles");
+const { DEFAULT_V5_COOKIE } = require("../../src/platform/session/v5SessionCookie");
 const { hashSessionToken } = require("../../src/platform/session/sessionToken");
 const { expectIsolationDenied } = require("./authzNegativeHelpers");
+
+/**
+ * Resolve BB CSRF cookie name from env/profile (not the deprecated CSRF_COOKIE alias alone).
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function resolveBbCsrfCookieName(env) {
+  return getCsrfCookieName(env || process.env);
+}
+
+/**
+ * Resolve BB session cookie name from authoritative deployment profile when set.
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function resolveBbSessionCookieName(env) {
+  const source = env || process.env;
+  if (hasAuthoritativeDeploymentProfile(source)) {
+    const profile = getDeploymentProfile(source);
+    if (profile && profile.sessionCookieName) return String(profile.sessionCookieName);
+  }
+  if (source.SESSION_COOKIE_NAME) return String(source.SESSION_COOKIE_NAME).trim();
+  return DEFAULT_V5_COOKIE;
+}
 
 function extractCsrfToken(html) {
   const text = String(html || "");
@@ -104,13 +130,15 @@ function issueAcCsrfPair(env, sessionCookieHeader) {
  * @param {{ text?: string, headers?: object }|null} [pageRes]
  */
 function issueBbCsrfPair(env, sessionCookieHeader, pageRes) {
+  const csrfCookieName = resolveBbCsrfCookieName(env);
   const fromPage = pageRes ? extractCsrfToken(pageRes.text) : null;
-  const fromCookie = pageRes ? extractSetCookie(pageRes, CSRF_COOKIE) : null;
+  const fromCookie = pageRes ? extractSetCookie(pageRes, csrfCookieName) : null;
   const token = fromPage || issueCsrfToken(env);
   const cookieToken = fromCookie || token;
   return {
     token,
-    cookie: `${sessionCookieHeader}; ${CSRF_COOKIE}=${cookieToken}`,
+    csrfCookieName,
+    cookie: `${sessionCookieHeader}; ${csrfCookieName}=${cookieToken}`,
   };
 }
 
@@ -124,9 +152,10 @@ function issueMismatchedCsrfPair(env, sessionCookieHeader, product) {
   const cookieToken = issueCsrfToken(env);
   const bodyToken = issueCsrfToken(env);
   const csrfCookie =
-    product === "bb" ? CSRF_COOKIE : CSRF_COOKIE_ACTIVECLINIC_ORG;
+    product === "bb" ? resolveBbCsrfCookieName(env) : CSRF_COOKIE_ACTIVECLINIC_ORG;
   return {
     token: bodyToken,
+    csrfCookieName: csrfCookie,
     cookie: `${sessionCookieHeader}; ${csrfCookie}=${cookieToken}`,
   };
 }
@@ -150,6 +179,9 @@ module.exports = {
   CSRF_FIELD,
   CSRF_COOKIE,
   CSRF_COOKIE_ACTIVECLINIC_ORG,
+  getCsrfCookieName,
+  resolveBbCsrfCookieName,
+  resolveBbSessionCookieName,
   extractCsrfToken,
   extractSetCookie,
   assertNoServerError,
