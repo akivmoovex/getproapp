@@ -2668,24 +2668,28 @@ ul.bb-apex-features {
    field stays usable and the button does not wrap beside a clipped input. */
 @media (max-width: 480px) {
   .bb-apex-directory-search__row {
+    position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
-    column-gap: 0.5rem;
     row-gap: 0.65rem;
   }
 
   .bb-apex-directory-search__row .material-symbols-outlined {
-    grid-column: 1;
-    grid-row: 1;
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .bb-apex-directory-search__row input {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     flex: unset;
     width: 100%;
     min-width: 0;
+    box-sizing: border-box;
+    padding-left: 2rem;
   }
 
   .bb-apex-directory-search__row .bb-apex-btn {

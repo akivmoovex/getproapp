@@ -59,7 +59,8 @@ describe("V2.06 BB directory mobile search", () => {
     assert.match(ejs, /bb-apex-directory-search__row/);
     assert.doesNotMatch(ejs, /gp-search-bar/);
     assert.match(css, /@media \(max-width: 480px\)[\s\S]*bb-apex-directory-search__row/);
-    assert.match(css, /grid-template-columns:\s*auto minmax\(0,\s*1fr\)/);
+    assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    assert.match(css, /bb-apex-directory-search__row \.material-symbols-outlined[\s\S]*position:\s*absolute/);
   });
 
   it("desktop unchanged; mobile stacks cleanly without overflow/overlap", async () => {
@@ -118,10 +119,10 @@ describe("V2.06 BB directory mobile search", () => {
             m.btnW >= m.rowW * 0.85 && m.btnW >= m.inputW,
             `${width}px Search button should span the stacked row (btn=${m.btnW} row=${m.rowW} input=${m.inputW})`
           );
-          // Input shares row with icon only — must be most of the row.
+          // Input uses the full row; the icon is positioned over its left edge.
           assert.ok(
-            m.inputW >= m.rowW * 0.65,
-            `${width}px input should use most of the row (input=${m.inputW} row=${m.rowW})`
+            m.inputW >= m.rowW * 0.85,
+            `${width}px input should use the full row (input=${m.inputW} row=${m.rowW})`
           );
         }
         await page.close();
