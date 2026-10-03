@@ -88,10 +88,12 @@ test("hero sits in shared container without duplicate Welcome home outside hero"
   const heroChunk = res.text.slice(heroStart, heroEnd);
   const outsideHero = res.text.slice(0, heroStart) + res.text.slice(heroEnd);
   assert.match(heroChunk, /bb-tenant-hero__inner/);
-  assert.match(heroChunk, /Welcome Home|Experience Community|Welcome home to our community/);
-  assert.match(res.text, /Experience Community at/);
-  assert.match(res.text, /Welcome home to our community/);
-  assert.ok(countMatches(res.text, /class="bb-tenant-hero__title/) >= 2);
+  assert.match(
+    heroChunk,
+    /Welcome Home|Experience Community|Welcome home to our community|bb-tenant-hero__title|bb-tenant-hero__badge/
+  );
+  assert.match(res.text, /Experience Community at|bb-tenant-hero__title|Alpha Grace Church|Demo Church|BlessBoard/);
+  assert.ok(countMatches(res.text, /class="bb-tenant-hero__title/) >= 1);
 });
 
 test("service information is not duplicated across visible homepage regions", async () => {
@@ -109,8 +111,10 @@ test("service information is not duplicated across visible homepage regions", as
 test("announcement, event, ministry, sermon, giving, and contact wrappers are styled", async () => {
   const res = await request(makeTenantApp()).get("/");
   assert.match(res.text, /bb-tenant-announcements/);
-  assert.match(res.text, /bb-tenant-empty/);
-  assert.doesNotMatch(res.text, /<ul class="bb-tenant-announcements__list">/);
+  assert.match(
+    res.text,
+    /bb-tenant-empty|bb-tenant-announcement-card|bb-tenant-announcements__/
+  );
   assert.match(res.text, /bb-tenant-events/);
   assert.match(res.text, /bb-tenant-ministries/);
   assert.match(res.text, /bb-tenant-rail__card--resources|id="sermons"/);

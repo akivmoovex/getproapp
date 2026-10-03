@@ -42,9 +42,7 @@ const {
   PRODUCT_CODE: REG_PRODUCT,
 } = require("../../platform/registration/registrationRenderLocals");
 const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
-const {
-  V204_BROWSER_ASSET_VERSION,
-} = require("../../platform/ui/theme/browserAssetVersion");
+const BB_APEX_ASSET_VERSION = "v206-qa-1";
 
 function registrationLocalsFromOpts(opts) {
   const step = (opts && opts.wizardStep) || null;
@@ -71,8 +69,8 @@ function shellLocals(opts) {
     authenticated: Boolean(opts && opts.authenticated),
     csrfToken: (opts && opts.csrfToken) || "",
     activeNav: (opts && opts.activeNav) || "home",
-    browserAssetVersion: V204_BROWSER_ASSET_VERSION,
-    assetVersion: V204_BROWSER_ASSET_VERSION,
+    browserAssetVersion: BB_APEX_ASSET_VERSION,
+    assetVersion: BB_APEX_ASSET_VERSION,
     cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, env) || "",
   };
 }

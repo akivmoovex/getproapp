@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * V2.05 — Canonical About version source for BlessBoard + ActiveClinic.
- * Proves production and testing both resolve Version 2.05 from shared
+ * V2.06 — Canonical About version source for BlessBoard + ActiveClinic.
+ * Proves production and testing both resolve Version 2.06 from shared
  * applicationBuildInfo (not legacy 1.03 / per-product constants).
  */
 
@@ -81,10 +81,10 @@ function makeBlessBoardApexApp(envOverrides) {
   return app;
 }
 
-describe("V2.05 canonical About version", () => {
-  it("shared version source is canonical 2.05 (not legacy 1.03 aliases)", () => {
-    assert.equal(VERSION_BASE, "2.05");
-    assert.equal(PRODUCT_VERSION, "2.05");
+describe("V2.06 canonical About version", () => {
+  it("shared version source is canonical 2.06 (not legacy 1.03 aliases)", () => {
+    assert.equal(VERSION_BASE, "2.06");
+    assert.equal(PRODUCT_VERSION, "2.06");
     assert.equal(VERSION_BASE, VERSION_BASE_V8);
     assert.equal(PRODUCT_VERSION, PRODUCT_VERSION_V8);
 
@@ -98,30 +98,30 @@ describe("V2.05 canonical About version", () => {
       },
     ]) {
       const scheme = resolveVersionScheme(env);
-      assert.equal(scheme.productVersion, "2.05");
-      assert.equal(scheme.versionBase, "2.05");
+      assert.equal(scheme.productVersion, "2.06");
+      assert.equal(scheme.versionBase, "2.06");
       assert.equal(scheme.platformLine, "v8");
 
       const info = getApplicationBuildInfo({
         env: { ...env, GETPRO_GIT_SHA: "c3deececc57d9a0e326c" },
       });
-      assert.equal(info.version, "2.05");
-      assert.equal(info.productVersion, "2.05");
-      assert.equal(info.productVersionLabel, "Version 2.05");
+      assert.equal(info.version, "2.06");
+      assert.equal(info.productVersion, "2.06");
+      assert.equal(info.productVersionLabel, "Version 2.06");
       assert.equal(info.build, "c3deececc57d");
       assert.doesNotMatch(info.version, /1\.03/);
       assert.equal(info.version.includes(info.build), false);
     }
   });
 
-  it("BlessBoard About displays 2.05 under production deployment profile", async () => {
+  it("BlessBoard About displays 2.06 under production deployment profile", async () => {
     const app = makeBlessBoardApexApp(PRODUCTION_BB_ENV);
     try {
       const res = await request(app).get("/about");
       assert.equal(res.status, 200);
       assert.match(res.text, /data-product="BlessBoard"/);
-      assert.match(res.text, /Version 2\.05/);
-      assert.match(res.text, /Release 2\.05/);
+      assert.match(res.text, /Version 2\.06/);
+      assert.match(res.text, /Release 2\.06/);
       assert.match(res.text, />c3deececc57d</);
       assert.doesNotMatch(res.text, /1\.03\./);
       assert.doesNotMatch(res.text, /Release 1\.3/);
@@ -130,7 +130,7 @@ describe("V2.05 canonical About version", () => {
     }
   });
 
-  it("ActiveClinic About displays 2.05 under production deployment profile", async () => {
+  it("ActiveClinic About displays 2.06 under production deployment profile", async () => {
     const {
       createActiveClinicFoundationApp,
     } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -152,8 +152,8 @@ describe("V2.05 canonical About version", () => {
       .set("Host", "activeclinic.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /data-product="ActiveClinic"/);
-    assert.match(res.text, /Version 2\.05/);
-    assert.match(res.text, /Enterprise v2\.05/);
+    assert.match(res.text, /Version 2\.06/);
+    assert.match(res.text, /Enterprise v2\.06/);
     assert.match(res.text, />c3deececc57d</);
     assert.doesNotMatch(res.text, /1\.03\./);
     assert.doesNotMatch(res.text, /Enterprise v1\.3/);

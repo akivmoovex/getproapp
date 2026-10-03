@@ -326,7 +326,8 @@ describe("blessboard v5 frontend assets — images and tokens", () => {
 
   it("shell CSS does not redeclare the primary palette :root block", () => {
     const tokens = read("public/blessboard/v5/design-tokens.css");
-    assert.match(tokens, /--bb-color-primary:\s*#6c5ce7/);
+    assert.match(tokens, /--bb-color-primary:\s*var\(--color-brand-primary\)/);
+    assert.doesNotMatch(tokens, /--bb-color-primary:\s*#6c5ce7/i);
     for (const rel of [
       "public/blessboard/v5/apex.css",
       "public/blessboard/v5/member-portal.css",
@@ -335,7 +336,7 @@ describe("blessboard v5 frontend assets — images and tokens", () => {
       "public/blessboard/v5/platform-admin.css",
     ]) {
       const css = read(rel);
-      assert.doesNotMatch(css, /:root\s*\{[^}]*--bb-color-primary:\s*#6c5ce7/, rel);
+      assert.doesNotMatch(css, /:root\s*\{[^}]*--bb-color-primary:\s*#6c5ce7/i, rel);
     }
   });
 

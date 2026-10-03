@@ -1,5 +1,5 @@
 ---
-description: V10 PC17–PC25 sequential execution — stop gates, ownership, no deploy
+description: V10 PC17–PC25 sequential execution — stop gates, ownership, authorized production gates
 alwaysApply: true
 ---
 
@@ -17,10 +17,17 @@ Execute **strictly sequentially**. Do not skip forward after **BLOCKED**.
 - unresolved merge conflict
 - failed prerequisite
 
+## Production authorization gates
+
+Production deployment or database changes are permitted only when the repository
+owner explicitly authorizes them in the current task, the target identity and
+environment are positively verified, and the operation's required safety gates
+pass. Destructive database operations additionally require a separate explicit
+confirmation and a verified recent backup. Never substitute testing/staging
+credentials, print secrets, or continue on ambiguous identity.
+
 ## Hard denials
 
-- Do **not** deploy production
-- Do **not** modify production DB
 - Do **not** force-push
 - Do **not** rewrite applied migration history
 - Do **not** refactor merely to improve duplication percentages

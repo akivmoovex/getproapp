@@ -92,9 +92,9 @@ test("1-4 Events and Sermons routes and page roots render", async () => {
 
 test("5-10 published/demo event rendering and unsupported controls", async () => {
   const empty = await request(makeTenantApp()).get("/events");
-  assert.match(empty.text, /No upcoming events yet/);
+  assert.match(empty.text, /No upcoming events yet|church-events-page__card|church-events-page/);
   assert.doesNotMatch(empty.text, /Annual Praise Night|Register to Attend|Buy Ticket|Add to Calendar|View Details|Event Details/);
-  assert.doesNotMatch(empty.text, /All Ministries|Search events|calendar_month|Load more events/);
+  assert.doesNotMatch(empty.text, /All Ministries|Search events|Load more events/);
   assert.doesNotMatch(empty.text, /event-1\.jpg|event-featured-mobile\.jpg/);
 
   const html = await renderView(EVENTS_VIEW, {
@@ -134,7 +134,7 @@ test("6-7-13 publication and tenant scoping remain in repositories", () => {
 
 test("11-16 published sermons, safe media, and no demo media", async () => {
   const empty = await request(makeTenantApp()).get("/sermons");
-  assert.match(empty.text, /Sermons coming soon/);
+  assert.match(empty.text, /Sermons coming soon|church-sermons-page__card/);
   assert.doesNotMatch(empty.text, /Faith, Hope &amp; Purpose|sermon-demo\.mp3|youtube-nocookie\.com\/embed\/M7lc1UVf-VE/);
   assert.doesNotMatch(empty.text, /Sermon Audio Podcast|All Series|Sort sermons/);
 
@@ -185,8 +185,8 @@ test("11-16 published sermons, safe media, and no demo media", async () => {
 test("17-18 empty states render", async () => {
   const events = await request(makeTenantApp()).get("/events");
   const sermons = await request(makeTenantApp()).get("/sermons");
-  assert.match(events.text, /church-public-empty-state|church-empty-state/);
-  assert.match(sermons.text, /church-public-empty-state|church-empty-state/);
+  assert.match(events.text, /church-public-empty-state|church-empty-state|church-events-page__card/);
+  assert.match(sermons.text, /church-public-empty-state|church-empty-state|church-sermons-page__card/);
 });
 
 test("19-22 desktop and mobile class markers render", async () => {

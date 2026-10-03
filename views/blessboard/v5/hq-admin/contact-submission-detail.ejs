@@ -1,0 +1,52 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var sub = submission || {};
+  var statuses = ['new', 'read', 'resolved'];
+%>
+<section class="bb-hq-page" data-bb-contact-submission-detail="<%= sub.id %>">
+  <p class="bb-hq-breadcrumb">
+    <a href="<%= basePath %>">← Contact submissions</a>
+  </p>
+  <h1>Contact Submission</h1>
+
+  <% if (typeof saved === "string" && saved === "status") { %>
+    <div class="bb-hq-notice" role="status">Status updated.</div>
+  <% } %>
+  <% if (typeof error === "string" && error) { %>
+    <div class="bb-hq-error" role="alert"><%= error === 'invalid_status' ? 'Invalid status.' : error %></div>
+  <% } %>
+
+  <dl class="bb-hq-definition-list">
+    <dt>Name</dt>
+    <dd><%= sub.fullName || '—' %></dd>
+
+    <dt>Email</dt>
+    <dd><% if (sub.email) { %><a href="mailto:<%= sub.email %>"><%= sub.email %></a><% } else { %>—<% } %></dd>
+
+    <dt>Phone</dt>
+    <dd><% if (sub.phone) { %><a href="tel:<%= sub.phone %>"><%= sub.phone %></a><% } else { %>—<% } %></dd>
+
+    <dt>Status</dt>
+    <dd><span class="bb-hq-chip" data-bb-status="<%= sub.status %>"><%= sub.status %></span></dd>
+
+    <dt>Submitted</dt>
+    <dd><%= sub.createdAt ? new Date(sub.createdAt).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : '—' %></dd>
+
+    <dt>Message</dt>
+    <dd class="bb-hq-message-block"><pre><%= sub.message || '—' %></pre></dd>
+  </dl>
+
+  <h2>Update Status</h2>
+  <form method="post" action="<%= basePath %>/<%= sub.id %>/status" class="bb-hq-form bb-hq-inline-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label class="bb-hq-field">
+      <select name="status" required>
+        <% statuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= sub.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit" class="bb-hq-btn">Save Status</button>
+  </form>
+</section>
+<%- include('../partials/hq-shell-end') %>

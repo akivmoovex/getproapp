@@ -1,0 +1,52 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var inq = inquiry || {};
+  var statuses = ['received', 'reviewed', 'closed'];
+%>
+<section class="bb-pa-page" data-ac-contact-inquiry-detail="<%= inq.id %>">
+  <p class="bb-pa-breadcrumb">
+    <a href="/admin/activeclinic/contact-inquiries">← AC Contact Inquiries</a>
+  </p>
+  <h1>Contact Inquiry</h1>
+
+  <% if (typeof notice === "string" && notice) { %>
+    <div class="bb-pa-notice" role="status"><%= notice === 'status_updated' ? 'Status updated.' : notice %></div>
+  <% } %>
+  <% if (typeof error === "string" && error) { %>
+    <div class="bb-pa-error" role="alert"><%= error === 'invalid_status' ? 'Invalid status.' : error %></div>
+  <% } %>
+
+  <dl class="bb-pa-definition-list">
+    <dt>Sender name</dt>
+    <dd><%= inq.senderName || '—' %></dd>
+
+    <dt>Email</dt>
+    <dd><%= inq.senderEmailDisplay || '—' %></dd>
+
+    <dt>Phone</dt>
+    <dd><%= inq.senderPhoneDisplay || '—' %></dd>
+
+    <dt>Status</dt>
+    <dd><span class="bb-pa-chip" data-ac-contact-status="<%= inq.status %>"><%= inq.status %></span></dd>
+
+    <dt>Submitted</dt>
+    <dd><%= inq.createdAt ? new Date(inq.createdAt).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : '—' %></dd>
+
+    <dt>Message</dt>
+    <dd class="bb-pa-message-block"><pre><%= inq.message || '—' %></pre></dd>
+  </dl>
+
+  <h2>Update Status</h2>
+  <form method="post" action="/admin/activeclinic/contact-inquiries/<%= inq.id %>/status" class="bb-pa-form bb-pa-inline-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label class="bb-pa-field">
+      <select name="status" required>
+        <% statuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= inq.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Save Status</button>
+  </form>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

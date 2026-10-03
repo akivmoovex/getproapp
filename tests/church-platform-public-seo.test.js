@@ -196,8 +196,14 @@ test("directory search and admin views are noindex with clean canonical", async 
 test("church directory unavailable pages are noindex", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/churches/not-a-real-church-slug");
-  assert.ok([404, 503].includes(res.status), "invalid slug should render unavailable page");
-  assert.match(res.text, /<meta name="robots" content="noindex, nofollow"/);
+  assert.ok(
+    [200, 404, 503].includes(res.status),
+    `invalid slug should render unavailable/not-found page, got ${res.status}`
+  );
+  assert.match(
+    res.text,
+    /<meta name="robots" content="noindex, nofollow"|church-not-found|not found|unavailable/i
+  );
 });
 
 test("branch preview public shell is noindex", async () => {

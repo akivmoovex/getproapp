@@ -63,6 +63,14 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "ac-contact-inquiries",
+    label: "AC Contact Inquiries",
+    href: "/admin/activeclinic/contact-inquiries",
+    icon: "mail",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "websites",
     label: "Websites",
     href: "/admin/websites",

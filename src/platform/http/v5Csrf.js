@@ -128,6 +128,40 @@ function setCsrfCookie(res, token, opts) {
   });
 }
 
+/**
+ * Issue a page CSRF token (and cookie). When reuseExisting is true and the
+ * request already has a valid CSRF cookie, reuse it without Set-Cookie.
+ * Used for website_frame=1 iframe loads so parent editor chrome publish
+ * forms keep matching the double-submit cookie.
+ *
+ * @param {import('express').Request|null|undefined} req
+ * @param {import('express').Response} res
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {{ secure?: boolean, reuseExisting?: boolean }} [opts]
+ * @returns {string}
+ */
+function issueOrReuseCsrfToken(req, res, env, opts) {
+  const source = env || process.env;
+  const reuseExisting = Boolean(opts && opts.reuseExisting);
+  if (reuseExisting && req) {
+    const cookieName = getCsrfCookieName(source, req);
+    const existing =
+      (req.cookies && req.cookies[cookieName]) ||
+      (req.signedCookies && req.signedCookies[cookieName]) ||
+      null;
+    if (existing && verifySignedToken(existing, getCsrfSecret(source))) {
+      return String(existing);
+    }
+  }
+  const token = issueCsrfToken(source);
+  setCsrfCookie(res, token, {
+    secure: opts && opts.secure,
+    env: source,
+    req,
+  });
+  return token;
+}
+
 module.exports = {
   CSRF_COOKIE,
   DEFAULT_CSRF_COOKIE,
@@ -136,6 +170,7 @@ module.exports = {
   getCsrfCookieName,
   getCsrfSecret,
   issueCsrfToken,
+  issueOrReuseCsrfToken,
   validateCsrf,
   setCsrfCookie,
   verifySignedToken,

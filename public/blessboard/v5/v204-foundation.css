@@ -258,6 +258,13 @@
   color: var(--nav-active-text);
 }
 
+/* Org/branch context on navy rail: use nav muted text (AA), not page --bb-muted. */
+[data-product="blessboard"][data-bb-shell="hq-admin"] .bb-hq-context,
+[data-product="blessboard"][data-bb-shell="branch-admin"] .bb-ba-context,
+[data-product="blessboard"][data-bb-shell="member"] .bb-mp-context {
+  color: var(--nav-text-muted);
+}
+
 /* —— Mobile bottom action affordance —— */
 @media (max-width: 767px) {
   [data-product="blessboard"][data-bb-shell="branch-admin"] .gp-ops-btn,

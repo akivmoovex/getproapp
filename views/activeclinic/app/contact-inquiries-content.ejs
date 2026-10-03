@@ -1,0 +1,92 @@
+<%
+  var list = (pageData && pageData.contactInquiries) || {};
+  var inquiries = list.inquiries || [];
+  var filters = list.filters || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section
+  class="ac-batch1a ac-contact-inquiries"
+  data-ac-page-section="contact-inquiries"
+  data-ac-stitch="ACN-CONTACT"
+>
+  <p class="ac-muted">Public contact form submissions for your clinic. Review and respond directly via the sender's contact details.</p>
+
+  <div class="ac-stats-grid">
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Total</p>
+      <p class="ac-stat-card__value"><%= inquiries.length %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">New (received)</p>
+      <p class="ac-stat-card__value"><%= inquiries.filter(function(i) { return i.status === 'received'; }).length %></p>
+    </article>
+  </div>
+
+  <form method="get" action="/app/operations/contact-inquiries" class="ac-panel ac-form ac-filter-form">
+    <label class="ac-field">
+      <span class="ac-field__label">Status</span>
+      <select name="status" class="ac-input">
+        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All</option>
+        <option value="received" <%= filters.status === 'received' ? 'selected' : '' %>>Received (new)</option>
+        <option value="reviewed" <%= filters.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+        <option value="closed" <%= filters.status === 'closed' ? 'selected' : '' %>>Closed</option>
+      </select>
+    </label>
+    <button type="submit" class="ac-btn ac-btn--ghost">Filter</button>
+  </form>
+
+  <% if (!inquiries.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'contact-inquiries',
+      title: 'No contact inquiries',
+      description: 'Public contact form submissions will appear here.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-batch1a__desktop" data-ac-table="contact-inquiries">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Sender</th>
+          <th scope="col">Email</th>
+          <th scope="col">Phone</th>
+          <th scope="col">Message (preview)</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% inquiries.forEach(function (inq) { %>
+        <tr data-ac-contact-inquiry-row="<%= inq.id %>">
+          <td><%= inq.senderName %></td>
+          <td class="ac-muted"><%= inq.senderEmailDisplay %></td>
+          <td class="ac-muted"><%= inq.senderPhoneDisplay || '—' %></td>
+          <td><%= (inq.message || '').slice(0, 60) %><%= (inq.message || '').length > 60 ? '…' : '' %></td>
+          <td><%= inq.createdAt ? new Date(inq.createdAt).toISOString().slice(0, 10) : '—' %></td>
+          <td><span class="ac-badge" data-ac-status="<%= inq.status %>"><%= inq.status %></span></td>
+          <td>
+            <a class="ac-btn ac-btn--ghost" href="/app/operations/contact-inquiries/<%= encodeURIComponent(inq.id) %>">View</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="ac-list ac-list--mobile-only ac-batch1a__mobile" data-ac-contact-inquiry-cards="1">
+    <% inquiries.forEach(function (inq) { %>
+    <li class="ac-card ac-batch1a-card" data-ac-contact-inquiry-card="<%= inq.id %>">
+      <a class="ac-batch1a-card__title" href="/app/operations/contact-inquiries/<%= encodeURIComponent(inq.id) %>"><%= inq.senderName %></a>
+      <p class="ac-muted"><%= inq.senderEmailDisplay %> · <%= inq.status %></p>
+      <p class="ac-muted"><%= (inq.message || '').slice(0, 80) %><%= (inq.message || '').length > 80 ? '…' : '' %></p>
+      <div class="ac-batch1a-card__meta">
+        <a class="ac-btn" href="/app/operations/contact-inquiries/<%= encodeURIComponent(inq.id) %>">View</a>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

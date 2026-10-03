@@ -17,6 +17,9 @@ const {
 } = require("../src/church/host");
 const churchRoutes = require("../src/routes/church");
 const { BLESSBOARD_NAME } = require("../src/church/branding");
+const {
+  withoutAuthoritativeDeploymentProfile,
+} = require("./helpers/blessBoardDomainTestEnv");
 
 function makeReq(hostHeader, opts = {}) {
   const { trustProxy = true, xForwardedHost } = opts;
@@ -55,13 +58,17 @@ function makeChurchApp(churchContext) {
 }
 
 test("isBlessBoardHost: apex, www, .org aliases, and church subdomains", () => {
-  assert.equal(isBlessBoardHost("blessboard.com"), true);
-  assert.equal(isBlessBoardHost("www.blessboard.com"), true);
-  assert.equal(isBlessBoardHost("blessboard.org"), true);
-  assert.equal(isBlessBoardHost("www.blessboard.org"), true);
-  assert.equal(isBlessBoardHost("demo.blessboard.com"), true);
-  assert.equal(isBlessBoardHost("demo.blessboard.org"), false);
-  assert.equal(isBlessBoardHost("getproapp.org"), false);
+  // Unprofiled V4 defaults include .org apex aliases. Registered
+  // blessboard-com-production apex is .com-only.
+  withoutAuthoritativeDeploymentProfile(() => {
+    assert.equal(isBlessBoardHost("blessboard.com"), true);
+    assert.equal(isBlessBoardHost("www.blessboard.com"), true);
+    assert.equal(isBlessBoardHost("blessboard.org"), true);
+    assert.equal(isBlessBoardHost("www.blessboard.org"), true);
+    assert.equal(isBlessBoardHost("demo.blessboard.com"), true);
+    assert.equal(isBlessBoardHost("demo.blessboard.org"), false);
+    assert.equal(isBlessBoardHost("getproapp.org"), false);
+  });
 });
 
 test("getBlessBoardChurchSlug extracts branch slug", () => {

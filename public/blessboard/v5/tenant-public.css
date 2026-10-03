@@ -6100,7 +6100,9 @@ a.bb-tp-content-card:hover {
 .bb-tp-body--editing .bb-tp-ministry-card__media.bb-tp-edit-media-wrap,
 .bb-tp-body--editing .bb-tp-event-card__media.bb-tp-edit-media-wrap,
 .bb-tp-body--editing .bb-tp-featured-event__media.bb-tp-edit-media-wrap,
-.bb-tp-body--editing .bb-tp-leader-card__media.bb-tp-edit-media-wrap {
+.bb-tp-body--editing .bb-tp-leader-card__media.bb-tp-edit-media-wrap,
+.bb-tp-body--editing .bb-tp-sermon-feature__media.bb-tp-edit-media-wrap,
+.bb-tp-body--editing .bb-tp-featured-sermon__media.bb-tp-edit-media-wrap {
   display: block;
   width: 100%;
 }
@@ -6108,7 +6110,9 @@ a.bb-tp-content-card:hover {
 .bb-tp-body--editing .bb-tp-ministry-card__media .bb-tp-structured-pencil,
 .bb-tp-body--editing .bb-tp-event-card__media .bb-tp-structured-pencil,
 .bb-tp-body--editing .bb-tp-featured-event__media .bb-tp-structured-pencil,
-.bb-tp-body--editing .bb-tp-leader-card__media .bb-tp-structured-pencil {
+.bb-tp-body--editing .bb-tp-leader-card__media .bb-tp-structured-pencil,
+.bb-tp-body--editing .bb-tp-sermon-feature__media .bb-tp-structured-pencil,
+.bb-tp-body--editing .bb-tp-featured-sermon__media .bb-tp-structured-pencil {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
@@ -6116,6 +6120,12 @@ a.bb-tp-content-card:hover {
   z-index: 2;
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   box-shadow: 0 2px 10px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+}
+.bb-tp-sermon-feature__edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
 }
 .bb-tp-leader-card--editable {
   overflow: visible;

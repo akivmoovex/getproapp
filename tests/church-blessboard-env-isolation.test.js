@@ -28,6 +28,11 @@ const { blessBoardAdminUrl } = require("../src/church/blessBoardApexHost");
 const { churchPublicHost, churchPublicUrl } = require("../src/church/platformProvisioningValidation");
 const { blessboardApexCanonicalUrl } = require("../src/church/platformPublicSeo");
 
+const {
+  withoutAuthoritativeDeploymentProfile,
+  withoutAuthoritativeDeploymentProfileAsync,
+} = require("./helpers/blessBoardDomainTestEnv");
+
 const ENV_KEYS = [
   "BLESSBOARD_CANONICAL_DOMAIN",
   "CHURCH_HOST_DOMAIN",
@@ -40,6 +45,8 @@ const ENV_KEYS = [
   "BLESSBOARD_JOBS_ENABLED",
   "DEPLOYMENT_ENV",
   "NODE_ENV",
+  // Authoritative prod profile must not override env-driven V4/V5 isolation cases.
+  "PLATFORM_DEPLOYMENT_CODE",
 ];
 
 function snapshotEnv() {
@@ -85,23 +92,25 @@ function makeRedirectApp() {
 }
 
 test("V4 defaults: canonical .com, public URL, cookie, upload root", () => {
-  const snap = snapshotEnv();
-  clearBlessBoardEnv();
-  try {
-    assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
-    assert.equal(getChurchHostDomain(), "blessboard.com");
-    assert.equal(getBlessBoardPublicUrl(), "https://blessboard.com");
-    assert.equal(getBlessBoardAdminUrl(), "https://blessboard.com");
-    assert.equal(getSessionCookieName(), DEFAULT_SESSION_COOKIE_NAME);
-    assert.equal(getSessionCookieName(), "getpro_sid");
-    assert.ok(getUploadRoot().endsWith(path.join("data", "uploads")));
-    assert.equal(getChurchUploadRoot(), path.join(getUploadRoot(), "church"));
-    const apex = getBlessBoardApexDomainSet();
-    assert.equal(apex.has("blessboard.com"), true);
-    assert.equal(apex.has("blessboard.org"), true);
-  } finally {
-    restoreEnv(snap);
-  }
+  withoutAuthoritativeDeploymentProfile(() => {
+    const snap = snapshotEnv();
+    clearBlessBoardEnv();
+    try {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+      assert.equal(getChurchHostDomain(), "blessboard.com");
+      assert.equal(getBlessBoardPublicUrl(), "https://blessboard.com");
+      assert.equal(getBlessBoardAdminUrl(), "https://blessboard.com");
+      assert.equal(getSessionCookieName(), DEFAULT_SESSION_COOKIE_NAME);
+      assert.equal(getSessionCookieName(), "getpro_sid");
+      assert.ok(getUploadRoot().endsWith(path.join("data", "uploads")));
+      assert.equal(getChurchUploadRoot(), path.join(getUploadRoot(), "church"));
+      const apex = getBlessBoardApexDomainSet();
+      assert.equal(apex.has("blessboard.com"), true);
+      assert.equal(apex.has("blessboard.org"), true);
+    } finally {
+      restoreEnv(snap);
+    }
+  });
 });
 
 test("V5 org env: public, admin, and tenant URLs use blessboard.org", () => {
@@ -184,21 +193,23 @@ test("no cross-TLD redirect: blessboard.com is not redirected to .org when not i
 });
 
 test("V4 default: blessboard.org still redirects to blessboard.com", async () => {
-  const snap = snapshotEnv();
-  clearBlessBoardEnv();
-  process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
-  try {
-    assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
-    const app = makeRedirectApp();
-    const res = await request(app)
-      .get("/pricing?ref=test")
-      .set("Host", "blessboard.org")
-      .set("X-Forwarded-Proto", "https");
-    assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "https://blessboard.com/pricing?ref=test");
-  } finally {
-    restoreEnv(snap);
-  }
+  await withoutAuthoritativeDeploymentProfileAsync(async () => {
+    const snap = snapshotEnv();
+    clearBlessBoardEnv();
+    process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
+    try {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+      const app = makeRedirectApp();
+      const res = await request(app)
+        .get("/pricing?ref=test")
+        .set("Host", "blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 301);
+      assert.equal(res.headers.location, "https://blessboard.com/pricing?ref=test");
+    } finally {
+      restoreEnv(snap);
+    }
+  });
 });
 
 test("UPLOAD_ROOT env relocates church upload base", () => {

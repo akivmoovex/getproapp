@@ -1,0 +1,62 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = inquiries || [];
+  var f = filters || {};
+  var statusFilter = f.status || 'all';
+%>
+<section class="bb-pa-page" data-ac-contact-inquiry-queue="1">
+  <h1>AC Contact Inquiries</h1>
+  <p class="bb-pa-hint">Platform-level contact submissions from ActiveClinic.org public contact form.</p>
+
+  <% if (typeof notice === "string" && notice) { %>
+    <div class="bb-pa-notice" role="status"><%= notice === 'status_updated' ? 'Status updated.' : notice %></div>
+  <% } %>
+  <% if (typeof error === "string" && error) { %>
+    <div class="bb-pa-error" role="alert"><%= error === 'not_found' ? 'Inquiry not found.' : error %></div>
+  <% } %>
+
+  <form method="get" action="/admin/activeclinic/contact-inquiries" class="bb-pa-filters bb-pa-form">
+    <label class="bb-pa-field">Status
+      <select name="status" data-ac-contact-status-filter="1">
+        <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All</option>
+        <option value="received" <%= statusFilter === 'received' ? 'selected' : '' %>>Received (new)</option>
+        <option value="reviewed" <%= statusFilter === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+        <option value="closed" <%= statusFilter === 'closed' ? 'selected' : '' %>>Closed</option>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+
+  <table class="bb-pa-table">
+    <thead>
+      <tr>
+        <th>Sender</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Message (preview)</th>
+        <th>Submitted</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="7">No contact inquiries.</td></tr>
+      <% } %>
+      <% rows.forEach(function (inq) { %>
+      <tr data-ac-contact-inquiry-row="<%= inq.id %>">
+        <td><%= inq.senderName %></td>
+        <td><span class="bb-pa-hint"><%= inq.senderEmailDisplay %></span></td>
+        <td><span class="bb-pa-hint"><%= inq.senderPhoneDisplay || '—' %></span></td>
+        <td><%= (inq.message || '').slice(0, 80) %><%= (inq.message || '').length > 80 ? '…' : '' %></td>
+        <td><%= inq.createdAt ? new Date(inq.createdAt).toISOString().slice(0, 10) : '—' %></td>
+        <td><span class="bb-pa-chip" data-ac-contact-status="<%= inq.status %>"><%= inq.status %></span></td>
+        <td>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/activeclinic/contact-inquiries/<%= inq.id %>">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

@@ -3283,7 +3283,10 @@ body.ac-public-body .ac-website-chrome__pills li.is-current {
 .ac-public-utility__value {
   color: inherit;
   text-decoration: none;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+  overflow: visible;
+  min-width: 0;
 }
 a.ac-public-utility__value:hover,
 a.ac-public-utility__value:focus-visible {
@@ -3296,6 +3299,15 @@ a.ac-public-utility__value:focus-visible {
 }
 .ac-public-utility__item--phone .ac-public-utility__label {
   color: var(--ac-status-danger);
+}
+/* Keep city/address fully legible (avoid mid-word clip of e.g. Lusaka → aka). */
+.ac-public-utility__item--location {
+  max-width: 100%;
+}
+.ac-public-utility__item--location .ac-public-utility__value {
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: normal;
 }
 
 /* Batch 7 finalization — mobile sticky book/call (above bottom nav) */
@@ -3374,6 +3386,14 @@ a.ac-public-utility__value:focus-visible {
     gap: 0.35rem;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
+  }
+  .ac-public-utility__item,
+  .ac-public-utility__item--location {
+    width: 100%;
+  }
+  .ac-public-utility__item--location .ac-public-utility__value {
+    display: inline;
+    max-width: none;
   }
   .ac-public-footer__col--care {
     width: 100%;

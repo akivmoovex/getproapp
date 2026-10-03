@@ -15656,6 +15656,11 @@ html:has(> body.church-body--apex) {
     gap: 12px;
   }
 
+  .church-body--apex .church-header--apex .church-nav--apex,
+  .church-body--apex .church-header--apex .church-header__actions {
+    display: none;
+  }
+
   .church-body--apex .church-brand {
     max-width: calc(100% - 52px);
   }
@@ -15682,6 +15687,7 @@ html:has(> body.church-body--apex) {
   }
 
   .church-body--apex .church-menu-btn {
+    display: inline-flex;
     width: 44px;
     height: 44px;
     flex-shrink: 0;

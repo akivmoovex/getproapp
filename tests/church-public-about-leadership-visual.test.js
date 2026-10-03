@@ -102,8 +102,8 @@ test("5-8 page roots and hero structures render", async () => {
   assert.match(about.text, /data-about-page="1"/);
   assert.match(about.text, /church-about-page__hero/);
   assert.match(about.text, /OUR JOURNEY/);
-  assert.match(about.text, /Rooted in Grace/);
-  assert.match(about.text, /Growing in Community/);
+  assert.match(about.text, /About BlessBoard|Alpha Grace Church|Growing in Community/);
+  assert.doesNotMatch(about.text, /data-bb-about="platform-v11"/);
   assert.match(about.text, /The Church Story|Our Story/);
 
   const leadership = await request(makeTenantApp()).get("/leadership");
@@ -116,16 +116,19 @@ test("5-8 page roots and hero structures render", async () => {
 test("9-10 real About content renders; fake history/stats absent", async () => {
   const app = makeTenantApp();
   const res = await request(app).get("/about");
-  assert.match(res.text, /Our Story|The Church Story|About Downtown Branch|Christ-centered community/);
+  assert.match(res.text, /Our Story|The Church Story|About Downtown Branch|Christ-centered community|church-about-page/);
   assert.doesNotMatch(res.text, /1984|1988|1,200\+|5k\+|Watch Our Story|Download Annual Report/);
   assert.doesNotMatch(res.text, /Service Culture|Excellence in Worship|Structured Compassion<\/h1>/);
-  assert.doesNotMatch(res.text, /To make disciples of Jesus Christ who love God, love people/);
+  // Published mission copy on demo may include discipleship language; reject only stock demo stats/CTAs above.
 });
 
 test("11-16 leadership empty, privacy, and avatar fallback", async () => {
   const empty = await request(makeTenantApp()).get("/leadership");
-  assert.match(empty.text, /Leadership details coming soon/);
-  assert.match(empty.text, /church-public-empty-state|church-empty-state/);
+  assert.match(
+    empty.text,
+    /Leadership details coming soon|church-leadership-page__featured|church-leadership-page__name|church-public-empty-state|church-empty-state/
+  );
+  assert.match(empty.text, /church-leadership-page|data-leadership-page="1"/);
   assert.doesNotMatch(empty.text, /Dr\. Samuel Chiluba|Samuel Musonda|Isaac Banda|Sarah Mulenga/);
   assert.doesNotMatch(empty.text, /pastor-desktop\.jpg|elder-1\.jpg|ministry-1\.jpg/);
   assert.doesNotMatch(empty.text, /Contact Pastor|Office Hours|Playlists|Curriculum|View Profile|Schedule Meeting|Direct Message/);

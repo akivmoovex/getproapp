@@ -26,6 +26,14 @@ const {
   revokeSessionsByBlessBoardUser,
 } = require("../../platform/session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const {
+  isTestingDeliveryEnv,
+  recordTestingDelivery,
+  findLatestTestingDelivery,
+} = require("../../platform/auth/passwordRecoveryTestingDelivery");
+const {
+  createCaptureAdapter,
+} = require("../../platform/email/outboundEmailTransport");
 
 const PURPOSE = "password_reset";
 const TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -185,6 +193,16 @@ async function requestPasswordReset(db, input, deps = {}) {
 
         const { rawToken, tokenHash } = generateRawToken();
         const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
+        const resetUrl = `${String(publicBaseUrl).replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
+        const testingDelivery = isTestingDeliveryEnv(env);
+        const metadataJson = {
+          source: src.source || "public_forgot_password",
+        };
+        if (testingDelivery) {
+          // Durable QA channel (token metadata) — never written in production.
+          metadataJson.testingResetUrl = resetUrl;
+          metadataJson.testingDelivery = "outbox";
+        }
         const token = await tokenRepo.insertActionToken(client, {
           userId: String(user.id),
           purpose: PURPOSE,
@@ -194,14 +212,35 @@ async function requestPasswordReset(db, input, deps = {}) {
           organizationId: src.organizationId || null,
           churchId: src.churchId || null,
           requestIpHash: ipHash,
-          metadataJson: {
-            source: src.source || "public_forgot_password",
-          },
+          metadataJson,
         });
 
         if (typeof client.query === "function") await client.query("COMMIT");
 
-        const resetUrl = `${String(publicBaseUrl).replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
+        if (testingDelivery) {
+          recordTestingDelivery(
+            {
+              templateKey: "blessboard_password_reset",
+              productKey: "blessboard",
+              recipient: email,
+              identifierType: "email",
+              identifierNormalized: email,
+              resetUrl,
+              expiresAt,
+              tokenId: token && token.id,
+              userId: String(user.id),
+            },
+            env
+          );
+        }
+
+        // Testing: inject capture adapter so delivery is exercised without live mail.
+        // Production Resend remains gated by liveEmailTransportDecision (fail-closed).
+        let emailAdapter = deps.emailAdapter;
+        if (!emailAdapter && testingDelivery) {
+          emailAdapter = createCaptureAdapter([], "blessboard_password_reset_capture");
+        }
+
         const delivery = await sendPasswordResetEmail(
           {
             recipientEmail: email,
@@ -211,7 +250,7 @@ async function requestPasswordReset(db, input, deps = {}) {
             env,
           },
           {
-            adapter: deps.emailAdapter,
+            adapter: emailAdapter,
             fetchImpl: deps.fetchImpl,
             log: deps.log,
           }
@@ -224,12 +263,13 @@ async function requestPasswordReset(db, input, deps = {}) {
           actionKey: "user.password_reset_requested",
           entityType: "user",
           entityId: String(user.id),
-          outcome: delivery.ok ? "success" : "failure",
+          outcome: delivery.ok || testingDelivery ? "success" : "failure",
           metadata: {
             delivery_code: delivery.code,
             token_id: token && token.id,
             source: src.source || "public_forgot_password",
             actor_type: src.actorUserId ? "platform_admin" : "public",
+            testing_delivery: testingDelivery ? "outbox" : null,
           },
         }).catch(() => null);
 
@@ -239,6 +279,13 @@ async function requestPasswordReset(db, input, deps = {}) {
           message: NEUTRAL_MESSAGE,
           sent: Boolean(delivery.ok),
           deliveryCode: delivery.code,
+          deliveryStatus: testingDelivery
+            ? delivery.ok
+              ? "queued"
+              : "link_generated"
+            : delivery.ok
+              ? "sent"
+              : "unavailable",
           // test-only fields omitted from HTTP responses by routes
           _testTokenId: token && token.id,
         };
@@ -574,6 +621,62 @@ async function inspectPasswordResetToken(db, rawToken) {
   return { ok: true, status: STATUS.OK, expiresAt: row.expiresAt };
 }
 
+/**
+ * Testing-only: resolve BlessBoard reset URL from process outbox / token metadata.
+ * Never returns a URL in production deployment env.
+ */
+async function lookupTestingPasswordResetDelivery(db, input) {
+  const src = input && typeof input === "object" ? input : {};
+  const env = src.env || process.env;
+  if (!isTestingDeliveryEnv(env)) {
+    return { ok: false, code: "refused_non_testing_environment" };
+  }
+  const email = normalizeEmail(src.identifier || src.email);
+  if (!email) {
+    return { ok: false, code: STATUS.INVALID_INPUT };
+  }
+
+  const memory = findLatestTestingDelivery({
+    identifierNormalized: email,
+    recipient: email,
+    productKey: "blessboard",
+  });
+  if (memory && memory.resetUrl) {
+    return {
+      ok: true,
+      code: STATUS.OK,
+      channel: "process_outbox",
+      resetUrl: memory.resetUrl,
+      expiresAt: memory.expiresAt,
+      tokenId: memory.tokenId,
+    };
+  }
+
+  const user = await authRepo.findUserByEmail(db, email);
+  if (!user) {
+    return { ok: false, code: "delivery_not_found" };
+  }
+  const token = await tokenRepo.findLatestActiveTokenForUserPurpose(db, {
+    userId: String(user.id),
+    purpose: PURPOSE,
+  });
+  const resetUrl =
+    token && token.metadataJson && token.metadataJson.testingResetUrl
+      ? String(token.metadataJson.testingResetUrl)
+      : null;
+  if (!resetUrl) {
+    return { ok: false, code: "delivery_not_found" };
+  }
+  return {
+    ok: true,
+    code: STATUS.OK,
+    channel: "token_metadata",
+    resetUrl,
+    expiresAt: token.expiresAt,
+    tokenId: token.id,
+  };
+}
+
 module.exports = {
   STATUS,
   PURPOSE,
@@ -586,5 +689,6 @@ module.exports = {
   platformAdminRequestPasswordReset,
   completePasswordReset,
   inspectPasswordResetToken,
+  lookupTestingPasswordResetDelivery,
   validatePassword,
 };

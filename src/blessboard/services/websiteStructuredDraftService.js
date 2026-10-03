@@ -683,21 +683,26 @@ function applyStructuredDraftsToModel(model, drafts) {
   }
 
   if (model.pageKey === "sermons" || model.pageKey === "home") {
-    const mapS = (p, key) => ({
-      id: key,
-      title: p.title,
-      speakerName: p.speakerName,
-      preachedAt: p.preachedAt,
-      summary: p.summary,
-      scripture: p.scripture,
-      mediaUrl: presentDraftImageUrl(p.mediaUrl),
-      resourceUrl: p.resourceUrl,
-      imageUrl: presentDraftImageUrl(p.imageUrl),
-      imagePlacement: p.placement || p.imagePlacement || null,
-      featured: p.featured,
-      visible: p.visible !== false,
-      series: p.series,
-    });
+    const mapS = (p, key) => {
+      const series = p.series || p.category || null;
+      return {
+        id: key,
+        title: p.title,
+        speakerName: p.speakerName,
+        preachedAt: p.preachedAt,
+        summary: p.summary,
+        scripture: p.scripture,
+        mediaUrl: presentDraftImageUrl(p.mediaUrl),
+        resourceUrl: p.resourceUrl,
+        imageUrl: presentDraftImageUrl(p.imageUrl),
+        imagePlacement: p.placement || p.imagePlacement || null,
+        featured: p.featured,
+        visible: p.visible !== false,
+        // Home / sermons templates read category; structured drafts store series.
+        series,
+        category: series,
+      };
+    };
     if (model.pageKey === "sermons") {
       model.entities = applyCollection(model.entities, byKind.sermon, mapS);
       model.entities.sort((a, b) => {

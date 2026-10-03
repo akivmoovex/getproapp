@@ -171,10 +171,55 @@ body.ac-auth-body {
 .ac-auth-public-header__link--register {
   color: var(--ac-auth-primary);
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .ac-auth-body:has(.ac-auth-public-header) .ac-auth-mobile-header {
   display: none;
+}
+
+/* Narrow auth header: keep "Register clinic" fully visible (no clip/overflow). */
+@media (max-width: 390px) {
+  .ac-auth-public-header {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .ac-auth-public-header__brand {
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: calc(100% - 8.5rem);
+  }
+
+  .ac-auth-public-header__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .ac-auth-public-header__nav {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .ac-auth-public-header__link {
+    padding: 0.25rem 0.4rem;
+  }
+
+  .ac-auth-public-header__link--register {
+    white-space: nowrap;
+    max-width: none;
+  }
 }
 
 .ac-auth-card {

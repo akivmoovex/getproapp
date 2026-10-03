@@ -429,6 +429,65 @@ async function saveHomeServiceTimes(db, input) {
         if (action === "save_publish") {
           nextStatus = "published";
         } else if (action === "save_draft") {
+          // Never demote a live published section to draft — that hides service
+          // times from public resolvers until a later publish. Prefer structured
+          // draft overlay when the live site is already published.
+          const livePublished =
+            String(ensured.section.status || "") === "published" &&
+            ensured.page &&
+            String(ensured.page.status || "") === "published";
+          if (
+            livePublished &&
+            input.organizationId &&
+            input.actorUserId
+          ) {
+            const {
+              saveStructuredDraft,
+            } = require("./websiteStructuredDraftService");
+            await saveStructuredDraft(client, {
+              organizationId: input.organizationId,
+              churchId,
+              branchId,
+              editorUserId: input.actorUserId,
+              draftKind: "service_times",
+              pageKey: "home",
+              sectionKey: SERVICE_TIMES_SECTION_KEY,
+              entityKey: "collection",
+              op: "upsert",
+              payload: { entries: validated.entries },
+            });
+            await recordBlessBoardAudit(client, {
+              churchId,
+              organizationId: input.organizationId,
+              branchId,
+              actorUserId: input.actorUserId,
+              actionKey: "content.service_times_saved",
+              entityType: "page_section",
+              entityId: ensured.section.id,
+              outcome: "success",
+              metadata: {
+                status: "ok",
+                entity_key: SERVICE_TIMES_SECTION_KEY,
+                count: validated.entries.length,
+                scope: branchId ? "branch" : "church",
+                published: false,
+                draft_overlay: true,
+                source: branchId ? "branch_service_times" : "hq_content",
+              },
+            }).catch(() => null);
+            await client.query("COMMIT");
+            return {
+              ok: true,
+              status: STATUS.OK,
+              section: ensured.section,
+              page: ensured.page,
+              createdSection: Boolean(ensured.created),
+              entryCount: validated.entries.length,
+              published: false,
+              draftOverlay: true,
+              branchId,
+            };
+          }
           nextStatus = "draft";
         } else {
           // Legacy content-admin checkbox flow.
@@ -606,12 +665,35 @@ async function loadAdminServiceTimes(db, input) {
           page: null,
         };
       }
+      // Live-site save_draft writes a structured overlay (does not demote the
+      // published section). Editor reopen must prefer that overlay when present.
+      let entries = entriesFromSection(ensured.section);
+      let draftOverlay = false;
+      try {
+        const draftRepo = require("../repositories/websiteStructuredDraftRepository");
+        const drafts = await draftRepo.listStructuredDrafts(client, {
+          churchId,
+          branchId,
+        });
+        const stDraft = (drafts || []).find((d) => d.draftKind === "service_times");
+        if (
+          stDraft &&
+          stDraft.payload &&
+          Array.isArray(stDraft.payload.entries)
+        ) {
+          entries = stDraft.payload.entries;
+          draftOverlay = true;
+        }
+      } catch {
+        // Fall back to published/draft section rows.
+      }
       return {
         ok: true,
         status: STATUS.OK,
         page: ensured.page,
         section: ensured.section,
-        entries: entriesFromSection(ensured.section),
+        entries,
+        draftOverlay,
         created: Boolean(ensured.created),
         branchId,
       };

@@ -153,17 +153,25 @@ test("apex header lockup and actions preserve responsive hierarchy", async () =>
   );
   assert.match(
     css,
-    /\.church-body--apex \.church-header__admin-link\s*\{[^}]*color:\s*#6C5CE7/s
+    /\.church-body--apex \.church-header__admin-link\s*\{[^}]*color:\s*var\(--color-brand-primary\)/s
   );
   assert.match(
     css,
-    /\.church-body--apex \.church-header__admin-link:hover,[\s\S]*?\.church-body--apex \.church-header__admin-link:focus-visible\s*\{[^}]*background:\s*rgba\(108,\s*92,\s*231,\s*0\.08\)[^}]*outline:\s*2px solid/s
+    /\.church-body--apex \.church-header__admin-link:hover,[\s\S]*?\.church-body--apex \.church-header__admin-link:focus-visible\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--color-brand-primary\) 8%, transparent\)[^}]*outline:\s*2px solid/s
   );
   assert.match(
     css,
     /\.church-body--apex \.church-header--apex \.church-nav--apex,[\s\S]*?\.church-body--apex \.church-header--apex \.church-header__actions\s*\{[^}]*flex-wrap:\s*nowrap/s
   );
-  assert.match(css, /--church-getpro-orange:\s*#ff9800/i);
+  assert.match(
+    css,
+    /@media \(max-width: 899px\)[\s\S]*?\.church-body--apex \.church-header--apex \.church-nav--apex,[\s\S]*?\.church-body--apex \.church-header--apex \.church-header__actions\s*\{\s*display:\s*none/s
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 899px\)[\s\S]*?\.church-body--apex \.church-menu-btn\s*\{\s*display:\s*inline-flex/s
+  );
+  assert.match(css, /--church-getpro-orange:\s*var\(--color-brand-accent\)/i);
   assert.match(res.text, /class="church-header__admin-link"[^>]*>Church Admin Login</);
   assert.match(
     res.text,

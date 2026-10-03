@@ -529,7 +529,8 @@ describe("ActiveClinic public website (P20–P26)", () => {
     const home = await request(app).get(`/clinics/${tenant.orgKey}`);
     assert.equal(home.status, 200);
     assert.doesNotMatch(home.text, /href="#"/);
-    assert.match(home.text, /href="\/clinics\/[^"]+\/pricing"/);
+    // Pricing nav is opt-in (page.pricing.visible defaults false); deep-link /pricing remains.
+    assert.doesNotMatch(home.text, /href="\/clinics\/[^"]+\/pricing"/);
     assert.match(home.text, /href="\/clinics\/[^"]+\/location"/);
     assert.match(home.text, /href="\/clinics\/[^"]+\/patient\/login"/);
 

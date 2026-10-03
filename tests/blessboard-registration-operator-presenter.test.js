@@ -201,7 +201,7 @@ describe("registration operator UI contracts", () => {
     assert.match(list, />Review</);
     assert.doesNotMatch(list, /primaryHref\(/);
     const css = read("public/blessboard/v5/platform-admin.css");
-    assert.match(css, /\.bb-pa-btn--primary[\s\S]*?color:\s*#fff/);
+    assert.match(css, /\.bb-pa-btn--primary[\s\S]*?color:\s*var\(--color-surface\)/);
   });
 
   it("17. technical details remain collapsed under secondary disclosure", () => {

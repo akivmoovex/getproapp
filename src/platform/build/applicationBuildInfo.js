@@ -6,9 +6,9 @@
  * Does not shell out to git on each call beyond the existing env/.git HEAD read.
  *
  * Canonical current product line (all deployments, including production):
- *   productVersion  → "2.05"
- *   versionBase     → "2.05"
- *   version         → "2.05" (Git SHA is shown separately as `build`; no invented build number)
+ *   productVersion  → "2.06"
+ *   versionBase     → "2.06"
+ *   version         → "2.06" (Git SHA is shown separately as `build`; no invented build number)
  *
  * Legacy V7 catalogue labels (historical reference only; not selected for About):
  *   productVersion  → "1.3"
@@ -25,12 +25,12 @@ const VERSION_BASE_V7 = "1.03";
 /** Human product version label for V7 release 1.3 (historical). */
 const PRODUCT_VERSION_V7 = "1.3";
 
-/** System / product version for the canonical GetPro V2.05 line. */
-const VERSION_BASE_V8 = "2.05";
-const PRODUCT_VERSION_V8 = "2.05";
+/** System / product version for the canonical GetPro V2.06 line. */
+const VERSION_BASE_V8 = "2.06";
+const PRODUCT_VERSION_V8 = "2.06";
 
 /**
- * Canonical aliases — current product About/version source is V2.05.
+ * Canonical aliases — current product About/version source is V2.06.
  * Prefer getApplicationBuildInfo({ env }) for environment + build SHA.
  */
 const VERSION_BASE = VERSION_BASE_V8;
@@ -61,7 +61,7 @@ function resolveBuildSha(options) {
  * }}
  */
 function resolveVersionScheme(env) {
-  // About/product version is canonical V2.05 for every deployment profile,
+  // About/product version is canonical V2.06 for every deployment profile,
   // including production (moovex-platform-production / activeclinic-org-production).
   // Deployment isolation platformLine (v7 vs v8) is orthogonal and must not
   // pin About to the legacy 1.03 catalogue label.
@@ -101,7 +101,7 @@ function getApplicationBuildInfo(options) {
   const environmentLabel =
     environment.charAt(0).toUpperCase() + environment.slice(1);
 
-  // Canonical V2.05: show product version alone; Git SHA lives in `build` only.
+  // Canonical V2.06: show product version alone; Git SHA lives in `build` only.
   const version = scheme.versionBase;
 
   return {

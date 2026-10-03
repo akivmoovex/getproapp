@@ -232,6 +232,8 @@ function createCaptureAdapter(store, id) {
         ctaUrl: envelope && envelope.ctaUrl,
         idempotencyKey: key || null,
         subject: envelope && envelope.subject,
+        text: envelope && envelope.text != null ? String(envelope.text) : null,
+        html: envelope && envelope.html != null ? String(envelope.html) : null,
         activationUrl: envelope && envelope.activationUrl ? String(envelope.activationUrl) : null,
         resetUrl: envelope && envelope.resetUrl ? String(envelope.resetUrl) : null,
       });

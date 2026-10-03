@@ -7,7 +7,12 @@
 
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
-const { issueCsrfToken, setCsrfCookie, validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  issueOrReuseCsrfToken,
+  validateCsrf,
+  CSRF_FIELD,
+} = require("../../platform/http/v5Csrf");
+const { isWebsiteFrameRequest } = require("../../platform/website-engine/editorViewportFrame");
 const {
   resolvePublishableClinicByKey,
   listPublishableClinics,
@@ -166,9 +171,12 @@ function sha256Hex(value) {
 }
 
 function issuePageCsrf(res, env, isProduction, req) {
-  const token = issueCsrfToken(env);
-  setCsrfCookie(res, token, { secure: isProduction, env, req });
-  return token;
+  // Same as BlessBoard: website_frame iframe loads must reuse the outer CSRF
+  // cookie so parent editor chrome publish forms keep validating.
+  return issueOrReuseCsrfToken(req, res, env, {
+    secure: isProduction,
+    reuseExisting: Boolean(req && isWebsiteFrameRequest(req.query || {})),
+  });
 }
 
 function resolveDirectorySearchQuery(req) {
@@ -360,7 +368,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
   const respondDeps = { env, isProduction, issuePageCsrf };
 
   async function renderTenantView(req, res, clinic, template, extra) {
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    // Responsive editor iframes must reuse the parent page's CSRF cookie.
+    // Desktop renders can issue a fresh token; website_frame requests cannot.
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
     const extras = extra || {};
     const presented = website.clinic || clinic;

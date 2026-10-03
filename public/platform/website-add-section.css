@@ -256,13 +256,37 @@
   }
 }
 
+/* Keep FAB clear of page body on narrow editor viewports (shared BB + AC). */
+@media (max-width: 768px) {
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) .ac-public-main,
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) .bb-tp-main,
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) [data-website-page-root] {
+    padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) {
+    scroll-padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ~390 densify */
 @media (max-width: 430px) {
   .gp-website-editor__add-section {
     right: 0.75rem;
-    bottom: 5.25rem;
+    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
     padding: 0.55rem 0.85rem;
     font-size: 0.875rem;
+    z-index: 45;
+  }
+
+  /* Keep hero/body copy out from under the fixed Add Section FAB. */
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) .gp-website-pc__hero-copy,
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) .bb-tp-hero__copy,
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) .bb-tp-hero__text,
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) [data-website-key="home.hero.subtitle"],
+  body.gp-website-editor-open:has([data-website-add-section-open]:not([hidden])) [data-website-key="home.hero.bodyText"] {
+    padding-right: 7.25rem;
+    box-sizing: border-box;
   }
 
   .gp-website-add-section__title {

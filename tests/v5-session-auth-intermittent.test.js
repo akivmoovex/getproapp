@@ -20,7 +20,12 @@ const {
 const {
   createLoadSessionScopedTenantContext,
 } = require("../src/blessboard/http/loadSessionScopedTenantContext");
-const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const {
+  getV5SessionCookieName,
+} = require("../src/platform/session/v5SessionCookie");
+
+// Profile-aware cookie name (e.g. blessboard_com_sid under blessboard-com-production).
+const V5_SESSION_COOKIE = getV5SessionCookieName();
 
 describe("v5 session auth intermittent loss", () => {
   it("maps store failure reasons to session_store_error", () => {
@@ -105,8 +110,8 @@ describe("v5 session auth intermittent loss", () => {
 
     const req = {
       path: "/branch-admin/members",
-      headers: { cookie: `${DEFAULT_V5_COOKIE}=raw-session-token` },
-      cookies: { [DEFAULT_V5_COOKIE]: "raw-session-token" },
+      headers: { cookie: `${V5_SESSION_COOKIE}=raw-session-token` },
+      cookies: { [V5_SESSION_COOKIE]: "raw-session-token" },
       requestId: "req-test-1",
     };
     const res = {
@@ -124,7 +129,7 @@ describe("v5 session auth intermittent loss", () => {
     assert.equal(req.v5Session.authenticated, false);
     assert.equal(req.v5Session.reason, "lookup_error");
     assert.equal(attempts, 2);
-    assert.equal(req.cookies[DEFAULT_V5_COOKIE], "raw-session-token");
+    assert.equal(req.cookies[V5_SESSION_COOKIE], "raw-session-token");
   });
 
   it("auth gate returns 503 for store errors and does not redirect to login", async () => {
@@ -135,8 +140,8 @@ describe("v5 session auth intermittent loss", () => {
     const req = {
       path: "/branch-admin",
       originalUrl: "/branch-admin",
-      headers: { cookie: `${DEFAULT_V5_COOKIE}=tok`, accept: "text/html" },
-      cookies: { [DEFAULT_V5_COOKIE]: "tok" },
+      headers: { cookie: `${V5_SESSION_COOKIE}=tok`, accept: "text/html" },
+      cookies: { [V5_SESSION_COOKIE]: "tok" },
       get(name) {
         return this.headers[String(name).toLowerCase()];
       },
@@ -202,8 +207,8 @@ describe("v5 session auth intermittent loss", () => {
     const req = {
       path: "/branch-admin",
       originalUrl: "/branch-admin",
-      headers: { cookie: `${DEFAULT_V5_COOKIE}=gone`, accept: "text/html" },
-      cookies: { [DEFAULT_V5_COOKIE]: "gone" },
+      headers: { cookie: `${V5_SESSION_COOKIE}=gone`, accept: "text/html" },
+      cookies: { [V5_SESSION_COOKIE]: "gone" },
       get(name) {
         return this.headers[String(name).toLowerCase()];
       },
@@ -272,8 +277,8 @@ describe("v5 session auth intermittent loss", () => {
     for (let i = 0; i < 12; i += 1) {
       const req = {
         path: BRANCH_ADMIN_ROUTES[i % BRANCH_ADMIN_ROUTES.length],
-        headers: { cookie: `${DEFAULT_V5_COOKIE}=stable-token` },
-        cookies: { [DEFAULT_V5_COOKIE]: "stable-token" },
+        headers: { cookie: `${V5_SESSION_COOKIE}=stable-token` },
+        cookies: { [V5_SESSION_COOKIE]: "stable-token" },
         requestId: `repeat-${i}`,
       };
       await load(req, {}, () => {});
@@ -298,7 +303,7 @@ describe("v5 session auth intermittent loss", () => {
           reason: "ok",
           session: { userId: "u1", organizationId: "o1" },
         };
-        req.cookies = { [DEFAULT_V5_COOKIE]: "tok" };
+        req.cookies = { [V5_SESSION_COOKIE]: "tok" };
         if (!requireSession(req, res, { loginNext: route })) return;
         res.status(200).type("text").send(`ok:${route}`);
       });
@@ -309,7 +314,7 @@ describe("v5 session auth intermittent loss", () => {
       for (let round = 0; round < 3; round += 1) {
         for (const route of BRANCH_ADMIN_ROUTES) {
           const result = await get(server.port, route, {
-            Cookie: `${DEFAULT_V5_COOKIE}=tok`,
+            Cookie: `${V5_SESSION_COOKIE}=tok`,
             Accept: "text/html",
           });
           assert.equal(result.status, 200, `${route} round ${round}`);
@@ -329,14 +334,14 @@ describe("v5 session auth intermittent loss", () => {
     });
     app.get("/branch-admin", (req, res) => {
       req.v5Session = { authenticated: false, reason: "lookup_error", session: null };
-      req.cookies = { [DEFAULT_V5_COOKIE]: "tok" };
+      req.cookies = { [V5_SESSION_COOKIE]: "tok" };
       if (!requireSession(req, res)) return;
       res.status(200).send("ok");
     });
     const server = await listen(app);
     try {
       const result = await get(server.port, "/branch-admin", {
-        Cookie: `${DEFAULT_V5_COOKIE}=tok`,
+        Cookie: `${V5_SESSION_COOKIE}=tok`,
         Accept: "text/html",
       });
       assert.equal(result.status, 503);

@@ -123,7 +123,7 @@ describe("blessboard v5 design system", () => {
     const head = read("views/blessboard/v5/partials/head-design-system.ejs");
     assert.match(head, /design-tokens\.css/);
     assert.match(head, /design-system\.css/);
-    assert.match(head, /head-fonts[\s\S]*fontFamily:\s*'hanken'/);
+    assert.match(head, /head-fonts[\s\S]*fontFamily:\s*'hanken-inter'/);
     assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), /tenant-public\.css/);
     assert.match(read("views/blessboard/v5/partials/member-shell-start.ejs"), /member-portal\.css/);
   });

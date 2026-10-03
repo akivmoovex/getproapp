@@ -127,6 +127,8 @@ body.ac-public--platform .ac-public-drawer__close {
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--acp-navy);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .acw-hero h1 em,
@@ -485,12 +487,14 @@ body.ac-public--platform .acw-footer__locale {
   color: var(--acw-contact-on);
 }
 
-.acw-contact-form input[type="text"],
-.acw-contact-form input[type="email"],
-.acw-contact-form input[type="tel"],
-.acw-contact-form select,
-.acw-contact-form textarea {
+/* Field controls must be full width. Do not rely on [type="text"] alone —
+   inputs without an explicit type attribute (HTML default text) do not match
+   that selector, which left "Your name" at the UA size=20 width. */
+.acw-contact-form .acp-field input:not([type="hidden"]),
+.acw-contact-form .acp-field select,
+.acw-contact-form .acp-field textarea {
   width: 100%;
+  min-width: 0;
   min-height: 3rem;
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--acw-contact-border);
@@ -1462,24 +1466,52 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 @media (max-width: 767px) {
+  .acw-hero__copy {
+    min-width: 0;
+  }
+
+  .acw-hero h1 {
+    min-width: 0;
+  }
+
   .acw-mf-reg-topbar {
     padding: 0 1rem;
   }
 
+  /*
+   * Mobile registration actions stay in document flow (not sticky/fixed).
+   * Sticky bottom actions were overlapping country/city on ~375–390 viewports.
+   */
   .acw-register {
-    padding: 1.25rem 1rem 6.5rem;
+    padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .acw-register__card {
+    overflow: visible;
+    padding-bottom: 1.25rem;
+  }
+
+  .acw-register__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  .acw-register__form .acw-register__grid {
+    min-width: 0;
   }
 
   .acw-register__actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 4;
+    position: static;
+    z-index: auto;
     flex-direction: column-reverse;
-    margin: 0 -1.5rem -1.5rem;
-    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-    background: var(--acp-surface);
+    flex-shrink: 0;
+    margin: 1.25rem 0 0;
+    padding: 1rem 0 0;
+    background: transparent;
     border-top: 1px solid var(--acp-border);
-    box-shadow: 0 -10px 25px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    box-shadow: none;
   }
 
   .acw-register__actions .ac-btn,
@@ -1494,7 +1526,7 @@ body.ac-public-body--mf-register .ac-public-main {
 
 @media (max-width: 390px) {
   .acw-register {
-    padding: 1rem 0.85rem 6.5rem;
+    padding: 1rem 0.85rem calc(2rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1552,6 +1584,24 @@ body.ac-public-body--mf-register .ac-public-main {
 @media (max-width: 767px) {
   body.ac-public--platform .acp-mobile-bottom-nav--platform {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Canonical hero CTAs stack cleanly on small viewports (no alternate mobile copy). */
+  .acw-hero .ac-public-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .acw-hero .ac-public-actions .ac-btn {
+    justify-content: center;
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
   }
 
   body.ac-public--platform .ac-public-header__cta {
@@ -1998,15 +2048,18 @@ body.ac-public--platform .ac-public-brand__icon {
   line-height: 1.6;
 }
 
-[data-ac-acw-screen="ACW02"] .acw-search--desktop {
+[data-ac-acw-screen="ACW02"] .acw-search {
   margin: 0;
 }
 
-[data-ac-acw-screen="ACW02"] .acw-search--compact {
-  display: none;
-  margin: 0;
-  padding: 0.5rem;
-  grid-template-columns: none;
+[data-ac-acw-screen="ACW02"] .acw-search__actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__actions .acw-search__submit {
+  flex: 1 1 auto;
 }
 
 [data-ac-acw-screen="ACW02"] .acw-search__field label {
@@ -2060,7 +2113,7 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 [data-ac-acw-screen="ACW02"] .acw-search__filter-btn {
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   width: var(--acp-touch);
@@ -2071,6 +2124,7 @@ body.ac-public--platform .ac-public-brand__icon {
   background: var(--acp-surface);
   color: var(--acp-navy);
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 [data-ac-acw-screen="ACW02"] .acw-directory-body {
@@ -2229,26 +2283,23 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 @media (max-width: 767px) {
-  [data-ac-acw-screen="ACW02"] .acw-search--desktop {
-    display: none;
+  /* Unified 3-field search stacks; keep filter affordance beside submit. */
+  [data-ac-acw-screen="ACW02"] .acw-search {
+    grid-template-columns: 1fr;
+    padding: 0.85rem;
   }
 
-  [data-ac-acw-screen="ACW02"] .acw-search--compact {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: transparent;
-    border: 0;
-    padding: 0;
-  }
-
-  [data-ac-acw-screen="ACW02"] .acw-search__control--grow {
-    flex: 1;
-    min-width: 0;
+  [data-ac-acw-screen="ACW02"] .acw-search__filter-btn {
+    display: inline-flex;
   }
 
   [data-ac-acw-screen="ACW02"] .acw-directory-hero {
     padding: 1.25rem 1rem 1rem;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-lede {
+    margin-bottom: 1rem;
+    font-size: 0.98rem;
   }
 
   [data-ac-acw-screen="ACW02"] .acw-directory-body {
@@ -2273,9 +2324,13 @@ body.ac-public--platform .ac-public-brand__icon {
     display: inline-flex;
   }
 
-  [data-ac-acw-screen="ACW02"] .acw-search--desktop {
+  [data-ac-acw-screen="ACW02"] .acw-search {
     grid-template-columns: 1.2fr 1fr 1fr auto;
     align-items: end;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-search__actions {
+    display: contents;
   }
 
   [data-ac-acw-screen="ACW02"] .acw-clinic-grid {

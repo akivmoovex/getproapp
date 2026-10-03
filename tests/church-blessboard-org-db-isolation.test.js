@@ -33,12 +33,17 @@ const ENV_KEYS = [
   "EXPECTED_DATABASE_ENV",
   "GETPRO_TEST_DB",
   "TEST_DATABASE_URL",
+  // Authoritative prod profile must not override org-testing isolation cases.
+  "PLATFORM_DEPLOYMENT_CODE",
 ];
 
 function withEnv(overrides, fn) {
   const prev = {};
   for (const key of ENV_KEYS) {
     prev[key] = process.env[key];
+  }
+  if (!Object.prototype.hasOwnProperty.call(overrides, "PLATFORM_DEPLOYMENT_CODE")) {
+    delete process.env.PLATFORM_DEPLOYMENT_CODE;
   }
   for (const [key, value] of Object.entries(overrides)) {
     if (value === undefined) delete process.env[key];
@@ -52,6 +57,13 @@ function withEnv(overrides, fn) {
       else process.env[key] = prev[key];
     }
   }
+}
+
+function spawnIsolationEnv(extra = {}) {
+  const env = { ...process.env, ...extra };
+  // Child scripts assert env-driven org-testing isolation, not com-production profile.
+  delete env.PLATFORM_DEPLOYMENT_CODE;
+  return env;
 }
 
 function v5TestingEnv(extra = {}) {
@@ -209,7 +221,7 @@ test("V5 gate exits when DATABASE_URL missing (child process)", () => {
   `;
   const result = spawnSync(process.execPath, ["-e", script], {
     encoding: "utf8",
-    env: { ...process.env, NODE_ENV: "production" },
+    env: spawnIsolationEnv({ NODE_ENV: "production" }),
   });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /explicit DATABASE_URL/);
@@ -233,7 +245,7 @@ test("V5 gate succeeds with explicit DATABASE_URL and does not log secrets", () 
   `;
   const result = spawnSync(process.execPath, ["-e", script], {
     encoding: "utf8",
-    env: { ...process.env, NODE_ENV: "production" },
+    env: spawnIsolationEnv({ NODE_ENV: "production" }),
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const combined = `${result.stdout}\n${result.stderr}`;
