@@ -6,6 +6,8 @@
 
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   issueCsrfToken,
   issueOrReuseCsrfToken,
@@ -20,6 +22,17 @@ const ENV = {
 };
 
 describe("V2.06 CSRF reuse for website_frame", () => {
+  it("passes the request into ActiveClinic tenant rendering", () => {
+    const source = fs.readFileSync(
+      path.join(__dirname, "../src/activeclinic/http/activeClinicPublicRoutes.js"),
+      "utf8"
+    );
+    assert.match(
+      source,
+      /async function renderTenantView\(req, res, clinic, template, extra\)[\s\S]*?issuePageCsrf\(res, env, isProduction, req\)/
+    );
+  });
+
   it("reuses valid cookie without Set-Cookie when reuseExisting", () => {
     const first = issueCsrfToken(ENV);
     const cookieName = getCsrfCookieName(ENV);

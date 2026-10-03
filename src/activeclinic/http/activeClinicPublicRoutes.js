@@ -368,7 +368,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
   const respondDeps = { env, isProduction, issuePageCsrf };
 
   async function renderTenantView(req, res, clinic, template, extra) {
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    // Responsive editor iframes must reuse the parent page's CSRF cookie.
+    // Desktop renders can issue a fresh token; website_frame requests cannot.
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
     const extras = extra || {};
     const presented = website.clinic || clinic;
