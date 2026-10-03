@@ -20,7 +20,7 @@ describe("V2.06 BB visual QA fixes", () => {
   it("1) directory mobile search stacks via BB-local apex CSS", () => {
     const css = read("public/blessboard/v5/apex.css");
     assert.match(css, /@media \(max-width: 480px\)[\s\S]*bb-apex-directory-search__row/);
-    assert.match(css, /grid-template-columns:\s*auto minmax\(0,\s*1fr\)/);
+    assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
     assert.match(css, /\.bb-apex-directory-search__row\s*\{[^}]*flex-wrap:\s*nowrap/);
   });
 

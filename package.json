@@ -79,6 +79,7 @@
     "test:v8:website-sections": "node --test --test-concurrency=1 tests/v8-shared-website-sections.test.js",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",
     "db:canonical-fresh-bootstrap": "node db/scripts/canonical-fresh-bootstrap.js",
+    "db:production-fresh-bootstrap": "node db/scripts/production-fresh-bootstrap.js",
     "db:verify:foundation": "node db/scripts/verify-foundation.js",
     "test:db:foundation": "node --test tests/db-foundation.test.js",
     "test:db:bootstrap-foundation": "node --test tests/db-bootstrap-foundation.test.js",
