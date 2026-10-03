@@ -27,10 +27,22 @@
     u.searchParams.set("website_mode", "draft");
     if (mode === "desktop") {
       u.searchParams.delete("website_frame");
+      u.searchParams.delete("website_viewport");
     } else {
       u.searchParams.set("website_frame", "1");
+      // Keep the responsive documents distinct.  Tablet and mobile otherwise
+      // share the same cache key, which can reuse a frame document containing
+      // the previous request's CSRF/session state.
+      u.searchParams.set("website_viewport", mode);
     }
     return u.pathname + (u.search ? u.search : "");
+  }
+
+  function applyFrameModeQuery(url) {
+    url.searchParams.set("website_frame", "1");
+    if (currentViewportMode === "tablet" || currentViewportMode === "mobile") {
+      url.searchParams.set("website_viewport", currentViewportMode);
+    }
   }
 
   function ensureViewportStage() {
@@ -213,7 +225,7 @@
         // Keep edit + frame context for in-product public pages.
         abs.searchParams.set("website_edit", "1");
         abs.searchParams.set("website_mode", "draft");
-        abs.searchParams.set("website_frame", "1");
+        applyFrameModeQuery(abs);
         var next = abs.pathname + abs.search + abs.hash;
         if (next !== href) {
           ev.preventDefault();
@@ -244,7 +256,7 @@
         ev.preventDefault();
         abs.searchParams.set("website_edit", "1");
         abs.searchParams.set("website_mode", "draft");
-        abs.searchParams.set("website_frame", "1");
+        applyFrameModeQuery(abs);
         var frame = document.querySelector("[data-website-viewport-frame]");
         if (frame) frame.setAttribute("src", abs.pathname + abs.search);
         try {
@@ -272,7 +284,7 @@
           }
           abs.searchParams.set("website_edit", "1");
           abs.searchParams.set("website_mode", "draft");
-          abs.searchParams.set("website_frame", "1");
+          applyFrameModeQuery(abs);
           var frame = document.querySelector("[data-website-viewport-frame]");
           if (frame) {
             frame.setAttribute("src", abs.pathname + abs.search);
