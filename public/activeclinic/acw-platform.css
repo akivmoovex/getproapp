@@ -127,6 +127,8 @@ body.ac-public--platform .ac-public-drawer__close {
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--acp-navy);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .acw-hero h1 em,
@@ -1464,6 +1466,14 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 @media (max-width: 767px) {
+  .acw-hero__copy {
+    min-width: 0;
+  }
+
+  .acw-hero h1 {
+    min-width: 0;
+  }
+
   .acw-mf-reg-topbar {
     padding: 0 1rem;
   }
