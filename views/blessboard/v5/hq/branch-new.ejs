@@ -99,10 +99,12 @@
           maxlength="200"
           value="<%= fval('displayName') %>"
           autocomplete="organization"
+          aria-describedby="<%= ferr('displayName') ? 'displayName-error' : '' %>"
+          <%= ferr('displayName') ? 'aria-invalid="true"' : '' %>
           data-bb-branch-display-name="1"
         />
         <p class="bb-hq-hint">Shown on the public branch website and in HQ lists.</p>
-        <% if (ferr('displayName')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('displayName') %></p><% } %>
+        <% if (ferr('displayName')) { %><p class="bb-hq-field-error" id="displayName-error" role="alert"><%= ferr('displayName') %></p><% } %>
       </div>
 
       <div class="bb-hq-field<%= ferr('branchKey') || ferr('reserved_key') ? ' is-invalid' : '' %>">
@@ -117,6 +119,8 @@
             pattern="[a-z][a-z0-9_-]{0,63}"
             value="<%= fval('branchKey') %>"
             autocomplete="off"
+            aria-describedby="<%= ferr('branchKey') || ferr('reserved_key') ? 'branchKey-error' : '' %>"
+            <%= ferr('branchKey') || ferr('reserved_key') ? 'aria-invalid="true"' : '' %>
             spellcheck="false"
             data-bb-branch-key="1"
           />
@@ -131,8 +135,7 @@
         <p class="bb-hq-hint" data-bb-branch-url-preview="1">
           Public path preview: <code data-bb-branch-url-preview-path="1"><%= publicPathPreview %></code>
         </p>
-        <% if (ferr('branchKey')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('branchKey') %></p><% } %>
-        <% if (ferr('reserved_key')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('reserved_key') %></p><% } %>
+        <% if (ferr('branchKey') || ferr('reserved_key')) { %><p class="bb-hq-field-error" id="branchKey-error" role="alert"><%= ferr('branchKey') || ferr('reserved_key') %></p><% } %>
       </div>
     </section>
 
@@ -141,13 +144,17 @@
       <p class="bb-hq-hint">Optional campus details stored on branch settings. Do not re-enter church-wide registration information.</p>
 
       <div class="bb-hq-form-row">
-        <div class="bb-hq-field<%= ferr('country_code') ? ' is-invalid' : '' %>">
+        <div class="bb-hq-field<%= ferr('countryCode') || ferr('country_code') ? ' is-invalid' : '' %>">
           <label for="countryCode">Country</label>
-          <input id="countryCode" name="countryCode" type="text" maxlength="2" value="<%= fval('countryCode') %>" placeholder="ZM" autocomplete="country" />
-          <p class="bb-hq-hint">Two-letter country code (for example ZM).</p>
-          <% if (ferr('country_code')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('country_code') %></p><% } %>
+          <select id="countryCode" name="countryCode" required autocomplete="country-name"
+            <%= ferr('countryCode') || ferr('country_code') ? 'aria-invalid="true" aria-describedby="countryCode-error"' : '' %>>
+            <% var branchCountryList = (typeof registrationCountries !== 'undefined' && registrationCountries) || []; var selectedBranchCountry = String(fval('countryCode') || defaultCountry || 'ZM').toUpperCase(); branchCountryList.forEach(function (c) { %>
+              <option value="<%= c.iso %>"<%= selectedBranchCountry === c.iso ? ' selected' : '' %>><%= c.name %></option>
+            <% }); %>
+          </select>
+          <% if (ferr('countryCode') || ferr('country_code')) { %><p class="bb-hq-field-error" id="countryCode-error" role="alert"><%= ferr('countryCode') || ferr('country_code') %></p><% } %>
         </div>
-        <div class="bb-hq-field">
+        <div class="bb-hq-field<%= ferr('city') ? ' is-invalid' : '' %>">
           <label for="city">Town / city</label>
           <%- include('../../../platform/partials/gp-location-field', {
             fieldId: 'city',
@@ -155,46 +162,53 @@
             fieldValue: fval('city'),
             countryFieldId: 'countryCode',
             listboxId: 'cityListbox',
+            inputClass: ferr('city') ? 'is-invalid' : '',
+            ariaInvalid: Boolean(ferr('city')),
+            ariaDescribedBy: ferr('city') ? 'city-error' : '',
+            placeholder: 'Start typing a city or town',
           }) %>
+          <% if (ferr('city')) { %><p class="bb-hq-field-error" id="city-error" role="alert"><%= ferr('city') %></p><% } %>
         </div>
       </div>
 
       <div class="bb-hq-field">
         <label for="provinceState">Province / state</label>
-        <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= fval('provinceState') %>" autocomplete="address-level1" />
+        <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= fval('provinceState') %>" autocomplete="address-level1" <%= ferr('provinceState') ? 'aria-invalid="true"' : '' %> />
       </div>
 
       <div class="bb-hq-field<%= ferr('address_line_1') ? ' is-invalid' : '' %>">
         <label for="addressLine1">Physical address</label>
-        <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= fval('addressLine1') %>" autocomplete="address-line1" />
+        <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= fval('addressLine1') %>" autocomplete="address-line1" <%= ferr('addressLine1') ? 'aria-invalid="true"' : '' %> />
+        <% if (ferr('addressLine1')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('addressLine1') %></p><% } %>
       </div>
       <div class="bb-hq-field">
         <label for="addressLine2">Address line 2</label>
-        <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= fval('addressLine2') %>" autocomplete="address-line2" />
+        <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= fval('addressLine2') %>" autocomplete="address-line2" <%= ferr('addressLine2') ? 'aria-invalid="true"' : '' %> />
       </div>
       <div class="bb-hq-field">
         <label for="postalCode">Postal code</label>
-        <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= fval('postalCode') %>" autocomplete="postal-code" />
+        <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= fval('postalCode') %>" autocomplete="postal-code" <%= ferr('postalCode') ? 'aria-invalid="true"' : '' %> />
       </div>
 
       <div class="bb-hq-form-row">
         <div class="bb-hq-field<%= ferr('email') ? ' is-invalid' : '' %>">
           <label for="email">Public email</label>
-          <input id="email" name="email" type="email" maxlength="254" value="<%= fval('email') %>" autocomplete="email" />
-          <% if (ferr('email')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('email') %></p><% } %>
+        <input id="email" name="email" type="email" maxlength="254" value="<%= fval('email') %>" autocomplete="email" <%= ferr('email') ? 'aria-invalid="true" aria-describedby="email-error"' : '' %> />
+          <% if (ferr('email')) { %><p class="bb-hq-field-error" id="email-error" role="alert"><%= ferr('email') %></p><% } %>
         </div>
         <%- include('../partials/phone-field', {
           id: 'phone',
           label: 'Public phone',
           required: false,
-          defaultCountry: 'ZM',
-          selectedCountry: (typeof formVals !== 'undefined' && formVals.phoneCountry) || 'ZM',
+          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          selectedCountry: (typeof formVals !== 'undefined' && formVals.phoneCountry) || ((typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM'),
           nationalValue: fval('phoneNational') || '',
           e164Value: fval('phone') || '',
           countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
           showLegacyHidden: false,
           hint: null,
           error: ferr('phone') || null,
+          showCountryName: true,
           placeholder: '97 123 4567'
         }) %>
       </div>

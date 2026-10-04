@@ -58,6 +58,7 @@ const {
   resolveBlessBoardFormPhone,
   blessBoardPhoneFieldLocals,
 } = require("../services/resolveBlessBoardFormPhone");
+const { buildRegistrationCountryLocals } = require("../../platform/registration/registrationCountrySelection");
 const {
   appendWebsiteModeNoticeQuery,
   parseWebsiteModeNoticeCode,
@@ -504,6 +505,7 @@ function createHqAdminRouter(deps) {
       (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
       "";
     const phoneLocals = blessBoardPhoneFieldLocals({ env });
+    const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, { env });
     const html = renderHqView(
       "hq/branch-new.ejs",
       await shellLocals(req, res, "branches", {
@@ -514,6 +516,7 @@ function createHqAdminRouter(deps) {
         organizationKey,
         loadPhoneField: true,
         ...phoneLocals,
+        ...countryLocals,
       })
     );
     return res.status(200).type("html").send(html);
@@ -542,6 +545,10 @@ function createHqAdminRouter(deps) {
         selectedCountry: form.phoneCountry,
         nationalValue: form.phoneNational,
       });
+      const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, {
+        env,
+        selectedCountry: form.countryCode,
+      });
       const html = renderHqView(
         "hq/branch-new.ejs",
         await shellLocals(req, res, "branches", {
@@ -552,6 +559,7 @@ function createHqAdminRouter(deps) {
           organizationKey,
           loadPhoneField: true,
           ...phoneLocals,
+          ...countryLocals,
         })
       );
       return res.status(status).type("html").send(html);
@@ -605,6 +613,10 @@ function createHqAdminRouter(deps) {
           selectedCountry: form.phoneCountry,
           nationalValue: form.phoneNational,
         });
+        const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, {
+          env,
+          selectedCountry: form.countryCode,
+        });
         const html = renderHqView(
           "hq/branch-new.ejs",
           await shellLocals(req, res, "branches", {
@@ -617,6 +629,7 @@ function createHqAdminRouter(deps) {
             organizationKey,
             loadPhoneField: true,
             ...phoneLocals,
+            ...countryLocals,
           })
         );
         return res.status(403).type("html").send(html);

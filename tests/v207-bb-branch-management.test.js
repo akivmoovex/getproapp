@@ -7,6 +7,8 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const routes = fs.readFileSync(path.join(root, "src/blessboard/http/hqAdminRoutes.js"), "utf8");
+const branchNew = fs.readFileSync(path.join(root, "views/blessboard/v5/hq/branch-new.ejs"), "utf8");
+const locationField = fs.readFileSync(path.join(root, "views/platform/partials/gp-location-field.ejs"), "utf8");
 const detail = fs.readFileSync(path.join(root, "views/blessboard/v5/hq/branch-detail.ejs"), "utf8");
 const edit = fs.readFileSync(path.join(root, "views/blessboard/v5/hq/branch-edit.ejs"), "utf8");
 const list = fs.readFileSync(path.join(root, "views/blessboard/v5/hq/branches.ejs"), "utf8");
@@ -43,5 +45,30 @@ describe("V2.07 BlessBoard branch management contracts", () => {
     assert.match(list, /statusOptions/);
     assert.match(list, /inactive/);
     assert.match(list, /branch\.status/);
+  });
+
+  it("keeps branch creation aligned with shared registration primitives", () => {
+    assert.match(routes, /buildRegistrationCountryLocals\(PRODUCT_CODE\.BLESSBOARD/);
+    assert.match(branchNew, /registrationCountries/);
+    assert.match(branchNew, /autocomplete="country-name"/);
+    assert.match(branchNew, /gp-location-field/);
+    assert.match(locationField, /data-gp-location-clear-on-country="1"/);
+    assert.match(branchNew, /showCountryName: true/);
+    assert.match(branchNew, /autocomplete="email"/);
+    assert.match(branchNew, /autocomplete="address-line1"/);
+    assert.match(branchNew, /maxlength="200"/);
+  });
+
+  it("preserves key rules, CSRF, tenant scope, and submitted values", () => {
+    assert.match(branchNew, /data-bb-branch-key-regen/);
+    assert.match(branchNew, /data-bb-branch-key-manual/);
+    assert.match(branchNew, /data-bb-branch-url-preview-path/);
+    assert.match(routes, /validateCsrf\(req, submitted, env\)/);
+    assert.match(routes, /churchId: tenant\.church\.id/);
+    assert.match(routes, /organizationId: tenant\.organization\.id/);
+    assert.doesNotMatch(routes, /churchId:\s*req\.body/);
+    assert.doesNotMatch(routes, /organizationId:\s*req\.body/);
+    assert.match(branchNew, /value="<%= fval\('displayName'\) %>"/);
+    assert.match(branchNew, /value="<%= fval\('email'\) %>"/);
   });
 });
