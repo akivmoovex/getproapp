@@ -1203,13 +1203,14 @@ describe("blessboard announcements", () => {
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-announcement-admin-list="1"/);
     assert.match(list.text, /data-bb-hq-announcements="1"/);
-    assert.match(list.text, /data-bb-stitch-announcements="61-hq-broadcast-center"/);
-    assert.match(list.text, /data-bb-delivery="overview"/);
-    assert.match(list.text, /data-bb-hq-ann-branches="1"/);
+    assert.match(list.text, /data-bb-stitch-announcements="69-hq-announcements-overview"/);
+    assert.match(list.text, /id="scope"/);
+    assert.match(list.text, /bb-ba-ann-policy/);
+    assert.doesNotMatch(list.text, /bb-hq-ann-branches|data-bb-delivery="overview"/);
     assert.match(list.text, /data-bb-ann-filter="1"/);
     assert.match(list.text, /data-bb-ann-status-chips="1"/);
     assert.match(list.text, /data-bb-ann-audience-chips="1"/);
-    assert.match(list.text, /href="\/hq\/announcements\/b\/campus"/);
+    assert.match(list.text, /(?:href|value)="\/hq\/announcements\/b\/campus"/);
     assert.match(list.text, /href="\/hq\/registrations"/);
     assert.doesNotMatch(list.text, /delivery rate|%\s*read|branch reach|WhatsApp/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
@@ -1326,9 +1327,8 @@ describe("blessboard announcements", () => {
       .set("Cookie", hqCookie);
     assert.equal(afterPublish.status, 200);
     assert.match(afterPublish.text, /HQ oversight draft/);
-    assert.match(afterPublish.text, /data-bb-delivery="row"/);
-    assert.match(afterPublish.text, /data-bb-eligible=/);
-    assert.match(afterPublish.text, /eligible/);
+    assert.doesNotMatch(afterPublish.text, /data-bb-delivery="row"/);
+    assert.doesNotMatch(afterPublish.text, /data-bb-eligible=/);
     assert.doesNotMatch(afterPublish.text, /delivery rate|%\s*read|branch reach/i);
 
     const searched = await request(app)
@@ -1366,7 +1366,7 @@ describe("blessboard announcements", () => {
       .set("Cookie", hqCookie);
     assert.equal(adminsList.status, 200);
     assert.match(adminsList.text, /Admins only HQ note/);
-    assert.match(adminsList.text, /data-bb-delivery="unavailable"/);
+    assert.doesNotMatch(adminsList.text, /data-bb-delivery="unavailable"/);
 
     const branchList = await request(app)
       .get("/hq/announcements/b/campus")
