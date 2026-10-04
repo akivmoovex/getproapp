@@ -1,11 +1,22 @@
 "use strict";
 
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const ejs = require("ejs");
 const { findOrganizationByKey } = require("../repositories/blessBoardCatalogueRepository");
 const { getBlessBoardCatalogueContext, STATUS: CTX_STATUS } = require("../services/getBlessBoardCatalogueContext");
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
 const { pageKeyFromPath, isTenantPublicPagePath, PAGE_SUFFIXES } = require("./tenantPublicPaths");
 const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
+const {
+  formatWhen,
+  formatDate,
+  formatEventParts,
+  sermonMediaKind,
+  sermonResourceKind,
+  initials,
+} = require("./renderTenantPublicPage");
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage } = require("./renderTenantLandingPage");
 const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
@@ -26,6 +37,8 @@ const {
   STATUS: WEBSITE_MODE_STATUS,
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
+const { getPublicWebsiteAnnouncement } = require("../services/announcementsService");
+const { presentRuntimeImageSrc, cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 const {
   PRODUCT_CODE,
   sendCanonicalPublicWebsiteRedirect,
@@ -42,6 +55,8 @@ const {
 const {
   createPathPublicChurchActionRouter,
 } = require("./pathPublicChurchActionRoutes");
+
+const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
 /**
  * @param {{
@@ -550,6 +565,29 @@ function createPathPublicRouter(deps) {
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
+    if (pageKey === "announcements") {
+      // Announcements are branch-scoped public content even when the branch
+      // does not have an independent mini-website. Keep this exception
+      // limited to the announcements page; all other pages retain the
+      // independent-website eligibility gate below.
+      return renderPublicModel(req, res, {
+        tenant: resolved.tenant,
+        pageKey,
+        pathPrefix: publicBranchHomePath(
+          resolved.organizationKey,
+          activeBranch.key
+        ),
+        selectedBranch: {
+          id: activeBranch.id,
+          key: activeBranch.key,
+          displayName: activeBranch.displayName,
+          branchType: activeBranch.branchType,
+          isPrimary: activeBranch.isPrimary,
+        },
+        routingMode: "path",
+        scopedBranchActive: true,
+      });
+    }
     if (
       websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
       !websiteMode.requestedBranchMayHaveIndependentPublicWebsite
@@ -590,6 +628,82 @@ function createPathPublicRouter(deps) {
   }
 
   // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
+  router.get("/c/:organizationKey/:branchKey/announcements/:id", (req, res, next) => {
+    Promise.resolve().then(async () => {
+      const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+      if (!resolved) return;
+      const branchKey = normalizeBranchKey(req.params.branchKey);
+      const websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+        branchKey,
+      });
+      const branch = websiteMode.ok
+        ? (websiteMode.activeBranches || []).find((item) => item.key === branchKey)
+        : null;
+      if (!branch) {
+        return res.status(404).type("html").send(
+          renderControlledErrorPage(404, "Announcement not found.")
+        );
+      }
+      const id = String(req.params.id || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+        return res.status(404).type("html").send(
+          renderControlledErrorPage(404, "Announcement not found.")
+        );
+      }
+      const selectedBranch = {
+        id: branch.id,
+        key: branch.key,
+        displayName: branch.displayName,
+        branchType: branch.branchType,
+        isPrimary: branch.isPrimary,
+      };
+      const pathPrefix = publicBranchHomePath(resolved.organizationKey, branch.key);
+      const model = await loadTenantPublicPageModel(getPool(), {
+        tenant: resolved.tenant,
+        pageKey: "announcements",
+        hostname: resolveHostname(req) || String(req.hostname || ""),
+        selectedBranch,
+        routingMode: "path",
+        pathPrefix,
+      });
+      const loaded = await getPublicWebsiteAnnouncement(getPool(), {
+        churchId: resolved.tenant.church.id,
+        branchId: branch.id,
+        id,
+      });
+      if (model.kind !== KIND.OK || !loaded.ok || !loaded.item) {
+        return res.status(404).type("html").send(
+          renderControlledErrorPage(404, "Announcement not found.")
+        );
+      }
+      const filename = path.join(VIEWS_ROOT, "public/announcement-detail.ejs");
+      const hrefFor = (pagePath) => {
+        const raw = String(pagePath || "/");
+        if (raw === "/") return pathPrefix;
+        return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
+      };
+      const html = ejs.render(fs.readFileSync(filename, "utf8"), {
+        ...model,
+        pageKey: "announcements",
+        pageTitle: loaded.item.title || "Announcement",
+        item: loaded.item,
+        branchView: selectedBranch,
+        pathPrefix,
+        homeHref: pathPrefix,
+        hrefFor,
+        formatWhen,
+        formatDate,
+        formatEventParts,
+        sermonMediaKind,
+        sermonResourceKind,
+        initials,
+        presentImageSrc: (src) => presentRuntimeImageSrc(src, getEnv()) || "",
+        cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, getEnv()) || "",
+      }, { filename });
+      return res.status(200).type("html").send(html);
+    }).catch(next);
+  });
   router.use(
     createPathPublicChurchActionRouter({
       getPool,

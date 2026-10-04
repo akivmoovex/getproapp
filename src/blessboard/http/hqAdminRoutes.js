@@ -34,6 +34,7 @@ const {
   getChurchSettingsPageModel,
   updateChurchSettings,
   updateBranchSettings,
+  getBranchSettingsPageModel,
   STATUS: SETTINGS_STATUS,
 } = require("../services/blessBoardSettingsService");
 const {
@@ -46,9 +47,18 @@ const {
   STATUS: CREATE_BRANCH_STATUS,
 } = require("../services/createBlessBoardBranch");
 const {
+  activateBlessBoardBranch,
+  STATUS: ACTIVATE_BRANCH_STATUS,
+} = require("../services/activateBlessBoardBranch");
+const {
+  deactivateBlessBoardBranch,
+  STATUS: DEACTIVATE_BRANCH_STATUS,
+} = require("../services/deactivateBlessBoardBranch");
+const {
   resolveBlessBoardFormPhone,
   blessBoardPhoneFieldLocals,
 } = require("../services/resolveBlessBoardFormPhone");
+const { buildRegistrationCountryLocals } = require("../../platform/registration/registrationCountrySelection");
 const {
   appendWebsiteModeNoticeQuery,
   parseWebsiteModeNoticeCode,
@@ -459,6 +469,9 @@ function createHqAdminRouter(deps) {
       .trim()
       .toLowerCase();
     const typeFilter = typeRaw === "hq" || typeRaw === "branch" ? typeRaw : "";
+    const statusRaw = String((req.query && req.query.status) || "").trim().toLowerCase();
+    const statusFilter =
+      statusRaw === "active" || statusRaw === "inactive" ? statusRaw : "";
     const created = String((req.query && req.query.created) || "").trim();
     const websiteModeNoticeCode = parseWebsiteModeNoticeCode(
       req.query && req.query.website_mode_notice
@@ -470,6 +483,8 @@ function createHqAdminRouter(deps) {
         activeBranchCount: listResult.activeCount || 0,
         q,
         typeFilter,
+        statusFilter,
+        inactiveBranchCount: listResult.inactiveCount || 0,
         capacity,
         createdKey: created,
         websiteModeNoticeCode,
@@ -490,6 +505,7 @@ function createHqAdminRouter(deps) {
       (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
       "";
     const phoneLocals = blessBoardPhoneFieldLocals({ env });
+    const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, { env });
     const html = renderHqView(
       "hq/branch-new.ejs",
       await shellLocals(req, res, "branches", {
@@ -500,6 +516,7 @@ function createHqAdminRouter(deps) {
         organizationKey,
         loadPhoneField: true,
         ...phoneLocals,
+        ...countryLocals,
       })
     );
     return res.status(200).type("html").send(html);
@@ -528,6 +545,10 @@ function createHqAdminRouter(deps) {
         selectedCountry: form.phoneCountry,
         nationalValue: form.phoneNational,
       });
+      const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, {
+        env,
+        selectedCountry: form.countryCode,
+      });
       const html = renderHqView(
         "hq/branch-new.ejs",
         await shellLocals(req, res, "branches", {
@@ -538,6 +559,7 @@ function createHqAdminRouter(deps) {
           organizationKey,
           loadPhoneField: true,
           ...phoneLocals,
+          ...countryLocals,
         })
       );
       return res.status(status).type("html").send(html);
@@ -591,6 +613,10 @@ function createHqAdminRouter(deps) {
           selectedCountry: form.phoneCountry,
           nationalValue: form.phoneNational,
         });
+        const countryLocals = buildRegistrationCountryLocals(PRODUCT_CODE.BLESSBOARD, {
+          env,
+          selectedCountry: form.countryCode,
+        });
         const html = renderHqView(
           "hq/branch-new.ejs",
           await shellLocals(req, res, "branches", {
@@ -603,6 +629,7 @@ function createHqAdminRouter(deps) {
             organizationKey,
             loadPhoneField: true,
             ...phoneLocals,
+            ...countryLocals,
           })
         );
         return res.status(403).type("html").send(html);
@@ -654,6 +681,85 @@ function createHqAdminRouter(deps) {
       })
     );
     return res.status(200).type("html").send(html);
+  });
+
+  async function lifecycleBranch(req, res, action) {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization || !tenant.organization.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    if (String(req.body && req.body.confirm_lifecycle || "") !== "1") {
+      return sendControlled(req, res, 400, "Explicit lifecycle confirmation is required.");
+    }
+    const listed = await listBlessBoardBranches(getPool(), tenant.church.id, { includeIds: true });
+    const branch = listed.ok && listed.branches.find((item) => item.key === String(req.params.branchKey).trim().toLowerCase());
+    if (!branch) return sendControlled(req, res, listed.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404, "This branch could not be found.");
+    const session = req.v5Session && req.v5Session.session;
+    const result = action === "activate"
+      ? await activateBlessBoardBranch(getPool(), {
+          churchId: tenant.church.id, organizationId: tenant.organization.id,
+          branchId: branch.id, actorUserId: session && session.userId,
+        })
+      : await deactivateBlessBoardBranch(getPool(), {
+          churchId: tenant.church.id, organizationId: tenant.organization.id,
+          branchId: branch.id, actorUserId: session && session.userId,
+        });
+    if (!result.ok) {
+      const status = result.status === ACTIVATE_BRANCH_STATUS.LIMIT_EXCEEDED ? 403 :
+        result.status === DEACTIVATE_BRANCH_STATUS.FORBIDDEN ? 403 : 400;
+      return sendControlled(req, res, status, result.message || result.reason || "Branch lifecycle update failed.");
+    }
+    return res.redirect(303, `/hq/branches/${encodeURIComponent(req.params.branchKey)}?lifecycle=${action}d`);
+  }
+
+  router.post("/hq/branches/:branchKey/deactivate", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    return lifecycleBranch(req, res, "deactivate");
+  });
+  router.post("/hq/branches/:branchKey/activate", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    return lifecycleBranch(req, res, "activate");
+  });
+
+  router.get("/hq/branches/:branchKey/edit", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id) return sendControlled(req, res, 403, "You do not have access to this site.");
+    const resolved = await resolveBlessBoardBranchForChurch(getPool(), tenant.church.id, req.params.branchKey);
+    if (!resolved.ok) return sendControlled(req, res, resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404, "This branch could not be found.");
+    const detail = await getBranchSettingsPageModel(getPool(), resolved.branch.id);
+    if (!detail.ok) return sendControlled(req, res, 503, "Branch details are temporarily unavailable.");
+    return res.type("html").send(await renderHqView("hq/branch-edit.ejs", await shellLocals(req, res, "branches", {
+      branch: resolved.branch, settings: detail.model.settings, error: null,
+    })));
+  });
+
+  router.post("/hq/branches/:branchKey/edit", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id) return sendControlled(req, res, 403, "You do not have access to this site.");
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    const resolved = await resolveBlessBoardBranchForChurch(getPool(), tenant.church.id, req.params.branchKey);
+    if (!resolved.ok) return sendControlled(req, res, resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404, "This branch could not be found.");
+    const body = req.body || {};
+    const phoneResolved = resolveBlessBoardFormPhone(body, { required: false, env, allowLegacyPhone: false });
+    if (body.phone_national && !phoneResolved.result.ok) {
+      return sendControlled(req, res, 400, "Enter a valid phone number, or leave it blank.");
+    }
+    const updated = await updateBranchSettings(getPool(), resolved.branch.id, {
+      publicName: body.publicName, email: body.email, phone: phoneResolved.e164,
+      timezone: body.timezone, countryCode: body.countryCode,
+      addressLine1: body.addressLine1, addressLine2: body.addressLine2,
+      city: body.city, provinceState: body.provinceState, postalCode: body.postalCode,
+      expectedChurchId: tenant.church.id,
+      actorUserId: req.v5Session && req.v5Session.session && req.v5Session.session.userId,
+    });
+    if (!updated.ok) {
+      const detail = await getBranchSettingsPageModel(getPool(), resolved.branch.id);
+      return res.status(400).type("html").send(await renderHqView("hq/branch-edit.ejs", await shellLocals(req, res, "branches", {
+        branch: resolved.branch, settings: { ...(detail.model ? detail.model.settings : {}), ...body },
+        error: updated.message || "Please check the branch details.",
+      })));
+    }
+    return res.redirect(303, `/hq/branches/${encodeURIComponent(resolved.branch.key)}`);
   });
 
   router.get("/hq/account", rejectApex, gateHq, async (req, res) => {
@@ -948,7 +1054,43 @@ function createHqAdminRouter(deps) {
       return sendControlled(req, res, 403, "You do not have access to this branch.");
     }
 
-    // Preserve authorization; open existing branch-admin shell (hostname primary context).
+    const detail = await getBranchSettingsPageModel(getPool(), resolved.branch.id);
+    if (!detail.ok || !detail.model) {
+      return sendControlled(req, res, 503, "Branch details are temporarily unavailable.");
+    }
+    const organizationKey =
+      (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) || "";
+    const publicHref = buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey,
+      scope: { kind: "branch", branchKey: resolved.branch.branchKey },
+    });
+    const html = renderHqView(
+      "hq/branch-detail.ejs",
+      await shellLocals(req, res, "branches", {
+        branch: {
+          ...resolved.branch,
+          settings: detail.model.settings,
+          publicHref,
+          workspaceHref: `/hq/branches/${encodeURIComponent(resolved.branch.key)}/workspace`,
+        },
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/branches/:branchKey/workspace", rejectApex, gateHq, requireBranchesView, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const resolved = await resolveBlessBoardBranchForChurch(getPool(), tenant.church.id, req.params.branchKey);
+    if (!resolved.ok) return sendControlled(req, res, resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404, "This branch could not be found.");
+    const session = req.v5Session && req.v5Session.session;
+    const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+      userId: session && session.userId, tenant, branchId: resolved.branch.id,
+    });
+    if (!authz.ok) return sendControlled(req, res, 403, "You do not have access to this branch.");
     return res.redirect(303, "/branch-admin");
   });
 

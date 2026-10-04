@@ -7,6 +7,7 @@
  */
 
 const repo = require("../repositories/publicContentRepository");
+const branchRepo = require("../repositories/blessBoardBranchRepository");
 const { PAGE_KEY_TITLES } = require("./publicContentConstants");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 
@@ -33,6 +34,7 @@ const STATUS = Object.freeze({
 
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 const TIME_WITH_SECONDS_RE = /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/;
+const BRANCH_SERVICE_TIMES_MODES = Object.freeze(["inherit", "override", "hidden"]);
 
 function emptyLayoutMetadata() {
   return { schema: SERVICE_TIMES_SCHEMA, entries: [] };
@@ -433,9 +435,7 @@ async function saveHomeServiceTimes(db, input) {
           // times from public resolvers until a later publish. Prefer structured
           // draft overlay when the live site is already published.
           const livePublished =
-            String(ensured.section.status || "") === "published" &&
-            ensured.page &&
-            String(ensured.page.status || "") === "published";
+            String(ensured.section.status || "") === "published";
           if (
             livePublished &&
             input.organizationId &&
@@ -475,6 +475,14 @@ async function saveHomeServiceTimes(db, input) {
                 source: branchId ? "branch_service_times" : "hq_content",
               },
             }).catch(() => null);
+            if (branchId && validated.entries.length > 0) {
+              await branchRepo.setBranchServiceTimesMode(client, {
+                branchId,
+                churchId,
+                organizationId: input.organizationId,
+                mode: "override",
+              });
+            }
             await client.query("COMMIT");
             return {
               ok: true,
@@ -513,6 +521,16 @@ async function saveHomeServiceTimes(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "section_update_failed" };
         }
+        // Legacy branch editors that write branch rows are explicit overrides.
+        // This preserves backward compatibility without copying HQ values.
+        if (branchId && validated.entries.length > 0) {
+          await branchRepo.setBranchServiceTimesMode(client, {
+            branchId,
+            churchId,
+            organizationId: input.organizationId,
+            mode: "override",
+          });
+        }
 
         if (input.organizationId && input.actorUserId) {
           await recordBlessBoardAudit(client, {
@@ -550,6 +568,57 @@ async function saveHomeServiceTimes(db, input) {
           );
         }
 
+        // Service-times publish is a real website publish, not only a CMS row
+        // update.  Run the canonical Platform lifecycle on this same client so
+        // its version and the CMS changes commit or roll back together.
+        let publication = null;
+        if (nextStatus === "published") {
+          // The submitted publish payload is authoritative. Remove the older
+          // overlay before the canonical lifecycle applies structured drafts;
+          // the surrounding transaction restores it if publication fails.
+          if (input.organizationId && input.actorUserId) {
+            const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
+            await structuredDraftRepo.discardStructuredDraftByKey(client, {
+              churchId,
+              branchId,
+              draftKind: "service_times",
+              entityKey: "collection",
+              pageKey: "home",
+              sectionKey: SERVICE_TIMES_SECTION_KEY,
+            });
+          }
+          const { publishChurchWebsite } = require("./churchWebsitePublishService");
+          publication = await publishChurchWebsite(client, {
+            organizationId: input.organizationId,
+            churchId,
+            branchId,
+            actorUserId: input.actorUserId,
+            confirmPublish: true,
+            forcePublishVersion: true,
+            deferServiceTimes: false,
+            relaxPreviewRequirement: true,
+            sourceType: branchId ? "branch_service_times" : "hq_service_times",
+            publicationNote: "Published service times",
+          });
+          if (!publication || !publication.ok) {
+            const error = new Error("service_times_canonical_publish_failed");
+            error.code = "SERVICE_TIMES_CANONICAL_PUBLISH_FAILED";
+            error.publication = publication;
+            throw error;
+          }
+          if (input.organizationId && input.actorUserId) {
+            const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
+            await structuredDraftRepo.discardStructuredDraftByKey(client, {
+              churchId,
+              branchId,
+              draftKind: "service_times",
+              entityKey: "collection",
+              pageKey: "home",
+              sectionKey: SERVICE_TIMES_SECTION_KEY,
+            });
+          }
+        }
+
         await client.query("COMMIT");
         return {
           ok: true,
@@ -559,6 +628,7 @@ async function saveHomeServiceTimes(db, input) {
           createdSection: Boolean(ensured.created),
           entryCount: validated.entries.length,
           published: nextStatus === "published",
+          publication,
           branchId,
         };
       } catch (err) {
@@ -653,6 +723,39 @@ async function loadAdminServiceTimes(db, input) {
       ? String(input.branchId).trim()
       : null;
   try {
+    if (branchId) {
+      const modeResult = await getBranchServiceTimesMode(db, {
+        churchId,
+        branchId,
+        organizationId: input.organizationId,
+      });
+      const mode = modeResult.ok && modeResult.mode ? modeResult.mode : "inherit";
+      if (mode === "hidden") {
+        return {
+          ok: true,
+          status: STATUS.OK,
+          page: null,
+          section: null,
+          entries: [],
+          draftOverlay: false,
+          created: false,
+          branchId,
+          mode,
+        };
+      }
+      if (mode === "inherit") {
+        const hq = await loadAdminServiceTimes(db, {
+          ...input,
+          branchId: null,
+        });
+        return {
+          ...hq,
+          branchId,
+          mode,
+          inherited: true,
+        };
+      }
+    }
     return await withClient(db, async (client) => {
       const ensured = await ensureCanonicalServiceTimesSection(client, { churchId, branchId });
       if (!ensured.ok || !ensured.section) {
@@ -696,6 +799,14 @@ async function loadAdminServiceTimes(db, input) {
         draftOverlay,
         created: Boolean(ensured.created),
         branchId,
+        mode: branchId
+          ? (await branchRepo.getBranchServiceTimesMode(
+              client,
+              branchId,
+              churchId,
+              input.organizationId
+            )) || "inherit"
+          : null,
       };
     });
   } catch {
@@ -727,10 +838,21 @@ async function resolvePublicServiceTimesEntries(db, input) {
     input && input.branchId != null && String(input.branchId).trim()
       ? String(input.branchId).trim()
       : null;
-  const allowChurchFallback = !input || input.allowChurchFallback !== false;
-
   try {
     return await withClient(db, async (client) => {
+      let mode = null;
+      if (branchId) {
+        mode = await branchRepo.getBranchServiceTimesMode(
+          client,
+          branchId,
+          churchId,
+          input && input.organizationId
+        );
+        mode = BRANCH_SERVICE_TIMES_MODES.includes(mode) ? mode : "inherit";
+        if (mode === "hidden") {
+          return { ok: true, status: STATUS.OK, entries: [], source: "hidden" };
+        }
+      }
       async function publishedEntriesForScope(scopeBranchId) {
         const page = await repo.findPageByScope(client, {
           churchId,
@@ -754,16 +876,13 @@ async function resolvePublicServiceTimesEntries(db, input) {
 
       if (branchId) {
         const branchEntries = await publishedEntriesForScope(branchId);
-        if (branchEntries.length) {
+        if (mode === "override") {
           return {
             ok: true,
             status: STATUS.OK,
             entries: branchEntries,
             source: "branch",
           };
-        }
-        if (!allowChurchFallback) {
-          return { ok: true, status: STATUS.OK, entries: [], source: "branch" };
         }
       }
 
@@ -784,6 +903,29 @@ async function resolvePublicServiceTimesEntries(db, input) {
   }
 }
 
+async function getBranchServiceTimesMode(db, input) {
+  const churchId = String(input && input.churchId || "").trim();
+  const branchId = String(input && input.branchId || "").trim();
+  if (!churchId || !branchId) return { ok: false, status: STATUS.INVALID_INPUT, mode: null };
+  const mode = await withClient(db, (client) =>
+    branchRepo.getBranchServiceTimesMode(client, branchId, churchId, input.organizationId)
+  );
+  return { ok: Boolean(mode), status: mode ? STATUS.OK : STATUS.NOT_FOUND, mode: mode || null };
+}
+
+async function setBranchServiceTimesMode(db, input) {
+  const mode = String(input && input.mode || "").trim().toLowerCase();
+  if (!BRANCH_SERVICE_TIMES_MODES.includes(mode)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, mode: null };
+  }
+  const result = await withClient(db, (client) =>
+    branchRepo.setBranchServiceTimesMode(client, input)
+  );
+  return result
+    ? { ok: true, status: STATUS.OK, mode: result.service_times_mode }
+    : { ok: false, status: STATUS.NOT_FOUND, mode: null };
+}
+
 module.exports = {
   STATUS,
   SERVICE_TIMES_SECTION_KEY,
@@ -801,6 +943,9 @@ module.exports = {
   repairHomeContentFoundation,
   loadAdminServiceTimes,
   resolvePublicServiceTimesEntries,
+  BRANCH_SERVICE_TIMES_MODES,
+  getBranchServiceTimesMode,
+  setBranchServiceTimesMode,
   dayLabel,
   formatTimeLabel,
 };

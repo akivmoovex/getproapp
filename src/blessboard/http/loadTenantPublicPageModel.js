@@ -1333,6 +1333,20 @@ async function loadTenantPublicPageModel(db, input) {
 
   if (pageKey === "home") {
     homeTeasers.announcement = pickAnnouncementHighlight(pageSections);
+    const canonicalAnnouncements = await listPublicWebsiteAnnouncements(db, {
+      churchId,
+      branchId: scopedBranchActive ? contentBranchId : null,
+      limit: 1,
+    });
+    const announcement = canonicalAnnouncements.items && canonicalAnnouncements.items[0];
+    homeTeasers.announcement = announcement
+      ? {
+          heading: announcement.title,
+          bodyText: announcement.body,
+          announcementId: announcement.id,
+          href: `/announcements/${announcement.id}`,
+        }
+      : null;
 
     const ministries = await loadEntityList(
       listPublishedMinistries,
@@ -2063,6 +2077,22 @@ async function loadTenantPublicPageModel(db, input) {
           isPrimary: true,
         };
 
+  const announcementHeroSection = pageSections.find((section) => {
+    const type = String((section && section.sectionType) || "").toLowerCase();
+    const key = String((section && section.sectionKey) || "").toLowerCase();
+    return type === "hero" || key.includes("hero");
+  });
+  const announcementHeroMedia = publicDemo.mediaOrFallback(
+    announcementHeroSection && (announcementHeroSection.mediaUrl || announcementHeroSection.imageUrl),
+    demoPack.announcementsPage.heroMediaUrl
+  );
+  const announcementFallbackImages = [
+    demoPack.announcementsPage.featuredMediaUrl,
+    ...demoPack.announcementsPage.cardMediaUrls,
+  ]
+    .map((url) => publicDemo.mediaOrFallback(url))
+    .filter(Boolean);
+
   return {
     kind: KIND.OK,
     pageKey,
@@ -2115,6 +2145,8 @@ async function loadTenantPublicPageModel(db, input) {
     sermonsDemoFallback,
     contactDemoFallback,
     givingDemoFallback,
+    announcementHeroMedia,
+    announcementFallbackImages,
     canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
@@ -2124,7 +2156,7 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     giveHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=68",
+    cssHref: "/blessboard/v5/tenant-public.css?v=71",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,

@@ -161,6 +161,13 @@ describe("V7 website editable-field schema", () => {
     assert.equal(hasEditableField(PRODUCT_CODE.ACTIVECLINIC, "home.hero.heading"), false);
 
     assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "home.hero.heading"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.heading"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.bodyText"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.buttonText"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.buttonUrl"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.secondaryButtonText"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.secondaryButtonUrl"), true);
+    assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "announcements.hero.image"), true);
     assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "home.hero.body_text"), true);
     assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "contact.details.phone"), true);
     assert.equal(hasEditableField(PRODUCT_CODE.BLESSBOARD, "contact.details.email"), true);

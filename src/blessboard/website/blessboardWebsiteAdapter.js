@@ -12,9 +12,22 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
   registerBlessBoardWebsiteTemplate();
   const organizationId = String((input && input.organizationId) || "");
   const slug = String((input && input.slug) || "").trim().toLowerCase();
+  let churchId = input.churchId || null;
+  if (!input.branchId && !churchId) {
+    const church = await db.query(
+      `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 2`,
+      [organizationId]
+    );
+    if (church.rows.length !== 1) {
+      return { ok: false, reason: "church_scope_required" };
+    }
+    churchId = church.rows[0].id;
+  }
   const existing = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
     organizationId,
     productCode: "blessboard",
+    scopeRef: input.branchId || churchId,
+    scopeKind: input.branchId ? "branch" : "church_wide",
   });
   if (existing) {
     return { ok: true, instance: existing, created: false, existed: true };
@@ -25,8 +38,8 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug: slug || organizationId.slice(0, 8),
     status: input.status || "coming_soon",
-    scopeKind: "church_wide",
-    scopeRef: null,
+    scopeKind: input.branchId ? "branch" : "church_wide",
+    scopeRef: input.branchId || churchId,
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: input.contentOverrides || {},
     seedDefaults: false,

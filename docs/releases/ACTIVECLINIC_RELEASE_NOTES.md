@@ -5,6 +5,19 @@ equivalents from `src/platform/release-notes/releaseNotesCatalog.js` (`productNa
 
 ---
 
+## Version 2.07
+
+Shared release and verification alignment update.
+
+### What's new
+
+- Password recovery QA passed using the testing-delivery outbox/capture.
+- RBAC, product-isolation, and tenant-isolation verification passed.
+- No ActiveClinic product defect was reproduced in this sanity-fix batch.
+- Shared release and About version alignment updated to 2.07.
+
+---
+
 ## Version 2.05
 
 **Title:** ActiveClinic 2.05

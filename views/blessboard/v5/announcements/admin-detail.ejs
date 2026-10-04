@@ -51,27 +51,67 @@
         <span aria-hidden="true">›</span>
         <span>Detail</span>
       </p>
-      <h1 class="bb-ba-page-head__title"><%= item.title %></h1>
-      <p class="bb-ba-lede">
+      <div class="bb-ann-detail__title-row">
+        <h1 class="bb-ba-page-head__title"><%= item.title %></h1>
         <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
-        · <%= audienceLabel(item.audiences) %>
-        · <%= item.branchId ? 'Branch' : 'Church-wide' %>
-      </p>
+        <span class="bb-ba-chip bb-ba-chip--muted"><%= item.branchId ? 'Branch' : 'Church-wide' %></span>
+      </div>
+      <p class="bb-ba-lede"><%= audienceLabel(item.audiences) %> · <%= item.branchId ? 'Branch' : 'Church-wide' %></p>
     </div>
   </header>
 
   <% if (saved === '1' || saved === 'published' || saved === 'scheduled' || saved === 'archived' || saved === 'already') { %>
-  <p class="bb-ba-ok" role="status">
+  <section class="bb-ann-success-state" data-bb-stitch="73" data-bb-ann-success="<%= saved %>" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true"><%= saved === 'scheduled' ? 'schedule' : 'check_circle' %></span>
+    <div>
+    <h2><%= saved === 'scheduled' ? 'Scheduled successfully' : (saved === 'published' ? 'Published successfully' : 'Announcement updated') %></h2>
+    <p>
     <% if (saved === 'published') { %>Announcement published.<% }
        else if (saved === 'scheduled') { %>Announcement scheduled (visible when start time is reached).<% }
        else if (saved === 'archived') { %>Announcement archived.<% }
        else if (saved === 'already') { %>Already published.<% }
        else { %>Saved.<% } %>
-  </p>
+    </p>
+    <% if (saved === 'scheduled') { %><p><strong>Starts:</strong> <%= formatWhen(item.startsAt) %> · <strong>Scope:</strong> <%= item.branchId ? 'Branch' : 'Church-wide' %></p><% } %>
+    <div class="bb-ann-success-state__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>">Back to announcements</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= item.id %>/edit">Edit announcement</a>
+    </div>
+    </div>
+  </section>
   <% } %>
   <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
 
-  <section class="bb-ba-panel">
+  <% if (saved === 'published' && (publicAnnouncementUrl || memberAnnouncementAudience)) { %>
+  <section class="bb-ba-panel" data-bb-announcement-destinations="1">
+    <h2 class="bb-ba-section-title">Published</h2>
+    <% if (publicAnnouncementScopeLabel) { %>
+    <p><strong>Scope:</strong> <%= publicAnnouncementScopeLabel %></p>
+    <% } %>
+    <p><strong>Visible to:</strong></p>
+    <ul>
+      <% if (memberAnnouncementAudience) { %>
+      <li><%= publicAnnouncementScopeLabel ? `Members of ${publicAnnouncementScopeLabel}` : 'Members across the church' %></li>
+      <% } %>
+      <% if (publicAnnouncementUrl) { %>
+      <li><%= publicAnnouncementScopeLabel ? `${publicAnnouncementScopeLabel} public announcements page` : 'Church public website' %></li>
+      <% } %>
+    </ul>
+    <% if (publicAnnouncementUrl) { %>
+    <p><a class="bb-ba-btn bb-ba-btn--primary" href="<%= publicAnnouncementUrl %>">View public announcement</a></p>
+    <% } %>
+  </section>
+  <% } %>
+
+  <% if (saved === 'scheduled') { %>
+  <section class="bb-ba-panel bb-ann-scheduled-destination" data-bb-ann-scheduled-destination="1">
+    <h2 class="bb-ba-section-title">Destination</h2>
+    <p>This announcement will appear in the <strong><%= item.branchId ? 'branch' : 'church-wide' %></strong> feed when its scheduled start is reached.</p>
+    <% if (!(item.audiences || []).includes('public')) { %><p class="bb-ba-hint">No public website destination is configured.</p><% } %>
+  </section>
+  <% } %>
+
+  <section class="bb-ba-panel bb-ann-detail__message">
     <h2 class="bb-ba-section-title">Message</h2>
     <p class="bb-ann-body"><%= item.body %></p>
     <% if (item.actionUrl) { %>
@@ -88,7 +128,7 @@
     </dl>
   </section>
 
-  <section class="bb-ba-panel" data-publication-history="1">
+  <section class="bb-ba-panel bb-ann-detail__info" data-publication-history="1">
     <h2 class="bb-ba-section-title">Publication history</h2>
     <% if (!history.length) { %>
       <p class="bb-ba-hint">No publication events recorded yet.</p>
@@ -128,7 +168,7 @@
     <h2 class="bb-ba-section-title">Attachments</h2>
     <ul>
       <% item.attachments.forEach(function (att) { %>
-      <li>
+      <li class="bb-ann-attachment-card">
         <% if (att.id && att.mediaAssetId) { %>
         <a href="<%= basePath %>/<%= item.id %>/attachments/<%= att.id %>/file" data-bb-ann-attachment-download="1">
           <%= att.originalFilename || att.mediaAssetId %>

@@ -120,6 +120,16 @@ async function listByFacility(db, input) {
   return result.rows;
 }
 
+async function countActiveByFacility(db, input) {
+  const result = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM activeclinic.staff_facility_assignments
+      WHERE organization_id = $1 AND facility_id = $2 AND status = 'active'`,
+    [input.organizationId, input.facilityId]
+  );
+  return Number(result.rows[0] && result.rows[0].n || 0);
+}
+
 async function updateStaffMember(db, input) {
   const p = input.patch || {};
   const result = await db.query(
@@ -229,6 +239,7 @@ module.exports = {
   listByOrganization,
   listByPlatformIdentity,
   listByFacility,
+  countActiveByFacility,
   updateStaffMember,
   setPlatformIdentity,
   clearPlatformIdentity,

@@ -391,6 +391,21 @@ async function updateFacility(db, input) {
   const existing = await getFacilityByIdAndOrganization(db, input);
   if (!existing.ok) return existing;
   const patch = { ...(input.patch || {}) };
+  if (
+    existing.facility.status === "archived" &&
+    patch.status != null &&
+    String(patch.status) !== "archived"
+  ) {
+    return { ok: false, code: RESULT.INVALID_STATUS, facility: null };
+  }
+  if (
+    existing.facility.isPrimary &&
+    existing.facility.status === "active" &&
+    patch.status != null &&
+    ["inactive", "suspended", "archived"].includes(String(patch.status))
+  ) {
+    return { ok: false, code: RESULT.PRIMARY_CONFLICT, facility: null };
+  }
   if (patch.facilityType != null && !FACILITY_TYPES.includes(String(patch.facilityType))) {
     return { ok: false, code: RESULT.INVALID_TYPE, facility: null };
   }
@@ -470,21 +485,56 @@ async function updateFacility(db, input) {
 async function archiveFacility(db, input) {
   const existing = await getFacilityByIdAndOrganization(db, input);
   if (!existing.ok) return existing;
-  const row = await repo.archiveFacility(db, {
-    id: input.id,
-    organizationId: input.organizationId,
-  });
-  await recordAuditEventSafe(db, {
-    deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
-    organizationId: input.organizationId,
-    actorUserId: null,
-    actionKey: "activeclinic.facility.archive",
-    entityType: "facility",
-    entityId: input.id,
-    outcome: "success",
-    metadataJson: { actor_kind: "system" },
-  });
-  return { ok: true, code: RESULT.OK, facility: mapFacility(row) };
+  let client = db;
+  let owned = false;
+  if (db && typeof db.connect === "function" && typeof db.release !== "function") {
+    client = await db.connect();
+    owned = true;
+  }
+  try {
+    if (owned) await client.query("BEGIN");
+    let replacement = null;
+    if (existing.facility.isPrimary && existing.facility.status === "active") {
+      const replacementId = String(input.replacementFacilityId || "").trim();
+      if (!replacementId) {
+        if (owned) await client.query("ROLLBACK");
+        return { ok: false, code: RESULT.PRIMARY_CONFLICT, facility: null };
+      }
+      replacement = await getFacilityByIdAndOrganization(client, {
+        id: replacementId, organizationId: input.organizationId,
+      });
+      if (!replacement.ok ||
+          replacement.facility.healthcareOrganizationId !== existing.facility.healthcareOrganizationId ||
+          replacement.facility.status !== "active" ||
+          replacement.facility.id === existing.facility.id) {
+        if (owned) await client.query("ROLLBACK");
+        return { ok: false, code: RESULT.PRIMARY_CONFLICT, facility: null };
+      }
+      await repo.setPrimaryFacility(client, {
+        id: replacement.facility.id,
+        organizationId: input.organizationId,
+        healthcareOrganizationId: existing.facility.healthcareOrganizationId,
+      });
+    }
+    const row = await repo.archiveFacility(client, {
+      id: input.id, organizationId: input.organizationId,
+    });
+    if (owned) await client.query("COMMIT");
+    if (!row) return { ok: false, code: RESULT.NOT_FOUND, facility: null };
+    await recordAuditEventSafe(db, {
+      deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+      organizationId: input.organizationId,
+      actorUserId: null,
+      actionKey: "activeclinic.facility.archive",
+      entityType: "facility",
+      entityId: input.id,
+      outcome: "success",
+      metadataJson: { actor_kind: "system", replacement_facility_id: replacement && replacement.facility.id || null },
+    });
+    return { ok: true, code: RESULT.OK, facility: mapFacility(row) };
+  } finally {
+    if (owned && client && typeof client.release === "function") client.release();
+  }
 }
 
 /**

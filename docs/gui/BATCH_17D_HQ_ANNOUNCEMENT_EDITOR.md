@@ -1,22 +1,22 @@
-# Batch 17D — HQ announcement create / edit presentation
+# Batch 17D — HQ announcement create / edit presentation (historical implementation note)
 
-**Date:** 2026-07-18  
+**Date:** 2026-07-18 · **V2.07 reconciliation:** 2026-10-04
 **Scope:** HQ Admin announcement **create and edit form presentation** (+ confirm-publish chrome). **Content admin not started.**  
 **References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 71), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_17C_HQ_ANNOUNCEMENTS_LIST.md`](./BATCH_17C_HQ_ANNOUNCEMENTS_LIST.md), [`BATCH_13B_BRANCH_ANNOUNCEMENT_EDITOR.md`](./BATCH_13B_BRANCH_ANNOUNCEMENT_EDITOR.md)
 
 ## 1. Canonical Stitch screen IDs
 
-No dedicated HQ create/edit Stitch frames. Canonical pair for HQ communications chrome:
+V2.07 canonical HQ create/edit pair:
 
 | Role | Exact title | ID |
 |------|-------------|-----|
-| Desktop | `61-hq-broadcast-center-desktop` | `ffa76443af8c4aa4ab97086fc8922b73` |
-| Mobile | `61-hq-broadcast-center-mobile` | `b4184b738eca442d8ca9ff3dbd445bec` |
+| Desktop | `70-hq-create-announcement-desktop` | Stitch project `4931965034209316203` |
+| Mobile | `70-hq-create-announcement-mobile` | Stitch project `4931965034209316203` |
 | Form states | BlessBoard Shared UI States Board | `b61a1ea8176648408211b681e942e0a6` |
 
 Markers:
-- Form: `data-bb-stitch-announcement-editor="61-hq-broadcast-center"` (+ `data-bb-hq-announcement-editor="1"`)
-- Publish: `data-bb-stitch-announcement-publish="61-hq-broadcast-center"` (+ `data-bb-hq-announcement-publish="1"`)
+- Form: Screen 70 marker (+ `data-bb-hq-announcement-editor="1"`)
+- Publish: no dedicated Stitch publish-confirmation pair; use Screen 70 as the editor reference
 
 Branch-admin mount keeps Stitch 35.
 
@@ -24,8 +24,8 @@ Branch-admin mount keeps Stitch 35.
 
 | Path | Change |
 |------|--------|
-| `views/blessboard/v5/announcements/admin-form.ejs` | HQ Stitch 61 chrome, scope panel, audience estimate when delivery present |
-| `views/blessboard/v5/announcements/admin-publish.ejs` | HQ Stitch 61 confirm-publish + scope/estimate markers |
+| `views/blessboard/v5/announcements/admin-form.ejs` | HQ Stitch 70 chrome, scope panel, audience estimate when delivery present |
+| `views/blessboard/v5/announcements/admin-publish.ejs` | HQ Stitch 72 confirm-publish + scope/estimate markers |
 | `src/blessboard/http/announcementAdminRoutes.js` | Pass existing scope locals into form/publish only (`editorScopeExtras`) — no service changes |
 | `public/blessboard/v5/hq-admin.css` | Editor scope styles (`?v=35`) |
 | `views/blessboard/v5/partials/hq-shell-start.ejs` | CSS cache bump |
@@ -83,7 +83,7 @@ Branch-admin mount keeps Stitch 35.
 ```
 feat(gui): HQ announcement create/edit Stitch presentation (Batch 17D)
 
-Match HQ announcement editor and confirm-publish chrome to Stitch 61 with
+Match HQ announcement editor and confirm-publish chrome to Stitch 70 with
 scope panel and real eligible-member estimates. No new channels or service
 logic. Content admin unchanged.
 ```

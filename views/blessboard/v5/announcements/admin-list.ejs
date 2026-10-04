@@ -9,13 +9,14 @@
   var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
   var activeAudience = typeof audienceFilter !== 'undefined' && audienceFilter ? String(audienceFilter) : '';
-  var hasFilter = Boolean(searchQ || activeStatus || activeAudience);
+  var activeScope = typeof scopeFilter !== 'undefined' && scopeFilter ? String(scopeFilter) : '';
+  var hasFilter = Boolean(searchQ || activeStatus || activeAudience || (activeScope && activeScope !== 'all'));
   var listBase = typeof basePath !== 'undefined' && basePath ? String(basePath) : '/branch-admin/announcements';
-  var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
+  var stitchKey = isHq ? '69-hq-announcements-overview' : '35-branch-announcements-management';
   var statusOptions = [
     { key: '', label: 'All' },
     { key: 'draft', label: 'Draft' },
-    { key: 'timed', label: 'Timed' },
+    { key: 'scheduled', label: isHq ? 'Scheduled' : 'Timed' },
     { key: 'published', label: 'Published' },
     { key: 'expired', label: 'Expired' },
     { key: 'archived', label: 'Archived' }
@@ -23,7 +24,6 @@
   var audienceOptions = [
     { key: '', label: 'All' },
     { key: 'members', label: 'Members' },
-    { key: 'admins', label: 'Admins' },
     { key: 'public', label: 'Website' }
   ];
   function statusLabel(s) {
@@ -88,6 +88,7 @@
       q: searchQ,
       status: activeStatus,
       audience: activeAudience,
+      scope: activeScope === 'church' ? 'church' : '',
       page: 1
     };
     Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
@@ -132,6 +133,7 @@
       </p>
       <div class="bb-ba-ann__title-row">
         <h1 class="bb-ba-page-head__title"><%= isHq ? 'Announcements' : 'Announcements management' %></h1>
+        <% if (isHq) { %><span class="bb-ba-chip bb-ba-chip--muted" data-bb-hq-scope-badge="central">HQ Central Scope</span><% } %>
         <% if (typeof total === 'number' && total >= 0) { %>
         <span class="bb-ba-ann__count" data-bb-ann-total="<%= total %>">
           <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'announcement' : 'announcements') %>
@@ -142,7 +144,7 @@
         <% if (isHq) { %>
         Church-wide and campus announcements for
         <strong><%= churchDisplayName || scopeLabel %></strong>.
-        Delivery counts show eligible members plus reads when the members audience is targeted — no percentages or branch-reach scores.
+        Announcements appear in BlessBoard feeds and do not send SMS or email. Use <a href="/hq/broadcasts">Broadcasts</a> for direct delivery.
         <% } else { %>
         Manage communications for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : (churchDisplayName || scopeLabel) %></strong>
@@ -158,36 +160,8 @@
     </p>
   </header>
 
-  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
-  <p class="bb-ba-hint">
-    <a href="/hq/announcements">← Church-wide announcements</a>
-  </p>
-  <% } %>
-
-  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
-  <section class="bb-hq-panel bb-ann-branch-scopes" data-bb-hq-ann-branches="1" aria-labelledby="hq-ann-branch-heading">
-    <h2 id="hq-ann-branch-heading" class="bb-hq-section-title">Branch announcements</h2>
-    <p class="bb-ba-hint">Open a branch to manage announcements scoped to that campus only.</p>
-    <ul class="bb-ca-branch-list">
-      <% branches.forEach(function (branch) { %>
-      <li>
-        <a href="/hq/announcements/b/<%= branch.key %>"><%= branch.displayName %></a>
-        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
-        <code class="bb-hq-key"><%= branch.key %></code>
-      </li>
-      <% }) %>
-    </ul>
-  </section>
-  <% } %>
-
   <% if (isHq) { %>
-  <aside class="bb-hq-ann-delivery-note" data-bb-delivery="overview" aria-labelledby="hq-ann-delivery-heading">
-    <h2 id="hq-ann-delivery-heading" class="bb-hq-ann-delivery-note__title">Delivery overview</h2>
-    <p class="bb-hq-ann-delivery-note__body">
-      Eligible, read, and unread counts come from existing member-audience delivery data only.
-      Additional outbound channels are not available. Open an announcement for the full summary.
-    </p>
-  </aside>
+  <aside class="bb-ba-ann-info" data-bb-ann-info="broadcasts"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>Announcements</strong> appear in BlessBoard feeds. For direct delivery, <a href="/hq/broadcasts">Go to Broadcasts</a>.</p></aside>
   <% } %>
 
   <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
@@ -222,7 +196,7 @@
       <label for="status">Status</label>
       <select id="status" name="status">
         <option value="">All statuses</option>
-        <% ['draft','published','archived'].forEach(function (st) { %>
+        <% ['draft','scheduled','published','archived'].forEach(function (st) { %>
         <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
         <% }) %>
       </select>
@@ -232,7 +206,7 @@
       <select id="audience" name="audience">
         <option value="">All audiences</option>
         <option value="members" <%= activeAudience === 'members' ? 'selected' : '' %>>Members</option>
-        <option value="admins" <%= activeAudience === 'admins' ? 'selected' : '' %>>Admins</option>
+        <option value="public" <%= activeAudience === 'public' ? 'selected' : '' %>>Public website</option>
       </select>
     </div>
     <div class="bb-ba-filter__actions">
@@ -245,6 +219,16 @@
       <% } %>
     </div>
   </form>
+
+  <% if (isHq) { %>
+  <nav class="bb-ba-ann-scope-tabs" aria-label="Announcement scope" data-bb-ann-scope-tabs="1">
+    <a class="bb-ba-ann-chip<%= !activeScope || activeScope === 'all' ? ' is-active' : '' %>" href="/hq/announcements" <%= !activeScope || activeScope === 'all' ? 'aria-current="page"' : '' %>>All</a>
+    <a class="bb-ba-ann-chip<%= activeScope === 'church' ? ' is-active' : '' %>" href="/hq/announcements?scope=church" <%= activeScope === 'church' ? 'aria-current="page"' : '' %>>Church-wide</a>
+    <% (branches || []).forEach(function (branch) { %>
+    <a class="bb-ba-ann-chip<%= activeScope === branch.key ? ' is-active' : '' %>" href="/hq/announcements/b/<%= branch.key %>" <%= activeScope === branch.key ? 'aria-current="page"' : '' %>><%= branch.displayName %></a>
+    <% }) %>
+  </nav>
+  <% } %>
 
   <nav class="bb-ba-ann-chips" aria-label="Status filters" data-bb-ann-status-chips="1">
     <% statusOptions.forEach(function (opt) { %>
@@ -311,12 +295,11 @@
         <thead>
           <tr>
             <th scope="col">Title</th>
-            <th scope="col">Message</th>
+            <th scope="col">Scope</th>
             <th scope="col">Audience</th>
-            <th scope="col">Source</th>
-            <% if (isHq) { %><th scope="col">Delivery</th><% } %>
-            <th scope="col">Published</th>
             <th scope="col">Status</th>
+            <th scope="col">Placement</th>
+            <th scope="col">Published</th>
             <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
           </tr>
         </thead>
@@ -340,28 +323,16 @@
               </div>
               <% } %>
             </td>
-            <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
-            <td><%= audienceLabel(item.audiences) %></td>
-            <td><%= sourceLabel(item) %></td>
-            <% if (isHq) { %>
             <td>
-              <% if (showDelivery(item)) { %>
-              <span
-                class="bb-hq-ann-delivery"
-                data-bb-delivery="row"
-                data-bb-eligible="<%= delivery.eligibleCount %>"
-                data-bb-read="<%= delivery.readCount %>"
-                data-bb-unread="<%= delivery.unreadCount %>"
-              >
-                <%= delivery.readCount %> read · <%= delivery.unreadCount %> unread · <%= delivery.eligibleCount %> eligible
-              </span>
-              <% } else { %>
-              <span class="bb-hq-muted" data-bb-delivery="unavailable">—</span>
-              <% } %>
+              <a href="<%= listBase %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
+              <div class="bb-ann-snippet"><%= snippet(item.body) %></div>
+              <% if (attachmentCount) { %><span class="bb-ba-chip bb-ba-chip--tiny bb-ba-chip--muted"><span class="material-symbols-outlined" aria-hidden="true">attach_file</span> <%= attachmentCount %></span><% } %>
             </td>
-            <% } %>
-            <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
+            <td><%= sourceLabel(item) %></td>
+            <td><%= audienceLabel(item.audiences) %></td>
             <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
+            <td><%= item.isPinned ? 'Pinned' : '' %><%= item.isPinned && item.isFeatured ? ' · ' : '' %><%= item.isFeatured ? 'Featured' : (!item.isPinned ? '—' : '') %></td>
+            <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
             <td class="bb-ba-table__actions">
               <a
                 class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
@@ -422,23 +393,10 @@
             <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
             <%= sourceLabel(item) %>
           </p>
-          <% if (showDelivery(item)) { %>
-          <p
-            class="bb-ba-ann-card__line"
-            data-bb-delivery="row"
-            data-bb-eligible="<%= delivery.eligibleCount %>"
-            data-bb-read="<%= delivery.readCount %>"
-            data-bb-unread="<%= delivery.unreadCount %>"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">mark_email_read</span>
-            <%= delivery.readCount %> read · <%= delivery.unreadCount %> unread · <%= delivery.eligibleCount %> eligible
+          <p class="bb-ba-ann-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            <%= audienceLabel(item.audiences) %> · <%= item.isPinned ? 'Pinned' : '' %><%= item.isPinned && item.isFeatured ? ' · ' : '' %><%= item.isFeatured ? 'Featured' : (!item.isPinned ? 'No placement' : '') %>
           </p>
-          <% } else if (isHq) { %>
-          <p class="bb-ba-ann-card__line bb-hq-muted" data-bb-delivery="unavailable">
-            <span class="material-symbols-outlined" aria-hidden="true">mark_email_unread</span>
-            Delivery counts available for members audience only
-          </p>
-          <% } %>
         </div>
         <div class="bb-ba-ann-card__actions">
           <a

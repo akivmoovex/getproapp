@@ -55,6 +55,10 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("../services/authorizeBlessBoardTenantAccess");
+const {
+  publicChurchPagePath,
+  publicBranchPagePath,
+} = require("../urls/churchUrlHelper");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -100,6 +104,24 @@ function sendControlled(req, res, status, message, shellKind) {
 }
 
 function errorMessage(reason) {
+  const messages = {
+    title: "Enter a title for the announcement.",
+    body: "Enter the announcement message.",
+    audiences_required: "Select at least one audience.",
+    audience_key: "Choose a supported audience.",
+    timezone: "Enter a valid timezone.",
+    starts_at: "Enter a valid start time.",
+    starts_at_required: "Scheduled announcements require a start time.",
+    ends_at: "Enter a valid end time.",
+    ends_before_starts: "End time must be after the start time.",
+    action_url: "Enter a valid HTTPS action URL.",
+    action_label: "Enter a valid action label.",
+    media_asset_id: "Choose a valid media attachment.",
+    media_asset: "That attachment is unavailable for this church.",
+    branch: "Choose a valid active branch in this church.",
+    scope: "The selected announcement scope is not allowed.",
+  };
+  if (messages[reason]) return messages[reason];
   if (reason === "confirm_publish") {
     return "You must confirm before publishing.";
   }
@@ -117,12 +139,6 @@ function errorMessage(reason) {
   }
   if (reason === "already_published") {
     return "This announcement is already published.";
-  }
-  if (reason === "starts_at_required") {
-    return "Scheduled announcements require a start time.";
-  }
-  if (reason === "ends_before_starts") {
-    return "End time must be after the start time.";
   }
   return "Please check the form and try again.";
 }
@@ -457,9 +473,14 @@ function createAnnouncementAdminRouter(deps) {
       if (page > MAX_LIST_PAGE) page = MAX_LIST_PAGE;
       const limit = PAGE_SIZE;
       const offset = (page - 1) * limit;
+      const requestedScope = String((req.query && req.query.scope) || "").toLowerCase();
+      const listAllScopes = variant === "hq" && !scope.branchId && !req.params.branchKey &&
+        requestedScope !== "church";
+      const listScopeMode = listAllScopes ? "all" : (scope.branchId ? "branch" : "church");
       const listed = await listAdminAnnouncements(getPool(), {
         churchId: scope.churchId,
-        branchId: scope.branchId,
+        scopeMode: listScopeMode,
+        ...(listScopeMode === "branch" ? { branchId: scope.branchId } : {}),
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
@@ -504,6 +525,8 @@ function createAnnouncementAdminRouter(deps) {
           q,
           statusFilter: status,
           audienceFilter: audience,
+          scopeFilter: listAllScopes ? "all" : (scope.branchId ? scope.branchKey : "church"),
+          allScopes: listAllScopes,
           page,
           limit,
           total,
@@ -516,6 +539,11 @@ function createAnnouncementAdminRouter(deps) {
     router.get(`${mountPrefix}/new`, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
+      let branches = [];
+      if (variant === "hq" && !scope.branchId) {
+        const result = await listBlessBoardBranches(getPool(), scope.churchId);
+        branches = result.ok ? result.branches : [];
+      }
       const html = renderView(
         "announcements/admin-form.ejs",
         await shellLocals(req, res, {
@@ -526,6 +554,7 @@ function createAnnouncementAdminRouter(deps) {
           formMode: "create",
           showPreview: true,
           mediaUploadUrl: mediaUploadUrlForScope(scope),
+          branches,
           ...editorScopeExtras(scope, isBranchScoped),
         })
       );
@@ -561,6 +590,11 @@ function createAnnouncementAdminRouter(deps) {
         ...scheduleFieldsFromBody(body),
       });
       if (!created.ok) {
+        let branches = [];
+        if (variant === "hq" && !scope.branchId) {
+          const result = await listBlessBoardBranches(getPool(), scope.churchId);
+          branches = result.ok ? result.branches : [];
+        }
         const html = renderView(
           "announcements/admin-form.ejs",
           await shellLocals(req, res, {
@@ -571,6 +605,7 @@ function createAnnouncementAdminRouter(deps) {
             formMode: "create",
             showPreview: true,
             mediaUploadUrl: mediaUploadUrlForScope(scope),
+            branches,
             ...editorScopeExtras(scope, isBranchScoped),
           })
         );
@@ -603,6 +638,22 @@ function createAnnouncementAdminRouter(deps) {
           scheduler: SCHEDULER_DEPENDENCY,
           error: null,
           saved: String((req.query && req.query.saved) || ""),
+          publicAnnouncementUrl: (item.audiences || []).includes("public")
+            ? (scope.branchKey
+              ? publicBranchPagePath(
+                  scope.tenant.organization.key,
+                  scope.branchKey,
+                  "announcements"
+                )
+              : publicChurchPagePath(
+                  scope.tenant.organization.key,
+                  "announcements"
+                ))
+            : null,
+          publicAnnouncementScopeLabel: scope.branchKey
+            ? scope.branchDisplayName
+            : null,
+          memberAnnouncementAudience: (item.audiences || []).includes("members"),
         })
       );
       return res.status(200).type("html").send(html);

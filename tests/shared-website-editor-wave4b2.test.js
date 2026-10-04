@@ -41,6 +41,11 @@ const contentService = require("../src/platform/website/contentService");
 const versionService = require("../src/platform/website/versionService");
 const publicationService = require("../src/platform/website/publicationService");
 const {
+  loadWebsiteThemeState,
+  saveWebsiteThemeDraft,
+} = require("../src/platform/website/websiteThemeService");
+const { listThemesForProduct } = require("../src/platform/website/themeRegistry");
+const {
   setClinicWebsiteAvailability,
 } = require("../src/activeclinic/services/clinicWebsiteAvailabilityService");
 const {
@@ -415,6 +420,221 @@ describe("shared website editor wave 4b2 — HTTP", () => {
     );
     assert.equal(row.draftValue, "#112233");
     assert.notEqual(row.publishedValue, "#112233");
+  });
+
+  it("ActiveClinic colors persist through draft, reload, publish, and public rendering", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const primary = "#123456";
+    const accent = "#abcdef";
+    const themeBefore = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "site.theme_id"
+    );
+    const themes = listThemesForProduct("activeclinic");
+    const alternateTheme = themes.find((theme) => theme.id !== themeBefore.publishedValue);
+    assert.ok(alternateTheme, "expected an alternate ActiveClinic theme");
+    const publishedThemeBefore = themeBefore.publishedValue;
+    const effectivePublishedTheme = publishedThemeBefore || "ac.default";
+    const page = await request(acApp)
+      .get(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", acCookie);
+    assert.equal(page.status, 200);
+    const csrf = extractCsrf(page.text);
+    const cookie = cookieHeader(acCookie, page);
+    assert.match(page.text, /name="primaryColor"/);
+    assert.match(page.text, /name="accentColor"/);
+
+    const saved = await request(acApp)
+      .post(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        primaryColor: primary,
+        primaryColorText: primary,
+        accentColor: accent,
+        accentColorText: accent,
+      });
+    assert.equal(saved.status, 303);
+
+    const themeSaved = await saveWebsiteThemeDraft(pool, {
+      organizationId: acOrgId,
+      instance: { id: acInstanceId, organizationId: acOrgId, productCode: "activeclinic" },
+      productCode: "activeclinic",
+      themeId: alternateTheme.id,
+      actorIdentityId: acIdentityId,
+      grantedPermissions: ["website.edit", "website.publish"],
+    });
+    assert.equal(themeSaved.ok, true);
+    const primaryRow = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "brand.primary_color"
+    );
+    const accentRow = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "brand.accent_color"
+    );
+    assert.equal(primaryRow.draftValue, primary);
+    assert.equal(accentRow.draftValue, accent);
+    const themeDraftRow = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "site.theme_id"
+    );
+    assert.equal(themeDraftRow.draftValue, alternateTheme.id);
+    assert.equal(themeDraftRow.publishedValue, publishedThemeBefore);
+    assert.equal(primaryRow.organizationId, acOrgId);
+    assert.equal(primaryRow.instanceId, acInstanceId);
+    assert.equal((await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
+      organizationId: acOrgId,
+      productCode: "activeclinic",
+    })).productCode, "activeclinic");
+    assert.notEqual(primaryRow.publishedValue, primary);
+    assert.notEqual(accentRow.publishedValue, accent);
+
+    const reloaded = await request(acApp)
+      .get(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", acCookie);
+    assert.equal(reloaded.status, 200);
+    assert.match(reloaded.text, new RegExp(`value="${primary}"`));
+    assert.match(reloaded.text, new RegExp(`value="${accent}"`));
+    const reloadedTheme = await loadWebsiteThemeState(pool, {
+      organizationId: acOrgId,
+      instance: { id: acInstanceId, organizationId: acOrgId, productCode: "activeclinic" },
+      productCode: "activeclinic",
+      preferDraft: true,
+    });
+    assert.equal(reloadedTheme.draftThemeId, alternateTheme.id);
+
+    const publicBeforePublish = await request(acApp).get(`/clinics/${acSlug}`);
+    assert.equal(publicBeforePublish.status, 200);
+    assert.match(publicBeforePublish.text, new RegExp(`class="[^"]*${publishedThemeBefore === alternateTheme.id ? alternateTheme.cssClass : ""}`.replace(/ $/, "")));
+    assert.doesNotMatch(publicBeforePublish.text, /--acp-primary:#123456/);
+    assert.doesNotMatch(publicBeforePublish.text, /--acp-primary-hover:#abcdef/);
+    const draftPreview = await request(acApp)
+      .get(`/clinics/${acSlug}?website_edit=1&website_mode=draft`)
+      .set("Cookie", acCookie);
+    assert.equal(draftPreview.status, 200);
+    assert.match(draftPreview.text, new RegExp(`--acp-primary:${primary}`));
+    assert.match(draftPreview.text, new RegExp(`--acp-primary-hover:${accent}`));
+    assert.match(draftPreview.text, new RegExp(alternateTheme.cssClass));
+
+    await publicationService.publishWebsiteDraft(pool, {
+      organizationId: acOrgId,
+      instanceId: acInstanceId,
+      actorIdentityId: acIdentityId,
+      allowEmpty: true,
+    });
+    const publishedPrimary = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "brand.primary_color"
+    );
+    const publishedAccent = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "brand.accent_color"
+    );
+    assert.equal(publishedPrimary.publishedValue, primary);
+    assert.equal(publishedAccent.publishedValue, accent);
+    const publishedTheme = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "site.theme_id"
+    );
+    assert.equal(publishedTheme.publishedValue, alternateTheme.id);
+    assert.equal(publishedTheme.publishedValue, publishedTheme.draftValue);
+
+    await saveWebsiteThemeDraft(pool, {
+      organizationId: acOrgId,
+      instance: { id: acInstanceId, organizationId: acOrgId, productCode: "activeclinic" },
+      productCode: "activeclinic",
+      themeId: effectivePublishedTheme,
+      actorIdentityId: acIdentityId,
+      grantedPermissions: ["website.edit", "website.publish"],
+    });
+    const postPublishTheme = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "site.theme_id"
+    );
+    assert.equal(postPublishTheme.draftValue, effectivePublishedTheme);
+    assert.equal(postPublishTheme.publishedValue, alternateTheme.id);
+
+    const publicPage = await request(acApp).get(`/clinics/${acSlug}`);
+    assert.equal(publicPage.status, 200);
+    assert.match(publicPage.text, /--acp-primary:#123456/);
+    assert.match(publicPage.text, /--acp-primary-hover:#abcdef/);
+    assert.match(publicPage.text, new RegExp(alternateTheme.cssClass));
+    const publicReload = await request(acApp).get(`/clinics/${acSlug}`);
+    assert.match(publicReload.text, /--acp-primary:#123456/);
+    assert.match(publicReload.text, /--acp-primary-hover:#abcdef/);
+    assert.match(publicReload.text, new RegExp(alternateTheme.cssClass));
+    const otherClinic = await request(acApp).get("/clinics/not-your-clinic");
+    assert.ok([403, 404].includes(otherClinic.status));
+  });
+
+  it("ActiveClinic rejects invalid colors and does not allow unauthenticated changes", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const page = await request(acApp)
+      .get(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", acCookie);
+    const csrf = extractCsrf(page.text);
+    const invalid = await request(acApp)
+      .post(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", cookieHeader(acCookie, page))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, primaryColor: "javascript:alert(1)", accentColor: "#123456" });
+    assert.equal(invalid.status, 303);
+    assert.match(invalid.headers.location, /saved=1/);
+    const invalidRow = await contentService.getWebsiteContentRow(
+      pool, acInstanceId, acOrgId, "brand.primary_color"
+    );
+    assert.notEqual(invalidRow.draftValue, "javascript:alert(1)");
+
+    const unauthenticated = await request(acApp)
+      .post(`/clinics/${acSlug}/website/styles`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, primaryColor: "#010101", accentColor: "#020202" });
+    assert.ok([302, 303, 401, 403].includes(unauthenticated.status));
+  });
+
+  it("ActiveClinic theme and colour HTTP security contract", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const themeState = await request(acApp)
+      .get(`/clinics/${acSlug}/website/theme`)
+      .set("Cookie", acCookie);
+    assert.equal(themeState.status, 200);
+
+    const page = await request(acApp)
+      .get(`/clinics/${acSlug}/website/styles`)
+      .set("Cookie", acCookie);
+    const csrf = extractCsrf(page.text);
+    const cookie = cookieHeader(acCookie, page);
+    const themes = listThemesForProduct("activeclinic");
+    const themeId = themes[0].id;
+
+    const savedTheme = await request(acApp)
+      .post(`/clinics/${acSlug}/website/theme`)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, themeId });
+    assert.equal(savedTheme.status, 200);
+
+    for (const token of ["", "invalid-csrf"]) {
+      const denied = await request(acApp)
+        .post(`/clinics/${acSlug}/website/theme`)
+        .set("Cookie", acCookie)
+        .type("form")
+        .send({ [CSRF_FIELD]: token, themeId });
+      assert.equal(denied.status, 403);
+    }
+
+    const invalidTheme = await request(acApp)
+      .post(`/clinics/${acSlug}/website/theme`)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, themeId: "not-a-real-activeclinic-theme" });
+    assert.equal(invalidTheme.status, 400);
+    assert.match(invalidTheme.text, /invalid_theme|invalid/i);
+
+    const crossClinic = await request(acApp)
+      .get("/clinics/not-your-clinic/website/theme")
+      .set("Cookie", acCookie);
+    assert.ok([403, 404].includes(crossClinic.status));
+
+    const noAuthBranding = await request(acApp)
+      .post("/app/settings/website/branding")
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, primaryColor: "#111111", accentColor: "#222222" });
+    assert.ok([302, 303, 401, 403].includes(noAuthBranding.status));
   });
 
   it("SEO save creates draft metadata", async (t) => {

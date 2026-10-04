@@ -21,6 +21,19 @@
       return k;
     }).join(', ');
   }
+  function audienceSummary(key) {
+    if (key === 'members') {
+      return scopeKind === 'Branch'
+        ? 'Visible to members of ' + scopeName + '.'
+        : 'Visible to eligible members across all branches.';
+    }
+    if (key === 'public') {
+      return scopeKind === 'Branch'
+        ? 'Visible on the ' + scopeName + ' public website.'
+        : 'Visible on the church public website and applicable branch public sites.';
+    }
+    return '';
+  }
   function dtLocal(value) {
     if (!value) return '';
     var d = value instanceof Date ? value : new Date(value);
@@ -49,11 +62,11 @@
     </p>
     <h1 class="bb-ba-page-head__title">Confirm publish</h1>
     <p class="bb-ba-lede">
-      Review audience and scope before publishing
+      Review scope, audience, and timing before publishing
       <% if (isHq) { %>
       for <strong><%= scopeName %></strong> (<%= scopeKind %>).
       <% } %>
-      This does not create member accounts or send messages on other channels.
+      Not sent by SMS or email. Use Broadcasts for direct messages.
     </p>
   </header>
 
@@ -61,11 +74,16 @@
   <%- include('../partials/form-errors', { errors: [error], id: 'bb-ann-publish-errors' }) %>
   <% } %>
 
-  <section class="bb-ba-panel" data-bb-ann-publish-review="1">
+  <div class="bb-ann-publish-layout">
+  <div class="bb-ann-publish-review">
+  <section class="bb-ba-panel bb-ann-publish-summary" data-bb-ann-publish-review="1">
     <h2 class="bb-ba-section-title"><%= item.title %></h2>
     <p class="bb-ann-body"><%= item.body %></p>
     <dl class="bb-ann-dl">
       <div><dt>Audience</dt><dd><%= audienceLabel(item.audiences) %></dd></div>
+      <% (item.audiences || []).filter(function (key) { return key === 'members' || key === 'public'; }).forEach(function (key) { %>
+      <div><dt><%= key === 'members' ? 'Members visibility' : 'Public visibility' %></dt><dd><%= audienceSummary(key) %></dd></div>
+      <% }) %>
       <div>
         <dt>Scope</dt>
         <dd data-bb-ann-publish-scope="<%= scopeKind === 'Church-wide' ? 'church' : 'branch' %>">
@@ -81,7 +99,16 @@
         <dd data-bb-delivery="eligible" data-bb-ann-audience-estimate="1"><%= item.delivery.eligibleCount %></dd>
       </div>
       <% } %>
+      <div><dt>Placement</dt><dd><%= item.isPinned ? 'Pinned' : 'Not pinned' %> · <%= item.isFeatured ? 'Featured' : 'Not featured' %></dd></div>
+      <div><dt>Attachments</dt><dd><%= item.attachments && item.attachments.length ? item.attachments.length : 'None' %></dd></div>
     </dl>
+    <% if (item.attachments && item.attachments.length) { %>
+    <ul aria-label="Attachments">
+      <% item.attachments.forEach(function (attachment) { %>
+      <li><%= attachment.originalFilename || attachment.mimeType || 'Attachment' %></li>
+      <% }) %>
+    </ul>
+    <% } %>
   </section>
 
   <form
@@ -121,13 +148,36 @@
       I confirm publishing now (required for publish-now; optional for timed mode)
     </label>
     <div class="bb-ba-decision__actions">
-      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>" data-bb-ann-cancel="1">Cancel</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>" data-bb-ann-cancel="1">Back to edit</a>
       <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-ann-confirm-publish-submit="1">
         <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
-        Confirm publish
+        <span data-bb-ann-submit-label>Confirm publish</span>
       </button>
     </div>
   </form>
+  </div>
+  <aside class="bb-ann-final-preview" aria-label="Final announcement preview">
+    <h2 class="bb-ba-section-title">Final preview</h2>
+    <article class="bb-ann-preview-card">
+      <span class="bb-ba-chip bb-ba-chip--muted"><%= item.branchId ? 'Branch' : 'Church-wide' %></span>
+      <h3><%= item.title %></h3>
+      <p class="bb-ann-preview-card__body"><%= item.body %></p>
+      <% if (item.actionUrl) { %><span class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"><%= item.actionLabel || 'Open link' %></span><% } %>
+    </article>
+  </aside>
+  </div>
+  <script>
+    (function () {
+      var form = document.querySelector('[data-bb-ann-publish-form]');
+      var label = document.querySelector('[data-bb-ann-submit-label]');
+      if (!form || !label) return;
+      form.querySelectorAll('input[name="publish_mode"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+          label.textContent = radio.value === 'timed' ? 'Confirm schedule' : 'Confirm publish';
+        });
+      });
+    }());
+  </script>
 </section>
 
 <% if (shellKind === 'hq') { %>

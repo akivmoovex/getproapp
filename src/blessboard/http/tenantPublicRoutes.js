@@ -300,6 +300,22 @@ function createTenantPublicRouter(deps) {
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
 
+    // Announcements remain branch-scoped even when the branch has no independent
+    // mini-website. Other public pages retain the single-site redirect policy.
+    if (parsed.pageKey === "announcements") {
+      return renderTenantModel(req, res, {
+        pageKey: parsed.pageKey,
+        pathPrefix: tenantBranchHomePath(activeBranch.key),
+        selectedBranch: {
+          id: activeBranch.id,
+          key: activeBranch.key,
+          displayName: activeBranch.displayName,
+          branchType: activeBranch.branchType,
+          isPrimary: activeBranch.isPrimary,
+        },
+      });
+    }
+
     // Single-site: only the church-wide CMS is public; collapse branch URLs permanently.
     if (
       websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||

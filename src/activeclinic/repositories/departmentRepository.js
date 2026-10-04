@@ -105,6 +105,16 @@ async function listActiveDepartmentTypesForFacility(db, { facilityId, organizati
   return r.rows.map((row) => row.department_type);
 }
 
+async function countActiveByFacility(db, { facilityId, organizationId }) {
+  const r = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM activeclinic.departments
+      WHERE facility_id = $1 AND organization_id = $2 AND status = 'active'`,
+    [facilityId, organizationId]
+  );
+  return Number(r.rows[0] && r.rows[0].n || 0);
+}
+
 async function hasActiveDepartmentOfType(db, { facilityId, organizationId, departmentType }) {
   const r = await db.query(
     `SELECT 1
@@ -186,6 +196,7 @@ module.exports = {
   listDepartmentsByFacility,
   listDepartmentsByOrganization,
   listActiveDepartmentTypesForFacility,
+  countActiveByFacility,
   hasActiveDepartmentOfType,
   updateDepartment,
   upsertDepartmentByKey,

@@ -421,7 +421,8 @@ describe("blessboard website draft review publish", () => {
     const afterPublic = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.match(afterPublic.text, /Draft Sacred Headline/);
 
-    const version = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const version = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     assert.ok(version && version.id);
 
     // CSRF required for HTTP discard/publish

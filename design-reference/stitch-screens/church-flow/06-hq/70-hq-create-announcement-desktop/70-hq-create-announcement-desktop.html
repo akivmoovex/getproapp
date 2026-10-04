@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BlessBoard V2.07 — Create Announcement</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-container": "#1e3a8a",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "inverse-surface": "#213145",
+            "surface-container-high": "#dce9ff",
+            "surface-dim": "#cbdbf5",
+            "inverse-primary": "#b6c4ff",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed-dim": "#b6c4ff",
+            "tertiary-fixed-dim": "#b9c7df",
+            "on-surface": "#0b1c30",
+            "primary": "#00236f",
+            "surface-variant": "#d3e4fe",
+            "surface-container": "#e5eeff",
+            "on-error-container": "#93000a",
+            "on-secondary-fixed-variant": "#763300",
+            "outline": "#757682",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed": "#331200",
+            "tertiary-fixed": "#d5e3fc",
+            "surface-container-highest": "#d3e4fe",
+            "surface-tint": "#4059aa",
+            "surface-container-low": "#eff4ff",
+            "on-primary-fixed-variant": "#264191",
+            "on-tertiary-fixed": "#0d1c2e",
+            "on-secondary-container": "#682c00",
+            "primary-fixed": "#dce1ff",
+            "secondary-fixed-dim": "#ffb68e",
+            "outline-variant": "#c5c5d3",
+            "on-tertiary-container": "#9eadc4",
+            "on-tertiary-fixed-variant": "#3a485b",
+            "on-tertiary": "#ffffff",
+            "surface-bright": "#f8f9ff",
+            "secondary-container": "#fd8a42",
+            "on-background": "#0b1c30",
+            "tertiary-container": "#334154",
+            "on-primary-fixed": "#00164e",
+            "background": "#f8f9ff",
+            "on-surface-variant": "#444651",
+            "inverse-on-surface": "#eaf1ff",
+            "error-container": "#ffdad6",
+            "tertiary": "#1d2b3d",
+            "secondary-fixed": "#ffdbca",
+            "on-primary": "#ffffff",
+            "surface": "#f8f9ff",
+            "on-primary-container": "#90a8ff",
+            "secondary": "#9b4500"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "2rem",
+            "space-xl": "2rem",
+            "gutter": "1.5rem",
+            "margin-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-2xl": "3rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Inter"],
+            "headline-sm": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "display-lg-mobile": ["Inter"],
+            "label-lg": ["Inter"],
+            "display-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "caption": ["Inter"],
+            "headline-xl": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-xl": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-body-md text-body-md selection:bg-primary-container selection:text-white">
+<!-- ADMIN SHELL: SideNavBar -->
+<aside class="h-screen w-64 flex flex-col fixed left-0 top-0 z-40 bg-tertiary text-primary shadow-sm border-r border-outline-variant/30">
+<div class="w-64 h-full flex flex-col justify-between p-4">
+<!-- Nav Top / Header -->
+<div class="flex flex-col gap-6">
+<!-- Brand & Sanctuary Seal -->
+<div class="flex items-center gap-3 px-2 pt-2">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-white shadow-inner flex-shrink-0">
+<span class="material-symbols-outlined text-white" data-icon="church">church</span>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-headline-sm font-headline-sm font-bold text-surface tracking-tight truncate">BlessBoard Console</span>
+<span class="text-label-sm font-label-sm text-tertiary-fixed-dim truncate">V2.07 • Central Administration</span>
+</div>
+</div>
+<!-- CTA Action from JSON -->
+<button class="w-full py-2.5 px-3 bg-secondary hover:bg-on-secondary-fixed-variant text-white rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span>Publish Bulletin</span>
+</button>
+<!-- Navigation Links (Exact 6 tabs from JSON, 'Announcements' active) -->
+<nav class="flex flex-col gap-1">
+<!-- Overview -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 active:scale-[0.99] font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</a>
+<!-- Announcements (ACTIVE) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm" href="#">
+<span class="material-symbols-outlined text-white" data-icon="campaign">campaign</span>
+<span>Announcements</span>
+</a>
+<!-- Services & Liturgy -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 active:scale-[0.99] font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="church">church</span>
+<span>Services &amp; Liturgy</span>
+</a>
+<!-- Congregation -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 active:scale-[0.99] font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Congregation</span>
+</a>
+<!-- Giving & Pledges -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 active:scale-[0.99] font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+<span>Giving &amp; Pledges</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 active:scale-[0.99] font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Footer Navigation Items from JSON -->
+<div class="flex flex-col gap-1 border-t border-tertiary-container/60 pt-3">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+<span>Branch Directory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/60 transition-colors duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="support">support</span>
+<span>Help &amp; Pastoral Desk</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- MAIN VIEWPORT CONTAINER (offset by sidebar w-64) -->
+<div class="ml-64 flex-1 flex flex-col min-w-0 pb-24">
+<!-- ADMIN SHELL: TopNavBar -->
+<header class="docked full-width top-0 sticky z-30 bg-surface-container-lowest shadow-sm border-b border-outline-variant/30 flex items-center justify-between px-6 py-3 w-full">
+<div class="flex items-center gap-6">
+<!-- Search bar on left -->
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg pointer-events-none" data-icon="search">search</span>
+<input class="w-full bg-surface-bright pl-9 pr-4 py-1.5 rounded-lg border border-outline-variant/50 text-body-sm font-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all placeholder:text-outline" placeholder="Search notices, bulletins, scripture..." type="text"/>
+</div>
+<!-- Navigation Links from JSON -->
+<nav class="hidden xl:flex items-center gap-6">
+<a class="border-b-2 border-secondary text-secondary font-label-lg text-label-lg pb-1" href="#">HQ Central</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg" href="#">St. Jude Branch</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg" href="#">Broadcast Scope</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg" href="#">Audit Log</a>
+</nav>
+</div>
+<!-- Trailing Profile & Actions -->
+<div class="flex items-center gap-3">
+<!-- Trailing Secondary Action -->
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant/60 text-on-surface hover:bg-surface-container text-label-md font-label-md flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="swap_horiz">swap_horiz</span>
+<span>Switch Branch</span>
+</button>
+<!-- Trailing Icon Actions from JSON: ["notifications", "history", "help_outline"] -->
+<div class="flex items-center text-outline">
+<button class="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface-variant" title="Notifications">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface-variant" title="History">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface-variant" title="Help">
+<span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+<div class="h-6 w-px bg-outline-variant/40 mx-1"></div>
+<!-- User Profile Avatar & Metadata -->
+<div class="flex items-center gap-2.5 pl-1 cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-xs ring-2 ring-primary-container/20">
+            FG
+          </div>
+<div class="hidden md:flex flex-col text-left">
+<span class="text-label-md font-label-md text-on-surface leading-tight">Father Gregory</span>
+<span class="text-caption font-caption text-outline leading-tight">Lead Administrator</span>
+</div>
+</div>
+</div>
+</header>
+<!-- WORKSPACE CANVAS (1440px bounded width) -->
+<main class="max-w-[1440px] w-full mx-auto px-8 pt-6">
+<!-- Breadcrumbs & Publishing Context Strip -->
+<div class="flex flex-col gap-2 mb-4">
+<div class="flex items-center gap-2 text-label-md font-label-md text-outline">
+<span class="hover:text-on-surface cursor-pointer">BlessBoard HQ</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="hover:text-on-surface cursor-pointer">Announcements</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-semibold">Create Announcement</span>
+</div>
+<!-- Publishing Context Banner -->
+<div class="bg-surface-container-high/60 border border-outline-variant/40 rounded-xl px-4 py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5 text-on-surface">
+<span class="material-symbols-outlined text-primary" data-icon="verified_user">verified_user</span>
+<span class="text-label-md font-label-md font-semibold text-primary">Context: HQ Central Synod</span>
+<span class="text-outline-variant">|</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Authoring authority enabled for Church-wide or individual Branch announcements.</span>
+</div>
+<div class="inline-flex items-center gap-1.5 bg-surface-container-lowest px-2.5 py-1 rounded-md border border-outline-variant/40 text-label-sm font-label-sm text-primary">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Synod Authoring Mode</span>
+</div>
+</div>
+</div>
+<!-- Page Header with Action Buttons -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-outline-variant/30">
+<div>
+<h1 class="text-headline-xl font-headline-xl text-on-surface tracking-tight">Create announcement</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-0.5">Create a notice for members or the public website.</p>
+</div>
+<!-- Top Header Actions -->
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors" type="button">
+            Cancel / Back
+          </button>
+<div class="flex flex-col items-end">
+<button class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface text-label-md font-label-md flex items-center gap-2 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="save">save</span>
+<span>Save draft</span>
+</button>
+<span class="text-caption font-caption text-outline mt-0.5">Drafts are invisible to members/public</span>
+</div>
+<button class="px-5 py-2.5 rounded-lg bg-primary-container hover:bg-primary text-white text-label-md font-label-md flex items-center gap-2 shadow-sm transition-colors duration-150" type="button">
+<span>Review &amp; publish</span>
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- TWO-COLUMN WORKSPACE (Authoring Form vs Live Preview & Validation) -->
+<div class="grid grid-cols-12 gap-8 mt-6">
+<!-- LEFT COLUMN: Authoring Form (7 cols) -->
+<div class="col-span-12 lg:col-span-7 flex flex-col gap-6">
+<!-- 1. PUBLISHING SCOPE -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant/20 mb-4">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">1. Publishing scope</h2>
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded bg-surface-container text-primary">Authority: HQ Synod</span>
+</div>
+<div class="space-y-4">
+<!-- Radio: Entire church -->
+<label class="flex items-start gap-3 p-3.5 rounded-lg border-2 border-primary-container bg-surface-container-low/40 cursor-pointer">
+<input checked="" class="mt-1 text-primary-container focus:ring-primary-container" name="scope_selection" type="radio" value="entire_church"/>
+<div class="flex flex-col">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">Entire church (Church-wide)</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Visible according to the selected audience across all church branches.</span>
+</div>
+</label>
+<!-- Radio: Specific branch -->
+<label class="flex items-start gap-3 p-3.5 rounded-lg border border-outline-variant/40 bg-surface-bright hover:bg-surface-container/30 cursor-pointer transition-colors">
+<input class="mt-1 text-primary-container focus:ring-primary-container" name="scope_selection" type="radio" value="specific_branch"/>
+<div class="flex flex-col flex-1">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">Specific branch</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant mb-2">This announcement will apply only to the selected branch.</span>
+<!-- Interactive Branch Selector Simulation Dropdown -->
+<div class="mt-1 max-w-sm">
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2 pl-3 pr-8 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+<option selected="">Select Branch: Kafue Campus</option>
+<option>St. Jude Main Sanctuary</option>
+<option>Livingstone Chapel</option>
+<option>Ndola Outreach Center</option>
+</select>
+</div>
+<p class="text-caption font-caption text-outline mt-1.5">HQ can target specific branches or church-wide. Non-destructive switch.</p>
+</div>
+</div>
+</label>
+<!-- Sub-variant demonstration card preview: Branch Admin Scoped Context -->
+<div class="bg-surface-container-high/40 rounded-lg p-3.5 border border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-outline text-base" data-icon="lock">lock</span>
+<div class="text-body-sm font-body-sm text-on-surface">
+<span class="font-semibold">Branch Admin Scoped Context: Kafue Branch (Locked)</span>
+<p class="text-caption font-caption text-on-surface-variant">Demonstration reference: Branch Admins cannot alter the Synod scope.</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded bg-surface-container-lowest text-label-sm font-label-sm border border-outline-variant/40 text-on-surface-variant">
+                  🔒 Kafue Branch Scope Locked
+                </span>
+</div>
+</div>
+</section>
+<!-- 2. MESSAGE -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant/20 mb-4">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">2. Message</h2>
+<span class="text-label-sm font-label-sm text-outline">Standard Liturgical &amp; Member Format</span>
+</div>
+<div class="space-y-5">
+<!-- Title Input -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<label class="text-label-lg font-label-lg text-on-surface" for="announcement-title">Announcement Title <span class="text-error">*</span></label>
+<span class="text-caption font-caption text-outline font-mono">48 / 200</span>
+</div>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3.5 py-2.5 text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-primary-container" id="announcement-title" type="text" value="Easter Sunday Sunrise Worship &amp; Family Breakfast"/>
+</div>
+<!-- Body Textarea with Clean Toolbar -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<label class="text-label-lg font-label-lg text-on-surface" for="announcement-body">Announcement Body <span class="text-error">*</span></label>
+<span class="text-caption font-caption text-outline font-mono">382 / 20,000</span>
+</div>
+<div class="border border-outline-variant rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary-container focus-within:border-primary-container">
+<!-- Toolbar -->
+<div class="bg-surface-bright border-b border-outline-variant/40 px-3 py-1.5 flex items-center gap-1 text-on-surface-variant">
+<button class="p-1 hover:bg-surface-container rounded text-sm font-bold w-7 h-7 flex items-center justify-center" type="button">B</button>
+<button class="p-1 hover:bg-surface-container rounded text-sm italic font-serif w-7 h-7 flex items-center justify-center" type="button">I</button>
+<div class="w-px h-4 bg-outline-variant/40 mx-1"></div>
+<button class="p-1 hover:bg-surface-container rounded w-7 h-7 flex items-center justify-center" title="List" type="button">
+<span class="material-symbols-outlined text-base" data-icon="format_list_bulleted">format_list_bulleted</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded w-7 h-7 flex items-center justify-center" title="Link" type="button">
+<span class="material-symbols-outlined text-base" data-icon="link">link</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded w-7 h-7 flex items-center justify-center" title="Quote" type="button">
+<span class="material-symbols-outlined text-base" data-icon="format_quote">format_quote</span>
+</button>
+</div>
+<textarea class="w-full bg-surface-container-lowest p-3.5 text-body-md font-body-md text-on-surface border-0 focus:ring-0 resize-y" id="announcement-body" rows="4">Join our entire church family for our annual Easter Sunrise service on the lawn followed by a fellowship breakfast in the fellowship hall. All ages are warmly invited. Volunteer signups for breakfast prep are open now.</textarea>
+</div>
+</div>
+<!-- Action Button (Optional) -->
+<div class="pt-2 border-t border-outline-variant/20">
+<label class="flex items-center gap-2.5 cursor-pointer select-none">
+<input checked="" class="rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+<span class="text-label-lg font-label-lg text-on-surface">Include action button</span>
+</label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pl-6">
+<div>
+<label class="block text-label-md font-label-md text-on-surface-variant mb-1">Action button label</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="text" value="Learn more &amp; RSVP"/>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-on-surface-variant mb-1">Action URL</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="url" value="https://gracefellowship.church/easter-2025"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. AUDIENCE -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<h2 class="text-headline-sm font-headline-sm text-on-surface pb-3 border-b border-outline-variant/20 mb-4">3. Audience (Who should see this?)</h2>
+<div class="space-y-3">
+<label class="flex items-start gap-3 p-3 rounded-lg border border-outline-variant/40 bg-surface-bright hover:bg-surface-container/30 cursor-pointer">
+<input checked="" class="mt-1 rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-label-lg font-label-lg text-on-surface">Members</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Appears in the BlessBoard member announcement feed (mobile app &amp; member portal).</span>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg border border-outline-variant/40 bg-surface-bright hover:bg-surface-container/30 cursor-pointer">
+<input checked="" class="mt-1 rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-label-lg font-label-lg text-on-surface">Public website</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Appears on the church public website and applicable public branch portals.</span>
+</div>
+</label>
+</div>
+<!-- Broadcast helper callout -->
+<div class="mt-4 p-3.5 bg-surface-container-low rounded-lg border border-outline-variant/40 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="cell_tower">cell_tower</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Publishing an announcement does not send SMS or email. Need direct delivery?</span>
+</div>
+<a class="text-label-sm font-label-sm text-secondary font-bold hover:underline flex-shrink-0" href="#">Go to Broadcasts →</a>
+</div>
+</section>
+<!-- 4. PLACEMENT -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<h2 class="text-headline-sm font-headline-sm text-on-surface pb-3 border-b border-outline-variant/20 mb-4">4. Placement</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<label class="flex items-start gap-3 p-3.5 rounded-lg border border-outline-variant/40 bg-surface-bright hover:bg-surface-container/30 cursor-pointer">
+<input checked="" class="mt-1 rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">Pinned</span>
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="push_pin">push_pin</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Pinned announcements appear first in the feed.</p>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3.5 rounded-lg border border-outline-variant/40 bg-surface-bright hover:bg-surface-container/30 cursor-pointer">
+<input checked="" class="mt-1 rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">Featured</span>
+<span class="material-symbols-outlined text-sm text-amber-600" data-icon="star">star</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Featured announcements receive stronger visual emphasis where supported.</p>
+</div>
+</label>
+</div>
+</section>
+<!-- 5. VISIBILITY & TIMING -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<h2 class="text-headline-sm font-headline-sm text-on-surface pb-3 border-b border-outline-variant/20 mb-4">5. Visibility &amp; Timing</h2>
+<div class="space-y-4">
+<!-- Radio Options -->
+<div class="flex items-center gap-6">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary-container focus:ring-primary-container" name="timing_mode" type="radio" value="publish_now"/>
+<span class="text-label-md font-label-md text-on-surface">Publish now (Immediately active upon publish confirmation)</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="text-primary-container focus:ring-primary-container" name="timing_mode" type="radio" value="schedule"/>
+<span class="text-label-md font-label-md font-semibold text-primary">Schedule (Selected)</span>
+</label>
+</div>
+<!-- Date & Time Pickers Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg bg-surface-bright border border-outline-variant/30">
+<!-- Start Date & Time -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">Start Date &amp; Time <span class="text-error">*</span></label>
+<div class="grid grid-cols-2 gap-2">
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="text" value="Mar 24, 2025"/>
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="text" value="06:00 AM"/>
+</div>
+</div>
+<!-- End Date & Time -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">End Date &amp; Time (Optional)</label>
+<div class="grid grid-cols-2 gap-2">
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="text" value="Apr 21, 2025"/>
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-2 text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container" type="text" value="11:59 PM"/>
+</div>
+</div>
+</div>
+<!-- Timezone & Church-Admin Helper Copy -->
+<div class="flex flex-col gap-1 text-caption font-caption text-outline">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span>Central Africa Time (CAT / UTC+2) • Local Church Time</span>
+</div>
+<p class="text-on-surface-variant">Announcement will automatically become visible at the scheduled start time. Invisible until then.</p>
+</div>
+</div>
+</section>
+<!-- 6. ATTACHMENTS & DOCUMENTS -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-6 shadow-sm">
+<h2 class="text-headline-sm font-headline-sm text-on-surface pb-3 border-b border-outline-variant/20 mb-4">6. Attachments &amp; Documents</h2>
+<!-- Upload Dropzone -->
+<div class="border-2 border-dashed border-outline-variant/80 rounded-xl p-6 text-center hover:bg-surface-bright transition-colors cursor-pointer mb-4">
+<span class="material-symbols-outlined text-3xl text-outline mb-2" data-icon="cloud_upload">cloud_upload</span>
+<p class="text-body-sm font-body-sm text-on-surface">
+                Drop bulletin PDFs, schedule graphics, or photos here, or <span class="text-primary font-semibold hover:underline">Browse files</span>
+</p>
+<p class="text-caption font-caption text-outline mt-1">Supports PDF, PNG, JPG up to 25MB each</p>
+</div>
+<!-- Attached Files List -->
+<div class="space-y-2 mb-4">
+<!-- File 1 -->
+<div class="flex items-center justify-between p-3 rounded-lg border border-outline-variant/30 bg-surface-bright">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="picture_as_pdf">picture_as_pdf</span>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface">Easter_Schedule_2025.pdf</span>
+<span class="text-caption font-caption text-outline">1.4 MB</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-container text-on-surface-variant border border-outline-variant/30">
+                    Visible to: Members &amp; Public
+                  </span>
+<button class="text-error hover:text-on-error-container text-label-sm font-label-sm font-semibold" type="button">Remove</button>
+</div>
+</div>
+<!-- File 2 -->
+<div class="flex items-center justify-between p-3 rounded-lg border border-outline-variant/30 bg-surface-bright">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="image">image</span>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface">Breakfast_Menu_Graphic.png</span>
+<span class="text-caption font-caption text-outline">840 KB</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-container text-on-surface-variant border border-outline-variant/30">
+                    Visible to: Members &amp; Public
+                  </span>
+<button class="text-error hover:text-on-error-container text-label-sm font-label-sm font-semibold" type="button">Remove</button>
+</div>
+</div>
+</div>
+<!-- Clarification Notice -->
+<p class="text-caption font-caption text-on-surface-variant bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/30">
+              ℹ️ Attachments inherit audience permissions. Members-only attachments remain restricted.
+            </p>
+</section>
+</div>
+<!-- RIGHT COLUMN: Sticky Live Feed Preview & State Validation (5 cols) -->
+<div class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+<!-- 1. STICKY LIVE FEED PREVIEW WIDGET -->
+<div class="sticky top-20 flex flex-col gap-6">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+<!-- Preview Header & Tab Switcher -->
+<div class="bg-surface-container-low px-4 py-3 border-b border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="visibility">visibility</span>
+<span class="text-label-md font-label-md font-semibold text-on-surface">Live Feed Preview</span>
+</div>
+<!-- Preview switcher -->
+<div class="inline-flex rounded-lg bg-surface-container p-0.5 border border-outline-variant/30 text-label-sm font-label-sm">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary font-semibold shadow-sm" type="button">Member Feed</button>
+<button class="px-2.5 py-1 text-on-surface-variant hover:text-on-surface" type="button">Public Website</button>
+</div>
+</div>
+<!-- Realistic Feed Card Preview (BlessBoard Member App UI) -->
+<div class="p-5 bg-background">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-5 shadow-sm space-y-3 relative">
+<!-- Sacred Amber/Indigo status chips -->
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-container text-white">Church-wide</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-secondary-fixed text-on-secondary-fixed flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[10px]" data-icon="push_pin">push_pin</span> Pinned
+                    </span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-amber-100 text-amber-900 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[10px]" data-icon="star">star</span> Featured
+                    </span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-emerald-100 text-emerald-800 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[10px]" data-icon="schedule">schedule</span> Scheduled Mar 24
+                    </span>
+</div>
+<!-- Title -->
+<h3 class="text-headline-sm font-headline-sm text-on-surface font-semibold leading-snug">
+                    Easter Sunday Sunrise Worship &amp; Family Breakfast
+                  </h3>
+<!-- Body Snippet -->
+<p class="text-body-md font-body-md text-on-surface-variant line-clamp-3">
+                    Join our entire church family for our annual Easter Sunrise service on the lawn followed by a fellowship breakfast in the fellowship hall. All ages are warmly invited. Volunteer signups for breakfast prep are open now.
+                  </p>
+<!-- Action CTA Button -->
+<div class="pt-1">
+<a class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container text-white text-label-md font-label-md shadow-sm hover:bg-primary transition-colors" href="#">
+<span>Learn more &amp; RSVP</span>
+<span class="material-symbols-outlined text-xs" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+<!-- Attachment Chips -->
+<div class="pt-2 border-t border-outline-variant/30 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs text-error" data-icon="picture_as_pdf">picture_as_pdf</span>
+<span>Easter_Schedule_2025.pdf</span>
+</span>
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs text-primary" data-icon="image">image</span>
+<span>Breakfast_Menu_Graphic.png</span>
+</span>
+</div>
+<!-- Meta stamp -->
+<div class="pt-1 flex items-center justify-between text-caption font-caption text-outline">
+<span>Posted by Lead Administrator</span>
+<span>Starts: Mar 24, 06:00 CAT</span>
+</div>
+</div>
+<!-- Simulation Footer Note -->
+<p class="text-center text-caption font-caption text-outline mt-3">
+                  Live simulation: Viewing as Church-wide announcement
+                </p>
+</div>
+</div>
+<!-- 2. INLINE VALIDATION & STATE REFERENCE DRAWER / CARD -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm space-y-4">
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/20">
+<span class="text-label-md font-label-md font-semibold text-on-surface">Publishing Readiness</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-emerald-100 text-emerald-800">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span> Ready to Publish
+                </span>
+</div>
+<!-- Rule Verification list -->
+<div class="space-y-2 text-body-sm font-body-sm">
+<div class="flex items-center gap-2 text-emerald-700">
+<span class="material-symbols-outlined text-base" data-icon="check_circle">check_circle</span>
+<span>Title &amp; Body valid (48 chars, 382 chars)</span>
+</div>
+<div class="flex items-center gap-2 text-emerald-700">
+<span class="material-symbols-outlined text-base" data-icon="check_circle">check_circle</span>
+<span>Scope selected: Synod Church-wide</span>
+</div>
+<div class="flex items-center gap-2 text-emerald-700">
+<span class="material-symbols-outlined text-base" data-icon="check_circle">check_circle</span>
+<span>Audience targeted (Members + Public web)</span>
+</div>
+<div class="flex items-center gap-2 text-emerald-700">
+<span class="material-symbols-outlined text-base" data-icon="check_circle">check_circle</span>
+<span>Valid schedule: Mar 24, 2025 at 06:00 CAT</span>
+</div>
+</div>
+<!-- Warning State Toggle Simulator -->
+<div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-900 text-caption font-caption space-y-1">
+<div class="font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+<span>System Validation Rules Engine</span>
+</div>
+<p>Sample: Missing title triggers <code class="bg-amber-100 px-1 py-0.5 rounded">Title is required (max 200 chars)</code>.</p>
+<p>Scheduled without start time triggers <code class="bg-amber-100 px-1 py-0.5 rounded">Start time required</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- 3. BOTTOM ACTION BAR (Sticky bottom dock) -->
+<footer class="fixed bottom-0 right-0 left-64 bg-surface-container-lowest/95 backdrop-blur-sm border-t border-outline-variant/30 py-3.5 px-8 z-30 shadow-lg flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+<span class="text-body-sm font-body-sm text-on-surface">Unsaved changes: <span class="font-semibold">Draft in progress</span></span>
+<span class="text-caption font-caption text-outline">Last saved locally 1 minute ago</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors" type="button">
+          Save draft
+        </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary-container hover:bg-primary text-white text-label-md font-label-md font-semibold flex items-center gap-2 shadow-sm transition-transform active:scale-[0.98]" type="button">
+<span>Review &amp; publish →</span>
+</button>
+</div>
+</footer>
+</div>
+</body></html>

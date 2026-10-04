@@ -23,6 +23,20 @@
     if (item.startsAt) return formatWhen(item.startsAt, item.timezone);
     return '';
   }
+  function announcementImage(item, index, featured) {
+    if (item && item.imageUrl) return { url: item.imageUrl, alt: item.imageAlt || item.title || 'Announcement image' };
+    var attachment = item && item.attachments && item.attachments[0] && item.attachments[0].imageUrl
+      ? item.attachments[0]
+      : (item && item.attachments || []).find(function (a) { return a && a.imageUrl; });
+    if (attachment) return { url: attachment.imageUrl, alt: attachment.imageAlt || item.title || 'Announcement image' };
+    var fallbacks = announcementFallbackImages || [];
+    var fallback = fallbacks.length ? fallbacks[featured ? 0 : 1 + (index % Math.max(1, fallbacks.length - 1))] : null;
+    return fallback ? { url: fallback, alt: item.title || 'Announcement image', fallback: true } : null;
+  }
+  var isBranchView = entitiesScope === 'branch';
+  var scopeDescription = isBranchView
+    ? 'Church-wide announcements and updates for this branch.'
+    : 'Church-wide announcements and updates for the whole church.';
 %>
 
 <section
@@ -38,7 +52,7 @@
   <%- include('./partials/page-hero', {
     heroHeading: pageTitle || 'Announcements',
     heroBody: 'Stay connected with gatherings, notices, and community life.',
-    heroMedia: null,
+    heroMedia: announcementHeroMedia || null,
     heroMediaAlt: '',
     heroEyebrow: 'Parish Bulletins',
     heroClass: 'bb-tp-announcements-hero',
@@ -50,14 +64,23 @@
   }) %>
 
   <div class="bb-tp-container bb-tp-directory__body">
+    <div class="bb-tp-ann-context" data-bb-ann-scope="<%= entitiesScope || 'church' %>">
+      <span class="bb-tp-ann-badge"><%= isBranchView ? 'Branch' : 'Church-wide' %></span>
+      <p><%= scopeDescription %></p>
+    </div>
     <% if (showEmptyState) { %>
       <%- include('./partials/empty-state') %>
     <% } %>
 
     <% if (featured) { %>
-    <article class="bb-tp-ann-featured" data-bb-ann-featured="1">
+    <% var featuredImage = announcementImage(featured, 0, true); %>
+    <article class="bb-tp-ann-featured<%= featuredImage ? ' has-image' : '' %>" data-bb-ann-featured="1">
+      <% if (featuredImage) { %>
+      <img class="bb-tp-ann-image bb-tp-ann-image--featured" src="<%= featuredImage.url %>" alt="<%= featuredImage.alt %>" loading="lazy" decoding="async" />
+      <% } %>
       <p class="bb-tp-ann-meta">
         <% if (featured.isFeatured) { %><span class="bb-tp-ann-badge">Featured</span><% } %>
+        <% if (featured.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
         <% if (featured.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span><% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
         <% if (whenLabel(featured)) { %><span><%= whenLabel(featured) %></span><% } %>
       </p>
@@ -65,22 +88,29 @@
         <a href="<%= hrefFor('/announcements/' + featured.id) %>"><%= featured.title %></a>
       </h2>
       <p class="bb-tp-ann-body"><%= snippet(featured.body) %></p>
+      <% if (featured.attachments && featured.attachments.length) { %><span class="bb-tp-ann-attachment">Attachment</span><% } %>
       <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/announcements/' + featured.id) %>">Open announcement</a>
     </article>
     <% } %>
 
     <% if (rest.length) { %>
     <ul class="bb-tp-ann-list" data-bb-ann-list="1">
-      <% rest.forEach(function (item) { %>
-      <li class="bb-tp-ann-card">
+      <% rest.forEach(function (item, index) { %>
+      <% var itemImage = announcementImage(item, index, false); %>
+      <li class="bb-tp-ann-card<%= itemImage ? ' has-image' : '' %>">
+        <% if (itemImage) { %>
+        <img class="bb-tp-ann-image bb-tp-ann-image--card" src="<%= itemImage.url %>" alt="<%= itemImage.alt %>" loading="lazy" decoding="async" />
+        <% } %>
         <p class="bb-tp-ann-meta">
           <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span><% } %>
+          <% if (item.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
           <% if (whenLabel(item)) { %><span><%= whenLabel(item) %></span><% } %>
         </p>
         <h3 class="bb-tp-ann-title">
           <a href="<%= hrefFor('/announcements/' + item.id) %>"><%= item.title %></a>
         </h3>
         <p class="bb-tp-ann-body"><%= snippet(item.body) %></p>
+        <% if (item.attachments && item.attachments.length) { %><span class="bb-tp-ann-attachment">Attachment</span><% } %>
         <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/announcements/' + item.id) %>">Open announcement</a>
       </li>
       <% }) %>

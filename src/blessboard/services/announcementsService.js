@@ -17,6 +17,7 @@ const {
   resolveAnnouncementProductPolicy,
 } = require("./announcementProductPolicy");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
+const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -287,7 +288,30 @@ async function authorizeActor(client, input) {
       branchId: input.branchId,
     }
   );
-  if (!result.ok || !result.allowed) {
+  // HQ permissions are church-scoped, while an announcement may target an
+  // authorized branch. The route has already verified that branch belongs to
+  // this church; evaluate the same permission at church scope for HQ grants
+  // instead of widening branch-admin authorization.
+  let effectiveResult = result;
+  if (
+    !result.ok &&
+    input.branchId &&
+    result.reason === "scope_mismatch"
+  ) {
+    const churchScoped = await requireActorPermission(
+      { query: client.query.bind(client) },
+      {
+        actorUserId: input.actorUserId,
+        tenant: input.tenant,
+        permission,
+        branchId: null,
+      }
+    );
+    if (churchScoped.ok && churchScoped.mode === "hq") {
+      effectiveResult = churchScoped;
+    }
+  }
+  if (!effectiveResult.ok || !effectiveResult.allowed) {
     // Platform default: may draft (manage) but not publish unless product policy allows.
     if (permission === "announcements.publish") {
       const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
@@ -313,7 +337,7 @@ async function authorizeActor(client, input) {
     return {
       ok: false,
       status: STATUS.FORBIDDEN,
-      reason: result.reason || "denied",
+      reason: effectiveResult.reason || "denied",
       mode: null,
     };
   }
@@ -342,7 +366,7 @@ async function authorizeActor(client, input) {
 
   return {
     ok: true,
-    mode: result.mode,
+    mode: effectiveResult.mode,
   };
 }
 
@@ -777,9 +801,15 @@ async function listAdminAnnouncements(db, input) {
   if (!churchId) {
     return { ok: false, status: STATUS.INVALID_INPUT, items: [], total: 0, reason: "church_id" };
   }
+  const scopeMode = ["all", "church", "branch"].includes(input && input.scopeMode)
+    ? input.scopeMode
+    : (input && input.allScopes ? "all" : (input && input.branchId ? "branch" : "church"));
   let branchId;
-  if (Object.prototype.hasOwnProperty.call(input || {}, "branchId")) {
+  if (scopeMode === "branch" && Object.prototype.hasOwnProperty.call(input || {}, "branchId")) {
     branchId = input.branchId == null || input.branchId === "" ? null : String(input.branchId);
+  }
+  if (scopeMode === "branch" && !branchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, items: [], total: 0, reason: "branch_id" };
   }
   try {
     return await withClient(db, async (client) => {
@@ -787,13 +817,13 @@ async function listAdminAnnouncements(db, input) {
         const authz = await authorizeActor(client, {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
-          branchId: branchId == null ? null : branchId,
+          branchId: scopeMode === "branch" ? branchId : null,
           permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: authz.reason };
         }
-        if (branchId == null && authz.mode === "branch") {
+        if (scopeMode !== "branch" && authz.mode === "branch") {
           return {
             ok: false,
             status: STATUS.FORBIDDEN,
@@ -806,6 +836,7 @@ async function listAdminAnnouncements(db, input) {
       const listed = await repo.listAnnouncements(client, {
         churchId,
         branchId,
+        scopeMode,
         status: input.status || null,
         audienceKey: input.audienceKey || null,
         q: input.q || null,
@@ -1082,10 +1113,17 @@ async function listPublicWebsiteAnnouncements(db, input) {
         offset: input.offset,
       });
       const now = new Date();
+      const publicItems = await Promise.all(items.map(async (item) => {
+        const attachments = await repo.listAttachments(client, item.id);
+        return publicAnnouncementPresentation(
+          item,
+          publicAnnouncementImageDto(attachments, churchId)
+        );
+      }));
       return {
         ok: true,
         status: STATUS.OK,
-        items: items
+        items: publicItems
           .map((item) => ({
             ...item,
             effectiveStatus: resolveEffectiveStatus(item, now),
@@ -1133,14 +1171,17 @@ async function getPublicWebsiteAnnouncement(db, input) {
       if (!isPubliclyVisible(existing)) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
+      const attachments = await repo.listAttachments(client, id);
       return {
         ok: true,
         status: STATUS.OK,
         item: {
-          ...existing,
+          ...publicAnnouncementPresentation(
+            existing,
+            publicAnnouncementImageDto(attachments, churchId)
+          ),
           effectiveStatus: "published",
           audiences: audiences.map((a) => a.audienceKey),
-          attachments: [],
           actionUrl: existing.actionUrl ? safeExternalUrl(existing.actionUrl) : null,
           body: String(existing.body || ""),
           title: String(existing.title || ""),
@@ -1151,6 +1192,42 @@ async function getPublicWebsiteAnnouncement(db, input) {
   } catch (err) {
     return { ...mapDbError(err), item: null };
   }
+}
+
+function publicAnnouncementImageDto(attachments, churchId, env) {
+  return (Array.isArray(attachments) ? attachments : [])
+    .filter((attachment) =>
+      attachment &&
+      attachment.churchId === churchId &&
+      attachment.visibility === "public" &&
+      attachment.mediaStatus === "active" &&
+      attachment.storageKey
+    )
+    .map((attachment) => {
+      const imageUrl = /^image\//i.test(String(attachment.mimeType || ""))
+        ? presentRuntimeImageSrc(`/media/${String(attachment.storageKey).replace(/^\/+/, "")}`, env || process.env)
+        : null;
+      return {
+        imageUrl: imageUrl || null,
+        imageAlt: attachment.altText || attachment.originalFilename || "Announcement image",
+        imageSource: imageUrl ? "public_attachment" : null,
+        originalFilename: attachment.originalFilename,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      };
+    })
+    .filter(Boolean);
+}
+
+function publicAnnouncementPresentation(item, attachments) {
+  const image = (Array.isArray(attachments) ? attachments : []).find((attachment) => attachment && attachment.imageUrl);
+  return {
+    ...item,
+    attachments,
+    imageUrl: image ? image.imageUrl : null,
+    imageAlt: image ? image.imageAlt : null,
+    imageSource: image ? image.imageSource : null,
+  };
 }
 
 async function listAnnouncementPublicationHistory(db, input) {
@@ -1195,5 +1272,6 @@ module.exports = {
   removeAnnouncementAttachment,
   listPublicWebsiteAnnouncements,
   getPublicWebsiteAnnouncement,
+  publicAnnouncementImageDto,
   listAnnouncementPublicationHistory,
 };

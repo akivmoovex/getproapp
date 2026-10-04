@@ -14,23 +14,60 @@
   data-bb-stitch-mobile="c9a739da878c4467b03344734e3b1e50"
   aria-label="Announcement"
 >
-  <div class="bb-tp-container" style="padding-top:1.5rem;padding-bottom:3rem;max-width:46rem">
+  <div class="bb-tp-container bb-tp-ann-detail__body">
     <p class="bb-tp-ann-meta">
       <a href="<%= hrefFor('/announcements') %>">← All announcements</a>
     </p>
     <% if (!item) { %>
       <h1 class="bb-tp-ann-title">Announcement unavailable</h1>
       <p>This notice is not published or has ended.</p>
-    <% } else { %>
+    <% } else {
+      var primaryAttachment = item.imageUrl ? {
+        imageUrl: item.imageUrl,
+        imageAlt: item.imageAlt || item.title || 'Announcement image'
+      } : (item.attachments || []).find(function (attachment) {
+        return attachment && attachment.imageUrl;
+      });
+      var fallbackImages = typeof announcementFallbackImages !== 'undefined' &&
+        Array.isArray(announcementFallbackImages) ? announcementFallbackImages : [];
+      if (!primaryAttachment && fallbackImages.length) {
+        primaryAttachment = {
+          imageUrl: announcementFallbackImages[0],
+          imageAlt: item.title || 'Announcement image'
+        };
+      }
+    %>
       <p class="bb-tp-ann-meta">
-        <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span>
+        <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch"><%= (typeof branchView !== 'undefined' && branchView && branchView.displayName) || 'Branch' %></span>
         <% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
+        <% if (item.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
+        <% if (item.isFeatured) { %><span class="bb-tp-ann-badge">Featured</span><% } %>
         <% if (item.publishedAt) { %><span><%= formatWhen(item.publishedAt, item.timezone) %></span><% } %>
       </p>
       <h1 class="bb-tp-ann-title"><%= item.title %></h1>
-      <div class="bb-tp-ann-body" style="white-space:pre-wrap;line-height:1.6;margin-top:1rem"><%= item.body %></div>
+      <% if (primaryAttachment) { %>
+      <img class="bb-tp-ann-detail__image" src="<%= primaryAttachment.imageUrl %>" alt="<%= primaryAttachment.imageAlt %>" loading="lazy" />
+      <% } %>
+      <div class="bb-tp-ann-body bb-tp-ann-detail__message"><%= item.body %></div>
+      <% if (item.attachments && item.attachments.length) { %>
+      <section class="bb-tp-ann-detail__attachments" aria-labelledby="announcement-attachments">
+        <h2 id="announcement-attachments">Attachments</h2>
+        <ul>
+          <% item.attachments.filter(function (attachment) {
+            return !primaryAttachment || attachment.imageUrl !== primaryAttachment.imageUrl;
+          }).forEach(function (attachment) { %>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+            <span><%= attachment.originalFilename || 'Attachment' %></span>
+            <% if (attachment.mimeType) { %><small><%= attachment.mimeType %></small><% } %>
+            <% if (attachment.sizeBytes != null) { %><small><%= attachment.sizeBytes %> bytes</small><% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+      <% } %>
       <% if (item.actionUrl && item.actionLabel) { %>
-        <p style="margin-top:1.25rem">
+        <p class="bb-tp-ann-detail__action">
           <a class="bb-tp-btn bb-tp-btn--primary" href="<%= item.actionUrl %>" rel="noopener noreferrer"><%= item.actionLabel %></a>
         </p>
       <% } %>

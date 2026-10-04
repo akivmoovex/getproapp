@@ -224,6 +224,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
 
     const result = await versionSvc.loadVersionHistory(getPool(), {
       organizationId: tenant.organization.id,
+      churchId: tenant.church && tenant.church.id,
       status: req.query && req.query.status,
       publishedBy: req.query && req.query.publisher,
       themeKey: req.query && req.query.theme,
@@ -406,6 +407,8 @@ function createWebsitePublicationVersionAdminRouter(deps) {
 
       const result = await versionSvc.loadHistoricalVersionPreview(getPool(), {
         organizationId: tenant.organization.id,
+        churchId: tenant.church && tenant.church.id,
+        branchId: tenant.branch && tenant.branch.id,
         versionId: req.params.versionId,
       });
       if (!result.ok) {
@@ -446,6 +449,8 @@ function createWebsitePublicationVersionAdminRouter(deps) {
 
       const result = await versionSvc.prepareVersionRestore(getPool(), {
         organizationId: tenant.organization.id,
+        churchId: tenant.church && tenant.church.id,
+        branchId: tenant.branch && tenant.branch.id,
         versionId: req.params.versionId,
       });
       if (!result.ok) {
@@ -507,13 +512,22 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       }
 
       const body = req.body || {};
+      if (!String(body.restoration_reason || body.reason || "").trim()) {
+        return res.redirect(
+          303,
+          `/hq/website/version-history/${encodeURIComponent(req.params.versionId)}/restore?error=${encodeURIComponent("A restoration reason is required.")}`
+        );
+      }
       let selectedPageKeys = body.pages || body.page_keys || [];
       if (!Array.isArray(selectedPageKeys)) selectedPageKeys = [selectedPageKeys];
       selectedPageKeys = selectedPageKeys.map((k) => String(k)).filter(Boolean);
 
+      let prepared = null;
       if (body.restore_all === "1" || body.restore_all === "on") {
-        const prepared = await versionSvc.prepareVersionRestore(getPool(), {
+        prepared = await versionSvc.prepareVersionRestore(getPool(), {
           organizationId: tenant.organization.id,
+          churchId,
+          branchId: null,
           versionId: req.params.versionId,
         });
         if (!prepared.ok) {
@@ -523,6 +537,20 @@ function createWebsitePublicationVersionAdminRouter(deps) {
           return sendControlled(req, res, 400, "This version cannot be restored.");
         }
         selectedPageKeys = (prepared.pageOptions || []).map((p) => p.key);
+      }
+      if (!prepared) {
+        prepared = await versionSvc.prepareVersionRestore(getPool(), {
+          organizationId: tenant.organization.id,
+          churchId,
+          branchId: null,
+          versionId: req.params.versionId,
+        });
+        if (!prepared.ok) {
+          if (prepared.status === versionSvc.STATUS.NOT_FOUND) {
+            return sendControlled(req, res, 404, "Version not found.");
+          }
+          return sendControlled(req, res, 400, "This version cannot be restored.");
+        }
       }
 
       const {
@@ -577,17 +605,19 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         "hq/phase3-restore-website-version.ejs",
         await shellLocals(req, res, {
           pageTitle: "Restore Website Version",
-          historical: result.historical,
-          current: null,
-          pageOptions: [],
-          themeHistorical: result.historical.themeKey,
-          themeCurrent: null,
-          statusLabels: versionSvc.STATUS_LABELS,
-          sourceLabels: versionSvc.SOURCE_LABELS,
+          historical: prepared && prepared.historical,
+          current: prepared && prepared.current,
+          pageOptions: (prepared && prepared.pageOptions) || [],
+          themeHistorical: prepared && prepared.themeHistorical,
+          themeCurrent: prepared && prepared.themeCurrent,
+          statusLabels: (prepared && prepared.statusLabels) || versionSvc.STATUS_LABELS,
+          sourceLabels: (prepared && prepared.sourceLabels) || versionSvc.SOURCE_LABELS,
           formError: null,
-          success: result.message,
-          draftVersion: result.draftVersion,
-          restoredPageKeys: result.restoredPageKeys,
+          success: result.message || "A restored draft has been created. Review it before publishing.",
+          draftVersion: result.draftVersion || result.version || prepared.historical,
+          restoredPageKeys:
+            result.restoredPageKeys ||
+            ((prepared && prepared.pageOptions) || []).map((p) => p.key),
         })
       );
       return res.type("html").send(html);
@@ -601,6 +631,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     const q = req.query || {};
     const result = await versionSvc.listPublishingHistory(getPool(), {
       organizationId: tenant.organization.id,
+      churchId: tenant.church && tenant.church.id,
       sourceType: q.eventType || q.sourceType || null,
       publishedBy: q.publisher || null,
       themeKey: q.theme || null,

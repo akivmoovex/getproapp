@@ -572,6 +572,37 @@ function registerActiveClinicFacilityRoutes(app, deps) {
   );
 
   app.post(
+    "/app/facilities/:facilityKey/status",
+    requireAuth,
+    requirePermission("activeclinic.facility.update"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return res.status(403).send("Forbidden");
+        const nextStatus = String(req.body && req.body.status || "").trim().toLowerCase();
+        if (!["planned", "active", "inactive", "suspended"].includes(nextStatus)) return res.status(400).send("Invalid status");
+        if (["inactive", "suspended"].includes(nextStatus) &&
+            String(req.body && req.body.confirm_status || "") !== "1") {
+          return res.status(400).send("Explicit confirmation required");
+        }
+        const detail = await loadActiveClinicFacilityDetailScreen(getPool(), {
+          auth: req.activeClinicAuth, facilityKey: req.params.facilityKey,
+        });
+        if (!detail.ok || !detail.actions.canUpdate) return res.status(404).send("Not found");
+        const updated = await updateFacility(getPool(), {
+          id: detail.facility.id,
+          organizationId: req.activeClinicAuth.organization.id,
+          patch: { status: nextStatus },
+          deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+        });
+        if (!updated.ok) return res.status(400).send(errorMessageForCode(updated.code));
+        return res.redirect(303, `/app/facilities/${encodeURIComponent(req.params.facilityKey)}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
     "/app/facilities/:facilityKey/archive",
     requireAuth,
     requirePermission("activeclinic.facility.archive"),
@@ -597,6 +628,7 @@ function registerActiveClinicFacilityRoutes(app, deps) {
         const archived = await archiveFacility(getPool(), {
           id: detail.facility.id,
           organizationId: req.activeClinicAuth.organization.id,
+          replacementFacilityId: req.body && req.body.replacement_facility_id,
           deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
         });
         if (!archived.ok) {

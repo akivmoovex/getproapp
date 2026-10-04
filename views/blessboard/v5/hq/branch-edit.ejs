@@ -1,0 +1,26 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var s = settings || {};
+  var field = function (key) { return s[key] == null ? '' : s[key]; };
+%>
+<section class="bb-hq-panel" aria-label="Edit branch details">
+  <p class="bb-hq-breadcrumb"><a href="/hq/branches/<%= encodeURIComponent(branch.key) %>">Branch</a> <span aria-hidden="true">›</span> <span>Edit</span></p>
+  <h1 class="bb-hq-page-head__title">Edit <%= branch.displayName %></h1>
+  <% if (error) { %><p class="bb-hq-error" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/hq/branches/<%= encodeURIComponent(branch.key) %>/edit" class="bb-hq-form">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <label>Display name<input name="publicName" value="<%= field('publicName') || branch.displayName %>" required maxlength="200"></label>
+    <label>Phone<input name="phone" value="<%= field('phone') %>"></label>
+    <label>Email<input name="email" type="email" value="<%= field('email') %>"></label>
+    <label>Address line 1<input name="addressLine1" value="<%= field('addressLine1') %>"></label>
+    <label>Address line 2<input name="addressLine2" value="<%= field('addressLine2') %>"></label>
+    <label>City<input name="city" value="<%= field('city') %>"></label>
+    <label>Province / state<input name="provinceState" value="<%= field('provinceState') %>"></label>
+    <label>Postal code<input name="postalCode" value="<%= field('postalCode') %>"></label>
+    <label>Country code<input name="countryCode" value="<%= field('countryCode') %>" maxlength="2" required></label>
+    <label>Timezone<input name="timezone" value="<%= field('timezone') %>" required></label>
+    <button class="bb-hq-btn bb-hq-btn--primary" type="submit">Save details</button>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches/<%= encodeURIComponent(branch.key) %>">Cancel</a>
+  </form>
+</section>
+<%- include('../partials/hq-shell-end') %>

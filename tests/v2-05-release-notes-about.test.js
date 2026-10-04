@@ -75,43 +75,42 @@ function makeBlessBoardApexApp(envOverrides) {
 }
 
 describe("V2.05 About + release notes", () => {
-  it("shared V8 product version is 2.06 with separate build identity", () => {
-    assert.equal(VERSION_BASE_V8, "2.06");
-    assert.equal(PRODUCT_VERSION_V8, "2.06");
+  it("shared V8 product version is 2.07 with separate build identity", () => {
+    assert.equal(VERSION_BASE_V8, "2.07");
+    assert.equal(PRODUCT_VERSION_V8, "2.07");
     const info = getApplicationBuildInfo({ env: V8_ENV });
-    assert.equal(info.productVersion, "2.06");
-    assert.equal(info.productVersionLabel, "Version 2.06");
-    assert.equal(info.version, "2.06");
+    assert.equal(info.productVersion, "2.07");
+    assert.equal(info.productVersionLabel, "Version 2.07");
+    assert.equal(info.version, "2.07");
     assert.equal(info.build, "a1b2c3d4e5f6");
     assert.equal(info.version.includes(info.build), false);
     assert.equal(info.environment, "testing");
   });
 
-  it("catalog preserves 2.03 and 2.04 and adds 2.05 as tip", () => {
+  it("catalog preserves 2.03 and 2.04 and adds 2.07 as tip", () => {
     assert.deepEqual(
       VERSION_ORDER.slice(-3),
-      ["2.03", "2.04", "2.05"]
+      ["2.04", "2.05", "2.07"]
     );
-    assert.equal(listVersions().length, 10);
+    assert.equal(listVersions().length, 11);
     assert.ok(getVersion("2.03"));
     assert.ok(getVersion("2.04"));
-    const v205 = getVersion("2.05");
-    assert.ok(v205);
-    assert.ok(v205.productNarratives.BlessBoard);
-    assert.ok(v205.productNarratives.ActiveClinic);
-    assert.match(v205.deploymentStatus, /TESTING|V5/i);
-    assert.ok(!/RELEASED TO PRODUCTION/i.test(v205.qaVerification));
-    assert.match(v205.qaVerification, /not a .*production RELEASED/i);
+    const v207 = getVersion("2.07");
+    assert.ok(v207);
+    assert.ok(v207.productNarratives.BlessBoard);
+    assert.ok(v207.productNarratives.ActiveClinic);
+    assert.match(v207.deploymentStatus, /V7|release preparation/i);
+    assert.ok(!/RELEASED TO PRODUCTION/i.test(v207.qaVerification));
   });
 
-  it("BlessBoard About shows 2.06, build identity, and no stale 2.05 current label", async () => {
+  it("BlessBoard About shows 2.07, build identity, and no stale 2.05 current label", async () => {
     const app = makeBlessBoardApexApp(V8_ENV);
     try {
       const res = await request(app).get("/about");
       assert.equal(res.status, 200);
       assert.match(res.text, /data-product="BlessBoard"/);
-      assert.match(res.text, /Version 2\.06/);
-      assert.match(res.text, /Release 2\.06/);
+      assert.match(res.text, /Version 2\.07/);
+      assert.match(res.text, /Release 2\.07/);
       assert.match(res.text, /a1b2c3d4e5f6/);
       assert.match(res.text, /unified Admin Console/i);
       assert.doesNotMatch(res.text, /Release 2\.05/);
@@ -122,7 +121,7 @@ describe("V2.05 About + release notes", () => {
     }
   });
 
-  it("ActiveClinic About shows 2.06, build identity, and no stale 2.05 current label", async () => {
+  it("ActiveClinic About shows 2.07, build identity, and no stale 2.05 current label", async () => {
     const {
       createActiveClinicFoundationApp,
     } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -142,8 +141,8 @@ describe("V2.05 About + release notes", () => {
       .set("Host", "activeclinic.neuniversity.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /data-product="ActiveClinic"/);
-    assert.match(res.text, /Version 2\.06/);
-    assert.match(res.text, /Enterprise v2\.06/);
+    assert.match(res.text, /Version 2\.07/);
+    assert.match(res.text, /Enterprise v2\.07/);
     assert.match(res.text, /a1b2c3d4e5f6/);
     assert.match(res.text, /unified Admin Console/i);
     assert.doesNotMatch(res.text, /Enterprise v2\.05/);

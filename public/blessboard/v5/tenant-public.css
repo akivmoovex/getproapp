@@ -964,6 +964,104 @@ html {
   background: linear-gradient(135deg, var(--bb-color-primary-soft), var(--color-surface));
 }
 
+.bb-tp-home-announcements__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--bb-line);
+  border-radius: 1rem;
+  background: var(--bb-surface);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-ink) 8%, transparent);
+}
+
+.bb-tp-home-announcements__card > .material-symbols-outlined {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.65rem;
+  background: var(--bb-color-primary-soft);
+  color: var(--bb-color-primary);
+}
+
+.bb-tp-home-announcements__card > div {
+  min-width: 0;
+}
+
+.bb-tp-home-announcements__card h3,
+.bb-tp-home-announcements__card p {
+  margin: 0;
+}
+
+.bb-tp-home-announcements__card p {
+  margin-top: 0.4rem;
+  color: var(--bb-muted);
+}
+
+.bb-tp-home-utility {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
+  gap: 1.25rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.bb-tp-home-utility__prayer,
+.bb-tp-home-utility__resources {
+  padding: 1.5rem;
+  border: 1px solid var(--bb-line);
+  border-radius: 1rem;
+  background: var(--bb-surface);
+}
+
+.bb-tp-home-utility__prayer {
+  background: var(--bb-color-primary-soft);
+}
+
+.bb-tp-home-utility h2 {
+  margin: 0;
+  color: var(--bb-ink);
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+
+.bb-tp-home-utility p {
+  margin: 0.5rem 0 1.1rem;
+  color: var(--bb-muted);
+}
+
+.bb-tp-home-utility__resources {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.bb-tp-home-utility__resources a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: var(--bb-touch-min, 2.75rem);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--bb-line);
+  border-radius: var(--bb-radius-sm);
+  background: var(--bb-surface-low);
+  color: var(--bb-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-tp-home-utility__resources a .material-symbols-outlined {
+  color: var(--bb-color-primary);
+}
+
+@media (max-width: 767px) {
+  .bb-tp-home-utility {
+    grid-template-columns: 1fr;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
 .bb-tp-home__teaser {
   padding-top: 0.5rem;
   padding-bottom: var(--bb-section);
@@ -3289,6 +3387,8 @@ html {
     display: grid;
     grid-template-columns: 4.25rem 1fr;
     align-items: stretch;
+    background: var(--bb-surface-low);
+    border-radius: 1rem;
   }
 
   .bb-tp-event-card__media {
@@ -3319,11 +3419,19 @@ html {
     justify-content: center;
     border-radius: 0;
     box-shadow: none;
+    background: var(--bb-surface);
+    color: var(--bb-color-primary);
+    border: 1px solid var(--bb-line);
     padding: 0.65rem 0.35rem;
   }
 
   .bb-tp-event-card__body {
     padding: 0.9rem 1rem;
+  }
+
+  .bb-tp-event-card__title {
+    font-size: 1rem;
+    line-height: 1.3;
   }
 
   .bb-tp-event-card__summary {
@@ -4867,6 +4975,9 @@ html {
 }
 
 .bb-tp-hero--phase7 .bb-tp-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   justify-content: center;
 }
 
@@ -4888,18 +4999,24 @@ html {
 }
 
 .bb-tp-service-times--band {
-  background: var(--bb-color-primary);
-  color: var(--color-text-inverse);
-  padding: 1.35rem 0;
+  background: transparent;
+  color: var(--color-text);
+  padding: 2rem 0;
 }
 
 .bb-tp-service-times__inner {
+  position: relative;
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 0 var(--bb-gutter);
+  padding: 1.5rem var(--bb-gutter);
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  background: var(--bb-color-primary);
+  color: var(--color-text-inverse);
+  border-radius: 1.25rem;
+  box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--bb-color-primary) 22%, transparent);
+  overflow: hidden;
 }
 
 /*
@@ -4911,8 +5028,8 @@ html {
  * Tablet/mobile: drop max-width so the band content stays flush (pre-fix).
  */
 .bb-tp-service-times--platform-public > .bb-tp-service-times__inner {
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: var(--bb-gutter);
+  padding-right: var(--bb-gutter);
 }
 
 @media (max-width: 899px) {
@@ -4955,6 +5072,10 @@ html {
   gap: 0.3rem;
 }
 
+.bb-tp-service-times__item:nth-child(even) {
+  background: color-mix(in srgb, var(--color-surface) 18%, transparent);
+}
+
 .bb-tp-service-times__name {
   font-weight: 700;
   font-size: 1.05rem;
@@ -4992,6 +5113,39 @@ html {
 .bb-tp-service-times--band .bb-tp-btn--ghost {
   color: var(--color-text-inverse);
   border-color: color-mix(in srgb, var(--color-surface) 55%, transparent);
+}
+
+@media (max-width: 767px) {
+  .bb-tp-service-times--band {
+    padding: 1.5rem 0;
+  }
+
+  .bb-tp-service-times__inner {
+    padding: 1.25rem var(--bb-gutter);
+    border-radius: 1rem;
+  }
+
+  .bb-tp-service-times__list {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0 calc(var(--bb-gutter) * -1);
+    padding: 0 var(--bb-gutter) 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .bb-tp-service-times__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bb-tp-service-times__item {
+    flex: 0 0 min(16rem, calc(100vw - 3rem));
+    scroll-snap-align: start;
+    min-height: 8.5rem;
+    padding: 1rem;
+  }
 }
 
 .bb-tp-home-welcome,
@@ -5126,6 +5280,26 @@ a.bb-tp-content-card:hover {
   object-fit: cover;
 }
 
+.bb-tp-content-card--ministry .bb-tp-content-card__media {
+  aspect-ratio: 2 / 1;
+}
+
+.bb-tp-content-card--ministry .bb-tp-content-card__body {
+  padding: 0.85rem 1rem 1rem;
+  gap: 0.3rem;
+}
+
+.bb-tp-content-card--ministry .bb-tp-content-card__title {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 699px) {
+  .bb-tp-content-card--ministry .bb-tp-content-card__media {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 .bb-tp-content-card__media .material-symbols-outlined {
   font-size: 2rem;
   color: var(--bb-color-primary);
@@ -5163,6 +5337,7 @@ a.bb-tp-content-card:hover {
   border-radius: 1.15rem;
   background: var(--color-surface);
   border: 1px solid color-mix(in srgb, var(--color-border-default) 95%, transparent);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-color-ink) 6%, transparent);
 }
 
 .bb-tp-event-card__media {
@@ -5183,6 +5358,7 @@ a.bb-tp-content-card:hover {
   border: 1px solid color-mix(in srgb, var(--color-border-default) 95%, transparent);
   border-radius: 1.25rem;
   overflow: hidden;
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-color-ink) 7%, transparent);
 }
 
 @media (min-width: 900px) {
@@ -5235,6 +5411,22 @@ a.bb-tp-content-card:hover {
   font-size: 0.95rem;
 }
 
+@media (max-width: 767px) {
+  .bb-tp-sermon-feature {
+    gap: 0;
+    border-radius: 1rem;
+  }
+
+  .bb-tp-sermon-feature__copy {
+    padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .bb-tp-sermon-feature__title {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+}
+
 .bb-tp-cta-band {
   padding: 2rem 0;
   background: linear-gradient(135deg, var(--bb-color-primary-deep) 0%, var(--bb-color-primary) 100%);
@@ -5280,6 +5472,49 @@ a.bb-tp-content-card:hover {
 .bb-tp-home-contact__grid {
   display: grid;
   gap: 1rem;
+}
+
+.bb-tp-home-contact__grid--location-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bb-tp-home-location-card {
+  overflow: hidden;
+  border: 1px solid var(--bb-line);
+  border-radius: 1.25rem;
+  background: var(--bb-surface);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-ink) 8%, transparent);
+}
+
+.bb-tp-home-location-card__map {
+  display: grid;
+  place-items: center;
+  min-height: 11rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bb-color-primary-soft) 70%, var(--bb-surface)), var(--bb-surface-low));
+  color: var(--bb-color-primary);
+}
+
+.bb-tp-home-location-card__map .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+.bb-tp-home-location-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.bb-tp-home-location-card__body p {
+  white-space: pre-line;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-home-location-card__body {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (min-width: 800px) {
@@ -5444,6 +5679,10 @@ a.bb-tp-content-card:hover {
 
   .bb-tp-hero__media-plane .bb-tp-hero__img {
     object-position: center 22%;
+  }
+
+  .bb-tp-hero--phase7 .bb-tp-hero__cta .bb-tp-btn {
+    min-width: min(14rem, 100%);
   }
 
   .bb-tp-service-times__actions .bb-tp-btn {
@@ -7078,6 +7317,9 @@ a.bb-tp-content-card:hover {
 
 /* BB21–BB22 public announcements */
 .bb-tp-announcements-hero { margin-bottom: 1.5rem; }
+.bb-tp-ann-context { display:flex; align-items:center; gap:.7rem; margin-bottom:1rem; padding:.8rem 1rem; border:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent); border-radius:12px; background:var(--color-surface-subtle); }
+.bb-tp-ann-context p { margin:0; color:var(--bb-color-muted); }
+.bb-tp-ann-attachment { display:inline-block; margin-bottom:.7rem; color:var(--bb-color-muted); font-size:.8rem; }
 .bb-tp-ann-featured,
 .bb-tp-ann-card {
   background: var(--color-surface);
@@ -7121,6 +7363,13 @@ a.bb-tp-content-card:hover {
 .bb-tp-ann-title a:hover { text-decoration: underline; }
 .bb-tp-ann-body { margin: 0 0 0.85rem; color: var(--bb-color-border); line-height: 1.55; }
 .bb-tp-announcement-detail .bb-tp-ann-title { font-size: clamp(1.4rem, 3vw, 2rem); }
+.bb-tp-ann-detail__body { padding-top:1.5rem; padding-bottom:3rem; max-width:46rem; }
+.bb-tp-ann-detail__message { margin-top:1rem; white-space:pre-wrap; line-height:1.6; }
+.bb-tp-ann-detail__attachments { margin-top:1.5rem; padding:1rem; border:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent); border-radius:12px; background:var(--color-surface-subtle); }
+.bb-tp-ann-detail__attachments h2 { margin:0 0 .7rem; font-size:1rem; }
+.bb-tp-ann-detail__attachments ul { display:grid; gap:.5rem; margin:0; padding:0; list-style:none; }
+.bb-tp-ann-detail__attachments li { display:flex; flex-wrap:wrap; align-items:center; gap:.45rem; padding:.65rem .7rem; border-radius:8px; background:var(--color-surface); }
+.bb-tp-ann-detail__attachments small { color:var(--bb-color-muted); }
 
 @media (max-width: 720px) {
   .bb-tp-announcements .bb-tp-ann-featured,

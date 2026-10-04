@@ -1006,7 +1006,7 @@ describe("blessboard announcements", () => {
     assert.match(list.text, /data-bb-ann-audience-chips="1"/);
     assert.match(list.text, /data-bb-ann-table="1"/);
     assert.match(list.text, /data-bb-ann-cards="1"/);
-    assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
+    assert.doesNotMatch(list.text, /Active Today|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
     assert.doesNotMatch(list.text, /data-bb-delivery=/);
     assert.doesNotMatch(list.text, /data-bb-hq-announcements=/);
     assert.doesNotMatch(list.text, /data-bb-ann-action="edit"/);
@@ -1077,6 +1077,9 @@ describe("blessboard announcements", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-announcement-admin-detail="1"/);
     assert.match(detail.text, /Branch GUI draft/);
+    assert.match(detail.text, /Branch scope/);
+    assert.match(detail.text, /bb-ann-detail__message/);
+    assert.match(detail.text, /bb-ann-detail__info/);
     assert.match(detail.text, /data-bb-delivery="summary"/);
     assert.match(detail.text, /Delivery \/ read summary/);
     assert.match(detail.text, /data-bb-ann-preview="1"/);
@@ -1109,6 +1112,9 @@ describe("blessboard announcements", () => {
     assert.equal(publishPage.status, 200);
     assert.match(publishPage.text, /data-bb-announcement-admin-publish="1"/);
     assert.match(publishPage.text, /Confirm publish/);
+    assert.match(publishPage.text, /bb-ann-publish-layout/);
+    assert.match(publishPage.text, /bb-ann-final-preview/);
+    assert.match(publishPage.text, /name="publish_mode"/);
     assert.match(publishPage.text, /name="confirm_publish"/);
     const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
 
@@ -1203,13 +1209,16 @@ describe("blessboard announcements", () => {
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-announcement-admin-list="1"/);
     assert.match(list.text, /data-bb-hq-announcements="1"/);
-    assert.match(list.text, /data-bb-stitch-announcements="61-hq-broadcast-center"/);
-    assert.match(list.text, /data-bb-delivery="overview"/);
-    assert.match(list.text, /data-bb-hq-ann-branches="1"/);
+    assert.match(list.text, /data-bb-stitch-announcements="69-hq-announcements-overview"/);
+    assert.match(list.text, /data-bb-ann-scope-tabs="1"/);
+    assert.match(list.text, /data-bb-hq-scope-badge="central"/);
+    assert.match(list.text, /data-bb-ann-info="broadcasts"/);
+    assert.doesNotMatch(list.text, /id="scope"/);
+    assert.doesNotMatch(list.text, /bb-hq-ann-branches|data-bb-delivery="overview"/);
     assert.match(list.text, /data-bb-ann-filter="1"/);
     assert.match(list.text, /data-bb-ann-status-chips="1"/);
     assert.match(list.text, /data-bb-ann-audience-chips="1"/);
-    assert.match(list.text, /href="\/hq\/announcements\/b\/campus"/);
+    assert.match(list.text, /(?:href|value)="\/hq\/announcements\/b\/campus"/);
     assert.match(list.text, /href="\/hq\/registrations"/);
     assert.doesNotMatch(list.text, /delivery rate|%\s*read|branch reach|WhatsApp/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
@@ -1221,14 +1230,14 @@ describe("blessboard announcements", () => {
     assert.equal(newForm.status, 200);
     assert.match(newForm.text, /data-bb-announcement-admin-form="1"/);
     assert.match(newForm.text, /data-bb-hq-announcement-editor="1"/);
-    assert.match(newForm.text, /data-bb-stitch-announcement-editor="61-hq-broadcast-center"/);
+    assert.match(newForm.text, /data-bb-stitch-announcement-editor="70-hq-create-announcement"/);
     assert.match(newForm.text, /data-bb-ann-scope-panel="1"/);
     assert.match(newForm.text, /data-bb-ann-scope="church"/);
     assert.match(newForm.text, /name="_csrf"/);
     assert.match(newForm.text, /name="title"/);
     assert.match(newForm.text, /name="body"/);
     assert.match(newForm.text, /name="audience_members"/);
-    assert.match(newForm.text, /name="audience_admins"/);
+    assert.doesNotMatch(newForm.text, /name="audience_admins"/);
     assert.match(newForm.text, /name="is_pinned"/);
     assert.match(newForm.text, /name="confirm_publish"/);
     assert.match(newForm.text, /data-bb-ann-save-draft="1"/);
@@ -1251,6 +1260,35 @@ describe("blessboard announcements", () => {
       });
     assert.equal(createRes.status, 303);
     const annId = createRes.headers.location.split("/").pop().split("?")[0];
+
+    const branchFormForSave = await request(app)
+      .get("/hq/announcements/b/campus/new")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchFormForSave.status, 200);
+    const branchFormCsrf = extractCookie(branchFormForSave, CSRF_COOKIE);
+    const branchSaveResult = await request(app)
+      .post("/hq/announcements/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${branchFormCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: branchFormCsrf,
+        title: "HQ branch draft",
+        body: "Branch-scoped message",
+        status: "draft",
+        audience_members: "1",
+        branch_id: "another-branch-must-be-ignored",
+        church_id: "another-church-must-be-ignored",
+      });
+    assert.equal(branchSaveResult.status, 303);
+    assert.match(branchSaveResult.headers.location, /\/hq\/announcements\/b\/campus\/[0-9a-f-]{36}/i);
+    const branchSaveDetail = await request(app)
+      .get(branchSaveResult.headers.location)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchSaveDetail.status, 200);
+    assert.match(branchSaveDetail.text, /· Members\s*· Branch|>Branch</);
 
     const editForm = await request(app)
       .get(`/hq/announcements/${annId}/edit`)
@@ -1326,9 +1364,8 @@ describe("blessboard announcements", () => {
       .set("Cookie", hqCookie);
     assert.equal(afterPublish.status, 200);
     assert.match(afterPublish.text, /HQ oversight draft/);
-    assert.match(afterPublish.text, /data-bb-delivery="row"/);
-    assert.match(afterPublish.text, /data-bb-eligible=/);
-    assert.match(afterPublish.text, /eligible/);
+    assert.doesNotMatch(afterPublish.text, /data-bb-delivery="row"/);
+    assert.doesNotMatch(afterPublish.text, /data-bb-eligible=/);
     assert.doesNotMatch(afterPublish.text, /delivery rate|%\s*read|branch reach/i);
 
     const searched = await request(app)
@@ -1366,7 +1403,7 @@ describe("blessboard announcements", () => {
       .set("Cookie", hqCookie);
     assert.equal(adminsList.status, 200);
     assert.match(adminsList.text, /Admins only HQ note/);
-    assert.match(adminsList.text, /data-bb-delivery="unavailable"/);
+    assert.doesNotMatch(adminsList.text, /data-bb-delivery="unavailable"/);
 
     const branchList = await request(app)
       .get("/hq/announcements/b/campus")

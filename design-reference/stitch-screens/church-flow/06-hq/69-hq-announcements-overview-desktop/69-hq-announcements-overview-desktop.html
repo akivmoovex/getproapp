@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BlessBoard Announcements - HQ Central</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-error-container": "#93000a",
+            "tertiary-fixed": "#d5e3fc",
+            "tertiary": "#1d2b3d",
+            "inverse-surface": "#213145",
+            "error-container": "#ffdad6",
+            "tertiary-container": "#334154",
+            "on-secondary-fixed-variant": "#763300",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary": "#ffffff",
+            "surface-dim": "#cbdbf5",
+            "surface-bright": "#f8f9ff",
+            "on-tertiary-fixed-variant": "#3a485b",
+            "surface-container-high": "#dce9ff",
+            "inverse-on-surface": "#eaf1ff",
+            "secondary-fixed": "#ffdbca",
+            "on-surface": "#0b1c30",
+            "on-primary-fixed": "#00164e",
+            "on-primary-fixed-variant": "#264191",
+            "on-background": "#0b1c30",
+            "on-error": "#ffffff",
+            "on-surface-variant": "#444651",
+            "tertiary-fixed-dim": "#b9c7df",
+            "on-secondary-container": "#682c00",
+            "surface": "#f8f9ff",
+            "surface-container-low": "#eff4ff",
+            "outline": "#757682",
+            "primary-container": "#1e3a8a",
+            "surface-tint": "#4059aa",
+            "on-secondary-fixed": "#331200",
+            "surface-container-highest": "#d3e4fe",
+            "surface-container": "#e5eeff",
+            "primary-fixed-dim": "#b6c4ff",
+            "on-primary": "#ffffff",
+            "error": "#ba1a1a",
+            "on-primary-container": "#90a8ff",
+            "on-tertiary-fixed": "#0d1c2e",
+            "secondary-container": "#fd8a42",
+            "on-tertiary-container": "#9eadc4",
+            "primary-fixed": "#dce1ff",
+            "primary": "#00236f",
+            "background": "#f8f9ff",
+            "outline-variant": "#c5c5d3",
+            "surface-variant": "#d3e4fe",
+            "on-tertiary": "#ffffff",
+            "inverse-primary": "#b6c4ff",
+            "secondary-fixed-dim": "#ffb68e",
+            "secondary": "#9b4500"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-xl": "2rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-2xl": "3rem",
+            "margin": "2rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "body-md": ["Inter"],
+            "body-xl": ["Inter"],
+            "display-lg-mobile": ["Inter"],
+            "display-lg": ["Inter"],
+            "label-lg": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "caption": ["Inter"],
+            "headline-xl": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-md": ["Inter"]
+          },
+          "fontSize": {
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "body-xl": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-background text-on-surface antialiased flex min-h-screen selection:bg-primary selection:text-on-primary">
+<!-- ================= SIDEBAR (SideNavBar Shared Component) ================= -->
+<aside class="h-screen w-64 flex flex-col fixed left-0 top-0 z-40 bg-tertiary dark:bg-inverse-surface border-r border-outline-variant/30 dark:border-outline/20 shadow-sm dark:shadow-none">
+<div class="w-64 h-full flex flex-col justify-between p-4">
+<!-- Top Brand Anchor & Header -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-3 px-2 pt-2">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest/10 border border-outline-variant/20 flex items-center justify-center text-surface shadow-sm">
+<span class="material-symbols-outlined text-surface" data-icon="church">church</span>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-sm font-headline-sm font-bold text-surface dark:text-inverse-on-surface tracking-tight">BlessBoard Console</span>
+<span class="text-body-sm font-body-sm text-on-tertiary-container">V2.07 • Central Administration</span>
+</div>
+</div>
+<!-- Quick Publish CTA Anchor -->
+<button class="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary px-4 py-2.5 rounded-lg font-label-md text-label-md hover:bg-on-secondary-container transition-colors duration-150 active:scale-[0.99] shadow-sm">
+<span class="material-symbols-outlined text-base" data-icon="send">send</span>
+<span>Publish Bulletin</span>
+</button>
+<!-- Navigation Tabs: Announcements Active -->
+<nav class="flex flex-col gap-1">
+<!-- Overview (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container dark:text-tertiary-fixed-dim hover:text-surface dark:hover:text-surface-bright font-label-md text-label-md hover:bg-tertiary-container/60 dark:hover:bg-inverse-surface/80 transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</a>
+<!-- Announcements (Active) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-label-md text-label-md shadow-inner" href="/hq/announcements">
+<span class="material-symbols-outlined" data-icon="campaign" data-weight="fill" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<span class="font-bold text-surface">Announcements</span>
+</a>
+<!-- Services & Liturgy (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container dark:text-tertiary-fixed-dim hover:text-surface dark:hover:text-surface-bright font-label-md text-label-md hover:bg-tertiary-container/60 dark:hover:bg-inverse-surface/80 transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="church">church</span>
+<span>Services &amp; Liturgy</span>
+</a>
+<!-- Congregation (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container dark:text-tertiary-fixed-dim hover:text-surface dark:hover:text-surface-bright font-label-md text-label-md hover:bg-tertiary-container/60 dark:hover:bg-inverse-surface/80 transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Congregation</span>
+</a>
+<!-- Giving & Pledges (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container dark:text-tertiary-fixed-dim hover:text-surface dark:hover:text-surface-bright font-label-md text-label-md hover:bg-tertiary-container/60 dark:hover:bg-inverse-surface/80 transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+<span>Giving &amp; Pledges</span>
+</a>
+<!-- Settings (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-tertiary-container dark:text-tertiary-fixed-dim hover:text-surface dark:hover:text-surface-bright font-label-md text-label-md hover:bg-tertiary-container/60 dark:hover:bg-inverse-surface/80 transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Nav Anchors -->
+<div class="flex flex-col gap-2 pt-4 border-t border-tertiary-container/60">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/40 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined text-base" data-icon="domain">domain</span>
+<span>Branch Directory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-tertiary-container hover:text-surface hover:bg-tertiary-container/40 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined text-base" data-icon="support">support</span>
+<span>Help &amp; Pastoral Desk</span>
+</a>
+<div class="mt-2 p-2.5 rounded-lg bg-tertiary-container/40 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold text-xs flex items-center justify-center">FG</div>
+<div class="flex flex-col">
+<span class="text-body-sm font-body-sm text-surface leading-tight font-medium">Fr. Gregory</span>
+<span class="text-caption font-caption text-on-tertiary-container">Lead Admin</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container hover:text-surface cursor-pointer text-sm" data-icon="logout">logout</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- ================= MAIN CONTENT WRAPPER ================= -->
+<div class="pl-64 flex-1 flex flex-col min-w-0">
+<!-- Top Navigation Bar (TopNavBar Shared Component) -->
+<header class="docked full-width top-0 sticky z-30 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant/40 dark:border-outline/30 shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-6 py-3 w-full border-b border-outline-variant/30">
+<!-- Search & Contextual Hierarchy -->
+<div class="flex items-center gap-6">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed tracking-tight">BlessBoard Announcements</span>
+<!-- Left Search Input -->
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg" data-icon="search">search</span>
+<input class="w-full pl-9 pr-4 py-1.5 bg-surface rounded-lg border border-outline-variant text-body-md font-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-150" placeholder="Search announcements by title or content..." type="text"/>
+</div>
+</div>
+<!-- Global Scope Navigation Links -->
+<div class="hidden xl:flex items-center gap-6">
+<a class="border-b-2 border-secondary text-secondary font-label-lg text-label-lg pb-1" href="#">HQ Central</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-label-lg text-label-lg transition-colors" href="#">St. Jude Branch</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-label-lg text-label-lg transition-colors" href="#">Broadcast Scope</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-label-lg text-label-lg transition-colors" href="#">Audit Log</a>
+</div>
+<!-- Action cluster & Profile -->
+<div class="flex items-center gap-3">
+<button class="px-3 py-1.5 text-label-md font-label-md rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-colors active:scale-[0.98] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm" data-icon="swap_horiz">swap_horiz</span>
+<span>Switch Branch</span>
+</button>
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded-lg text-label-md font-label-md hover:bg-primary-container transition-colors active:scale-[0.98] flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span>Create Announcement</span>
+</button>
+<div class="h-6 w-px bg-outline-variant/50 mx-1"></div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button class="p-2 rounded-lg hover:bg-surface-container transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-container transition-colors" title="History">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-container transition-colors" title="Help">
+<span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+<div class="flex items-center gap-2 pl-2">
+<img class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="Dignified portrait of Father Gregory, the Lead Church Administrator, wearing pastoral clerical collar with a serene natural warm library background, soft diffused lighting, photorealistic editorial style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNX22y_7X2TRtIfoJNBxAQPcrVOVkawJjSbARVfEQ-NfN3EqYFwb1v6f9wbm6oRqfKwlYNL0d0fH1H02509aLgwUJGBRby_cPCRSAIdOHsmZmf7q5Y7g5RMqpvNM4K-QWUk1-df_6xWQGHqG1EISbRH0gI-UMX0PhJ3wypbUI5kjoJ_AR1NOvakMP5S0NKMkhrg-5stXPpKUeREQElVZsZPCvffSq_ubP9wNqGhpK7Ky8Gosr8w7Ym"/>
+</div>
+</div>
+</div>
+</header>
+<!-- ================= CANVAS (Fluid bounded to 1440px) ================= -->
+<main class="w-full max-w-[1440px] mx-auto p-8 space-y-6">
+<!-- Breadcrumb & Header Title Area -->
+<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div>
+<!-- Breadcrumb trail -->
+<nav class="flex items-center gap-1.5 text-caption font-caption text-on-surface-variant mb-1">
+<span class="hover:text-primary cursor-pointer">BlessBoard HQ</span>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="chevron_right">chevron_right</span>
+<span class="hover:text-primary cursor-pointer">Announcements</span>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-semibold">All</span>
+</nav>
+<div class="flex items-center gap-3">
+<h1 class="text-headline-xl font-headline-xl text-on-surface tracking-tight">Announcements</h1>
+<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-high text-primary border border-surface-dim">
+              HQ Central Scope
+            </span>
+</div>
+</div>
+<!-- Primary Action CTA -->
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg text-label-lg font-label-lg hover:bg-primary-container shadow-sm active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+<span>+ New announcement</span>
+</button>
+</div>
+</div>
+<!-- Informational Notice Banner (Amber / Parchment Warm Tint) -->
+<div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-start justify-between gap-4 text-amber-950">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-lg" data-icon="info" data-weight="fill" style="font-variation-settings: 'FILL' 1;">info</span>
+</div>
+<div>
+<p class="text-body-md font-body-md font-medium text-amber-900 leading-snug">
+              Announcements appear in BlessBoard member/public feeds. They do not send SMS or email. Use Broadcasts for direct messaging.
+            </p>
+<p class="text-caption font-caption text-amber-800/80 mt-0.5">
+              Public feed items sync every 15 minutes to outward-facing branch portals and website widgets.
+            </p>
+</div>
+</div>
+<a class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-secondary hover:bg-amber-100/50 font-label-md text-label-md transition-colors whitespace-nowrap shadow-xs" href="#">
+<span>Go to Broadcasts</span>
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<!-- Filter Bar Segment -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-4 shadow-sm space-y-3.5">
+<!-- Row 1: Scope Tabs (Church-wide, Lusaka, Kafue) -->
+<div class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-container-low pb-3">
+<div class="flex items-center gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mr-1">Scope:</span>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-xs flex items-center gap-1.5">
+<span>All</span>
+<span class="text-xs bg-primary-container px-1.5 py-0.2 rounded-full font-bold">6</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-container text-on-surface font-label-md text-label-md border border-outline-variant/60 flex items-center gap-1.5 transition-colors">
+<span>Church-wide</span>
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-1.5 py-0.2 rounded-full font-medium">3</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-container text-on-surface font-label-md text-label-md border border-outline-variant/60 flex items-center gap-1.5 transition-colors">
+<span>Lusaka Central</span>
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-1.5 py-0.2 rounded-full font-medium">2</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-container text-on-surface font-label-md text-label-md border border-outline-variant/60 flex items-center gap-1.5 transition-colors">
+<span>Kafue Branch</span>
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-1.5 py-0.2 rounded-full font-medium">1</span>
+</button>
+</div>
+<!-- Secondary Quick Tools -->
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-surface transition-colors" title="Export Log">
+<span class="material-symbols-outlined text-base" data-icon="file_download">file_download</span>
+</button>
+<button class="p-2 rounded-lg border border-outline-variant/50 text-on-surface-variant hover:text-on-surface hover:bg-surface transition-colors" title="Display Density">
+<span class="material-symbols-outlined text-base" data-icon="density_medium">density_medium</span>
+</button>
+</div>
+</div>
+<!-- Row 2: Secondary Status + Audience Chips & Inline Search -->
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-wrap items-center gap-4">
+<!-- Status filter group -->
+<div class="flex items-center gap-1.5">
+<span class="text-caption font-caption text-outline mr-1 font-medium">STATUS</span>
+<button class="px-2.5 py-1 rounded-md text-xs font-semibold bg-surface-container-highest text-on-surface">All</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Draft (1)</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Scheduled (1)</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Published (3)</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Archived (1)</button>
+</div>
+<div class="h-4 w-px bg-outline-variant/40"></div>
+<!-- Audience filter group -->
+<div class="flex items-center gap-1.5">
+<span class="text-caption font-caption text-outline mr-1 font-medium">AUDIENCE</span>
+<button class="px-2.5 py-1 rounded-md text-xs font-semibold bg-surface-container text-primary">All</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Members</button>
+<button class="px-2.5 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors">Public website</button>
+</div>
+</div>
+<!-- Total announcement badge -->
+<div class="text-caption font-caption text-on-surface-variant flex items-center gap-1">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>6 total records synced</span>
+</div>
+</div>
+</div>
+<!-- MAIN DATA TABLE PANEL (Refined Editorial SaaS) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant/40 text-on-surface-variant text-label-sm font-label-sm">
+<th class="py-3 px-4 w-12 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Title &amp; Content Context</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Scope</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Audience</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Status</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Placement</th>
+<th class="py-3 px-4 uppercase tracking-wider font-semibold">Schedule &amp; Dates</th>
+<th class="py-3 px-4 text-right uppercase tracking-wider font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-md font-body-md text-on-surface">
+<!-- Row 1: Easter Sunday -->
+<tr class="hover:bg-surface/80 transition-colors">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface hover:text-primary cursor-pointer">Easter Sunday Sunrise Worship &amp; Family Breakfast</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Joint outdoor morning service on Mount Zion Lawn followed by fellowship breakfast in the great hall.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-on-primary">
+                    Church-wide
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container text-primary border border-outline-variant/40">
+<span class="material-symbols-outlined text-xs" data-icon="language">language</span>
+                    Members + Public website
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-xs text-emerald-700" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    Published
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-amber-700 text-sm" data-icon="push_pin" data-weight="fill" style="font-variation-settings: 'FILL' 1;" title="Pinned">push_pin</span>
+<span class="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                      Featured
+                    </span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Published Mar 24, 2025</div>
+<div class="text-caption font-caption text-outline">Active until Apr 21</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Edit</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Preview</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface-variant transition-colors">Archive</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Kafue Youth Camp -->
+<tr class="hover:bg-surface/80 transition-colors">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface hover:text-primary cursor-pointer">Kafue Campus Harvest &amp; Community Youth Camp</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Registration open for high schoolers. Daily devotional programs, leadership tracks, and community service.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-tertiary-container text-on-tertiary-container">
+                    Kafue Branch
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs" data-icon="lock">lock</span>
+                    Members only
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300">
+<span class="material-symbols-outlined text-xs text-amber-700" data-icon="schedule">schedule</span>
+                    Scheduled
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-caption font-caption text-outline">
+                  Standard
+                </td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Scheduled for Apr 05, 2025</div>
+<div class="text-caption font-caption text-outline">at 8:00 AM</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Edit</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Preview</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-red-50 text-error transition-colors">Cancel Schedule</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Lusaka Vigil -->
+<tr class="hover:bg-surface/80 transition-colors">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface hover:text-primary cursor-pointer">Lusaka Central Mid-Week Prayer &amp; Fasting Vigil</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Wednesday evening prayer chain with dedicated intercession for our regional mission fields and hospitals.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface">
+                    Lusaka Central
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs" data-icon="lock">lock</span>
+                    Members only
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-xs text-emerald-700" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    Published
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="push_pin" data-weight="fill" style="font-variation-settings: 'FILL' 1;" title="Pinned">push_pin</span>
+<span class="text-xs font-medium">Pinned</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Published Mar 18, 2025</div>
+<div class="text-caption font-caption text-outline">Continuous feed</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Edit</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Preview</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface-variant transition-colors">Archive</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Annual Tithes -->
+<tr class="hover:bg-surface/80 transition-colors">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface hover:text-primary cursor-pointer">Annual Tithes &amp; Stewardship Report 2024</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Official financial overview and pastoral review of ministry fund utilization and sanctuary upkeep.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-on-primary">
+                    Church-wide
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs" data-icon="lock">lock</span>
+                    Members only
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-xs text-emerald-700" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    Published
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-caption font-caption text-outline">
+                  Standard
+                </td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Published Feb 01, 2025</div>
+<div class="text-caption font-caption text-outline">Permanent archive</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Edit</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Preview</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface-variant transition-colors">Archive</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Global Missions -->
+<tr class="hover:bg-surface/80 transition-colors">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface hover:text-primary cursor-pointer">Grace Fellowship Global Missions Week Registration</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Calling for medical volunteers, translators, and logistical support personnel for regional summer clinics.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-on-primary">
+                    Church-wide
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container text-primary border border-outline-variant/40">
+<span class="material-symbols-outlined text-xs" data-icon="public">public</span>
+                    Public website
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface-variant border border-outline-variant/50">
+<span class="material-symbols-outlined text-xs" data-icon="edit_note">edit_note</span>
+                    Draft
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-caption font-caption text-outline">
+                  Standard
+                </td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Updated yesterday</div>
+<div class="text-caption font-caption text-outline">by Pastor David M.</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-semibold rounded bg-surface-container text-primary hover:bg-surface-container-high transition-colors">Resume Draft</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-error-container text-error transition-colors">Discard</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: New Year Liturgy -->
+<tr class="hover:bg-surface/80 transition-colors opacity-80">
+<td class="py-3 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-on-surface line-through hover:text-primary cursor-pointer">New Year Liturgy &amp; Covenant Renewal</span>
+</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant line-clamp-1 mt-0.5">
+                    Order of service and pastoral address for the initial opening solemn assembly of 2025.
+                  </div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface-variant">
+                    Church-wide
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-xs" data-icon="groups">groups</span>
+                    Members + Public
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container text-on-surface-variant border border-outline-variant/40">
+<span class="material-symbols-outlined text-xs" data-icon="inventory_2">inventory_2</span>
+                    Archived
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-caption font-caption text-outline">
+                  —
+                </td>
+<td class="py-3.5 px-4 whitespace-nowrap text-body-sm font-body-sm text-on-surface-variant">
+<div class="font-medium text-on-surface">Archived Jan 15, 2025</div>
+<div class="text-caption font-caption text-outline">Stored in 2024 Records</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface transition-colors">Restore</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded hover:bg-surface-container text-on-surface-variant transition-colors">View</button>
+<button class="p-1 rounded hover:bg-surface-container text-outline" title="More">
+<span class="material-symbols-outlined text-base" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="px-6 py-3 bg-surface border-t border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span>Showing <span class="font-semibold text-on-surface">1 - 6</span> of 6 items</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-base" data-icon="chevron_left">chevron_left</span>
+</button>
+<span class="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold">1</span>
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-base" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- SECONDARY / DEMO COMPONENT: EMPTY STATE PREVIEW -->
+<div class="pt-4">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-lg" data-icon="preview">preview</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Preview Pattern: Branch Filter Empty State</h2>
+</div>
+<span class="text-caption font-caption text-outline">Simulated empty state for zero-result branch queries (e.g. Copperbelt Campus)</span>
+</div>
+<div class="rounded-xl border border-dashed border-outline-variant/70 bg-surface-container-lowest p-8 text-center flex flex-col items-center justify-center max-w-2xl mx-auto shadow-xs">
+<div class="w-14 h-14 rounded-full bg-surface-container-low flex items-center justify-center text-outline mb-3 border border-outline-variant/30">
+<span class="material-symbols-outlined text-2xl text-on-surface-variant" data-icon="filter_list_off">filter_list_off</span>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface mb-1">No announcements in selected branch</h3>
+<p class="text-body-md font-body-md text-on-surface-variant max-w-md mb-5">
+            There are currently no active, draft, or scheduled announcements scoped to this specific branch location. Church-wide broadcasts will still render on the branch's screens.
+          </p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg bg-surface border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">
+              Reset Filters
+            </button>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span>Draft for this Branch</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

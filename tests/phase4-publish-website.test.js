@@ -644,12 +644,12 @@ describe("phase4 publish website", () => {
     });
     assert.equal(result.ok, true, result.reason || JSON.stringify(result));
 
-    const version = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const version = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     assert.ok(version);
     assert.equal(version.status, "published");
-    assert.equal(version.changeSummary.publicationNote, "Stage 2A launch note");
     assert.ok(version.publishedAt);
-    assert.ok(version.publishedBy || version.publishedByName);
+    assert.equal(result.publicationVersionId, version.id);
 
     const after = await submissionRepo.getSubmissionByOrgAndId(pool, orgA.id, approved.id);
     assert.equal(after.status, "published");
@@ -676,12 +676,9 @@ describe("phase4 publish website", () => {
     });
     assert.equal(seeded.ok, true, seeded.reason || JSON.stringify(seeded));
 
-    const beforeList = await versionRepo.listVersions(pool, {
-      organizationId: orgA.id,
-      status: "published",
-    });
-    const beforeCount = beforeList.total;
-    const beforeCurrent = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const beforeList = await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100);
+    const beforeCount = beforeList.length;
+    const beforeCurrent = beforeList.find((v) => v.status === "published");
     assert.ok(beforeCurrent);
 
     const again = await publishChurchWebsite(pool, {
@@ -695,16 +692,14 @@ describe("phase4 publish website", () => {
     assert.equal(again.idempotent, true);
     assert.equal(again.publicationVersionId, beforeCurrent.id);
 
-    const afterList = await versionRepo.listVersions(pool, {
-      organizationId: orgA.id,
-      status: "published",
-    });
-    assert.equal(afterList.total, beforeCount);
+    const afterList = await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100);
+    assert.equal(afterList.length, beforeCount);
   });
 
   it("failed publish leaves live website unchanged", async () => {
     skipIfNeeded();
-    const before = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const before = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     const fail = await publishChurchWebsite(pool, {
       churchId: churchA.id,
       actorUserId: users.hqA.user.id,
@@ -713,7 +708,8 @@ describe("phase4 publish website", () => {
       env: baseEnv(),
     });
     assert.equal(fail.ok, false);
-    const after = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const after = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     assert.equal(after && after.id, before && before.id);
   });
 

@@ -380,8 +380,8 @@ describe("v7 shared website editor — HTTP matrix", () => {
     const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
       organizationId: rec.organizationId,
       productCode: "blessboard",
-      scopeRef: null,
     });
+    assert.ok(instance, "provisioned BlessBoard website instance");
     const rowDraft = await contentService.getWebsiteContentRow(
       pool,
       instance.id,

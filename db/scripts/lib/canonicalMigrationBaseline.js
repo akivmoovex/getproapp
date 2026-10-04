@@ -41,12 +41,12 @@ const STRATEGY = Object.freeze({
  */
 const CANONICAL_CEILING = Object.freeze({
   platform: Object.freeze({
-    version: "043",
-    filename: "043_shared_data_jobs_and_preferences.sql",
+    version: "047",
+    filename: "047_approval_request_foundation.sql",
   }),
   blessboard: Object.freeze({
-    version: "118",
-    filename: "118_activeclinic_management_data_permissions.sql",
+    version: "128",
+    filename: "128_canonical_hq_website_scope_ref.sql",
   }),
   activeclinic: Object.freeze({
     version: "042",
