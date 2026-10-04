@@ -323,8 +323,8 @@ describe("V203 QA06 critical platform — canonical bootstrap contract", () => {
   it("canonical migration ceiling matches disk (no drift)", () => {
     const mismatches = assertCeilingMatchesDisk();
     assert.deepEqual(mismatches, []);
-    assert.equal(CANONICAL_CEILING.platform.version, "043");
-    assert.equal(CANONICAL_CEILING.blessboard.version, "118");
+    assert.equal(CANONICAL_CEILING.platform.version, "047");
+    assert.equal(CANONICAL_CEILING.blessboard.version, "128");
     assert.equal(CANONICAL_CEILING.activeclinic.version, "042");
   });
 });

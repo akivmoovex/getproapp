@@ -99,8 +99,8 @@ describe("PL07 canonical migration baseline", () => {
 
   it("canonical ceiling matches highest on-disk migration per module", () => {
     assert.deepEqual(assertCeilingMatchesDisk(), []);
-    assert.equal(CANONICAL_CEILING.platform.version, "043");
-    assert.equal(CANONICAL_CEILING.blessboard.version, "118");
+    assert.equal(CANONICAL_CEILING.platform.version, "047");
+    assert.equal(CANONICAL_CEILING.blessboard.version, "128");
     assert.equal(CANONICAL_CEILING.activeclinic.version, "042");
   });
 
