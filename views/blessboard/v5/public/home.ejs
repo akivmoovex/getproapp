@@ -686,13 +686,21 @@
       editPageKey: 'home',
       editSectionKey: 'contact_intro'
     }) %>
-    <div class="bb-tp-home-contact__grid">
+    <div class="bb-tp-home-contact__grid bb-tp-home-contact__grid--location-card">
       <% if (contact && contact.addressText) { %>
-      <div class="bb-tp-home-contact__item">
-        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-        <div>
-          <h3 class="bb-tp-home-contact__label">Location</h3>
-          <p><%= contact.addressText %></p>
+      <div class="bb-tp-home-location-card">
+        <div class="bb-tp-home-location-card__map" aria-hidden="true">
+          <span class="material-symbols-outlined">location_on</span>
+        </div>
+        <div class="bb-tp-home-location-card__body">
+          <div>
+            <h3 class="bb-tp-home-contact__label">Location</h3>
+            <p><%= contact.addressText %></p>
+          </div>
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= directionsHref || hrefFor('/contact') %>">
+            <span class="material-symbols-outlined" aria-hidden="true">directions</span>
+            Directions
+          </a>
         </div>
       </div>
       <% } %>

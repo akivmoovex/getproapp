@@ -5423,6 +5423,49 @@ a.bb-tp-content-card:hover {
   gap: 1rem;
 }
 
+.bb-tp-home-contact__grid--location-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bb-tp-home-location-card {
+  overflow: hidden;
+  border: 1px solid var(--bb-line);
+  border-radius: 1.25rem;
+  background: var(--bb-surface);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-ink) 8%, transparent);
+}
+
+.bb-tp-home-location-card__map {
+  display: grid;
+  place-items: center;
+  min-height: 11rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bb-color-primary-soft) 70%, var(--bb-surface)), var(--bb-surface-low));
+  color: var(--bb-color-primary);
+}
+
+.bb-tp-home-location-card__map .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+.bb-tp-home-location-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.bb-tp-home-location-card__body p {
+  white-space: pre-line;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-home-location-card__body {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 @media (min-width: 800px) {
   .bb-tp-home-contact__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
