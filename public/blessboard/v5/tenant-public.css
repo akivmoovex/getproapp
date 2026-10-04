@@ -1000,6 +1000,68 @@ html {
   color: var(--bb-muted);
 }
 
+.bb-tp-home-utility {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
+  gap: 1.25rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.bb-tp-home-utility__prayer,
+.bb-tp-home-utility__resources {
+  padding: 1.5rem;
+  border: 1px solid var(--bb-line);
+  border-radius: 1rem;
+  background: var(--bb-surface);
+}
+
+.bb-tp-home-utility__prayer {
+  background: var(--bb-color-primary-soft);
+}
+
+.bb-tp-home-utility h2 {
+  margin: 0;
+  color: var(--bb-ink);
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+
+.bb-tp-home-utility p {
+  margin: 0.5rem 0 1.1rem;
+  color: var(--bb-muted);
+}
+
+.bb-tp-home-utility__resources {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.bb-tp-home-utility__resources a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: var(--bb-touch-min, 2.75rem);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--bb-line);
+  border-radius: var(--bb-radius-sm);
+  background: var(--bb-surface-low);
+  color: var(--bb-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-tp-home-utility__resources a .material-symbols-outlined {
+  color: var(--bb-color-primary);
+}
+
+@media (max-width: 767px) {
+  .bb-tp-home-utility {
+    grid-template-columns: 1fr;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
 .bb-tp-home__teaser {
   padding-top: 0.5rem;
   padding-bottom: var(--bb-section);

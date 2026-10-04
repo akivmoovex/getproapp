@@ -460,6 +460,19 @@
   </section>
   <% } %>
 
+  <section class="bb-tp-container bb-tp-home-utility" data-bb-home-utility="1" aria-labelledby="bb-tp-home-utility-heading">
+    <div class="bb-tp-home-utility__prayer">
+      <h2 id="bb-tp-home-utility-heading">Need prayer?</h2>
+      <p>Our prayer team is ready to support you in your journey.</p>
+      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Request prayer</a>
+    </div>
+    <div class="bb-tp-home-utility__resources" aria-labelledby="bb-tp-home-resources-heading">
+      <h2 id="bb-tp-home-resources-heading">Quick actions</h2>
+      <a href="<%= hrefFor('/sermons') %>"><span class="material-symbols-outlined" aria-hidden="true">play_circle</span><span>Latest sermons</span></a>
+      <a href="<%= hrefFor('/ministries') %>"><span class="material-symbols-outlined" aria-hidden="true">groups</span><span>Explore ministries</span></a>
+    </div>
+  </section>
+
   <% homeMiddleRenderOrder.forEach(function (sectionKey) { %>
   <% if (sectionKey === 'welcome' || sectionKey === 'welcome_home' || sectionKey === 'about_preview' || sectionKey === 'our_story') { %>
   <% } else if (sectionKey === 'ministries_intro' && teasers.ministries && teasers.ministries.length) { %>
