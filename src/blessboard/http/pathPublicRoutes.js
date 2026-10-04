@@ -38,6 +38,7 @@ const {
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
 const { getPublicWebsiteAnnouncement } = require("../services/announcementsService");
+const { getDeploymentEnvMode } = require("../../platform/config/deploymentEnv");
 const { presentRuntimeImageSrc, cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 const {
   PRODUCT_CODE,
@@ -70,6 +71,17 @@ function createPathPublicRouter(deps) {
   const getPool = deps.getPool;
   const getEnv =
     typeof deps.getEnv === "function" ? deps.getEnv : () => process.env;
+  const detailDiagnostic = (req, event, fields = {}) => {
+    if (getDeploymentEnvMode(getEnv()) !== "testing") return;
+    console.error(`[bb-public-announcement-detail] ${JSON.stringify({
+      event,
+      requestId: req.requestId || req.correlationId || null,
+      organizationKey: req.params.organizationKey || null,
+      branchKey: req.params.branchKey || null,
+      announcementId: req.params.id || null,
+      ...fields,
+    })}`);
+  };
 
   async function resolvePathTenant(req, res, organizationKeyRaw) {
     const rawKey = String(organizationKeyRaw || "").trim().toLowerCase();
@@ -630,7 +642,12 @@ function createPathPublicRouter(deps) {
   // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
   router.get("/c/:organizationKey/:branchKey/announcements/:id", (req, res, next) => {
     Promise.resolve().then(async () => {
+      detailDiagnostic(req, "bb_public_announcement_detail_start");
       const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+      detailDiagnostic(req, "bb_public_announcement_detail_resolution", {
+        organizationResolved: Boolean(resolved && resolved.tenant),
+        branchResolved: Boolean(resolved && resolved.tenant),
+      });
       if (!resolved) return;
       const branchKey = normalizeBranchKey(req.params.branchKey);
       const websiteMode = await resolveWebsiteMode(getPool(), {
@@ -672,6 +689,14 @@ function createPathPublicRouter(deps) {
         branchId: branch.id,
         id,
       });
+      detailDiagnostic(req, "bb_public_announcement_detail_loaded", {
+        announcementFound: Boolean(loaded && loaded.ok && loaded.item),
+        announcementBranchIdPresent: Boolean(loaded && loaded.item && loaded.item.branchId),
+        imageUrlPresent: Boolean(loaded && loaded.item && loaded.item.imageUrl),
+        attachmentCount: loaded && loaded.item && Array.isArray(loaded.item.attachments)
+          ? loaded.item.attachments.length
+          : 0,
+      });
       if (model.kind !== KIND.OK || !loaded.ok || !loaded.item) {
         return res.status(404).type("html").send(
           renderControlledErrorPage(404, "Announcement not found.")
@@ -700,8 +725,19 @@ function createPathPublicRouter(deps) {
         presentImageSrc: (src) => presentRuntimeImageSrc(src, getEnv()) || "",
         cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, getEnv()) || "",
       }, { filename });
+      detailDiagnostic(req, "bb_public_announcement_detail_render_success");
       return res.status(200).type("html").send(html);
-    }).catch(next);
+    }).catch((err) => {
+      detailDiagnostic(req, "bb_public_announcement_detail_error", {
+        errorName: err && err.name,
+        errorMessage: err && err.message,
+        stack: err && err.stack,
+        firstApplicationFrame: err && err.stack
+          ? String(err.stack).split("\n").find((line) => /\/src\//.test(line)) || null
+          : null,
+      });
+      return next(err);
+    });
   });
   router.use(
     createPathPublicChurchActionRouter({
