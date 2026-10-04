@@ -27,6 +27,7 @@ function mapBranch(row, opts) {
     key: String(row.branch_key),
     displayName: String(row.display_name || ""),
     branchType: String(row.branch_type || ""),
+    status: String(row.status || ""),
     isPrimary: Boolean(row.is_primary),
   };
   // Staff assignment forms (Add Member) need stable branch UUIDs as select values.
@@ -62,6 +63,7 @@ async function listBlessBoardBranches(db, churchId, opts) {
       message: "church_id_required",
       branches: [],
       activeCount: 0,
+      inactiveCount: 0,
     };
   }
   if (!db || typeof db.query !== "function") {
@@ -71,18 +73,22 @@ async function listBlessBoardBranches(db, churchId, opts) {
       message: "database required",
       branches: [],
       activeCount: 0,
+      inactiveCount: 0,
     };
   }
 
   try {
     const rows = await repo.listActiveBranchesByChurchId(db, id);
     const branches = rows.map((row) => mapBranch(row, opts)).filter(Boolean);
+    const activeCount = branches.filter((branch) => branch.status === "active").length;
+    const inactiveCount = branches.filter((branch) => branch.status === "inactive").length;
     return {
       ok: true,
       status: STATUS.OK,
       message: STATUS.OK,
       branches,
-      activeCount: branches.length,
+      activeCount,
+      inactiveCount,
     };
   } catch {
     return {
@@ -91,6 +97,7 @@ async function listBlessBoardBranches(db, churchId, opts) {
       message: "lookup_error",
       branches: [],
       activeCount: 0,
+      inactiveCount: 0,
     };
   }
 }

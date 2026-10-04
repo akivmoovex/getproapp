@@ -3,26 +3,36 @@
   var allRows = branches || [];
   var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var typeFilter = typeof typeFilter !== 'undefined' && typeFilter ? String(typeFilter) : '';
+  var statusFilter = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
   var needle = searchQ.trim().toLowerCase();
   var typeKey = typeFilter.trim().toLowerCase();
-  var hasFilter = Boolean(needle || typeKey);
+  var statusKey = statusFilter.trim().toLowerCase();
+  var hasFilter = Boolean(needle || typeKey || statusKey);
   var rows = allRows.filter(function (branch) {
     var bt = String(branch.branchType || '').toLowerCase();
+    var bs = String(branch.status || '').toLowerCase();
     if (typeKey === 'hq' && bt !== 'hq') return false;
     if (typeKey === 'branch' && bt === 'hq') return false;
+    if (statusKey && bs !== statusKey) return false;
     if (!needle) return true;
     var name = String(branch.displayName || '').toLowerCase();
     var key = String(branch.key || '').toLowerCase();
     return name.indexOf(needle) !== -1 || key.indexOf(needle) !== -1;
   });
   var matchCount = rows.length;
-  var totalActive = typeof activeBranchCount === 'number' ? activeBranchCount : allRows.length;
+  var totalActive = typeof activeBranchCount === 'number' ? activeBranchCount : allRows.filter(function (b) { return b.status === 'active'; }).length;
+  var totalInactive = typeof inactiveBranchCount === 'number' ? inactiveBranchCount : allRows.filter(function (b) { return b.status === 'inactive'; }).length;
   var cap = typeof capacity !== 'undefined' && capacity ? capacity : null;
   var createdKey = typeof createdKey !== 'undefined' && createdKey ? String(createdKey) : '';
   var typeOptions = [
     { key: '', label: 'All' },
     { key: 'hq', label: 'HQ' },
     { key: 'branch', label: 'Branch' }
+  ];
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'active', label: 'Active' },
+    { key: 'inactive', label: 'Inactive' }
   ];
   function typeLabel(t) {
     return String(t || '').toLowerCase() === 'hq' ? 'HQ' : 'Branch';
@@ -33,10 +43,11 @@
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
   }
-  function filterHref(nextType) {
+  function filterHref(nextType, nextStatus) {
     var params = [];
     if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
     if (nextType) params.push('type=' + encodeURIComponent(nextType));
+    if (nextStatus) params.push('status=' + encodeURIComponent(nextStatus));
     return '/hq/branches' + (params.length ? '?' + params.join('&') : '');
   }
 %>
@@ -56,11 +67,11 @@
       </p>
       <div class="bb-hq-branches__title-row">
         <h1 class="bb-hq-page-head__title">Branch registry</h1>
-        <span class="bb-hq-branches__count" data-bb-count="active-branches"><%= totalActive %></span>
+        <span class="bb-hq-branches__count" data-bb-count="all-branches"><%= allRows.length %></span>
       </div>
       <p class="bb-hq-lede">
-        Active branches for <strong><%= churchDisplayName %></strong>.
-        Inactive branches are hidden. Open a branch to enter branch administration when authorized.
+        Active and inactive branches for <strong><%= churchDisplayName %></strong>.
+        Open an active branch to enter branch administration when authorized.
         Member counts, leader names, locations, and performance scores are not shown here.
       </p>
     </div>
@@ -96,7 +107,7 @@
 
   <% if (!allRows.length) { %>
   <div class="bb-hq-empty" data-bb-empty="branches" role="status">
-    No active branches are available for this church.
+    No active or inactive branches are available for this church.
   </div>
   <% } else { %>
 
@@ -130,6 +141,16 @@
       ><%= opt.label %></a>
       <% }) %>
     </div>
+    <div class="bb-hq-branches-filter__chips" role="group" aria-label="Branch status">
+      <% statusOptions.forEach(function (opt) {
+        var chipActive = statusKey === opt.key;
+      %>
+      <a class="bb-hq-branches-chip<%= chipActive ? ' is-active' : '' %>"
+        href="<%= filterHref(typeKey, opt.key) %>"
+        data-bb-branch-status="<%= opt.key || 'all' %>"<% if (chipActive) { %> aria-current="true"<% } %>
+      ><%= opt.label %></a>
+      <% }) %>
+    </div>
     <div class="bb-hq-branches-filter__actions">
       <button type="submit" class="bb-hq-btn bb-hq-btn--primary bb-hq-btn--sm">Search</button>
       <% if (hasFilter) { %>
@@ -146,8 +167,8 @@
   <% } else { %>
 
   <p class="bb-hq-branches__meta" data-bb-branch-match-count="<%= matchCount %>">
-    Showing <%= matchCount %> of <%= totalActive %> active
-    <%= totalActive === 1 ? 'branch' : 'branches' %><% if (hasFilter) { %> matching filters<% } %>.
+    Showing <%= matchCount %> of <%= allRows.length %> branches
+    (<%= totalActive %> active, <%= totalInactive %> inactive)<% if (hasFilter) { %> matching filters<% } %>.
   </p>
 
   <div
@@ -182,7 +203,7 @@
           </td>
           <td><span class="bb-hq-pill"><%= typeLabel(branch.branchType) %></span></td>
           <td><code class="bb-hq-key"><%= branch.key %></code></td>
-          <td><span class="bb-hq-pill bb-hq-pill--ok">Active</span></td>
+          <td><span class="bb-hq-pill <%= branch.status === 'active' ? 'bb-hq-pill--ok' : '' %>"><%= branch.status === 'inactive' ? 'Inactive' : 'Active' %></span></td>
           <td class="bb-hq-table__actions">
             <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/branches/<%= branch.key %>">
               Open
@@ -206,7 +227,7 @@
             <% if (branch.isPrimary) { %>
             <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
             <% } %>
-            <span class="bb-hq-pill bb-hq-pill--ok">Active</span>
+            <span class="bb-hq-pill <%= branch.status === 'active' ? 'bb-hq-pill--ok' : '' %>"><%= branch.status === 'inactive' ? 'Inactive' : 'Active' %></span>
           </p>
           <p class="bb-hq-branches-card__key"><code class="bb-hq-key"><%= branch.key %></code></p>
         </div>

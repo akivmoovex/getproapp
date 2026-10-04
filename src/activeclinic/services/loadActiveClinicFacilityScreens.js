@@ -14,6 +14,9 @@ const {
 const {
   listFacilitiesForStaff,
 } = require("./activeClinicStaffFacilityService");
+const staffRepo = require("../repositories/staffMemberRepository");
+const departmentRepo = require("../repositories/departmentRepository");
+const roomRepo = require("../repositories/facilityRoomRepository");
 const {
   suggestFacilityKeyFromDisplayName,
 } = require("./normalizeFacilityKey");
@@ -105,7 +108,7 @@ function mapFacilityDetail(f) {
 
 /**
  * Non-creators see assignment-scoped facilities.
- * Creators (typically network admins) see the organization catalogue.
+ * Organization-wide viewers (typically network admins) see the organization catalogue.
  */
 async function listAuthorizedFacilitiesForAuth(db, auth, statusFilter) {
   const organizationId = auth.organization.id;
@@ -115,7 +118,10 @@ async function listAuthorizedFacilitiesForAuth(db, auth, statusFilter) {
   });
   if (!listed.ok) return listed;
 
-  if (hasPerm(auth.permissions, "activeclinic.facility.create")) {
+  if (
+    hasPerm(auth.permissions, "activeclinic.facility.view_all") ||
+    hasPerm(auth.permissions, "activeclinic.facility.create")
+  ) {
     return listed;
   }
 
@@ -137,7 +143,10 @@ async function listAuthorizedFacilitiesForAuth(db, auth, statusFilter) {
 
 async function assertFacilityReadable(db, auth, facility) {
   if (!facility) return false;
-  if (hasPerm(auth.permissions, "activeclinic.facility.create")) {
+  if (
+    hasPerm(auth.permissions, "activeclinic.facility.view_all") ||
+    hasPerm(auth.permissions, "activeclinic.facility.create")
+  ) {
     return true;
   }
   const assigned = await listFacilitiesForStaff(db, {
@@ -273,6 +282,12 @@ async function loadActiveClinicFacilityDetailScreen(db, input) {
 
   const perms = auth.permissions || [];
   const facility = mapFacilityDetail(got.facility);
+  const [staffCount, departmentsCount, roomsByStatus] = await Promise.all([
+    staffRepo.countActiveByFacility(db, { organizationId: auth.organization.id, facilityId: got.facility.id }),
+    departmentRepo.countActiveByFacility(db, { organizationId: auth.organization.id, facilityId: got.facility.id }),
+    roomRepo.countRoomsByStatus(db, { organizationId: auth.organization.id, facilityId: got.facility.id }),
+  ]);
+  const roomsCount = roomsByStatus.reduce((total, row) => total + Number(row.n || 0), 0);
   const canUpdate = hasPerm(perms, "activeclinic.facility.update");
   const canArchive = hasPerm(perms, "activeclinic.facility.archive");
   const canSetPrimary =
@@ -281,6 +296,7 @@ async function loadActiveClinicFacilityDetailScreen(db, input) {
   return {
     ok: true,
     facility,
+    impact: { activeStaff: staffCount, activeDepartments: departmentsCount, rooms: roomsCount },
     actions: {
       canUpdate,
       canArchive: canArchive && facility.status !== "archived",

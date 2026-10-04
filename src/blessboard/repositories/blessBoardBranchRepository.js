@@ -14,7 +14,7 @@ async function listActiveBranchesByChurchId(client, churchId) {
     `SELECT id, branch_key, display_name, branch_type, is_primary, status
        FROM blessboard.branches
       WHERE church_id = $1
-        AND status = 'active'
+        AND status IN ('active', 'inactive')
       ORDER BY
         CASE WHEN branch_type = 'hq' THEN 0 ELSE 1 END,
         CASE WHEN is_primary THEN 0 ELSE 1 END,

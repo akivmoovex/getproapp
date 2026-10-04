@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * BlessBoard V5 branch list service — active-only DTOs, church ownership, no UUID leakage.
+ * BlessBoard V5 branch registry — active/inactive DTOs, church ownership, no UUID leakage.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -121,21 +121,23 @@ describe("blessboard branch-list", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  it("lists active branches only with compact DTOs and real count", async () => {
+  it("lists active and inactive branches with compact DTOs and status counts", async () => {
     requireDb();
     const listed = await listBlessBoardBranches(pool, churchA.id);
     assert.equal(listed.ok, true, listed.message);
     assert.equal(listed.activeCount, 2);
-    assert.equal(listed.branches.length, 2);
+    assert.equal(listed.inactiveCount, 1);
+    assert.equal(listed.branches.length, 3);
     assert.ok(listed.branches.some((b) => b.key === "hq"));
     assert.ok(listed.branches.some((b) => b.key === "campus-north"));
-    assert.ok(!listed.branches.some((b) => b.key === "campus-old"));
+    assert.ok(listed.branches.some((b) => b.key === "campus-old" && b.status === "inactive"));
 
     for (const branch of listed.branches) {
       assert.equal(Object.prototype.hasOwnProperty.call(branch, "id"), false);
       assert.equal(Object.prototype.hasOwnProperty.call(branch, "churchId"), false);
       assert.ok(branch.key);
       assert.ok(branch.displayName);
+      assert.ok(["active", "inactive"].includes(branch.status));
     }
 
     const serialized = JSON.stringify(listed.branches);

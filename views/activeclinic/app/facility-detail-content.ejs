@@ -68,6 +68,17 @@
       </div>
     </dl>
   </div>
+  <% if (detail.impact) { %>
+  <div class="ac-panel" style="margin-top:1rem">
+    <h2 class="ac-dashboard__card-title">Operational impact</h2>
+    <p class="ac-muted">Before changing lifecycle status, review the existing records currently associated with this facility.</p>
+    <ul>
+      <li><%= detail.impact.activeStaff %> active staff assignments</li>
+      <li><%= detail.impact.activeDepartments %> active departments</li>
+      <li><%= detail.impact.rooms %> rooms</li>
+    </ul>
+  </div>
+  <% } %>
 
   <div class="ac-panel" style="margin-top:1rem">
     <h2 class="ac-dashboard__card-title">Location</h2>
@@ -100,6 +111,31 @@
         <button type="submit" class="ac-btn ac-btn--ghost">Set as primary</button>
       </form>
       <% } %>
+      <% if (actions.canUpdate && f.status !== 'archived') { %>
+      <% if (f.status !== 'active') { %>
+      <form method="post" action="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>/status">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <input type="hidden" name="status" value="active"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Activate</button>
+      </form>
+      <% } %>
+      <% if (f.status !== 'inactive') { %>
+      <form method="post" action="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>/status">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <input type="hidden" name="status" value="inactive"/>
+        <input type="hidden" name="confirm_status" value="1"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Deactivate</button>
+      </form>
+      <% } %>
+      <% if (f.status !== 'suspended') { %>
+      <form method="post" action="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>/status">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <input type="hidden" name="status" value="suspended"/>
+        <input type="hidden" name="confirm_status" value="1"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Suspend</button>
+      </form>
+      <% } %>
+      <% } %>
       <% if (actions.archiveAction) { %>
       <details class="ac-destructive" data-ac-archive-confirm="1">
         <summary class="ac-btn ac-btn--danger" style="list-style:none;cursor:pointer">Archive facility…</summary>
@@ -111,6 +147,12 @@
               <input type="checkbox" name="confirm_archive" value="1" required/>
               I understand this facility will be archived
             </label>
+            <% if (f.isPrimary) { %>
+            <label class="ac-label">Replacement active facility ID
+              <input class="ac-input" name="replacement_facility_id" required placeholder="Select another active facility"/>
+            </label>
+            <p class="ac-muted">The primary facility must be replaced before archiving.</p>
+            <% } %>
             <button type="submit" class="ac-btn ac-btn--danger" data-loading="Archiving…">Confirm archive</button>
           </form>
         </div>

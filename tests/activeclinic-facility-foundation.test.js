@@ -264,6 +264,7 @@ describe("ActiveClinic healthcare organization and facility foundation", () => {
     const archived = await archiveFacility(pool, {
       id: primary.facility.id,
       organizationId: orgA.records.organization.id,
+      replacementFacilityId: clinic.facility.id,
     });
     assert.equal(archived.ok, true);
     assert.equal(archived.facility.isPrimary, false);
@@ -275,7 +276,7 @@ describe("ActiveClinic healthcare organization and facility foundation", () => {
         isPrimary: true,
       })
     );
-    assert.equal(replacement.ok, true, JSON.stringify(replacement));
+    assert.equal(replacement.code, FAC_RESULT.PRIMARY_CONFLICT);
 
     const inactive = await createFacility(
       pool,

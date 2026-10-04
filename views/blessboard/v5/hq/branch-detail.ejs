@@ -1,0 +1,51 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var b = branch || {};
+  var s = b.settings || {};
+  var status = String(b.status || '').toLowerCase();
+  var value = function (v) { return v == null || v === '' ? '—' : v; };
+%>
+<section class="bb-hq-panel" aria-label="Branch management">
+  <p class="bb-hq-breadcrumb"><a href="/hq/branches">Branches</a> <span aria-hidden="true">›</span> <span><%= value(b.displayName) %></span></p>
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title"><%= value(b.displayName) %></h1>
+    <p class="bb-hq-lede">Manage this organization unit.</p>
+  </header>
+  <p>
+    <span class="bb-hq-pill"><%= b.branchType === 'hq' ? 'HQ' : 'Branch' %></span>
+    <span class="bb-hq-pill <%= status === 'active' ? 'bb-hq-pill--ok' : '' %>"><%= status === 'inactive' ? 'Inactive' : 'Active' %></span>
+    <% if (b.isPrimary) { %><span class="bb-hq-pill bb-hq-pill--primary">Primary</span><% } %>
+  </p>
+  <dl class="bb-hq-detail-list">
+    <dt>Branch key</dt><dd><code class="bb-hq-key"><%= value(b.key) %></code></dd>
+    <dt>Phone</dt><dd><%= value(s.phone) %></dd>
+    <dt>Email</dt><dd><%= value(s.email) %></dd>
+    <dt>Address</dt><dd><%= value([s.addressLine1, s.addressLine2, s.city, s.provinceState, s.postalCode].filter(Boolean).join(', ')) %></dd>
+    <dt>Timezone</dt><dd><%= value(s.timezone || b.timezone) %></dd>
+  </dl>
+  <div class="bb-hq-page-head__actions">
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= b.workspaceHref %>">Open branch workspace</a>
+    <% if (b.publicHref) { %><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= b.publicHref %>">View website</a><% } %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches/<%= encodeURIComponent(b.key) %>/edit">Edit details</a>
+    <% if (status === 'active' && b.branchType !== 'hq' && !b.isPrimary) { %>
+    <form method="post" action="/hq/branches/<%= encodeURIComponent(b.key) %>/deactivate">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="hidden" name="confirm_lifecycle" value="1">
+      <button class="bb-hq-btn bb-hq-btn--ghost" type="submit" onclick="return confirm('Deactivate this branch? Its content and history will be preserved.');">Deactivate</button>
+    </form>
+    <% } else if (status === 'inactive') { %>
+    <form method="post" action="/hq/branches/<%= encodeURIComponent(b.key) %>/activate">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="hidden" name="confirm_lifecycle" value="1">
+      <button class="bb-hq-btn bb-hq-btn--ghost" type="submit">Activate</button>
+    </form>
+    <% } %>
+  </div>
+  <section class="bb-hq-panel" aria-labelledby="branch-admins-heading">
+    <h2 id="branch-admins-heading">Branch administrators</h2>
+    <p class="bb-hq-hint">Manage branch-scoped administrators using HQ staff access. Assignments remain limited to this branch.</p>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/settings/staff-access?branch=<%= encodeURIComponent(b.id) %>&role=branch_admin">List branch admins</a>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/settings/staff-access/invite?placement=branch&branch_id=<%= encodeURIComponent(b.id) %>&role_key=branch_admin">Invite branch admin</a>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>
