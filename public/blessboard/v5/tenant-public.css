@@ -4888,18 +4888,24 @@ html {
 }
 
 .bb-tp-service-times--band {
-  background: var(--bb-color-primary);
-  color: var(--color-text-inverse);
-  padding: 1.35rem 0;
+  background: transparent;
+  color: var(--color-text);
+  padding: 2rem 0;
 }
 
 .bb-tp-service-times__inner {
+  position: relative;
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 0 var(--bb-gutter);
+  padding: 1.5rem var(--bb-gutter);
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  background: var(--bb-color-primary);
+  color: var(--color-text-inverse);
+  border-radius: 1.25rem;
+  box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--bb-color-primary) 22%, transparent);
+  overflow: hidden;
 }
 
 /*
@@ -4911,8 +4917,8 @@ html {
  * Tablet/mobile: drop max-width so the band content stays flush (pre-fix).
  */
 .bb-tp-service-times--platform-public > .bb-tp-service-times__inner {
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: var(--bb-gutter);
+  padding-right: var(--bb-gutter);
 }
 
 @media (max-width: 899px) {
@@ -4955,6 +4961,10 @@ html {
   gap: 0.3rem;
 }
 
+.bb-tp-service-times__item:nth-child(even) {
+  background: color-mix(in srgb, var(--color-surface) 18%, transparent);
+}
+
 .bb-tp-service-times__name {
   font-weight: 700;
   font-size: 1.05rem;
@@ -4992,6 +5002,39 @@ html {
 .bb-tp-service-times--band .bb-tp-btn--ghost {
   color: var(--color-text-inverse);
   border-color: color-mix(in srgb, var(--color-surface) 55%, transparent);
+}
+
+@media (max-width: 767px) {
+  .bb-tp-service-times--band {
+    padding: 1.5rem 0;
+  }
+
+  .bb-tp-service-times__inner {
+    padding: 1.25rem var(--bb-gutter);
+    border-radius: 1rem;
+  }
+
+  .bb-tp-service-times__list {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0 calc(var(--bb-gutter) * -1);
+    padding: 0 var(--bb-gutter) 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .bb-tp-service-times__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bb-tp-service-times__item {
+    flex: 0 0 min(16rem, calc(100vw - 3rem));
+    scroll-snap-align: start;
+    min-height: 8.5rem;
+    padding: 1rem;
+  }
 }
 
 .bb-tp-home-welcome,
