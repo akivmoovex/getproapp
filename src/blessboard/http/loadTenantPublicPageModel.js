@@ -2084,8 +2084,14 @@ async function loadTenantPublicPageModel(db, input) {
   });
   const announcementHeroMedia = publicDemo.mediaOrFallback(
     announcementHeroSection && (announcementHeroSection.mediaUrl || announcementHeroSection.imageUrl),
-    isPreview ? demoPack.eventsPage.heroMediaUrl : null
+    demoPack.announcementsPage.heroMediaUrl
   );
+  const announcementFallbackImages = [
+    demoPack.announcementsPage.featuredMediaUrl,
+    ...demoPack.announcementsPage.cardMediaUrls,
+  ]
+    .map((url) => publicDemo.mediaOrFallback(url))
+    .filter(Boolean);
 
   return {
     kind: KIND.OK,
@@ -2140,6 +2146,7 @@ async function loadTenantPublicPageModel(db, input) {
     contactDemoFallback,
     givingDemoFallback,
     announcementHeroMedia,
+    announcementFallbackImages,
     canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
@@ -2149,7 +2156,7 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     giveHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=69",
+    cssHref: "/blessboard/v5/tenant-public.css?v=71",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,

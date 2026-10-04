@@ -17,6 +17,7 @@ const {
   resolveAnnouncementProductPolicy,
 } = require("./announcementProductPolicy");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
+const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -1112,10 +1113,17 @@ async function listPublicWebsiteAnnouncements(db, input) {
         offset: input.offset,
       });
       const now = new Date();
+      const publicItems = await Promise.all(items.map(async (item) => {
+        const attachments = await repo.listAttachments(client, item.id);
+        return publicAnnouncementPresentation(
+          item,
+          publicAnnouncementImageDto(attachments, churchId)
+        );
+      }));
       return {
         ok: true,
         status: STATUS.OK,
-        items: items
+        items: publicItems
           .map((item) => ({
             ...item,
             effectiveStatus: resolveEffectiveStatus(item, now),
@@ -1163,14 +1171,17 @@ async function getPublicWebsiteAnnouncement(db, input) {
       if (!isPubliclyVisible(existing)) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
+      const attachments = await repo.listAttachments(client, id);
       return {
         ok: true,
         status: STATUS.OK,
         item: {
-          ...existing,
+          ...publicAnnouncementPresentation(
+            existing,
+            publicAnnouncementImageDto(attachments, churchId)
+          ),
           effectiveStatus: "published",
           audiences: audiences.map((a) => a.audienceKey),
-          attachments: [],
           actionUrl: existing.actionUrl ? safeExternalUrl(existing.actionUrl) : null,
           body: String(existing.body || ""),
           title: String(existing.title || ""),
@@ -1181,6 +1192,42 @@ async function getPublicWebsiteAnnouncement(db, input) {
   } catch (err) {
     return { ...mapDbError(err), item: null };
   }
+}
+
+function publicAnnouncementImageDto(attachments, churchId, env) {
+  return (Array.isArray(attachments) ? attachments : [])
+    .filter((attachment) =>
+      attachment &&
+      attachment.churchId === churchId &&
+      attachment.visibility === "public" &&
+      attachment.mediaStatus === "active" &&
+      attachment.storageKey
+    )
+    .map((attachment) => {
+      const imageUrl = /^image\//i.test(String(attachment.mimeType || ""))
+        ? presentRuntimeImageSrc(`/media/${String(attachment.storageKey).replace(/^\/+/, "")}`, env || process.env)
+        : null;
+      return {
+        imageUrl: imageUrl || null,
+        imageAlt: attachment.altText || attachment.originalFilename || "Announcement image",
+        imageSource: imageUrl ? "public_attachment" : null,
+        originalFilename: attachment.originalFilename,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      };
+    })
+    .filter(Boolean);
+}
+
+function publicAnnouncementPresentation(item, attachments) {
+  const image = (Array.isArray(attachments) ? attachments : []).find((attachment) => attachment && attachment.imageUrl);
+  return {
+    ...item,
+    attachments,
+    imageUrl: image ? image.imageUrl : null,
+    imageAlt: image ? image.imageAlt : null,
+    imageSource: image ? image.imageSource : null,
+  };
 }
 
 async function listAnnouncementPublicationHistory(db, input) {
@@ -1225,5 +1272,6 @@ module.exports = {
   removeAnnouncementAttachment,
   listPublicWebsiteAnnouncements,
   getPublicWebsiteAnnouncement,
+  publicAnnouncementImageDto,
   listAnnouncementPublicationHistory,
 };

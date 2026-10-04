@@ -27,6 +27,11 @@ const MEDIA = Object.freeze({
   homeHero: "/church/images/tenant-public/home-desktop-hero.jpg",
   homeHeroMobile: "/church/images/tenant-public/home-mobile-hero.jpg",
   aboutHero: "/church/images/tenant-public/about-hero-building.jpg",
+  announcementHero: "/church/images/tenant-public/announcements/hero-default.jpg",
+  announcementFeatured: "/church/images/tenant-public/announcements/featured-default.jpg",
+  announcementCard1: "/church/images/tenant-public/announcements/card-01.jpg",
+  announcementCard2: "/church/images/tenant-public/announcements/card-02.jpg",
+  announcementCard3: "/church/images/tenant-public/announcements/card-03.jpg",
   aboutStory: "/church/images/tenant-public/home-mobile-hero.jpg",
   aboutGallery1: "/church/images/tenant-public/about-hero-building.jpg",
   aboutGallery2: "/church/images/tenant-public/home-desktop-hero.jpg",
@@ -532,6 +537,19 @@ function buildPublicDemoPack(opts) {
     introMediaUrl: MEDIA.sermonsIntro || MEDIA.sermon,
   });
 
+  const announcementsPage = Object.freeze({
+    heroMediaUrl: MEDIA.eventsIntro,
+    featuredMediaUrl: MEDIA.sermon,
+    cardMediaUrls: Object.freeze([
+      MEDIA.event1,
+      MEDIA.ministryWorship,
+      MEDIA.event2,
+      MEDIA.event3,
+      MEDIA.sermon2,
+      MEDIA.ministryYouth,
+    ]),
+  });
+
   const contactPage = Object.freeze({
     introHeading: "We'd Love to Hear From You",
     introBody: `Reach ${N} about a first visit, pastoral care, ministry questions, or practical directions. We respond as quickly as we can during office hours and will point you to the right person when needed.`,
@@ -613,6 +631,7 @@ function buildPublicDemoPack(opts) {
     ministriesPage,
     eventsPage,
     sermonsPage,
+    announcementsPage,
     contactPage,
     givingPage,
     contact,

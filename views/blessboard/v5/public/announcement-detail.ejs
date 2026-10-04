@@ -21,7 +21,20 @@
     <% if (!item) { %>
       <h1 class="bb-tp-ann-title">Announcement unavailable</h1>
       <p>This notice is not published or has ended.</p>
-    <% } else { %>
+    <% } else {
+      var primaryAttachment = item.imageUrl ? {
+        imageUrl: item.imageUrl,
+        imageAlt: item.imageAlt || item.title || 'Announcement image'
+      } : (item.attachments || []).find(function (attachment) {
+        return attachment && attachment.imageUrl;
+      });
+      if (!primaryAttachment && announcementFallbackImages && announcementFallbackImages.length) {
+        primaryAttachment = {
+          imageUrl: announcementFallbackImages[0],
+          imageAlt: item.title || 'Announcement image'
+        };
+      }
+    %>
       <p class="bb-tp-ann-meta">
         <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch"><%= (branchView && branchView.displayName) || 'Branch' %></span>
         <% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
@@ -30,12 +43,17 @@
         <% if (item.publishedAt) { %><span><%= formatWhen(item.publishedAt, item.timezone) %></span><% } %>
       </p>
       <h1 class="bb-tp-ann-title"><%= item.title %></h1>
+      <% if (primaryAttachment) { %>
+      <img class="bb-tp-ann-detail__image" src="<%= primaryAttachment.imageUrl %>" alt="<%= primaryAttachment.imageAlt %>" loading="lazy" />
+      <% } %>
       <div class="bb-tp-ann-body bb-tp-ann-detail__message"><%= item.body %></div>
       <% if (item.attachments && item.attachments.length) { %>
       <section class="bb-tp-ann-detail__attachments" aria-labelledby="announcement-attachments">
         <h2 id="announcement-attachments">Attachments</h2>
         <ul>
-          <% item.attachments.forEach(function (attachment) { %>
+          <% item.attachments.filter(function (attachment) {
+            return !primaryAttachment || attachment.imageUrl !== primaryAttachment.imageUrl;
+          }).forEach(function (attachment) { %>
           <li>
             <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
             <span><%= attachment.originalFilename || 'Attachment' %></span>
@@ -47,7 +65,7 @@
       </section>
       <% } %>
       <% if (item.actionUrl && item.actionLabel) { %>
-        <p style="margin-top:1.25rem">
+        <p class="bb-tp-ann-detail__action">
           <a class="bb-tp-btn bb-tp-btn--primary" href="<%= item.actionUrl %>" rel="noopener noreferrer"><%= item.actionLabel %></a>
         </p>
       <% } %>

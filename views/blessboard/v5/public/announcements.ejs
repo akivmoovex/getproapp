@@ -23,6 +23,16 @@
     if (item.startsAt) return formatWhen(item.startsAt, item.timezone);
     return '';
   }
+  function announcementImage(item, index, featured) {
+    if (item && item.imageUrl) return { url: item.imageUrl, alt: item.imageAlt || item.title || 'Announcement image' };
+    var attachment = item && item.attachments && item.attachments[0] && item.attachments[0].imageUrl
+      ? item.attachments[0]
+      : (item && item.attachments || []).find(function (a) { return a && a.imageUrl; });
+    if (attachment) return { url: attachment.imageUrl, alt: attachment.imageAlt || item.title || 'Announcement image' };
+    var fallbacks = announcementFallbackImages || [];
+    var fallback = fallbacks.length ? fallbacks[featured ? 0 : 1 + (index % Math.max(1, fallbacks.length - 1))] : null;
+    return fallback ? { url: fallback, alt: item.title || 'Announcement image', fallback: true } : null;
+  }
   var isBranchView = entitiesScope === 'branch';
   var scopeDescription = isBranchView
     ? 'Church-wide announcements and updates for this branch.'
@@ -63,7 +73,11 @@
     <% } %>
 
     <% if (featured) { %>
-    <article class="bb-tp-ann-featured" data-bb-ann-featured="1">
+    <% var featuredImage = announcementImage(featured, 0, true); %>
+    <article class="bb-tp-ann-featured<%= featuredImage ? ' has-image' : '' %>" data-bb-ann-featured="1">
+      <% if (featuredImage) { %>
+      <img class="bb-tp-ann-image bb-tp-ann-image--featured" src="<%= featuredImage.url %>" alt="<%= featuredImage.alt %>" loading="lazy" decoding="async" />
+      <% } %>
       <p class="bb-tp-ann-meta">
         <% if (featured.isFeatured) { %><span class="bb-tp-ann-badge">Featured</span><% } %>
         <% if (featured.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
@@ -81,8 +95,12 @@
 
     <% if (rest.length) { %>
     <ul class="bb-tp-ann-list" data-bb-ann-list="1">
-      <% rest.forEach(function (item) { %>
-      <li class="bb-tp-ann-card">
+      <% rest.forEach(function (item, index) { %>
+      <% var itemImage = announcementImage(item, index, false); %>
+      <li class="bb-tp-ann-card<%= itemImage ? ' has-image' : '' %>">
+        <% if (itemImage) { %>
+        <img class="bb-tp-ann-image bb-tp-ann-image--card" src="<%= itemImage.url %>" alt="<%= itemImage.alt %>" loading="lazy" decoding="async" />
+        <% } %>
         <p class="bb-tp-ann-meta">
           <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span><% } %>
           <% if (item.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
