@@ -55,6 +55,10 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("../services/authorizeBlessBoardTenantAccess");
+const {
+  publicChurchPagePath,
+  publicBranchPagePath,
+} = require("../urls/churchUrlHelper");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -634,6 +638,22 @@ function createAnnouncementAdminRouter(deps) {
           scheduler: SCHEDULER_DEPENDENCY,
           error: null,
           saved: String((req.query && req.query.saved) || ""),
+          publicAnnouncementUrl: (item.audiences || []).includes("public")
+            ? (scope.branchKey
+              ? publicBranchPagePath(
+                  scope.tenant.organization.key,
+                  scope.branchKey,
+                  "announcements"
+                )
+              : publicChurchPagePath(
+                  scope.tenant.organization.key,
+                  "announcements"
+                ))
+            : null,
+          publicAnnouncementScopeLabel: scope.branchKey
+            ? scope.branchDisplayName
+            : null,
+          memberAnnouncementAudience: (item.audiences || []).includes("members"),
         })
       );
       return res.status(200).type("html").send(html);

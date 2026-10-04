@@ -71,6 +71,27 @@
   <% } %>
   <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
 
+  <% if (saved === 'published' && (publicAnnouncementUrl || memberAnnouncementAudience)) { %>
+  <section class="bb-ba-panel" data-bb-announcement-destinations="1">
+    <h2 class="bb-ba-section-title">Published</h2>
+    <% if (publicAnnouncementScopeLabel) { %>
+    <p><strong>Scope:</strong> <%= publicAnnouncementScopeLabel %></p>
+    <% } %>
+    <p><strong>Visible to:</strong></p>
+    <ul>
+      <% if (memberAnnouncementAudience) { %>
+      <li><%= publicAnnouncementScopeLabel ? `Members of ${publicAnnouncementScopeLabel}` : 'Members across the church' %></li>
+      <% } %>
+      <% if (publicAnnouncementUrl) { %>
+      <li><%= publicAnnouncementScopeLabel ? `${publicAnnouncementScopeLabel} public announcements page` : 'Church public website' %></li>
+      <% } %>
+    </ul>
+    <% if (publicAnnouncementUrl) { %>
+    <p><a class="bb-ba-btn bb-ba-btn--primary" href="<%= publicAnnouncementUrl %>">View public announcement</a></p>
+    <% } %>
+  </section>
+  <% } %>
+
   <section class="bb-ba-panel">
     <h2 class="bb-ba-section-title">Message</h2>
     <p class="bb-ann-body"><%= item.body %></p>
