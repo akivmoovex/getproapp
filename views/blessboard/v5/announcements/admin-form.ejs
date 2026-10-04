@@ -17,7 +17,7 @@
   var isTimed = currentStatus === 'scheduled';
   var previewTitle = item && item.title ? item.title : 'Announcement title';
   var previewBody = item && item.body ? item.body : 'Message preview will appear here as you write.';
-  var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
+  var stitchKey = isHq ? '70-hq-create-announcement' : '35-branch-announcements-management';
   var scopeName = typeof branchDisplayName !== 'undefined' && branchDisplayName
     ? branchDisplayName
     : (typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : (scopeLabel || 'this church'));
@@ -178,6 +178,8 @@
             name="title"
             maxlength="200"
             required
+            aria-invalid="<%= error ? 'true' : 'false' %>"
+            aria-describedby="<%= error ? 'bb-ann-form-errors' : '' %>"
             value="<%= item && item.title ? item.title : '' %>"
             data-bb-ann-preview-title
             autocomplete="off"
@@ -191,6 +193,8 @@
             rows="10"
             maxlength="20000"
             required
+            aria-invalid="<%= error ? 'true' : 'false' %>"
+            aria-describedby="<%= error ? 'bb-ann-form-errors' : '' %>"
             data-bb-ann-preview-body
           ><%= item && item.body ? item.body : '' %></textarea>
         </div>
@@ -241,8 +245,8 @@
 
       <section class="bb-ba-ann-editor__section" aria-labelledby="bb-ann-window-heading" data-bb-ann-section="window">
         <h2 id="bb-ann-window-heading" class="bb-ba-section-title">Visibility window</h2>
-        <p class="bb-ba-hint" data-lazy-visibility="1">
-          No background job runner is configured. Timed notices become visible when the start time is reached (lazy evaluation). Live notifications are not sent.
+        <p class="bb-ba-hint" data-visibility-help="1">
+          Choose when this announcement becomes visible. Drafts remain hidden until published.
         </p>
         <% if (isDraft || isTimed) { %>
         <div class="bb-ba-field">

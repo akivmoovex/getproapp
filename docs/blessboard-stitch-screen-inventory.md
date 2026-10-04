@@ -217,6 +217,8 @@ Folder: `06-hq/` — screens 58–61 and 69. Screen 69 includes desktop and mobi
 | `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
 | `69-hq-announcements-overview-desktop.png` | HQ | Announcements overview | Desktop | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
 | `69-hq-announcements-overview-mobile.png` | HQ | Announcements overview | Mobile | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
+| `70-hq-create-announcement-desktop.html` | HQ | Create announcement | Desktop | `/hq/announcements/new` | HQ announcement editor | Reference imported (V2.07 / V7) |
+| `70-hq-create-announcement-mobile.png` | HQ | Create announcement | Mobile | `/hq/announcements/new` | HQ announcement editor | Reference imported (V2.07 / V7) |
 
 Related HQ routes also include `/hq/dashboard`, `/hq/reports`, `/hq/branches`, `/hq/analytics` (implemented; not all have PNGs in this export).
 

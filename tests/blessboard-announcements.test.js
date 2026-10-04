@@ -1222,7 +1222,7 @@ describe("blessboard announcements", () => {
     assert.equal(newForm.status, 200);
     assert.match(newForm.text, /data-bb-announcement-admin-form="1"/);
     assert.match(newForm.text, /data-bb-hq-announcement-editor="1"/);
-    assert.match(newForm.text, /data-bb-stitch-announcement-editor="61-hq-broadcast-center"/);
+    assert.match(newForm.text, /data-bb-stitch-announcement-editor="70-hq-create-announcement"/);
     assert.match(newForm.text, /data-bb-ann-scope-panel="1"/);
     assert.match(newForm.text, /data-bb-ann-scope="church"/);
     assert.match(newForm.text, /name="_csrf"/);
