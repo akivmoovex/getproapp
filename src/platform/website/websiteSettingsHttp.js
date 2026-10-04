@@ -151,9 +151,17 @@ function renderStandaloneSeoPage(presentation) {
 
 function parseStylesFormBody(body) {
   const entries = [];
-  const primary = normalizeHexColor(body.primaryColor || body.primaryColorText);
+  // The text field is the canonical value: the color input is only a UI
+  // mirror. Prefer it when both controls are submitted so stale DOM state
+  // cannot overwrite the user's typed value.
+  const scalar = (value) => (Array.isArray(value) ? value[value.length - 1] : value);
+  const primary = normalizeHexColor(
+    scalar(body.primaryColorText) || scalar(body.primaryColor)
+  );
   if (primary.ok && primary.value) entries.push({ key: "brand.primary_color", value: primary.value });
-  const accent = normalizeHexColor(body.accentColor || body.accentColorText);
+  const accent = normalizeHexColor(
+    scalar(body.accentColorText) || scalar(body.accentColor)
+  );
   if (accent.ok && accent.value) entries.push({ key: "brand.accent_color", value: accent.value });
   const logoSrc = String(body.logo || "").trim();
   const logoAlt = String(body.logoAlt || "").trim();
