@@ -440,6 +440,26 @@
   </section>
   <% } %>
 
+  <% if (teasers.announcement && (teasers.announcement.heading || teasers.announcement.bodyText)) { %>
+  <section class="bb-tp-container bb-tp-home-teaser bb-tp-home-announcements" data-bb-home-announcements="1" aria-labelledby="bb-tp-home-announcements-heading">
+    <%- include('./partials/section-heading', {
+      sectionId: 'bb-tp-home-announcements-heading',
+      sectionTitle: teasers.announcement.heading || 'Announcements',
+      sectionLead: teasers.announcement.bodyText || '',
+      sectionHref: hrefFor('/announcements'),
+      sectionLinkLabel: 'View archive',
+      sectionRuled: true
+    }) %>
+    <article class="bb-tp-home-announcements__card">
+      <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+      <div>
+        <h3><%= teasers.announcement.heading || 'Community update' %></h3>
+        <% if (teasers.announcement.bodyText) { %><p><%= teasers.announcement.bodyText %></p><% } %>
+      </div>
+    </article>
+  </section>
+  <% } %>
+
   <% homeMiddleRenderOrder.forEach(function (sectionKey) { %>
   <% if (sectionKey === 'welcome' || sectionKey === 'welcome_home' || sectionKey === 'about_preview' || sectionKey === 'our_story') { %>
   <% } else if (sectionKey === 'ministries_intro' && teasers.ministries && teasers.ministries.length) { %>

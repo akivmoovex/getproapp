@@ -964,6 +964,42 @@ html {
   background: linear-gradient(135deg, var(--bb-color-primary-soft), var(--color-surface));
 }
 
+.bb-tp-home-announcements__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--bb-line);
+  border-radius: 1rem;
+  background: var(--bb-surface);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-ink) 8%, transparent);
+}
+
+.bb-tp-home-announcements__card > .material-symbols-outlined {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.65rem;
+  background: var(--bb-color-primary-soft);
+  color: var(--bb-color-primary);
+}
+
+.bb-tp-home-announcements__card > div {
+  min-width: 0;
+}
+
+.bb-tp-home-announcements__card h3,
+.bb-tp-home-announcements__card p {
+  margin: 0;
+}
+
+.bb-tp-home-announcements__card p {
+  margin-top: 0.4rem;
+  color: var(--bb-muted);
+}
+
 .bb-tp-home__teaser {
   padding-top: 0.5rem;
   padding-bottom: var(--bb-section);
