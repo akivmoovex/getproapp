@@ -38,7 +38,6 @@ const {
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
 const { getPublicWebsiteAnnouncement } = require("../services/announcementsService");
-const { getDeploymentEnvMode } = require("../../platform/config/deploymentEnv");
 const { presentRuntimeImageSrc, cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 const {
   PRODUCT_CODE,
@@ -71,36 +70,6 @@ function createPathPublicRouter(deps) {
   const getPool = deps.getPool;
   const getEnv =
     typeof deps.getEnv === "function" ? deps.getEnv : () => process.env;
-  const detailDiagnostic = (req, event, fields = {}) => {
-    if (getDeploymentEnvMode(getEnv()) !== "testing") return;
-    console.error(`[bb-public-announcement-detail] ${JSON.stringify({
-      event,
-      requestId: req.requestId || req.correlationId || null,
-      organizationKey: req.params.organizationKey || null,
-      branchKey: req.params.branchKey || null,
-      announcementId: req.params.id || null,
-      ...fields,
-    })}`);
-  };
-  const detailDebugHeaders = (req, res) => {
-    if (getDeploymentEnvMode(getEnv()) !== "testing") return null;
-    let stage = "start";
-    const set = (next, values = {}) => {
-      stage = next;
-      res.setHeader("X-BB-Debug-Stage", next);
-      for (const [key, value] of Object.entries(values)) {
-        res.setHeader(`X-BB-Debug-${key}`, String(value));
-      }
-    };
-    set(stage, {
-      Branch: 0,
-      Announcement: 0,
-      Image: 0,
-      Attachments: 0,
-      HrefFor: 0,
-    });
-    return { set, getStage: () => stage };
-  };
 
   async function resolvePathTenant(req, res, organizationKeyRaw) {
     const rawKey = String(organizationKeyRaw || "").trim().toLowerCase();
@@ -661,14 +630,7 @@ function createPathPublicRouter(deps) {
   // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
   router.get("/c/:organizationKey/:branchKey/announcements/:id", (req, res, next) => {
     Promise.resolve().then(async () => {
-      const debug = detailDebugHeaders(req, res);
-      detailDiagnostic(req, "bb_public_announcement_detail_start");
       const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
-      debug?.set("tenant_resolved");
-      detailDiagnostic(req, "bb_public_announcement_detail_resolution", {
-        organizationResolved: Boolean(resolved && resolved.tenant),
-        branchResolved: Boolean(resolved && resolved.tenant),
-      });
       if (!resolved) return;
       const branchKey = normalizeBranchKey(req.params.branchKey);
       const websiteMode = await resolveWebsiteMode(getPool(), {
@@ -678,9 +640,6 @@ function createPathPublicRouter(deps) {
       const branch = websiteMode.ok
         ? (websiteMode.activeBranches || []).find((item) => item.key === branchKey)
         : null;
-      debug?.set("branch_resolved", {
-        Branch: branch ? 1 : 0,
-      });
       if (!branch) {
         return res.status(404).type("html").send(
           renderControlledErrorPage(404, "Announcement not found.")
@@ -713,27 +672,6 @@ function createPathPublicRouter(deps) {
         branchId: branch.id,
         id,
       });
-      debug?.set("announcement_loaded", {
-        Announcement: loaded && loaded.ok && loaded.item ? 1 : 0,
-      });
-      debug?.set("visibility_validated");
-      debug?.set("attachments_loaded", {
-        Attachments:
-          loaded && loaded.item && Array.isArray(loaded.item.attachments)
-            ? Math.min(9, loaded.item.attachments.length)
-            : 0,
-      });
-      debug?.set("image_resolved", {
-        Image: loaded && loaded.item && loaded.item.imageUrl ? 1 : 0,
-      });
-      detailDiagnostic(req, "bb_public_announcement_detail_loaded", {
-        announcementFound: Boolean(loaded && loaded.ok && loaded.item),
-        announcementBranchIdPresent: Boolean(loaded && loaded.item && loaded.item.branchId),
-        imageUrlPresent: Boolean(loaded && loaded.item && loaded.item.imageUrl),
-        attachmentCount: loaded && loaded.item && Array.isArray(loaded.item.attachments)
-          ? loaded.item.attachments.length
-          : 0,
-      });
       if (model.kind !== KIND.OK || !loaded.ok || !loaded.item) {
         return res.status(404).type("html").send(
           renderControlledErrorPage(404, "Announcement not found.")
@@ -745,13 +683,12 @@ function createPathPublicRouter(deps) {
         if (raw === "/") return pathPrefix;
         return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
       };
-      debug?.set("model_ready", { HrefFor: 1 });
-      debug?.set("render_start");
       const html = ejs.render(fs.readFileSync(filename, "utf8"), {
         ...model,
         pageKey: "announcements",
         pageTitle: loaded.item.title || "Announcement",
         item: loaded.item,
+        branchView: selectedBranch,
         pathPrefix,
         homeHref: pathPrefix,
         hrefFor,
@@ -764,20 +701,8 @@ function createPathPublicRouter(deps) {
         presentImageSrc: (src) => presentRuntimeImageSrc(src, getEnv()) || "",
         cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, getEnv()) || "",
       }, { filename });
-      debug?.set("render_success");
-      detailDiagnostic(req, "bb_public_announcement_detail_render_success");
       return res.status(200).type("html").send(html);
-    }).catch((err) => {
-      detailDiagnostic(req, "bb_public_announcement_detail_error", {
-        errorName: err && err.name,
-        errorMessage: err && err.message,
-        stack: err && err.stack,
-        firstApplicationFrame: err && err.stack
-          ? String(err.stack).split("\n").find((line) => /\/src\//.test(line)) || null
-          : null,
-      });
-      return next(err);
-    });
+    }).catch(next);
   });
   router.use(
     createPathPublicChurchActionRouter({

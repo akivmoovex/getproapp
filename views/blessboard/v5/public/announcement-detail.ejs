@@ -28,7 +28,9 @@
       } : (item.attachments || []).find(function (attachment) {
         return attachment && attachment.imageUrl;
       });
-      if (!primaryAttachment && announcementFallbackImages && announcementFallbackImages.length) {
+      var fallbackImages = typeof announcementFallbackImages !== 'undefined' &&
+        Array.isArray(announcementFallbackImages) ? announcementFallbackImages : [];
+      if (!primaryAttachment && fallbackImages.length) {
         primaryAttachment = {
           imageUrl: announcementFallbackImages[0],
           imageAlt: item.title || 'Announcement image'
@@ -36,7 +38,7 @@
       }
     %>
       <p class="bb-tp-ann-meta">
-        <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch"><%= (branchView && branchView.displayName) || 'Branch' %></span>
+        <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch"><%= (typeof branchView !== 'undefined' && branchView && branchView.displayName) || 'Branch' %></span>
         <% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
         <% if (item.isPinned) { %><span class="bb-tp-ann-badge">Pinned</span><% } %>
         <% if (item.isFeatured) { %><span class="bb-tp-ann-badge">Featured</span><% } %>
