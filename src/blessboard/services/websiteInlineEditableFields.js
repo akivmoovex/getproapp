@@ -234,6 +234,13 @@ const EDITABLE_FIELDS = [
   ...heroImageField("sermons"),
   ...heroChromeFields("sermons"),
 
+  ...fieldsFor("announcements", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...heroImageField("announcements"),
+  ...heroChromeFields("announcements"),
+
   ...fieldsFor("contact", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],

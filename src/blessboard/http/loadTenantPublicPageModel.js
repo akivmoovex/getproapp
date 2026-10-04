@@ -2077,6 +2077,16 @@ async function loadTenantPublicPageModel(db, input) {
           isPrimary: true,
         };
 
+  const announcementHeroSection = pageSections.find((section) => {
+    const type = String((section && section.sectionType) || "").toLowerCase();
+    const key = String((section && section.sectionKey) || "").toLowerCase();
+    return type === "hero" || key.includes("hero");
+  });
+  const announcementHeroMedia = publicDemo.mediaOrFallback(
+    announcementHeroSection && (announcementHeroSection.mediaUrl || announcementHeroSection.imageUrl),
+    isPreview ? demoPack.eventsPage.heroMediaUrl : null
+  );
+
   return {
     kind: KIND.OK,
     pageKey,
@@ -2129,6 +2139,7 @@ async function loadTenantPublicPageModel(db, input) {
     sermonsDemoFallback,
     contactDemoFallback,
     givingDemoFallback,
+    announcementHeroMedia,
     canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
