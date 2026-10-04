@@ -100,6 +100,24 @@ function sendControlled(req, res, status, message, shellKind) {
 }
 
 function errorMessage(reason) {
+  const messages = {
+    title: "Enter a title for the announcement.",
+    body: "Enter the announcement message.",
+    audiences_required: "Select at least one audience.",
+    audience_key: "Choose a supported audience.",
+    timezone: "Enter a valid timezone.",
+    starts_at: "Enter a valid start time.",
+    starts_at_required: "Scheduled announcements require a start time.",
+    ends_at: "Enter a valid end time.",
+    ends_before_starts: "End time must be after the start time.",
+    action_url: "Enter a valid HTTPS action URL.",
+    action_label: "Enter a valid action label.",
+    media_asset_id: "Choose a valid media attachment.",
+    media_asset: "That attachment is unavailable for this church.",
+    branch: "Choose a valid active branch in this church.",
+    scope: "The selected announcement scope is not allowed.",
+  };
+  if (messages[reason]) return messages[reason];
   if (reason === "confirm_publish") {
     return "You must confirm before publishing.";
   }
@@ -117,12 +135,6 @@ function errorMessage(reason) {
   }
   if (reason === "already_published") {
     return "This announcement is already published.";
-  }
-  if (reason === "starts_at_required") {
-    return "Scheduled announcements require a start time.";
-  }
-  if (reason === "ends_before_starts") {
-    return "End time must be after the start time.";
   }
   return "Please check the form and try again.";
 }

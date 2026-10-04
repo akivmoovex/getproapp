@@ -1253,6 +1253,35 @@ describe("blessboard announcements", () => {
     assert.equal(createRes.status, 303);
     const annId = createRes.headers.location.split("/").pop().split("?")[0];
 
+    const branchFormForSave = await request(app)
+      .get("/hq/announcements/b/campus/new")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchFormForSave.status, 200);
+    const branchFormCsrf = extractCookie(branchFormForSave, CSRF_COOKIE);
+    const branchSaveResult = await request(app)
+      .post("/hq/announcements/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${branchFormCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: branchFormCsrf,
+        title: "HQ branch draft",
+        body: "Branch-scoped message",
+        status: "draft",
+        audience_members: "1",
+        branch_id: "another-branch-must-be-ignored",
+        church_id: "another-church-must-be-ignored",
+      });
+    assert.equal(branchSaveResult.status, 303);
+    assert.match(branchSaveResult.headers.location, /\/hq\/announcements\/b\/campus\/[0-9a-f-]{36}/i);
+    const branchSaveDetail = await request(app)
+      .get(branchSaveResult.headers.location)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchSaveDetail.status, 200);
+    assert.match(branchSaveDetail.text, /· Members\s*· Branch|>Branch</);
+
     const editForm = await request(app)
       .get(`/hq/announcements/${annId}/edit`)
       .set("Host", HOST_A)

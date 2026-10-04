@@ -287,7 +287,30 @@ async function authorizeActor(client, input) {
       branchId: input.branchId,
     }
   );
-  if (!result.ok || !result.allowed) {
+  // HQ permissions are church-scoped, while an announcement may target an
+  // authorized branch. The route has already verified that branch belongs to
+  // this church; evaluate the same permission at church scope for HQ grants
+  // instead of widening branch-admin authorization.
+  let effectiveResult = result;
+  if (
+    !result.ok &&
+    input.branchId &&
+    result.reason === "scope_mismatch"
+  ) {
+    const churchScoped = await requireActorPermission(
+      { query: client.query.bind(client) },
+      {
+        actorUserId: input.actorUserId,
+        tenant: input.tenant,
+        permission,
+        branchId: null,
+      }
+    );
+    if (churchScoped.ok && churchScoped.mode === "hq") {
+      effectiveResult = churchScoped;
+    }
+  }
+  if (!effectiveResult.ok || !effectiveResult.allowed) {
     // Platform default: may draft (manage) but not publish unless product policy allows.
     if (permission === "announcements.publish") {
       const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
@@ -313,7 +336,7 @@ async function authorizeActor(client, input) {
     return {
       ok: false,
       status: STATUS.FORBIDDEN,
-      reason: result.reason || "denied",
+      reason: effectiveResult.reason || "denied",
       mode: null,
     };
   }
@@ -342,7 +365,7 @@ async function authorizeActor(client, input) {
 
   return {
     ok: true,
-    mode: result.mode,
+    mode: effectiveResult.mode,
   };
 }
 
