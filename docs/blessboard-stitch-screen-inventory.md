@@ -3,7 +3,8 @@
 **Last updated:** 2026-10-04
 **CSS freeze baseline:** v36; Batch A v37; Batch B Auth v38; desktop menu hotfix v39; Batch C v40; Batch D Branch Admin v41; Batch E Platform Admin v42  
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
-**Unique PNGs in this inventory:** 112 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
+**V2.07 announcement references:** Stitch project `4931965034209316203`
+**Unique PNGs in this inventory:** 126 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
 
 **Goal:** Every PNG-backed screen must match via EJS + CSS. Do **not** display Stitch PNGs as UI.
 
@@ -207,18 +208,35 @@ Folder: `05-leader/`
 
 ## 6. HQ
 
-Folder: `06-hq/` — screens 58–61 and 69. Screen 69 includes desktop and mobile references.
+Folder: `06-hq/` — screens 58–61, 69, and 70. Announcement references 69/70 are from Stitch project `4931965034209316203`.
 
 | File | Module | Screen | Device | Expected route | Current view | Status |
 |------|--------|--------|--------|----------------|--------------|--------|
 | `58-hq-global-audit-trail-mobile.png` | HQ | Global audit trail | Mobile | `/hq/audit` | `church/hq/audit_trail.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
 | `59-hq-permission-role-management-mobile.png` | HQ | Permission / role management | Mobile | `/hq/*` | *(HQ account / org controls)* | Partial / route gap; Missing PNG pair (desktop) |
 | `60-hq-organization-templates-standards-mobile.png` | HQ | Organization templates / standards | Mobile | `/hq/*` | *(HQ templates / standards)* | Partial / route gap; Missing PNG pair (desktop) |
-| `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
-| `69-hq-announcements-overview-desktop.png` | HQ | Announcements overview | Desktop | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
-| `69-hq-announcements-overview-mobile.png` | HQ | Announcements overview | Mobile | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
-| `70-hq-create-announcement-desktop.html` | HQ | Create announcement | Desktop | `/hq/announcements/new` | HQ announcement editor | Reference imported (V2.07 / V7) |
-| `70-hq-create-announcement-mobile.png` | HQ | Create announcement | Mobile | `/hq/announcements/new` | HQ announcement editor | Reference imported (V2.07 / V7) |
+| `61-hq-broadcast-center-desktop.png` | HQ | Broadcast center | Desktop | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Separate broadcast reference; not announcements |
+| `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Separate broadcast reference; not announcements |
+| `69-hq-announcements-overview-desktop.png` | HQ | Announcements overview | Desktop | `/hq/announcements` | `views/blessboard/v5/announcements/admin-list.ejs` | Imported from V2.07 / V7 project |
+| `69-hq-announcements-overview-mobile.png` | HQ | Announcements overview | Mobile | `/hq/announcements` | `views/blessboard/v5/announcements/admin-list.ejs` | Imported from V2.07 / V7 project |
+| `70-hq-create-announcement-desktop.html` | HQ | Create/edit announcement | Desktop | `/hq/announcements/new`, `/hq/announcements/b/:branchKey/new` | `views/blessboard/v5/announcements/admin-form.ejs` | Imported from V2.07 / V7 project |
+| `70-hq-create-announcement-mobile.png` | HQ | Create/edit announcement | Mobile | `/hq/announcements/new`, `/hq/announcements/b/:branchKey/new` | `views/blessboard/v5/announcements/admin-form.ejs` | Imported from V2.07 / V7 project |
+| `71-hq-announcement-detail-desktop.png` | HQ | Admin announcement detail | Desktop | `/hq/announcements/:id` | `views/blessboard/v5/announcements/admin-detail.ejs` | Imported from V2.07 / V7 project |
+| `71-hq-announcement-detail-mobile.png` | HQ | Admin announcement detail | Mobile | `/hq/announcements/:id` | `views/blessboard/v5/announcements/admin-detail.ejs` | Imported from V2.07 / V7 project |
+| `72-hq-review-publish-desktop.png` | HQ | Review & publish | Desktop | `/hq/announcements/:id/publish` | `views/blessboard/v5/announcements/admin-publish.ejs` | Imported from V2.07 / V7 project |
+| `72-hq-review-publish-mobile.png` | HQ | Review & publish | Mobile | `/hq/announcements/:id/publish` | `views/blessboard/v5/announcements/admin-publish.ejs` | Imported from V2.07 / V7 project |
+| `73-hq-published-scheduled-success-desktop.png` | HQ | Published/scheduled success | Desktop | `/hq/announcements/:id/success` | `views/blessboard/v5/announcements/admin-success.ejs` | Imported from V2.07 / V7 project |
+| `73-hq-published-scheduled-success-mobile.png` | HQ | Published/scheduled success | Mobile | `/hq/announcements/:id/success` | `views/blessboard/v5/announcements/admin-success.ejs` | Imported from V2.07 / V7 project |
+| `74-public-announcements-list-desktop.png` | Public | Announcements list | Desktop | `/announcements` | `views/blessboard/v5/announcements/public-list.ejs` | Imported from V2.07 / V7 project |
+| `74-public-announcements-list-mobile.png` | Public | Announcements list | Mobile | `/announcements` | `views/blessboard/v5/announcements/public-list.ejs` | Imported from V2.07 / V7 project |
+| `75-public-announcement-detail-desktop.png` | Public | Announcement detail | Desktop | `/announcements/:slug` | `views/blessboard/v5/announcements/public-detail.ejs` | Imported from V2.07 / V7 project |
+| `75-public-announcement-detail-mobile.png` | Public | Announcement detail | Mobile | `/announcements/:slug` | `views/blessboard/v5/announcements/public-detail.ejs` | Imported from V2.07 / V7 project |
+
+Branch Admin announcements continue to use `35-branch-announcements-management-desktop/mobile`.
+The shared editor implementation may use Screen 70 as a UX reference for
+`/branch-admin/announcements/new`, but the branch scope is locked to the
+current branch and exact parity is not claimed without a dedicated Stitch
+verification.
 
 Related HQ routes also include `/hq/dashboard`, `/hq/reports`, `/hq/branches`, `/hq/analytics` (implemented; not all have PNGs in this export).
 

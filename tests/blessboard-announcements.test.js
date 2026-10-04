@@ -1077,6 +1077,9 @@ describe("blessboard announcements", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-announcement-admin-detail="1"/);
     assert.match(detail.text, /Branch GUI draft/);
+    assert.match(detail.text, /Branch scope/);
+    assert.match(detail.text, /bb-ann-detail__message/);
+    assert.match(detail.text, /bb-ann-detail__info/);
     assert.match(detail.text, /data-bb-delivery="summary"/);
     assert.match(detail.text, /Delivery \/ read summary/);
     assert.match(detail.text, /data-bb-ann-preview="1"/);
@@ -1109,6 +1112,9 @@ describe("blessboard announcements", () => {
     assert.equal(publishPage.status, 200);
     assert.match(publishPage.text, /data-bb-announcement-admin-publish="1"/);
     assert.match(publishPage.text, /Confirm publish/);
+    assert.match(publishPage.text, /bb-ann-publish-layout/);
+    assert.match(publishPage.text, /bb-ann-final-preview/);
+    assert.match(publishPage.text, /name="publish_mode"/);
     assert.match(publishPage.text, /name="confirm_publish"/);
     const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
 
@@ -1204,8 +1210,10 @@ describe("blessboard announcements", () => {
     assert.match(list.text, /data-bb-announcement-admin-list="1"/);
     assert.match(list.text, /data-bb-hq-announcements="1"/);
     assert.match(list.text, /data-bb-stitch-announcements="69-hq-announcements-overview"/);
-    assert.match(list.text, /id="scope"/);
-    assert.match(list.text, /bb-ba-ann-policy/);
+    assert.match(list.text, /data-bb-ann-scope-tabs="1"/);
+    assert.match(list.text, /data-bb-hq-scope-badge="central"/);
+    assert.match(list.text, /data-bb-ann-info="broadcasts"/);
+    assert.doesNotMatch(list.text, /id="scope"/);
     assert.doesNotMatch(list.text, /bb-hq-ann-branches|data-bb-delivery="overview"/);
     assert.match(list.text, /data-bb-ann-filter="1"/);
     assert.match(list.text, /data-bb-ann-status-chips="1"/);

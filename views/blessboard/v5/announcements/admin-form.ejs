@@ -117,23 +117,44 @@
       Audience estimate appears on the confirm-publish step when members are targeted.
     </p>
     <% if (isCreate && scopeKind === 'Church-wide') { %>
-    <div class="bb-ba-field">
-      <label for="announcement-scope">Announcement scope</label>
-      <select id="announcement-scope" data-bb-announcement-scope>
-        <option value="/hq/announcements">Entire church</option>
-        <% (branches || []).forEach(function (branch) { %>
-        <option value="/hq/announcements/b/<%= branch.key %>">Specific branch: <%= branch.displayName %></option>
-        <% }) %>
-      </select>
-      <p class="bb-ba-hint">The server resolves and authorizes the selected church branch.</p>
-    </div>
+    <fieldset class="bb-ann-choice-group" data-bb-ann-scope-choices>
+      <legend>Announcement scope</legend>
+      <label class="bb-ann-choice-card is-selected">
+        <input type="radio" name="scope_choice" value="/hq/announcements" data-bb-announcement-scope checked />
+        <span><strong>Entire church</strong><small>Publish across the church scope.</small></span>
+      </label>
+      <label class="bb-ann-choice-card">
+        <input type="radio" name="scope_choice" value="" data-bb-announcement-scope />
+        <span><strong>Specific branch</strong><small>Publish to one branch only.</small></span>
+      </label>
+      <div class="bb-ba-field bb-ann-scope-branch" data-bb-ann-scope-branch hidden>
+        <label for="announcement-branch">Branch</label>
+        <select id="announcement-branch" data-bb-announcement-branch>
+          <option value="">Choose a branch</option>
+          <% (branches || []).forEach(function (branch) { %>
+          <option value="/hq/announcements/b/<%= branch.key %>"><%= branch.displayName %></option>
+          <% }) %>
+        </select>
+      </div>
+    </fieldset>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
-        var select = document.querySelector('[data-bb-announcement-scope]');
+        var scopeChoices = document.querySelectorAll('[data-bb-announcement-scope]');
+        var branchSelect = document.querySelector('[data-bb-announcement-branch]');
+        var branchWrap = document.querySelector('[data-bb-ann-scope-branch]');
         var form = document.getElementById('bb-ann-form');
-        if (select && form) select.addEventListener('change', function () {
-          form.action = select.value;
+        function updateScope() {
+          var selected = document.querySelector('[data-bb-announcement-scope]:checked');
+          var isBranch = selected && selected.value === '';
+          if (branchWrap) branchWrap.hidden = !isBranch;
+          if (form && selected && selected.value) form.action = selected.value;
+          if (form && isBranch && branchSelect && branchSelect.value) form.action = branchSelect.value;
+        }
+        scopeChoices.forEach(function (choice) {
+          choice.addEventListener('change', updateScope);
         });
+        if (branchSelect) branchSelect.addEventListener('change', updateScope);
+        updateScope();
       });
     </script>
     <% } %>
@@ -202,12 +223,12 @@
 
       <section class="bb-ba-ann-editor__section" aria-labelledby="bb-ann-audience-heading" data-bb-ann-section="audience">
         <h2 id="bb-ann-audience-heading" class="bb-ba-section-title">Audience &amp; placement</h2>
-        <fieldset class="bb-ann-fieldset">
+        <fieldset class="bb-ann-fieldset bb-ann-card-group">
           <legend>Audience</legend>
           <p class="bb-ba-hint">Who can see this announcement after it is published.</p>
-          <label class="bb-ann-check">
+          <label class="bb-ann-choice-card">
             <input type="checkbox" name="audience_members" value="1" <%= hasMembers || isCreate ? 'checked' : '' %> />
-            Members
+            <span><strong>Members</strong><small>Show in the member feed.</small></span>
           </label>
           <% if (isHq && hasAdmins) { %>
           <input type="hidden" name="audience_admins" value="1" />
@@ -218,20 +239,20 @@
             Admins
           </label>
           <% } %>
-          <label class="bb-ann-check">
+          <label class="bb-ann-choice-card">
             <input type="checkbox" name="audience_public" value="1" <%= hasPublic ? 'checked' : '' %> />
-            Church website (public visitors)
+            <span><strong>Public website</strong><small>Show to public visitors.</small></span>
           </label>
         </fieldset>
-        <fieldset class="bb-ann-fieldset">
+        <fieldset class="bb-ann-fieldset bb-ann-card-group">
           <legend>Placement</legend>
-          <label class="bb-ann-check">
+          <label class="bb-ann-choice-card">
             <input type="checkbox" name="is_pinned" value="1" <%= item && item.isPinned ? 'checked' : '' %> />
-            Pinned
+            <span><strong>Pinned</strong><small>Keep near the top of feeds.</small></span>
           </label>
-          <label class="bb-ann-check">
+          <label class="bb-ann-choice-card">
             <input type="checkbox" name="is_featured" value="1" <%= item && item.isFeatured ? 'checked' : '' %> />
-            Featured
+            <span><strong>Featured</strong><small>Highlight this announcement.</small></span>
           </label>
         </fieldset>
         <% if (isEdit && item && item.delivery && hasMembers) { %>
@@ -306,14 +327,14 @@
       <section class="bb-ba-ann-editor__section" aria-labelledby="bb-ann-attach-heading" data-bb-ann-section="attachments">
         <h2 id="bb-ann-attach-heading" class="bb-ba-section-title">Attachments</h2>
         <div class="bb-ba-field">
-          <label for="media_asset_id">Attach media asset</label>
+          <label for="media_asset_id">Add an attachment</label>
           <input
             id="media_asset_id"
             type="text"
             name="media_asset_id"
             maxlength="36"
             value=""
-            placeholder="Optional — use picker"
+            placeholder="Choose from media library"
             data-bb-ann-media-id
             autocomplete="off"
           />
@@ -418,7 +439,7 @@
     </form>
 
     <% if (typeof showPreview !== 'undefined' && showPreview) { %>
-    <aside class="bb-ann-preview-panel" data-bb-ann-live-preview="1" aria-live="polite">
+      <aside class="bb-ann-preview-panel" data-bb-ann-live-preview="1" aria-live="polite">
       <h2 class="bb-ba-section-title">Member preview</h2>
       <p class="bb-ba-hint">How this may appear in the member feed (draft wording until published).</p>
       <article class="bb-ann-preview-card">
@@ -429,6 +450,10 @@
         <p class="bb-ann-preview-card__body" data-bb-ann-preview-body-out><%= previewBody %></p>
       </article>
       <p class="bb-ba-hint">No delivery percentages or analytics are shown here.</p>
+      <section class="bb-ann-readiness" data-bb-ann-readiness="1">
+        <h3>Readiness</h3>
+        <p>Save a draft before publishing. Required fields are checked by the existing form.</p>
+      </section>
     </aside>
     <% } %>
   </div>

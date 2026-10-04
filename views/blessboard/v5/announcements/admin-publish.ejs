@@ -74,7 +74,9 @@
   <%- include('../partials/form-errors', { errors: [error], id: 'bb-ann-publish-errors' }) %>
   <% } %>
 
-  <section class="bb-ba-panel" data-bb-ann-publish-review="1">
+  <div class="bb-ann-publish-layout">
+  <div class="bb-ann-publish-review">
+  <section class="bb-ba-panel bb-ann-publish-summary" data-bb-ann-publish-review="1">
     <h2 class="bb-ba-section-title"><%= item.title %></h2>
     <p class="bb-ann-body"><%= item.body %></p>
     <dl class="bb-ann-dl">
@@ -153,6 +155,17 @@
       </button>
     </div>
   </form>
+  </div>
+  <aside class="bb-ann-final-preview" aria-label="Final announcement preview">
+    <h2 class="bb-ba-section-title">Final preview</h2>
+    <article class="bb-ann-preview-card">
+      <span class="bb-ba-chip bb-ba-chip--muted"><%= item.branchId ? 'Branch' : 'Church-wide' %></span>
+      <h3><%= item.title %></h3>
+      <p class="bb-ann-preview-card__body"><%= item.body %></p>
+      <% if (item.actionUrl) { %><span class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"><%= item.actionLabel || 'Open link' %></span><% } %>
+    </article>
+  </aside>
+  </div>
   <script>
     (function () {
       var form = document.querySelector('[data-bb-ann-publish-form]');

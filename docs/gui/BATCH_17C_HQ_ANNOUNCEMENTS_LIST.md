@@ -1,6 +1,6 @@
-# Batch 17C — HQ Announcements list & delivery overview
+# Batch 17C — HQ Announcements list & delivery overview (historical implementation note)
 
-**Date:** 2026-07-18  
+**Date:** 2026-07-18 · **V2.07 reconciliation:** 2026-10-04
 **Scope:** HQ Admin `/hq/announcements` (and branch-scoped `/hq/announcements/b/:key`) **list presentation + delivery overview only**. **Announcement editing not started.**  
 **References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 71), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_17B_HQ_REGISTRATIONS.md`](./BATCH_17B_HQ_REGISTRATIONS.md), [`BATCH_13A_BRANCH_ANNOUNCEMENTS_LIST.md`](./BATCH_13A_BRANCH_ANNOUNCEMENTS_LIST.md)
 
@@ -8,10 +8,11 @@
 
 | Role | Exact title | ID |
 |------|-------------|-----|
-| Desktop | `61-hq-broadcast-center-desktop` | `ffa76443af8c4aa4ab97086fc8922b73` |
-| Mobile | `61-hq-broadcast-center-mobile` | `b4184b738eca442d8ca9ff3dbd445bec` |
+| Desktop | `69-hq-announcements-overview-desktop` | Stitch project `4931965034209316203` |
+| Mobile | `69-hq-announcements-overview-mobile` | Stitch project `4931965034209316203` |
 
-Marker: `data-bb-stitch-announcements="61-hq-broadcast-center"` (plus `data-bb-hq-announcements="1"`).
+Current marker: `data-bb-stitch-announcements="69-hq-announcements-overview"` (plus `data-bb-hq-announcements="1"`).
+Screen 61 remains the separate Broadcast Center reference for `/hq/broadcasts`.
 
 Branch-admin mount of the same template keeps Stitch 35 (`35-branch-announcements-management`).
 
@@ -19,7 +20,7 @@ Branch-admin mount of the same template keeps Stitch 35 (`35-branch-announcement
 
 | Path | Change |
 |------|--------|
-| `views/blessboard/v5/announcements/admin-list.ejs` | HQ Stitch 61 chrome; delivery overview note; HQ-only delivery column/cards from real `item.delivery` |
+| `views/blessboard/v5/announcements/admin-list.ejs` | HQ Stitch 69 chrome; delivery overview note; HQ-only delivery column/cards from real `item.delivery` |
 | `public/blessboard/v5/hq-admin.css` | Delivery overview styles (`?v=34`) |
 | `views/blessboard/v5/partials/hq-shell-start.ejs` | CSS cache bump |
 | `tests/blessboard-announcements.test.js` | HQ list markers, search/no-results, members vs admins delivery rendering |
@@ -91,7 +92,7 @@ When members audience is not targeted: `data-bb-delivery="unavailable"` (em dash
 ```
 feat(gui): HQ announcements list and delivery overview (Batch 17C)
 
-Match /hq/announcements to Stitch 61 broadcast-center chrome with real
+Match /hq/announcements to Stitch 69 announcements-overview chrome with real
 eligible/read/unread counts when members are targeted. No fabricated
 percentages or new channels. Editing unchanged.
 ```

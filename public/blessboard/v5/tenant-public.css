@@ -7317,6 +7317,9 @@ a.bb-tp-content-card:hover {
 
 /* BB21–BB22 public announcements */
 .bb-tp-announcements-hero { margin-bottom: 1.5rem; }
+.bb-tp-ann-context { display:flex; align-items:center; gap:.7rem; margin-bottom:1rem; padding:.8rem 1rem; border:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent); border-radius:12px; background:var(--color-surface-subtle); }
+.bb-tp-ann-context p { margin:0; color:var(--bb-color-muted); }
+.bb-tp-ann-attachment { display:inline-block; margin-bottom:.7rem; color:var(--bb-color-muted); font-size:.8rem; }
 .bb-tp-ann-featured,
 .bb-tp-ann-card {
   background: var(--color-surface);
@@ -7360,6 +7363,13 @@ a.bb-tp-content-card:hover {
 .bb-tp-ann-title a:hover { text-decoration: underline; }
 .bb-tp-ann-body { margin: 0 0 0.85rem; color: var(--bb-color-border); line-height: 1.55; }
 .bb-tp-announcement-detail .bb-tp-ann-title { font-size: clamp(1.4rem, 3vw, 2rem); }
+.bb-tp-ann-detail__body { padding-top:1.5rem; padding-bottom:3rem; max-width:46rem; }
+.bb-tp-ann-detail__message { margin-top:1rem; white-space:pre-wrap; line-height:1.6; }
+.bb-tp-ann-detail__attachments { margin-top:1.5rem; padding:1rem; border:1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent); border-radius:12px; background:var(--color-surface-subtle); }
+.bb-tp-ann-detail__attachments h2 { margin:0 0 .7rem; font-size:1rem; }
+.bb-tp-ann-detail__attachments ul { display:grid; gap:.5rem; margin:0; padding:0; list-style:none; }
+.bb-tp-ann-detail__attachments li { display:flex; flex-wrap:wrap; align-items:center; gap:.45rem; padding:.65rem .7rem; border-radius:8px; background:var(--color-surface); }
+.bb-tp-ann-detail__attachments small { color:var(--bb-color-muted); }
 
 @media (max-width: 720px) {
   .bb-tp-announcements .bb-tp-ann-featured,

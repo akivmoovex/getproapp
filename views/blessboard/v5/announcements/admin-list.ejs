@@ -132,7 +132,8 @@
         <span>Announcements</span>
       </p>
       <div class="bb-ba-ann__title-row">
-        <h1 class="bb-ba-page-head__title"><%= isHq ? 'BlessBoard Announcements' : 'Announcements management' %></h1>
+        <h1 class="bb-ba-page-head__title"><%= isHq ? 'Announcements' : 'Announcements management' %></h1>
+        <% if (isHq) { %><span class="bb-ba-chip bb-ba-chip--muted" data-bb-hq-scope-badge="central">HQ Central Scope</span><% } %>
         <% if (typeof total === 'number' && total >= 0) { %>
         <span class="bb-ba-ann__count" data-bb-ann-total="<%= total %>">
           <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'announcement' : 'announcements') %>
@@ -160,7 +161,7 @@
   </header>
 
   <% if (isHq) { %>
-  <p class="bb-ba-ann-policy">Announcements appear in BlessBoard feeds and do not send SMS or email. <a href="/hq/broadcasts">Use Broadcasts for direct delivery.</a></p>
+  <aside class="bb-ba-ann-info" data-bb-ann-info="broadcasts"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>Announcements</strong> appear in BlessBoard feeds. For direct delivery, <a href="/hq/broadcasts">Go to Broadcasts</a>.</p></aside>
   <% } %>
 
   <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
@@ -179,18 +180,6 @@
     data-bb-ann-filter="1"
     role="search"
   >
-    <% if (isHq) { %>
-    <div class="bb-ba-field bb-ba-ann-scope-control">
-      <label for="scope">Scope</label>
-      <select id="scope" name="scope" onchange="if (this.value) window.location.href = this.value">
-        <option value="/hq/announcements" <%= activeScope === 'all' ? 'selected' : '' %>>All scopes</option>
-        <option value="/hq/announcements?scope=church" <%= activeScope === 'church' ? 'selected' : '' %>>Church-wide</option>
-        <% (branches || []).forEach(function (branch) { %>
-        <option value="/hq/announcements/b/<%= branch.key %>" <%= activeScope === branch.key ? 'selected' : '' %>><%= branch.displayName %></option>
-        <% }) %>
-      </select>
-    </div>
-    <% } %>
     <div class="bb-ba-field">
       <label for="q">Search</label>
       <input
@@ -230,6 +219,16 @@
       <% } %>
     </div>
   </form>
+
+  <% if (isHq) { %>
+  <nav class="bb-ba-ann-scope-tabs" aria-label="Announcement scope" data-bb-ann-scope-tabs="1">
+    <a class="bb-ba-ann-chip<%= !activeScope || activeScope === 'all' ? ' is-active' : '' %>" href="/hq/announcements" <%= !activeScope || activeScope === 'all' ? 'aria-current="page"' : '' %>>All</a>
+    <a class="bb-ba-ann-chip<%= activeScope === 'church' ? ' is-active' : '' %>" href="/hq/announcements?scope=church" <%= activeScope === 'church' ? 'aria-current="page"' : '' %>>Church-wide</a>
+    <% (branches || []).forEach(function (branch) { %>
+    <a class="bb-ba-ann-chip<%= activeScope === branch.key ? ' is-active' : '' %>" href="/hq/announcements/b/<%= branch.key %>" <%= activeScope === branch.key ? 'aria-current="page"' : '' %>><%= branch.displayName %></a>
+    <% }) %>
+  </nav>
+  <% } %>
 
   <nav class="bb-ba-ann-chips" aria-label="Status filters" data-bb-ann-status-chips="1">
     <% statusOptions.forEach(function (opt) { %>
@@ -296,11 +295,11 @@
         <thead>
           <tr>
             <th scope="col">Title</th>
-            <th scope="col">Message</th>
+            <th scope="col">Scope</th>
             <th scope="col">Audience</th>
-            <th scope="col">Source</th>
-            <th scope="col">Published</th>
             <th scope="col">Status</th>
+            <th scope="col">Placement</th>
+            <th scope="col">Published</th>
             <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
           </tr>
         </thead>
@@ -324,11 +323,16 @@
               </div>
               <% } %>
             </td>
-            <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
-            <td><%= audienceLabel(item.audiences) %></td>
+            <td>
+              <a href="<%= listBase %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
+              <div class="bb-ann-snippet"><%= snippet(item.body) %></div>
+              <% if (attachmentCount) { %><span class="bb-ba-chip bb-ba-chip--tiny bb-ba-chip--muted"><span class="material-symbols-outlined" aria-hidden="true">attach_file</span> <%= attachmentCount %></span><% } %>
+            </td>
             <td><%= sourceLabel(item) %></td>
-            <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
+            <td><%= audienceLabel(item.audiences) %></td>
             <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
+            <td><%= item.isPinned ? 'Pinned' : '' %><%= item.isPinned && item.isFeatured ? ' · ' : '' %><%= item.isFeatured ? 'Featured' : (!item.isPinned ? '—' : '') %></td>
+            <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
             <td class="bb-ba-table__actions">
               <a
                 class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
@@ -388,6 +392,10 @@
           <p class="bb-ba-ann-card__line">
             <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
             <%= sourceLabel(item) %>
+          </p>
+          <p class="bb-ba-ann-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            <%= audienceLabel(item.audiences) %> · <%= item.isPinned ? 'Pinned' : '' %><%= item.isPinned && item.isFeatured ? ' · ' : '' %><%= item.isFeatured ? 'Featured' : (!item.isPinned ? 'No placement' : '') %>
           </p>
         </div>
         <div class="bb-ba-ann-card__actions">
