@@ -625,13 +625,36 @@ describe("v7 tenant isolation — ActiveClinic HTTP and services", () => {
     const bbOnAc = await request(acApp).get("/clinics/iso-church-a");
     isolationDenied(bbOnAc, "church slug on /clinics");
 
+    const bbTenant = await provisionPlatformTenant(pool, {
+      organizationKey: `bb-shadow-${clinicA.result.slug}`,
+      displayName: "BlessBoard shadow tenant",
+      legalName: null,
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: `bb-shadow-${clinicA.result.slug}`,
+      hostname: `bb-shadow-${clinicA.result.slug}.blessboard.test`,
+      domainType: "canonical",
+      deploymentCode: "blessboard-org-staging",
+      isPrimary: true,
+    });
+    assert.equal(bbTenant.ok, true, JSON.stringify(bbTenant));
+    const bbChurch = await provisionBlessBoardChurch(pool, {
+      organizationKey: `bb-shadow-${clinicA.result.slug}`,
+      churchKey: `bb-shadow-${clinicA.result.slug}`,
+      displayName: "BlessBoard shadow church",
+      dataEnvironment: "testing",
+      hqBranchKey: "hq",
+      hqBranchDisplayName: "Shadow HQ",
+    });
+    assert.equal(bbChurch.ok, true, JSON.stringify(bbChurch));
+
     const bbInstance = await ensureBlessBoardWebsiteInstance(pool, {
-      organizationId: clinicA.result.organizationId,
+      organizationId: bbTenant.records.organization.id,
       slug: `bb-shadow-${clinicA.result.slug}`,
     });
     assert.equal(bbInstance.ok, true, JSON.stringify(bbInstance));
     const publishedBb = await publicationService.publishWebsiteDraft(pool, {
-      organizationId: clinicA.result.organizationId,
+      organizationId: bbTenant.records.organization.id,
       instanceId: bbInstance.instance.id,
       allowEmpty: true,
       forceTenantPublish: true,
@@ -639,7 +662,7 @@ describe("v7 tenant isolation — ActiveClinic HTTP and services", () => {
     assert.equal(publishedBb.ok, true, JSON.stringify(publishedBb));
     const bbVersions = await versionService.listWebsiteVersions(pool, {
       instanceId: bbInstance.instance.id,
-      organizationId: clinicA.result.organizationId,
+      organizationId: bbTenant.records.organization.id,
     });
     const bbVersion = (bbVersions.versions || [])[0];
     assert.ok(bbVersion);
@@ -650,8 +673,8 @@ describe("v7 tenant isolation — ActiveClinic HTTP and services", () => {
     isolationDenied(leak, "BlessBoard version via AC path");
 
     const restoreBb = await publicationService.restoreWebsiteVersionLive(pool, {
-      organizationId: clinicA.result.organizationId,
-      instanceId: clinicA.instance.id,
+      organizationId: bbTenant.records.organization.id,
+      instanceId: bbInstance.instance.id,
       expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
       versionId: bbVersion.id,
     });
