@@ -3387,6 +3387,8 @@ html {
     display: grid;
     grid-template-columns: 4.25rem 1fr;
     align-items: stretch;
+    background: var(--bb-surface-low);
+    border-radius: 1rem;
   }
 
   .bb-tp-event-card__media {
@@ -3417,11 +3419,19 @@ html {
     justify-content: center;
     border-radius: 0;
     box-shadow: none;
+    background: var(--bb-surface);
+    color: var(--bb-color-primary);
+    border: 1px solid var(--bb-line);
     padding: 0.65rem 0.35rem;
   }
 
   .bb-tp-event-card__body {
     padding: 0.9rem 1rem;
+  }
+
+  .bb-tp-event-card__title {
+    font-size: 1rem;
+    line-height: 1.3;
   }
 
   .bb-tp-event-card__summary {
@@ -5324,6 +5334,7 @@ a.bb-tp-content-card:hover {
   border-radius: 1.15rem;
   background: var(--color-surface);
   border: 1px solid color-mix(in srgb, var(--color-border-default) 95%, transparent);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-color-ink) 6%, transparent);
 }
 
 .bb-tp-event-card__media {
@@ -5344,6 +5355,7 @@ a.bb-tp-content-card:hover {
   border: 1px solid color-mix(in srgb, var(--color-border-default) 95%, transparent);
   border-radius: 1.25rem;
   overflow: hidden;
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--bb-color-ink) 7%, transparent);
 }
 
 @media (min-width: 900px) {
@@ -5394,6 +5406,22 @@ a.bb-tp-content-card:hover {
   margin: 0 0 0.75rem;
   color: var(--bb-muted);
   font-size: 0.95rem;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-sermon-feature {
+    gap: 0;
+    border-radius: 1rem;
+  }
+
+  .bb-tp-sermon-feature__copy {
+    padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .bb-tp-sermon-feature__title {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
 }
 
 .bb-tp-cta-band {
