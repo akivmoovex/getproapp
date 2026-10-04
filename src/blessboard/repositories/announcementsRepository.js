@@ -114,9 +114,12 @@ async function findAnnouncementById(client, id) {
 async function listAnnouncements(client, opts) {
   const params = [opts.churchId];
   let where = `a.church_id = $1`;
-  if (opts.branchId === null) {
+  const scopeMode = ["all", "church", "branch"].includes(opts.scopeMode)
+    ? opts.scopeMode
+    : (opts.branchId === null ? "church" : opts.branchId ? "branch" : "all");
+  if (scopeMode === "church") {
     where += ` AND a.branch_id IS NULL`;
-  } else if (opts.branchId) {
+  } else if (scopeMode === "branch" && opts.branchId) {
     params.push(opts.branchId);
     where += ` AND a.branch_id = $${params.length}`;
   }
@@ -129,7 +132,7 @@ async function listAnnouncements(client, opts) {
       ? String(opts.audienceKey).trim().toLowerCase()
       : "";
   let from = `FROM blessboard.announcements a`;
-  if (audienceKey === "members" || audienceKey === "admins") {
+  if (audienceKey === "members" || audienceKey === "admins" || audienceKey === "public") {
     params.push(audienceKey);
     from += ` INNER JOIN blessboard.announcement_audiences aud
                 ON aud.announcement_id = a.id AND aud.audience_key = $${params.length}`;

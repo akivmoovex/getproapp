@@ -9,13 +9,14 @@
   var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
   var activeAudience = typeof audienceFilter !== 'undefined' && audienceFilter ? String(audienceFilter) : '';
-  var hasFilter = Boolean(searchQ || activeStatus || activeAudience);
+  var activeScope = typeof scopeFilter !== 'undefined' && scopeFilter ? String(scopeFilter) : '';
+  var hasFilter = Boolean(searchQ || activeStatus || activeAudience || (activeScope && activeScope !== 'all'));
   var listBase = typeof basePath !== 'undefined' && basePath ? String(basePath) : '/branch-admin/announcements';
   var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
   var statusOptions = [
     { key: '', label: 'All' },
     { key: 'draft', label: 'Draft' },
-    { key: 'timed', label: 'Timed' },
+    { key: 'scheduled', label: isHq ? 'Scheduled' : 'Timed' },
     { key: 'published', label: 'Published' },
     { key: 'expired', label: 'Expired' },
     { key: 'archived', label: 'Archived' }
@@ -23,7 +24,6 @@
   var audienceOptions = [
     { key: '', label: 'All' },
     { key: 'members', label: 'Members' },
-    { key: 'admins', label: 'Admins' },
     { key: 'public', label: 'Website' }
   ];
   function statusLabel(s) {
@@ -88,6 +88,7 @@
       q: searchQ,
       status: activeStatus,
       audience: activeAudience,
+      scope: activeScope === 'church' ? 'church' : '',
       page: 1
     };
     Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
@@ -142,7 +143,7 @@
         <% if (isHq) { %>
         Church-wide and campus announcements for
         <strong><%= churchDisplayName || scopeLabel %></strong>.
-        Delivery counts show eligible members plus reads when the members audience is targeted — no percentages or branch-reach scores.
+        Announcements appear in BlessBoard feeds and do not send SMS or email. Use <a href="/hq/broadcasts">Broadcasts</a> for direct delivery.
         <% } else { %>
         Manage communications for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : (churchDisplayName || scopeLabel) %></strong>
@@ -206,6 +207,18 @@
     data-bb-ann-filter="1"
     role="search"
   >
+    <% if (isHq) { %>
+    <div class="bb-ba-field">
+      <label for="scope">Scope</label>
+      <select id="scope" name="scope" onchange="if (this.value) window.location.href = this.value">
+        <option value="/hq/announcements" <%= activeScope === 'all' ? 'selected' : '' %>>All scopes</option>
+        <option value="/hq/announcements?scope=church" <%= activeScope === 'church' ? 'selected' : '' %>>Church-wide</option>
+        <% (branches || []).forEach(function (branch) { %>
+        <option value="/hq/announcements/b/<%= branch.key %>" <%= activeScope === branch.key ? 'selected' : '' %>><%= branch.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% } %>
     <div class="bb-ba-field">
       <label for="q">Search</label>
       <input
@@ -222,7 +235,7 @@
       <label for="status">Status</label>
       <select id="status" name="status">
         <option value="">All statuses</option>
-        <% ['draft','published','archived'].forEach(function (st) { %>
+        <% ['draft','scheduled','published','archived'].forEach(function (st) { %>
         <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
         <% }) %>
       </select>
@@ -232,7 +245,7 @@
       <select id="audience" name="audience">
         <option value="">All audiences</option>
         <option value="members" <%= activeAudience === 'members' ? 'selected' : '' %>>Members</option>
-        <option value="admins" <%= activeAudience === 'admins' ? 'selected' : '' %>>Admins</option>
+        <option value="public" <%= activeAudience === 'public' ? 'selected' : '' %>>Public website</option>
       </select>
     </div>
     <div class="bb-ba-filter__actions">

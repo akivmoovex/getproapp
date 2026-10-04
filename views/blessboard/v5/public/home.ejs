@@ -447,16 +447,16 @@
       sectionTitle: teasers.announcement.heading || 'Announcements',
       sectionLead: teasers.announcement.bodyText || '',
       sectionHref: hrefFor('/announcements'),
-      sectionLinkLabel: 'View archive',
+      sectionLinkLabel: 'View all',
       sectionRuled: true
     }) %>
-    <article class="bb-tp-home-announcements__card">
+    <a class="bb-tp-home-announcements__card" href="<%= hrefFor(teasers.announcement.href || '/announcements') %>">
       <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
       <div>
         <h3><%= teasers.announcement.heading || 'Community update' %></h3>
         <% if (teasers.announcement.bodyText) { %><p><%= teasers.announcement.bodyText %></p><% } %>
       </div>
-    </article>
+    </a>
   </section>
   <% } %>
 

@@ -1006,7 +1006,7 @@ describe("blessboard announcements", () => {
     assert.match(list.text, /data-bb-ann-audience-chips="1"/);
     assert.match(list.text, /data-bb-ann-table="1"/);
     assert.match(list.text, /data-bb-ann-cards="1"/);
-    assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
+    assert.doesNotMatch(list.text, /Active Today|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
     assert.doesNotMatch(list.text, /data-bb-delivery=/);
     assert.doesNotMatch(list.text, /data-bb-hq-announcements=/);
     assert.doesNotMatch(list.text, /data-bb-ann-action="edit"/);
@@ -1228,7 +1228,7 @@ describe("blessboard announcements", () => {
     assert.match(newForm.text, /name="title"/);
     assert.match(newForm.text, /name="body"/);
     assert.match(newForm.text, /name="audience_members"/);
-    assert.match(newForm.text, /name="audience_admins"/);
+    assert.doesNotMatch(newForm.text, /name="audience_admins"/);
     assert.match(newForm.text, /name="is_pinned"/);
     assert.match(newForm.text, /name="confirm_publish"/);
     assert.match(newForm.text, /data-bb-ann-save-draft="1"/);

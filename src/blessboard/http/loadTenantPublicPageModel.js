@@ -1333,6 +1333,20 @@ async function loadTenantPublicPageModel(db, input) {
 
   if (pageKey === "home") {
     homeTeasers.announcement = pickAnnouncementHighlight(pageSections);
+    const canonicalAnnouncements = await listPublicWebsiteAnnouncements(db, {
+      churchId,
+      branchId: scopedBranchActive ? contentBranchId : null,
+      limit: 1,
+    });
+    const announcement = canonicalAnnouncements.items && canonicalAnnouncements.items[0];
+    homeTeasers.announcement = announcement
+      ? {
+          heading: announcement.title,
+          bodyText: announcement.body,
+          announcementId: announcement.id,
+          href: `/announcements/${announcement.id}`,
+        }
+      : null;
 
     const ministries = await loadEntityList(
       listPublishedMinistries,

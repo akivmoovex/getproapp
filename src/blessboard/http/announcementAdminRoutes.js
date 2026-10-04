@@ -457,9 +457,14 @@ function createAnnouncementAdminRouter(deps) {
       if (page > MAX_LIST_PAGE) page = MAX_LIST_PAGE;
       const limit = PAGE_SIZE;
       const offset = (page - 1) * limit;
+      const requestedScope = String((req.query && req.query.scope) || "").toLowerCase();
+      const listAllScopes = variant === "hq" && !scope.branchId && !req.params.branchKey &&
+        requestedScope !== "church";
+      const listScopeMode = listAllScopes ? "all" : (scope.branchId ? "branch" : "church");
       const listed = await listAdminAnnouncements(getPool(), {
         churchId: scope.churchId,
-        branchId: scope.branchId,
+        scopeMode: listScopeMode,
+        ...(listScopeMode === "branch" ? { branchId: scope.branchId } : {}),
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
@@ -504,6 +509,8 @@ function createAnnouncementAdminRouter(deps) {
           q,
           statusFilter: status,
           audienceFilter: audience,
+          scopeFilter: listAllScopes ? "all" : (scope.branchId ? scope.branchKey : "church"),
+          allScopes: listAllScopes,
           page,
           limit,
           total,
@@ -516,6 +523,11 @@ function createAnnouncementAdminRouter(deps) {
     router.get(`${mountPrefix}/new`, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
+      let branches = [];
+      if (variant === "hq" && !scope.branchId) {
+        const result = await listBlessBoardBranches(getPool(), scope.churchId);
+        branches = result.ok ? result.branches : [];
+      }
       const html = renderView(
         "announcements/admin-form.ejs",
         await shellLocals(req, res, {
@@ -526,6 +538,7 @@ function createAnnouncementAdminRouter(deps) {
           formMode: "create",
           showPreview: true,
           mediaUploadUrl: mediaUploadUrlForScope(scope),
+          branches,
           ...editorScopeExtras(scope, isBranchScoped),
         })
       );
@@ -561,6 +574,11 @@ function createAnnouncementAdminRouter(deps) {
         ...scheduleFieldsFromBody(body),
       });
       if (!created.ok) {
+        let branches = [];
+        if (variant === "hq" && !scope.branchId) {
+          const result = await listBlessBoardBranches(getPool(), scope.churchId);
+          branches = result.ok ? result.branches : [];
+        }
         const html = renderView(
           "announcements/admin-form.ejs",
           await shellLocals(req, res, {
@@ -571,6 +589,7 @@ function createAnnouncementAdminRouter(deps) {
             formMode: "create",
             showPreview: true,
             mediaUploadUrl: mediaUploadUrlForScope(scope),
+            branches,
             ...editorScopeExtras(scope, isBranchScoped),
           })
         );

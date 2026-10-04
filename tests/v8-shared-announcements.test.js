@@ -405,8 +405,8 @@ describe("V8 shared announcements AN01–AN05", () => {
     );
     assert.match(css, /mx-ann--blessboard/);
     assert.match(css, /mx-ann--activeclinic/);
-    assert.match(css, /#6c5ce7/);
-    assert.match(css, /#0f766e/);
+    assert.match(css, /--color-brand-primary/);
+    assert.match(css, /--mx-ann-accent-soft/);
     assert.match(css, /@media \(max-width:\s*720px\)/);
     assert.match(css, /\.mx-ann-actions\s*\{[^}]*flex-direction:\s*column/s);
     assert.match(css, /\.mx-ann-top\s*\{[^}]*flex-direction:\s*column/s);

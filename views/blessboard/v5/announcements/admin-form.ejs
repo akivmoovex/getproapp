@@ -116,6 +116,27 @@
       for <strong><%= scopeName %></strong>.
       Audience estimate appears on the confirm-publish step when members are targeted.
     </p>
+    <% if (isCreate && scopeKind === 'Church-wide') { %>
+    <div class="bb-ba-field">
+      <label for="announcement-scope">Announcement scope</label>
+      <select id="announcement-scope" data-bb-announcement-scope>
+        <option value="/hq/announcements">Entire church</option>
+        <% (branches || []).forEach(function (branch) { %>
+        <option value="/hq/announcements/b/<%= branch.key %>">Specific branch: <%= branch.displayName %></option>
+        <% }) %>
+      </select>
+      <p class="bb-ba-hint">The server resolves and authorizes the selected church branch.</p>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var select = document.querySelector('[data-bb-announcement-scope]');
+        var form = document.getElementById('bb-ann-form');
+        if (select && form) select.addEventListener('change', function () {
+          form.action = select.value;
+        });
+      });
+    </script>
+    <% } %>
     <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
     <p class="bb-ba-hint"><a href="/hq/announcements">← Church-wide announcements</a></p>
     <% } %>
@@ -184,10 +205,15 @@
             <input type="checkbox" name="audience_members" value="1" <%= hasMembers || isCreate ? 'checked' : '' %> />
             Members
           </label>
+          <% if (isHq && hasAdmins) { %>
+          <input type="hidden" name="audience_admins" value="1" />
+          <% } %>
+          <% if (!isHq) { %>
           <label class="bb-ann-check">
             <input type="checkbox" name="audience_admins" value="1" <%= hasAdmins ? 'checked' : '' %> />
             Admins
           </label>
+          <% } %>
           <label class="bb-ann-check">
             <input type="checkbox" name="audience_public" value="1" <%= hasPublic ? 'checked' : '' %> />
             Church website (public visitors)

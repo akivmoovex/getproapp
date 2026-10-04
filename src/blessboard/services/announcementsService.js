@@ -777,9 +777,15 @@ async function listAdminAnnouncements(db, input) {
   if (!churchId) {
     return { ok: false, status: STATUS.INVALID_INPUT, items: [], total: 0, reason: "church_id" };
   }
+  const scopeMode = ["all", "church", "branch"].includes(input && input.scopeMode)
+    ? input.scopeMode
+    : (input && input.allScopes ? "all" : (input && input.branchId ? "branch" : "church"));
   let branchId;
-  if (Object.prototype.hasOwnProperty.call(input || {}, "branchId")) {
+  if (scopeMode === "branch" && Object.prototype.hasOwnProperty.call(input || {}, "branchId")) {
     branchId = input.branchId == null || input.branchId === "" ? null : String(input.branchId);
+  }
+  if (scopeMode === "branch" && !branchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, items: [], total: 0, reason: "branch_id" };
   }
   try {
     return await withClient(db, async (client) => {
@@ -787,13 +793,13 @@ async function listAdminAnnouncements(db, input) {
         const authz = await authorizeActor(client, {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
-          branchId: branchId == null ? null : branchId,
+          branchId: scopeMode === "branch" ? branchId : null,
           permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: authz.reason };
         }
-        if (branchId == null && authz.mode === "branch") {
+        if (scopeMode !== "branch" && authz.mode === "branch") {
           return {
             ok: false,
             status: STATUS.FORBIDDEN,
@@ -806,6 +812,7 @@ async function listAdminAnnouncements(db, input) {
       const listed = await repo.listAnnouncements(client, {
         churchId,
         branchId,
+        scopeMode,
         status: input.status || null,
         audienceKey: input.audienceKey || null,
         q: input.q || null,

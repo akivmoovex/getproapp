@@ -1,9 +1,9 @@
 # BlessBoard Stitch Screen Inventory
 
-**Last updated:** 2026-07-10  
+**Last updated:** 2026-10-04
 **CSS freeze baseline:** v36; Batch A v37; Batch B Auth v38; desktop menu hotfix v39; Batch C v40; Batch D Branch Admin v41; Batch E Platform Admin v42  
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
-**Unique PNGs in this inventory:** 110 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
+**Unique PNGs in this inventory:** 112 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
 
 **Goal:** Every PNG-backed screen must match via EJS + CSS. Do **not** display Stitch PNGs as UI.
 
@@ -207,7 +207,7 @@ Folder: `05-leader/`
 
 ## 6. HQ
 
-Folder: `06-hq/` — **mobile PNGs only** (58–61). Missing PNG pair for desktop.
+Folder: `06-hq/` — screens 58–61 and 69. Screen 69 includes desktop and mobile references.
 
 | File | Module | Screen | Device | Expected route | Current view | Status |
 |------|--------|--------|--------|----------------|--------------|--------|
@@ -215,6 +215,8 @@ Folder: `06-hq/` — **mobile PNGs only** (58–61). Missing PNG pair for deskto
 | `59-hq-permission-role-management-mobile.png` | HQ | Permission / role management | Mobile | `/hq/*` | *(HQ account / org controls)* | Partial / route gap; Missing PNG pair (desktop) |
 | `60-hq-organization-templates-standards-mobile.png` | HQ | Organization templates / standards | Mobile | `/hq/*` | *(HQ templates / standards)* | Partial / route gap; Missing PNG pair (desktop) |
 | `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
+| `69-hq-announcements-overview-desktop.png` | HQ | Announcements overview | Desktop | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
+| `69-hq-announcements-overview-mobile.png` | HQ | Announcements overview | Mobile | `/hq/announcements` | HQ announcements surface | Reference imported (V2.07 / V7) |
 
 Related HQ routes also include `/hq/dashboard`, `/hq/reports`, `/hq/branches`, `/hq/analytics` (implemented; not all have PNGs in this export).
 
@@ -351,9 +353,9 @@ Confirmed working routes from the codebase (representative set):
 | 03 Member portal | 13 |
 | 04 Branch admin | 42 |
 | 05 Leader | 10 |
-| 06 HQ (mobile only) | 4 |
+| 06 HQ | 6 |
 | 07 Platform admin | 14 |
-| **Total (excl. `* 2` / `* 3` duplicates)** | **110** |
+| **Total (excl. `* 2` / `* 3` duplicates)** | **112** |
 
 See also: [`docs/blessboard-stitch-asset-map.md`](blessboard-stitch-asset-map.md), [`docs/blessboard-screen-implementation-status.md`](blessboard-screen-implementation-status.md), [`docs/blessboard-final-stitch-parity-report.md`](blessboard-final-stitch-parity-report.md).
 
