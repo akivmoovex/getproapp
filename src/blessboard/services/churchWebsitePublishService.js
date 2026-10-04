@@ -8,6 +8,7 @@
 
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const publicContentRepo = require("../repositories/publicContentRepository");
+const publicationVersionRepo = require("../repositories/websitePublicationVersionRepository");
 const appRepo = require("../repositories/platformChurchRegistrationRepository");
 const {
   resolveOrganizationEntitlements,
@@ -705,32 +706,11 @@ async function publishChurchWebsite(db, input) {
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
         if (draftN === 0 && approvedN === 0 && pendingOverlayDrafts === 0) {
-          const recentRes = branchId
-            ? await client.query(
-                `SELECT id, version_number, published_at, published_by
-                   FROM blessboard.website_publication_versions
-                  WHERE organization_id = $1
-                    AND branch_id = $2
-                    AND published_by = $3
-                    AND status = 'published'
-                    AND published_at > now() - interval '15 seconds'
-                  ORDER BY published_at DESC
-                  LIMIT 1`,
-                [inner.organizationId, branchId, input.actorUserId]
-              )
-            : await client.query(
-                `SELECT id, version_number, published_at, published_by
-                   FROM blessboard.website_publication_versions
-                  WHERE organization_id = $1
-                    AND branch_id IS NULL
-                    AND published_by = $2
-                    AND status = 'published'
-                    AND published_at > now() - interval '15 seconds'
-                  ORDER BY published_at DESC
-                  LIMIT 1`,
-                [inner.organizationId, input.actorUserId]
-              );
-          const recent = recentRes.rows[0];
+          const recent = await publicationVersionRepo.findLatestPlatformVersion(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+          });
           if (recent && recent.id) {
             return {
               ok: true,
@@ -928,6 +908,7 @@ async function publishChurchWebsite(db, input) {
           const {
             ensureEngineContent,
           } = require("../../platform/website-engine/blessboardBridge");
+          const { buildPublicationSnapshot } = require("./websitePublicationVersionService");
           const ensured = await ensureBlessBoardWebsiteInstance(client, {
             organizationId: inner.organizationId,
             slug: inner.organizationKey,
@@ -946,12 +927,14 @@ async function publishChurchWebsite(db, input) {
             actorIdentityId: input.actorUserId || null,
             slug: inner.organizationKey,
           });
+          const bbPublicationSnapshot = await buildPublicationSnapshot(client, churchId, branchId);
           const enginePublished = await publicationService.publishWebsiteDraft(client, {
             organizationId: inner.organizationId,
             instanceId: ensured.instance.id,
             actorIdentityId: input.actorUserId || null,
             grantedPermissions: ["website.publish"],
             forceTenantPublish: true,
+            snapshot: bbPublicationSnapshot,
             // forcePublishVersion must mint a new platform version even when draft==published
             // (governance tests + HQ "Publish again" after approval).
             allowEmpty: Boolean(input && input.forcePublishVersion === true),

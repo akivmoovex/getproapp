@@ -167,14 +167,12 @@ async function getWebsiteVersion(db, input) {
        FROM platform.website_versions v
        LEFT JOIN platform.website_edit_sessions s ON s.id = v.edit_session_id
       WHERE v.id = $1 AND v.organization_id = $2
+        AND ($3::uuid IS NULL OR v.instance_id = $3::uuid)
       LIMIT 1`,
-    [input.versionId, input.organizationId]
+    [input.versionId, input.organizationId, input.instanceId || null]
   );
   const version = mapVersion(rows.rows[0] || null);
   if (!version) return { ok: false, code: RESULT.NOT_FOUND, version: null };
-  if (input.instanceId && version.instanceId !== String(input.instanceId)) {
-    return { ok: false, code: RESULT.NOT_FOUND, version: null };
-  }
   return { ok: true, version };
 }
 

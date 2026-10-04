@@ -58,19 +58,61 @@ async function restore(db, request) {
     return { ok: false, status: "invalid_input", reason: "organization_id_or_version" };
   }
 
-  const ensured = await ensureBlessBoardWebsiteInstance(db, {
-    organizationId,
-    slug: request.slug || request.organizationKey || undefined,
-    branchId: request.branchId || null,
-    actorIdentityId: request.actorUserId || request.actorIdentityId || null,
-  });
-  if (!ensured || !ensured.ok || !ensured.instance) {
-    return { ok: false, status: "invalid_input", reason: "website_instance_not_found" };
+  const churchId = String(request.churchId || "");
+  const branchId = request.branchId || null;
+  const church = await db.query(
+    `SELECT id, organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    [churchId]
+  );
+  if (!church.rows[0] || String(church.rows[0].organization_id) !== organizationId) {
+    return { ok: false, status: "forbidden", reason: "church_scope" };
+  }
+  if (branchId) {
+    const branch = await db.query(
+      `SELECT id FROM blessboard.branches WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [branchId, churchId]
+    );
+    if (!branch.rows[0]) return { ok: false, status: "forbidden", reason: "branch_scope" };
+  }
+  const sourceVersion = await db.query(
+    `SELECT instance_id, organization_id
+       FROM platform.website_versions
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [versionId, organizationId]
+  );
+  if (!sourceVersion.rows[0]) {
+    return { ok: false, status: "not_found", reason: "version_scope" };
+  }
+  const instanceResult = await db.query(
+    `SELECT *
+       FROM platform.website_instances
+      WHERE id = $1 AND organization_id = $2
+        AND product_code = $3
+        AND status <> 'archived'
+      LIMIT 1`,
+    [sourceVersion.rows[0].instance_id, organizationId, PRODUCT_CODE]
+  );
+  const instance = instanceResult.rows[0] || null;
+  if (!instance) {
+    return { ok: false, status: "not_found", reason: "website_instance_not_found" };
+  }
+  if (branchId) {
+    if (
+      instance.scope_kind !== "branch" ||
+      String(instance.scope_ref || "") !== String(branchId)
+    ) {
+      return { ok: false, status: "not_found", reason: "version_scope" };
+    }
+  } else if (instance.scope_kind !== "church_wide") {
+    return { ok: false, status: "not_found", reason: "version_scope" };
   }
 
   const restored = await publicationService.restoreWebsiteVersionToDraft(db, {
     organizationId,
-    instanceId: ensured.instance.id,
+    churchId: request.churchId || null,
+    branchId: request.branchId || null,
+    instanceId: instance.id,
     versionId,
     actorIdentityId: request.actorUserId || request.actorIdentityId || null,
     grantedPermissions: request.grantedPermissions || [

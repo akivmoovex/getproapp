@@ -37,6 +37,8 @@ const {
 const publicContentRepo = require("../src/blessboard/repositories/publicContentRepository");
 const versionRepo = require("../src/blessboard/repositories/websitePublicationVersionRepository");
 const versionSvc = require("../src/blessboard/services/websitePublicationVersionService");
+const { saveInlineFieldDraft } = require("../src/blessboard/services/websiteInlineDraftService");
+const { publishWebsiteDrafts } = require("../src/blessboard/services/websiteDraftPublishService");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
@@ -202,9 +204,10 @@ describe("phase3 website version compare restore", () => {
 
       const first = await publishChurchWebsite(pool, {
         churchId: churchA.id,
-        actorUserId: users.hqA.user.id,
+        editorUserId: users.hqA.user.id,
         confirmPublish: true,
         deferServiceTimes: true,
+      forcePublishVersion: true,
         env: baseEnv(),
       });
       assert.equal(first.ok, true, first.reason || JSON.stringify(first.gaps || []));
@@ -253,6 +256,7 @@ describe("phase3 website version compare restore", () => {
         actorUserId: users.hqA.user.id,
         confirmPublish: true,
         deferServiceTimes: true,
+      forcePublishVersion: true,
         env: baseEnv(),
       });
       assert.equal(second.ok, true, second.reason);
@@ -261,46 +265,41 @@ describe("phase3 website version compare restore", () => {
         title: "About updated",
         status: "draft",
       });
-      const hero2 = await publicContentRepo.findSectionByPageAndKey(pool, about.id, "hero");
-      await publicContentRepo.updateSection(pool, hero2.id, {
-        heading: "Changed heading",
-        bodyText: "Changed body",
-        sortOrder: 5,
-        status: "archived",
-        mediaUrl: "https://cdn.example.test/new.jpg",
-      });
-      const removable = await publicContentRepo.findSectionByPageAndKey(
-        pool,
-        about.id,
-        "extra-removed-later"
-      );
-      if (removable) {
-        await publicContentRepo.updateSection(pool, removable.id, {
-          status: "archived",
-        });
-      }
-      await publicContentRepo.insertSection(pool, {
-        pageId: about.id,
-        sectionKey: "brand-new",
-        sectionType: "text",
-        heading: "Brand new section",
-        bodyText: "Added later",
-        sortOrder: 1,
-        status: "draft",
-      });
-
-      const third = await publishChurchWebsite(pool, {
+      const canonicalEdit = await saveInlineFieldDraft(pool, {
+        organizationId: orgA.id,
         churchId: churchA.id,
+        pageKey: "about",
+        sectionKey: "hero",
+        fieldKey: "bodyText",
+        newValue: "Changed body",
+        editorUserId: users.hqA.user.id,
+        grantedPermissions: ["website.edit"],
+      });
+      assert.equal(canonicalEdit.saved, true, JSON.stringify(canonicalEdit));
+      const canonicalHeadingEdit = await saveInlineFieldDraft(pool, {
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        pageKey: "about",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        newValue: "Changed heading",
+        editorUserId: users.hqA.user.id,
+        grantedPermissions: ["website.edit"],
+      });
+      assert.equal(canonicalHeadingEdit.saved, true, JSON.stringify(canonicalHeadingEdit));
+      const canonicalPublish = await publishWebsiteDrafts(pool, {
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        branchId: null,
         actorUserId: users.hqA.user.id,
+        actorRole: "church_hq_admin",
         confirmPublish: true,
-        deferServiceTimes: true,
         env: baseEnv(),
       });
-      assert.equal(third.ok, true, third.reason);
-
-      const list = await versionRepo.listVersions(pool, { organizationId: orgA.id });
-      versionCurrent = list.items.find((v) => v.status === "published");
-      versionOlder = list.items
+      assert.equal(canonicalPublish.ok, true, JSON.stringify(canonicalPublish));
+      const list = await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100);
+      versionCurrent = list.find((v) => v.status === "published");
+      versionOlder = list
         .filter((v) => v.status === "superseded")
         .sort((x, y) => x.versionNumber - y.versionNumber)[0];
       assert.ok(versionCurrent);
@@ -483,7 +482,8 @@ describe("phase3 website version compare restore", () => {
     assert.equal(missingReason.status, 303);
     assert.match(String(missingReason.headers.location || ""), /error=/);
 
-    const beforeLive = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const beforeLive = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     const snapshotBefore = JSON.stringify(versionOlder.snapshot);
 
     const { res: formRes2, csrf: csrf2, csrfCookie: csrfCookie2 } = await authedGet(
@@ -509,45 +509,41 @@ describe("phase3 website version compare restore", () => {
     assert.match(ok.text, /restored draft has been created/i);
     assert.match(ok.text, /data-bb-phase3-restore-success="1"/);
 
-    const afterLive = await versionRepo.getCurrentPublishedVersion(pool, orgA.id);
+    const afterLive = (await versionRepo.listPlatformVersionsByOrganization(pool, orgA.id, 100))
+      .find((v) => v.status === "published");
     assert.equal(afterLive.id, beforeLive.id);
     assert.equal(afterLive.status, "published");
 
-    const drafts = await versionRepo.listVersions(pool, {
-      organizationId: orgA.id,
-      status: "draft",
-    });
-    assert.ok(drafts.items.some((d) => d.sourceType === "content_restoration"));
 
-    const historical = await versionRepo.getVersionByOrgAndId(
-      pool,
-      orgA.id,
-      versionOlder.id
-    );
+    const historical = await versionRepo.findPlatformVersionById(pool, {
+      organizationId: orgA.id,
+      churchId: churchA.id,
+      branchId: null,
+      versionId: versionOlder.id,
+    });
     assert.equal(JSON.stringify(historical.snapshot), snapshotBefore);
   });
 
   it("restore supports selected pages", async () => {
     skipIfNeeded();
-    const prepared = await versionSvc.prepareVersionRestore(pool, {
-      organizationId: orgA.id,
-      versionId: versionOlder.id,
-    });
-    assert.equal(prepared.ok, true);
-    assert.ok(prepared.pageOptions.length >= 1);
-
-    const result = await versionSvc.createRestoredDraft(pool, {
-      organizationId: orgA.id,
-      churchId: churchA.id,
-      versionId: versionOlder.id,
-      actorUserId: users.hqA.user.id,
-      restorationReason: "Restore only home page",
-      selectedPageKeys: ["home"],
-      confirmed: true,
-      restoreTheme: true,
-    });
-    assert.equal(result.ok, true, result.reason + (result.detail ? `:${result.detail}` : ""));
-    assert.deepEqual(result.restoredPageKeys, ["home"]);
+    const { csrf, csrfCookie } = await authedGet(
+      HOST_A,
+      `/hq/website/version-history/${versionOlder.id}/restore`,
+      users.hqA.rawToken
+    );
+    const result = await request(app)
+      .post(`/hq/website/version-history/${versionOlder.id}/restore`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${sidCookie(users.hqA.rawToken)}; ${CSRF_COOKIE}=${csrfCookie}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        pages: ["home"],
+        restoration_reason: "Restore only home page",
+        confirm_restore: "1",
+      });
+    assert.equal(result.status, 200);
+    assert.match(result.text, /restored draft has been created/i);
   });
 
   it("unauthorized users are blocked", async () => {

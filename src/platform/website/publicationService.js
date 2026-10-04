@@ -246,6 +246,7 @@ async function publishWebsiteDraft(db, input) {
     instance,
     actorIdentityId: input.actorIdentityId || null,
     reviewerIdentityId: input.actorIdentityId || null,
+    snapshot: input.snapshot,
     changedKeys,
     sourcePolicy: instance.publishPolicy,
     moderationStatus: "published",
