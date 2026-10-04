@@ -38,6 +38,7 @@ const VERSION_ORDER = Object.freeze([
   "2.03",
   "2.04",
   "2.05",
+  "2.07",
 ]);
 
 /**
@@ -3310,6 +3311,89 @@ const VERSIONS = Object.freeze([
     ],
     sources: [
       "docs/releases/V2_05_RELEASE_NOTES.md",
+      "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+      "src/platform/build/applicationBuildInfo.js",
+    ],
+  }),
+  Object.freeze({
+    version: "2.07",
+    summary:
+      "V2.07 promotes focused website reliability fixes and confirms password recovery, RBAC, and tenant-isolation readiness for BlessBoard and ActiveClinic.",
+    releaseDate: "2026-10-04",
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "V7 release preparation; production promotion requires separate authorization.",
+    qaVerification:
+      "Focused V2.06 sanity verification passed; no ActiveClinic product defect was reproduced.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.07",
+      "Product-specific V2.07 release narratives render without cross-product leakage",
+      "Password recovery uses the testing delivery outbox/capture in testing",
+      "RBAC and tenant-isolation focused verification remains passing",
+    ],
+    pendingDevelopment: [],
+    knownIssues: [],
+    documentationGaps: [
+      "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
+      "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
+    ],
+    architectureWork: {
+      title: "V2.07 sanity-fix promotion",
+      body: "Focused release preparation for shared version alignment and verified product boundaries.",
+      items: [
+        "BlessBoard Home Service Times canonical metadata fallback",
+        "BlessBoard soft-fill sermon visibility preservation",
+        "Shared password recovery testing-delivery verification",
+        "RBAC and tenant-isolation verification",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "Focused website reliability and security verification update.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "What's new",
+            items: Object.freeze([
+              "Fixed Home Service Times so canonical service-time metadata renders correctly after edit and publish.",
+              "Fixed Walking in Grace soft-fill sermon publication so visibility state is preserved.",
+              "Password recovery QA passed using the testing-delivery outbox/capture.",
+              "RBAC and tenant-isolation verification passed: 41 focused tests, with no security defect reproduced.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "Shared release and verification alignment update.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "What's new",
+            items: Object.freeze([
+              "Password recovery QA passed using the testing-delivery outbox/capture.",
+              "RBAC, product-isolation, and tenant-isolation verification passed.",
+              "No ActiveClinic product defect was reproduced in this sanity-fix batch.",
+              "Shared release and About version alignment updated to 2.07.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared V2.07 release alignment and focused verification.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Verification",
+            items: Object.freeze([
+              "Testing password recovery remains available without requiring real email or SMS delivery.",
+              "Product authorization and tenant boundaries remain enforced.",
+            ]),
+          }),
+        ]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: [
       "docs/releases/BLESSBOARD_RELEASE_NOTES.md",
       "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
       "src/platform/build/applicationBuildInfo.js",

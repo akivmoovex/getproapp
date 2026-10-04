@@ -5,6 +5,19 @@ equivalents from `src/platform/release-notes/releaseNotesCatalog.js` (`productNa
 
 ---
 
+## Version 2.07
+
+Focused website reliability and security verification update.
+
+### What's new
+
+- Fixed Home Service Times so canonical service-time metadata renders correctly after edit and publish.
+- Fixed Walking in Grace soft-fill sermon publication so visibility state is preserved.
+- Password recovery QA passed using the testing-delivery outbox/capture.
+- RBAC and tenant-isolation verification passed: 41 focused tests, with no security defect reproduced.
+
+---
+
 ## Version 2.05
 
 **Title:** BlessBoard 2.05
