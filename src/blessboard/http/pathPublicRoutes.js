@@ -82,6 +82,25 @@ function createPathPublicRouter(deps) {
       ...fields,
     })}`);
   };
+  const detailDebugHeaders = (req, res) => {
+    if (getDeploymentEnvMode(getEnv()) !== "testing") return null;
+    let stage = "start";
+    const set = (next, values = {}) => {
+      stage = next;
+      res.setHeader("X-BB-Debug-Stage", next);
+      for (const [key, value] of Object.entries(values)) {
+        res.setHeader(`X-BB-Debug-${key}`, String(value));
+      }
+    };
+    set(stage, {
+      Branch: 0,
+      Announcement: 0,
+      Image: 0,
+      Attachments: 0,
+      HrefFor: 0,
+    });
+    return { set, getStage: () => stage };
+  };
 
   async function resolvePathTenant(req, res, organizationKeyRaw) {
     const rawKey = String(organizationKeyRaw || "").trim().toLowerCase();
@@ -642,8 +661,10 @@ function createPathPublicRouter(deps) {
   // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
   router.get("/c/:organizationKey/:branchKey/announcements/:id", (req, res, next) => {
     Promise.resolve().then(async () => {
+      const debug = detailDebugHeaders(req, res);
       detailDiagnostic(req, "bb_public_announcement_detail_start");
       const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+      debug?.set("tenant_resolved");
       detailDiagnostic(req, "bb_public_announcement_detail_resolution", {
         organizationResolved: Boolean(resolved && resolved.tenant),
         branchResolved: Boolean(resolved && resolved.tenant),
@@ -657,6 +678,9 @@ function createPathPublicRouter(deps) {
       const branch = websiteMode.ok
         ? (websiteMode.activeBranches || []).find((item) => item.key === branchKey)
         : null;
+      debug?.set("branch_resolved", {
+        Branch: branch ? 1 : 0,
+      });
       if (!branch) {
         return res.status(404).type("html").send(
           renderControlledErrorPage(404, "Announcement not found.")
@@ -689,6 +713,19 @@ function createPathPublicRouter(deps) {
         branchId: branch.id,
         id,
       });
+      debug?.set("announcement_loaded", {
+        Announcement: loaded && loaded.ok && loaded.item ? 1 : 0,
+      });
+      debug?.set("visibility_validated");
+      debug?.set("attachments_loaded", {
+        Attachments:
+          loaded && loaded.item && Array.isArray(loaded.item.attachments)
+            ? Math.min(9, loaded.item.attachments.length)
+            : 0,
+      });
+      debug?.set("image_resolved", {
+        Image: loaded && loaded.item && loaded.item.imageUrl ? 1 : 0,
+      });
       detailDiagnostic(req, "bb_public_announcement_detail_loaded", {
         announcementFound: Boolean(loaded && loaded.ok && loaded.item),
         announcementBranchIdPresent: Boolean(loaded && loaded.item && loaded.item.branchId),
@@ -708,6 +745,8 @@ function createPathPublicRouter(deps) {
         if (raw === "/") return pathPrefix;
         return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
       };
+      debug?.set("model_ready", { HrefFor: 1 });
+      debug?.set("render_start");
       const html = ejs.render(fs.readFileSync(filename, "utf8"), {
         ...model,
         pageKey: "announcements",
@@ -725,6 +764,7 @@ function createPathPublicRouter(deps) {
         presentImageSrc: (src) => presentRuntimeImageSrc(src, getEnv()) || "",
         cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, getEnv()) || "",
       }, { filename });
+      debug?.set("render_success");
       detailDiagnostic(req, "bb_public_announcement_detail_render_success");
       return res.status(200).type("html").send(html);
     }).catch((err) => {
