@@ -27,7 +27,7 @@ const PRODUCTS = Object.freeze({
 });
 
 /** @type {ReadonlyArray<string>} */
-const VERSION_ORDER = Object.freeze(["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", "2.02"]);
+const VERSION_ORDER = Object.freeze(["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", "2.02", "2.08"]);
 
 /**
  * @typedef {object} ReleaseFeature
@@ -93,6 +93,96 @@ const VERSION_ORDER = Object.freeze(["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", 
 
 /** @type {ReadonlyArray<ReleaseVersion>} */
 const VERSIONS = Object.freeze([
+  Object.freeze({
+    version: "2.08",
+    summary:
+      "V2.08 Admin Console foundation work for ActiveClinic and BlessBoard: shared shell contract, design tokens, product adapters, and capability-aware navigation registry. Visual consolidation remains in progress.",
+    releaseDate: "2026-10-10",
+    products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
+    deploymentStatus:
+      "IN DEVELOPMENT — Admin Console consolidation is in progress. Hosted V8 visual verification and production deployment are pending.",
+    qaVerification:
+      "LOCAL QA PASS for shell, navigation, authorization, tenant isolation, host/product isolation, CSRF, and active-route regression coverage. Hosted visual baseline is not certified.",
+    acceptanceCriteria: [
+      "Shared Admin Console shell contract exists without replacing either product shell",
+      "Shared design tokens and product-specific adapters preserve existing behavior",
+      "Capability-aware navigation registry preserves product, host, tenant, and authorization boundaries",
+      "No route, controller, RBAC, database, migration, or business-logic changes in these batches",
+    ],
+    pendingDevelopment: [
+      "Visual consolidation of Admin Console components",
+      "Responsive visual baseline certification at 1440 / 768 / 390",
+      "Hosted V8 testing deployment verification",
+      "Production deployment is not part of this change",
+    ],
+    knownIssues: [
+      "Testing host currently reports an older V6 deployment instead of the expected V8 tip",
+      "Batch 3 GUI consolidation has not started",
+    ],
+    documentationGaps: [],
+    features: [
+      Object.freeze({
+        id: "F-2.08-ADMIN-FOUNDATION",
+        name: "Shared Admin Console foundation",
+        description:
+          "Platform-neutral shell contract, shared Admin Console design tokens, and Legacy Admin/BlessBoard Platform Admin adapters.",
+        workflow: "Existing Admin Console shells consume shared presentation contracts without route or behavior changes.",
+        expectedBehavior: "Existing product-specific shells, terminology, routes, and authorization remain intact.",
+        products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
+        featureType: "platform",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.08-ADMIN-FOUNDATION"],
+        sources: ["src/platform/build/applicationBuildInfo.js", "src/platform/ui/adminShellContract.js"],
+        publicSafe: true,
+      }),
+      Object.freeze({
+        id: "F-2.08-ADMIN-NAVIGATION",
+        name: "Capability-aware Admin navigation registry",
+        description:
+          "Shared navigation data and active-route resolution with product adapters, preserving route visibility and product boundaries.",
+        workflow: "Legacy Admin and BlessBoard Platform Admin filter shared navigation data through their own adapters.",
+        expectedBehavior: "No cross-product navigation leakage; active states support nested routes and query strings.",
+        products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
+        featureType: "platform",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.08-ADMIN-NAVIGATION"],
+        sources: ["src/platform/ui/adminNavigationRegistry.js", "tests/admin-navigation-registry.test.js"],
+        publicSafe: true,
+      }),
+    ],
+    bugs: [],
+    qaChecklist: [
+      Object.freeze({
+        id: "TC-2.08-ADMIN-FOUNDATION",
+        featureOrBugId: "F-2.08-ADMIN-FOUNDATION",
+        product: PRODUCTS.SHARED,
+        objective: "Admin shell foundation regression coverage",
+        prerequisites: "V8 checkout",
+        steps: ["Run shell contract and product adapter tests", "Run authorization and tenant isolation suites"],
+        expectedResult: "Existing shells render; security boundaries remain unchanged.",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "tests/admin-shell-contract.test.js and Batch 1 safety suites",
+      }),
+      Object.freeze({
+        id: "TC-2.08-ADMIN-NAVIGATION",
+        featureOrBugId: "F-2.08-ADMIN-NAVIGATION",
+        product: PRODUCTS.SHARED,
+        objective: "Navigation registry product and active-route isolation",
+        prerequisites: "V8 checkout",
+        steps: ["Run registry tests", "Check product/capability/mobile filtering", "Check nested active routes"],
+        expectedResult: "Ordering and product boundaries remain preserved.",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "tests/admin-navigation-registry.test.js and Batch 2 navigation suites",
+      }),
+    ],
+    sources: [
+      "src/platform/ui/adminNavigationRegistry.js",
+      "src/platform/ui/adminShellContract.js",
+      "docs/gui/PLATFORM_ADMIN_PARITY_AUDIT.md",
+    ],
+  }),
   Object.freeze({
     version: "1.0",
     summary:

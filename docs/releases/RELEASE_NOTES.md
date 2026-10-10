@@ -412,3 +412,47 @@ TESTING target `moovex-platform-v8-testing`. Production untouched in V2.01 task 
 ## QA persistence note
 
 Interactive checklist results in the UI are **catalog-backed** (repository evidence). Persistent operator-editable QA tracking would need approved storage/migration — **not added** in this task. Do not rely on browser-only state as system of record.
+
+---
+
+## Version 2.08
+
+### Summary
+
+ActiveClinic and BlessBoard Admin Console foundation work on V8: a shared platform-neutral shell contract, shared design tokens, product-specific adapters, and a capability-aware navigation registry. Existing routes, permissions, product terminology, and tenant/host boundaries remain unchanged.
+
+### Release date
+
+2026-10-10.
+
+### Products
+
+ActiveClinic, BlessBoard, Shared GetPro Platform.
+
+### New features / improvements
+
+- Shared Admin Console shell contract for the Legacy Admin and BlessBoard Platform Admin surfaces.
+- Shared typography, spacing, surface, control, focus, touch-target, and responsive tokens.
+- Legacy Admin and BlessBoard Platform Admin adapters.
+- Shared capability-aware navigation data and active-route resolution.
+- Product-specific navigation ordering and visibility preserved.
+- Cross-product, host, apex, tenant, and authorization boundaries preserved.
+
+### Quality and regression protection
+
+- Legacy Admin and BlessBoard Admin tests pass.
+- Authorization, tenant-isolation, and host/product-isolation coverage passes.
+- Navigation, active-route, mobile-navigation, and CSRF regression coverage passes.
+- No database or migration changes were introduced for these Admin Console foundation batches.
+
+### Known issues / pending
+
+- Visual Admin Console consolidation is still in progress.
+- Responsive visual baseline at 1440 / 768 / 390 is not yet certified.
+- Hosted V8 testing deployment verification is pending; the testing host is serving an older V6 deployment.
+- Batch 3 and later GUI consolidation work has not started.
+- Production deployment is not part of this change.
+
+### QA verification
+
+LOCAL QA PASS for the implemented shell and navigation foundation. Hosted visual verification is blocked pending the correct V8 testing deployment. This is **not** a production release certificate.
