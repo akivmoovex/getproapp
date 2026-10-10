@@ -26,6 +26,8 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | AC-07 | Public inquiry persistence, CSRF, duplicate handling, and success response already covered by prior contact fixes | No new change | `activeclinic-public-website.test.js`, `v2-05-contact-flow-security.test.js` | ALREADY_FIXED | 0c873840 / 9a0c3045 |
 | AC-11 | Booking and clinic-inquiry route ownership/duplicate handling already fixed in V8 | No new change | `activeclinic-public-booking.test.js` and booking linkage suites | ALREADY_FIXED | 0c873840 / c5ce63fc |
 | BB-04 | Existing shared contact security suite covers church recipient and tenant isolation paths | No new change; mocked notification delivery only | `v2-05-contact-flow-security.test.js` and BB contact tests | ALREADY_FIXED | facf93bc |
+| AC-09 | Canonical clinic-key directory navigation and clickable detail routes already fixed in V8 | No new change; preserve published/unpublished visibility rules | `activeclinic-clinic-directory.test.js` and directory parity suites | ALREADY_FIXED | bb1ab5e9 / 9197741a |
+| AC-10 | Guest booking linkage, clinic/facility ownership, and duplicate handling already fixed in V8 | No new change; preserve public booking permissions and no-notification test mode | `activeclinic-public-booking.test.js`, `activeclinic-booking-patient-linkage.test.js` | ALREADY_FIXED | 9b380a7d / c5ce63fc |
 
 No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
