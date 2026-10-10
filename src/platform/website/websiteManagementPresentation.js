@@ -19,6 +19,7 @@ const {
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteMediaLibraryPath,
   buildPublicWebsiteStylesPath,
+  buildPublicWebsiteThemesPath,
   buildPublicWebsiteSeoPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,
@@ -83,6 +84,7 @@ function presentWebsiteSettingsUx(input) {
   const historyPath = facts.historyPath || null;
   const seoPath = facts.seoPath || null;
   const stylesPath = facts.stylesPath || null;
+  const themesPath = facts.themesPath || null;
   const mediaPath = facts.mediaPath || facts.libraryPath || null;
   const publishPath = facts.publishPath || null;
   const retryPath = facts.retryPath || null;
@@ -177,6 +179,13 @@ function presentWebsiteSettingsUx(input) {
   const showHistory = canView && Boolean(historyPath) && exists;
   const showSeo = canEdit && Boolean(seoPath) && exists;
   const showStyles = canEdit && Boolean(stylesPath) && exists;
+  const showThemes =
+    canEdit &&
+    Boolean(themesPath) &&
+    exists &&
+    state !== PRESENTATION_STATE.SUSPENDED &&
+    state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
+    state !== PRESENTATION_STATE.MISSING;
   const showMedia = canView && Boolean(mediaPath) && exists;
   const showUnpublish =
     canPublish &&
@@ -241,6 +250,7 @@ function presentWebsiteSettingsUx(input) {
       media: showMedia ? mediaPath : null,
       seo: showSeo ? seoPath : null,
       styles: showStyles ? stylesPath : null,
+      themes: showThemes ? themesPath : null,
       history: showHistory ? historyPath : null,
       retry: showRetry ? retryPath : null,
       contactPlatformAdmin: showContactPlatformAdmin,
@@ -485,6 +495,7 @@ async function loadWebsiteManagementSummary(db, input) {
     historyPath: buildPublicWebsiteHistoryPath({ product: productCode, organizationKey: key }),
     seoPath: buildPublicWebsiteSeoPath({ product: productCode, organizationKey: key }),
     stylesPath: buildPublicWebsiteStylesPath({ product: productCode, organizationKey: key }),
+    themesPath: buildPublicWebsiteThemesPath({ product: productCode, organizationKey: key }),
     mediaPath: buildPublicWebsiteMediaLibraryPath({ product: productCode, organizationKey: key }),
     publishPath: buildPublicWebsitePublishPath({ product: productCode, organizationKey: key }),
     unpublishPath: buildPublicWebsiteUnpublishPath({ product: productCode, organizationKey: key }),

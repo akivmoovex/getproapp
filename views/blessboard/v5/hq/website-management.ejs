@@ -254,6 +254,12 @@
       <p>Update colours, typography, and the overall look of your site.</p>
     </a>
     <% } %>
+    <% if (hubWebsite.canEdit && actions.themes) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.themes %>" data-bb-website-action="themes">
+      <h3>Themes</h3>
+      <p>Choose the visual theme for your church website.</p>
+    </a>
+    <% } %>
     <% if (actions.seo) { %>
     <a class="bb-wm-hub-tile" href="<%= actions.seo %>" data-bb-website-action="seo">
       <h3>SEO</h3>

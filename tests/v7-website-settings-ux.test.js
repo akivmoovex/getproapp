@@ -313,6 +313,35 @@ describe("presentWebsiteSettingsUx", () => {
     assert.ok(ux.actions.history);
     assert.equal(PERMISSIONS.VIEW, "website.view");
   });
+
+  it("exposes themes only for editable, existing, active websites", () => {
+    const editable = presentWebsiteSettingsUx({
+      exists: true,
+      availabilityPublished: false,
+      themesPath: "/clinics/demo/website/themes",
+      canView: true,
+      canEdit: true,
+    });
+    assert.equal(editable.actions.themes, "/clinics/demo/website/themes");
+
+    const viewOnly = presentWebsiteSettingsUx({
+      exists: true,
+      availabilityPublished: false,
+      themesPath: "/clinics/demo/website/themes",
+      canView: true,
+      canEdit: false,
+    });
+    assert.equal(viewOnly.actions.themes, null);
+
+    const suspended = presentWebsiteSettingsUx({
+      exists: true,
+      productWebsiteStatus: "suspended",
+      themesPath: "/clinics/demo/website/themes",
+      canView: true,
+      canEdit: true,
+    });
+    assert.equal(suspended.actions.themes, null);
+  });
 });
 
 describe("website settings HTTP", () => {

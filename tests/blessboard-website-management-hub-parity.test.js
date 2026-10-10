@@ -301,6 +301,8 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(hub, /data-bb-website-action="publish"/);
     assert.match(hub, /data-bb-website-action="unpublish"/);
     assert.match(hub, /data-bb-website-action="history"/);
+    assert.match(hub, /data-bb-website-action="themes"/);
+    assert.match(hub, /Choose the visual theme for your church website\./);
     assert.match(hub, /Customize branding/);
     assert.match(hub, /Logo, colours, and the look of the public site/);
     const brandingItem = hub.match(
@@ -359,6 +361,8 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /action="\/hq\/website\/publish"/);
     assert.match(page.text, /data-bb-website-action="history"/);
     assert.match(page.text, new RegExp(`/c/${church.key}/website/history`));
+    assert.match(page.text, /data-bb-website-action="themes"/);
+    assert.match(page.text, new RegExp(`/c/${church.key}/website/themes`));
     assert.doesNotMatch(page.text, /data-ac-website-management/);
     assert.doesNotMatch(page.text, /class="ac-mw/);
 
@@ -501,6 +505,8 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /data-ac-website-action="preview"/);
     assert.match(page.text, /data-ac-website-action="publish"/);
     assert.match(page.text, /data-ac-website-action="history"/);
+    assert.match(page.text, /data-ac-website-action="themes"/);
+    assert.match(page.text, new RegExp(`/clinics/${result.slug}/website/themes`));
     assert.match(page.text, /Customize branding/);
     assert.match(page.text, /href="\/app\/settings\/website\/branding"/);
     assert.equal(hrefForAcWebsiteAction(page.text, "branding"), "/app/settings/website/branding");

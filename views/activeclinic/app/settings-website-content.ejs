@@ -211,6 +211,12 @@
       <h3>Branding</h3>
       <p>Update logo, colours, and the look of your site.</p>
     </a>
+    <% if (website.canEdit && actions.themes) { %>
+    <a class="ac-mw-hub-tile" href="<%= actions.themes %>" data-ac-website-action="themes">
+      <h3>Themes</h3>
+      <p>Choose the visual theme for your clinic website.</p>
+    </a>
+    <% } %>
     <a class="ac-mw-hub-tile" href="/app/settings/website/settings" data-ac-website-action="settings">
       <h3>Website Settings</h3>
       <p>Name, contact details, and opening information.</p>
