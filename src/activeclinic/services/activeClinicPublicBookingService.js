@@ -49,6 +49,12 @@ function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function validDateOrNull(value) {
+  if (value == null || String(value).trim() === "") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? false : date;
+}
+
 /**
  * @deprecated Phone-only match must not auto-link. Use assessBookingIdentityMatches.
  * Retained for tests that assert non-creation behavior.
@@ -181,8 +187,11 @@ async function createConsultationBookingRequest(db, input) {
     lastName,
   });
 
-  const preferredStartsAt = input.preferredStartsAt ? new Date(input.preferredStartsAt) : null;
-  const preferredEndsAt = input.preferredEndsAt ? new Date(input.preferredEndsAt) : null;
+  const preferredStartsAt = validDateOrNull(input.preferredStartsAt);
+  const preferredEndsAt = validDateOrNull(input.preferredEndsAt);
+  if (preferredStartsAt === false || preferredEndsAt === false) {
+    return { ok: false, code: RESULT.INVALID_INPUT, booking: null };
+  }
   const timezone = input.timezone || "Africa/Lusaka";
 
   const idempotencyKey = input.idempotencyKey || generateIdempotencyKey();
@@ -382,7 +391,10 @@ async function createProcedureBookingRequest(db, input) {
 
   const referralNotes = input.referralNotes ? String(input.referralNotes).trim().slice(0, 2000) : null;
   const preparationAcknowledged = input.preparationAcknowledged === true;
-  const preferredStartsAt = input.preferredStartsAt ? new Date(input.preferredStartsAt) : null;
+  const preferredStartsAt = validDateOrNull(input.preferredStartsAt);
+  if (preferredStartsAt === false) {
+    return { ok: false, code: RESULT.INVALID_INPUT, booking: null };
+  }
   const timezone = input.timezone || "Africa/Lusaka";
   const idempotencyKey = input.idempotencyKey || generateIdempotencyKey();
 

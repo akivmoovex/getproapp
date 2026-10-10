@@ -35,6 +35,17 @@ async function createPublicContactInquiry(db, input) {
   const organizationId = organizationIdCheck.value;
   const healthcareOrganizationId = hcoCheck.value;
 
+  const organizationScope = await db.query(
+    `SELECT 1
+       FROM activeclinic.healthcare_organizations
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [healthcareOrganizationId, organizationId]
+  );
+  if (!organizationScope.rows[0]) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, inquiry: null };
+  }
+
   let facilityId = null;
   if (input && input.facilityId) {
     const facilityCheck = validateUuid(input.facilityId, {
