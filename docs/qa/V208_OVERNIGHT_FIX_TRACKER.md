@@ -15,7 +15,12 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | AC-02 | Existing patient registration implementation requires verification against the focused registration/auth suite | No runtime change; preserve CSRF, identity, duplicate, and tenant guards | `activeclinic-mf08-patient-registration.test.js` and related registration suites | BLOCKED | — |
 | BB-01 | Branch capacity is plan-derived; a manual branch-count field is not authorized by the stated contract | No code change; require a product decision before adding non-plan capacity behavior | Branch provisioning, registry, edit, entitlement, and limit suites | REQUIREMENT_DECISION | — |
 | BB-02 | Announcement scope and attachment isolation require the focused suite to complete before a defect can be established | No runtime change; preserve church/branch scope and RBAC guards | `v8-bb-announcements.test.js`, branch announcement, attachment, and scope suites | BLOCKED | — |
+| AC-03 | Mobile publishing requires real browser verification; existing shared editor contracts were not safely re-run in this batch | No code change; retain publish RBAC and draft/live separation | ActiveClinic mobile/editor publishing suites | BLOCKED | — |
+| AC-04 | Gallery-image selection versus camera behavior requires native mobile picker verification | No code change; do not infer picker behavior from DOM alone | ActiveClinic media/mobile suites | BLOCKED | — |
+| BB-06 | Mobile publishing requires real browser verification; existing shared editor contracts were not safely re-run in this batch | No code change; retain publish RBAC and draft/live separation | BlessBoard mobile/editor publishing suites | BLOCKED | — |
+| BB-07 | Gallery-image selection versus camera behavior requires native mobile picker verification | No code change; do not infer picker behavior from DOM alone | BlessBoard media/mobile suites | BLOCKED | — |
 
-No application files were modified. The focused BB suites were started once and
-stalled before producing pass/fail output; no assertions were weakened and no
-database writes, migrations, resets, or external-service calls were made.
+No application files were modified. Mobile native-picker behavior was not
+claimed from static inspection, and no browser verification was run in this
+batch. No assertions were weakened and no database writes, migrations, resets,
+or external-service calls were made.
