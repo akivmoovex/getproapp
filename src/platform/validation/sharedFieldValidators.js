@@ -284,6 +284,7 @@ function validateImageUpload(input, opts) {
   const maxBytes =
     Number.isFinite(Number(opts && opts.maxBytes)) ? Number(opts.maxBytes) : MEDIA_LIMITS.maxBytes;
   const mime = asTrimmedString(input && input.mimeType).toLowerCase();
+  const buffer = input && input.buffer;
   const size =
     Number.isFinite(Number(input && input.sizeBytes))
       ? Number(input.sizeBytes)
@@ -298,6 +299,41 @@ function validateImageUpload(input, opts) {
       error: "Use a JPEG, PNG, WebP, or GIF image.",
       value: null,
     };
+  }
+  if (buffer != null) {
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+      return {
+        ok: false,
+        code: VALIDATION_CODE.INVALID_INPUT,
+        field,
+        error: "The uploaded file is empty or unreadable.",
+        value: null,
+      };
+    }
+    const signature =
+      buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff ? "image/jpeg" :
+      buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47 ? "image/png" :
+      buffer.length >= 6 && buffer.toString("ascii", 0, 6).match(/^GIF8[79]a$/) ? "image/gif" :
+      buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" &&
+        buffer.toString("ascii", 8, 12) === "WEBP" ? "image/webp" : null;
+    if (!signature) {
+      return {
+        ok: false,
+        code: VALIDATION_CODE.UNSAFE_MEDIA_TYPE,
+        field,
+        error: "The file encoding is not a supported JPEG, PNG, WebP, or GIF.",
+        value: null,
+      };
+    }
+    if (signature !== mime) {
+      return {
+        ok: false,
+        code: VALIDATION_CODE.UNSAFE_MEDIA_TYPE,
+        field,
+        error: "The file contents do not match its declared image type.",
+        value: null,
+      };
+    }
   }
   if (!size || size > maxBytes) {
     return {

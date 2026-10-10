@@ -248,6 +248,8 @@ async function registerWebsiteMedia(db, input) {
       return {
         ok: false,
         code: sized.code === "media_too_large" ? RESULT.TOO_LARGE : RESULT.UNSAFE_TYPE,
+        message: sized.error || "The uploaded image is invalid.",
+        validationCode: sized.code,
         media: null,
       };
     }

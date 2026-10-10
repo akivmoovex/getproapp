@@ -115,7 +115,22 @@ function createMediaUploadService(env, storageOverrides) {
       claimedMime: raw.claimedMime,
     });
     if (!validated.ok) {
-      return { ok: false, status: STATUS.INVALID_INPUT, reason: validated.reason, asset: null };
+      const messages = {
+        empty_file: "The uploaded file is empty or unreadable.",
+        size_limit: "The image is too large. Maximum size is 5 MB.",
+        signature_unrecognized: "The file encoding is not a supported JPEG, PNG, WebP, GIF, or PDF.",
+        mime_mismatch: "The file contents do not match its declared type.",
+        extension_mismatch: "The filename extension does not match the file type.",
+        mime_rejected: "This file type is not allowed.",
+        mime_not_allowed: "Use a JPEG, PNG, WebP, GIF, or PDF.",
+      };
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        reason: validated.reason,
+        message: messages[validated.reason] || "The uploaded file failed validation.",
+        asset: null,
+      };
     }
 
     const sha256 = crypto.createHash("sha256").update(raw.buffer).digest("hex");
