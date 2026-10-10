@@ -31,6 +31,14 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | AC-08 | Existing ActiveClinic service-card/doctor management functionality and scoped public contracts are present | No new fields or schema; preserve facility and role scoping | `v2-ac-service-card-editing.test.js`, ActiveClinic service/doctor suites | ALREADY_FIXED | f7248510 / 31099fbc |
 | BB-03 | Shared media/attachment lifecycle and authorization coverage already exist | No new change; preserve media-type and church/branch scope checks | `church-attachment-lifecycle.test.js`, `church-branch-announcement-attachments.test.js`, shared media suites | ALREADY_FIXED | e34e2538 |
 | BB-10 | V2.07 service-time editor, inherit/override/hidden modes, and canonical publication are implemented | No new schema or fields; preserve existing service-time contract | `blessboard-branch-service-times.test.js`, `blessboard-home-service-times.test.js` | ALREADY_FIXED | 907183f7 / 2c404be1 / c918d526 |
+| BB-08 | Shared website engine already models draft changes as one publishable coherent snapshot with version history/restore | No new publication model introduced; verify existing atomic publication contract | `v7-website-draft-live-integrity.test.js`, publication/version-history suites | ALREADY_FIXED | 0ca8ec5e / debcefff |
+| BB-09 | No sufficiently defined prayer-request product contract was found in the inspected V8 architecture | Requirement decision: define data sensitivity, recipients, retention, moderation, visibility, and RBAC before implementation | Product specification and church ministry/admin review | REQUIREMENT_DECISION | — |
+
+BB-09 implementation specification needed before coding: define request fields,
+whether requests are private or public, recipient scopes, staff/member roles,
+attachments, retention/deletion, moderation, notifications, auditability, and
+cross-branch/church isolation. No sensitive-data or public-visibility behavior
+was invented.
 
 No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
