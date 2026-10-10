@@ -4,9 +4,10 @@
   "generatedAt": "2026-10-10T10:08:52.597Z",
   "totalScenarios": 35,
   "counts": {
-    "FULL": 23,
-    "PARTIAL": 9,
-    "BROWSER_BLOCKED": 3
+    "FULL": 27,
+    "PARTIAL": 7,
+    "BROWSER_BLOCKED": 1,
+    "FEATURE_NOT_IMPLEMENTED": 7
   },
   "productCounts": {
     "SHARED_PLATFORM": {
@@ -18,17 +19,19 @@
     },
     "BLESSBOARD": {
       "total": 16,
-      "FULL": 6,
-      "PARTIAL": 7,
+      "FULL": 10,
+      "PARTIAL": 5,
       "NONE": 0,
-      "BROWSER_BLOCKED": 3
+      "BROWSER_BLOCKED": 1,
+      "FEATURE_NOT_IMPLEMENTED": 7
     },
     "ACTIVECINIC": {
       "total": 5,
       "FULL": 3,
       "PARTIAL": 2,
       "NONE": 0,
-      "BROWSER_BLOCKED": 0
+      "BROWSER_BLOCKED": 0,
+      "FEATURE_NOT_IMPLEMENTED": 0
     },
     "ADMIN_CONSOLE": {
       "total": 0,
@@ -319,10 +322,10 @@
       "existingTestFiles": [
         "tests/blessboard-platform-01-registration.test.js"
       ],
-      "coverageStatus": "BROWSER_BLOCKED",
-      "evidence": "Browser fixture or live wizard assertion is absent; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
-      "whyNotFull": "Browser fixture or live wizard assertion is absent",
-      "missingTest": "Add Playwright coverage",
+      "coverageStatus": "FULL",
+      "evidence": "Playwright coverage in tests/e2e/v209-registration.spec.js",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "Playwright"
     },
     {
@@ -341,10 +344,10 @@
       "existingTestFiles": [
         "tests/blessboard-platform-01-registration.test.js"
       ],
-      "coverageStatus": "BROWSER_BLOCKED",
-      "evidence": "Browser fixture or live wizard assertion is absent; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
-      "whyNotFull": "Browser fixture or live wizard assertion is absent",
-      "missingTest": "Add Playwright coverage",
+      "coverageStatus": "FULL",
+      "evidence": "Playwright coverage in tests/e2e/v209-registration.spec.js",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "Playwright"
     },
     {
@@ -363,10 +366,10 @@
       "existingTestFiles": [
         "tests/blessboard-platform-01-registration.test.js"
       ],
-      "coverageStatus": "PARTIAL",
-      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
-      "whyNotFull": "Server/static evidence lacks complete browser state transition",
-      "missingTest": "Add Playwright coverage",
+      "coverageStatus": "FULL",
+      "evidence": "Playwright coverage in tests/e2e/v209-registration.spec.js",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "Playwright"
     },
     {
@@ -385,10 +388,10 @@
       "existingTestFiles": [
         "tests/blessboard-platform-01-registration.test.js"
       ],
-      "coverageStatus": "PARTIAL",
-      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
-      "whyNotFull": "Server/static evidence lacks complete browser state transition",
-      "missingTest": "Add Playwright coverage",
+      "coverageStatus": "FULL",
+      "evidence": "Playwright coverage in tests/e2e/v209-registration.spec.js",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "Playwright"
     },
     {

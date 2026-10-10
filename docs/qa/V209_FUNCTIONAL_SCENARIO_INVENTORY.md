@@ -3,8 +3,8 @@
 Reconstructed from the available V209 registration matrix and repository evidence. Requested V208 artifacts were not present.
 
 TOTAL_FUNCTIONAL_SCENARIOS=35
-FULL=19
-PARTIAL=13
+FULL=23
+PARTIAL=9
 NONE=0
 ENVIRONMENT_BLOCKED=0
 BROWSER_BLOCKED=3
@@ -26,10 +26,10 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 | V209-10 | SHARED_PLATFORM | PASSWORD_POLICY | HIGH | FULL | Client metadata matches server policy | tests/v209-registration-regressions.test.js |
 | V209-11 | SHARED_PLATFORM | PASSWORD_POLICY | HIGH | FULL | Future policy changes centrally | tests/v209-registration-regressions.test.js |
 | V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | PARTIAL | Step 2 initially renders unsatisfied indicators | tests/blessboard-platform-01-registration.test.js |
-| V209-13 | BLESSBOARD | PASSWORD_POLICY | HIGH | BROWSER_BLOCKED | Password indicators update while typing | tests/blessboard-platform-01-registration.test.js |
-| V209-14 | BLESSBOARD | PASSWORD_POLICY | HIGH | BROWSER_BLOCKED | Satisfied indicators expose class and ARIA state | tests/blessboard-platform-01-registration.test.js |
-| V209-15 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | PARTIAL | Weak password cannot continue | tests/blessboard-platform-01-registration.test.js |
-| V209-16 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | PARTIAL | Valid password continues | tests/blessboard-platform-01-registration.test.js |
+| V209-13 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Password indicators update while typing | tests/e2e/v209-registration.spec.js |
+| V209-14 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Satisfied indicators expose class and ARIA state | tests/e2e/v209-registration.spec.js |
+| V209-15 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | Weak password cannot continue | tests/e2e/v209-registration.spec.js |
+| V209-16 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | Valid password continues | tests/e2e/v209-registration.spec.js |
 | V209-17 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Confirmation mismatch rejected | tests/blessboard-platform-01-registration.test.js |
 | V209-18 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | BB consumes shared policy without duplicate rules | tests/blessboard-platform-01-registration.test.js |
 | V209-23 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | PARTIAL | Step 1 to Step 2 succeeds | tests/blessboard-platform-01-registration.test.js |
@@ -57,8 +57,6 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 ## PARTIAL_SCENARIOS
 
 - V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | Step 2 initially renders unsatisfied indicators | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-15 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | Weak password cannot continue | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-16 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | Valid password continues | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-23 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Step 1 to Step 2 succeeds | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-24 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Validation correction and resubmit succeeds | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-25 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Back navigation preserves wizard state | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
@@ -72,8 +70,6 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 
 ## BROWSER_BLOCKED_SCENARIOS
 
-- V209-13 | BLESSBOARD | Password indicators update while typing | browser fixture/setup unavailable
-- V209-14 | BLESSBOARD | Satisfied indicators expose class and ARIA state | browser fixture/setup unavailable
 - V209-27 | BLESSBOARD | Terms return preserves state | browser fixture/setup unavailable
 
 ## NONE_SCENARIOS
