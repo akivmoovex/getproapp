@@ -655,9 +655,13 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
     const pathPublic = await request(app)
       .get("/c/dli-a")
       .set("Host", "blessboard.org")
+      .expect(301);
+    const canonicalPathPublic = await request(app)
+      .get(pathPublic.headers.location)
+      .set("Host", "blessboard.org")
       .expect(200);
-    assert.match(pathPublic.text, /Published Welcome/);
-    assert.doesNotMatch(pathPublic.text, /SECRET_DRAFT_HEADING_BB/);
+    assert.match(canonicalPathPublic.text, /Published Welcome/);
+    assert.doesNotMatch(canonicalPathPublic.text, /SECRET_DRAFT_HEADING_BB/);
   });
 
   it("2-5 text and image ✓ write draft only; authorized preview reads draft", async () => {
@@ -691,7 +695,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
       sectionKey: "hero",
       entityKey: "home-hero",
       payload: {
-        imageUrl: "/church/images/tenant-public/about-story.jpg",
+        imageUrl: "https://cdn.example.test/draft-hero.jpg",
         altText: "Draft image only",
         focal: "center",
       },
@@ -712,7 +716,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
     const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.match(publicRes.text, /Published Welcome/);
     assert.doesNotMatch(publicRes.text, /Draft Heading Preview Me/);
-    assert.doesNotMatch(publicRes.text, /about-story\.jpg/);
+    assert.doesNotMatch(publicRes.text, /draft-hero\.jpg/);
 
     const previewPublic = await request(app)
       .get("/?website_mode=draft")
@@ -720,7 +724,7 @@ describe("v7 website draft/live integrity — BlessBoard", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`)
       .expect(200);
     assert.match(previewPublic.text, /Draft Heading Preview Me/);
-    assert.match(previewPublic.text, /about-story\.jpg/);
+    assert.match(previewPublic.text, /draft-hero\.jpg/);
     assert.doesNotMatch(previewPublic.text, /data-bb-inline-start/);
 
     const hqPreview = await request(app)

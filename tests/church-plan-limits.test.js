@@ -22,6 +22,7 @@ const platformProvisioningRepo = require("../src/db/pg/church/platformProvisioni
 const churchPlanService = require("../src/services/church/churchPlanService");
 const {
   getChurchPlan,
+  getPlanLimit,
   isFeatureEnabled,
   canCreateAdditionalBranch,
   buildUsageWarnings,

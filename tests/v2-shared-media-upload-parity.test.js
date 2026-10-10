@@ -24,10 +24,11 @@ describe("v2 shared media upload parity contracts", () => {
 
   it("inline editor action labels match Content Library wording for both products", () => {
     const js = read("public/platform/website-inline-edit.js");
+    const field = read("views/platform/website/partials/media-field.ejs");
     assert.match(js, /Upload from computer/);
-    assert.match(js, /Choose from Content Library/);
-    assert.match(js, /Replace image/);
-    assert.match(js, /Remove image/);
+    assert.match(field, /Choose from Content Library/);
+    assert.match(field, /Replace image/);
+    assert.match(field, /Remove image/);
     // currentSrc must be resolved before building the action label
     const idxSrc = js.indexOf('var currentSrc = canvasImg');
     const idxUpload = js.indexOf('"Upload from computer"');
@@ -58,15 +59,15 @@ describe("v2 shared media upload parity contracts", () => {
   it("BlessBoard public editor cache bust includes media parity assets", () => {
     const start = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
     const end = read("views/blessboard/v5/partials/tenant-public-shell-end.ejs");
-    assert.match(start, /website-inline-edit\.css\?v=v2-media-parity-1/);
-    assert.match(end, /website-inline-edit\.js\?v=v2-media-parity-1/);
+    assert.match(start, /website-inline-edit\.css\?v=v2-sp-vis-1/);
+    assert.match(end, /website-inline-edit\.js\?v=v2-img-editor-2/);
   });
 
   it("BlessBoard structured edit and branding skip duplicate upload handlers when shared field is present", () => {
     const structured = read("public/blessboard/v5/website-structured-edit.js");
     const brandingJs = read("public/blessboard/v5/website-branding.js");
     assert.match(structured, /Upload from computer/);
-    assert.match(structured, /Choose from Content Library/);
+    assert.match(structured, /data-bb-se-library/);
     assert.match(brandingJs, /usesSharedMediaField/);
     assert.match(brandingJs, /data-gp-we-media-field/);
   });
