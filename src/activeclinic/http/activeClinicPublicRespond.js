@@ -93,6 +93,23 @@ function sendClinicResolveFailure(res, result, deps) {
   return sendClinicNotFound(res, deps);
 }
 
+function sendClinicUnpublished(res, clinic, req) {
+  const { renderWebsiteUnpublishedState } = require("../../platform/website/websiteUnpublishedState");
+  const { canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+  const key = encodeURIComponent(String(clinic.clinicKey || ""));
+  return res.status(200).type("html").send(renderWebsiteUnpublishedState({
+    product: "activeclinic",
+    organizationName: clinic.publicName || clinic.websiteDisplayName || "This clinic",
+    organizationType: "clinic",
+    directoryUrl: "/clinics",
+    loginUrl: `/login?returnTo=${encodeURIComponent(`/clinics/${key}`)}`,
+    customizeUrl: canEditClinicWebsite(req, clinic) ? `/clinics/${key}/website/edit` : null,
+    isAuthenticated: Boolean(req.activeClinicAuth && req.activeClinicAuth.authenticated),
+    canEditWebsite: canEditClinicWebsite(req, clinic),
+    branding: { name: "ActiveClinic", primary: "#2563eb" },
+  }));
+}
+
 /**
  * JSON/API clinic resolve failure. Does not require page CSRF helpers.
  * Maps to the same status/code policy as the HTML public pages.
@@ -133,8 +150,19 @@ async function resolveClinicOrRespond(getPool, req, res, deps) {
   });
   if (
     !result.ok &&
-    (result.code === RESULT.NOT_PUBLISHED ||
-      result.code === RESULT.WEBSITE_OFFLINE ||
+    result.code === RESULT.NOT_PUBLISHED
+  ) {
+    const unpublished = await resolvePublishableClinicByKey(pool, {
+      clinicKey: req.params.clinicKey,
+      allowUnpublished: true,
+    });
+    if (unpublished.ok && unpublished.clinic) {
+      return sendClinicUnpublished(res, unpublished.clinic, req);
+    }
+  }
+  if (
+    !result.ok &&
+    (result.code === RESULT.WEBSITE_OFFLINE ||
       result.code === RESULT.WEBSITE_SUSPENDED)
   ) {
     const unpublished = await resolvePublishableClinicByKey(pool, {

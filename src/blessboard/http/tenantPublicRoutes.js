@@ -158,11 +158,30 @@ function createTenantPublicRouter(deps) {
 
     if (model.kind === KIND.SETUP) {
       res.setHeader("X-Robots-Tag", "noindex, nofollow");
-      const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
+      const { resolveWebsiteEditCapability } = require("./attachWebsiteAdminChrome");
+      const { renderWebsiteUnpublishedState } = require("../../platform/website/websiteUnpublishedState");
+      let canEditWebsite = false;
+      try {
+        const capability = await resolveWebsiteEditCapability(getPool(), {
+          req,
+          tenant,
+          branchId: selectedBranch && selectedBranch.id,
+        });
+        canEditWebsite = capability.canEdit === true;
+      } catch {
+        canEditWebsite = false;
+      }
       return res.status(200).type("html").send(
-        renderWebsiteSetupPage({
-          publicName: model.publicName,
-          message: "This website is being prepared and is not public yet.",
+        renderWebsiteUnpublishedState({
+          product: "blessboard",
+          organizationName: model.publicName,
+          organizationType: "church",
+          directoryUrl: "/directory",
+          loginUrl: `/login?returnTo=${encodeURIComponent(req.originalUrl || "/")}`,
+          customizeUrl: canEditWebsite ? "/hq/website" : null,
+          isAuthenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+          canEditWebsite,
+          branding: { name: "BlessBoard", primary: "#6c5ce7" },
         })
       );
     }
