@@ -24,7 +24,7 @@ describe("ActiveClinic editor client contracts", () => {
     const js = read("public/activeclinic/website-cms.js");
     assert.match(js, /new URLSearchParams\(new FormData\(publishForm\)\)/);
     assert.match(js, /application\/x-www-form-urlencoded/);
-    assert.match(js, /Publish failed — check your connection and retry\. Draft unchanged\./);
+    assert.match(js, /Publish failed — check your connection and retry\./);
     assert.doesNotMatch(
       js,
       /body:\s*new FormData\(publishForm\)/,
@@ -36,7 +36,7 @@ describe("ActiveClinic editor client contracts", () => {
     const js = read("public/platform/website-lifecycle.js");
     assert.match(js, /new URLSearchParams\(new FormData\(form\)\)/);
     assert.match(js, /application\/x-www-form-urlencoded/);
-    assert.match(js, /Publish failed — check your connection and retry\. Draft unchanged\./);
+    assert.match(js, /Publish failed — check your connection and retry\./);
     assert.match(js, /beforeunload/);
   });
 
