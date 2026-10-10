@@ -107,7 +107,7 @@ function normalizeActiveClinicEmail(raw) {
   if (raw == null || String(raw).trim() === "") {
     return { ok: true, normalized: null, display: null };
   }
-  const display = String(raw).trim();
+  const display = String(raw).normalize("NFKC").trim();
   const normalized = display.toLowerCase();
   if (!EMAIL_RE.test(normalized) || normalized.length > 254) {
     return { ok: false, code: "email_invalid" };

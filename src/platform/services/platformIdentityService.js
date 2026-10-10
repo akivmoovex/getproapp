@@ -24,6 +24,7 @@ const UUID_RE =
 
 function normalizeEmail(raw) {
   const value = String(raw || "")
+    .normalize("NFKC")
     .trim()
     .toLowerCase();
   return value || null;
