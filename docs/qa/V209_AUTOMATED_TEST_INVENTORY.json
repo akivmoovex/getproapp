@@ -3,7 +3,7 @@
   "generatedAt": "2026-10-10T09:50:52.688Z",
   "method": "Static discovery: one record per it()/test() declaration; classification by file/name evidence.",
   "discoveredTestFiles": 806,
-  "discoveredTestCases": 6934,
+  "discoveredTestCases": 6935,
   "activeTestFiles": 806,
   "ignoredTestFiles": 0,
   "historicalTestFiles": 0,
@@ -16,13 +16,42 @@
     "UNIT": 1135,
     "SERVICE": 223,
     "ROUTE": 361,
-    "INTEGRATION": 187,
+    "INTEGRATION": 188,
     "FUNCTIONAL": 2277,
     "BROWSER_E2E": 16,
     "ARCHITECTURE": 189,
     "MIGRATION": 154,
     "STATIC_CONTRACT": 644,
     "SECURITY": 1748
+  },
+  "featureCoverage": {
+    "THEME_MANAGEMENT": {
+      "testFiles": [
+        "tests/v2-01-shared-theme-infra.test.js",
+        "tests/v2-01-first-additional-themes.test.js",
+        "tests/v2-01-shared-theme-gallery.test.js",
+        "tests/v7-website-settings-ux.test.js",
+        "tests/blessboard-website-management-hub-parity.test.js"
+      ],
+      "testCases": 26,
+      "functionalCoverage": [
+        "product-isolated theme registry",
+        "shared management actions and canonical product paths",
+        "ActiveClinic and BlessBoard management-hub tiles",
+        "authorized gallery GET routes",
+        "alternate-theme draft selection without publication"
+      ],
+      "negativeCoverage": [
+        "view-only mutation denied",
+        "cross-product theme ids rejected",
+        "cross-tenant BlessBoard mutation denied"
+      ],
+      "browserCoverage": {
+        "1440": "NOT_AUTOMATED",
+        "768": "NOT_AUTOMATED",
+        "390": "NOT_AUTOMATED"
+      }
+    }
   },
   "testCases": [
     {
@@ -90165,6 +90194,19 @@
       "security": false,
       "browser": false,
       "dbRequired": false,
+      "status": "discovered"
+    },
+    {
+      "testFile": "tests/blessboard-website-management-hub-parity.test.js",
+      "testName": "renders both product galleries and saves alternate themes as drafts only",
+      "runner": "node:test",
+      "primaryType": "INTEGRATION",
+      "product": "SHARED_PLATFORM",
+      "functional": true,
+      "negative": true,
+      "security": true,
+      "browser": false,
+      "dbRequired": true,
       "status": "discovered"
     }
   ],

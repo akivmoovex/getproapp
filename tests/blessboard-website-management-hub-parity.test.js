@@ -32,6 +32,7 @@ const {
 } = require("../src/platform/config/deploymentProfiles");
 const instanceRepo = require("../src/platform/website/instanceRepository");
 const contentService = require("../src/platform/website/contentService");
+const { loadWebsiteThemeState } = require("../src/platform/website/websiteThemeService");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
@@ -249,6 +250,20 @@ function decodeHtmlAttr(value) {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
+}
+
+function themeGalleryCsrf(html) {
+  const match = String(html || "").match(/\bdata-csrf-token="([^"]+)"/);
+  assert.ok(match, "expected theme gallery CSRF token");
+  return decodeHtmlAttr(match[1]);
+}
+
+function cookieJar(...sources) {
+  return sources
+    .flat()
+    .filter(Boolean)
+    .map((value) => String(value).split(";")[0])
+    .join("; ");
 }
 
 function hrefForAcWebsiteAction(html, action) {
@@ -513,5 +528,101 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.doesNotMatch(page.text, /data-bb-website-management/);
     assert.doesNotMatch(page.text, /class="bb-wm/);
     assert.doesNotMatch(page.text, /church website/);
+  });
+
+  it("renders both product galleries and saves alternate themes as drafts only", async () => {
+    requireDb();
+    const clinic = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    assert.equal(clinic.ok, true, JSON.stringify(clinic));
+    const clinicCookie = await acCookie(clinic.identityId, clinic.organizationId);
+    const clinicGallery = await request(makeAcApp())
+      .get(`/clinics/${clinic.slug}/website/themes`)
+      .set("Cookie", clinicCookie);
+    assert.equal(clinicGallery.status, 200, clinicGallery.text);
+    assert.match(clinicGallery.text, /ActiveClinic Classic/);
+    assert.match(clinicGallery.text, /Family Wellness Mint/);
+    const clinicSave = await request(makeAcApp())
+      .post(`/clinics/${clinic.slug}/website/theme`)
+      .set("Cookie", cookieJar(clinicCookie, clinicGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(clinicGallery.text),
+        themeId: "ac.family-wellness-mint",
+      });
+    assert.equal(clinicSave.status, 200, clinicSave.text);
+    assert.equal(clinicSave.body.published, false);
+    const clinicState = await loadWebsiteThemeState(pool, {
+      organizationId: clinic.organizationId,
+      productCode: PRODUCT_CODE.ACTIVECLINIC,
+      preferDraft: true,
+    });
+    assert.equal(clinicState.draftThemeId, "ac.family-wellness-mint");
+    assert.equal(clinicState.publishedThemeId, "ac.default");
+    const clinicCrossProduct = await request(makeAcApp())
+      .post(`/clinics/${clinic.slug}/website/theme`)
+      .set("Cookie", cookieJar(clinicCookie, clinicGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(clinicGallery.text),
+        themeId: "bb.default",
+      });
+    assert.equal(clinicCrossProduct.status, 400);
+    assert.equal(clinicCrossProduct.body.code, "invalid_theme");
+    const clinicViewOnly = await request(makeAcApp())
+      .post(`/clinics/${clinic.slug}/website/theme`)
+      .send({ themeId: "ac.default" });
+    assert.equal(clinicViewOnly.status, 403);
+
+    const church = await provisionChurch("theme");
+    const churchCookie = await hqCookie(church, church.hqUserId);
+    const churchGallery = await request(makeBbApp())
+      .get(`/c/${church.key}/website/themes`)
+      .set("Host", church.host)
+      .set("Cookie", churchCookie);
+    assert.equal(churchGallery.status, 200, churchGallery.text);
+    assert.match(churchGallery.text, /BlessBoard Classic/);
+    assert.match(churchGallery.text, /Contemporary Fellowship/);
+    const churchSave = await request(makeBbApp())
+      .post(`/c/${church.key}/website/theme`)
+      .set("Host", church.host)
+      .set("Cookie", cookieJar(churchCookie, churchGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(churchGallery.text),
+        themeId: "bb.contemporary-fellowship",
+      });
+    assert.equal(churchSave.status, 200, churchSave.text);
+    assert.equal(churchSave.body.published, false);
+    const churchState = await loadWebsiteThemeState(pool, {
+      organizationId: church.organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      preferDraft: true,
+    });
+    assert.equal(churchState.draftThemeId, "bb.contemporary-fellowship");
+    assert.equal(churchState.publishedThemeId, "bb.default");
+    const churchCrossProduct = await request(makeBbApp())
+      .post(`/c/${church.key}/website/theme`)
+      .set("Host", church.host)
+      .set("Cookie", cookieJar(churchCookie, churchGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(churchGallery.text),
+        themeId: "ac.default",
+      });
+    assert.equal(churchCrossProduct.status, 400);
+    assert.equal(churchCrossProduct.body.code, "invalid_theme");
+
+    const otherChurch = await provisionChurch("themother");
+    const otherCookie = await hqCookie(otherChurch, otherChurch.hqUserId);
+    const otherGallery = await request(makeBbApp())
+      .get(`/c/${otherChurch.key}/website/themes`)
+      .set("Host", otherChurch.host)
+      .set("Cookie", otherCookie);
+    assert.equal(otherGallery.status, 200, otherGallery.text);
+    const crossTenant = await request(makeBbApp())
+      .post(`/c/${church.key}/website/theme`)
+      .set("Host", church.host)
+      .set("Cookie", cookieJar(otherCookie, otherGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(otherGallery.text),
+        themeId: "bb.default",
+      });
+    assert.equal(crossTenant.status, 403);
   });
 });
