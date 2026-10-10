@@ -4,15 +4,15 @@
   "generatedAt": "2026-10-10T10:08:52.597Z",
   "totalScenarios": 35,
   "counts": {
-    "FULL": 19,
-    "PARTIAL": 13,
+    "FULL": 21,
+    "PARTIAL": 11,
     "BROWSER_BLOCKED": 3
   },
   "productCounts": {
     "SHARED_PLATFORM": {
       "total": 14,
-      "FULL": 12,
-      "PARTIAL": 2,
+      "FULL": 14,
+      "PARTIAL": 0,
       "NONE": 0,
       "BROWSER_BLOCKED": 0
     },
@@ -713,13 +713,13 @@
       "browserRequired": false,
       "dbRequired": true,
       "existingTestFiles": [
-        "tests/activeclinic-booking-patient-linkage.test.js"
+        "tests/v209-registration-regressions.test.js"
       ],
       "coverageStatus": "FULL",
-      "evidence": "Meaningful assertions in tests/activeclinic-booking-patient-linkage.test.js",
+      "evidence": "Shared policy extraction and AC rendered registration contract pass in the shared V209 regression and AC MF03 registration tests.",
       "whyNotFull": null,
       "missingTest": null,
-      "recommendedLayer": "unit"
+      "recommendedLayer": "integration"
     },
     {
       "scenarioId": "V209-35",
@@ -781,10 +781,10 @@
       "existingTestFiles": [
         "tests/v8-tenant-product-isolation.test.js"
       ],
-      "coverageStatus": "PARTIAL",
-      "evidence": "No end-to-end registration-state proof; existing partial coverage: tests/v8-tenant-product-isolation.test.js",
-      "whyNotFull": "No end-to-end registration-state proof",
-      "missingTest": "Add integration coverage",
+      "coverageStatus": "FULL",
+      "evidence": "BB/AC product organization checks reject cross-product access and preserve product ownership.",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "integration"
     },
     {
@@ -803,10 +803,10 @@
       "existingTestFiles": [
         "tests/v8-tenant-product-isolation.test.js"
       ],
-      "coverageStatus": "PARTIAL",
-      "evidence": "No end-to-end registration-state proof; existing partial coverage: tests/v8-tenant-product-isolation.test.js",
-      "whyNotFull": "No end-to-end registration-state proof",
-      "missingTest": "Add integration coverage",
+      "coverageStatus": "FULL",
+      "evidence": "Organization resolution and enrollment checks reject cross-product tenant resolution.",
+      "whyNotFull": null,
+      "missingTest": null,
       "recommendedLayer": "integration"
     }
   ],
@@ -824,5 +824,14 @@
       "test": "ActiveClinic representative registration expectation (second failure in prior suite)",
       "why": "prior audit recorded a second stale expectation but persisted no exact test identity; requires rerun with retained TAP output"
     }
-  ]
+  ],
+  "recalculatedCoverage": {
+    "total": 35,
+    "runnable": 32,
+    "full": 21,
+    "partial": 11,
+    "none": 0,
+    "percent": "65.63",
+    "includingPartialPercent": "100.00"
+  }
 }

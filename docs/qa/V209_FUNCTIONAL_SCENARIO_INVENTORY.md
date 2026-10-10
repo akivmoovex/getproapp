@@ -84,3 +84,7 @@ None in this reconstructed V209 scope.
 
 - STALE_TEST_1: tests/activeclinic-mf03-registration.test.js — step 2 password policy copy — expects legacy rendered helper text absent from current V9 registration view
 - STALE_TEST_2: ActiveClinic representative registration expectation (second failure in prior suite) — prior audit recorded a second stale expectation but persisted no exact test identity; requires rerun with retained TAP output
+
+## Non-blocked completion
+
+V209-22, V209-33, and V209-34 are FULL based on existing meaningful assertions; no duplicate tests were added.

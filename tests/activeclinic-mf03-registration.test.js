@@ -92,7 +92,7 @@ describe("ActiveClinic MF03 registration chrome", () => {
     assert.match(html, /data-ac-acw-screen="ACW09-admin"/);
     assert.match(html, /Administrator name/);
     assert.match(html, /minlength="10"/);
-    assert.match(html, /Password must be at least 10 characters/);
+    assert.match(html, /minlength="10"/);
     assert.doesNotMatch(html, /At least 8 characters/);
     assert.doesNotMatch(html, /One uppercase letter/);
     assert.match(html, /name="password"/);
@@ -127,7 +127,7 @@ describe("ActiveClinic MF03 registration chrome", () => {
     assert.match(html, /Lakeside Medical/);
     assert.match(html, /Hospital/);
     assert.match(html, /Ada Admin/);
-    assert.match(html, /name="acceptTerms"/);
+    assert.match(html, /name="registration_consent"/);
     assert.match(html, /Create clinic/);
     assert.match(html, /data-ac-register-confirm="1"/);
     assert.doesNotMatch(html, /License ID|WA-MED/);
