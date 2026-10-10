@@ -19,6 +19,9 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | AC-04 | Gallery-image selection versus camera behavior requires native mobile picker verification | No code change; do not infer picker behavior from DOM alone | ActiveClinic media/mobile suites | BLOCKED | — |
 | BB-06 | Mobile publishing requires real browser verification; existing shared editor contracts were not safely re-run in this batch | No code change; retain publish RBAC and draft/live separation | BlessBoard mobile/editor publishing suites | BLOCKED | — |
 | BB-07 | Gallery-image selection versus camera behavior requires native mobile picker verification | No code change; do not infer picker behavior from DOM alone | BlessBoard media/mobile suites | BLOCKED | — |
+| AC-05 | Shared recovery/token hardening and ActiveClinic testing delivery outbox already exist in V8 history | No new change; use mock/testing outbox only | ActiveClinic password-recovery and delivery tests | ALREADY_FIXED | 3287b52a / 62f60f7c |
+| AC-12 | Invitation URL/environment parity and staff-invite coverage already exist in V8 history | No new change; do not claim inbox delivery | ActiveClinic staff-invite and environment-parity tests | ALREADY_FIXED | 10ddb165 |
+| BB-05 | Existing BlessBoard invitation/password-reset suites cover token, linking, role, and tenant paths | No new change; mock delivery only; inbox delivery unverified | BlessBoard invitation and recovery suites | ALREADY_FIXED | — |
 
 No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
