@@ -1051,6 +1051,15 @@ body.gp-website-editor-open:has([data-website-save-status]:not([hidden]):not([da
     height: 20px;
   }
 
+  .gp-website-editor__publish {
+    display: none;
+  }
+
+  .gp-website-editor__more-sep--mobile-publish,
+  .gp-website-editor__more-form--mobile-publish {
+    display: block;
+  }
+
   body.gp-website-editor-open.bb-tp-body--editing {
     overflow-x: hidden;
   }

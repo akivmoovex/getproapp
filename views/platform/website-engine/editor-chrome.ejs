@@ -210,6 +210,18 @@
             <% }) %>
           </div>
           <% }) %>
+          <% if (shell.canPublish && (shell.publishHref || shell.publishPath)) { %>
+          <div class="gp-website-editor__more-sep gp-website-editor__more-sep--mobile-publish" role="separator"></div>
+          <form method="post" action="<%= shell.publishHref || shell.publishPath %>" class="gp-website-editor__more-form gp-website-editor__more-form--mobile-publish" role="none">
+            <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+            <input type="hidden" name="confirm_publish" value="1"/>
+            <input type="hidden" name="makePublic" value="1"/>
+            <button type="submit" class="gp-website-editor__more-item" role="menuitem" data-website-engine-publish="1" data-bb-review-publish="1">
+              <span class="material-symbols-outlined" aria-hidden="true">publish</span>
+              <%= (shell.changeManager && shell.changeManager.publishLabel) || labels.publish || 'Publish' %>
+            </button>
+          </form>
+          <% } %>
           <% if (shell.exitMethod === 'POST' && (shell.exitAction || shell.exitHref)) { %>
           <div class="gp-website-editor__more-sep gp-website-editor__more-sep--mobile-exit" role="separator"></div>
           <form method="post" action="<%= shell.exitAction || shell.exitHref %>" class="gp-website-editor__more-form gp-website-editor__more-form--mobile-exit" role="none">
