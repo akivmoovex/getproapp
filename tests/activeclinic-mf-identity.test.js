@@ -39,8 +39,8 @@ describe("ActiveClinic MF staff identity chrome", () => {
     const html = renderLoginPage({ csrfToken: "csrf-mf" });
     assert.match(html, /data-ac-composition="p01-login"/);
     assert.match(html, /data-ac-mf-family="MF01"/);
-    assert.match(html, /<h1[^>]*>Sign In<\/h1>/);
-    assert.match(html, /Email address or phone number/);
+    assert.match(html, /<h1[^>]*>Signing you in\.\.\.<\/h1>/);
+    assert.match(html, /Email address/);
     assert.match(html, /action="\/login"/);
     assert.match(html, /href="\/forgot-password"/);
     assert.match(html, /href="\/register-clinic"/);

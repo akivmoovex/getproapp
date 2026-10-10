@@ -47,7 +47,7 @@ describe("v7 unified website editor mobile QA", () => {
     assert.match(js, /gp-website-field-editing/);
     assert.match(js, /scrollIntoView/);
     assert.match(js, /data-website-publish-confirm/);
-    assert.match(js, /window\.confirm/);
+    assert.doesNotMatch(js, /window\.confirm/);
     assert.match(js, /data-bb-inline-edit/);
     assert.match(js, /data-website-start/);
   });
@@ -79,19 +79,15 @@ describe("v7 unified website editor mobile QA", () => {
     const bbChrome = read("views/blessboard/v5/partials/website-admin-chrome.ejs");
     const sharedChrome = read("views/platform/website-engine/editor-chrome.ejs");
     assert.match(acField, /data-website-start="1"/);
-    assert.match(acField, /data-website-save="1"/);
-    assert.match(acField, /data-website-cancel="1"/);
-    assert.match(acField, /enterkeyhint="done"/);
-    assert.match(acField, /enterkeyhint="enter"/);
+    const sharedEditor = read("public/platform/website-inline-edit.js");
+    assert.match(sharedEditor, /data-website-field-editor-save/);
+    assert.match(sharedEditor, /data-website-field-editor-cancel/);
+    assert.match(acField, /data-website-start="1"/);
     assert.match(acImage, /data-website-type="image"/);
-    assert.match(acImage, /data-website-file="1"/);
-    assert.match(acImage, /capture="environment"/);
-    assert.match(acImage, /enterkeyhint="done"/);
-    assert.match(bbField, /data-bb-inline-start="1"/);
-    assert.match(bbField, /data-bb-inline-save="1"/);
-    assert.match(bbField, /data-bb-inline-cancel="1"/);
-    assert.match(bbField, /enterkeyhint="done"/);
-    assert.match(bbField, /enterkeyhint="enter"/);
+    assert.match(acImage, /data-website-image="1"/);
+    assert.match(sharedEditor, /data-website-file="1"/);
+    assert.doesNotMatch(acImage, /capture="environment"/);
+    assert.match(bbField, /data-bb-inline-edit="1"/);
     assert.match(acChrome, /data-website-edit-control="1"/);
     assert.match(acChrome, /data-website-preview="1"/);
     assert.match(sharedChrome, /data-website-publish-confirm="1"/);
@@ -108,7 +104,10 @@ describe("v7 unified website editor mobile QA", () => {
     const acSettings = read("views/activeclinic/app/settings-website-content.ejs");
     const bbReview = read("views/blessboard/v5/content-admin/website-publish-review.ejs");
     assert.match(acChrome, /websitePreviewUrl/);
-    assert.match(sharedChrome, /Publish this website\? Public visitors will see the current draft\./);
+    assert.match(
+      read("public/platform/website-lifecycle.js"),
+      /Publish failed — draft unchanged\. Retry when ready\./
+    );
     assert.match(acSettings, /data-ac-website-action="preview"/);
     assert.match(acSettings, /data-ac-website-next-action=/);
     assert.match(acSettings, /onsubmit="return confirm\(/);

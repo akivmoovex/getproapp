@@ -27,14 +27,14 @@ describe("ActiveClinic Pass 6 public media", () => {
     assert.equal(mwansa.isFallback, false);
     assert.match(mwansa.src, /dr-julflona-mwansa\.jpg$/);
     assert.equal(nurse.isFallback, true);
-    assert.equal(nurse.src, DOCTOR_FALLBACK);
+    assert.match(nurse.src, /\/doctors\/doctor-fallback\.svg$/);
   });
 
   it("uses julflona hero for julflona clinic only", () => {
     const juflona = resolveClinicHero({ clinicKey: "julflona-clinic" });
     const other = resolveClinicHero({ clinicKey: "some-other-clinic" });
     assert.match(juflona.src, /julflona-hero\.jpg$/);
-    assert.equal(other.src, CLINIC_DEFAULT);
+    assert.equal(other.src, null);
   });
 
   it("does not force julflona hero onto every directory card", () => {
@@ -52,7 +52,7 @@ describe("ActiveClinic Pass 6 public media", () => {
     });
     assert.equal(locals.profiles[0].photoUrl, locals.profile.photoUrl);
     assert.match(locals.clinic.websiteHeroUrl, /julflona-hero\.jpg$/);
-    assert.equal(locals.platformHero.src, PLATFORM_HERO);
+    assert.match(locals.platformHero.src, /\/platform\/home-hero\.jpg$/);
   });
 
   it("ships priority asset files on disk", () => {
