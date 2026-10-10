@@ -66,7 +66,7 @@ const {
 const PASSWORD = "DemoStaff-ActiveClinic-2026A";
 let pool;
 let skipReason = null;
-let phoneSeq = 26097110000;
+let phoneSeq = 260971100000;
 
 function nextPhone() {
   phoneSeq += 1;
@@ -113,7 +113,7 @@ async function seedTenant(key) {
     timezone: "Africa/Lusaka",
     phone: nextPhone(),
   });
-  assert.equal(facility.ok, true);
+  assert.equal(facility.ok, true, `${facility.code || "facility_error"}: ${facility.message || ""}`);
   await ensureDefaultDepartments(pool, {
     organizationId: orgId,
     healthcareOrganizationId: hco.healthcareOrganization.id,
