@@ -19,8 +19,8 @@ test.describe("V209 minimal cross-product authentication", () => {
       },
     });
     const page = await context.newPage();
-    await page.goto(`${BASE_URL}/hq/dashboard`);
-    await expect(page).toHaveURL(/\/hq\/dashboard/);
+    await page.goto(`${BASE_URL}/hq`);
+    await expect(page).toHaveURL(/\/hq(?:\/)?$/);
     await expect(page.getByRole("link", { name: /website|build|edit/i }).first()).toBeVisible();
     await context.close();
   });
