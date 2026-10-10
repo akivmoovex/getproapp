@@ -425,7 +425,7 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       organizationId: church.organizationId,
       instanceId: instance.id,
       contentKey: "home.logo",
-      value: { alt: "Draft logo", src: "/tmp/draft-logo.png" },
+      value: { alt: "Draft logo", src: "https://example.invalid/draft-logo.png" },
     });
     assert.equal(saved.ok, true, JSON.stringify(saved));
     const draftPage = await request(makeBbApp())

@@ -157,7 +157,12 @@ async function resolveClinicOrRespond(getPool, req, res, deps) {
       allowUnpublished: true,
     });
     if (unpublished.ok && unpublished.clinic) {
-      return sendClinicUnpublished(res, unpublished.clinic, req);
+      const { canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+      if (editRequested && canEditClinicWebsite(req, unpublished.clinic)) {
+        result = unpublished;
+      } else {
+        return sendClinicUnpublished(res, unpublished.clinic, req);
+      }
     }
   }
   if (

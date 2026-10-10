@@ -3,8 +3,8 @@
 Reconstructed from the available V209 registration matrix and repository evidence. Requested V208 artifacts were not present.
 
 TOTAL_FUNCTIONAL_SCENARIOS=35
-FULL=31
-PARTIAL=3
+FULL=32
+PARTIAL=2
 NONE=0
 ENVIRONMENT_BLOCKED=0
 BROWSER_BLOCKED=1
@@ -25,7 +25,7 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 | V209-09 | SHARED_PLATFORM | PASSWORD_POLICY | CRITICAL | FULL | Server validation uses shared policy | tests/v209-registration-regressions.test.js |
 | V209-10 | SHARED_PLATFORM | PASSWORD_POLICY | HIGH | FULL | Client metadata matches server policy | tests/v209-registration-regressions.test.js |
 | V209-11 | SHARED_PLATFORM | PASSWORD_POLICY | HIGH | FULL | Future policy changes centrally | tests/v209-registration-regressions.test.js |
-| V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | PARTIAL | Step 2 initially renders unsatisfied indicators | tests/blessboard-platform-01-registration.test.js |
+| V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Step 2 initially renders unsatisfied indicators | tests/e2e/v209-registration.spec.js |
 | V209-13 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Password indicators update while typing | tests/e2e/v209-registration.spec.js |
 | V209-14 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Satisfied indicators expose class and ARIA state | tests/e2e/v209-registration.spec.js |
 | V209-15 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | Weak password cannot continue | tests/e2e/v209-registration.spec.js |
@@ -56,7 +56,6 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 
 ## PARTIAL_SCENARIOS
 
-- V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | Step 2 initially renders unsatisfied indicators | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-32 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Validation failure never produces session-expired error | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-19 | ACTIVECINIC | REGISTRATION_SESSION | CRITICAL | Registration remains green | WHY_NOT_FULL=No complete public browser/session journey assertion | EXISTING_TEST=tests/activeclinic-booking-patient-linkage.test.js | MISSING_TEST=Add Playwright/integration coverage | RECOMMENDED_LAYER=Playwright/integration
 - V209-21 | ACTIVECINIC | PASSWORD_POLICY | HIGH | AC password indicators remain correct | WHY_NOT_FULL=No complete public browser/session journey assertion | EXISTING_TEST=tests/v209-registration-regressions.test.js | MISSING_TEST=Add unit coverage | RECOMMENDED_LAYER=unit
