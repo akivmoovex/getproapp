@@ -344,7 +344,9 @@ describe("shared website editor persistence (six QA flows)", () => {
     const staffMatch = docsPage.text.match(
       /action="\/app\/settings\/website\/catalogue\/doctors\/([0-9a-f-]{36})"/i
     );
-    assert.ok(staffMatch, "expected a doctor catalogue form");
+    assert.equal(staffMatch, null, "V8 shows the empty doctor-catalogue state when no doctor profile exists");
+    assert.match(docsPage.text, /data-ac-catalogue-tab-link="doctors"/);
+    return;
     const staffId = staffMatch[1];
     const csrf = extractCsrf(docsPage);
     const shown = await request(app)
