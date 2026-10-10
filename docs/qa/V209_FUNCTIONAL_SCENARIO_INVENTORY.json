@@ -1,0 +1,828 @@
+{
+  "schemaVersion": "1.0",
+  "authority": "Reconstructed from V209 registration matrix and repository test evidence; V208 artifacts requested were absent.",
+  "generatedAt": "2026-10-10T10:08:52.597Z",
+  "totalScenarios": 35,
+  "counts": {
+    "FULL": 19,
+    "PARTIAL": 13,
+    "BROWSER_BLOCKED": 3
+  },
+  "productCounts": {
+    "SHARED_PLATFORM": {
+      "total": 14,
+      "FULL": 12,
+      "PARTIAL": 2,
+      "NONE": 0,
+      "BROWSER_BLOCKED": 0
+    },
+    "BLESSBOARD": {
+      "total": 16,
+      "FULL": 5,
+      "PARTIAL": 8,
+      "NONE": 0,
+      "BROWSER_BLOCKED": 3
+    },
+    "ACTIVECINIC": {
+      "total": 5,
+      "FULL": 2,
+      "PARTIAL": 3,
+      "NONE": 0,
+      "BROWSER_BLOCKED": 0
+    },
+    "ADMIN_CONSOLE": {
+      "total": 0,
+      "FULL": 0,
+      "PARTIAL": 0,
+      "NONE": 0,
+      "BROWSER_BLOCKED": 0
+    }
+  },
+  "scenarios": [
+    {
+      "scenarioId": "V209-01",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Below-minimum password rejected",
+      "description": "Below-minimum password rejected",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-02",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Minimum length boundary satisfied",
+      "description": "Minimum length boundary satisfied",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-03",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Uppercase rule transition",
+      "description": "Uppercase rule transition",
+      "risk": "MEDIUM",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-04",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Lowercase rule transition",
+      "description": "Lowercase rule transition",
+      "risk": "MEDIUM",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-05",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Number rule transition",
+      "description": "Number rule transition",
+      "risk": "MEDIUM",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-06",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Special-character rule transition",
+      "description": "Special-character rule transition",
+      "risk": "MEDIUM",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-07",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Partial password exact unsatisfied requirements",
+      "description": "Partial password exact unsatisfied requirements",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-08",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Fully compliant password accepted",
+      "description": "Fully compliant password accepted",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-09",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Server validation uses shared policy",
+      "description": "Server validation uses shared policy",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-10",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Client metadata matches server policy",
+      "description": "Client metadata matches server policy",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "contract"
+    },
+    {
+      "scenarioId": "V209-11",
+      "product": "SHARED_PLATFORM",
+      "area": "PASSWORD_POLICY",
+      "name": "Future policy changes centrally",
+      "description": "Future policy changes centrally",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-12",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Step 2 initially renders unsatisfied indicators",
+      "description": "Step 2 initially renders unsatisfied indicators",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-13",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Password indicators update while typing",
+      "description": "Password indicators update while typing",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "BROWSER_BLOCKED",
+      "evidence": "Browser fixture or live wizard assertion is absent; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Browser fixture or live wizard assertion is absent",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-14",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Satisfied indicators expose class and ARIA state",
+      "description": "Satisfied indicators expose class and ARIA state",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "BROWSER_BLOCKED",
+      "evidence": "Browser fixture or live wizard assertion is absent; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Browser fixture or live wizard assertion is absent",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-15",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Weak password cannot continue",
+      "description": "Weak password cannot continue",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-16",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Valid password continues",
+      "description": "Valid password continues",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-17",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "Confirmation mismatch rejected",
+      "description": "Confirmation mismatch rejected",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-18",
+      "product": "BLESSBOARD",
+      "area": "PASSWORD_POLICY",
+      "name": "BB consumes shared policy without duplicate rules",
+      "description": "BB consumes shared policy without duplicate rules",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-23",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Step 1 to Step 2 succeeds",
+      "description": "Step 1 to Step 2 succeeds",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-24",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Validation correction and resubmit succeeds",
+      "description": "Validation correction and resubmit succeeds",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-25",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Back navigation preserves wizard state",
+      "description": "Back navigation preserves wizard state",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-26",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Email correction continues",
+      "description": "Email correction continues",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-27",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Terms return preserves state",
+      "description": "Terms return preserves state",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "BROWSER_BLOCKED",
+      "evidence": "Browser fixture or live wizard assertion is absent; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Browser fixture or live wizard assertion is absent",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-28",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Current CSRF token succeeds",
+      "description": "Current CSRF token succeeds",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-29",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Missing CSRF rejected",
+      "description": "Missing CSRF rejected",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-30",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Invalid CSRF rejected",
+      "description": "Invalid CSRF rejected",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-32",
+      "product": "BLESSBOARD",
+      "area": "REGISTRATION_SESSION",
+      "name": "Validation failure never produces session-expired error",
+      "description": "Validation failure never produces session-expired error",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/blessboard-platform-01-registration.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "Server/static evidence lacks complete browser state transition; existing partial coverage: tests/blessboard-platform-01-registration.test.js",
+      "whyNotFull": "Server/static evidence lacks complete browser state transition",
+      "missingTest": "Add Playwright coverage",
+      "recommendedLayer": "Playwright"
+    },
+    {
+      "scenarioId": "V209-19",
+      "product": "ACTIVECINIC",
+      "area": "REGISTRATION_SESSION",
+      "name": "Registration remains green",
+      "description": "Registration remains green",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": true,
+      "existingTestFiles": [
+        "tests/activeclinic-booking-patient-linkage.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "No complete public browser/session journey assertion; existing partial coverage: tests/activeclinic-booking-patient-linkage.test.js",
+      "whyNotFull": "No complete public browser/session journey assertion",
+      "missingTest": "Add Playwright/integration coverage",
+      "recommendedLayer": "Playwright/integration"
+    },
+    {
+      "scenarioId": "V209-20",
+      "product": "ACTIVECINIC",
+      "area": "PASSWORD_POLICY",
+      "name": "AC consumes shared policy",
+      "description": "AC consumes shared policy",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v209-registration-regressions.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-21",
+      "product": "ACTIVECINIC",
+      "area": "PASSWORD_POLICY",
+      "name": "AC password indicators remain correct",
+      "description": "AC password indicators remain correct",
+      "risk": "HIGH",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v209-registration-regressions.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "No complete public browser/session journey assertion; existing partial coverage: tests/v209-registration-regressions.test.js",
+      "whyNotFull": "No complete public browser/session journey assertion",
+      "missingTest": "Add unit coverage",
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-22",
+      "product": "ACTIVECINIC",
+      "area": "REGISTRATION_SESSION",
+      "name": "No AC regression from policy extraction",
+      "description": "No AC regression from policy extraction",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": true,
+      "existingTestFiles": [
+        "tests/activeclinic-booking-patient-linkage.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/activeclinic-booking-patient-linkage.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-35",
+      "product": "ACTIVECINIC",
+      "area": "REGISTRATION_SESSION",
+      "name": "AC registration/session behavior remains green",
+      "description": "AC registration/session behavior remains green",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": true,
+      "dbRequired": true,
+      "existingTestFiles": [
+        "tests/activeclinic-booking-patient-linkage.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "No complete public browser/session journey assertion; existing partial coverage: tests/activeclinic-booking-patient-linkage.test.js",
+      "whyNotFull": "No complete public browser/session journey assertion",
+      "missingTest": "Add Playwright/integration coverage",
+      "recommendedLayer": "Playwright/integration"
+    },
+    {
+      "scenarioId": "V209-31",
+      "product": "SHARED_PLATFORM",
+      "area": "CSRF_SESSION",
+      "name": "Expired or missing session handled safely",
+      "description": "Expired or missing session handled safely",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": false,
+      "existingTestFiles": [
+        "tests/v8-shared-session-security.test.js"
+      ],
+      "coverageStatus": "FULL",
+      "evidence": "Meaningful assertions in tests/v8-shared-session-security.test.js",
+      "whyNotFull": null,
+      "missingTest": null,
+      "recommendedLayer": "unit"
+    },
+    {
+      "scenarioId": "V209-33",
+      "product": "SHARED_PLATFORM",
+      "area": "PRODUCT_ISOLATION",
+      "name": "Registration state isolated between products",
+      "description": "Registration state isolated between products",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": true,
+      "existingTestFiles": [
+        "tests/v8-tenant-product-isolation.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "No end-to-end registration-state proof; existing partial coverage: tests/v8-tenant-product-isolation.test.js",
+      "whyNotFull": "No end-to-end registration-state proof",
+      "missingTest": "Add integration coverage",
+      "recommendedLayer": "integration"
+    },
+    {
+      "scenarioId": "V209-34",
+      "product": "SHARED_PLATFORM",
+      "area": "TENANT_ISOLATION",
+      "name": "Registration state isolated between tenants/sessions",
+      "description": "Registration state isolated between tenants/sessions",
+      "risk": "CRITICAL",
+      "routeOrService": "registration/session/policy contract",
+      "happyPath": true,
+      "negativePath": true,
+      "securityRelevant": true,
+      "browserRequired": false,
+      "dbRequired": true,
+      "existingTestFiles": [
+        "tests/v8-tenant-product-isolation.test.js"
+      ],
+      "coverageStatus": "PARTIAL",
+      "evidence": "No end-to-end registration-state proof; existing partial coverage: tests/v8-tenant-product-isolation.test.js",
+      "whyNotFull": "No end-to-end registration-state proof",
+      "missingTest": "Add integration coverage",
+      "recommendedLayer": "integration"
+    }
+  ],
+  "validation": {
+    "uniqueIds": true,
+    "partitionSum": true,
+    "fullHaveEvidence": true
+  },
+  "staleTests": [
+    {
+      "test": "tests/activeclinic-mf03-registration.test.js — step 2 password policy copy",
+      "why": "expects legacy rendered helper text absent from current V9 registration view"
+    },
+    {
+      "test": "ActiveClinic representative registration expectation (second failure in prior suite)",
+      "why": "prior audit recorded a second stale expectation but persisted no exact test identity; requires rerun with retained TAP output"
+    }
+  ]
+}
