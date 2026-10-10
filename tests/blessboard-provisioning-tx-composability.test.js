@@ -23,7 +23,11 @@ const {
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
-const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
+const {
+  assignBlessBoardRole,
+  STATUS: ROLE_STATUS,
+} = require("../src/blessboard/services/assignBlessBoardRole");
+const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepository");
 const { recordAuditEvent } = require("../src/platform/services/auditEventService");
 
 function uniqueKey(prefix) {
@@ -452,5 +456,118 @@ describe("blessboard provisioning transaction composability", () => {
       instr.restore();
       client.release();
     }
+  });
+
+  it("preserves sanitized non-unique assignment-insert diagnostics", async () => {
+    requireDb();
+    const key = uniqueKey("tx-role-diagnostic");
+    const email = `${key}@example.org`;
+    const org = await provisionPlatformTenant(pool, {
+      organizationKey: key,
+      displayName: "Role Diagnostic",
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: key,
+      hostname: `${key}.blessboard.test`,
+      domainType: "canonical",
+      deploymentCode: "blessboard-org-staging",
+      isPrimary: true,
+    });
+    assert.equal(org.ok, true);
+    const church = await provisionBlessBoardChurch(pool, {
+      organizationKey: key,
+      churchKey: key,
+      displayName: "Role Diagnostic",
+      dataEnvironment: "testing",
+      hqBranchKey: "hq",
+      hqBranchDisplayName: "Headquarters",
+    });
+    assert.equal(church.ok, true);
+    const user = await createBlessBoardUser(pool, {
+      email,
+      displayName: "Role Diagnostic Admin",
+      password: "TestPassword99",
+    });
+    assert.equal(user.ok, true);
+
+    const originalInsert = rbacRepo.insertAssignment;
+    rbacRepo.insertAssignment = async () => {
+      throw Object.assign(
+        new Error(
+          "permission denied for table user_role_assignments password=hunter2 token=abc admin@church.test"
+        ),
+        {
+          code: "42501",
+          constraint: "role_assignment_scope_check",
+          table: "user_role_assignments",
+          schema: "blessboard",
+          routine: "aclcheck_error",
+        }
+      );
+    };
+    try {
+      const failed = await assignBlessBoardRole(pool, {
+        email,
+        organizationKey: key,
+        roleKey: "church_hq_admin",
+        churchKey: key,
+      });
+      assert.equal(failed.ok, false);
+      assert.equal(failed.status, ROLE_STATUS.TRANSACTION_ERROR);
+      assert.equal(failed.databaseError.errorName, "Error");
+      assert.equal(failed.databaseError.postgresCode, "42501");
+      assert.equal(failed.databaseError.constraint, "role_assignment_scope_check");
+      assert.equal(failed.databaseError.table, "user_role_assignments");
+      assert.equal(failed.databaseError.schema, "blessboard");
+      assert.equal(failed.databaseError.routine, "aclcheck_error");
+      assert.match(failed.databaseError.message, /permission denied/i);
+      assert.doesNotMatch(
+        JSON.stringify(failed.databaseError),
+        /hunter2|token=abc|admin@church\.test/i
+      );
+    } finally {
+      rbacRepo.insertAssignment = originalInsert;
+    }
+  });
+
+  it("keeps duplicate role assignment idempotent", async () => {
+    requireDb();
+    const key = uniqueKey("tx-role-idempotent");
+    const email = `${key}@example.org`;
+    const org = await provisionPlatformTenant(pool, {
+      organizationKey: key,
+      displayName: "Role Idempotent",
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: key,
+      hostname: `${key}.blessboard.test`,
+      domainType: "canonical",
+      deploymentCode: "blessboard-org-staging",
+      isPrimary: true,
+    });
+    assert.equal(org.ok, true);
+    const church = await provisionBlessBoardChurch(pool, {
+      organizationKey: key,
+      churchKey: key,
+      displayName: "Role Idempotent",
+      dataEnvironment: "testing",
+      hqBranchKey: "hq",
+      hqBranchDisplayName: "Headquarters",
+    });
+    assert.equal(church.ok, true);
+    const user = await createBlessBoardUser(pool, {
+      email,
+      displayName: "Role Idempotent Admin",
+      password: "TestPassword99",
+    });
+    assert.equal(user.ok, true);
+    const request = {
+      email,
+      organizationKey: key,
+      roleKey: "church_hq_admin",
+      churchKey: key,
+    };
+    assert.equal((await assignBlessBoardRole(pool, request)).status, ROLE_STATUS.ASSIGNED);
+    assert.equal((await assignBlessBoardRole(pool, request)).status, ROLE_STATUS.ALREADY_ASSIGNED);
   });
 });

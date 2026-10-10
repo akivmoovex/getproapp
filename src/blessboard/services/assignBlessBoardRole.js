@@ -51,6 +51,38 @@ function normalizeRoleKey(raw) {
   return key;
 }
 
+/**
+ * Safe metadata for an internal provisioning failure. PostgreSQL error detail
+ * may include input values, so retain only structural fields and a redacted
+ * message for the registration trace.
+ * @param {unknown} err
+ */
+function sanitizeDatabaseError(err) {
+  const source = err && typeof err === "object" ? err : {};
+  const rawMessage = String(source.message || "");
+  const message = rawMessage
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, "[redacted-url]")
+    .replace(/\b(password|token|secret|session(?:_id)?|csrf)\s*([=:])\s*\S+/gi, "$1$2[redacted]")
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/Key \([^)]*\)=\([^)]*\)/gi, "Key ([redacted])=([redacted])")
+    .replace(/'[^']{1,200}'/g, "'[redacted]'")
+    .slice(0, 500);
+  const code = source.code != null ? String(source.code).slice(0, 16) : null;
+  return {
+    errorName: source.name != null ? String(source.name).slice(0, 80) : "Error",
+    causeType: source.constructor && source.constructor.name
+      ? String(source.constructor.name).slice(0, 80)
+      : "Error",
+    errorCode: code,
+    postgresCode: code && /^[0-9A-Z]{5}$/.test(code) ? code : null,
+    constraint: source.constraint != null ? String(source.constraint).slice(0, 120) : null,
+    table: source.table != null ? String(source.table).slice(0, 120) : null,
+    schema: source.schema != null ? String(source.schema).slice(0, 64) : null,
+    routine: source.routine != null ? String(source.routine).slice(0, 120) : null,
+    message: message || "database_insert_failed",
+  };
+}
+
 function scopeForCatalogueRole(catalogueRoleKey, churchId, branchId, organizationId) {
   if (catalogueRoleKey === "platform_administrator") {
     return {
@@ -345,6 +377,7 @@ async function assignBlessBoardRole(db, input, options) {
         status: STATUS.TRANSACTION_ERROR,
         message: "transaction_error",
         role: null,
+        databaseError: sanitizeDatabaseError(err),
       });
     }
 
@@ -376,4 +409,5 @@ module.exports = {
   assignBlessBoardRole,
   validateInput,
   normalizeRoleKey,
+  sanitizeDatabaseError,
 };

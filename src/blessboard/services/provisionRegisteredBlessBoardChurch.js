@@ -471,10 +471,14 @@ function extractProvisionErrorDiagnostics(err) {
         : err.cause && err.cause.name
           ? String(err.cause.name).slice(0, 80)
           : null,
+    errorCode: merged.errorCode != null ? String(merged.errorCode).slice(0, 16) : null,
     postgresCode: pgCode,
     constraint: merged.constraint != null ? String(merged.constraint).slice(0, 120) : null,
     table: merged.table != null ? String(merged.table).slice(0, 120) : null,
     schema: merged.schema != null ? String(merged.schema).slice(0, 64) : null,
+    routine: merged.routine != null ? String(merged.routine).slice(0, 120) : null,
+    message: merged.message != null ? sanitizeErrorDetail(merged.message) : null,
+    causeType: merged.causeType != null ? String(merged.causeType).slice(0, 80) : null,
     identityResolution:
       merged.identityResolution != null ? String(merged.identityResolution).slice(0, 80) : null,
     emailMatched:
@@ -1159,6 +1163,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
               diagnostics: {
                 ...identityResolutionDiagnostics,
                 roleStatus: hqRole.status,
+                ...(hqRole.databaseError || {}),
               },
             });
           }
@@ -1182,6 +1187,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
                 diagnostics: {
                   ...identityResolutionDiagnostics,
                   roleStatus: branchRole.status,
+                  ...(branchRole.databaseError || {}),
                 },
               }
             );
@@ -1256,6 +1262,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             diagnostics: {
               ...identityResolutionDiagnostics,
               roleStatus: hqRole.status,
+              ...(hqRole.databaseError || {}),
             },
           });
         }
@@ -1279,6 +1286,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
               diagnostics: {
                 ...identityResolutionDiagnostics,
                 roleStatus: branchRole.status,
+                ...(branchRole.databaseError || {}),
               },
             }
           );
@@ -1390,6 +1398,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             diagnostics: {
               ...identityResolutionDiagnostics,
               roleStatus: hqRole.status,
+              ...(hqRole.databaseError || {}),
             },
           });
         }
@@ -1413,6 +1422,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
               diagnostics: {
                 ...identityResolutionDiagnostics,
                 roleStatus: branchRole.status,
+                ...(branchRole.databaseError || {}),
               },
             }
           );
