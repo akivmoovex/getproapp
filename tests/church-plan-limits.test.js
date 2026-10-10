@@ -103,6 +103,14 @@ test("church plan config exposes free limits and locked premium features", () =>
   assert.equal(canCreateAdditionalBranch("free", 0).allowed, true);
 });
 
+test("branch capacity is plan-derived, not an editable church setting", () => {
+  assert.equal(getPlanLimit("free", "max_branches"), 1);
+  assert.equal(getPlanLimit("standard", "max_branches"), 5);
+  assert.equal(getPlanLimit("pro", "max_branches"), 999);
+  assert.equal(canCreateAdditionalBranch("standard", 5).allowed, false);
+  assert.equal(canCreateAdditionalBranch("standard", 4).allowed, true);
+});
+
 test("validatePlanUpdateBody rejects invalid plan_code", () => {
   const result = validatePlanUpdateBody({ plan_code: "enterprise" });
   assert.equal(result.ok, false);
