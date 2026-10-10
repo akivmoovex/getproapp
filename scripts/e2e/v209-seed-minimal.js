@@ -11,6 +11,7 @@ const {
 const { createBlessBoardUser } = require("../../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../../src/blessboard/services/assignBlessBoardRole");
 const blessBoardRbacRepository = require("../../src/blessboard/repositories/blessBoardRbacRepository");
+const { createWebsiteInstance } = require("../../src/platform/website/instanceRepository");
 const { createPlatformIdentity } = require("../../src/platform/services/platformIdentityService");
 const {
   setPlatformIdentityPassword,
@@ -145,6 +146,72 @@ async function main() {
         assignmentOrigin: "system",
         assignmentReason: "v209_e2e_member",
       });
+    }
+
+    for (const fixture of [
+      { key: "v209-e2e-bb-unpublished", name: "V209 E2E BB Unpublished", published: false },
+      { key: "v209-e2e-bb-published", name: "V209 E2E BB Published", published: true },
+    ]) {
+      const tenant = await provisionPlatformTenant(pool, {
+        organizationKey: fixture.key,
+        displayName: fixture.name,
+        productKey: "blessboard",
+        productTenantKey: fixture.key,
+        deploymentCode: CODE_ORG_STAGING,
+        dataEnvironment: "testing",
+        skipDomain: true,
+      });
+      if (!tenant.ok) throw new Error(`BB website tenant: ${tenant.message}`);
+      const church = await provisionBlessBoardChurch(pool, {
+        organizationKey: fixture.key,
+        churchKey: fixture.key,
+        displayName: fixture.name,
+        legalName: fixture.name,
+        dataEnvironment: "testing",
+        hqBranchKey: "hq",
+        hqBranchDisplayName: `${fixture.name} HQ`,
+        countryCode: "ZM",
+        timezone: "Africa/Lusaka",
+      });
+      if (!church.ok) throw new Error(`BB website church: ${church.message || church.status}`);
+      const instance = await createWebsiteInstance(pool, {
+        organizationId: tenant.records.organization.id,
+        productCode: "blessboard",
+        templateId: "blessboard_church",
+        templateVersion: 1,
+        slug: fixture.key,
+        status: fixture.published ? "published" : "coming_soon",
+        scopeKind: "church_wide",
+        scopeRef: null,
+        lifecycleStatus: "provisional",
+        publishPolicy: "TENANT_PUBLISH",
+        adapterMode: "shared_engine",
+      });
+      if (!instance.ok) throw new Error(`BB website instance: ${instance.code}`);
+      if (fixture.published) {
+        await pool.query(
+          `UPDATE platform.website_instances
+              SET status = 'published', published_at = COALESCE(published_at, now()),
+                  last_published_at = COALESCE(last_published_at, now())
+            WHERE id = $1`,
+          [instance.instance.id]
+        );
+        await pool.query(
+          `INSERT INTO platform.website_versions
+             (organization_id, instance_id, version_number, snapshot_json, status,
+              published_at, source_policy, changed_keys, moderation_status)
+           SELECT $1, $2, 1, $3::jsonb, 'published', now(), 'TENANT_PUBLISH',
+                  ARRAY['home'], 'published'
+           WHERE NOT EXISTS (
+             SELECT 1 FROM platform.website_versions WHERE instance_id = $2 AND status = 'published'
+           )`,
+          [
+            tenant.records.organization.id,
+            instance.instance.id,
+            JSON.stringify({ home: { title: fixture.name, body: "V209 E2E published site" } }),
+          ]
+        );
+      }
     }
 
     const acTenant = await provisionPlatformTenant(pool, {
