@@ -3,27 +3,27 @@
 Generated 2026-10-10T09:50:52.688Z. Static-discovery counts; not execution results.
 
 ## Inventory
-TOTAL_TEST_FILES=806
-TOTAL_TEST_CASES=6935
-ACTIVE_TEST_FILES=806
+TOTAL_TEST_FILES=807
+TOTAL_TEST_CASES=6937
+ACTIVE_TEST_FILES=807
 IGNORED_TEST_FILES=0
 HISTORICAL_TEST_FILES=0
 SKIPPED_TEST_CASES=0
-NODE_TEST_FILES=803
+NODE_TEST_FILES=804
 PLAYWRIGHT_SPEC_FILES=3
 
 ## Classification
-FUNCTIONAL_TEST_CASES=4921
-FUNCTIONAL_PERCENT_OF_TOTAL=70.96
+FUNCTIONAL_TEST_CASES=4923
+FUNCTIONAL_PERCENT_OF_TOTAL=70.97
 NEGATIVE_TEST_CASES=2243
 NEGATIVE_PERCENT_OF_TOTAL=32.34
 NEGATIVE_PERCENT_OF_FUNCTIONAL=45.58
 CLASSIFICATION_COUNTS={"UNIT":1135,"SERVICE":223,"ROUTE":361,"INTEGRATION":188,"FUNCTIONAL":2277,"BROWSER_E2E":16,"ARCHITECTURE":189,"MIGRATION":154,"STATIC_CONTRACT":644,"SECURITY":1748}
 
 ## Theme management
-THEME_TEST_FILES=tests/v2-01-shared-theme-infra.test.js; tests/v2-01-first-additional-themes.test.js; tests/v2-01-shared-theme-gallery.test.js; tests/v7-website-settings-ux.test.js; tests/blessboard-website-management-hub-parity.test.js
-THEME_TEST_CASES=26
-THEME_FUNCTIONAL_COVERAGE=registry isolation; shared management actions and canonical paths; AC/BB hub tiles; authorized gallery routes; alternate-theme draft-only saves
+THEME_TEST_FILES=tests/v2-01-shared-theme-infra.test.js; tests/v2-01-first-additional-themes.test.js; tests/v2-01-shared-theme-gallery.test.js; tests/v7-website-settings-ux.test.js; tests/blessboard-website-management-hub-parity.test.js; tests/v209-theme-lifecycle.test.js
+THEME_TEST_CASES=28
+THEME_FUNCTIONAL_COVERAGE=registry isolation; shared management actions and canonical paths; AC/BB hub tiles; authorized gallery routes; alternate-theme draft-only saves; exhaustive product theme transitions; draft and publish persistence; public-render verification; content preservation
 THEME_NEGATIVE_COVERAGE=view-only mutation denied; cross-product theme ids rejected; cross-tenant BlessBoard mutation denied
 THEME_BROWSER_COVERAGE=1440 NOT_AUTOMATED; 768 NOT_AUTOMATED; 390 NOT_AUTOMATED
 
