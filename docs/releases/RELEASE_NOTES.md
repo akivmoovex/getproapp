@@ -437,12 +437,25 @@ ActiveClinic, BlessBoard, Shared GetPro Platform.
 - Shared capability-aware navigation data and active-route resolution.
 - Product-specific navigation ordering and visibility preserved.
 - Cross-product, host, apex, tenant, and authorization boundaries preserved.
+- Shared identity, account recovery, media validation, website publish/versioning,
+  authorization, RBAC, tenant/product isolation, and CSRF regression coverage.
+- Authoritative V8 Admin route/action inventory and expanded Admin QA infrastructure.
+- Automated regression coverage for all 20 fixed QA issues (100%).
+- BlessBoard leadership multi-item publishing, announcement audience resolution,
+  shared media feedback, mobile editor behavior, and plan-derived branch capacity.
+- ActiveClinic theme rendering, patient registration, guest booking/linkage,
+  clinic inquiry routing, password recovery, staff invitation/linking, mobile
+  publishing/image selection, and website draft/live/versioning.
 
 ### Quality and regression protection
 
 - Legacy Admin and BlessBoard Admin tests pass.
 - Authorization, tenant-isolation, and host/product-isolation coverage passes.
 - Navigation, active-route, mobile-navigation, and CSRF regression coverage passes.
+- Final fixed-issue regression: 122 PASS / 0 FAIL / 0 SKIP; 20/20 issues covered.
+- BlessBoard and ActiveClinic targeted regression suites are green.
+- No real product bugs, remaining test bugs, stale expectations, or release
+  blockers were identified within this fixed-issue QA scope.
 - No database or migration changes were introduced for these Admin Console foundation batches.
 
 ### Known issues / pending

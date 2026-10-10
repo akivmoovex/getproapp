@@ -96,13 +96,13 @@ const VERSIONS = Object.freeze([
   Object.freeze({
     version: "2.08",
     summary:
-      "V2.08 Admin Console foundation work for ActiveClinic and BlessBoard: shared shell contract, design tokens, product adapters, and capability-aware navigation registry. Visual consolidation remains in progress.",
+      "V2.08 Admin Console foundation and fixed-issue QA closure for ActiveClinic and BlessBoard: shared shell contract, design tokens, product adapters, capability-aware navigation, identity/media/website hardening, and verified regression coverage. Visual consolidation remains in progress.",
     releaseDate: "2026-10-10",
     products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
     deploymentStatus:
       "IN DEVELOPMENT — Admin Console consolidation is in progress. Hosted V8 visual verification and production deployment are pending.",
     qaVerification:
-      "LOCAL QA PASS for shell, navigation, authorization, tenant isolation, host/product isolation, CSRF, and active-route regression coverage. Hosted visual baseline is not certified.",
+      "LOCAL QA PASS: 122 PASS / 0 FAIL / 0 SKIP for the final fixed-issue regression; 20 of 20 fixed QA issues have automated coverage. Hosted visual baseline and production deployment are not certified.",
     acceptanceCriteria: [
       "Shared Admin Console shell contract exists without replacing either product shell",
       "Shared design tokens and product-specific adapters preserve existing behavior",
@@ -151,6 +151,26 @@ const VERSIONS = Object.freeze([
         sources: ["src/platform/ui/adminNavigationRegistry.js", "tests/admin-navigation-registry.test.js"],
         publicSafe: true,
       }),
+      Object.freeze({
+        id: "F-2.08-FIXED-ISSUES-QA",
+        name: "BB + AC fixed-issue regression coverage",
+        description:
+          "Regression coverage for website publishing/versioning, media validation, identity/account flows, booking and inquiry workflows, mobile editor behavior, audience resolution, and security boundaries.",
+        workflow:
+          "Focused local fixtures and mocked delivery paths exercise both product adapters and shared platform contracts without production or hosted destructive operations.",
+        expectedBehavior:
+          "All 20 fixed QA issues remain covered; draft/live, tenant, product, RBAC, authorization, and CSRF boundaries remain enforced.",
+        products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
+        featureType: "qa",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.08-FIXED-ISSUES-QA"],
+        sources: [
+          "docs/qa/V208_FIXED_ISSUES_AUTOTEST_MATRIX.md",
+          "tests/activeclinic-booking-patient-linkage.test.js",
+        ],
+        publicSafe: true,
+      }),
     ],
     bugs: [],
     qaChecklist: [
@@ -175,6 +195,20 @@ const VERSIONS = Object.freeze([
         expectedResult: "Ordering and product boundaries remain preserved.",
         status: STATUS.LOCAL_QA_PASS,
         evidence: "tests/admin-navigation-registry.test.js and Batch 2 navigation suites",
+      }),
+      Object.freeze({
+        id: "TC-2.08-FIXED-ISSUES-QA",
+        featureOrBugId: "F-2.08-FIXED-ISSUES-QA",
+        product: PRODUCTS.SHARED,
+        objective: "Final fixed-issue regression gate",
+        prerequisites: "V8 checkout and disposable local test fixtures",
+        steps: [
+          "Run the fixed-issue matrix suites",
+          "Run authorization, RBAC, tenant/product isolation, CSRF, and route inventory suites",
+        ],
+        expectedResult: "122 PASS / 0 FAIL / 0 SKIP; no real product or test bugs remain in scope.",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V208_FIXED_ISSUES_AUTOTEST_MATRIX.md",
       }),
     ],
     sources: [
