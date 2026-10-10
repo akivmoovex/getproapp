@@ -28,6 +28,9 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | BB-04 | Existing shared contact security suite covers church recipient and tenant isolation paths | No new change; mocked notification delivery only | `v2-05-contact-flow-security.test.js` and BB contact tests | ALREADY_FIXED | facf93bc |
 | AC-09 | Canonical clinic-key directory navigation and clickable detail routes already fixed in V8 | No new change; preserve published/unpublished visibility rules | `activeclinic-clinic-directory.test.js` and directory parity suites | ALREADY_FIXED | bb1ab5e9 / 9197741a |
 | AC-10 | Guest booking linkage, clinic/facility ownership, and duplicate handling already fixed in V8 | No new change; preserve public booking permissions and no-notification test mode | `activeclinic-public-booking.test.js`, `activeclinic-booking-patient-linkage.test.js` | ALREADY_FIXED | 9b380a7d / c5ce63fc |
+| AC-08 | Existing ActiveClinic service-card/doctor management functionality and scoped public contracts are present | No new fields or schema; preserve facility and role scoping | `v2-ac-service-card-editing.test.js`, ActiveClinic service/doctor suites | ALREADY_FIXED | f7248510 / 31099fbc |
+| BB-03 | Shared media/attachment lifecycle and authorization coverage already exist | No new change; preserve media-type and church/branch scope checks | `church-attachment-lifecycle.test.js`, `church-branch-announcement-attachments.test.js`, shared media suites | ALREADY_FIXED | e34e2538 |
+| BB-10 | V2.07 service-time editor, inherit/override/hidden modes, and canonical publication are implemented | No new schema or fields; preserve existing service-time contract | `blessboard-branch-service-times.test.js`, `blessboard-home-service-times.test.js` | ALREADY_FIXED | 907183f7 / 2c404be1 / c918d526 |
 
 No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
