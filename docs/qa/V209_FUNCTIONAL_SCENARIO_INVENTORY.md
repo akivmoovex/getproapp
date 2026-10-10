@@ -3,13 +3,13 @@
 Reconstructed from the available V209 registration matrix and repository evidence. Requested V208 artifacts were not present.
 
 TOTAL_FUNCTIONAL_SCENARIOS=35
-FULL=23
-PARTIAL=9
+FULL=31
+PARTIAL=3
 NONE=0
 ENVIRONMENT_BLOCKED=0
-BROWSER_BLOCKED=3
-RUNNABLE_FUNCTIONAL_SCENARIOS=32
-FUNCTIONAL_SCENARIO_COVERAGE_PERCENT=59.38
+BROWSER_BLOCKED=1
+RUNNABLE_FUNCTIONAL_SCENARIOS=34
+FUNCTIONAL_SCENARIO_COVERAGE_PERCENT=91.18
 COVERAGE_WITH_PARTIAL_PERCENT=100.00
 
 | ID | Product | Area | Risk | Status | Name | Evidence |
@@ -32,10 +32,10 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 | V209-16 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | Valid password continues | tests/e2e/v209-registration.spec.js |
 | V209-17 | BLESSBOARD | PASSWORD_POLICY | HIGH | FULL | Confirmation mismatch rejected | tests/blessboard-platform-01-registration.test.js |
 | V209-18 | BLESSBOARD | PASSWORD_POLICY | CRITICAL | FULL | BB consumes shared policy without duplicate rules | tests/blessboard-platform-01-registration.test.js |
-| V209-23 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | PARTIAL | Step 1 to Step 2 succeeds | tests/blessboard-platform-01-registration.test.js |
-| V209-24 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | PARTIAL | Validation correction and resubmit succeeds | tests/blessboard-platform-01-registration.test.js |
-| V209-25 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | PARTIAL | Back navigation preserves wizard state | tests/blessboard-platform-01-registration.test.js |
-| V209-26 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | PARTIAL | Email correction continues | tests/blessboard-platform-01-registration.test.js |
+| V209-23 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Step 1 to Step 2 succeeds | tests/e2e/v209-registration.spec.js |
+| V209-24 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Validation correction and resubmit succeeds | tests/e2e/v209-registration.spec.js |
+| V209-25 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Back navigation preserves wizard state | tests/e2e/v209-registration.spec.js |
+| V209-26 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Email correction continues | tests/e2e/v209-registration.spec.js |
 | V209-27 | BLESSBOARD | REGISTRATION_SESSION | HIGH | BROWSER_BLOCKED | Terms return preserves state | tests/blessboard-platform-01-registration.test.js |
 | V209-28 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Current CSRF token succeeds | tests/blessboard-platform-01-registration.test.js |
 | V209-29 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | FULL | Missing CSRF rejected | tests/blessboard-platform-01-registration.test.js |
@@ -57,10 +57,6 @@ COVERAGE_WITH_PARTIAL_PERCENT=100.00
 ## PARTIAL_SCENARIOS
 
 - V209-12 | BLESSBOARD | PASSWORD_POLICY | HIGH | Step 2 initially renders unsatisfied indicators | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-23 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Step 1 to Step 2 succeeds | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-24 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Validation correction and resubmit succeeds | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-25 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Back navigation preserves wizard state | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
-- V209-26 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Email correction continues | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-32 | BLESSBOARD | REGISTRATION_SESSION | CRITICAL | Validation failure never produces session-expired error | WHY_NOT_FULL=Server/static evidence lacks complete browser state transition | EXISTING_TEST=tests/blessboard-platform-01-registration.test.js | MISSING_TEST=Add Playwright coverage | RECOMMENDED_LAYER=Playwright
 - V209-19 | ACTIVECINIC | REGISTRATION_SESSION | CRITICAL | Registration remains green | WHY_NOT_FULL=No complete public browser/session journey assertion | EXISTING_TEST=tests/activeclinic-booking-patient-linkage.test.js | MISSING_TEST=Add Playwright/integration coverage | RECOMMENDED_LAYER=Playwright/integration
 - V209-21 | ACTIVECINIC | PASSWORD_POLICY | HIGH | AC password indicators remain correct | WHY_NOT_FULL=No complete public browser/session journey assertion | EXISTING_TEST=tests/v209-registration-regressions.test.js | MISSING_TEST=Add unit coverage | RECOMMENDED_LAYER=unit

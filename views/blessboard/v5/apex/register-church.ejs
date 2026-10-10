@@ -483,7 +483,7 @@
                 Continue
               </button>
               <% } else if (step === 'administrator') { %>
-              <a class="bb-apex-btn bb-apex-btn--secondary" href="/register-church?step=church<%= planValue ? ('&plan=' + encodeURIComponent(planValue)) : '' %>">Back</a>
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="/register-church?step=church&gpRegNav=1<%= planValue ? ('&plan=' + encodeURIComponent(planValue)) : '' %>">Back</a>
               <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit" name="action" value="next-admin">
                 Continue
               </button>
