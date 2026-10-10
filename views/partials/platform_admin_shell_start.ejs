@@ -226,6 +226,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title><%= _pageTitle %> | <%= typeof _bn !== 'undefined' ? _bn : 'Admin' %></title>
     <link rel="stylesheet" href="<%= typeof asset === 'function' ? asset('styles') : '/styles.css' %>" />
+    <link rel="stylesheet" href="/platform/admin-console-tokens.css" />
   </head>
   <body class="admin-app<%= typeof bodyEmbedClass !== 'undefined' ? bodyEmbedClass : '' %>">
     <%- include('./admin_nav', { navTitle: _navTitle, activeNav: _active }) %>
