@@ -905,7 +905,7 @@ async function getMemberAnnouncement(db, input) {
       if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
-      if (existing.branchId && String(existing.branchId) !== branchId) {
+      if (!isVisibleForBranch(existing, branchId, new Date())) {
         return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "branch_isolation" };
       }
       const audiences = await repo.listAudiences(client, id);
@@ -970,7 +970,7 @@ async function markAnnouncementRead(db, input) {
       if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, read: null };
       }
-      if (existing.branchId && String(existing.branchId) !== branchId) {
+      if (!isVisibleForBranch(existing, branchId, new Date())) {
         return { ok: false, status: STATUS.FORBIDDEN, read: null, reason: "branch_isolation" };
       }
       const audiences = await repo.listAudiences(client, id);
@@ -1039,6 +1039,12 @@ function isPubliclyVisible(ann, now) {
   return resolveEffectiveStatus(ann, now) === "published";
 }
 
+function isVisibleForBranch(ann, branchId, now) {
+  if (!isPubliclyVisible(ann, now)) return false;
+  if (!ann || !ann.branchId) return true;
+  return Boolean(branchId) && String(ann.branchId) === String(branchId);
+}
+
 async function listPublicWebsiteAnnouncements(db, input) {
   const churchId = String((input && input.churchId) || "").trim();
   if (!churchId) {
@@ -1094,7 +1100,7 @@ async function getPublicWebsiteAnnouncement(db, input) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
       if (branchId) {
-        if (existing.branchId && String(existing.branchId) !== branchId) {
+        if (!isVisibleForBranch(existing, branchId, new Date())) {
           return { ok: false, status: STATUS.NOT_FOUND, item: null };
         }
       } else if (existing.branchId) {
@@ -1105,7 +1111,7 @@ async function getPublicWebsiteAnnouncement(db, input) {
       if (!audiences.some((a) => a.audienceKey === "public")) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
-      if (!isPubliclyVisible(existing)) {
+      if (!isVisibleForBranch(existing, branchId, new Date())) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
       return {
@@ -1160,6 +1166,7 @@ module.exports = {
   presentAnnouncementForRender,
   resolveEffectiveStatus,
   isPubliclyVisible,
+  isVisibleForBranch,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,
