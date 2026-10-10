@@ -17,7 +17,19 @@ const OUT_DIR = '/tmp/v8-visual-audit';
 const SHOT_DIR = path.join(OUT_DIR, 'shots');
 const STITCH_DIR = path.join(OUT_DIR, 'stitch');
 const BB = 'https://blessboard.neuniversity.org';
-const HOSTED_SHA = 'bd2916bd3141';
+const EXPECTED_HOSTED_SHA = '26ed8a30cd49ae123533bdbc6945070a71b72ec4';
+const HOSTED_SHA_PREFIX = EXPECTED_HOSTED_SHA.slice(0, 12);
+const STORAGE_STATE_ENV = Object.freeze({
+  hq: 'V8_QA_STORAGE_STATE_HQ',
+  branch: 'V8_QA_STORAGE_STATE_BRANCH',
+  public: 'V8_QA_STORAGE_STATE_PUBLIC',
+  none: 'V8_QA_STORAGE_STATE_NONE',
+});
+const VIEWPORTS = Object.freeze([
+  { code: 'D', width: 1440, height: 900 },
+  { code: 'T', width: 768, height: 1024 },
+  { code: 'M', width: 390, height: 844 },
+]);
 
 function loadCreds() {
   const creds = {};
@@ -99,6 +111,30 @@ function req(jar, url, opt = {}) {
   });
 }
 
+async function verifyHostedIdentity() {
+  const hosts = [BB, 'https://activeclinic.neuniversity.org'];
+  for (const host of hosts) {
+    const response = await req(new Jar(), `${host}/healthz`);
+    let health;
+    try {
+      health = JSON.parse(response.body);
+    } catch {
+      throw new Error(`Invalid health JSON from ${host} (status ${response.status})`);
+    }
+    if (
+      response.status !== 200 ||
+      health.deploymentCode !== 'moovex-platform-v8-testing' ||
+      health.environment !== 'testing' ||
+      health.platformLine !== 'v8' ||
+      health.schemaCompatible !== true ||
+      String(health.gitSha || '').trim() !== HOSTED_SHA_PREFIX
+    ) {
+      throw new Error(`Hosted identity mismatch at ${host}`);
+    }
+  }
+  return { expectedSha: EXPECTED_HOSTED_SHA, hostedShaPrefix: HOSTED_SHA_PREFIX };
+}
+
 async function follow(jar, res, origin) {
   let cur = res;
   for (let i = 0; i < 10; i++) {
@@ -157,7 +193,7 @@ async function discover(creds) {
   const org = creds.V8_QA_BB_ORG_KEY;
   const hq = await login(creds.V8_QA_BB_HQ_EMAIL, creds.V8_QA_BB_PASSWORD);
   const branch = await login(creds.V8_QA_BB_BRANCH_EMAIL, creds.V8_QA_BB_PASSWORD);
-  const out = { org, hostedSha: HOSTED_SHA };
+  const out = { org, expectedHostedSha: EXPECTED_HOSTED_SHA };
 
   const forms = await req(hq, `${BB}/hq/form-studio`);
   out.formId = firstUuid(forms.body, '/hq/form-studio');
@@ -342,8 +378,9 @@ function buildMatrix(ids) {
 
   const rows = [];
   for (const s of screens) {
-    rows.push({ ...s, viewport: 'D', width: 1440, height: 900 });
-    rows.push({ ...s, viewport: 'M', width: 390, height: 844 });
+    for (const viewport of VIEWPORTS) {
+      rows.push({ ...s, viewport: viewport.code, width: viewport.width, height: viewport.height });
+    }
   }
   return rows;
 }
@@ -438,10 +475,18 @@ async function captureAll(ctx) {
   const results = [];
 
   async function contextFor(auth) {
-    const c = await browser.newContext({
+    const storageStatePath = process.env[STORAGE_STATE_ENV[auth] || ''];
+    const options = {
       viewport: { width: 1440, height: 900 },
       userAgent: 'V8-Visual-Audit-Playwright',
-    });
+    };
+    if (storageStatePath) {
+      if (!fs.existsSync(storageStatePath)) {
+        throw new Error(`${STORAGE_STATE_ENV[auth]} points to a missing local file`);
+      }
+      options.storageState = storageStatePath;
+    }
+    const c = await browser.newContext(options);
     if (auth === 'hq') await c.addCookies(hq.asPlaywrightCookies(BB));
     if (auth === 'branch') await c.addCookies(branch.asPlaywrightCookies(BB));
     return c;
@@ -597,7 +642,10 @@ async function downloadStitchRefs() {
 
 (async () => {
   fs.mkdirSync(OUT_DIR, { recursive: true });
+  console.log('Verifying hosted V8 identity…');
+  console.log(JSON.stringify(await verifyHostedIdentity()));
   const creds = loadCreds();
+  console.log(`Expected hosted SHA prefix: ${HOSTED_SHA_PREFIX}`);
   console.log('Discovering live IDs…');
   const ctx = await discover(creds);
   console.log(JSON.stringify(ctx.ids, null, 2));
