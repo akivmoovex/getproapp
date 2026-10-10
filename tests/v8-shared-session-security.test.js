@@ -40,6 +40,8 @@ const {
   getCsrfCookieName,
   getCsrfSecret,
   issueCsrfToken,
+  issueOrReuseCsrfToken,
+  validateCsrf,
 } = require("../src/platform/http/v5Csrf");
 const {
   wantsV5PrivateNoStore,
@@ -74,6 +76,18 @@ const V8_ENV = Object.freeze({
 });
 
 describe("V8 shared session security — cookie / secret isolation", () => {
+  it("reuses a valid registration CSRF cookie across browser-history navigation", () => {
+    const token = issueCsrfToken(V8_ENV);
+    const req = {
+      cookies: { [getCsrfCookieName(V8_ENV)]: token },
+    };
+    assert.equal(issueOrReuseCsrfToken(req, V8_ENV), token);
+    assert.equal(
+      validateCsrf(req, token, V8_ENV),
+      true
+    );
+  });
+
   it("uses distinct cookie names for pronline testing vs neuniversity V8 profiles", () => {
     const v7 = describeSessionCookieIsolation(V7_ENV);
     const v8 = describeSessionCookieIsolation(V8_ENV);

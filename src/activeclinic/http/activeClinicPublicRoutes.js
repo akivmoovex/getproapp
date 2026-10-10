@@ -7,7 +7,12 @@
 
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
-const { issueCsrfToken, setCsrfCookie, validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  issueOrReuseCsrfToken,
+  setCsrfCookie,
+  validateCsrf,
+  CSRF_FIELD,
+} = require("../../platform/http/v5Csrf");
 const {
   resolvePublishableClinicByKey,
   listPublishableClinics,
@@ -151,7 +156,7 @@ function sha256Hex(value) {
 }
 
 function issuePageCsrf(res, env, isProduction, req) {
-  const token = issueCsrfToken(env);
+  const token = issueOrReuseCsrfToken(req, env);
   setCsrfCookie(res, token, { secure: isProduction, env, req });
   return token;
 }

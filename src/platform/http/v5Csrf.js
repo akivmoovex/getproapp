@@ -86,6 +86,20 @@ function issueCsrfToken(env) {
 }
 
 /**
+ * Reuse a valid host-scoped double-submit token during ordinary navigation.
+ * This keeps a form restored from browser history paired with its cookie while
+ * still replacing missing, malformed, or differently signed tokens.
+ */
+function issueOrReuseCsrfToken(req, env) {
+  const cookieName = getCsrfCookieName(env, req);
+  const existing = req && req.cookies && req.cookies[cookieName];
+  if (existing && verifySignedToken(existing, getCsrfSecret(env))) {
+    return existing;
+  }
+  return issueCsrfToken(env);
+}
+
+/**
  * @param {import('express').Request} req
  * @param {string} submitted
  * @param {NodeJS.ProcessEnv} [env]
@@ -136,6 +150,7 @@ module.exports = {
   getCsrfCookieName,
   getCsrfSecret,
   issueCsrfToken,
+  issueOrReuseCsrfToken,
   validateCsrf,
   setCsrfCookie,
   verifySignedToken,

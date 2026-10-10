@@ -29,6 +29,7 @@ const {
   CSRF_COOKIE,
   CSRF_FIELD,
   issueCsrfToken,
+  issueOrReuseCsrfToken,
   setCsrfCookie,
   validateCsrf,
   getCsrfSecret,
@@ -355,7 +356,7 @@ function createApexMarketingRouter(deps) {
   const dataEnvironment = resolveRegistrationDataEnvironment(env, { deploymentCode });
 
   function issueAndSetCsrf(req, res) {
-    const csrfToken = issueToken(env);
+    const csrfToken = issueOrReuseCsrfToken(req, env);
     setCookie(res, csrfToken, { secure: isProduction, env, req });
     return csrfToken;
   }
