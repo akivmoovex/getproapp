@@ -570,6 +570,21 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       .post(`/clinics/${clinic.slug}/website/theme`)
       .send({ themeId: "ac.default" });
     assert.equal(clinicViewOnly.status, 403);
+    const otherClinic = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    assert.equal(otherClinic.ok, true, JSON.stringify(otherClinic));
+    const otherClinicCookie = await acCookie(otherClinic.identityId, otherClinic.organizationId);
+    const otherClinicGallery = await request(makeAcApp())
+      .get(`/clinics/${otherClinic.slug}/website/themes`)
+      .set("Cookie", otherClinicCookie);
+    assert.equal(otherClinicGallery.status, 200, otherClinicGallery.text);
+    const clinicCrossTenant = await request(makeAcApp())
+      .post(`/clinics/${clinic.slug}/website/theme`)
+      .set("Cookie", cookieJar(otherClinicCookie, otherClinicGallery.headers["set-cookie"]))
+      .send({
+        _csrf: themeGalleryCsrf(otherClinicGallery.text),
+        themeId: "ac.default",
+      });
+    assert.equal(clinicCrossTenant.status, 403);
 
     const church = await provisionChurch("theme");
     const churchCookie = await hqCookie(church, church.hqUserId);
