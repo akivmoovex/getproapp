@@ -22,6 +22,10 @@ ENVIRONMENT_BLOCKERS=Focused AC tests stalled during startup/import or harness i
 | AC-05 | Shared recovery/token hardening and ActiveClinic testing delivery outbox already exist in V8 history | No new change; use mock/testing outbox only | ActiveClinic password-recovery and delivery tests | ALREADY_FIXED | 3287b52a / 62f60f7c |
 | AC-12 | Invitation URL/environment parity and staff-invite coverage already exist in V8 history | No new change; do not claim inbox delivery | ActiveClinic staff-invite and environment-parity tests | ALREADY_FIXED | 10ddb165 |
 | BB-05 | Existing BlessBoard invitation/password-reset suites cover token, linking, role, and tenant paths | No new change; mock delivery only; inbox delivery unverified | BlessBoard invitation and recovery suites | ALREADY_FIXED | — |
+| AC-06 | ActiveClinic public contact ownership/routing fixes already exist in V8 history | No new change; reuse tenant-scoped contact service and mocked delivery | `activeclinic-public-website.test.js`, contact security suite | ALREADY_FIXED | 9a0c3045 |
+| AC-07 | Public inquiry persistence, CSRF, duplicate handling, and success response already covered by prior contact fixes | No new change | `activeclinic-public-website.test.js`, `v2-05-contact-flow-security.test.js` | ALREADY_FIXED | 0c873840 / 9a0c3045 |
+| AC-11 | Booking and clinic-inquiry route ownership/duplicate handling already fixed in V8 | No new change | `activeclinic-public-booking.test.js` and booking linkage suites | ALREADY_FIXED | 0c873840 / c5ce63fc |
+| BB-04 | Existing shared contact security suite covers church recipient and tenant isolation paths | No new change; mocked notification delivery only | `v2-05-contact-flow-security.test.js` and BB contact tests | ALREADY_FIXED | facf93bc |
 
 No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
