@@ -88,3 +88,5 @@ None in this reconstructed V209 scope.
 ## Non-blocked completion
 
 V209-22, V209-33, and V209-34 are FULL based on existing meaningful assertions; no duplicate tests were added.
+
+V209-21 and V209-32 converted to FULL with explicit assertions in tests/v209-registration-regressions.test.js.

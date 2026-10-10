@@ -86,9 +86,39 @@ describe("V2.09 registration presenter contracts", () => {
     assert.equal(shared.resolvePasswordLengthBounds({}).min, 10);
     assert.match(read("tests/activeclinic-mf03-registration.test.js"), /minlength="10"/);
   });
+  it("AC indicator evaluation mirrors the shared policy for transitions", () => {
+    const samples = ["short", "1234567890", "ValidPass10!"];
+    for (const password of samples) {
+      assert.deepEqual(
+        registration.evaluateRegistrationPasswordRules(password),
+        shared.evaluatePasswordRules(password),
+        `AC indicator state must match shared policy for ${password}`
+      );
+    }
+    assert.equal(
+      registration.evaluateRegistrationPasswordRules("short").some((rule) => !rule.met),
+      true
+    );
+    assert.equal(
+      registration.evaluateRegistrationPasswordRules("ValidPass10!").every((rule) => rule.met),
+      true
+    );
+    assert.equal(
+      read("src/activeclinic/http/activeClinicPublicRoutes.js").match(/GETPRO_PASSWORD_MIN_LENGTH|sharedPasswordPolicy/g),
+      null,
+      "AC route must not define a second password policy"
+    );
+  });
   it("ordinary validation failures do not map to session expiry", () => {
-    assert.equal(shared.validatePasswordPair("short", "short").code, shared.POLICY_RESULT.WEAK_PASSWORD);
-    assert.notEqual(shared.validatePasswordPair("short", "short").code, "session_expired");
+    const invalid = shared.validatePasswordPair("short", "short");
+    assert.equal(invalid.ok, false);
+    assert.equal(invalid.code, shared.POLICY_RESULT.WEAK_PASSWORD);
+    assert.match(invalid.error, /at least 10 characters/i);
+    assert.doesNotMatch(invalid.error, /session expired/i);
+
+    const corrected = shared.validatePasswordPair("ValidPass10!", "ValidPass10!");
+    assert.equal(corrected.ok, true);
+    assert.equal(corrected.value, "ValidPass10!");
   });
 });
 
