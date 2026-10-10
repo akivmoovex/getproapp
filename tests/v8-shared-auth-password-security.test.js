@@ -21,6 +21,7 @@ const {
   resolvePasswordLengthBounds,
   validatePasswordPolicy,
   validatePasswordPair,
+  evaluatePasswordRules,
   POLICY_RESULT,
 } = require("../src/platform/auth/sharedPasswordPolicy");
 const {
@@ -140,6 +141,18 @@ describe("V8 shared password policy", () => {
     const ok = validateRegistrationPasswordPair(PASSWORD, PASSWORD);
     assert.equal(ok.ok, true);
     assert.ok(REGISTRATION_PASSWORD_RULES.length >= 2);
+  });
+
+  it("evaluates every shared client rule with matching server boundaries", () => {
+    const weak = evaluatePasswordRules("short");
+    const partial = evaluatePasswordRules("1234567890");
+    const valid = evaluatePasswordRules(PASSWORD);
+    assert.deepEqual(weak.map((rule) => rule.met), [false, true]);
+    assert.deepEqual(partial.map((rule) => rule.met), [true, true]);
+    assert.deepEqual(valid.map((rule) => rule.met), [true, true]);
+    assert.equal(validatePasswordPolicy("short").ok, false);
+    assert.equal(validatePasswordPolicy(PASSWORD).ok, true);
+    assert.match(weak[0].label, /10/);
   });
 
   it("preserves bcrypt hash compatibility for V7 passwords", async () => {

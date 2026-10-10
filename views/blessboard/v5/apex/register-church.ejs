@@ -506,7 +506,7 @@
 </section>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+function initBlessBoardRegistrationPasswordRules() {
   var nameInput = document.getElementById("register_church_name");
   var branchInput = document.getElementById("register_branch_name");
   var keyInput = document.getElementById("register_organization_key");
@@ -533,7 +533,9 @@ document.addEventListener("DOMContentLoaded", function () {
       maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
     });
   }
-});
+}
+document.addEventListener("DOMContentLoaded", initBlessBoardRegistrationPasswordRules);
+window.addEventListener("load", initBlessBoardRegistrationPasswordRules);
 </script>
 
 <%- include('../partials/apex-shell-end') %>

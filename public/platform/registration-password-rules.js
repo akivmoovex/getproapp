@@ -22,6 +22,10 @@
         ? qs(config.confirmStatus)
         : config.confirmStatus;
     if (!passwordInput || !rulesRoot) return null;
+    if (rulesRoot.__gpPasswordRulesController) {
+      rulesRoot.__gpPasswordRulesController.refresh();
+      return rulesRoot.__gpPasswordRulesController;
+    }
 
     var minLength = Number(config.minLength) > 0 ? Number(config.minLength) : 10;
     var maxLength = Number(config.maxLength) > 0 ? Number(config.maxLength) : 200;
@@ -72,7 +76,9 @@
       confirmInput.addEventListener("blur", render);
     }
     render();
-    return { refresh: render };
+    var controller = { refresh: render };
+    rulesRoot.__gpPasswordRulesController = controller;
+    return controller;
   }
 
   global.GpRegistrationPasswordRules = {
