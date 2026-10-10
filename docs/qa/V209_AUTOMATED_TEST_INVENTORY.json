@@ -90167,5 +90167,81 @@
       "dbRequired": false,
       "status": "discovered"
     }
-  ]
+  ],
+  "audit": {
+    "codeCoverage": {
+      "statements": "UNAVAILABLE",
+      "branches": "UNAVAILABLE",
+      "functions": "UNAVAILABLE",
+      "lines": "UNAVAILABLE",
+      "reason": "Native c8 runs blocked/hung in repository test bootstrap; no fabricated metrics."
+    },
+    "functionalScenarioCoverage": {
+      "total": 35,
+      "runnable": 35,
+      "fullyAutomated": 23,
+      "partial": 12,
+      "none": 0,
+      "environmentBlocked": 0,
+      "browserOnly": 0,
+      "percent": "65.71",
+      "includingPartialPercent": "100.00",
+      "basis": "V209 registration matrix only; V208 inventories are absent from repository."
+    },
+    "negativeBreakdown": {
+      "VALIDATION_NEGATIVE": 461,
+      "AUTH_NEGATIVE": 82,
+      "RBAC_NEGATIVE": 262,
+      "TENANT_ISOLATION_NEGATIVE": 253,
+      "PRODUCT_ISOLATION_NEGATIVE": 102,
+      "CSRF_NEGATIVE": 184,
+      "SESSION_TOKEN_NEGATIVE": 81,
+      "NOT_FOUND_NEGATIVE": 44,
+      "DUPLICATE_CONFLICT_NEGATIVE": 274,
+      "MEDIA_NEGATIVE": 57,
+      "WORKFLOW_STATE_NEGATIVE": 131,
+      "OTHER_NEGATIVE": 311
+    },
+    "qualityReview": {
+      "duplicateTestCases": "UNREVIEWED",
+      "staleTests": 2,
+      "weakSmokeTests": "UNREVIEWED",
+      "noMeaningfulAssertion": "UNREVIEWED",
+      "externalNetworkDependent": "UNREVIEWED",
+      "nondeterministicFixtures": "UNREVIEWED",
+      "notes": [
+        "Two stale ActiveClinic expectations were observed in the representative run.",
+        "Other quality categories require semantic review beyond static naming."
+      ]
+    },
+    "topGaps": [
+      {
+        "area": "REGISTRATION",
+        "scenario": "Browser BB registration flow",
+        "risk": "CRITICAL",
+        "coverage": "PARTIAL",
+        "layer": "Playwright",
+        "dbRequired": "NO",
+        "browserRequired": "YES"
+      },
+      {
+        "area": "AUTH_LOGIN_RECOVERY",
+        "scenario": "Cross-product recovery boundary",
+        "risk": "CRITICAL",
+        "coverage": "PARTIAL",
+        "layer": "integration",
+        "dbRequired": "YES",
+        "browserRequired": "NO"
+      },
+      {
+        "area": "BOOKING_APPOINTMENTS",
+        "scenario": "Full patient booking journey",
+        "risk": "HIGH",
+        "coverage": "PARTIAL",
+        "layer": "integration/browser",
+        "dbRequired": "YES",
+        "browserRequired": "YES"
+      }
+    ]
+  }
 }
