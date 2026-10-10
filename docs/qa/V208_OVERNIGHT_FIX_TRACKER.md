@@ -44,3 +44,19 @@ No application files were modified. Mobile native-picker behavior was not
 claimed from static inspection, and no browser verification was run in this
 batch. No assertions were weakened and no database writes, migrations, resets,
 or external-service calls were made.
+
+## Final QA gate
+
+```text
+QA_TOTAL=22
+FIXED_VERIFIED=0
+ALREADY_FIXED=13
+NOT_REPRODUCED=0
+BLOCKED=7
+REQUIREMENT_DECISION=2
+OPEN=0
+```
+
+The seven blocked IDs require bounded test/browser execution: AC-01, AC-02,
+AC-03, AC-04, BB-02, BB-06, and BB-07. Requirement decisions are BB-01
+(plan-derived branch capacity) and BB-09 (undefined prayer-request contract).
