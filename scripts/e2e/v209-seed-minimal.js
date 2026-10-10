@@ -29,6 +29,15 @@ const { CODE_ORG_STAGING, CODE_ACTIVECLINIC_ORG_V6 } = require("../../src/platfo
 const BB_PASSWORD = process.env.E2E_BB_ADMIN_PASSWORD || "V209-local-BB-admin!";
 const BB_MEMBER_PASSWORD = process.env.E2E_BB_MEMBER_PASSWORD || "V209-local-BB-member!";
 const AC_PASSWORD = process.env.E2E_AC_ADMIN_PASSWORD || "V209-local-AC-admin!";
+const BB_RECOVERY_EMAIL = process.env.E2E_BB_RECOVERY_EMAIL || "v209-e2e-bb-recovery@example.test";
+const AC_RECOVERY_EMAIL = process.env.E2E_AC_RECOVERY_EMAIL || "v209-e2e-ac-recovery@example.test";
+
+function deterministicRegistrationData(runKey = "default") {
+  return {
+    email: `v209-e2e-registration-${String(runKey).replace(/[^a-z0-9-]/gi, "-")}@example.test`,
+    displayName: "V209 E2E Registration",
+  };
+}
 
 function databaseUrl() {
   const raw = String(process.env.E2E_DATABASE_URL || "").trim();
@@ -365,6 +374,63 @@ async function main() {
         );
       }
     }
+    const bbRecoveryUser = await createBlessBoardUser(pool, {
+      email: BB_RECOVERY_EMAIL,
+      displayName: "V209 E2E BB Recovery",
+      password: process.env.E2E_BB_RECOVERY_PASSWORD || "V209-local-BB-recovery!",
+    });
+    if (!bbRecoveryUser.ok) throw new Error(`BB recovery user: ${bbRecoveryUser.message || bbRecoveryUser.status}`);
+    const acRecovery = await createPlatformIdentity(pool, {
+      primaryEmail: AC_RECOVERY_EMAIL,
+      emailNormalized: AC_RECOVERY_EMAIL.toLowerCase(),
+      primaryPhone: "+260971209004",
+      phoneNormalized: "+260971209004",
+      emailVerifiedAt: new Date().toISOString(),
+      phoneVerifiedAt: new Date().toISOString(),
+    });
+    let acRecoveryIdentity = acRecovery.identity;
+    if (!acRecoveryIdentity && acRecovery.code === "duplicate_email") {
+      acRecoveryIdentity = (await pool.query(
+        `SELECT id FROM platform.identities WHERE email_normalized = $1`,
+        [AC_RECOVERY_EMAIL.toLowerCase()]
+      )).rows[0];
+    }
+    if (!acRecoveryIdentity) throw new Error(`AC recovery identity: ${acRecovery.message || acRecovery.code}`);
+    await setPlatformIdentityPassword(pool, {
+      identityId: acRecoveryIdentity.id,
+      password: process.env.E2E_AC_RECOVERY_PASSWORD || "V209-local-AC-recovery!",
+    });
+    const registrationFixture = deterministicRegistrationData("seed");
+    const registrationCollision = await pool.query(
+      `SELECT 1 FROM platform.identities WHERE email_normalized = $1`,
+      [registrationFixture.email]
+    );
+    if (registrationCollision.rowCount) throw new Error("BB registration fixture email collision");
+    const bookingFacility = await pool.query(
+      `SELECT id FROM activeclinic.facilities WHERE organization_id = $1 AND status = 'active' LIMIT 1`,
+      [acTenant.records.organization.id]
+    );
+    if (!bookingFacility.rowCount) {
+      await pool.query(
+        `INSERT INTO activeclinic.facilities
+          (organization_id, healthcare_organization_id, facility_key, display_name,
+           facility_type, status, is_primary, country_code, phone_normalized, phone_display, timezone)
+         VALUES ($1,$2,'v209-booking','V209 E2E Booking Facility','clinic','active',true,'ZM',
+                 '+260971209005','+260971209005','Africa/Lusaka')`,
+        [acTenant.records.organization.id, healthcareOrganization.id]
+      );
+    }
+    await pool.query(
+      `INSERT INTO activeclinic.appointment_service_types
+        (organization_id, healthcare_organization_id, service_key, display_name,
+         status, public_bookable, public_website_visible)
+       SELECT $1,$2,'v209-booking-consultation','V209 E2E Consultation','active',true,true
+       WHERE NOT EXISTS (
+         SELECT 1 FROM activeclinic.appointment_service_types
+          WHERE organization_id=$1 AND service_key='v209-booking-consultation'
+       )`,
+      [acTenant.records.organization.id, healthcareOrganization.id]
+    );
     console.log(JSON.stringify({ ok: true, bbChurch: bbChurch.church?.id || null, bbAdmin: bbUser.user?.id || null, bbMember: bbMember.user?.id || null, acClinic: healthcareOrganization.id, acAdmin: identity.id }));
   } finally {
     await pool.end();
