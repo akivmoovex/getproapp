@@ -472,7 +472,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           .trim()
           .toUpperCase() || "ZM";
         // V7 patient portal register uses phone_country + phone_national only.
-        const phone = String(phoneFields.phoneNational || "").trim();
+        const phone = String(phoneFields.phoneNational || phoneFields.phone || "").trim();
         const email = String((req.body && req.body.email) || "").trim();
         const firstName = String((req.body && req.body.firstName) || "").trim();
         const lastName = String((req.body && req.body.lastName) || "").trim();
