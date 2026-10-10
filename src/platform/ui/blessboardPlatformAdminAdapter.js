@@ -1,4 +1,5 @@
 const { normalizeAdminShellContract } = require("./adminShellContract");
+const { getAdminNavigation } = require("./adminNavigationRegistry");
 
 function createBlessboardPlatformAdminAdapter(locals = {}) {
   return normalizeAdminShellContract({
@@ -15,5 +16,14 @@ function createBlessboardPlatformAdminAdapter(locals = {}) {
   });
 }
 
-module.exports = { createBlessboardPlatformAdminAdapter };
+function getBlessboardPlatformAdminNavigation(locals = {}, viewport = "desktop") {
+  return getAdminNavigation("blessboard", {
+    path: locals.path || "",
+  }, viewport);
+}
+
+module.exports = {
+  createBlessboardPlatformAdminAdapter,
+  getBlessboardPlatformAdminNavigation,
+};
 

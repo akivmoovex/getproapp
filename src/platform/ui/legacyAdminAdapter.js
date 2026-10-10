@@ -1,4 +1,5 @@
 const { normalizeAdminShellContract } = require("./adminShellContract");
+const { getAdminNavigation } = require("./adminNavigationRegistry");
 
 function createLegacyAdminAdapter(locals = {}) {
   return normalizeAdminShellContract({
@@ -15,5 +16,15 @@ function createLegacyAdminAdapter(locals = {}) {
   });
 }
 
-module.exports = { createLegacyAdminAdapter };
+function getLegacyAdminNavigation(locals = {}, viewport = "desktop") {
+  const nav = locals.adminNav || {};
+  return getAdminNavigation("legacy", {
+    ...nav,
+    path: locals.path || "",
+    isSuper: !!nav.isSuper,
+    tenantScoped: !!nav.tenantScoped,
+  }, viewport);
+}
+
+module.exports = { createLegacyAdminAdapter, getLegacyAdminNavigation };
 
