@@ -66,6 +66,13 @@ dialog. Accepting `Publish this website? Public visitors will see the current
 draft.` through the normal dialog handler produced the authorized POST and
 published the clinic. Unauthenticated Chromium then received HTTP 200 for the
 clinic page, patient registration, and patient login routes.
+The first patient lifecycle attempt then exposed a separate product form-state
+defect: the Review hidden-field projection omitted `phone_country` and
+`phone_national`, so the created patient had no portal-match phone. The
+projection was corrected without changing validation or identity rules.
+The complete Chromium lifecycle passed twice with fresh clinics/patients:
+activation, identity linking, login, refresh, logout, relogin, and staff-route
+denial.
 
 DB-backed portal tests: patient login/session isolation passed; guest-token
 registration failed with HTTP 400. MF08/MF09 focused suites also failed
