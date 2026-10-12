@@ -58,6 +58,14 @@ apex reached `/admin`, survived refresh, and displayed `PLATFORM ADMINISTRATOR`.
 The target clinic approval record was already `active`/`provisioned` in the
 authorized UI, but its separate website state was `UNPUBLISHED`; public clinic
 and patient portal checks therefore remain blocked.
+The clinic administrator reached `/app/settings/website/publish` with HTTP 200
+and saw an enabled `Publish All Changes` control. A normal Chromium click on
+the valid form produced no POST/navigation, so publication did not complete.
+Instrumentation showed the browser had auto-dismissed the native confirmation
+dialog. Accepting `Publish this website? Public visitors will see the current
+draft.` through the normal dialog handler produced the authorized POST and
+published the clinic. Unauthenticated Chromium then received HTTP 200 for the
+clinic page, patient registration, and patient login routes.
 
 DB-backed portal tests: patient login/session isolation passed; guest-token
 registration failed with HTTP 400. MF08/MF09 focused suites also failed
