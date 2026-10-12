@@ -38,6 +38,9 @@ const {
 const { createCompareLegacyHostContext } = require("./src/platform/http/compareLegacyHostContext");
 const { getPlatformHostContextMode } = require("./src/platform/config/platformHostContextMode");
 const {
+  assertBlessBoardDatabaseIdentityOrExit,
+} = require("./src/startup/blessBoardOrgDbGate");
+const {
   getPlatformDeploymentCode,
   warnOnceIfDiagnosticDeploymentUnavailable,
 } = require("./src/platform/config/platformDeploymentCode");
