@@ -44,7 +44,6 @@ module.exports = defineConfig({
       ...process.env,
       PORT,
       HOST: "127.0.0.1",
-      BASE_DOMAIN: "local.test",
       GETPRO_HTML_DATA_BRAND: "getpro",
       NODE_ENV: "test",
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "playwright-ci-admin-password",
