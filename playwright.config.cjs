@@ -1,7 +1,7 @@
 const path = require("path");
 const { defineConfig, devices } = require("@playwright/test");
 
-const PORT = process.env.PLAYWRIGHT_PORT || "4175";
+const PORT = process.env.PLAYWRIGHT_PORT || "4319";
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 /**
@@ -36,7 +36,7 @@ module.exports = defineConfig({
     },
   },
   webServer: {
-    command: `node server.js`,
+    command: `node scripts/local/run-local-qa-server.js`,
     url: `${BASE_URL}/healthz`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
