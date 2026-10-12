@@ -19,6 +19,7 @@ const { assertSafeFoundationDatabaseHost } = require("./lib/foundationHostSafety
 const { buildFoundationPoolConfig } = require("./lib/foundationPool");
 const { validateIdentityKey } = require("./lib/databaseIdentity");
 const { verifyFoundation } = require("./lib/foundationVerify");
+const { verifyUnified, UNIFIED_IDENTITY } = require("./lib/unifiedVerify");
 
 async function main() {
   let connectionString;
@@ -57,7 +58,10 @@ async function main() {
 
   const pool = new Pool(buildFoundationPoolConfig(connectionString, { max: 2 }));
   try {
-    const report = await verifyFoundation(pool, { identityKey: keyCheck.key });
+    const report =
+      keyCheck.key === UNIFIED_IDENTITY
+        ? await verifyUnified(pool, { identityKey: keyCheck.key })
+        : await verifyFoundation(pool, { identityKey: keyCheck.key });
     const out = {
       ok: report.ok,
       host_fingerprint: hostFingerprint,

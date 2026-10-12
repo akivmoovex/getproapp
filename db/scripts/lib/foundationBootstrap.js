@@ -18,6 +18,7 @@ const {
   ensureDatabaseIdentity,
 } = require("./databaseIdentity");
 const { verifyFoundation } = require("./foundationVerify");
+const { verifyUnified, UNIFIED_IDENTITY } = require("./unifiedVerify");
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
@@ -133,7 +134,10 @@ async function bootstrapFoundation(opts = {}) {
     }
     log(`[db:bootstrap:foundation] identity result=${identityResult.result}`);
 
-    const verify = await verifyFoundation(pool, { identityKey: inputs.identityKey });
+    const verify =
+      inputs.identityKey === UNIFIED_IDENTITY
+        ? await verifyUnified(pool, { identityKey: inputs.identityKey })
+        : await verifyFoundation(pool, { identityKey: inputs.identityKey });
     if (!verify.ok) {
       return {
         ok: false,
