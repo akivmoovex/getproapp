@@ -32,6 +32,7 @@ const {
 } = require("./lib/provisionCliSafety");
 const {
   CODE_MOOVEX_PLATFORM_V8_TESTING,
+  CODE_MOOVEX_PLATFORM_TESTING,
 } = require("../../src/platform/config/canonicalDeploymentProfiles");
 const {
   provisionPlatformTenant,
@@ -71,7 +72,11 @@ const {
 
 const EXPECTED_IDENTITY = "moovex-platform-v7";
 const EXPECTED_ENV = "testing";
-const DEPLOYMENT = CODE_MOOVEX_PLATFORM_V8_TESTING;
+const DEPLOYMENT =
+  String(process.env.PLATFORM_DEPLOYMENT_CODE || "").trim() ===
+  CODE_MOOVEX_PLATFORM_TESTING
+    ? CODE_MOOVEX_PLATFORM_TESTING
+    : CODE_MOOVEX_PLATFORM_V8_TESTING;
 const CREDENTIALS_FILE = path.join(
   process.cwd(),
   ".env.v8-qa-tenants.local"
