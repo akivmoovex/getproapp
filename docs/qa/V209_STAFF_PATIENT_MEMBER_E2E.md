@@ -81,3 +81,28 @@ registration/dashboard assertions. No new runtime change was justified.
 Clinic/facility association, portal activation, patient refresh/logout/relogin,
 RBAC denial matrix, duplicate submission, and cross-clinic browser evidence remain
 NOT_RUN. No commit was made for this incomplete lifecycle.
+
+Focused security regression: `activeclinic-patient-registration-rbac.test.js`
+passed all 12 cases, including receptionist creation and denial of unauthorized
+creation/identifier actions. Combined portal/RBAC execution passed 20/21 tests;
+the sole failure was the pre-existing guest-token registration case (HTTP 400).
+Patient-to-other-patient, cross-clinic, cross-product, and invalid-password
+browser denials were not executed in this pass.
+
+Focused fixture follow-up: no isolated patient/clinic security test file is
+present or registered in the current test suite. The only available patient
+portal fixtures are per-test single-clinic fixtures in
+`tests/activeclinic-patient-portal.test.js`; the registration RBAC suite also
+creates isolated tenants but does not create portal identities or test
+cross-patient access. Therefore the requested Clinic A/Clinic B denial matrix
+was not executable without adding a new harness.
+
+The focused rerun executed 21 tests: 20 passed and 1 failed. The failure is
+`guest token registration links patient and lists only owned bookings`
+(`tests/activeclinic-patient-portal.test.js:327`), POST
+`/clinics/:clinicKey/patient/register`, expected 200/302/303, actual 400. The
+response body was only the generic registration failure page; no validation
+code was exposed by the route. Source inspection shows the route maps any
+`registerPatientWithGuestToken` failure to HTTP 400, so this run cannot
+distinguish invalid fixture, token, or input without additional instrumentation.
+No product or test fix was applied.
