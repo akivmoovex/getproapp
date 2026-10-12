@@ -66,8 +66,27 @@
     }
     var btn = form.querySelector('button[type="submit"]:not([disabled])');
     if (!btn) return;
+    var submitter = e.submitter || (document.activeElement && document.activeElement.form === form
+      ? document.activeElement
+      : null);
+    if (!submitter && form.dataset.acSubmitName && form.dataset.acSubmitValue) {
+      submitter = { name: form.dataset.acSubmitName, value: form.dataset.acSubmitValue };
+    }
+    if (submitter && submitter.name && submitter.value) {
+      var existing = form.querySelector(
+        'input[type="hidden"][name="' + submitter.name + '"]'
+      );
+      if (!existing) {
+        var field = document.createElement("input");
+        field.type = "hidden";
+        field.name = submitter.name;
+        field.value = submitter.value;
+        field.dataset.acSubmitFallback = "1";
+        form.appendChild(field);
+      }
+      submitter.removeAttribute("name");
+    }
     form.setAttribute("aria-busy", "true");
-    btn.disabled = true;
     btn.setAttribute("aria-busy", "true");
     var loading = btn.getAttribute("data-loading") || "Please wait…";
     if (!btn.getAttribute("data-original-label")) {
@@ -80,6 +99,14 @@
       document.getElementById("ac-patient-live");
     if (live) live.textContent = loading;
   });
+
+  document.addEventListener("click", function (e) {
+    var button = e.target && e.target.closest && e.target.closest("button[type=\"submit\"]");
+    if (button && button.form && button.name && button.value) {
+      button.form.dataset.acSubmitName = button.name;
+      button.form.dataset.acSubmitValue = button.value;
+    }
+  }, true);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
