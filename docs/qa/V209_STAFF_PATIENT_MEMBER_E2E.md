@@ -52,7 +52,12 @@ Further audit found the supported services `createBlessBoardUser` and
 wrapper was added at `scripts/local/provision-platform-admin-qa.js`, but its
 first explicit local write attempt stopped at `role_conflict` (the identity
 creation completed before the existing assignment service rejected the role).
-No platform role was assigned and no browser approval flow was run.
+The narrow entitlement exemption was then verified and the existing QA identity
+received an active platform-scope role. Chromium login at the local BlessBoard
+apex reached `/admin`, survived refresh, and displayed `PLATFORM ADMINISTRATOR`.
+The target clinic approval record was already `active`/`provisioned` in the
+authorized UI, but its separate website state was `UNPUBLISHED`; public clinic
+and patient portal checks therefore remain blocked.
 
 DB-backed portal tests: patient login/session isolation passed; guest-token
 registration failed with HTTP 400. MF08/MF09 focused suites also failed
