@@ -106,3 +106,12 @@ code was exposed by the route. Source inspection shows the route maps any
 `registerPatientWithGuestToken` failure to HTTP 400, so this run cannot
 distinguish invalid fixture, token, or input without additional instrumentation.
 No product or test fix was applied.
+
+The executable isolation harness was added as
+`tests/ac-patient-isolation.spec.cjs`. It created fresh Clinic A/Clinic B
+fixtures and patient records, then executed wrong-password, own-profile,
+cross-clinic, and staff-route requests. The first authorization defect was
+`GET /app/patients` returning HTTP 200 for an authenticated patient session
+(expected denial); execution stopped there. Same-clinic patient-target
+isolation remains unverified because the current portal profile route has no
+documented target-record parameter. No runtime authorization code was changed.
