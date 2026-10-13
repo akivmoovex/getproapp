@@ -136,3 +136,12 @@ registration, receptionist invitation/activation/login, authorized patient
 creation with read-only persistence verification, and denial of staff
 invitation/administrator-management routes. Platform approval remains
 unexecuted.
+
+Two-port cross-product harness was added at
+`tests/ac-cross-product-rbac.spec.cjs`. Both local health checks passed on
+4319/4321 with the testing profile and V7 identity. Two fresh executions
+verified unauthenticated denial: Apex `/admin` and ActiveClinic
+`/app/patients` returned login pages (final HTTP 200), while Apex
+`/api/admin` returned 503 without protected content. No authenticated
+ActiveClinic patient, receptionist, or administrator session was evaluated
+by Apex; role-aware cross-product denial remains unverified.
