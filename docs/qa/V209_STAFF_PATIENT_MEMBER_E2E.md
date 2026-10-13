@@ -128,5 +128,11 @@ executions. The same Patient A1 session also denied the existing
 `POST /app/patients` routes through the same `/login` redirect, with no staff
 content. Same-clinic target-record isolation is not applicable to the current
 portal contract because no patient-ID-addressable protected endpoint was
-found. Cross-product and receptionist role-management checks remain
+found. Cross-product checks remain unexecuted.
+
+Independent receptionist RBAC coverage was added in
+`tests/ac-receptionist-rbac.spec.cjs`. Two fresh executions completed clinic
+registration, receptionist invitation/activation/login, authorized patient
+creation with read-only persistence verification, and denial of staff
+invitation/administrator-management routes. Platform approval remains
 unexecuted.
