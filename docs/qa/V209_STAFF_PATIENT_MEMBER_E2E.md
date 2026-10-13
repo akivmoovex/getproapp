@@ -115,3 +115,13 @@ cross-clinic, and staff-route requests. The first authorization defect was
 (expected denial); execution stopped there. Same-clinic patient-target
 isolation remains unverified because the current portal profile route has no
 documented target-record parameter. No runtime authorization code was changed.
+
+Follow-up reproduction corrected the apparent staff-route failure: with a fresh
+patient context, `GET /app/patients` followed the authentication redirect to
+`/login` and returned the login page with HTTP 200; staff patient-list content
+was not rendered. The route is protected by `requireAuth` and
+`requirePermission(PERM.SEARCH)` in `activeClinicPatientRoutes.js`, with the
+permission boundary in `activeClinicPermissionMiddleware.js`. Wrong-password,
+own-profile, cross-clinic-profile, and staff-route denial passed in two fresh
+executions. Same-clinic target-record, staff-detail, and staff-create denial
+remain unverified.

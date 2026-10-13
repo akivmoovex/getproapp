@@ -71,8 +71,14 @@ async function browserFetch(page, url, options = {}) {
       credentials: "include",
       headers: options.headers || {},
       body: options.body,
+      redirect: options.redirect || "follow",
     });
-    return { status: response.status, text: await response.text() };
+    return {
+      status: response.status,
+      text: await response.text(),
+      url: response.url,
+      location: response.headers.get("location"),
+    };
   }, { url, options });
 }
 
@@ -125,8 +131,10 @@ test("isolates patients within and across clinics", async ({ browser }) => {
   expect(other.text).not.toContain(a2.phone);
   const cross = await browserFetch(pa, `${host}/clinics/${b.clinicKey}/patient/profile`);
   expect([401, 403, 404]).toContain(cross.status);
-  const staff = await browserFetch(pa, `${host}/app/patients`);
-  expect([302, 401, 403]).toContain(staff.status);
+  const staff = await browserFetch(pa, "/app/patients");
+  expect(staff.status).toBe(200);
+  expect(staff.url).toMatch(/\/login$/);
+  expect(staff.text).toMatch(/Sign in|Log in/i);
   await pa.close();
   expect(b1.phone).toMatch(/^\d+$/);
 });
