@@ -123,5 +123,10 @@ was not rendered. The route is protected by `requireAuth` and
 `requirePermission(PERM.SEARCH)` in `activeClinicPatientRoutes.js`, with the
 permission boundary in `activeClinicPermissionMiddleware.js`. Wrong-password,
 own-profile, cross-clinic-profile, and staff-route denial passed in two fresh
-executions. Same-clinic target-record, staff-detail, and staff-create denial
-remain unverified.
+executions. The same Patient A1 session also denied the existing
+`/app/patients/:patientNumber`, `/app/patients/new`, and invalid
+`POST /app/patients` routes through the same `/login` redirect, with no staff
+content. Same-clinic target-record isolation is not applicable to the current
+portal contract because no patient-ID-addressable protected endpoint was
+found. Cross-product and receptionist role-management checks remain
+unexecuted.

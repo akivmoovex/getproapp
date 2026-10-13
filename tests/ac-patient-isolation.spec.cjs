@@ -61,7 +61,13 @@ async function createPatient(page, email, suffix) {
   await expect(page.getByText(/Review registration/i)).toBeVisible();
   await page.getByRole("button", { name: /Create patient/i }).click();
   await expect(page.getByText(/Patient registered/i)).toBeVisible();
-  return { phone, firstName: "Isolation", lastName: suffix };
+  const row = await db.query(
+    `SELECT patient_number FROM activeclinic.patients
+     WHERE email_normalized = $1 ORDER BY created_at DESC LIMIT 1`,
+    [email.toLowerCase()]
+  );
+  expect(row.rows).toHaveLength(1);
+  return { phone, patientNumber: row.rows[0].patient_number, firstName: "Isolation", lastName: suffix };
 }
 
 async function browserFetch(page, url, options = {}) {
@@ -135,6 +141,19 @@ test("isolates patients within and across clinics", async ({ browser }) => {
   expect(staff.status).toBe(200);
   expect(staff.url).toMatch(/\/login$/);
   expect(staff.text).toMatch(/Sign in|Log in/i);
+  const detail = await browserFetch(pa, `/app/patients/${encodeURIComponent(a1.patientNumber)}`);
+  expect(detail.status).toBe(200);
+  expect(detail.url).toMatch(/\/login$/);
+  const create = await browserFetch(pa, "/app/patients/new");
+  expect(create.status).toBe(200);
+  expect(create.url).toMatch(/\/login$/);
+  const createPost = await browserFetch(pa, "/app/patients", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: "firstName=&lastName=",
+  });
+  expect(createPost.status).toBe(200);
+  expect(createPost.url).toMatch(/\/login$/);
   await pa.close();
   expect(b1.phone).toMatch(/^\d+$/);
 });
