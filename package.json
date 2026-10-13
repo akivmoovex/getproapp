@@ -284,7 +284,7 @@
     "helmet": "^8.1.0",
     "libphonenumber-js": "^1.13.10",
     "morgan": "^1.10.1",
-    "multer": "^2.1.1",
+    "multer": "^2.3.0",
     "pg": "^8.20.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.34.5",
