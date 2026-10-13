@@ -75,3 +75,31 @@ Hostinger application IDs/roots, deployed branch/SHA/time, Node version,
 startup file, effective sanitized environment, proxy headers, DNS ownership,
 database identity/migrations, and a rollback artifact are unavailable to this
 read-only session.
+
+## Final execution checklist
+
+Deployment B minimum values are: `PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`,
+`NODE_ENV` matching the approved testing mode, private `DATABASE_URL`,
+`SESSION_SECRET`, `PORT`/bind settings supplied by Hostinger, and the
+approved trusted-proxy hop configuration. The database URL must identify the
+approved V9 testing database and its `platform.database_identity` must be
+`moovex-platform-v7` / `testing`; migration compatibility must be checked
+read-only before startup.
+
+Before domain activation, confirm the application loads the target registry
+profile, `pronline.org` is canonical, every target hostname is in
+`apexDomains`, and the proxy supplies the intended forwarded host/proto
+without unrestricted forwarded-host trust. Test a temporary Hostinger
+hostname first, then health, host routing, canonical redirects, login,
+session isolation, and product smoke routes.
+
+STOP if either application shares an unapproved database, the profile/identity
+does not match, any target host is absent, proxy headers are ambiguous,
+Hostinger capacity is insufficient for two applications, domain ownership is
+unconfirmed, or a rollback artifact is missing. Deployment A must remain
+healthy before, during, and after Deployment B activation.
+
+Hostinger must manually provide application IDs/roots, capacity limits,
+domain bindings and DNS targets, deployed SHA/branch, Node version, startup
+file, effective sanitized environment, database identity/migration report,
+proxy configuration, deployment logs, and a restorable previous artifact.
