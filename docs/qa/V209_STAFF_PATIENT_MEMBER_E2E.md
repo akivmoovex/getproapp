@@ -145,3 +145,11 @@ verified unauthenticated denial: Apex `/admin` and ActiveClinic
 `/api/admin` returned 503 without protected content. No authenticated
 ActiveClinic patient, receptionist, or administrator session was evaluated
 by Apex; role-aware cross-product denial remains unverified.
+
+Guest-token regression isolated as `MISSING_REQUIRED_FIELD` in the test
+fixture. `activeClinicPatientPortalRoutes.js` extracts the V7 contract fields
+`phone_country` and `phone_national`, but the fixture sent `phone`; the
+service returned `phone_required`, correctly mapped to HTTP 400. The fixture
+now sends canonical phone fields. The focused guest-token test passed and the
+complete portal suite passed 9/9. Token expiry, identity linking, and clinic
+association behavior were unchanged.

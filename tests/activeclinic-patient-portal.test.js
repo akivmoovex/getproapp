@@ -387,7 +387,8 @@ describe("ActiveClinic Patient Portal (P27)", () => {
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        phone,
+        phone_country: "ZM",
+        phone_national: phone,
         password: "GuestPass12!",
         guestToken: token,
         firstName: "Guest",
