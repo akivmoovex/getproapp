@@ -299,7 +299,8 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: "No",
         lastName: "Match",
-        phone: nextPhone(),
+        phone_country: "ZM",
+        phone_national: nextPhone(),
         password: PORTAL_PASSWORD,
       });
     assert.equal(noMatch.status, 400);
@@ -313,7 +314,8 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: unlinked.firstName,
         lastName: unlinked.lastName,
-        phone: unlinked.phone,
+        phone_country: "ZM",
+        phone_national: unlinked.phone,
         password: PORTAL_PASSWORD,
       });
     assert.equal(created.status, 303);
@@ -327,7 +329,8 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: unlinked.firstName,
         lastName: unlinked.lastName,
-        phone: unlinked.phone,
+        phone_country: "ZM",
+        phone_national: unlinked.phone,
         password: PORTAL_PASSWORD,
       });
     assert.equal(duplicate.status, 400);
@@ -438,7 +441,8 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        phone: unlinked.phone,
+        phone_country: "ZM",
+        phone_national: unlinked.phone,
         password: PORTAL_PASSWORD,
         guestToken: booking.booking.accessToken,
         firstName: unlinked.firstName,

@@ -296,7 +296,8 @@ describe("ActiveClinic MF09 patient dashboard chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: unlinked.firstName,
         lastName: unlinked.lastName,
-        phone: unlinked.phone,
+        phone_country: "ZM",
+        phone_national: unlinked.phone,
         password: PORTAL_PASSWORD,
       });
     assert.equal(reg.status, 303);
@@ -467,7 +468,8 @@ describe("ActiveClinic MF09 patient dashboard chrome", () => {
           [CSRF_FIELD]: csrf,
           firstName: unlinked.firstName,
           lastName: unlinked.lastName,
-          phone: unlinked.phone,
+          phone_country: "ZM",
+          phone_national: unlinked.phone,
           password: PORTAL_PASSWORD,
         });
       const loginPage = await request(app).get(`/clinics/${clinic.clinicKey}/patient/login`);

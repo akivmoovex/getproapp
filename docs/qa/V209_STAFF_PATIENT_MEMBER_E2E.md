@@ -153,3 +153,9 @@ service returned `phone_required`, correctly mapped to HTTP 400. The fixture
 now sends canonical phone fields. The focused guest-token test passed and the
 complete portal suite passed 9/9. Token expiry, identity linking, and clinic
 association behavior were unchanged.
+
+The two onboarding-suite failures were stale portal fixture fields, not
+runtime regressions. MF08 and MF09 posted `phone`, while the current portal
+registration contract requires `phone_country` plus `phone_national`.
+Updating those test payloads restored the registration, dashboard, and
+responsive-flow assertions. The focused MF08/MF09 run passed all 14 tests.
