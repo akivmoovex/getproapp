@@ -62,7 +62,7 @@ function safePlatformAdminNextPath(raw) {
 function hasPlatformAdminRole(roles) {
   return (roles || []).some((r) => {
     const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
-    return key === "platform_administrator";
+    return key === "platform_admin" || key === "platform_administrator";
   });
 }
 
@@ -106,6 +106,7 @@ function hasChurchHqAdminRole(roles) {
   return (roles || []).some((r) => {
     const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
     return (
+      key === "church_hq_admin" ||
       key === "organisation_administrator" ||
       key === "church_system_administrator"
     );
@@ -119,7 +120,11 @@ function hasChurchHqAdminRole(roles) {
 function hasBranchAdminRole(roles) {
   return (roles || []).some((r) => {
     const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
-    return key === "branch_administrator" || key === "branch_pastor";
+    return (
+      key === "branch_admin" ||
+      key === "branch_administrator" ||
+      key === "branch_pastor"
+    );
   });
 }
 

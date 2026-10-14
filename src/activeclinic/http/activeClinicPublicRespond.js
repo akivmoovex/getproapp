@@ -97,7 +97,7 @@ function sendClinicUnpublished(res, clinic, req) {
   const { renderWebsiteUnpublishedState } = require("../../platform/website/websiteUnpublishedState");
   const { canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
   const key = encodeURIComponent(String(clinic.clinicKey || ""));
-  return res.status(200).type("html").send(renderWebsiteUnpublishedState({
+  return res.status(403).type("html").send(renderWebsiteUnpublishedState({
     product: "activeclinic",
     organizationName: clinic.publicName || clinic.websiteDisplayName || "This clinic",
     organizationType: "clinic",

@@ -161,7 +161,7 @@ describe("blessboard auth schema", () => {
              (email_normalized, email_display, password_hash, status, display_name)
            VALUES ('badstatus@example.org', 'badstatus@example.org', '$2a$12$abcdefghijklmnopqrstuv', 'retired', 'Bad')`
         ),
-      /check|violates/i
+      /frozen|check|violates/i
     );
   });
 
@@ -183,14 +183,18 @@ describe("blessboard auth schema", () => {
            VALUES ($1, $2, 'superuser', 'active')`,
           [userId, org.id]
         ),
-      /check|violates/i
+      /frozen|check|violates/i
     );
 
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, role_key, status)
-       VALUES ($1, $2, 'platform_admin', 'active')`,
-      [userId, org.id]
+    await assert.rejects(
+      () =>
+        pool.query(
+          `INSERT INTO blessboard.user_roles
+             (user_id, organization_id, role_key, status)
+           VALUES ($1, $2, 'platform_admin', 'active')`,
+          [userId, org.id]
+        ),
+      /frozen|check|violates/i
     );
 
     await assert.rejects(
@@ -201,7 +205,7 @@ describe("blessboard auth schema", () => {
            VALUES ($1, $2, $3, 'platform_admin', 'active')`,
           [userId, org.id, churchId]
         ),
-      /check|violates|scope/i
+      /frozen|check|violates|scope/i
     );
 
     await assert.rejects(
@@ -212,14 +216,18 @@ describe("blessboard auth schema", () => {
            VALUES ($1, $2, 'church_hq_admin', 'active')`,
           [userId, org.id]
         ),
-      /check|violates|scope/i
+      /frozen|check|violates|scope/i
     );
 
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, church_id, role_key, status)
-       VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-      [userId, org.id, churchId]
+    await assert.rejects(
+      () =>
+        pool.query(
+          `INSERT INTO blessboard.user_roles
+             (user_id, organization_id, church_id, role_key, status)
+           VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
+          [userId, org.id, churchId]
+        ),
+      /frozen|check|violates|scope/i
     );
 
     await assert.rejects(
@@ -230,14 +238,18 @@ describe("blessboard auth schema", () => {
            VALUES ($1, $2, $3, 'branch_admin', 'active')`,
           [userId, org.id, churchId]
         ),
-      /check|violates|scope/i
+      /frozen|check|violates|scope/i
     );
 
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, church_id, branch_id, role_key, status)
-       VALUES ($1, $2, $3, $4, 'branch_admin', 'active')`,
-      [userId, org.id, churchId, branchId]
+    await assert.rejects(
+      () =>
+        pool.query(
+          `INSERT INTO blessboard.user_roles
+             (user_id, organization_id, church_id, branch_id, role_key, status)
+           VALUES ($1, $2, $3, $4, 'branch_admin', 'active')`,
+          [userId, org.id, churchId, branchId]
+        ),
+      /frozen|check|violates|scope/i
     );
 
     const otherOrg = await provisionPlatformTenant(pool, {
@@ -260,7 +272,7 @@ describe("blessboard auth schema", () => {
            VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
           [userId, otherOrg.records.organization.id, churchId]
         ),
-      /belong|integrity|violates/i
+      /belong|integrity|violates|frozen/i
     );
   });
 });

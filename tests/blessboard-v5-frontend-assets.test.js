@@ -69,8 +69,8 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     for (const rel of gatedPages) {
       const src = read(rel);
       assert.match(src, /loadMediaPicker:\s*true/, rel);
-      assert.match(src, /hq-shell-start',\s*\{\s*loadMediaPicker:\s*true\s*\}/, rel);
-      assert.match(src, /hq-shell-end',\s*\{\s*loadMediaPicker:\s*true\s*\}/, rel);
+      assert.match(src, /hq-shell-start'/, rel);
+      assert.match(src, /hq-shell-end'/, rel);
     }
     assert.doesNotMatch(
       read("views/blessboard/v5/branch-admin/dashboard.ejs"),

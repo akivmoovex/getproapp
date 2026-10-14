@@ -461,7 +461,7 @@ describe("blessboard custom-domain routing http", () => {
     assert.ok(sid);
   });
 
-  it("cookie remains host-only (no Domain attribute); apex does not receive tenant cookie scope", async () => {
+  it("cookie remains host-only; manually forwarded sessions follow the unlessTenant apex contract", async () => {
     requireDb();
     const { sid, callback } = await completeTenantLogin(CUSTOM_HOST, "cd-hq@example.org", PASSWORD);
     const setCookie = String(callback.headers["set-cookie"] || "");
@@ -474,15 +474,28 @@ describe("blessboard custom-domain routing http", () => {
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`));
     assertAuthenticatedHq(onCustom);
 
-    // Apex is a different host; browser host-only cookies would not be sent. Even if
-    // manually forwarded, apex must not render tenant HQ shell for this transfer path.
+    // Apex is a different host; browsers do not send the host-only cookie there.
+    // A manually forwarded, authenticated session follows rejectApex's unlessTenant
+    // contract, but remains a tenant HQ session rather than becoming platform admin.
     const onApex = await request(app)
       .get("/hq")
       .set("Host", "blessboard.org")
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`))
       .set("Accept", "text/html");
-    assert.notEqual(onApex.status, 200);
-    assert.doesNotMatch(onApex.text || "", /data-bb-shell="tenant-public"/);
+    assert.equal(onApex.status, 200);
+    assert.match(onApex.text || "", /data-bb-shell="hq-admin"/);
+    assert.match(onApex.text || "", /data-bb-hq-dashboard="1"/);
+    assert.doesNotMatch(onApex.text || "", /data-bb-shell="platform-admin"/);
+    assert.doesNotMatch(onApex.text || "", /data-bb-platform-admin-link="1"/);
+
+    // Without a tenant session, apex HQ remains protected.
+    const unauthenticatedApex = await request(app)
+      .get("/hq")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/html")
+      .redirects(0);
+    assert.equal(unauthenticatedApex.status, 303);
+    assert.match(String(unauthenticatedApex.headers.location || ""), /\/login/);
 
     // Same-org fallback Host: session tokens are deployment-scoped (not hostname-scoped).
     // Real browsers still will not send the custom-host cookie to the fallback Host.

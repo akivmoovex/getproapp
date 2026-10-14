@@ -333,8 +333,13 @@ describe("clinic website availability", () => {
     });
     assert.equal(paUser.ok, true, JSON.stringify(paUser));
     await pool.query(
-      `INSERT INTO blessboard.user_roles (user_id, organization_id, role_key, status)
-       VALUES ($1, $2, 'platform_admin', 'active')`,
+      `INSERT INTO blessboard.user_role_assignments (
+         user_id, organization_id, role_id, scope_type,
+         status, assignment_origin, assignment_reason
+       )
+       SELECT $1, $2, r.id, 'platform', 'active', 'system', 'availability-test'
+         FROM blessboard.roles r
+        WHERE r.role_key = 'platform_administrator'`,
       [paUser.user.id, orgId]
     );
     const session = await createV5Session(pool, {

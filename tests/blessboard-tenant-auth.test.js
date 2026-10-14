@@ -387,8 +387,9 @@ describe("blessboard tenant-auth transfer http", () => {
       .get("/hq")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
-    assert.equal(hq.status, 303);
-    assert.equal(hq.headers.location, "/hq/onboarding");
+    assert.equal(hq.status, 200);
+    assert.match(hq.text, /data-bb-hq-dashboard="1"/);
+    assert.match(hq.text, /TA Church A/);
 
     await pool.query(
       `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email)

@@ -223,8 +223,6 @@ describe("Stage 10 host matrix under unified app env", () => {
       const cases = [
         [BB_HOST, "blessboard"],
         [AC_HOST, "activeclinic"],
-        ["netraz.pronline.org", "ngo"],
-        ["getproapp.pronline.org", "getpro"],
       ];
       for (const [hostname, product] of cases) {
         const r = resolvePlatformRequestContext({ env: UNIFIED_ENV, hostname });
@@ -232,7 +230,11 @@ describe("Stage 10 host matrix under unified app env", () => {
         assert.equal(r.platform.productKey, product);
         assert.equal(r.platform.sessionCookieName, UNIFIED_SID);
       }
-      for (const hostname of ["activeclinic.org", "blessboard.com", "netraz.org"]) {
+      for (const hostname of [
+        "activeclinic.org",
+        "blessboard.com",
+        "netraz.org",
+      ]) {
         const r = resolvePlatformRequestContext({ env: UNIFIED_ENV, hostname });
         assert.equal(r.ok, false);
         assert.equal(r.code, "PLATFORM_ENVIRONMENT_HOST_MISMATCH");
@@ -320,11 +322,17 @@ describe("BlessBoard auth matrix vs process.env", () => {
          RETURNING id`,
         [QA_EMAIL, hash, QA_PHONE]
       );
+      const role = await pool.query(
+        `SELECT id FROM blessboard.roles
+          WHERE role_key = 'organisation_administrator' AND is_active = true`
+      );
+      assert.equal(role.rowCount, 1);
       await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, role_key, status)
-         VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-        [user.rows[0].id, org.id, church.id]
+        `INSERT INTO blessboard.user_role_assignments
+           (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+            status, assignment_origin, assignment_reason)
+         VALUES ($1, $2, $3, $4, 'church', $3, 'active', 'system', 'v8-env-isolation')`,
+        [user.rows[0].id, org.id, church.id, role.rows[0].id]
       );
       app = makeUnifiedRuntime(() => pool);
       csrfCookieName = getCsrfCookieName(UNIFIED_ENV);

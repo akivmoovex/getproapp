@@ -5,10 +5,12 @@
  */
 
 const COLS = `id, deployment_code, organization_id, church_id, branch_id, facility_id, product_code,
-  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
+  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at,
+  created_at::text AS cursor_created_at`;
 
 const COLS_LEGACY = `id, deployment_code, organization_id, church_id, branch_id,
-  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
+  actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at,
+  created_at::text AS cursor_created_at`;
 
 function mapEvent(row) {
   if (!row) return null;
@@ -147,8 +149,18 @@ async function listAuditEvents(client, opts) {
     params.push(opts.createdBeforeExclusive);
     where += ` AND created_at < $${params.length}::timestamptz`;
   }
-  if (opts.before) {
-    params.push(opts.before);
+  const cursor = decodeAuditCursor(opts.before);
+  if (opts.before && !cursor) {
+    return { ok: false, status: "invalid_input", events: [], reason: "before" };
+  }
+  if (cursor && cursor.id) {
+    params.push(cursor.createdAt);
+    const createdAtIndex = params.length;
+    params.push(cursor.id);
+    where += ` AND (created_at < $${createdAtIndex}::timestamptz
+      OR (created_at = $${createdAtIndex}::timestamptz AND id < $${params.length}::uuid))`;
+  } else if (cursor) {
+    params.push(cursor.createdAt);
     where += ` AND created_at < $${params.length}::timestamptz`;
   }
   const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
@@ -206,8 +218,14 @@ async function listAuditEvents(client, opts) {
       legacyParams.push(opts.createdBeforeExclusive);
       legacyWhere += ` AND created_at < $${legacyParams.length}::timestamptz`;
     }
-    if (opts.before) {
-      legacyParams.push(opts.before);
+  if (cursor && cursor.id) {
+      legacyParams.push(cursor.createdAt);
+      const createdAtIndex = legacyParams.length;
+      legacyParams.push(cursor.id);
+      legacyWhere += ` AND (created_at < $${createdAtIndex}::timestamptz
+        OR (created_at = $${createdAtIndex}::timestamptz AND id < $${legacyParams.length}::uuid))`;
+    } else if (cursor) {
+      legacyParams.push(cursor.createdAt);
       legacyWhere += ` AND created_at < $${legacyParams.length}::timestamptz`;
     }
     legacyParams.push(limit + 1);
@@ -224,8 +242,46 @@ async function listAuditEvents(client, opts) {
   const hasMore = rows.length > limit;
   const events = rows.slice(0, limit).map(mapEvent);
   const nextBefore =
-    hasMore && events.length ? events[events.length - 1].createdAt : null;
-  return { events, hasMore, nextBefore };
+    hasMore && events.length
+      ? encodeAuditCursor(rows[events.length - 1])
+      : null;
+  return { ok: true, events, hasMore, nextBefore };
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function encodeAuditCursor(event) {
+  return Buffer.from(
+    JSON.stringify({
+      v: 2,
+      createdAt: event.cursor_created_at || event.createdAt,
+      id: event.id,
+    }),
+    "utf8"
+  ).toString("base64url");
+}
+
+function decodeAuditCursor(value) {
+  if (!value) return null;
+  const raw = String(value);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+    return { createdAt: raw, id: null };
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
+    if (
+      parsed &&
+      parsed.v === 2 &&
+      typeof parsed.createdAt === "string" &&
+      UUID_RE.test(String(parsed.id))
+    ) {
+      return { createdAt: parsed.createdAt, id: parsed.id };
+    }
+  } catch {
+    // Invalid cursors fail closed.
+  }
+  return null;
 }
 
 module.exports = {

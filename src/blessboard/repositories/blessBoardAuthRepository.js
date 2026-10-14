@@ -165,10 +165,16 @@ async function activateUserWithPassword(client, userId, fields) {
  */
 async function listActiveRolesForUser(client, userId) {
   const r = await client.query(
-    `SELECT id, user_id, organization_id, church_id, branch_id, role_key, status
-       FROM blessboard.user_roles
-      WHERE user_id = $1 AND status = 'active'
-      ORDER BY role_key, organization_id`,
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id,
+            CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END AS branch_id,
+            r.role_key, a.status
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id AND r.is_active = true
+      WHERE a.user_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+      ORDER BY r.role_key, a.organization_id`,
     [userId]
   );
   return r.rows;

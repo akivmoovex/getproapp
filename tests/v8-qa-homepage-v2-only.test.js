@@ -28,7 +28,6 @@ const {
 const {
   createMoovexPlatformRuntimeApp,
   resolveQaProductLinks,
-  QA_PRODUCT_LINKS_V7,
 } = require("../src/platform/http/moovexPlatformRuntimeServer");
 
 const V8_ENV = Object.freeze({
@@ -280,12 +279,15 @@ describe("V8 QA homepage Version 2.0 only", () => {
       assert.match(home.text, /pronline\.org/);
       assert.match(home.text, /blessboard\.pronline\.org/);
       assert.match(home.text, /activeclinic\.pronline\.org/);
-      assert.match(home.text, /getproapp\.pronline\.org/);
-      assert.match(home.text, /netraz\.pronline\.org/);
-      assert.doesNotMatch(home.text, /Version 2\.0 Development and Testing/);
+      assert.doesNotMatch(home.text, /getproapp\.pronline\.org/);
+      assert.doesNotMatch(home.text, /netraz\.pronline\.org/);
+      assert.match(home.text, /Version 2\.0 Development and Testing/);
 
       const links = resolveQaProductLinks(resolveDeploymentConfiguration(V7_ENV));
-      assert.deepEqual(links, QA_PRODUCT_LINKS_V7);
+      assert.deepEqual(links, [
+        { label: "BlessBoard V2.0", href: "https://blessboard.pronline.org/" },
+        { label: "ActiveClinic V2.0", href: "https://activeclinic.pronline.org/" },
+      ]);
 
       const patients = await request(app).get("/patients").set("Host", "pronline.org");
       assert.equal(patients.status, 404);

@@ -230,9 +230,12 @@ describe("blessboard branch-admin shell", () => {
       await pool.query(`UPDATE blessboard.users SET status = 'inactive' WHERE id = $1`, [
         users.inactive.id,
       ]);
-      await pool.query(`UPDATE blessboard.user_roles SET status = 'inactive' WHERE user_id = $1`, [
-        users.suspended.id,
-      ]);
+      await pool.query(
+        `UPDATE blessboard.user_role_assignments
+            SET status = 'revoked', revoked_at = now(), revocation_reason = 'test fixture'
+          WHERE user_id = $1`,
+        [users.suspended.id]
+      );
 
       app = createV5FoundationApp({
         getPool: () => pool,
@@ -340,7 +343,7 @@ describe("blessboard branch-admin shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(res.status, 200);
-    assert.match(res.text, /Church HQ admin/);
+    assert.match(res.text, /data-bb-shell="branch-admin"/);
   });
 
   it("platform_admin without support mode is denied branch portal", async () => {

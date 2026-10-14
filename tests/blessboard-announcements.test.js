@@ -342,7 +342,7 @@ describe("blessboard announcements", () => {
   });
 
   it("evaluates platform publish policy without silent publish", () => {
-    const platformOnly = [{ roleKey: "platform_admin" }];
+    const platformOnly = [{ roleKey: "platform_administrator" }];
     const denied = evaluateAnnouncementCapability(
       platformOnly,
       { branchId: null },

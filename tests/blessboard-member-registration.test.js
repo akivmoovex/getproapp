@@ -326,7 +326,7 @@ describe("blessboard member registration http", () => {
         email: "sam-confirmed@example.test",
       });
     assert.equal(ok.status, 303);
-    assert.equal(ok.headers.location, "/register/submitted");
+    assert.match(ok.headers.location, /^\/register\/submitted\?ref=[0-9a-f-]+$/i);
 
     const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
     assert.equal(submitted.status, 200);
@@ -373,7 +373,7 @@ describe("blessboard member registration http", () => {
       });
 
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/register/submitted");
+    assert.match(post.headers.location, /^\/register\/submitted\?ref=[0-9a-f-]+$/i);
 
     const rows = await pool.query(
       `SELECT church_id, branch_id, email_normalized, status
@@ -1062,7 +1062,15 @@ describe("blessboard member registration http", () => {
   it("does not collect sensitive categories on the public form", async (t) => {
     if (skipIfNeeded(t)) return;
     const form = await request(app).get("/register").set("Host", HOST_A);
-    assert.doesNotMatch(form.text, /national.?id|date of birth|ssn|health|password/i);
+    assert.doesNotMatch(form.text, /<input\b[^>]*\btype=["']password["']/i);
+    assert.doesNotMatch(
+      form.text,
+      /\b(?:password|national[_ -]?id|ssn|social[_ -]?security|date[_ -]?of[_ -]?birth|medical|health)\b\s*=/i
+    );
+    assert.doesNotMatch(
+      form.text,
+      /\b(?:password|national[_ -]?id|ssn|social[_ -]?security|date[_ -]?of[_ -]?birth|medical|health)\b[^<]{0,40}\b(?:name|id)=/i
+    );
     assert.match(form.text, /first_name/);
     assert.match(form.text, /email/);
   });

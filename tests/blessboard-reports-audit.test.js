@@ -7,6 +7,7 @@
 
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
+const { randomUUID } = require("node:crypto");
 const fs = require("fs");
 const path = require("path");
 const request = require("supertest");
@@ -307,18 +308,24 @@ describe("blessboard reports-audit", () => {
 
   it("paginates audit events and scopes by organization/church", async (t) => {
     if (skipIfNeeded(t)) return;
+    const fixedCreatedAt = "2026-10-14T20:00:00.123456Z";
     for (let i = 0; i < 3; i += 1) {
-      const r = await recordAuditEvent(pool, {
-        deploymentCode: DEPLOYMENT,
-        organizationId: orgA.records.organization.id,
-        churchId: churchA.id,
-        actorUserId: hqAdmin.user.id,
-        actionKey: "test.page.item",
-        entityType: "test_entity",
-        outcome: "success",
-        metadata: { count: i },
-      });
-      assert.equal(r.ok, true, r.reason);
+      await pool.query(
+        `INSERT INTO platform.audit_events
+          (id, deployment_code, organization_id, church_id, actor_user_id,
+           action_key, entity_type, outcome, metadata_json, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'test.page.item', 'test_entity',
+                 'success', $6::jsonb, $7::timestamptz)`,
+        [
+          randomUUID(),
+          DEPLOYMENT,
+          orgA.records.organization.id,
+          churchA.id,
+          hqAdmin.user.id,
+          JSON.stringify({ count: i }),
+          fixedCreatedAt,
+        ]
+      );
     }
 
     const page1 = await listOrganizationAuditEvents(pool, {
@@ -340,8 +347,20 @@ describe("blessboard reports-audit", () => {
       limit: 2,
     });
     assert.equal(page2.ok, true, page2.reason);
-    assert.ok(page2.events.length >= 1);
+    assert.equal(page2.events.length, 1);
     assert.ok(!page2.events.some((e) => e.id === page1.events[0].id));
+    assert.deepEqual(
+      [...page1.events, ...page2.events].map((event) => event.metadata.count).sort(),
+      [0, 1, 2]
+    );
+    const invalid = await listOrganizationAuditEvents(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      actionKey: "test.page.item",
+      before: "not-a-cursor",
+      limit: 2,
+    });
+    assert.equal(invalid.ok, false);
   });
 
   it("builds HQ reports from real aggregates (no fake numbers)", async (t) => {

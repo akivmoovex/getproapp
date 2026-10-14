@@ -471,6 +471,7 @@ async function listOrganizationAuditEvents(db, input) {
         before: input.before || null,
         limit: input.limit,
       });
+      if (!page.ok) return page;
       return {
         ok: true,
         status: STATUS.OK,

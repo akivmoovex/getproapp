@@ -79,7 +79,7 @@ describe("V8 shared-module coverage — deployment isolation", () => {
         PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
         DEPLOYMENT_ENV: "testing",
       }),
-      "v7"
+      "v8"
     );
     assert.equal(isV8Deployment(V8_ENV), true);
     assert.equal(areOutboundSideEffectsAllowed(V8_ENV), false);
@@ -110,12 +110,11 @@ describe("V8 shared-module coverage — deployment isolation", () => {
   });
 
   it("assertV8EnvironmentSafeOrError covers fail-closed branches", () => {
-    assert.equal(
-      assertV8EnvironmentSafeOrError({
-        PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
-      }).skipped,
-      true
-    );
+    const missingV9 = assertV8EnvironmentSafeOrError({
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.equal(missingV9.ok, false);
+    assert.equal(missingV9.code, "v8_env_missing");
     const missing = assertV8EnvironmentSafeOrError({
       PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_V8_TESTING,
       NODE_ENV: "production",

@@ -250,6 +250,15 @@ async function applyBranch(client, record) {
 async function applyUserRole(client, record) {
   const u = record.user;
   const role = record.role;
+  const roleMap = {
+    platform_admin: "platform_administrator",
+    church_hq_admin: "organisation_administrator",
+    branch_admin: "branch_administrator",
+  };
+  const roleKey = roleMap[role.roleKey];
+  if (!roleKey) {
+    return { status: "conflict", code: "unmapped_legacy_role", roleKey: role.roleKey };
+  }
 
   const byId = await client.query(`SELECT id, email_normalized FROM blessboard.users WHERE id = $1`, [
     u.id,
@@ -292,21 +301,39 @@ async function applyUserRole(client, record) {
   }
 
   const userId = role.userId;
+  const catalogueRole = await client.query(
+    `SELECT id FROM blessboard.roles WHERE role_key = $1 AND is_active = true`,
+    [roleKey]
+  );
+  if (!catalogueRole.rows[0]) {
+    return { status: "conflict", code: "catalogue_role_missing", roleKey };
+  }
+  const scopeType = role.branchId ? "branch" : role.churchId ? "church" : "organisation";
+  const scopeId = role.branchId || role.churchId || null;
   const existingRole = await client.query(
-    `SELECT id FROM blessboard.user_roles
+    `SELECT id FROM blessboard.user_role_assignments
       WHERE user_id = $1 AND organization_id = $2
         AND church_id IS NOT DISTINCT FROM $3
-        AND branch_id IS NOT DISTINCT FROM $4
-        AND role_key = $5`,
-    [userId, role.organizationId, role.churchId, role.branchId, role.roleKey]
+        AND role_id = $4 AND scope_type = $5
+        AND scope_id IS NOT DISTINCT FROM $6`,
+    [userId, role.organizationId, role.churchId, catalogueRole.rows[0].id, scopeType, scopeId]
   );
   if (existingRole.rows[0]) return { status: "skipped", reason: "already_present" };
 
   await client.query(
-    `INSERT INTO blessboard.user_roles
-       (user_id, organization_id, church_id, branch_id, role_key, status)
-     VALUES ($1,$2,$3,$4,$5,'active')`,
-    [userId, role.organizationId, role.churchId, role.branchId, role.roleKey]
+    `INSERT INTO blessboard.user_role_assignments
+       (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+        status, assignment_origin, assignment_reason)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'migration','v4_to_v5')`,
+    [
+      userId,
+      role.organizationId,
+      role.churchId,
+      catalogueRole.rows[0].id,
+      scopeType,
+      scopeId,
+      role.status === "inactive" || role.status === "revoked" ? role.status : "active",
+    ]
   );
   return { status: "written" };
 }
