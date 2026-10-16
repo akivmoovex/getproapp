@@ -18,3 +18,12 @@
 - Focused result: 24/25 passed; one unrelated stale asset-version assertion failed in `v2-01-shared-section-management.test.js`.
 - Code fix: none.
 - Status: `NEEDS_SCOPE` for unrelated test maintenance; no product change made.
+
+## V210-P02 — 2026-10-17
+
+- Bug: `V208-REG-03` editor black/empty screen.
+- Root cause: no confirmed initialization, template-local, JavaScript, or authorization defect.
+- BB/AC desktop and mobile editor initialization: `VERIFIED_PASS`.
+- Focused result: 20/20 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
