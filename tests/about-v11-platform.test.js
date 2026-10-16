@@ -55,17 +55,17 @@ function makeBlessBoardApexApp(envOverrides) {
   return app;
 }
 
-test("shared version formatting uses canonical 2.09 with separate healthz SHA", () => {
+test("shared version formatting uses canonical 2.10 with separate healthz SHA", () => {
   const sha = "408d0589ab1234567890";
   const info = getApplicationBuildInfo({
     env: { DEPLOYMENT_ENV: "testing", GETPRO_GIT_SHA: sha },
   });
-  assert.equal(VERSION_BASE, "2.09");
-  assert.equal(PRODUCT_VERSION, "2.09");
+  assert.equal(VERSION_BASE, "2.10");
+  assert.equal(PRODUCT_VERSION, "2.10");
   assert.equal(info.versionBase, VERSION_BASE);
   assert.equal(info.productVersion, PRODUCT_VERSION);
   assert.equal(info.build, sha.slice(0, 12));
-  assert.equal(info.version, "2.09");
+  assert.equal(info.version, "2.10");
   assert.equal(info.available, true);
   assert.equal(info.environment, "testing");
   assert.equal(info.environmentLabel, "Testing");
@@ -86,7 +86,7 @@ test("getApplicationBuildInfo does not hard-code Testing for production mode", (
   });
   assert.equal(info.environment, "production");
   assert.equal(info.environmentLabel, "Production");
-  assert.equal(info.version, "2.09");
+  assert.equal(info.version, "2.10");
   assert.equal(info.build, "deadbeefcafe");
   assert.equal(info.available, true);
 });
@@ -103,7 +103,7 @@ test("missing deployment metadata yields explicit unavailable state (no fabricat
   });
   assert.equal(info.available, false);
   assert.equal(info.build, UNAVAILABLE);
-  assert.equal(info.version, "2.09");
+  assert.equal(info.version, "2.10");
   assert.doesNotMatch(info.build, /^[a-f0-9]{7,}$/i);
 });
 
@@ -114,14 +114,14 @@ test("subsequent builds automatically display their new SHA", () => {
   const second = getApplicationBuildInfo({
     env: { DEPLOYMENT_ENV: "testing", GETPRO_GIT_SHA: "bbbbbbbbbbbbbbbb" },
   });
-  assert.equal(first.version, "2.09");
-  assert.equal(second.version, "2.09");
+  assert.equal(first.version, "2.10");
+  assert.equal(second.version, "2.10");
   assert.equal(first.build, "aaaaaaaaaaaa");
   assert.equal(second.build, "bbbbbbbbbbbb");
   assert.notEqual(first.build, second.build);
 });
 
-test("BlessBoard GET /about renders V2.09 About without auth and without secrets", async () => {
+test("BlessBoard GET /about renders V2.10 About without auth and without secrets", async () => {
   const app = makeBlessBoardApexApp({
     DEPLOYMENT_ENV: "testing",
     GETPRO_GIT_SHA: "abcdef0123456789ffff",
@@ -152,7 +152,7 @@ test("BlessBoard GET /about renders V2.09 About without auth and without secrets
   }
 });
 
-test("ActiveClinic GET /about renders V2.09 About without auth and without secrets", async () => {
+test("ActiveClinic GET /about renders V2.10 About without auth and without secrets", async () => {
   const {
     createActiveClinicFoundationApp,
   } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -199,7 +199,7 @@ test("ActiveClinic GET /about renders V2.09 About without auth and without secre
   }
 });
 
-test("BlessBoard V5 apex About renderer exposes 2.09 build metadata", () => {
+test("BlessBoard V5 apex About renderer exposes 2.10 build metadata", () => {
   const { renderAboutPage } = require("../src/blessboard/http/renderApexMarketing");
   const html = renderAboutPage({
     authenticated: false,
@@ -230,5 +230,5 @@ test("About version build matches simulated /healthz short SHA", () => {
   });
   // healthz uses the same readGitShaShort / GETPRO_GIT_SHA slice
   assert.equal(info.build, short);
-  assert.equal(info.version, "2.09");
+  assert.equal(info.version, "2.10");
 });

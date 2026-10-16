@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * V8-BUG-001 / V2.06 — About pages show Version 2.06 + real Git build.
- * Canonical shared applicationBuildInfo is V2.06 for testing and production.
+ * V8-BUG-001 / V2.10 — About pages show Version 2.10 + real Git build.
+ * Canonical shared applicationBuildInfo is V2.10 for testing and production.
  */
 
 const path = require("path");
@@ -40,7 +40,7 @@ const V8_ENV_BASE = Object.freeze({
   DATABASE_IDENTITY_ENV: "testing",
 });
 
-/** Pronline testing (V9) — same deployment code, V8 platform line → About 2.06. */
+/** Pronline testing (V9) — same deployment code, V8 platform line → About 2.10. */
 const PRONLINE_V9_ENV_BASE = Object.freeze({
   NODE_ENV: "production",
   DEPLOYMENT_ENV: "testing",
@@ -51,7 +51,7 @@ const PRONLINE_V9_ENV_BASE = Object.freeze({
   DATABASE_IDENTITY_ENV: "testing",
 });
 
-/** Production deployment profile — About still uses canonical V2.06. */
+/** Production deployment profile — About still uses canonical V2.10. */
 const PRODUCTION_ENV_BASE = Object.freeze({
   NODE_ENV: "production",
   DEPLOYMENT_ENV: "production",
@@ -93,66 +93,66 @@ function makeBlessBoardApexApp(envOverrides) {
   return app;
 }
 
-describe("V8 About Version 2.06", () => {
-  it("keeps historical V7 constants and resolves canonical V2.06 for all deployments", () => {
+describe("V8 About Version 2.10", () => {
+  it("keeps historical V7 constants and resolves canonical V2.10 for all deployments", () => {
     assert.equal(VERSION_BASE, VERSION_BASE_V8);
     assert.equal(PRODUCT_VERSION, PRODUCT_VERSION_V8);
     assert.equal(VERSION_BASE_V7, "1.03");
     assert.equal(PRODUCT_VERSION_V7, "1.3");
-    assert.equal(VERSION_BASE_V8, "2.06");
-    assert.equal(PRODUCT_VERSION_V8, "2.06");
+    assert.equal(VERSION_BASE_V8, "2.10");
+    assert.equal(PRODUCT_VERSION_V8, "2.10");
 
     const v8 = resolveVersionScheme(V8_ENV_BASE);
     const pronline = resolveVersionScheme(PRONLINE_V9_ENV_BASE);
     const production = resolveVersionScheme(PRODUCTION_ENV_BASE);
     assert.equal(v8.platformLine, "v8");
-    assert.equal(v8.productVersion, "2.06");
+    assert.equal(v8.productVersion, "2.10");
     assert.equal(pronline.platformLine, "v8");
-    assert.equal(pronline.productVersion, "2.06");
+    assert.equal(pronline.productVersion, "2.10");
     assert.equal(production.platformLine, "v8");
-    assert.equal(production.productVersion, "2.06");
+    assert.equal(production.productVersion, "2.10");
   });
 
-  it("formats V8 About metadata as Version 2.06 with separate Git build (shared for BB/AC)", () => {
+  it("formats V8 About metadata as Version 2.10 with separate Git build (shared for BB/AC)", () => {
     const sha = "4e081537165cabcdef99";
     const info = getApplicationBuildInfo({
       env: { ...V8_ENV_BASE, GETPRO_GIT_SHA: sha },
     });
     assert.equal(info.platformLine, "v8");
-    assert.equal(info.productVersion, "2.06");
-    assert.equal(info.versionBase, "2.06");
-    assert.equal(info.version, "2.06");
-    assert.equal(info.productVersionLabel, "Version 2.06");
+    assert.equal(info.productVersion, "2.10");
+    assert.equal(info.versionBase, "2.10");
+    assert.equal(info.version, "2.10");
+    assert.equal(info.productVersionLabel, "Version 2.10");
     assert.equal(info.build, sha.slice(0, 12));
     assert.equal(info.available, true);
-    assert.notEqual(info.version, `2.06.${info.build}`);
+    assert.notEqual(info.version, `2.10.${info.build}`);
     assert.equal(info.version.includes(info.build), false);
   });
 
-  it("production About uses canonical Version 2.06 with separate Git build", () => {
+  it("production About uses canonical Version 2.10 with separate Git build", () => {
     const sha = "03a89106e2feabcd";
     const info = getApplicationBuildInfo({
       env: { ...PRODUCTION_ENV_BASE, GETPRO_GIT_SHA: sha },
     });
     assert.equal(info.platformLine, "v8");
-    assert.equal(info.productVersion, "2.06");
-    assert.equal(info.versionBase, "2.06");
-    assert.equal(info.version, "2.06");
+    assert.equal(info.productVersion, "2.10");
+    assert.equal(info.versionBase, "2.10");
+    assert.equal(info.version, "2.10");
     assert.equal(info.build, sha.slice(0, 12));
-    assert.equal(info.productVersionLabel, "Version 2.06");
+    assert.equal(info.productVersionLabel, "Version 2.10");
     assert.equal(info.version.includes(info.build), false);
   });
 
-  it("pronline moovex-platform-testing (V9) About scheme is Version 2.06", () => {
+  it("pronline moovex-platform-testing (V9) About scheme is Version 2.10", () => {
     const sha = "2ff400a24a677d";
     const info = getApplicationBuildInfo({
       env: { ...PRONLINE_V9_ENV_BASE, GETPRO_GIT_SHA: sha },
     });
     assert.equal(info.platformLine, "v8");
-    assert.equal(info.productVersion, "2.06");
-    assert.equal(info.versionBase, "2.06");
-    assert.equal(info.version, "2.06");
-    assert.equal(info.productVersionLabel, "Version 2.06");
+    assert.equal(info.productVersion, "2.10");
+    assert.equal(info.versionBase, "2.10");
+    assert.equal(info.version, "2.10");
+    assert.equal(info.productVersionLabel, "Version 2.10");
     assert.equal(info.build, sha.slice(0, 12));
   });
 
@@ -167,12 +167,12 @@ describe("V8 About Version 2.06", () => {
       appRoot: path.join(__dirname, "fixtures", "no-git-root-does-not-exist"),
     });
     assert.equal(info.platformLine, "v8");
-    assert.equal(info.version, "2.06");
+    assert.equal(info.version, "2.10");
     assert.equal(info.build, UNAVAILABLE);
     assert.equal(info.available, false);
   });
 
-  it("BlessBoard V8 GET /about shows Version 2.06 and the real Git build", async () => {
+  it("BlessBoard V8 GET /about shows Version 2.10 and the real Git build", async () => {
     const sha = "abcdef0123456789ffff";
     const app = makeBlessBoardApexApp({
       ...V8_ENV_BASE,
@@ -199,7 +199,7 @@ describe("V8 About Version 2.06", () => {
     }
   });
 
-  it("ActiveClinic V8 GET /about shows Version 2.06 and the real Git build", async () => {
+  it("ActiveClinic V8 GET /about shows Version 2.10 and the real Git build", async () => {
     const {
       createActiveClinicFoundationApp,
     } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -262,6 +262,6 @@ describe("V8 About Version 2.06", () => {
     assert.equal(a.version, b.version);
     assert.equal(a.build, b.build);
     assert.equal(a.platformLine, "v8");
-    assert.equal(a.productVersion, "2.06");
+    assert.equal(a.productVersion, "2.10");
   });
 });

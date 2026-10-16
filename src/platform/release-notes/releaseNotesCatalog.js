@@ -39,6 +39,7 @@ const VERSION_ORDER = Object.freeze([
   "2.04",
   "2.05",
   "2.07",
+  "2.10",
 ]);
 
 /**
@@ -3398,6 +3399,55 @@ const VERSIONS = Object.freeze([
       "docs/releases/ACTIVECLINIC_RELEASE_NOTES.md",
       "src/platform/build/applicationBuildInfo.js",
     ],
+  }),
+  Object.freeze({
+    version: "2.10",
+    summary:
+      "V2.10 is the current development foundation created from integrated V2.09 main on new development branch V10. Future V2.10 features are not yet released.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V10. Not released or deployed.",
+    qaVerification: "NOT TESTED — development foundation only; no V2.10 feature completion is claimed.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.10",
+      "V2.10 is clearly identified as the current DEVELOPMENT version",
+      "V2.09 and all historical release notes remain available",
+    ],
+    pendingDevelopment: [
+      "Future V2.10 features are not yet released",
+      "V2.10 development, testing, and release qualification remain pending",
+    ],
+    knownIssues: [],
+    documentationGaps: [],
+    architectureWork: {
+      title: "V2.10 development foundation",
+      body:
+        "Created from integrated V2.09 main as new development branch V10. This entry records the development baseline only.",
+      items: [
+        "Integrated V2.09 main baseline",
+        "New development branch V10",
+        "Future V2.10 features not yet released",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "BlessBoard V2.10 development foundation; future features are not yet released.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "ActiveClinic V2.10 development foundation; future features are not yet released.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared V2.10 development foundation on branch V10.",
+        sections: Object.freeze([]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: ["src/platform/build/applicationBuildInfo.js"],
   }),
 ]);
 
