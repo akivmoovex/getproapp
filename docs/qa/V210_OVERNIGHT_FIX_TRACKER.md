@@ -27,3 +27,14 @@
 - Focused result: 20/20 passed.
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
+
+## V210-P03 — 2026-10-17
+
+- Bugs: `AC-NEW-05`, `AC-NEW-06` patient activation and existing-profile access.
+- Root cause: no confirmed defect; existing phone + name match activation already links the clinic patient atomically after identity checks.
+- Portal entry: `/clinics/:clinicKey/patient/register` and `/patient/login` present.
+- Duplicate protection: existing identity, linked patient, ambiguous match, and cross-clinic checks covered.
+- Tenant isolation: verified.
+- Focused result: 22/22 passed; isolated test data only.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
