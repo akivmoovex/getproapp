@@ -28,6 +28,15 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P20 — 2026-10-17
+
+- Bug: `BB209-02` BlessBoard background color editing and publication.
+- Draft/publish/editor persistence coverage passed; theme HTTP and boundary coverage passed.
+- No confirmed BB-specific background-color defect reproduced.
+- Blocker: shared legacy color-system suite has 6 unrelated baseline failures (including ActiveClinic staff primary and BlessBoard token assertions).
+- Code fix: none; no color or publishing logic changed.
+- Status: `BLOCKED`.
+
 ## V210-P19 — 2026-10-17
 
 - Bug: `AC-HIST-02` mobile website editor and image/gallery selection.
