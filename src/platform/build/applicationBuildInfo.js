@@ -25,12 +25,12 @@ const VERSION_BASE_V7 = "1.03";
 /** Human product version label for V7 release 1.3 (historical). */
 const PRODUCT_VERSION_V7 = "1.3";
 
-/** System / product version for the canonical GetPro V2.07 line. */
-const VERSION_BASE_V8 = "2.07";
-const PRODUCT_VERSION_V8 = "2.07";
+/** System / product version for the canonical GetPro V2.09 line. */
+const VERSION_BASE_V8 = "2.09";
+const PRODUCT_VERSION_V8 = "2.09";
 
 /**
- * Canonical aliases — current product About/version source is V2.07.
+ * Canonical aliases — current product About/version source is V2.09.
  * Prefer getApplicationBuildInfo({ env }) for environment + build SHA.
  */
 const VERSION_BASE = VERSION_BASE_V8;
@@ -61,7 +61,7 @@ function resolveBuildSha(options) {
  * }}
  */
 function resolveVersionScheme(env) {
-  // About/product version is canonical V2.07 for every deployment profile,
+  // About/product version is canonical V2.09 for every deployment profile,
   // including production (moovex-platform-production / activeclinic-org-production).
   // Deployment isolation platformLine (v7 vs v8) is orthogonal and must not
   // pin About to the legacy 1.03 catalogue label.
