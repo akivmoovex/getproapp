@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P13 — 2026-10-17
+
+- Bugs: `BB209-11`, `BB-06` announcement image disappearance after save/publish.
+- Image save/publish: `VERIFIED_PASS` through existing media attachment and announcement services.
+- Audience: church/branch/member/public targeting and cross-tenant isolation verified.
+- RBAC: authorized management and unauthorized access paths verified.
+- Focused result: 74/74 passed with small fixtures.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P12 — 2026-10-17
 
 - Bug: `BB209-07` invitation role selector appears restricted.
