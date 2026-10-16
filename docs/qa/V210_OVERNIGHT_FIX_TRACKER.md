@@ -56,6 +56,15 @@
 - Code fix: none.
 - Status: `NEEDS_SCOPE` for any new V5 prayer module/route.
 
+## V210-P23 — 2026-10-17
+
+- Bug: `BB-07` branch capacity and plan rules.
+- Plan rules: Foundation allows one active branch; Growth and Network allow additional/unlimited active campuses; legacy aliases resolve safely.
+- Branch limits: transactional enforcement, concurrent-create protection, plan-derived capacity, scoped overrides, activation/deactivation, downgrade protection, and tenant isolation `VERIFIED_PASS`.
+- Focused result: 43 passed, 3 skipped integration cases; no defect reproduced.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P19 — 2026-10-17
 
 - Bug: `AC-HIST-02` mobile website editor and image/gallery selection.
