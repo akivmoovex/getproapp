@@ -62,9 +62,9 @@ function hubApp(env) {
 }
 
 describe("release notes catalog", () => {
-  it("lists all ten versions", () => {
-    assert.deepEqual(VERSION_ORDER, ["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", "2.02", "2.03", "2.04", "2.05"]);
-    assert.equal(listVersions().length, 10);
+  it("lists all twelve versions", () => {
+    assert.deepEqual(VERSION_ORDER, ["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", "2.02", "2.03", "2.04", "2.05", "2.07", "2.10"]);
+    assert.equal(listVersions().length, 12);
   });
 
   it("marks 1.1 and 1.2 documentation gaps", () => {

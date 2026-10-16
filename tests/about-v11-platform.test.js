@@ -131,9 +131,9 @@ test("BlessBoard GET /about renders V2.10 About without auth and without secrets
     assert.equal(res.status, 200);
     assert.match(res.text, /data-product="BlessBoard"/);
     assert.match(res.text, /About BlessBoard/);
-    assert.match(res.text, /Version 2\.09/);
+    assert.match(res.text, /Version 2\.10/);
     assert.match(res.text, />abcdef012345</);
-    assert.match(res.text, /Release 2\.09/);
+    assert.match(res.text, /Release 2\.10/);
     assert.match(res.text, /Testing/);
     assert.match(res.text, /href="\/about"/);
     assert.match(res.text, /href="\/privacy"/);
@@ -180,8 +180,8 @@ test("ActiveClinic GET /about renders V2.10 About without auth and without secre
   assert.match(res.text, /data-product="ActiveClinic"/);
   assert.match(res.text, /data-ac-acw-screen="ACW06"/);
   assert.match(res.text, /About ActiveClinic/);
-  assert.match(res.text, /Enterprise v2\.09/);
-  assert.match(res.text, /Version 2\.09/);
+  assert.match(res.text, /Enterprise v2\.10/);
+  assert.match(res.text, /Version 2\.10/);
   assert.match(res.text, />fedcba987654</);
   assert.match(res.text, /Testing/);
   assert.match(res.text, /href="\/about"/);
@@ -208,8 +208,8 @@ test("BlessBoard V5 apex About renderer exposes 2.10 build metadata", () => {
   });
   assert.match(html, /data-bb-shell="apex"/);
   assert.match(html, /data-product="BlessBoard"/);
-  assert.match(html, /Version 2\.09/);
-  assert.match(html, /Release 2\.09/);
+  assert.match(html, /Version 2\.10/);
+  assert.match(html, /Release 2\.10/);
   assert.match(html, /Testing/);
   assert.match(html, /href="\/about"/);
   assert.match(html, /href="\/privacy"/);
