@@ -277,6 +277,35 @@ async function listVersions(db, filters) {
 }
 
 /**
+ * Compatibility view for the version-history service.
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {number} [limit]
+ */
+async function listPlatformVersionsByOrganization(db, organizationId, limit = 100) {
+  if (!isUuid(organizationId)) return [];
+  const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+  const result = await db.query(
+    `SELECT id, organization_id, version_number, snapshot_json, status,
+            published_at
+       FROM platform.website_versions
+      WHERE organization_id = $1
+      ORDER BY version_number DESC
+      LIMIT $2`,
+    [organizationId, safeLimit]
+  );
+  return (result.rows || []).map((row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    branchId: null,
+    versionNumber: Number(row.version_number),
+    snapshot: row.snapshot_json || {},
+    status: row.status,
+    publishedAt: row.published_at || null,
+  }));
+}
+
+/**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
  * @param {string} versionId
@@ -640,6 +669,7 @@ module.exports = {
   insertPublishedVersion,
   insertDraftRestorationVersion,
   listVersions,
+  listPlatformVersionsByOrganization,
   getVersionByOrgAndId,
   getCurrentPublishedVersion,
   loadVersionPair,
