@@ -330,15 +330,13 @@ describe("blessboard hq role management", () => {
   it("revokes role, records audit, and enforces stale authorization", async () => {
     requireDb();
     const listed = await pool.query(
-      `SELECT a.id
-         FROM blessboard.user_role_assignments a
+      `SELECT a.id FROM blessboard.user_role_assignments a
          JOIN blessboard.roles r ON r.id = a.role_id
-        WHERE a.user_id = $1
-          AND r.role_key = 'branch_administrator'
-          AND a.status = 'active'
-          AND a.revoked_at IS NULL
+        WHERE a.user_id = $1 AND r.role_key = 'branch_administrator'
+          AND a.church_id = $2 AND a.scope_type = 'branch'
+          AND a.status = 'active' AND a.revoked_at IS NULL
         LIMIT 1`,
-      [users.target.id]
+      [users.target.id, churchA.id]
     );
     assert.ok(listed.rows[0]);
     const roleId = listed.rows[0].id;
@@ -369,7 +367,7 @@ describe("blessboard hq role management", () => {
     const audit = await pool.query(
       `SELECT action_key, entity_type, entity_id
          FROM platform.audit_events
-        WHERE action_key = 'role.revoked' AND entity_id = $1
+        WHERE action_key = 'rbac.assignment.revoked' AND entity_id = $1
         ORDER BY created_at DESC
         LIMIT 1`,
       [roleId]
@@ -466,7 +464,7 @@ describe("blessboard hq role management", () => {
     assert.match(ok.headers.location, /notice=assigned/);
 
     const audit = await pool.query(
-      `SELECT 1 FROM platform.audit_events WHERE action_key = 'role.assigned' LIMIT 1`
+      `SELECT 1 FROM platform.audit_events WHERE action_key = 'rbac.assignment.created' LIMIT 1`
     );
     assert.equal(audit.rows.length, 1);
   });
@@ -474,12 +472,11 @@ describe("blessboard hq role management", () => {
   it("rejects cross-church revoke via church scope", async () => {
     requireDb();
     const role = await pool.query(
-      `SELECT a.id
-         FROM blessboard.user_role_assignments a
-        WHERE a.user_id = $1
-          AND a.church_id = $2
-          AND a.status = 'active'
-          AND a.revoked_at IS NULL
+      `SELECT a.id FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.church_id = $2
+          AND r.role_key = 'organisation_administrator'
+          AND a.status = 'active' AND a.revoked_at IS NULL
         LIMIT 1`,
       [users.otherChurch.id, churchB.id]
     );
@@ -493,7 +490,7 @@ describe("blessboard hq role management", () => {
       env: baseEnv(),
     });
     assert.equal(result.ok, false);
-    assert.equal(result.reason, "cross_church");
+    assert.equal(result.reason, "RBAC_SCOPE_MISMATCH");
   });
 
   it("does not invent leader role keys in V5 role modules", async () => {

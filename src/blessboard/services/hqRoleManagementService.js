@@ -2,20 +2,22 @@
 
 /**
  * HQ-scoped staff role list / assign / revoke for fixed V5 roles only.
- * Assignable: church_hq_admin, branch_admin (mapped to catalogue assignments).
- * platform_admin is forbidden on this path. Catalogue ura writes only (DBCL06).
+ * Assignable: church_hq_admin, branch_admin. Never platform_admin via this path.
  */
 
 const repo = require("../repositories/blessBoardAuthRepository");
-const rbacRepo = require("../repositories/blessBoardRbacRepository");
 const { normalizeEmail } = require("./createBlessBoardUser");
-const { assignBlessBoardRole } = require("./assignBlessBoardRole");
 const {
   evaluateStaffAccountLimit,
   STATUS: ENT_STATUS,
 } = require("../../platform/services/entitlementService");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 const { assertNotLastHqAdminRemoval } = require("./blessBoardLastAdminGuard");
+const {
+  createRoleAssignment,
+  revokeRoleAssignment,
+} = require("./blessBoardRoleAssignmentService");
+const rbacRepo = require("../repositories/blessBoardRbacRepository");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -84,436 +86,86 @@ async function withClient(db, fn) {
  * }} input
  */
 async function listHqChurchRoles(db, input) {
-  const actorUserId = String((input && input.actorUserId) || "").trim();
-  const organizationId = String((input && input.organizationId) || "").trim();
-  const churchId = String((input && input.churchId) || "").trim();
+  const actorUserId = String(input?.actorUserId || '').trim();
+  const organizationId = String(input?.organizationId || '').trim();
+  const churchId = String(input?.churchId || '').trim();
   if (!UUID_RE.test(actorUserId) || !UUID_RE.test(organizationId) || !UUID_RE.test(churchId)) {
-    return { ok: false, status: STATUS.INVALID_INPUT, roles: [], total: 0, counts: null, reason: "scope" };
+    return { ok: false, status: STATUS.INVALID_INPUT, roles: [], total: 0, counts: null, reason: 'scope' };
   }
   try {
-    return await withClient(db, async (client) => {
-      const rows = await repo.listChurchStaffRoles(client, {
-        organizationId,
-        churchId,
-        q: input.q,
-        roleKey: input.roleKey,
-        limit: input.limit,
-        offset: input.offset,
-      });
-      const counts = await repo.countActiveChurchStaffRoles(client, churchId, organizationId);
-      const total = rows.length ? Number(rows[0].total_count) || rows.length : 0;
-      return {
-        ok: true,
-        status: STATUS.OK,
-        roles: rows.map(mapRoleRow),
-        total,
-        counts,
-      };
+    const rows = await rbacRepo.listAssignmentsForChurch(db, {
+      organizationId, churchId,
+      scopeType: input.roleKey === 'branch_admin' ? 'branch' : undefined,
     });
+    const roles = rows.filter((a) => ['organisation_administrator', 'branch_administrator'].includes(a.roleKey))
+      .map((a) => ({
+        id: a.id, userId: a.userId, organizationId: a.organizationId, churchId: a.churchId,
+        branchId: a.scopeType === 'branch' ? a.scopeId : null,
+        roleKey: a.roleKey === 'organisation_administrator' ? 'church_hq_admin' : 'branch_admin',
+        status: a.status,
+      }));
+    return { ok: true, status: STATUS.OK, roles, total: roles.length, counts: null };
   } catch (err) {
-    return {
-      ok: false,
-      status: STATUS.LOOKUP_ERROR,
-      roles: [],
-      total: 0,
-      counts: null,
-      reason: err && err.message ? String(err.message) : "error",
-    };
+    return { ok: false, status: STATUS.LOOKUP_ERROR, roles: [], total: 0, counts: null, reason: err.message || 'error' };
   }
 }
 
-/**
- * @param {{ query: Function, connect?: Function }} db
- * @param {{
- *   actorUserId: string,
- *   organizationId: string,
- *   organizationKey: string,
- *   churchId: string,
- *   churchKey: string,
- *   email: string,
- *   roleKey: string,
- *   branchKey?: string | null,
- *   confirmed: boolean,
- *   env?: NodeJS.ProcessEnv,
- * }} input
- */
 async function assignHqChurchRole(db, input) {
-  const actorUserId = String((input && input.actorUserId) || "").trim();
-  const organizationId = String((input && input.organizationId) || "").trim();
-  const organizationKey = String((input && input.organizationKey) || "")
-    .trim()
-    .toLowerCase();
-  const churchId = String((input && input.churchId) || "").trim();
-  const churchKey = String((input && input.churchKey) || "")
-    .trim()
-    .toLowerCase();
-  const email = normalizeEmail(input && input.email);
-  const roleKey = String((input && input.roleKey) || "")
-    .trim()
-    .toLowerCase();
-  const branchKey =
-    input && input.branchKey != null
-      ? String(input.branchKey).trim().toLowerCase()
-      : "";
-
-  if (!UUID_RE.test(actorUserId) || !UUID_RE.test(organizationId) || !UUID_RE.test(churchId)) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "scope" };
+  const actorUserId = String(input?.actorUserId || '').trim();
+  const organizationId = String(input?.organizationId || '').trim();
+  const organizationKey = String(input?.organizationKey || '').trim().toLowerCase();
+  const churchId = String(input?.churchId || '').trim();
+  const churchKey = String(input?.churchKey || '').trim().toLowerCase();
+  const email = normalizeEmail(input?.email);
+  const roleKey = String(input?.roleKey || '').trim().toLowerCase();
+  const branchKey = String(input?.branchKey || '').trim().toLowerCase();
+  if (!UUID_RE.test(actorUserId) || !UUID_RE.test(organizationId) || !UUID_RE.test(churchId) || !organizationKey || !churchKey || !email) {
+    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: 'fields' };
   }
-  if (!organizationKey || !churchKey || !email) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "fields" };
+  if (input.confirmed !== true) return { ok: false, status: STATUS.CONFIRMATION_REQUIRED, role: null, reason: 'confirm' };
+  if (roleKey === 'platform_admin') return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: 'platform_admin_forbidden' };
+  const canonicalRole = roleKey === 'church_hq_admin' ? 'organisation_administrator' : roleKey === 'branch_admin' ? 'branch_administrator' : null;
+  if (!canonicalRole) return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: 'role_key' };
+  const user = await repo.findUserByEmail(db, email);
+  if (!user) return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: 'user' };
+  if (String(user.status) !== 'active') return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: 'user_inactive' };
+  const church = await repo.findChurchByKey(db, churchKey);
+  if (!church || String(church.id) !== churchId || String(church.organization_id) !== organizationId) return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: 'church' };
+  let scopeType = 'church'; let scopeId = churchId; let branchId = null;
+  if (canonicalRole === 'branch_administrator') {
+    if (!branchKey) return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: 'branch_required' };
+    const branch = await repo.findBranchByChurchAndKey(db, churchId, branchKey);
+    if (!branch || String(branch.status) !== 'active') return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: 'branch' };
+    scopeType = 'branch'; scopeId = branch.id; branchId = branch.id;
   }
-  if (roleKey === "platform_admin") {
-    return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "platform_admin_forbidden" };
-  }
-  if (!HQ_ASSIGNABLE_ROLES.includes(roleKey)) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "role_key" };
-  }
-  if (roleKey === "church_hq_admin" && branchKey) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "hq_scope" };
-  }
-  if (roleKey === "branch_admin" && !branchKey) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "branch_required" };
-  }
-  if (input.confirmed !== true) {
-    return { ok: false, status: STATUS.CONFIRMATION_REQUIRED, role: null, reason: "confirm" };
-  }
-
-  try {
-    return await withClient(db, async (client) => {
-      await client.query("BEGIN");
-      try {
-        const organization = await repo.findOrganizationByKey(client, organizationKey);
-        if (!organization || String(organization.id) !== organizationId) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "organization" };
-        }
-        const church = await repo.findChurchByKey(client, churchKey);
-        if (
-          !church ||
-          String(church.id) !== churchId ||
-          String(church.organization_id) !== organizationId
-        ) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "church" };
-        }
-
-        const user = await repo.findUserByEmail(client, email);
-        if (!user) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: "user" };
-        }
-        if (String(user.status) !== "active") {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "user_inactive" };
-        }
-        if (String(user.id) === actorUserId) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "self_escalation" };
-        }
-
-        let branchId = null;
-        if (roleKey === "branch_admin") {
-          const branch = await repo.findBranchByChurchAndKey(client, churchId, branchKey);
-          if (!branch || String(branch.status) !== "active") {
-            await client.query("ROLLBACK");
-            return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: "branch" };
-          }
-          branchId = branch.id;
-        }
-
-        const existingStaff = await client.query(
-          `SELECT 1 FROM blessboard.user_role_assignments a
-            WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
-              AND a.revoked_at IS NULL
-              AND (a.expires_at IS NULL OR a.expires_at > now())
-            LIMIT 1`,
-          [user.id, organizationId]
-        );
-        const existing = await repo.findRole(client, {
-          userId: user.id,
-          organizationId,
-          churchId,
-          branchId,
-          roleKey,
-        });
-        const countsAsNewStaff =
-          existingStaff.rows.length === 0 && !(existing && String(existing.status) === "active");
-
-        const staffGate = await evaluateStaffAccountLimit(client, {
-          organizationId,
-          countsAsNewStaff,
-          countsAsNewUser: countsAsNewStaff,
-        });
-        if (!staffGate.ok) {
-          await client.query("ROLLBACK");
-          if (staffGate.status === ENT_STATUS.LIMIT_EXCEEDED) {
-            return {
-              ok: false,
-              status: STATUS.LIMIT_EXCEEDED,
-              role: null,
-              reason: staffGate.reason || "max_staff_accounts",
-            };
-          }
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "entitlement" };
-        }
-
-        if (existing && String(existing.status) === "active") {
-          await client.query("COMMIT");
-          return {
-            ok: true,
-            status: STATUS.OK,
-            role: mapRoleRow({
-              ...existing,
-              email_display: user.email_display,
-              user_display_name: user.display_name,
-              user_status: user.status,
-            }),
-            alreadyAssigned: true,
-          };
-        }
-
-        const assigned = await assignBlessBoardRole(
-          client,
-          {
-            email,
-            organizationKey,
-            churchKey,
-            branchKey: branchKey || null,
-            roleKey,
-          },
-          { manageTransaction: false }
-        );
-        if (!assigned.ok) {
-          await client.query("ROLLBACK");
-          if (/limit_exceeded/i.test(String(assigned.message || ""))) {
-            return {
-              ok: false,
-              status: STATUS.LIMIT_EXCEEDED,
-              role: null,
-              reason: "max_staff_accounts",
-            };
-          }
-          if (assigned.status === "already_assigned" || assigned.message === "already_assigned") {
-            return {
-              ok: true,
-              status: STATUS.OK,
-              role: mapRoleRow({
-                id: assigned.role && assigned.role.id,
-                user_id: user.id,
-                organization_id: organizationId,
-                church_id: churchId,
-                branch_id: branchId,
-                role_key: roleKey,
-                status: "active",
-                email_display: user.email_display,
-                user_display_name: user.display_name,
-                user_status: user.status,
-              }),
-              alreadyAssigned: true,
-            };
-          }
-          return {
-            ok: false,
-            status: STATUS.LOOKUP_ERROR,
-            role: null,
-            reason: assigned.message || "assign_failed",
-          };
-        }
-
-        const outcome =
-          existing && String(existing.status) !== "active" ? "reactivated" : "assigned";
-        const roleRow = {
-          id: assigned.role.id,
-          user_id: user.id,
-          organization_id: organizationId,
-          church_id: churchId,
-          branch_id: branchId,
-          role_key: roleKey,
-          status: "active",
-        };
-
-        await recordBlessBoardAudit(client, {
-          organizationId,
-          churchId,
-          branchId,
-          actorUserId,
-          actionKey: "role.assigned",
-          entityType: "user_role_assignment",
-          entityId: roleRow.id,
-          outcome: "success",
-          metadata: {
-            role_key: roleKey,
-            branch_key: branchKey || null,
-            outcome,
-            reason_code: outcome,
-          },
-          env: input.env,
-        });
-
-        await client.query("COMMIT");
-        return {
-          ok: true,
-          status: STATUS.OK,
-          role: mapRoleRow({
-            ...roleRow,
-            email_display: user.email_display,
-            user_display_name: user.display_name,
-            user_status: user.status,
-          }),
-          alreadyAssigned: false,
-        };
-      } catch (err) {
-        try {
-          await client.query("ROLLBACK");
-        } catch {
-          /* ignore */
-        }
-        if (repo.isUniqueViolation(err)) {
-          return { ok: false, status: STATUS.CONFLICT, role: null, reason: "duplicate" };
-        }
-        throw err;
-      }
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      status: STATUS.LOOKUP_ERROR,
-      role: null,
-      reason: err && err.message ? String(err.message) : "error",
-    };
-  }
+  const result = await createRoleAssignment(db, {
+    actorUserId, userId: user.id, roleKey: canonicalRole, organizationId, churchId,
+    scopeType, scopeId, actorChurchId: churchId, assignmentOrigin: 'manual',
+    assignmentReason: 'hq_role_management', forbidPlatformScope: true,
+    tenantContext: { resolved: true, organization: { id: organizationId }, church: { id: churchId }, primaryBranch: branchId ? { id: branchId } : null },
+  });
+  if (!result.ok) return { ok: false, status: result.status === 'forbidden' ? STATUS.FORBIDDEN : STATUS.INVALID_INPUT, role: null, reason: result.reason === 'self_elevation' ? 'self_escalation' : result.reason };
+  return { ok: true, status: STATUS.OK, alreadyAssigned: result.idempotent === true, role: { id: result.assignment.id, userId: user.id, organizationId, churchId, branchId, roleKey, status: 'active' } };
 }
 
-/**
- * @param {{ query: Function, connect?: Function }} db
- * @param {{
- *   actorUserId: string,
- *   organizationId: string,
- *   churchId: string,
- *   roleId: string,
- *   confirmed: boolean,
- *   env?: NodeJS.ProcessEnv,
- * }} input
- */
 async function revokeHqChurchRole(db, input) {
-  const actorUserId = String((input && input.actorUserId) || "").trim();
-  const organizationId = String((input && input.organizationId) || "").trim();
-  const churchId = String((input && input.churchId) || "").trim();
-  const roleId = String((input && input.roleId) || "").trim();
-  if (
-    !UUID_RE.test(actorUserId) ||
-    !UUID_RE.test(organizationId) ||
-    !UUID_RE.test(churchId) ||
-    !UUID_RE.test(roleId)
-  ) {
-    return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: "scope" };
-  }
-  if (input.confirmed !== true) {
-    return { ok: false, status: STATUS.CONFIRMATION_REQUIRED, role: null, reason: "confirm" };
-  }
-
-  try {
-    return await withClient(db, async (client) => {
-      await client.query("BEGIN");
-      try {
-        const existing = await repo.findRoleById(client, roleId);
-        if (!existing) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: "role" };
-        }
-        if (
-          String(existing.organization_id) !== organizationId ||
-          (existing.church_id != null && String(existing.church_id) !== churchId)
-        ) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "cross_church" };
-        }
-        if (!HQ_ASSIGNABLE_ROLES.includes(String(existing.role_key))) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "role_key" };
-        }
-        if (String(existing.user_id) === actorUserId) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "self_escalation" };
-        }
-        if (String(existing.status) !== "active") {
-          await client.query("COMMIT");
-          return { ok: true, status: STATUS.OK, role: mapRoleRow(existing), alreadyRevoked: true };
-        }
-
-        if (String(existing.role_key) === "church_hq_admin") {
-          const lastAdmin = await assertNotLastHqAdminRemoval(client, {
-            organizationId,
-            churchId,
-            userId: existing.user_id,
-            excludeAssignmentId: roleId,
-            roleKey: String(existing.catalogue_role_key || "organisation_administrator"),
-            scopeType: existing.scope_type || "church",
-          });
-          if (!lastAdmin.ok) {
-            await client.query("ROLLBACK");
-            return {
-              ok: false,
-              status: STATUS.FORBIDDEN,
-              role: null,
-              reason: lastAdmin.reason || "last_hq_admin",
-            };
-          }
-        }
-
-        const revoked = await rbacRepo.revokeAssignment(client, {
-          assignmentId: roleId,
-          revokedByUserId: actorUserId,
-          revocationReason: "hq_role_revoke",
-        });
-        if (!revoked) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: "role" };
-        }
-
-        const roleRow = {
-          ...existing,
-          status: "inactive",
-        };
-        await recordBlessBoardAudit(client, {
-          organizationId,
-          churchId,
-          branchId: existing.branch_id,
-          actorUserId,
-          actionKey: "role.revoked",
-          entityType: "user_role_assignment",
-          entityId: roleId,
-          outcome: "success",
-          metadata: {
-            reason_code: String(existing.role_key),
-            branch_key: null,
-          },
-          env: input.env,
-        });
-        await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, role: mapRoleRow(roleRow), alreadyRevoked: false };
-      } catch (err) {
-        try {
-          await client.query("ROLLBACK");
-        } catch {
-          /* ignore */
-        }
-        throw err;
-      }
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      status: STATUS.LOOKUP_ERROR,
-      role: null,
-      reason: err && err.message ? String(err.message) : "error",
-    };
-  }
+  const actorUserId = String(input?.actorUserId || '').trim();
+  const organizationId = String(input?.organizationId || '').trim();
+  const churchId = String(input?.churchId || '').trim();
+  const roleId = String(input?.roleId || '').trim();
+  if (!UUID_RE.test(actorUserId) || !UUID_RE.test(organizationId) || !UUID_RE.test(churchId) || !UUID_RE.test(roleId)) return { ok: false, status: STATUS.INVALID_INPUT, role: null, reason: 'scope' };
+  if (input.confirmed !== true) return { ok: false, status: STATUS.CONFIRMATION_REQUIRED, role: null, reason: 'confirm' };
+  const result = await revokeRoleAssignment(db, {
+    actorUserId, assignmentId: roleId, actorChurchId: churchId, revocationReason: 'hq_role_management',
+    tenantContext: { resolved: true, organization: { id: organizationId }, church: { id: churchId } },
+  });
+  if (!result.ok) return { ok: false, status: result.status === 'forbidden' ? STATUS.FORBIDDEN : STATUS.NOT_FOUND, role: null, reason: result.reason === 'self_elevation' ? 'self_escalation' : result.reason };
+  return { ok: true, status: STATUS.OK, role: result.assignment, alreadyRevoked: false };
 }
 
 module.exports = {
   STATUS,
-  HQ_ASSIGNABLE_ROLES,
+  HQ_ASSIGNABLE_ROLES: Object.freeze(['church_hq_admin', 'branch_admin']),
   listHqChurchRoles,
   assignHqChurchRole,
   revokeHqChurchRole,

@@ -117,6 +117,53 @@ async function listAssignmentsForUserOrg(client, userId, organizationId) {
 }
 
 /**
+ * List active catalogue assignments visible within one church.
+ * HQ assignments are church-scoped; branch assignments are included only
+ * when their scope belongs to the requested church and organization.
+ * @param {{ query: Function }} client
+ * @param {{ organizationId: string, churchId: string, scopeType?: string }} input
+ */
+async function listAssignmentsForChurch(client, input) {
+  const organizationId = String(input && input.organizationId || "").trim();
+  const churchId = String(input && input.churchId || "").trim();
+  const scopeType = input && input.scopeType != null
+    ? String(input.scopeType).trim().toLowerCase()
+    : "";
+  if (!organizationId || !churchId || (scopeType && !["church", "branch"].includes(scopeType))) {
+    return [];
+  }
+  const params = [organizationId, churchId];
+  const scopeClause = scopeType ? `AND a.scope_type = $${params.push(scopeType)}` : "";
+  const r = await client.query(
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id, a.role_id,
+            a.scope_type, a.scope_id, a.status, a.assigned_by_user_id,
+            a.assignment_origin, a.assignment_reason, a.expires_at,
+            a.revoked_at, a.revoked_by_user_id, a.revocation_reason,
+            a.created_at, a.updated_at,
+            r.role_key, r.is_sensitive
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND r.is_active = true
+        ${scopeClause}
+        AND (
+          (a.scope_type = 'church' AND a.scope_id = $2 AND a.church_id = $2)
+          OR
+          (a.scope_type = 'branch' AND a.church_id = $2 AND EXISTS (
+            SELECT 1
+              FROM blessboard.branches b
+             WHERE b.id = a.scope_id
+               AND b.church_id = $2
+          ))
+        )
+      ORDER BY a.created_at DESC`,
+    params
+  );
+  return r.rows.map(mapAssignment);
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string} assignmentId
  */
@@ -255,6 +302,7 @@ module.exports = {
   listPermissionKeysForRoleIds,
   listActiveAssignmentsForUser,
   listAssignmentsForUserOrg,
+  listAssignmentsForChurch,
   findAssignmentById,
   insertAssignment,
   revokeAssignment,
