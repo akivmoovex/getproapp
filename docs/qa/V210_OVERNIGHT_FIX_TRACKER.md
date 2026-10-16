@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P15 — 2026-10-17
+
+- Bugs: `BB209-05`, `BB209-09` contact/profile and unwanted directory content.
+- Contact: edit, save, publish, fallback handling, and anonymous rendering `VERIFIED_PASS`.
+- Directory: intentional fallback content and church/branch isolation `VERIFIED_PASS`; no confirmed stale/leaking mismatch.
+- Root cause: none confirmed.
+- Focused result: 86/86 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P14 — 2026-10-17
 
 - Bug: `BB209-06` service fields appear unavailable for editing.
