@@ -36,6 +36,17 @@
 - Code fix: none; no unverified change made.
 - Status: `BLOCKED` pending a clean, appropriately scoped member-creation test environment.
 
+## V210-P07 — 2026-10-17
+
+- Bugs: `BB209-10`, `BB-05` service names, days, and times missing publicly.
+- Root cause: no confirmed omission; HQ service-time editing, draft/publication, branch inheritance/override, hidden mode, public rendering, and mobile hooks are covered and passing.
+- HQ: `VERIFIED_PASS`.
+- Branch: inherit/override/hidden behavior `VERIFIED_PASS`.
+- Publish/public anonymous view: `VERIFIED_PASS`.
+- Focused result: 61/61 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P04 — 2026-10-17
 
 - Bug: `AC-NEW-07` patient self-registration approval queue.
