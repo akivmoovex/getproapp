@@ -37,6 +37,16 @@
 - Code fix: none.
 - Status: `BLOCKED` pending clean theme lifecycle coverage; working color controls preserved.
 
+## V210-P17 — 2026-10-17
+
+- Bugs: `AC-NEW-03`, `AC-NEW-04` missing laboratory/radiology result entry.
+- Lab results: existing queue, specimen, result-entry, persistence, patient association, and lab-role access `VERIFIED_PASS`.
+- Radiology results: existing report-entry, persistence, patient association, and radiology-role access `VERIFIED_PASS`.
+- Role access: modality separation, facility scope, audit paths, and unauthorized/tampered IDs verified.
+- Focused result: 19/19 passed; one legacy UI suite skipped due missing legacy utilities.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P15 — 2026-10-17
 
 - Bugs: `BB209-05`, `BB209-09` contact/profile and unwanted directory content.
