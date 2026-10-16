@@ -28,6 +28,15 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P18 — 2026-10-17
+
+- Bugs: `AC-HIST-03`, `AC-HIST-04` password recovery and clinic inquiry routing.
+- Password recovery: mocked delivery, token hashing, expiry, one-use enforcement, identity consistency, session revocation, and enumeration-safe responses `VERIFIED_PASS`.
+- Inquiry routing: clinic inquiries persist with organization, healthcare organization, and facility scope; duplicate retry protection and cross-clinic isolation `VERIFIED_PASS`.
+- Focused result: 28/28 passed; no production data or live delivery used.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P16 — 2026-10-17
 
 - Bug: `AC-NEW-01` ActiveClinic theme selection save/preview/publish.
