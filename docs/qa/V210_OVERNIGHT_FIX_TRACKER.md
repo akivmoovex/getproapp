@@ -37,6 +37,15 @@
 - Code fix: none; no color or publishing logic changed.
 - Status: `BLOCKED`.
 
+## V210-P21 — 2026-10-17
+
+- Bug: `BB209-04` member journey stages and transitions.
+- Implemented: evangelism, registration/first-timers, orientation, cell assignment, classes, department service, persistence/history, RBAC, tenant scope, and visitor non-approval behavior.
+- Missing exact approved labels: `New Convert`, `Membership Preparation`, and `Active Member` are not distinct canonical stages; existing equivalents (`salvation_class`, `foundation_class`/`establishment_class`, active membership) require product approval before mapping.
+- Focused result: 53/53 passed.
+- Code fix: none.
+- Status: `NEEDS_SCOPE`.
+
 ## V210-P19 — 2026-10-17
 
 - Bug: `AC-HIST-02` mobile website editor and image/gallery selection.
