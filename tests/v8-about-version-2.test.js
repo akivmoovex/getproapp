@@ -183,14 +183,14 @@ describe("V8 About Version 2.10", () => {
       assert.equal(res.status, 200);
       assert.match(res.text, /data-product="BlessBoard"/);
       assert.match(res.text, /About BlessBoard/);
-      assert.match(res.text, /Release 2\.06/);
+      assert.match(res.text, /Release 2\.10/);
       assert.match(res.text, new RegExp(`>${sha.slice(0, 12)}<`));
       assert.match(res.text, /href="\/about"/);
-      assert.match(res.text, /Version 2\.06/);
+      assert.match(res.text, /Version 2\.10/);
       assert.doesNotMatch(res.text, /1\.03\./);
       assert.doesNotMatch(res.text, /Release 1\.3/);
       assert.doesNotMatch(res.text, /1\.01\./);
-      assert.doesNotMatch(res.text, /2\.06\.abcdef012345/);
+      assert.doesNotMatch(res.text, /2\.10\.abcdef012345/);
       assert.doesNotMatch(res.text, /Version 2\.0(?!\d)/);
       assert.doesNotMatch(res.text, /Release 2\.05/);
       assert.doesNotMatch(res.text, /v2\.05 Ready/);
@@ -226,13 +226,13 @@ describe("V8 About Version 2.10", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-product="ActiveClinic"/);
     assert.match(res.text, /About ActiveClinic/);
-    assert.match(res.text, /Enterprise v2\.06/);
+    assert.match(res.text, /Enterprise v2\.10/);
     assert.match(res.text, new RegExp(`>${sha.slice(0, 12)}<`));
     assert.match(res.text, /href="\/about"/);
-    assert.match(res.text, /Version 2\.06/);
+    assert.match(res.text, /Version 2\.10/);
     assert.doesNotMatch(res.text, /1\.03\./);
     assert.doesNotMatch(res.text, /Enterprise v1\.3/);
-    assert.doesNotMatch(res.text, /2\.06\.fedcba987654/);
+    assert.doesNotMatch(res.text, /2\.10\.fedcba987654/);
     assert.doesNotMatch(res.text, /Version 2\.0(?!\d)/);
     assert.doesNotMatch(res.text, /Enterprise v2\.05/);
   });
@@ -246,8 +246,8 @@ describe("V8 About Version 2.10", () => {
       env: { ...V8_ENV_BASE, GETPRO_GIT_SHA: sha },
     });
     assert.match(html, /data-product="BlessBoard"/);
-    assert.match(html, /Release 2\.06/);
-    assert.match(html, /Version 2\.06/);
+    assert.match(html, /Release 2\.10/);
+    assert.match(html, /Version 2\.10/);
     assert.match(html, new RegExp(sha.slice(0, 12)));
     assert.doesNotMatch(html, /Release 1\.3/);
     assert.doesNotMatch(html, /1\.03\./);
