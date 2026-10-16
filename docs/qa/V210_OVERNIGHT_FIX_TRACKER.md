@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P10 — 2026-10-17
+
+- Bug: `AC-HIST-07` guest appointment and patient identity linking.
+- Guest booking: `VERIFIED_PASS`; requests remain clinic-scoped and pending until confirmation.
+- Patient linkage: verified guest-token registration, verified-phone claim, and existing-patient staff linking.
+- Duplicates: no auto-linking; duplicate and cross-clinic protections pass.
+- Focused result: 28/28 passed; no reminders or payments sent.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P08 — 2026-10-17
 
 - Bug: `BB209-01` public church website displays an old image after replacement/publish.
