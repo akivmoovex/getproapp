@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P12 — 2026-10-17
+
+- Bug: `BB209-07` invitation role selector appears restricted.
+- Root cause: no confirmed UI/backend inconsistency; approved catalogue roles and invitation actor gates are aligned.
+- Role matrix: verified without permission widening.
+- Invitations: creation, reuse, branch placement, activation-path contracts, CSRF, unauthorized access, and tenant scope passed.
+- Focused result: 33/33 passed with mock delivery.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P11 — 2026-10-17
 
 - Shared audit: BB/AC draft, preview, publish, version history, restore, public resolution, and tenant isolation were inspected.
