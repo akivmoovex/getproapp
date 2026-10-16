@@ -28,6 +28,15 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P16 — 2026-10-17
+
+- Bug: `AC-NEW-01` ActiveClinic theme selection save/preview/publish.
+- Theme scope: supported theme infrastructure and scoped `site.theme_id` draft/public wiring pass; no new theme system invented.
+- Draft/preview/publish/restore: not fully verified because the combined focused run hit two unrelated ActiveClinic CMS assertions (`Page Builder`, `Hidden consult 11`).
+- Isolated theme infrastructure result: 9/9 passed.
+- Code fix: none.
+- Status: `BLOCKED` pending clean theme lifecycle coverage; working color controls preserved.
+
 ## V210-P15 — 2026-10-17
 
 - Bugs: `BB209-05`, `BB209-09` contact/profile and unwanted directory content.
