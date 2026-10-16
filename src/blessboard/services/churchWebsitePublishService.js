@@ -706,17 +706,17 @@ async function publishChurchWebsite(db, input) {
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
         if (draftN === 0 && approvedN === 0 && pendingOverlayDrafts === 0) {
-          const recent = await publicationVersionRepo.findLatestPlatformVersion(client, {
-            organizationId: inner.organizationId,
-            churchId,
-            branchId,
-          });
+          const recent = await publicationVersionRepo.loadCurrentWebsitePublication(
+            client,
+            inner.organizationId,
+            branchId
+          );
           if (recent && recent.id) {
             return {
               ok: true,
               status: STATUS.OK,
-              publishedAt: recent.published_at
-                ? new Date(recent.published_at).toISOString()
+              publishedAt: recent.publishedAt
+                ? new Date(recent.publishedAt).toISOString()
                 : new Date().toISOString(),
               pageCount: PUBLIC_PAGE_KEYS.length,
               publicPath: inner.publicPath,
