@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P14 — 2026-10-17
+
+- Bug: `BB209-06` service fields appear unavailable for editing.
+- Root cause: no confirmed missing-control defect; HQ and branch service-time editors expose permitted controls and existing structured mechanisms.
+- Edit access: HQ/branch role visibility verified.
+- Save/publish: values persist and publish; inherited, override, and hidden modes preserved.
+- Focused result: 77/77 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P13 — 2026-10-17
 
 - Bugs: `BB209-11`, `BB-06` announcement image disappearance after save/publish.
