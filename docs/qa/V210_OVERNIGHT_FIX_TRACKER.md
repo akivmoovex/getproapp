@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P24 — 2026-10-17
+
+- Bug: `AC-HIST-06` clinic directory and detail pages.
+- Directory: search aliases, location/service filters, unpublished exclusion, empty/error states, and public selection `VERIFIED_PASS`.
+- Details/booking: public clinic profile routes, services/procedures, contact, and booking links `VERIFIED_PASS`.
+- Responsive: mobile platform contracts and public navigation `VERIFIED_PASS`.
+- Focused result: 25/25 passed; no defect reproduced.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P20 — 2026-10-17
 
 - Bug: `BB209-02` BlessBoard background color editing and publication.
