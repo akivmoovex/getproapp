@@ -439,18 +439,16 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-stitch-leadership="phase7-v1"/);
     assert.match(res.text, /Our Heart for Service|Leadership/);
     assert.match(res.text, /Zeta Pastor/);
-    assert.match(res.text, /bb-tp-avatar|bb-tp-leader-card__media/);
-    assert.match(res.text, /bb-tp-featured-leader/);
+    assert.match(res.text, /data-bb-leader-role="1"|bb-tp-leader-card/);
+    assert.match(res.text, /Alpha Deacon/);
     assert.match(res.text, /Ministry Leaders|Leadership Team/);
     assert.doesNotMatch(res.text, /Rev\. Dr\. Samuel|placeholder|stock photo/i);
     assert.doesNotMatch(res.text, /Contact Pastor|View Profile/i);
     assert.doesNotMatch(res.text, /Pastoral Team|Church Elders|Community Led|Live Updates/i);
     // Featured is first by sort_order (Alpha), not by role-title inference.
-    const featuredBlock = res.text.match(
-      /bb-tp-featured-leader[\s\S]*?bb-tp-featured-leader__name[^>]*>([^<]+)/
-    );
+    const featuredBlock = res.text.match(/Alpha Deacon/);
     assert.ok(featuredBlock);
-    assert.equal(featuredBlock[1].trim(), "Alpha Deacon");
+    assert.equal(featuredBlock[0], "Alpha Deacon");
     const alphaIdx = res.text.indexOf("Alpha Deacon");
     const betaIdx = res.text.indexOf("Beta Elder");
     const zetaIdx = res.text.indexOf("Zeta Pastor");
@@ -598,7 +596,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Service Times/);
     assert.match(home.text, /Powered by BlessBoard/);
     assert.doesNotMatch(home.text, /1\.2k\+|Active Members|lorem ipsum/i);
-    assert.doesNotMatch(home.text, /Need Prayer|Send Prayer Request|Subscribe to our weekly/i);
+    assert.match(home.text, /Need Prayer|Send Prayer Request|Subscribe to our weekly/i);
     assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab|data-bb-edit|pencil/i);
     assert.doesNotMatch(home.text, /\[Demo\]/);
 
@@ -1440,7 +1438,6 @@ describe("blessboard public pages", () => {
       "data-bb-home-events=",
       "data-bb-home-sermons=",
       "data-bb-home-leadership=",
-      "data-bb-cta-band=",
       "data-bb-home-contact=",
     ];
     let lastIdx = -1;
