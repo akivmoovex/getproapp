@@ -28,6 +28,14 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P08 — 2026-10-17
+
+- Bug: `BB209-01` public church website displays an old image after replacement/publish.
+- Root cause: not confirmed; the focused image suite failed on an existing markup assertion (`data-bb-kind="image"`), before proving persistence, snapshot, resolver, or cache failure.
+- Draft/preview/publish/public: not verified to completion.
+- Code fix: none; no unverified media or historical-version change made.
+- Status: `BLOCKED` by the existing focused test failure.
+
 ## V210-P06 — 2026-10-17
 
 - Bug: `BB209-03` church administrators cannot add new members.
