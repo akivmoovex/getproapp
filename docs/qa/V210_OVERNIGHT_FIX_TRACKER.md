@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P04 — 2026-10-17
+
+- Bug: `AC-NEW-07` patient self-registration approval queue.
+- Root cause: no defect confirmed; current workflow intentionally creates/links an active patient portal identity, not a pending clinic-approval record.
+- Staff queue: no supported patient self-registration approval queue exists.
+- Patient linkage: existing phone/name match and staff registration workflows pass with clinic scoping and duplicate controls.
+- Focused result: 17/17 passed.
+- Code fix: none.
+- Status: `NEEDS_SCOPE` — approval policy is a new requirement and was not invented.
+
 ## V210-P03 — 2026-10-17
 
 - Bugs: `AC-NEW-05`, `AC-NEW-06` patient activation and existing-profile access.
