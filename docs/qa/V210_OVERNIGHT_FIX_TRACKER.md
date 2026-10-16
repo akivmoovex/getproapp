@@ -38,6 +38,17 @@
 - Code fix: none.
 - Status: `NEEDS_SCOPE` — approval policy is a new requirement and was not invented.
 
+## V210-P05 — 2026-10-17
+
+- Bug: `AC-NEW-02` nurse triage has no accessible patient-vitals workflow.
+- Root cause: no confirmed defect; existing clinical encounter vitals workflow is permissioned by `activeclinic.triage.record`, which the nurse role has.
+- Vitals workflow: `VERIFIED_PASS` at `/app/clinical/encounter/:encounterId/vitals`.
+- Role access: nurse dashboard/clinical access and triage permission verified.
+- Data persistence/security: immutable observations, staff identity, timestamps, facility and tenant scope verified.
+- Focused result: 42/42 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P03 — 2026-10-17
 
 - Bugs: `AC-NEW-05`, `AC-NEW-06` patient activation and existing-profile access.
