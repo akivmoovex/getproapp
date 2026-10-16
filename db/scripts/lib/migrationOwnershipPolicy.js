@@ -39,6 +39,8 @@ const HISTORICAL_EXCEPTIONS = Object.freeze([
   "blessboard/092_activeclinic_patient_registration_rbac_hardening.sql",
   "blessboard/115_activeclinic_patient_create_v202_alignment.sql",
   "blessboard/118_activeclinic_management_data_permissions.sql",
+  // Historical ActiveClinic RBAC catalogue stored in BlessBoard migrations because it targets blessboard permissions tables.
+  "blessboard/124_activeclinic_facility_view_all.sql",
 
   // Website permission rows that also grant ActiveClinic roles — still BB module
   // because they primarily extend the shared website permission catalogue.
