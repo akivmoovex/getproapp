@@ -46,6 +46,16 @@
 - Code fix: none.
 - Status: `NEEDS_SCOPE`.
 
+## V210-P22 — 2026-10-17
+
+- Bug: `BB209-08` prayer requests.
+- Feature found: legacy/member request category and foundation pastoral-care prayer-request workflow exist; V5 member prayer-request route and quick action are intentionally disabled/missing per current scope map.
+- Visibility: no new V5 route exposed; existing authorized branch/HQ pastoral processing remains available.
+- Privacy: branch/church scoping, CSRF, ownership, redaction, pastoral RBAC, and non-public handling verified.
+- Focused result: 45/45 passed.
+- Code fix: none.
+- Status: `NEEDS_SCOPE` for any new V5 prayer module/route.
+
 ## V210-P19 — 2026-10-17
 
 - Bug: `AC-HIST-02` mobile website editor and image/gallery selection.
