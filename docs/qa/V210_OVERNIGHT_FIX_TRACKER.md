@@ -28,6 +28,15 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P11 — 2026-10-17
+
+- Shared audit: BB/AC draft, preview, publish, version history, restore, public resolution, and tenant isolation were inspected.
+- Shared defects: none confirmed.
+- Product-specific defects: none confirmed.
+- Focused result: 44/45 passed; one existing moderation fixture failed with `church_scope_required`.
+- Code fix: none; no duplicate prior fix or unverified change made.
+- Status: `BLOCKED` by the unrelated existing fixture failure.
+
 ## V210-P10 — 2026-10-17
 
 - Bug: `AC-HIST-07` guest appointment and patient identity linking.
