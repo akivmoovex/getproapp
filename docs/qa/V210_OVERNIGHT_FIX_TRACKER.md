@@ -36,6 +36,17 @@
 - Code fix: none; no unverified media or historical-version change made.
 - Status: `BLOCKED` by the existing focused test failure.
 
+## V210-P09 — 2026-10-17
+
+- Bug: `BB-03` multiple saved website edits may not publish together.
+- Root cause: no confirmed publication defect; supported behavior is bulk publication of all scoped drafts in one snapshot transaction.
+- Multi-section publish: `VERIFIED_PASS`, including failure rollback.
+- Versions: immutable history and restore-as-new `VERIFIED_PASS`.
+- Isolation: branch/church scope `VERIFIED_PASS`.
+- Focused result: 29/29 passed.
+- Code fix: none.
+- Status: `VERIFIED_PASS`.
+
 ## V210-P06 — 2026-10-17
 
 - Bug: `BB209-03` church administrators cannot add new members.
