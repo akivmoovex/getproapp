@@ -28,6 +28,14 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-P06 — 2026-10-17
+
+- Bug: `BB209-03` church administrators cannot add new members.
+- Root cause: no confirmed route/service/RBAC defect; the existing member registration and verification paths are present.
+- Create/list/search/RBAC: not fully verified because the focused suite hit an unrelated existing schema privacy assertion (`date_of_birth`) and three PostgreSQL-dependent tests were skipped.
+- Code fix: none; no unverified change made.
+- Status: `BLOCKED` pending a clean, appropriately scoped member-creation test environment.
+
 ## V210-P04 — 2026-10-17
 
 - Bug: `AC-NEW-07` patient self-registration approval queue.
