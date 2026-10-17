@@ -60,3 +60,15 @@ QA-08 reran the blocked database workflows without skips: 49 tests, 40 passed, 9
 The security batch remains 91 passed, 0 failed, 1 PostgreSQL pastoral skip. Browser smoke remains blocked: only two generic tests completed before the bounded Playwright run stalled; neither required 1440×900 nor 390×844 coverage was completed. The three historical AC issues `AC-HIST-01`, `AC-HIST-05`, and `AC-HIST-08` have no supplied focused coverage and remain untested.
 
 About pages were statically verified at version 2.10 for both products. No critical security defect was confirmed. Release decision remains **NOT_READY** because critical database workflows, browser viewports, and three historical AC issues remain unresolved/unverified.
+
+## QA-14 reconciliation
+
+All nine QA-08 failures have explicit outcomes: BB service-time branch separation, branch-admin authorization, HQ/foreign-branch authorization, draft-versus-published visibility, branch override/inheritance, demo-time absence, and validation/database-error handling remain blocked by `lookup_error`/503 or false assertions in the isolated workflow fixture; the AC duplicate/reapplication case remains a stale/incomplete city fixture; and the pastoral suite remains blocked by its deterministic host-slug uniqueness collision. No product defect was confirmed.
+
+QA-13 executed focused historical AC coverage: 54 tests in the patient/invitation/RBAC batch and 9 tests in the doctors/services and staff-management batch, all passed. AC-HIST-01, AC-HIST-05, and AC-HIST-08 now have implementation evidence, with no runtime changes.
+
+QA-12 exercised actual 1440×900 and 390×844 Playwright projects with 12 cases, console/overflow checks, and failure screenshots. Two cases passed and ten failed or were blocked by product-apex host/profile routing; this is not release evidence for the requested journeys.
+
+Unique latest evidence: QA-08 database batch 40/49 passed, 9 failed, 0 skipped; security 91/92 passed, 0 failed, 1 skipped; QA-13 historical AC suites 63/63 passed; browser 2/12 passed with 10 blocked/failed. These counts are per distinct test-case batch and are not added to earlier duplicate runs.
+
+Final status remains **NOT_READY**. Blockers are BB service-time workflow failures, BB pastoral fixture failure, AC registration fixture failure, browser host/profile routing and incomplete journey coverage, one skipped pastoral security test, and unresolved schema validation in the failing workflow fixtures.
