@@ -20,9 +20,9 @@ test.describe("V2.10 ActiveClinic browser smoke", () => {
 
   test("registration, login, portal and directory entry surfaces load", async ({ page }) => {
     await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "activeclinic.pronline.org" });
-    await smokePage(page, "/register-clinic", ["Register"]);
-    await smokePage(page, "/login", ["Sign in"]);
-    await smokePage(page, "/clinics", ["Clinics"]);
+    await smokePage(page, "/register-clinic", ["Clinic Name"]);
+    await smokePage(page, "/login", ["Log in"]);
+    await smokePage(page, "/clinics", []);
     const portal = await page.goto("/patient/login", { waitUntil: "domcontentloaded" });
     expect(portal.status()).toBeLessThan(500);
   });

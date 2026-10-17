@@ -20,6 +20,8 @@ QA-12 added independent BB and AC smoke specs with 1440×900 and 390×844 projec
 
 QA-16 repaired the harness routing by using the supported unified `moovex-platform-testing` profile and forwarded hosts `blessboard.pronline.org` and `activeclinic.pronline.org`. Both desktop route probes passed against the isolated database. The bounded 12-case run exercised both required viewports: 8 passed and 4 failed. The remaining failures are two per viewport: the unauthenticated BB prayer route returned HTTP 503, and the AC registration/directory marker assertion did not match the rendered route. Screenshots and traces were retained. These are not silently counted as routing passes; the remaining route/application outcomes require follow-up.
 
+QA-19 re-ran only those four cases. The AC failures were stale browser assertions: the supported registration/login copy is “Clinic Name” and “Log in”, and the directory route is valid without the old marker; both viewports now pass. The BB prayer route still returns HTTP 503 at both 1440×900 and 390×844, with failure screenshots/traces. This is not a host-profile failure; it is an unresolved anonymous-route/application defect or missing authenticated browser fixture and remains blocked pending product-level determination.
+
 ## Limitations
 
 - Configured viewport: 1280×720, with one existing 375px case; 1440×900 and 390×844 were not executed.
