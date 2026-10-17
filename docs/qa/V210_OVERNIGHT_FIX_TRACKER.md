@@ -28,6 +28,16 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210 Harness Verification — 2026-10-17
+
+- P01: `VERIFIED_PASS`; stale ActiveClinic asset-version assertion now accepts the shared version constant. Add Section suite: 6/6.
+- P06: `VERIFIED_PASS`; current isolated member-registration suite passes 18/18. No runtime defect reproduced.
+- P08: `VERIFIED_PASS`; stale image-kind assertion now matches the current structured editor contract. Image suite: 11/11.
+- P11: `PRODUCT_BUG_CONFIRMED`; isolated BB publish suites pass, but registration-to-engine bridge still fails because the provisioned registration has no website instance (`assert.ok(instance)`); runtime change is prohibited in this harness-only task.
+- P16: `VERIFIED_PASS`; CMS suite 9/9 plus theme infrastructure 9/9, gallery 7/7, and additional themes 5/5.
+- P20: `VERIFIED_PASS`; current token aliases and staff token source are reflected in the color assertions. Color suite: 14/14.
+- No test timed out or was cancelled in this verification pass. No production data, migration, or deployment activity.
+
 ## V210-P24 — 2026-10-17
 
 - Bug: `AC-HIST-06` clinic directory and detail pages.

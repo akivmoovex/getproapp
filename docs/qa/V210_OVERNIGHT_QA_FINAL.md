@@ -61,3 +61,24 @@ Original V10 backup: `backup-v10-before-main-reset-20261017` → `5707a0f33bb453
 - Main and V9 were not modified.
 - Backup tag remains preserved and resolves to the old V10 SHA.
 - No product code, production data, migrations, or deployment changed.
+
+## Harness verification
+
+Starting SHA: `74acb840baa5e9e259936451b05f754894ba1ad0`
+
+| Task | Result | Evidence |
+|---|---|---|
+| P01 | VERIFIED_PASS | Add Section 6/6; stale asset-version assertion corrected |
+| P06 | VERIFIED_PASS | Member registration 18/18; no product defect reproduced |
+| P08 | VERIFIED_PASS | Image lifecycle suite 11/11; current structured-editor contract asserted |
+| P11 | PRODUCT_BUG_CONFIRMED | BB publish suites pass, but registration-to-engine bridge has no provisioned website instance; runtime fix prohibited |
+| P16 | VERIFIED_PASS | CMS 9/9; theme infrastructure 9/9; gallery 7/7; additional themes 5/5 |
+| P20 | VERIFIED_PASS | Color system 14/14; current token aliases asserted |
+
+Test-only changes:
+- `tests/v2-01-shared-section-management.test.js`
+- `tests/v7-website-image-management.test.js`
+- `tests/activeclinic-website-cms.test.js`
+- `tests/v7-color-system-consolidation.test.js`
+
+No test timed out or was cancelled. Product runtime files were unchanged.

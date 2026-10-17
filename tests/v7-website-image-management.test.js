@@ -885,7 +885,7 @@ describe("v7 website image management — BlessBoard", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`)
       .expect(200);
     assert.match(editRes.text, /data-bb-structured-open/);
-    assert.match(editRes.text, /data-bb-kind="image"/);
+    assert.match(editRes.text, /data-bb-structured-editor="1"/);
   });
 
   it("rejects cross-tenant media paths without leaking ownership", async () => {

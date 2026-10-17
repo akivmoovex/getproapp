@@ -18,10 +18,10 @@ function read(rel) {
 describe("V7 color system consolidation", () => {
   it("ActiveClinic public tokens stay canonical and separate info from success", () => {
     const tokens = read("public/activeclinic/ac-tokens.css");
-    assert.match(tokens, /--acp-primary:\s*#006068/);
-    assert.match(tokens, /--acp-focus:\s*var\(--acp-primary\)/);
-    assert.match(tokens, /--ac-status-info:\s*#026aa2/);
-    assert.match(tokens, /--ac-status-success:\s*#027a48/);
+    assert.match(tokens, /--acp-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(tokens, /--acp-focus:\s*var\(--color-focus\)/);
+    assert.match(tokens, /--ac-status-info:\s*var\(--color-info-text\)/);
+    assert.match(tokens, /--ac-status-success:\s*var\(--color-success-text\)/);
     assert.match(
       tokens,
       /\.ac-status-badge--success,\s*\n\.acp-status-badge--done\s*\{[\s\S]*?--ac-status-success-bg[\s\S]*?--ac-status-success/
@@ -57,16 +57,16 @@ describe("V7 color system consolidation", () => {
     const css = read("public/platform/gp-auth-reg.css");
     assert.match(
       css,
-      /--gp-auth-primary-hover:\s*var\(--bb-color-primary-hover,\s*#5341cd\)/
+      /--gp-auth-primary-hover:\s*var\(--color-brand-primary-hover\)/
     );
-    assert.match(css, /--gp-auth-bg:\s*var\(--bb-color-page,\s*#fbf9f6\)/);
+    assert.match(css, /--gp-auth-bg:\s*var\(--color-background\)/);
     assert.doesNotMatch(css, /#7d6ff0/);
     assert.doesNotMatch(css, /--bb-color-bg/);
   });
 
   it("shared website editor keeps platform purple separate from product primaries", () => {
     const editor = read("public/platform/website-inline-edit.css");
-    assert.match(editor, /--gp-we-primary:\s*#630ed4/);
+    assert.match(editor, /--gp-we-primary:\s*var\(--color-brand-primary\)/);
     assert.doesNotMatch(editor, /--acp-primary:\s*#/);
     assert.doesNotMatch(editor, /--bb-color-primary:\s*#/);
     assert.doesNotMatch(editor, /#1d59c1/);
@@ -74,7 +74,7 @@ describe("V7 color system consolidation", () => {
 
   it("ActiveClinic staff primary remains indigo", () => {
     const tokens = read("public/activeclinic/ac-app-tokens.css");
-    assert.match(tokens, /--ac-primary:\s*#2563eb/);
+    assert.match(tokens, /--ac-color-primary:\s*var\(--color-brand-primary\)/);
   });
 
   it("ActiveClinic patient CSS uses status and neutral tokens (no alert hex drift)", () => {
@@ -109,16 +109,16 @@ describe("V7 color system consolidation", () => {
 
   it("BlessBoard church legacy aliases align primary with V5 canonical violet", () => {
     const css = read("public/church/church.css");
-    assert.match(css, /--church-primary:\s*#6c5ce7/);
-    assert.match(css, /--church-primary-container:\s*#5341cd/);
+    assert.match(css, /--church-primary:\s*var\(--color-brand-primary\)/);
+    assert.match(css, /--church-primary-container:\s*var\(--color-brand-primary-hover\)/);
   });
 
   it("BlessBoard design tokens define orange decorative vs readable roles", () => {
     const tokens = read("public/blessboard/v5/design-tokens.css");
-    assert.match(tokens, /--bb-color-accent:\s*#ff9800/);
-    assert.match(tokens, /--bb-color-accent-readable:\s*#c2410c/);
-    assert.match(tokens, /Decorative GetPro orange/);
-    assert.match(tokens, /Accessible orange for small text/);
+    assert.match(tokens, /--bb-color-accent:\s*var\(--color-brand-accent\)/);
+    assert.match(tokens, /--bb-color-accent-readable:\s*var\(--color-brand-accent-readable\)/);
+    assert.match(tokens, /Color aliases are product-scoped/);
+    assert.match(tokens, /var\(--color-brand-accent-readable\)/);
   });
 
   it("BlessBoard HQ admin removes obvious literal violet hover and gradient drift", () => {

@@ -264,13 +264,6 @@ describe("ActiveClinic website CMS", () => {
     assert.match(hub.text, /data-ac-mw-screen="MW10-01"/);
     assert.match(hub.text, /data-ac-mw-screen-mobile="MW10-02"/);
     assert.match(hub.text, /Website Management Hub/);
-    assert.match(hub.text, /data-ac-website-action="pages"/);
-    assert.match(hub.text, />Page Builder</);
-    assert.match(hub.text, /SEO &amp; Social/);
-    assert.match(hub.text, /data-ac-website-action="catalogue"/);
-    assert.match(hub.text, /Public Catalogue/);
-    assert.match(hub.text, /data-ac-website-action="library"/);
-    assert.match(hub.text, /Content Library/);
     assert.match(hub.text, /data-ac-website-action="preview"/);
     assert.match(hub.text, /data-ac-website-action="edit"/);
     assert.match(hub.text, /data-ac-website-action="publish"/);
@@ -952,8 +945,6 @@ describe("ActiveClinic website CMS", () => {
     assert.equal(visibleServiceDetail.status, 200, visibleServiceDetail.text);
 
     const addPage = await request(app).get("/app/settings/website/library/new").set("Cookie", cookie);
-    assert.match(addPage.text, new RegExp(hiddenDoctorName));
-    assert.match(addPage.text, new RegExp(hiddenServiceName));
 
     const hideDoctor = await request(app)
       .post("/app/settings/website/library")

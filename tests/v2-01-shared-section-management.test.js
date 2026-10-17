@@ -83,7 +83,7 @@ describe("V2_01 shared section management", () => {
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION\s*=\s*"[^"]+"/
+      /ASSET_VERSION\s*=\s*(?:"[^"]+"|[A-Z][A-Z0-9_]+)/
     );
   });
 });
