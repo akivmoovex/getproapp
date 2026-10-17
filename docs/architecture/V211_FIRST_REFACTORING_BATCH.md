@@ -8,7 +8,7 @@ Select a preparatory characterization-test batch, not a production extraction. N
 
 **Modify:**
 
-- `tests/v211-platform-contract-characterization.test.js` (new)
+- `tests/v211-tenant-resolution-characterization.test.js` (new)
 - `docs/architecture/V211_FIRST_REFACTORING_BATCH.md`
 
 **Do not modify:**
@@ -26,7 +26,7 @@ Select a preparatory characterization-test batch, not a production extraction. N
 - `db/**`
 - deployment configuration, migrations, or package scripts
 
-The test file is proposed, not created by this audit. This report itself is the only executable-batch documentation artifact added in this phase.
+The characterization test now exists and remains deliberately limited to current behavior. No shared resolver API was implemented.
 
 ## Characterization targets
 
@@ -99,4 +99,4 @@ Rollback is deletion/revert of the single characterization test and this batch r
 
 ## Verification status
 
-This selection is **DOCUMENTATION_ONLY / NOT_IMPLEMENTED**. The audit verified the branch, commit, clean tracked state, and report-only scope. No source code, product code, tests, database, migration, deployment, or production system was changed.
+This selection is **CHARACTERIZATION_COMPLETE / EXTRACTION_NOT_IMPLEMENTED**. Tenant-resolution characterization covers static and dynamic-host behavior with controlled database mocks, while existing integration suites cover product isolation. No source runtime, product runtime, database, migration, deployment, or production system was changed.

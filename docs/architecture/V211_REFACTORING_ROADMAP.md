@@ -98,6 +98,15 @@ Never merge BlessBoard and ActiveClinic identities or role vocabularies. Platfor
 
 `server.legacy.js` is not safe to delete today. Missing `PLATFORM_DEPLOYMENT_CODE` can still select it, and it mounts active legacy route families and legacy database/session consumers.
 
+## Tenant-resolution decision
+
+`TENANT_RESOLUTION_EXTRACTION=DEFERRED`
+`REASON=Existing Platform authority sufficient; duplicate resolver not justified`
+`LIVE_DB_VERIFICATION=OUTSTANDING`
+`RUNTIME_SECURITY_FIX=NOT_REQUIRED_BY_CURRENT_EVIDENCE`
+
+The tenant-resolution review characterized 18 cases with controlled database mocks, confirmed the full request-context environment guard, and found no confirmed security defect. The proposed `resolveProductTenantContext` API is not approved and must not become a second authority. The existing resolver remains authoritative.
+
 ### P10 — Cosmetic/duplicate cleanup (P4 priority)
 
 **Dependencies:** runtime manifest, coverage, ownership approval.
@@ -123,3 +132,5 @@ Each batch must produce: an ownership decision, adapter contract, focused tests,
 ## V211-ARCH-02 selection
 
 No production extraction satisfies all first-batch acceptance criteria. The smallest useful and reversible batch is therefore the isolated characterization batch described in `V211_FIRST_REFACTORING_BATCH.md`. It changes documentation/tests only, introduces no Platform API, and deliberately leaves product code, startup, deployment, sessions, CSRF, RBAC, URLs, and database behavior unchanged.
+
+The tenant-resolution extraction candidate is closed for this phase as **DEFERRED**, not implemented. After live disposable-database coverage is separately authorized, the next independent low-risk review candidate is generic, non-sensitive rendering/presentation utilities. That review is not authorization to implement or consolidate them.

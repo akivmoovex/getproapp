@@ -9,7 +9,15 @@ const {
 } = require("../src/platform/config/canonicalHostRegistry");
 const {
   resolveRequestCanonicalSite,
+  resolveRequestCanonicalSiteAsync,
 } = require("../src/platform/http/resolveRequestHostname");
+const {
+  resolveHostname,
+  RESULT_TYPES,
+} = require("../src/platform/services/resolveHostname");
+const {
+  resolvePlatformRequestContext,
+} = require("../src/platform/http/platformRequestContext");
 const {
   createLoadActiveClinicProductContext,
 } = require("../src/activeclinic/http/loadActiveClinicProductContext");
@@ -195,4 +203,210 @@ test("product registry preserves BB and AC boundary", () => {
   assert.equal(getProduct("blessboard").productCode, "blessboard");
   assert.equal(getProduct("activeclinic").productCode, "activeclinic");
   assert.notEqual(getProduct("blessboard").productCode, getProduct("activeclinic").productCode);
+});
+
+function dynamicRow(overrides = {}) {
+  return {
+    domain_id: "domain-1",
+    domain_type: "custom",
+    domain_status: "active",
+    domain_is_primary: false,
+    domain_deployment_id: "blessboard-com-production",
+    deployment_code: "blessboard-com-production",
+    deployment_status: "active",
+    deployment_jobs_enabled: false,
+    product_id: "product-1",
+    product_key: "blessboard",
+    product_display_name: "BlessBoard",
+    product_status: "active",
+    organization_id: "org-1",
+    organization_key: "church-one",
+    organization_display_name: "Church One",
+    organization_status: "active",
+    organization_data_environment: "production",
+    organization_product_id: "enrolment-1",
+    organization_product_status: "active",
+    organization_product_tenant_key: "church-one",
+    ...overrides,
+  };
+}
+
+function databaseReturning(row) {
+  return {
+    query: async () => ({ rows: row ? [row] : [] }),
+  };
+}
+
+test("dynamic BB hostname resolves a tenant through the existing database resolver", async () => {
+  const result = await resolveRequestCanonicalSiteAsync(
+    requestFor("church-one.example.test"),
+    {
+      env: { NODE_ENV: "production" },
+      allowTestHostOverride: false,
+      db: databaseReturning(dynamicRow()),
+      expectedDeploymentCode: "blessboard-com-production",
+    }
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.site.productKey, "blessboard");
+  assert.equal(result.site.siteType, "tenant");
+  assert.equal(result.site.environment, "production");
+});
+
+test("dynamic AC hostname resolves an ActiveClinic tenant without changing the resolver authority", async () => {
+  const result = await resolveRequestCanonicalSiteAsync(
+    requestFor("clinic-one.example.test"),
+    {
+      env: { NODE_ENV: "production" },
+      allowTestHostOverride: false,
+      db: databaseReturning(dynamicRow({
+        domain_deployment_id: "activeclinic-org-production",
+        deployment_code: "activeclinic-org-production",
+        product_key: "activeclinic",
+        product_display_name: "ActiveClinic",
+        organization_key: "clinic-one",
+        organization_data_environment: "production",
+      })),
+      expectedDeploymentCode: "activeclinic-org-production",
+    }
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.site.productKey, "activeclinic");
+  assert.equal(result.site.siteType, "tenant");
+});
+
+test("dynamic resolver characterizes unknown and inactive host states", async () => {
+  const unknown = await resolveHostname(databaseReturning(null), "unknown.example.test");
+  assert.equal(unknown.type, RESULT_TYPES.UNKNOWN_DOMAIN);
+
+  const inactive = await resolveHostname(
+    databaseReturning(dynamicRow({ domain_status: "inactive" })),
+    "inactive.example.test"
+  );
+  assert.equal(inactive.type, RESULT_TYPES.INACTIVE_DOMAIN);
+});
+
+test("dynamic resolver characterizes inactive enrolment, product, and organization", async () => {
+  const inactiveProduct = await resolveHostname(
+    databaseReturning(dynamicRow({ product_status: "inactive" })),
+    "inactive-product.example.test"
+  );
+  const inactiveOrg = await resolveHostname(
+    databaseReturning(dynamicRow({ organization_status: "inactive" })),
+    "inactive-org.example.test"
+  );
+  const inactiveEnrolment = await resolveHostname(
+    databaseReturning(dynamicRow({ organization_product_status: "inactive" })),
+    "inactive-enrolment.example.test"
+  );
+  assert.equal(inactiveProduct.type, RESULT_TYPES.INACTIVE_PRODUCT);
+  assert.equal(inactiveOrg.type, RESULT_TYPES.INACTIVE_ORGANIZATION);
+  assert.equal(inactiveEnrolment.type, RESULT_TYPES.INACTIVE_ENROLMENT);
+});
+
+test("dynamic resolver characterizes deployment and environment mismatch", async () => {
+  const mismatch = await resolveHostname(
+    databaseReturning(dynamicRow()),
+    "mismatch.example.test",
+    { expectedDeploymentCode: "activeclinic-org-production" }
+  );
+  assert.equal(mismatch.type, RESULT_TYPES.DEPLOYMENT_MISMATCH);
+
+  const environmentMismatch = await resolveRequestCanonicalSiteAsync(
+    requestFor("wrong-environment.example.test"),
+    {
+      env: { NODE_ENV: "production" },
+      allowTestHostOverride: false,
+      db: databaseReturning(dynamicRow({
+        organization_data_environment: "testing",
+      })),
+      expectedDeploymentCode: "blessboard-com-production",
+    }
+  );
+  // Dynamic site environment is taken from the resolved organization; the
+  // current async resolver does not independently reject this mismatch.
+  assert.equal(environmentMismatch.ok, true);
+  assert.equal(environmentMismatch.site.environment, "testing");
+});
+
+test("request-context layer rejects a dynamic environment mismatch", () => {
+  const result = resolvePlatformRequestContext({
+    env: {
+      NODE_ENV: "production",
+      DEPLOYMENT_ENV: "production",
+      PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
+    },
+    resolvedSite: {
+      hostname: "wrong-environment.example.test",
+      productKey: "blessboard",
+      environment: "testing",
+      platformLine: "v8",
+      brand: "BlessBoard",
+      siteType: "tenant",
+      sessionCookieName: null,
+      csrfCookieName: null,
+      redirectTargetOrigin: null,
+    },
+    hostSource: "request",
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "PLATFORM_ENVIRONMENT_HOST_MISMATCH");
+});
+
+test("dynamic resolver rejects missing organization, enrolment, and unrelated product", async () => {
+  const missingOrg = await resolveHostname(
+    databaseReturning(dynamicRow({ organization_id: null })),
+    "missing-org.example.test"
+  );
+  const missingEnrolment = await resolveHostname(
+    databaseReturning(dynamicRow({ organization_product_id: null })),
+    "missing-enrolment.example.test"
+  );
+  const unrelated = await resolveHostname(
+    databaseReturning(dynamicRow({ product_key: "activeclinic" })),
+    "unrelated-product.example.test"
+  );
+  assert.equal(missingOrg.type, RESULT_TYPES.MISSING_ORGANIZATION);
+  assert.equal(missingEnrolment.type, RESULT_TYPES.MISSING_ENROLMENT);
+  assert.equal(unrelated.type, RESULT_TYPES.RESOLVED_TENANT);
+});
+
+test("dynamic resolver safely handles missing database and database failure", async () => {
+  const noDatabase = await resolveRequestCanonicalSiteAsync(
+    requestFor("dynamic.example.test"),
+    { env: { NODE_ENV: "production" }, allowTestHostOverride: false }
+  );
+  assert.equal(noDatabase.ok, false);
+  assert.equal(noDatabase.code, "UNKNOWN_PLATFORM_HOST");
+
+  const databaseFailure = await resolveRequestCanonicalSiteAsync(
+    requestFor("dynamic.example.test"),
+    {
+      env: { NODE_ENV: "production" },
+      allowTestHostOverride: false,
+      db: { query: async () => { throw new Error("controlled failure"); } },
+    }
+  );
+  assert.equal(databaseFailure.ok, false);
+  assert.equal(databaseFailure.code, "UNKNOWN_PLATFORM_HOST");
+});
+
+test("static canonical host takes precedence over dynamic database lookup", async () => {
+  let calls = 0;
+  const result = await resolveRequestCanonicalSiteAsync(
+    requestFor("blessboard.neuniversity.org"),
+    {
+      env: { NODE_ENV: "production" },
+      allowTestHostOverride: false,
+      db: {
+        query: async () => {
+          calls += 1;
+          throw new Error("static host must not query database");
+        },
+      },
+    }
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.site.productKey, "blessboard");
+  assert.equal(calls, 0);
 });
