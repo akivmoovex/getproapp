@@ -305,11 +305,10 @@ describe("blessboard member portal", () => {
     assert.match(res.text, /data-bb-dash-empty="events"/);
     assert.match(res.text, /data-bb-dash-empty="announcements"/);
     assert.match(res.text, /data-bb-dash-empty="ministries"/);
-    assert.match(res.text, /Not enabled yet/);
-    assert.match(res.text, /data-bb-quick-action="prayer"[^>]*data-bb-quick-enabled="0"|data-bb-quick-enabled="0"[^>]*data-bb-quick-action="prayer"/);
+    assert.match(res.text, /data-bb-quick-action="prayer"[^>]*data-bb-quick-enabled="1"|data-bb-quick-enabled="1"[^>]*data-bb-quick-action="prayer"/);
     assert.match(res.text, /href="\/member\/events"/);
     assert.match(res.text, /href="\/member\/giving"/);
-    assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
+    assert.match(res.text, /href="\/member\/prayer-request"/);
     assert.doesNotMatch(res.text, /Check-in|Member Directory|View Calendar/i);
     assert.doesNotMatch(res.text, /\b\d+\s+(announcements|events|forms|ministries)/i);
     assert.doesNotMatch(res.text, /attendance|spots remaining|registered count/i);
@@ -374,15 +373,14 @@ describe("blessboard member portal", () => {
     assert.match(res.text, /href="\/member\/requests"/);
     assert.match(res.text, /href="\/member\/giving"/);
     assert.match(res.text, />Dashboard</);
-    assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
-    assert.doesNotMatch(res.text, /href="\/member\/prayer-request"/);
+    assert.match(res.text, /href="\/member\/prayer-request"/);
     assert.match(
       res.text,
       /data-bb-module="giving"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="giving"/
     );
     assert.match(
       res.text,
-      /data-bb-module="prayer"[^>]*data-bb-module-enabled="0"|data-bb-module-enabled="0"[^>]*data-bb-module="prayer"/
+      /data-bb-module="prayer"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="prayer"/
     );
     assert.match(res.text, /action="\/member\/logout"/);
     assert.match(res.text, /name="_csrf"/);

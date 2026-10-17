@@ -63,6 +63,14 @@ const PORTAL_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "prayer",
+    label: "Request Prayer",
+    href: "/member/prayer-request",
+    icon: "volunteer_activism",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "giving",
     label: "Giving",
     href: "/member/giving",
@@ -96,13 +104,6 @@ const PORTAL_MODULES = Object.freeze([
     icon: item.icon,
     enabled: item.enabled,
   })),
-  {
-    key: "prayer",
-    label: "Prayer request",
-    href: null,
-    icon: "volunteer_activism",
-    enabled: false,
-  },
 ]);
 
 const PORTAL_MOBILE_TABS = Object.freeze([

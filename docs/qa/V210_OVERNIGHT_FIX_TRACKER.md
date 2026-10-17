@@ -250,3 +250,9 @@
 - Focused result: 22/22 passed; isolated test data only.
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
+
+## V210 Product Decisions — 2026-10-17
+
+- `AC-NEW-07`: `NOT_REQUIRED_BY_CURRENT_WORKFLOW`; staff registration is authorized and facility-scoped, with no mandatory secondary approval queue.
+- `BB209-04`: `VERIFIED_EXISTING_WORKFLOW`; all 12 canonical journey stages remain unchanged. Simplified business labels are a `FUTURE_ENHANCEMENT`.
+- `BB209-08`: existing `/member/prayer-request` route, persistence, CSRF, branch ownership, member visibility, and pastoral privacy controls verified. Request Prayer navigation enabled using the existing route; no schema or role changes.

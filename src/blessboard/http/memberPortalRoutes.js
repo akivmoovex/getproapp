@@ -53,7 +53,7 @@ const DASHBOARD_PREVIEW_LIMIT = 3;
 
 /**
  * Quick actions for the member dashboard — implemented routes only.
- * Prayer remains visible but disabled (no V5 route). Check-in / directory omitted.
+ * Check-in / directory omitted.
  */
 const DASHBOARD_QUICK_ACTIONS = Object.freeze([
   {
@@ -79,10 +79,10 @@ const DASHBOARD_QUICK_ACTIONS = Object.freeze([
   },
   {
     key: "prayer",
-    label: "Prayer request",
-    href: null,
+    label: "Request Prayer",
+    href: "/member/prayer-request",
     icon: "favorite",
-    enabled: false,
+    enabled: true,
   },
 ]);
 
