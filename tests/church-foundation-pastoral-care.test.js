@@ -62,6 +62,11 @@ async function postWithCsrf(agent, getPath, postPath, body) {
 
 async function cleanup(pool, branchIds, orgIds) {
   for (const branchId of branchIds) {
+    await pool.query(
+      `DELETE FROM public.church_member_branch_history
+        WHERE from_branch_id = $1 OR to_branch_id = $1`,
+      [branchId]
+    );
     await pool.query(`DELETE FROM public.church_pastoral_attachments WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_pastoral_case_follow_ups WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_pastoral_cases WHERE branch_id = $1`, [branchId]);
@@ -109,17 +114,20 @@ test(
     });
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
+      host_slug: `main_${suffix}`,
       name: `Campus A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "east",
+      slug: `east_${suffix}`,
+      host_slug: `east_${suffix}`,
       name: `Campus B ${suffix}`,
     });
     const otherBranch = await branchesRepo.createBranch(pool, {
       organization_id: otherOrg.id,
-      slug: "main",
+      slug: `main_${suffix}`,
+      host_slug: `other_main_${suffix}`,
       name: "Other Branch",
     });
 
