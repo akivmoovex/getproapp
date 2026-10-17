@@ -117,6 +117,16 @@ The current V10 SHA is `edd28c57fa14a648331a557a1feacb1349bf6e0a`, matching
 - No new migration, production access, production mutation, or deployment was
   performed. Overall decision: **DO_NOT_PROCEED_TO_PRODUCTION**.
 
+## Independent QA consolidation
+
+The standalone reports contain `90` reported passes: BB `64/64` focused tests
+and AC `26/26` public tests, with zero reported failures. This is not complete
+browser coverage. BB has unverified owner-detail, privacy, administrator,
+cross-tenant, and additional viewport checks. AC registration, patient, staff,
+security rerun, and responsive browser checks are not run or
+environment-blocked. Platform remains `PASS` on existing resolver/security
+evidence; privileged QA bootstrap remains `BLOCKED_SECURITY`.
+
 ## QA-10 final gate recheck
 
 Final verified V10 SHA: `443f8b00bd2c8993d067adf12541b20be8bbd85b`, matching `origin/V10`. Main and V9 remain unchanged.

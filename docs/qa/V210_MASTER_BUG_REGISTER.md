@@ -96,6 +96,16 @@ No skipped test is counted as a pass. No production access, mutation,
 deployment, migration, commit, or push was performed by the QA work recorded
 here.
 
+## Independent QA consolidation
+
+The standalone reports record BB `64/64` focused tests passing and AC `26/26`
+public tests passing: `90` reported passes and zero reported failures. These
+counts are not full product or browser coverage. BB owner-detail, privacy,
+administrator, cross-tenant, and additional viewport checks remain
+unverified. AC registration, patient, staff, security rerun, and responsive
+browser checks remain not run or environment-blocked. No new confirmed product
+bug was identified.
+
 - QA-15 fixture repairs verified pastoral PostgreSQL 2/2 and ActiveClinic registration lifecycle 13/13. BB service-time verification remains failed, with a confirmed runtime repository-method defect; no runtime repair was authorized in QA-15.
 - QA-16 browser routing probes passed for both product hosts. The required 1440×900 and 390×844 smoke projects ran 12 unique cases: 8 passed and 4 failed. The failures are BB prayer HTTP 503 and AC registration/directory content mismatches at both viewports.
 - Security remains 91 passed, 0 failed, 1 skipped. AC-HIST-01, AC-HIST-05, and AC-HIST-08 remain verified by QA-13's 63 focused tests. About pages remain statically verified at 2.10.
