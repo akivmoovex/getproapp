@@ -72,3 +72,11 @@ QA-12 exercised actual 1440×900 and 390×844 Playwright projects with 12 cases,
 Unique latest evidence: QA-08 database batch 40/49 passed, 9 failed, 0 skipped; security 91/92 passed, 0 failed, 1 skipped; QA-13 historical AC suites 63/63 passed; browser 2/12 passed with 10 blocked/failed. These counts are per distinct test-case batch and are not added to earlier duplicate runs.
 
 Final status remains **NOT_READY**. Blockers are BB service-time workflow failures, BB pastoral fixture failure, AC registration fixture failure, browser host/profile routing and incomplete journey coverage, one skipped pastoral security test, and unresolved schema validation in the failing workflow fixtures.
+
+## QA-15 / QA-16 / QA-17 final blocker verification
+
+QA-15 repaired only isolated fixtures. The pastoral PostgreSQL suite now executes without skips and passes 2/2; the ActiveClinic registration lifecycle passes 13/13 after supplying the approved required location fields. The seven BB service-time cases still fail: the first write reaches runtime `lookup_error`, and the HTTP cases return 503 because the service path calls the unavailable `setBranchServiceTimesMode` repository method. This is a confirmed product defect, not a fixture-only failure. No runtime change was made.
+
+QA-16 corrected browser routing with the supported unified `moovex-platform-testing` profile and product forwarded hosts. Both route probes passed. The bounded smoke run covered 1440×900 and 390×844: 8/12 passed and 4/12 failed (BB prayer HTTP 503 and AC registration/directory marker mismatches, each at both viewports). Screenshots/traces were retained; essential browser coverage is not fully verified.
+
+QA-17 therefore remains **NOT_READY**. Security evidence remains valid at 91 passed, 0 failed, 1 skipped; historical AC-01/05/08 remain verified from 63 focused tests; About pages remain 2.10; no new migration requirement or production mutation was identified. The release blockers are the confirmed BB service-time defect, four unresolved browser smoke failures, and one skipped pastoral security integration test.

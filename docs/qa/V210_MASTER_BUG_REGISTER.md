@@ -16,7 +16,7 @@ Reconciled: 2026-10-17
 | BB209-07 | BB | P1 | VERIFIED_PASS | Invitation role catalogue, activation, RBAC and isolation verified | 33/33 | — | — |
 | BB209-08 | BB | P1 | FIXED | Existing prayer route enabled in member navigation; privacy/CSRF/RBAC preserved | 24/24 contract; DB pastoral skipped | 3fbf804a | Isolated DB pastoral integration |
 | BB209-09 | BB | P1 | VERIFIED_PASS | Directory/contact fallback and tenant isolation verified | 86/86 | — | — |
-| BB209-10 | BB | P1 | VERIFIED_PASS | Service names/times, inheritance, overrides and public rendering verified | 61/61 prior focused | — | — |
+| BB209-10 | BB | P1 | FAILED | QA-15 isolated rerun: service-time write returns `lookup_error`; authorized HTTP paths return 503 because runtime calls unavailable `setBranchServiceTimesMode` | 0/7; 7 failed | — | Confirmed runtime service-time repository defect |
 | BB209-11 | BB | P1 | VERIFIED_PASS | Announcement image save/publish and audience isolation verified | 74/74 | — | — |
 | BB-03 | BB | P1 | VERIFIED_PASS | Multi-section publication, rollback, history and restore verified | 29/29 | — | — |
 | BB-06 | BB | P1 | VERIFIED_PASS | Announcement workflow included with BB209-11 | 74/74 | — | — |
@@ -45,3 +45,10 @@ Reconciled: 2026-10-17
 - No production verification is implied by focused test evidence.
 - Release blockers: BB color baseline, BB member DB coverage, AC theme lifecycle coverage, isolated PostgreSQL pastoral/service-time coverage, stale ActiveClinic city fixture, and browser viewport coverage.
 - No issue record was invented for AC-HIST-01, AC-HIST-05, or AC-HIST-08.
+
+## QA-17 reconciliation
+
+- QA-15 fixture repairs verified pastoral PostgreSQL 2/2 and ActiveClinic registration lifecycle 13/13. BB service-time verification remains failed, with a confirmed runtime repository-method defect; no runtime repair was authorized in QA-15.
+- QA-16 browser routing probes passed for both product hosts. The required 1440×900 and 390×844 smoke projects ran 12 unique cases: 8 passed and 4 failed. The failures are BB prayer HTTP 503 and AC registration/directory content mismatches at both viewports.
+- Security remains 91 passed, 0 failed, 1 skipped. AC-HIST-01, AC-HIST-05, and AC-HIST-08 remain verified by QA-13's 63 focused tests. About pages remain statically verified at 2.10.
+- Current release blockers: confirmed BB service-time defect, four browser smoke failures, and one skipped pastoral security integration test. No new migration requirement or production mutation was identified.
