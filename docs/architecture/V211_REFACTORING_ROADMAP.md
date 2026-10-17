@@ -134,3 +134,13 @@ Each batch must produce: an ownership decision, adapter contract, focused tests,
 No production extraction satisfies all first-batch acceptance criteria. The smallest useful and reversible batch is therefore the isolated characterization batch described in `V211_FIRST_REFACTORING_BATCH.md`. It changes documentation/tests only, introduces no Platform API, and deliberately leaves product code, startup, deployment, sessions, CSRF, RBAC, URLs, and database behavior unchanged.
 
 The tenant-resolution extraction candidate is closed for this phase as **DEFERRED**, not implemented. After live disposable-database coverage is separately authorized, the next independent low-risk review candidate is generic, non-sensitive rendering/presentation utilities. That review is not authorization to implement or consolidate them.
+
+## V2.11 architecture decision summary
+
+`TENANT_RESOLUTION_EXTRACTION=DEFERRED`
+`SHARED_EJS_RENDERER=REJECTED`
+`LEGACY_DELETION=NOT_AUTHORIZED`
+`RUNTIME_REFACTORING=NOT_PERFORMED`
+`ARCHITECTURE_REVIEW=COMPLETE_FOR_CURRENT_SCOPE`
+
+The rendering audit measured approximately 51 low-level duplicated mechanism lines versus an estimated 30–45 line Platform utility before compatibility tests and adapters. The net consolidation benefit is negligible or negative. BlessBoard source-cache semantics and ActiveClinic include/root semantics remain product-specific and must be preserved. No shared renderer is approved.
