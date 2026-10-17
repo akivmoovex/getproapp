@@ -27,7 +27,7 @@ test.describe("V2.10 BlessBoard browser smoke", () => {
   });
 
   test("prayer navigation and public website routes are wired", async ({ page }) => {
-    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "blessboard.pronline.org" });
+    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "stimes-a.blessboard.org" });
     const member = await page.goto("/member/prayer-request", { waitUntil: "domcontentloaded" });
     expect([200, 301, 302, 303, 401, 403, 404]).toContain(member.status());
     const editor = await page.goto("/hq/website", { waitUntil: "domcontentloaded" });
