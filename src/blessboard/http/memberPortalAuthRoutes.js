@@ -54,7 +54,7 @@ function createMemberPortalAuthRouter(deps) {
   });
 
   function csrfLocals(req, res) {
-    const token = issueCsrfToken(req, res, env);
+    const token = issueCsrfToken(env);
     setCsrfCookie(res, token, env);
     return { csrfToken: token, csrfField: CSRF_FIELD };
   }
