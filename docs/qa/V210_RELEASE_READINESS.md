@@ -48,3 +48,15 @@ Before deployment:
 7. Verify deployment SHA and migration plan at release time.
 
 Production was not accessed, mutated, or deployed.
+
+## QA-10 final gate recheck
+
+Final verified V10 SHA: `443f8b00bd2c8993d067adf12541b20be8bbd85b`, matching `origin/V10`. Main and V9 remain unchanged.
+
+QA-07 created and validated the disposable local database `getpro_v210_qa_test_20261017`, owned by the local test user and initially empty. Existing platform, BlessBoard, ActiveClinic, GetPro, NGO, and seed migrations applied through ceilings platform 047, BlessBoard 128, ActiveClinic 042, GetPro 001, NGO 001, seeds 011. No new migration was created or expected.
+
+QA-08 reran the blocked database workflows without skips: 49 tests, 40 passed, 9 failed. The seven BlessBoard service-time failures remain `lookup_error`/503 environment/schema-fixture failures; the ActiveClinic failure remains the incomplete city fixture; pastoral setup remains blocked by a duplicate test host-slug fixture. Member registration/create/search tests passed. These are not confirmed product defects.
+
+The security batch remains 91 passed, 0 failed, 1 PostgreSQL pastoral skip. Browser smoke remains blocked: only two generic tests completed before the bounded Playwright run stalled; neither required 1440×900 nor 390×844 coverage was completed. The three historical AC issues `AC-HIST-01`, `AC-HIST-05`, and `AC-HIST-08` have no supplied focused coverage and remain untested.
+
+About pages were statically verified at version 2.10 for both products. No critical security defect was confirmed. Release decision remains **NOT_READY** because critical database workflows, browser viewports, and three historical AC issues remain unresolved/unverified.
