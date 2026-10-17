@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Member invitation | BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/platform.css">
+</head>
+<body>
+  <main style="max-width:42rem;margin:4rem auto;padding:2rem">
+    <% if (state === "authentication_required") { %>
+      <h1>Sign in required</h1>
+      <p>Sign in with the existing account associated with this member invitation.</p>
+    <% } else if (state === "accepted") { %>
+      <h1>Member access activated</h1>
+      <p>Your BlessBoard member access is now active.</p>
+    <% } else if (state === "error") { %>
+      <h1>Invitation unavailable</h1>
+      <p><%= error %></p>
+    <% } else { %>
+      <h1>Accept member invitation</h1>
+      <p>Confirm to activate your existing BlessBoard member access.</p>
+      <form method="post" action="/member-invite/accept" autocomplete="off">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+        <input type="hidden" name="token" value="<%= token %>">
+        <button type="submit">Accept invitation</button>
+      </form>
+    <% } %>
+  </main>
+</body>
+</html>

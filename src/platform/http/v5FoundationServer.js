@@ -63,6 +63,12 @@ const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersA
 const { createHqRoleAdminRouter } = require("../../blessboard/http/hqRoleAdminRoutes");
 const { createHqStaffAccessRouter } = require("../../blessboard/http/hqStaffAccessRoutes");
 const { createInviteAcceptRouter } = require("../../blessboard/http/inviteAcceptRoutes");
+const {
+  createMemberPortalInvitationAcceptRouter,
+} = require("../../blessboard/http/memberPortalInvitationAcceptRoutes");
+const {
+  createMemberPortalInvitationAdminRouter,
+} = require("../../blessboard/http/memberPortalInvitationAdminRoutes");
 const { createPasswordResetRouter } = require("../../blessboard/http/passwordResetRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
 const {
@@ -1049,6 +1055,8 @@ function createV5FoundationApp(options) {
     isProduction,
     variant: "branch",
   });
+  app.use(createMemberPortalInvitationAcceptRouter({ getPool, env }));
+  app.use(createMemberPortalInvitationAdminRouter({ getPool, env }));
   const {
     registerBlessBoardSharedAnnouncementRoutes,
   } = require("../../blessboard/http/registerBlessBoardSharedAnnouncementRoutes");

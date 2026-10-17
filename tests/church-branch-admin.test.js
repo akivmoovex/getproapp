@@ -85,7 +85,7 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: `BA Church ${suffix}`,
     });
     const passwordHash = await bcrypt.hash("testpass123", 12);
@@ -134,7 +134,7 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: `Verify Church ${suffix}`,
     });
     const passwordHash = await bcrypt.hash("testpass123", 12);
@@ -217,12 +217,12 @@ test(
     });
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: "Scope A Branch",
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
-      slug: "main",
+      slug: `main_b_${suffix}`,
       name: "Scope B Branch",
     });
     const passwordHash = await bcrypt.hash("testpass123", 12);

@@ -150,7 +150,7 @@ function registerChurchAuthRoutes(router) {
           branchAuthLocals(req, {
             error:
               "We could not complete registration with these details. If you already registered, try signing in or contact the church office.",
-            form: validation.form,
+            form: validation.data,
             ageGroupOptions: AGE_GROUP_OPTIONS,
             attendanceDurationOptions: ATTENDANCE_DURATION_OPTIONS,
             ministryInterestOptions: MINISTRY_INTEREST_OPTIONS,
@@ -184,7 +184,7 @@ function registerChurchAuthRoutes(router) {
             branchAuthLocals(req, {
               error:
                 "We could not complete registration with these details. If you already registered, try signing in or contact the church office.",
-              form: validation.form,
+              form: validation.data,
               ageGroupOptions: AGE_GROUP_OPTIONS,
               attendanceDurationOptions: ATTENDANCE_DURATION_OPTIONS,
               ministryInterestOptions: MINISTRY_INTEREST_OPTIONS,

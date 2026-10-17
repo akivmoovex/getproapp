@@ -10,6 +10,7 @@ const {
   isCatalogueHqRole,
   isCatalogueBranchRole,
 } = require("./blessBoardCatalogueLogin");
+const memberIdentityRepo = require("../repositories/memberIdentityRepository");
 
 const STATUS = Object.freeze({
   AUTHORIZED: "authorized",
@@ -235,6 +236,30 @@ async function authorizeBlessBoardTenantAccess(db, input) {
       },
       { branchBelongsToChurch }
     );
+
+    // Ordinary member portal access is identity- and membership-bound, not a
+    // staff catalogue grant. Keep it tenant/branch scoped and fail closed.
+    if (effectiveRoles.length === 0) {
+      const member = await memberIdentityRepo.findActiveMemberByUserId(db, {
+        churchId: tenantIds.churchId,
+        userId,
+      });
+      if (
+        member &&
+        String(member.portalAccessStatus || "") === "active" &&
+        branchId
+      ) {
+        const membership = await memberIdentityRepo.findMembership(db, member.id, branchId);
+        if (membership && membership.membershipStatus === "active") {
+          effectiveRoles.push({
+            roleKey: "member",
+            organizationId: tenantIds.organizationId,
+            churchId: tenantIds.churchId,
+            branchId,
+          });
+        }
+      }
+    }
 
     if (!effectiveRoles.length) {
       return deny({

@@ -103,7 +103,7 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: `Test Church ${suffix}`,
     });
 
@@ -154,7 +154,7 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: `Dup Church ${suffix}`,
     });
 
@@ -171,10 +171,28 @@ test(
     const first = await request(app).post("/register").type("form").send(body);
     assert.equal(first.status, 303);
     assert.equal(first.headers.location, "/registration-submitted");
+    const beforeDuplicate = await pool.query(
+      `select
+         (select count(*) from public.church_members where branch_id = $1)::int as members,
+         (select count(*) from public.church_branches where organization_id = $2)::int as branches,
+         (select count(*) from public.church_organizations where id = $2)::int as organizations`,
+      [branch.id, org.id]
+    );
 
     const second = await request(app).post("/register").type("form").send(body);
     assert.equal(second.status, 400);
     assert.match(second.text, /could not complete registration/i);
+    const afterDuplicate = await pool.query(
+      `select
+         (select count(*) from public.church_members where branch_id = $1)::int as members,
+         (select count(*) from public.church_branches where organization_id = $2)::int as branches,
+         (select count(*) from public.church_organizations where id = $2)::int as organizations`,
+      [branch.id, org.id]
+    );
+    assert.deepEqual(afterDuplicate.rows[0], beforeDuplicate.rows[0]);
+    assert.equal(afterDuplicate.rows[0].members, 1);
+    assert.equal(afterDuplicate.rows[0].branches, 1);
+    assert.equal(afterDuplicate.rows[0].organizations, 1);
 
     await pool.query(`DELETE FROM public.church_members WHERE branch_id = $1`, [branch.id]);
     await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [org.id]);
@@ -197,7 +215,7 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
       name: `Login Church ${suffix}`,
     });
 
@@ -234,7 +252,7 @@ test(
 
     const waiting = await agent.get("/waiting-verification");
     assert.equal(waiting.status, 200);
-    assert.match(waiting.text, /Waiting for verification/i);
+    assert.match(waiting.text, /Verification in Progress|Pending Verification/i);
 
     await pool.query(`DELETE FROM public.church_members WHERE branch_id = $1`, [branch.id]);
     await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [org.id]);

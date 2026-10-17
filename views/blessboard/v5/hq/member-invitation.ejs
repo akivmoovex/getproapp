@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Member portal invitation</title><link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=56"></head><body class="bb-hq-body">
+<main class="bb-hq-panel" aria-labelledby="member-invitation-title">
+  <h1 id="member-invitation-title">Member portal invitation</h1>
+  <p><%= member.first_name %> <%= member.last_name %></p>
+  <dl>
+    <dt>Portal access</dt><dd><%= member.portal_access_status %></dd>
+    <dt>Invitation</dt><dd><%= invitation ? invitation.status : 'none' %></dd>
+    <% if (invitation && invitation.expires_at) { %><dt>Expires</dt><dd><%= invitation.expires_at %></dd><% } %>
+  </dl>
+  <% if (!member.user_id) { %>
+    <p role="status">Portal invitation unavailable: a verified existing-user identity is required.</p>
+  <% } %>
+  <% if (message) { %><p role="status"><%= message %></p><% } %>
+  <% if (oneTimeToken) { %>
+    <textarea readonly aria-label="Invitation link" rows="3" style="width:100%">/member-invite/accept?token=<%= oneTimeToken %></textarea>
+    <p>Copy this link now. It will not be shown again.</p>
+  <% } %>
+  <% if (member.portal_access_status !== 'active' && member.user_id) { %>
+    <form method="post" action="<%= member.branch_id ? '/hq/members/' + member.id + '/invitation' : '/hq/members/' + member.id + '/invitation' %>">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+      <button name="action" value="<%= invitation && invitation.status === 'pending' ? 'resend' : 'issue' %>" type="submit">
+        <%= invitation && invitation.status === 'pending' ? 'Resend invitation' : 'Issue invitation' %>
+      </button>
+      <% if (invitation && invitation.status === 'pending') { %>
+        <button name="action" value="revoke" type="submit">Revoke invitation</button>
+      <% } %>
+    </form>
+  <% } %>
+</main></body></html>

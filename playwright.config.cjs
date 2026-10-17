@@ -13,7 +13,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
  */
 module.exports = defineConfig({
   testDir: "./tests",
-  testMatch: ["ui.spec.js", "brand-home-stability.spec.js"],
+  testMatch: ["ui.spec.js", "brand-home-stability.spec.js", "bb-v211-hq-member-invitation-security.spec.js", "bb-v211-branch-member-invitation-security.spec.js", "bb-v211-member-invitation-acceptance-security.spec.js"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -25,7 +25,7 @@ module.exports = defineConfig({
     baseURL: BASE_URL,
     ...devices["Desktop Chrome"],
     viewport: { width: 1280, height: 720 },
-    extraHTTPHeaders: {
+    extraHTTPHeaders: process.env.BB_BROWSER_SECURITY ? {} : {
       "X-Forwarded-Host": "demo.local.test",
       "X-Forwarded-Proto": "http",
     },
@@ -40,7 +40,7 @@ module.exports = defineConfig({
     },
   },
   webServer: {
-    command: `node server.js`,
+    command: `node scripts/local/run-local-qa-server.js`,
     url: `${BASE_URL}/healthz`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
@@ -53,6 +53,7 @@ module.exports = defineConfig({
       APP_BRAND: "getpro",
       NODE_ENV: "test",
       GETPRO_TEST_DB: "1",
+      DATABASE_URL: process.env.DATABASE_URL || "postgresql:///getpro_v211_test_01?host=/tmp",
       GETPRO_PG_SSL: process.env.GETPRO_PG_SSL || "off",
       GETPRO_DB_MISSING_EXIT_DELAY_MS: process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS || "0",
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "playwright-ci-admin-password",
