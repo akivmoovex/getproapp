@@ -1,5 +1,48 @@
 # V2.10 Release Readiness
 
+## Verdict
+
+**NOT READY** — the targeted release gate is not fully verified.
+
+The V10 change corrects the BB prayer smoke host from the shared apex host to
+the isolated tenant fixture host `stimes-a.blessboard.org`, which addresses the
+identified 503 test-fixture/host-profile failure. The focused browser gate was
+not rerun successfully because the required isolated `E2E_DATABASE_URL` was
+not provided. No PASS is inferred from the missing run.
+
+## Gate status
+
+| Gate | Status | Evidence |
+|---|---|---|
+| BB anonymous prayer route | NOT VERIFIED | Focused browser run blocked by missing `E2E_DATABASE_URL` |
+| Authenticated member prayer flow | NOT VERIFIED | Same isolated DB prerequisite |
+| BB browser 1440x900 and 390x844 | NOT VERIFIED | Same isolated DB prerequisite |
+| BB service-time tests 23/23 | NOT VERIFIED | Not rerun for this targeted gate |
+| Pastoral security integration 2/2 | NOT VERIFIED | Not rerun for this targeted gate |
+| AC browser 2/2 | NOT VERIFIED | Not rerun for this targeted gate |
+| Historical AC tests | EXISTING EVIDENCE ONLY | No new run counted |
+| Security authorization / tenant isolation | EXISTING EVIDENCE ONLY | No new run counted |
+| Migration ceilings | EXISTING EVIDENCE ONLY | No migration changes in V10 delta |
+| BB/AC About 2.10 | NOT VERIFIED | No successful V10 browser run |
+| V10 local/remote SHA | PASS | `6476674a3ae8ffc86a9d8b1393df42996f6349d9` |
+| Main and V9 unchanged | PASS | V10-only targeted commit; no writes to those refs |
+| Release-critical defects | BLOCKED | Required targeted evidence is incomplete |
+
+## QA-22 root cause
+
+The failing anonymous request was exercised with the shared
+`blessboard.pronline.org` host. V10 changes the smoke fixture to
+`stimes-a.blessboard.org`, the isolated tenant host used by the local QA
+profile. The route is `/member/prayer-request`; its anonymous contract remains
+authorization-gated, while authenticated members use the existing prayer
+request table and branch/member scoping.
+
+## Execution boundary
+
+No production deployment, migration, or production database mutation was
+performed.
+# V2.10 Release Readiness
+
 Date: 2026-10-17  
 Branch: `V10`
 
@@ -48,6 +91,31 @@ Before deployment:
 7. Verify deployment SHA and migration plan at release time.
 
 Production was not accessed, mutated, or deployed.
+
+## V210 QA-72–88 final evidence
+
+The current V10 SHA is `edd28c57fa14a648331a557a1feacb1349bf6e0a`, matching
+`origin/V10`.
+
+- BlessBoard member activation/login, CSRF, prayer form, one complete prayer
+  submission, persistence, category mapping, ownership, and 1440x900/390x844
+  responsive sanity checks passed.
+- BlessBoard owner-detail browser reopen, cross-member privacy, administrator
+  denial, and cross-tenant browser checks remain `NOT_VERIFIED`; skipped checks
+  are not treated as passes.
+- ActiveClinic public root/directory routing passed. The clinic administrator
+  fixture is incomplete, so website publication and patient login/browser QA
+  are `BLOCKED_ENVIRONMENT`.
+- Shared dynamic BB/AC hostname resolution, static compatibility, deployment,
+  product, tenant isolation, host spoofing, canonical redirects, and 50
+  focused security/resolver tests passed.
+- The member CSRF issuance contract was corrected and committed in
+  `edd28c57`; real login and dashboard verification passed.
+- QA administrator bootstrap is `BLOCKED_SECURITY`: the local authorization
+  file is self-authorizable, no independent trust root exists, and bootstrap
+  execution is prohibited.
+- No new migration, production access, production mutation, or deployment was
+  performed. Overall decision: **DO_NOT_PROCEED_TO_PRODUCTION**.
 
 ## QA-10 final gate recheck
 

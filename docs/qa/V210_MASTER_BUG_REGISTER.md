@@ -1,5 +1,33 @@
 # V2.10 Master Bug Register
 
+## QA-22 — BB prayer HTTP 503
+
+- **Status:** Root cause identified; targeted release verification blocked.
+- **Route:** `/member/prayer-request`
+- **Failure class:** `HOST_PROFILE` / `TEST_FIXTURE`
+- **Root cause:** The browser smoke used the shared
+  `blessboard.pronline.org` host instead of the isolated tenant fixture
+  `stimes-a.blessboard.org`. The host/profile mismatch caused the anonymous
+  request to resolve outside the local tenant fixture and return the
+  controlled 503.
+- **V10 change:** The smoke test now sends
+  `X-Forwarded-Host: stimes-a.blessboard.org`.
+- **Product defect:** Not proven.
+- **Authorization impact:** None. Anonymous access remains authorization
+  gated; authenticated member access remains member-, branch-, and
+  organization-scoped. Pastoral access remains separately protected.
+- **Verification:** The focused browser run could not start the application
+  because `E2E_DATABASE_URL` was not configured. This is recorded as
+  `NOT VERIFIED`, not PASS.
+- **Production:** No deployment or production mutation.
+
+## Release-critical status
+
+No confirmed product defect is recorded from QA-22. Release remains blocked
+until the isolated database-backed targeted browser and dependent release
+checks are executed successfully.
+# V2.10 Master Bug Register
+
 Branch: `V10`  
 Reconciled: 2026-10-17
 
@@ -47,6 +75,26 @@ Reconciled: 2026-10-17
 - No issue record was invented for AC-HIST-01, AC-HIST-05, or AC-HIST-08.
 
 ## QA-17 reconciliation
+
+## V210 final release evidence
+
+As of V10 commit `edd28c57fa14a648331a557a1feacb1349bf6e0a`, matching
+`origin/V10`, the remaining V2.10 release blockers are classified as
+environment or security gates rather than confirmed product defects.
+
+BlessBoard member login/CSRF, complete prayer submission and persistence, and
+desktop/mobile responsive sanity passed. Owner-detail reopen, cross-member
+privacy, administrator denial, and cross-tenant browser checks remain
+`NOT_VERIFIED`. ActiveClinic public routing passed, while administrator
+provisioning, website publication, and patient login remain
+`BLOCKED_ENVIRONMENT`. Shared dynamic host resolution and its 50 focused
+security/resolver tests passed. QA administrator bootstrap remains
+`BLOCKED_SECURITY` because its local authorization mechanism has no independent
+trust root; it must not execute.
+
+No skipped test is counted as a pass. No production access, mutation,
+deployment, migration, commit, or push was performed by the QA work recorded
+here.
 
 - QA-15 fixture repairs verified pastoral PostgreSQL 2/2 and ActiveClinic registration lifecycle 13/13. BB service-time verification remains failed, with a confirmed runtime repository-method defect; no runtime repair was authorized in QA-15.
 - QA-16 browser routing probes passed for both product hosts. The required 1440×900 and 390×844 smoke projects ran 12 unique cases: 8 passed and 4 failed. The failures are BB prayer HTTP 503 and AC registration/directory content mismatches at both viewports.
