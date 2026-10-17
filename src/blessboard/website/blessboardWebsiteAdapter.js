@@ -26,8 +26,8 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
   const existing = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
     organizationId,
     productCode: "blessboard",
-    scopeRef: input.branchId || churchId,
-    scopeKind: input.branchId ? "branch" : "church_wide",
+    scopeRef: input.branchId || null,
+    scopeKind: input.branchId ? "branch" : "tenant",
   });
   if (existing) {
     return { ok: true, instance: existing, created: false, existed: true };
@@ -38,8 +38,8 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug: slug || organizationId.slice(0, 8),
     status: input.status || "coming_soon",
-    scopeKind: input.branchId ? "branch" : "church_wide",
-    scopeRef: input.branchId || churchId,
+    scopeKind: input.branchId ? "branch" : "tenant",
+    scopeRef: input.branchId || null,
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: input.contentOverrides || {},
     seedDefaults: false,
