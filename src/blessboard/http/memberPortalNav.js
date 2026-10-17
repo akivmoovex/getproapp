@@ -65,7 +65,7 @@ const PORTAL_NAV = Object.freeze([
   {
     key: "prayer",
     label: "Request Prayer",
-    href: "/member/prayer-request",
+    href: "/member/requests/new?category=prayer",
     icon: "volunteer_activism",
     enabled: true,
     nav: true,

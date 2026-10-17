@@ -80,7 +80,7 @@ const DASHBOARD_QUICK_ACTIONS = Object.freeze([
   {
     key: "prayer",
     label: "Request Prayer",
-    href: "/member/prayer-request",
+    href: "/member/requests/new?category=prayer",
     icon: "favorite",
     enabled: true,
   },
