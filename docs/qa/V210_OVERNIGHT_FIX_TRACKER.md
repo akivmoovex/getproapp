@@ -28,6 +28,13 @@
 - Code fix: none.
 - Status: `VERIFIED_PASS`.
 
+## V210-QA-01 — 2026-10-17
+
+- Three skipped tests were located: the PostgreSQL-backed pastoral-care suite, the PostgreSQL-backed Foundation/Growth regression suite, and the PostgreSQL-backed member-portal submission suite.
+- Classification: all three are `ENVIRONMENT`; each uses `skip: !isPgConfigured()` and the isolated PostgreSQL test environment is not configured in this run.
+- No stale assertion, unsupported behavior, or product defect was established. No test or runtime weakening was made.
+- Resolution: documented environment blocker; tests remain skipped and are not marked passed.
+
 ## V210 Harness Verification — 2026-10-17
 
 - P01: `VERIFIED_PASS`; stale ActiveClinic asset-version assertion now accepts the shared version constant. Add Section suite: 6/6.
