@@ -1,0 +1,18 @@
+<%- include('../partials/hq-shell-start') %>
+<section class="bb-hq-panel" data-bb-hq-member-review="1">
+  <h1 class="bb-hq-page-head__title">Review new member</h1>
+  <p>Confirm the church membership record. Portal activation remains pending.</p>
+  <% if (review && review.fieldErrors && review.fieldErrors.length) { %>
+  <%- include('../partials/form-errors', { title: 'Unable to create member', errors: review.fieldErrors }) %>
+  <% } %>
+  <dl>
+    <dt>Name</dt><dd><%= (review && review.values && review.values.fullName) || 'New member' %></dd>
+    <dt>Branch</dt><dd><%= (review && review.values && review.values.branchId) || 'Authorized branch' %></dd>
+  </dl>
+  <form method="post" action="/hq/members/new/review">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <input type="hidden" name="draft_token" value="<%= draftToken %>" />
+    <button class="bb-hq-btn bb-hq-btn--primary" name="action" value="confirm_create">Create member</button>
+  </form>
+</section>
+<%- include('../partials/hq-shell-end') %>

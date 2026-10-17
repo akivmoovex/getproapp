@@ -524,7 +524,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(directory, /item\.branchDisplayName|item\.branchKey/);
     assert.match(directory, /item\.phoneDisplay/);
     assert.match(directory, /item\.emailDisplay/);
-    assert.doesNotMatch(directory, /type="checkbox"|Export CSV|Bulk|Demographic|Add Member/i);
+    assert.doesNotMatch(directory, /type="checkbox"|Export CSV|Bulk|Demographic/i);
     assert.doesNotMatch(directory, /email_normalized|phone_normalized|churchId|branchId|user_id|userId/);
     assert.match(css, /\.bb-hq-members-cards/);
     assert.match(css, /\.bb-hq-members-table-wrap/);

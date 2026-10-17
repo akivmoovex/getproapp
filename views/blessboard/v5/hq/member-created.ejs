@@ -1,0 +1,9 @@
+<%- include('../partials/hq-shell-start') %>
+<section class="bb-hq-panel" data-bb-hq-member-created="1" role="status">
+  <h1 class="bb-hq-page-head__title">Member created</h1>
+  <p><strong><%= member && member.firstName %> <%= member && member.lastName %></strong> was added to the church membership directory.</p>
+  <p>Portal access is <%= (member && member.portalAccessStatus) || 'not_activated' %>. No invitation was sent by this workflow.</p>
+  <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/members/<%= member && member.id %>">View member</a>
+  <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/members">Back to members</a>
+</section>
+<%- include('../partials/hq-shell-end') %>

@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const express = require("express");
+const { CSRF_FIELD, issueCsrfToken, setCsrfCookie, validateCsrf } = require("../../platform/http/v5Csrf");
 
 const {
   createRequireBlessBoardPermission,
@@ -31,6 +32,16 @@ const {
   resolveBlessBoardBranchForChurch,
   STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
+const { buildAddMemberFormModel } = require("../services/blessBoardStaffAddMemberFormService");
+const { parseAddMemberFormBody } = require("../services/blessBoardStaffAddMemberFormService");
+const {
+  beginStaffAddMemberFlow,
+  handleMatchStep,
+  confirmStaffAddMemberCreate,
+  reviewModelFromDraft,
+  FLOW_CODE,
+} = require("../services/blessBoardStaffAddMemberFlowService");
+const { authorize: authorizeBlessBoard } = require("../services/blessBoardRbacAuthorizationService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -103,6 +114,7 @@ function createHqMembersAdminRouter(deps) {
 
   const router = express.Router();
   const requireHqAccess = createRequireBlessBoardPermission("members.view", null, { getPool, scopeMode: "church" });
+  const requireHqCreate = createRequireBlessBoardPermission("members.create", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -120,6 +132,14 @@ function createHqMembersAdminRouter(deps) {
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
     return requireHqAccess(req, res, next);
+  }
+
+  function gateHqCreate(req, res, next) {
+    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
+    if (!sessionOk) {
+      return res.redirect(303, `/login?next=${encodeURIComponent(req.originalUrl || "/hq/members/new")}`);
+    }
+    return requireHqCreate(req, res, next);
   }
 
   async function shellLocals(req, res, activeNav, extra) {
@@ -149,6 +169,48 @@ function createHqMembersAdminRouter(deps) {
       actorUserId: session.userId,
       tenant,
     };
+  }
+
+  async function renderHqAdd(req, res, scope, opts) {
+    const options = opts || {};
+    const branches = await listBlessBoardBranches(getPool(), scope.churchId, { includeIds: true });
+    const form = await buildAddMemberFormModel(getPool(), {
+      churchId: scope.churchId,
+      defaultBranchId: scope.tenant && scope.tenant.primaryBranch ? scope.tenant.primaryBranch.id : "",
+      values: options.values || {},
+      fieldErrors: options.fieldErrors || [],
+      errors: options.errors || {},
+    });
+    const token = issueCsrfToken(env);
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
+    const html = renderHqView("hq/member-add.ejs", await shellLocals(req, res, "members", {
+      pageTitle: "Add member",
+      form,
+      branches: branches.ok ? branches.branches : [],
+      csrfField: CSRF_FIELD,
+      csrfToken: token,
+      memberSubmissionEnabled: true,
+    }));
+    return res.status(options.status || 200).type("html").send(html);
+  }
+
+  function csrfOk(req, res) {
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+      return false;
+    }
+    return true;
+  }
+
+  async function renderHqFlowView(req, res, scope, name, locals, status) {
+    const token = issueCsrfToken(env);
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
+    const html = renderHqView(`hq/${name}.ejs`, await shellLocals(req, res, "members", {
+      ...locals,
+      csrfField: CSRF_FIELD,
+      csrfToken: token,
+    }));
+    return res.status(status || 200).type("html").send(html);
   }
 
   async function resolveOptionalBranchFilter(scope, branchKeyRaw) {
@@ -320,6 +382,24 @@ function createHqMembersAdminRouter(deps) {
     }
 
     const branches = await listBlessBoardBranches(getPool(), scope.churchId);
+    let canCreateMember = false;
+    try {
+      const authz = await authorizeBlessBoard(getPool(), {
+        permission: "members.create",
+        actor: { userId: scope.actorUserId },
+        tenantContext: {
+          organizationId: scope.organizationId,
+          churchId: scope.churchId,
+          primaryBranchId: scope.tenant && scope.tenant.primaryBranch
+            ? scope.tenant.primaryBranch.id
+            : null,
+        },
+        resourceContext: { organizationId: scope.organizationId, churchId: scope.churchId },
+      });
+      canCreateMember = Boolean(authz && authz.allowed);
+    } catch (_err) {
+      canCreateMember = false;
+    }
     const totalPages = Math.max(1, Math.ceil(listed.total / PAGE_LIMIT));
     const html = renderHqView(
       "hq/members.ejs",
@@ -335,10 +415,148 @@ function createHqMembersAdminRouter(deps) {
         portalFilter: portal,
         branchFilter: branchFilter.branchKey,
         branches: branches.ok ? branches.branches : [],
+        canCreateMember,
         loadGpOpsAssets: true,
       })
     );
     return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/members/new", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope) return;
+    const branches = await listBlessBoardBranches(getPool(), scope.churchId, { includeIds: true });
+    if (!branches.ok) return sendControlled(req, res, 503, "Branches are temporarily unavailable.");
+    const csrfToken = issueCsrfToken(env);
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    const form = await buildAddMemberFormModel(getPool(), {
+      churchId: scope.churchId,
+      defaultBranchId: scope.tenant && scope.tenant.primaryBranch
+        ? scope.tenant.primaryBranch.id
+        : "",
+    });
+    const html = renderHqView(
+      "hq/member-add.ejs",
+      await shellLocals(req, res, "members", {
+        pageTitle: "Add member",
+        form,
+        branches: branches.branches,
+        csrfField: CSRF_FIELD,
+        csrfToken,
+        memberSubmissionEnabled: false,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/members/new", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope || !csrfOk(req, res)) return;
+    const parsed = parseAddMemberFormBody(req.body || {});
+    const selected = String(parsed.branchId || parsed.values.branchId || "").trim();
+    const branches = await listBlessBoardBranches(getPool(), scope.churchId, { includeIds: true });
+    const branch = branches.ok
+      ? (branches.branches || []).find((item) => String(item.id) === selected && item.status === "active")
+      : null;
+    if (!branch) {
+      parsed.ok = false;
+      parsed.fieldErrors = (parsed.fieldErrors || []).concat([
+        { field: "branch_id", message: "Select an active branch in this church." },
+      ]);
+    } else {
+      parsed.branchId = branch.id;
+      parsed.values.branchId = branch.id;
+    }
+    const started = await beginStaffAddMemberFlow(getPool(), {
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      parsed,
+      env,
+    }, {});
+    if (started.code === FLOW_CODE.VALIDATION || (!started.ok && started.step === "form")) {
+      return renderHqAdd(req, res, scope, {
+        values: started.values || parsed.values,
+        fieldErrors: started.fieldErrors || parsed.fieldErrors,
+        status: 400,
+      });
+    }
+    if (started.step === "match") {
+      return renderHqFlowView(req, res, scope, "member-match", {
+        draftToken: started.draftToken, draft: started.draft, matches: started.matches || [],
+        blocked: started.code === FLOW_CODE.MATCH_BLOCKED, churchIdPreview: started.churchIdPreview,
+      }, started.code === FLOW_CODE.MATCH_BLOCKED ? 409 : 200);
+    }
+    return renderHqFlowView(req, res, scope, "member-review", {
+      draftToken: started.draftToken, draft: started.draft,
+      review: reviewModelFromDraft(started.draft || {}),
+    });
+  });
+
+  router.post("/hq/members/new/match", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope || !csrfOk(req, res)) return;
+    const result = await handleMatchStep(getPool(), {
+      actorUserId: scope.actorUserId, organizationId: scope.organizationId,
+      churchId: scope.churchId, draftToken: req.body && req.body.draft_token,
+      action: req.body && req.body.action, memberId: req.body && (req.body.member_id || req.body.subject_ref), env,
+    }, {});
+    if (result.code === FLOW_CODE.UNAUTHORIZED || result.code === FLOW_CODE.INVALID_DRAFT) {
+      return sendControlled(req, res, 403, "This member draft is no longer available.");
+    }
+    if (result.step === "open_existing" && result.memberId) {
+      return res.redirect(303, `/hq/members/${result.memberId}`);
+    }
+    if (result.step === "form") return renderHqAdd(req, res, scope, { values: result.values || {} });
+    if (result.step === "review") {
+      return renderHqFlowView(req, res, scope, "member-review", {
+        draftToken: result.draftToken, draft: result.draft, review: reviewModelFromDraft(result.draft || {}),
+      });
+    }
+    return renderHqFlowView(req, res, scope, "member-match", {
+      draftToken: result.draftToken || req.body.draft_token, draft: result.draft,
+      matches: result.matches || [], blocked: result.code === FLOW_CODE.MATCH_BLOCKED,
+    }, 409);
+  });
+
+  router.post("/hq/members/new/review", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope || !csrfOk(req, res)) return;
+    const result = await confirmStaffAddMemberCreate(getPool(), {
+      actorUserId: scope.actorUserId, organizationId: scope.organizationId,
+      churchId: scope.churchId, draftToken: req.body && req.body.draft_token,
+      action: req.body && req.body.action, env,
+    }, {});
+    if (result.code === FLOW_CODE.UNAUTHORIZED || result.code === FLOW_CODE.INVALID_DRAFT) {
+      return sendControlled(req, res, 403, "This member draft is no longer available.");
+    }
+    if (result.code === FLOW_CODE.CREATED || result.code === FLOW_CODE.IDEMPOTENT_REPLAY) {
+      return res.redirect(303, `/hq/members/${result.memberId}/created`);
+    }
+    if (result.step === "match") {
+      return renderHqFlowView(req, res, scope, "member-match", {
+        draftToken: result.draftToken, draft: result.draft, matches: result.matches || [],
+        blocked: result.code === FLOW_CODE.MATCH_BLOCKED,
+      }, 409);
+    }
+    return renderHqFlowView(req, res, scope, "member-review", {
+      draftToken: req.body && req.body.draft_token, draft: result.draft,
+      review: reviewModelFromDraft(result.draft || {}, { fieldErrors: result.fieldErrors || [] }),
+    }, 400);
+  });
+
+  router.get("/hq/members/:id/created", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope) return;
+    const id = String(req.params.id || "").trim();
+    if (!UUID_RE.test(id)) return sendControlled(req, res, 404, "Member not found.");
+    const loaded = await getChurchMemberForManager(getPool(), {
+      memberId: id, actorUserId: scope.actorUserId, churchId: scope.churchId, tenant: scope.tenant,
+    });
+    if (!loaded.ok || !loaded.member) return sendControlled(req, res, 404, "Member not found.");
+    return renderHqFlowView(req, res, scope, "member-created", {
+      member: loaded.member, productIdentifier: loaded.member.memberNumber || null,
+    });
   });
 
   router.get("/hq/members/:id", rejectApex, gateHq, async (req, res) => {

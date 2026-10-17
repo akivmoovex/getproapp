@@ -100,6 +100,12 @@
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
+      <% if (canCreateMember) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/members/new" data-bb-hq-add-member="1">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        Add Member
+      </a>
+      <% } %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/registrations">
         <span class="material-symbols-outlined" aria-hidden="true">how_to_reg</span>
         Registration oversight

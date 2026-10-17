@@ -1,0 +1,55 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var f = form || {};
+  var values = f.values || {};
+  var branchesList = branches || [];
+  var errors = f.fieldErrors || [];
+%>
+<section class="bb-hq-members" data-bb-hq-member-add="1" aria-labelledby="bb-hq-add-member-title">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb"><a href="/hq/members">Members</a> <span aria-hidden="true">›</span> Add member</p>
+    <h1 id="bb-hq-add-member-title" class="bb-hq-page-head__title">Add member</h1>
+    <p class="bb-hq-lede">Prepare a church membership record. Portal activation is handled separately.</p>
+  </header>
+  <div class="bb-hq-panel">
+    <div class="bb-hq-panel__head">
+      <h2 class="bb-hq-members-panel__title">Member details</h2>
+      <p class="bb-hq-lede">Review and confirm possible matches before creation.</p>
+    </div>
+    <% if (errors.length) { %>
+    <div class="bb-hq-login-unavailable" role="alert">
+      <%- include('../partials/form-errors', { title: 'Please correct the highlighted fields', errors: errors }) %>
+    </div>
+    <% } %>
+    <form class="bb-hq-filter" method="post" action="/hq/members/new" data-bb-hq-add-member-form="1" aria-describedby="bb-hq-add-member-status">
+      <div class="bb-hq-field">
+        <label for="hq_add_full_name">Full name</label>
+        <input id="hq_add_full_name" name="full_name" type="text" value="<%= values.fullName || '' %>" autocomplete="name" required />
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_last_name">Last name</label>
+        <input id="hq_add_last_name" name="last_name" type="hidden" value="<%= values.lastName || '' %>" />
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_email">Email</label>
+        <input id="hq_add_email" name="email" type="email" value="<%= values.email || '' %>" autocomplete="email" />
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_phone">Phone</label>
+        <input id="hq_add_phone" name="phone" type="tel" value="<%= values.phone || '' %>" autocomplete="tel" required />
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_branch">Authorized branch</label>
+        <select id="hq_add_branch" name="branch_id" required>
+          <% branchesList.forEach(function (branch) { %>
+          <option value="<%= branch.id || '' %>" <%= String(values.branchId || '') === String(branch.id || '') ? 'selected' : '' %>><%= branch.displayName || branch.key %></option>
+          <% }) %>
+        </select>
+      </div>
+      <p id="bb-hq-add-member-status" class="bb-hq-lede" role="status">Portal activation remains pending after creation.</p>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Continue</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/hq-shell-end') %>
