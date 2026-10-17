@@ -263,3 +263,10 @@
 - `AC-NEW-07`: `NOT_REQUIRED_BY_CURRENT_WORKFLOW`; staff registration is authorized and facility-scoped, with no mandatory secondary approval queue.
 - `BB209-04`: `VERIFIED_EXISTING_WORKFLOW`; all 12 canonical journey stages remain unchanged. Simplified business labels are a `FUTURE_ENHANCEMENT`.
 - `BB209-08`: existing `/member/prayer-request` route, persistence, CSRF, branch ownership, member visibility, and pastoral privacy controls verified. Request Prayer navigation enabled using the existing route; no schema or role changes.
+
+## V210-QA-13 — 2026-10-17
+
+- `AC-HIST-01`: staff patient registration, persistence, duplicate protection, search, RBAC, facility scope, and portal separation verified by `activeclinic-patient-foundation`, `activeclinic-patient-registration-rbac`, and `activeclinic-mf08-patient-registration`; 25 focused tests passed. Original issue-specific record was not present in the supplied sources.
+- `AC-HIST-05`: doctor/practitioner and service creation, persistence, pricing, availability, RBAC, tenant tamper rejection, and HTTP routes verified by `activeclinic-batch1a-config`; 5 focused tests passed. Original issue-specific record was not present in the supplied sources.
+- `AC-HIST-08`: staff invitation, activation/login readiness, identity association, facility scope, role permissions, replay/expiry rejection, and unauthorized access verified by `activeclinic-staff-invitation`, `activeclinic-staff-management-parity`, `activeclinic-staff-rbac-foundation`, and `activeclinic-rbac-role-matrix`; 24 focused tests passed. Original issue-specific record was not present in the supplied sources.
+- No product defects reproduced. No runtime changes made.
