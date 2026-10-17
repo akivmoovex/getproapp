@@ -16,7 +16,7 @@ Reconciled: 2026-10-17
 | BB209-07 | BB | P1 | VERIFIED_PASS | Invitation role catalogue, activation, RBAC and isolation verified | 33/33 | — | — |
 | BB209-08 | BB | P1 | FIXED | Existing prayer route enabled in member navigation; privacy/CSRF/RBAC preserved | 24/24 contract; DB pastoral skipped | 3fbf804a | Isolated DB pastoral integration |
 | BB209-09 | BB | P1 | VERIFIED_PASS | Directory/contact fallback and tenant isolation verified | 86/86 | — | — |
-| BB209-10 | BB | P1 | FAILED | QA-15 isolated rerun: service-time write returns `lookup_error`; authorized HTTP paths return 503 because runtime calls unavailable `setBranchServiceTimesMode` | 0/7; 7 failed | — | Confirmed runtime service-time repository defect |
+| BB209-10 | BB | P1 | FIXED | QA-18 restored tenant-scoped service-time repository methods; inheritance, overrides, hidden mode and publication passed | 23 focused pass | 38578898 | — |
 | BB209-11 | BB | P1 | VERIFIED_PASS | Announcement image save/publish and audience isolation verified | 74/74 | — | — |
 | BB-03 | BB | P1 | VERIFIED_PASS | Multi-section publication, rollback, history and restore verified | 29/29 | — | — |
 | BB-06 | BB | P1 | VERIFIED_PASS | Announcement workflow included with BB209-11 | 74/74 | — | — |
@@ -52,3 +52,10 @@ Reconciled: 2026-10-17
 - QA-16 browser routing probes passed for both product hosts. The required 1440×900 and 390×844 smoke projects ran 12 unique cases: 8 passed and 4 failed. The failures are BB prayer HTTP 503 and AC registration/directory content mismatches at both viewports.
 - Security remains 91 passed, 0 failed, 1 skipped. AC-HIST-01, AC-HIST-05, and AC-HIST-08 remain verified by QA-13's 63 focused tests. About pages remain statically verified at 2.10.
 - Current release blockers: confirmed BB service-time defect, four browser smoke failures, and one skipped pastoral security integration test. No new migration requirement or production mutation was identified.
+
+## QA-18 / QA-19 / QA-20 reconciliation
+
+- BB209-10 is now FIXED by `38578898`; service-time, publication, tenant-isolation and repository-contract tests passed.
+- QA-19 passed the two AC browser cases at both required viewports after correcting stale assertions. The two BB prayer browser cases still fail at both viewports with anonymous HTTP 503 and remain a release blocker.
+- QA-20 executed the pastoral PostgreSQL integration/security suite: 2/2 passed, 0 skipped, including privacy, RBAC, branch and tenant isolation.
+- AC-HIST-01, AC-HIST-05 and AC-HIST-08 remain verified by the prior 63 focused tests. No new migration requirement or production mutation was identified.

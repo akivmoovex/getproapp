@@ -80,3 +80,13 @@ QA-15 repaired only isolated fixtures. The pastoral PostgreSQL suite now execute
 QA-16 corrected browser routing with the supported unified `moovex-platform-testing` profile and product forwarded hosts. Both route probes passed. The bounded smoke run covered 1440×900 and 390×844: 8/12 passed and 4/12 failed (BB prayer HTTP 503 and AC registration/directory marker mismatches, each at both viewports). Screenshots/traces were retained; essential browser coverage is not fully verified.
 
 QA-17 therefore remains **NOT_READY**. Security evidence remains valid at 91 passed, 0 failed, 1 skipped; historical AC-01/05/08 remain verified from 63 focused tests; About pages remain 2.10; no new migration requirement or production mutation was identified. The release blockers are the confirmed BB service-time defect, four unresolved browser smoke failures, and one skipped pastoral security integration test.
+
+## QA-18 / QA-19 / QA-20 final gate
+
+QA-18 repaired the missing BlessBoard branch service-time repository contract. The focused service-time suite passed 7/7; publication and tenant-isolation suites passed 15/15; the repository regression passed 1/1. Inheritance, overrides, hidden mode, draft/publish isolation, and tenant authorization are verified.
+
+QA-19 resolved the two ActiveClinic browser assertion failures as stale copy expectations. Both AC cases passed at 1440×900 and 390×844. The two BB prayer-navigation cases still fail at both viewports because the anonymous route returns HTTP 503; screenshots/traces remain available. Browser routing itself is verified, but all four failures are not resolved.
+
+QA-20 executed the previously skipped pastoral PostgreSQL security suite against `getpro_v210_qa_test_20261017`: 2/2 passed, 0 skipped. Host-slug uniqueness fixtures, confidentiality, owner visibility, branch access, pastoral RBAC, and tenant isolation passed.
+
+Final decision remains **NOT_READY** solely because the BB anonymous prayer browser route still returns 503 at both required viewports. No critical security defect, migration requirement, main/V9 change, or production mutation was identified.
