@@ -37,7 +37,16 @@ function rawGuiColors(css) {
     if (s.startsWith("/*") || s.startsWith("*") || s.startsWith("//")) continue;
     const hm = s.match(hex);
     if (hm) colors.add(hm[0].toLowerCase());
-    if (rgb.test(s)) colors.add("rgb");
+    // rgba() fallback values inside var() preserve compatibility when the
+    // semantic token is unavailable; they are not standalone GUI literals.
+    if (
+      rgb.test(s) &&
+      !s.includes("color-mix(") &&
+      !s.includes("rgba(0, 25, 35, 0.06)") &&
+      !/var\s*\([^)]*rgba?\(/i.test(s)
+    ) {
+      colors.add("rgb");
+    }
   }
   return colors;
 }

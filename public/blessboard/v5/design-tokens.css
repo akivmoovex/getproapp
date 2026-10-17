@@ -109,6 +109,7 @@
   --bb-color-success: var(--color-success-text);
   --bb-color-success-bg: var(--color-success-bg);
   --bb-color-success-border: var(--color-success-border);
+  --bb-color-danger: var(--color-danger-text);
   --bb-color-error: var(--color-danger-text);
   --bb-color-error-bg: var(--color-danger-bg);
   --bb-color-error-border: var(--color-danger-border);

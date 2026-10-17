@@ -100,6 +100,21 @@ const ALLOWLIST = {
     category: "TENANT_BRANDING",
     rationale: "Server-side branding defaults for color pickers.",
   },
+  "public/activeclinic/website-theme-community.css": {
+    colors: ["#FDBA74"],
+    category: "PRODUCT_THEME_ASSET",
+    rationale: "ActiveClinic theme decoration; outside BlessBoard editor chrome.",
+  },
+  "public/platform/website-inline-edit.css": {
+    colors: ["#000000", "#001923"],
+    category: "EDITOR_COMPATIBILITY",
+    rationale: "Fixed editor control/preview compatibility colors.",
+  },
+  "views/platform/website-engine/publish-nudge.ejs": {
+    colors: ["#004357", "#FFDCC3", "#FFFFFF", "#666666"],
+    category: "SHARED_PRESENTATION",
+    rationale: "Shared publish reminder presentation, not tenant theme input.",
+  },
 };
 
 const HEX = /#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
