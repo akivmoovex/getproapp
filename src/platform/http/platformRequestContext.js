@@ -10,7 +10,10 @@ const {
   hasAuthoritativeDeploymentProfile,
   getDeploymentProfile,
 } = require("../config/deploymentProfiles");
-const { resolveRequestCanonicalSite } = require("./resolveRequestHostname");
+const {
+  resolveRequestCanonicalSite,
+  resolveRequestCanonicalSiteAsync,
+} = require("./resolveRequestHostname");
 const { getProduct } = require("../config/productRegistry");
 
 class UnknownPlatformHostError extends Error {
@@ -72,6 +75,9 @@ function assertHostnameMatchesEnvironment(runtimeEnvironment, site) {
  */
 function assertHostnameAllowedForDeployment(profile, site) {
   if (!profile || profile.productSelection !== "hostname") {
+    return { ok: true };
+  }
+  if (site && site.dynamic === true) {
     return { ok: true };
   }
   const apex = Array.isArray(profile.apexDomains) ? profile.apexDomains : [];
@@ -144,7 +150,11 @@ function resolvePlatformRequestContext(input) {
   let hostname = opts.hostname || null;
   let hostSource = "explicit";
 
-  if (opts.req) {
+  if (opts.resolvedSite) {
+    site = opts.resolvedSite;
+    hostname = site.hostname;
+    hostSource = opts.hostSource || "request";
+  } else if (opts.req) {
     const resolved = resolveRequestCanonicalSite(opts.req, {
       env,
       allowTestHostOverride: opts.allowTestHostOverride,
@@ -309,12 +319,29 @@ function resolvePlatformRequestContext(input) {
  */
 function createLoadPlatformRequestContext(opts) {
   const options = opts || {};
-  return function loadPlatformRequestContext(req, res, next) {
-    const result = resolvePlatformRequestContext({
-      env: options.env || process.env,
-      req,
-      allowTestHostOverride: options.allowTestHostOverride,
-    });
+  return async function loadPlatformRequestContext(req, res, next) {
+    const env = options.env || process.env;
+    const pool = typeof options.getPool === "function" ? options.getPool() : null;
+    const deployment = resolveDeploymentConfiguration(env);
+    const resolvedSite = pool
+      ? await resolveRequestCanonicalSiteAsync(req, {
+          env,
+          db: pool,
+          expectedDeploymentCode: deployment.code,
+          allowTestHostOverride: options.allowTestHostOverride,
+        })
+      : null;
+    const result = resolvedSite && resolvedSite.ok
+      ? resolvePlatformRequestContext({
+          env,
+          resolvedSite: resolvedSite.site,
+          hostSource: resolvedSite.source,
+        })
+      : resolvePlatformRequestContext({
+          env,
+          req,
+          allowTestHostOverride: options.allowTestHostOverride,
+        });
     if (!result.ok) {
       if (typeof options.onUnknown === "function") {
         return options.onUnknown(req, res, result);

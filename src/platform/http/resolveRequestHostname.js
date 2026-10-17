@@ -18,6 +18,7 @@ const {
   normalizeCanonicalHostname,
   resolveCanonicalHost,
 } = require("../config/canonicalHostRegistry");
+const { resolveHostname: resolveDatabaseHostname } = require("../services/resolveHostname");
 
 /**
  * Resolve the public hostname for this request using existing proxy rules,
@@ -72,7 +73,47 @@ function resolveRequestCanonicalSite(req, opts) {
   };
 }
 
+async function resolveRequestCanonicalSiteAsync(req, opts = {}) {
+  const hostResult = resolveRequestHostname(req, opts);
+  if (!hostResult.ok) return hostResult;
+  const staticResult = resolveCanonicalHost(hostResult.hostname);
+  if (staticResult.ok) {
+    return { ok: true, hostname: hostResult.hostname, source: hostResult.source, site: staticResult.site };
+  }
+  if (staticResult.code !== "UNKNOWN_PLATFORM_HOST" || !opts.db) return staticResult;
+  let dynamic;
+  try {
+    dynamic = await resolveDatabaseHostname(opts.db, hostResult.hostname, {
+      expectedDeploymentCode: opts.expectedDeploymentCode,
+    });
+  } catch {
+    return staticResult;
+  }
+  if (!dynamic || dynamic.type !== "resolved_tenant" || !dynamic.product || !dynamic.organization) {
+    return staticResult;
+  }
+  return {
+    ok: true,
+    hostname: hostResult.hostname,
+    source: hostResult.source,
+    site: {
+      hostname: hostResult.hostname,
+      productKey: dynamic.product.key,
+      environment: dynamic.organization.dataEnvironment,
+      platformLine: "v8",
+      brand: dynamic.product.displayName,
+      siteType: "tenant",
+      sessionCookieName: null,
+      csrfCookieName: null,
+      redirectTargetOrigin: null,
+      status: "canonical",
+      dynamic: true,
+    },
+  };
+}
+
 module.exports = {
   resolveRequestHostname,
   resolveRequestCanonicalSite,
+  resolveRequestCanonicalSiteAsync,
 };

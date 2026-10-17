@@ -712,6 +712,7 @@ function createMoovexPlatformRuntimeApp(options) {
   app.use(
     createLoadPlatformRequestContext({
       env,
+      getPool: opts.getPool || getPgPool,
       allowTestHostOverride: String(env.NODE_ENV || "").toLowerCase() !== "production",
     })
   );
