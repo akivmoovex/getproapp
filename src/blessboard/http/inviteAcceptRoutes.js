@@ -20,6 +20,8 @@ const {
   validateCsrf,
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
+const { acceptMemberPortalInvitation } = require("../services/memberPortalInvitationService");
+const rateLimit = require("express-rate-limit");
 
 function renderView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -37,6 +39,12 @@ function createInviteAcceptRouter(deps) {
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
   const router = express.Router();
+  const memberInvitationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
 
   function ensureCsrf(req, res) {
     const token = issueCsrfToken(env);
@@ -106,6 +114,34 @@ function createInviteAcceptRouter(deps) {
       displayName: result.user && result.user.displayName,
     });
     return res.status(200).type("html").send(html);
+  });
+
+  router.get("/member/invite/accept", async (req, res) => {
+    const token = String((req.query && req.query.token) || "");
+    const csrfToken = ensureCsrf(req, res);
+    return res.status(200).type("html").send(`<!doctype html><html><body>
+      <h1>Activate member portal</h1>
+      <form method="post" action="/member/invite/accept">
+      <input type="hidden" name="${CSRF_FIELD}" value="${csrfToken}">
+      <input type="hidden" name="token" value="${token.replace(/"/g, "&quot;")}">
+      <label>Password <input type="password" name="password" minlength="10" required></label>
+      <button type="submit">Activate</button></form></body></html>`);
+  });
+
+  router.post("/member/invite/accept", memberInvitationLimiter, async (req, res) => {
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const result = await acceptMemberPortalInvitation(getPool(), {
+      token: req.body && req.body.token,
+      password: req.body && req.body.password,
+      authenticatedUserId:
+        req.v5Session && req.v5Session.authenticated && req.v5Session.session
+          ? req.v5Session.session.userId
+          : null,
+    });
+    if (!result.ok) return res.status(400).type("text").send("This member invitation is not valid.");
+    return res.redirect(303, "/login?next=%2Fmember%2Fdashboard");
   });
 
   return router;

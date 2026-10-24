@@ -66,6 +66,15 @@ async function runTenantUnifiedLoginPost(pool, req, res, opts) {
 
   clearAllChurchRoleSessions(req);
   applyRoleSession(req, result.primaryRole);
+  const requested = String(opts.nextPath || "").trim();
+  if (
+    requested === "/member/dashboard" ||
+    requested.startsWith("/member/") &&
+      !requested.includes("://") &&
+      !requested.startsWith("//")
+  ) {
+    return res.redirect(303, requested);
+  }
   return res.redirect(303, destinationForRole(result.primaryRole));
 }
 

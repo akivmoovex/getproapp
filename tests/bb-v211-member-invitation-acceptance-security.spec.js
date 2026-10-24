@@ -75,13 +75,14 @@ test("member invitation acceptance enforces recipient ownership and one-time use
     expect(token).toBeTruthy();
     const url = `/member-invite/accept?token=${encodeURIComponent(token)}`;
     const observed = [];
+    const localOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || "4175"}`;
     function monitor(page) {
       page.on("request", (request) => {
-        if (!request.url().startsWith("http://127.0.0.1:4175")) {
+        if (!request.url().startsWith(localOrigin)) {
           observed.push({ url: request.url(), referrer: request.headers().referer || "" });
         }
       });
-      return page.route("**/*", async (route) => route.request().url().startsWith("http://127.0.0.1:4175")
+      return page.route("**/*", async (route) => route.request().url().startsWith(localOrigin)
         ? route.continue() : route.abort());
     }
     async function login(page, account) {

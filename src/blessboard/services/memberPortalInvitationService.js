@@ -74,7 +74,6 @@ async function loadEligibleMember(client, input) {
   if (String(row.organization_id) !== String(input.organizationId)) return result("foreign_organization");
   if (row.portal_access_status === "active") return result("already_active");
   if (!row.email_normalized) return result("contact_required");
-  if (!row.user_id) return result("identity_required");
   if (row.user_id) {
     const conflict = await client.query(
       `SELECT id FROM blessboard.users
@@ -152,6 +151,119 @@ async function resendMemberPortalInvitation(db, input) {
   });
 }
 
+async function acceptMemberPortalInvitation(db, input) {
+  const tokenHash = hashSessionToken(String(input.token || ""));
+  const password = String(input.password || "");
+  if (!tokenHash || password.length < 10) return result("invalid_input");
+  const bcrypt = require("bcryptjs");
+  const passwordHash = await bcrypt.hash(password, 12);
+  try {
+    return await withTransaction(db, async (client) => {
+      const found = await client.query(
+        `SELECT * FROM blessboard.member_portal_invitations
+          WHERE token_hash=$1 AND purpose=$2 AND status='pending' FOR UPDATE`,
+        [tokenHash, PURPOSE]
+      );
+      const invite = found.rows[0];
+      if (!invite) return result("invalid_token");
+      if (new Date(invite.expires_at).getTime() <= Date.now()) {
+        await client.query(
+          `UPDATE blessboard.member_portal_invitations SET status='expired',updated_at=now() WHERE id=$1`,
+          [invite.id]
+        );
+        return result("expired");
+      }
+      const member = (await client.query(
+        `SELECT * FROM blessboard.members WHERE id=$1 AND church_id=$2 FOR UPDATE`,
+        [invite.member_id, invite.church_id]
+      )).rows[0];
+      if (!member || member.user_id || member.portal_access_status === "blocked") return result("member_unavailable");
+      const existing = member.email_normalized
+        ? await require("../repositories/blessBoardAuthRepository").findUserByEmail(client, member.email_normalized)
+        : null;
+      if (existing && existing.status !== "active") return result("identity_unavailable");
+      if (existing && String(input.authenticatedUserId || "") !== String(existing.id)) {
+        return result("authenticated_ownership_required");
+      }
+      const user = existing || await require("../repositories/blessBoardAuthRepository").insertUser(client, {
+        emailNormalized: member.email_normalized,
+        emailDisplay: member.email_display,
+        phoneNormalized: member.phone_normalized,
+        phoneDisplay: member.phone_display,
+        passwordHash,
+        status: "active",
+        displayName: [member.first_name, member.last_name].filter(Boolean).join(" "),
+      });
+      await client.query(
+        `UPDATE blessboard.members SET user_id=$1,updated_at=now() WHERE id=$2`,
+        [user.id, member.id]
+      );
+      await client.query(
+        `UPDATE blessboard.member_portal_invitations
+            SET status='accepted',accepted_user_id=$1,accepted_at=now(),updated_at=now()
+          WHERE id=$2`,
+        [user.id, invite.id]
+      );
+      await recordBlessBoardAudit(client, {
+        organizationId: invite.organization_id,
+        churchId: invite.church_id,
+        branchId: invite.branch_id,
+        actorUserId: user.id,
+        actionKey: "member_portal_invitation.accepted",
+        entityType: "member_portal_invitation",
+        entityId: invite.id,
+        outcome: "success",
+        metadata: { purpose: PURPOSE, member_id: invite.member_id },
+      });
+      return { ok: true, code: "accepted", userId: user.id, memberId: member.id };
+    });
+  } catch (_err) {
+    return result("failed");
+  }
+}
+
+async function approveMemberMembership(db, input) {
+  return withTransaction(db, async (client) => {
+    const auth = await checkAuthority(client, input, input.branchId);
+    if (!auth) return result("unauthorized");
+    try {
+      const member = (await client.query(
+        `SELECT id,church_id,status,portal_access_status FROM blessboard.members
+          WHERE id=$1 AND church_id=$2 FOR UPDATE`,
+        [input.memberId, input.churchId]
+      )).rows[0];
+      if (!member) return result("not_found");
+      if (!["pending", "active"].includes(member.status)) return result("invalid_state");
+      const membership = (await client.query(
+        `SELECT id,membership_status FROM blessboard.member_branch_memberships
+          WHERE member_id=$1 AND branch_id=$2 FOR UPDATE`,
+        [input.memberId, input.branchId]
+      )).rows[0];
+      if (!membership) return result("branch_membership_missing");
+      await client.query(
+        `UPDATE blessboard.members SET status='active',updated_at=now() WHERE id=$1`,
+        [input.memberId]
+      );
+      await client.query(
+        `UPDATE blessboard.member_branch_memberships
+            SET membership_status='active',joined_at=COALESCE(joined_at,now()),updated_at=now()
+          WHERE id=$1`,
+        [membership.id]
+      );
+      await recordBlessBoardAudit(client, {
+        organizationId: input.organizationId, churchId: input.churchId,
+        branchId: input.branchId, actorUserId: input.actorUserId,
+        actionKey: "member.approved", entityType: "member",
+        entityId: input.memberId, outcome: "success",
+        metadata: { membership_status: "active" },
+      });
+      return { ok: true, code: "approved" };
+    } catch (error) {
+      throw error;
+    }
+  });
+}
+
 async function mutateInvitation(db, input, operation, nested) {
   const execute = async (client) => {
     const row = await client.query(`
@@ -191,4 +303,6 @@ module.exports = {
   issueMemberPortalInvitation,
   revokeMemberPortalInvitation,
   resendMemberPortalInvitation,
+  acceptMemberPortalInvitation,
+  approveMemberMembership,
 };

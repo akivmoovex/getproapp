@@ -46,13 +46,14 @@ test("HQ invitation issue, resend and refresh protect one-time secrets", async (
     `, [memberId, context.branch_id]);
 
     const externalRequests = [];
+    const localOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || "4175"}`;
     page.on("request", (request) => {
-      if (!request.url().startsWith("http://127.0.0.1:4175")) {
+      if (!request.url().startsWith(localOrigin)) {
         externalRequests.push({ url: request.url(), referrer: request.headers().referer || "" });
       }
     });
     await page.route("**/*", async (route) => {
-      if (route.request().url().startsWith("http://127.0.0.1:4175")) return route.continue();
+      if (route.request().url().startsWith(localOrigin)) return route.continue();
       return route.abort();
     });
 

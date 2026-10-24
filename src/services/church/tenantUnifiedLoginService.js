@@ -240,7 +240,7 @@ function validateLocalRole(candidate, org, branch) {
           "Your member access is currently suspended. Please contact the church office for assistance.",
       };
     }
-    if (row.status !== "pending" && row.status !== "verified") {
+    if (row.status !== "pending" && row.status !== "verified" && row.status !== "active") {
       return {
         ok: false,
         reason: "status",
@@ -251,7 +251,7 @@ function validateLocalRole(candidate, org, branch) {
       ok: true,
       role: {
         type: "member",
-        status: row.status,
+        status: row.status === "active" ? "verified" : row.status,
         label: ROLE_LABELS.member,
         destination: destinationForRole({ type: "member", status: row.status }),
         sessionPayload: {

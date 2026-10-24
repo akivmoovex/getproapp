@@ -214,6 +214,7 @@ function registerChurchAuthRoutes(router) {
       branchAuthLocals(req, {
         error: null,
         identifier: "",
+        nextPath: normalizeMemberNext(req.query && req.query.next),
       })
     );
   });
@@ -228,12 +229,14 @@ function registerChurchAuthRoutes(router) {
       return await runTenantUnifiedLoginPost(pool, req, res, {
         identifier,
         password,
+        nextPath: normalizeMemberNext(req.body && req.body.next),
         renderError: (message) =>
           res.status(400).render(
             "church/auth/login",
             branchAuthLocals(req, {
               error: message,
               identifier,
+              nextPath: normalizeMemberNext(req.body && req.body.next),
               loginFormAction: "/login",
             })
           ),
@@ -490,6 +493,14 @@ function registerChurchAuthRoutes(router) {
       })
     );
   });
+}
+
+function normalizeMemberNext(value) {
+  const next = String(value || "").trim();
+  if (next === "/member/dashboard" || (next.startsWith("/member/") && !next.includes("://") && !next.startsWith("//"))) {
+    return next;
+  }
+  return "";
 }
 
 registerChurchAuthRoutes.requireChurchBranchHost = requireChurchBranchHost;

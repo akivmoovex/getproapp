@@ -29,6 +29,9 @@
       <% } %>
 
       <form class="church-auth-form" method="post" action="<%= typeof loginFormAction !== 'undefined' && loginFormAction ? loginFormAction : '/login' %>" data-unified-login="1">
+        <% if (typeof nextPath !== 'undefined' && nextPath) { %>
+        <input type="hidden" name="next" value="<%= nextPath %>"/>
+        <% } %>
         <div class="church-auth-field">
           <label class="church-auth-label" for="identifier">Email or Phone Number</label>
           <div class="church-auth-input-wrap">

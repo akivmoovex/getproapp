@@ -42,6 +42,10 @@ const {
   FLOW_CODE,
 } = require("../services/blessBoardStaffAddMemberFlowService");
 const { authorize: authorizeBlessBoard } = require("../services/blessBoardRbacAuthorizationService");
+const {
+  issueMemberPortalInvitation,
+  approveMemberMembership,
+} = require("../services/memberPortalInvitationService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -557,6 +561,46 @@ function createHqMembersAdminRouter(deps) {
     return renderHqFlowView(req, res, scope, "member-created", {
       member: loaded.member, productIdentifier: loaded.member.memberNumber || null,
     });
+  });
+
+  router.post("/hq/members/:id/invitation", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope || !csrfOk(req, res)) return;
+    const id = String(req.params.id || "").trim();
+    if (!UUID_RE.test(id)) return sendControlled(req, res, 404, "Member not found.");
+    const result = await issueMemberPortalInvitation(getPool(), {
+      memberId: id,
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      purpose: "MEMBER_PORTAL_ACTIVATION",
+      branchId: scope.tenant && scope.tenant.primaryBranch ? scope.tenant.primaryBranch.id : null,
+    });
+    if (!result.ok) return sendControlled(req, res, result.code === "member_not_invitable" ? 409 : 400, "Member invitation could not be issued.");
+    const origin = `${req.protocol}://${req.get("host")}`;
+    return res.status(200).json({
+      ok: true,
+      invitationId: result.invitationId,
+      expiresAt: result.expiresAt,
+      invitationUrl: `${origin}/member/invite/accept?token=${encodeURIComponent(result.rawToken)}`,
+    });
+  });
+
+  router.post("/hq/members/:id/approve", rejectApex, gateHqCreate, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope || !csrfOk(req, res)) return;
+    const id = String(req.params.id || "").trim();
+    if (!UUID_RE.test(id)) return sendControlled(req, res, 404, "Member not found.");
+    const branchId = scope.tenant && scope.tenant.primaryBranch ? scope.tenant.primaryBranch.id : null;
+    const result = await approveMemberMembership(getPool(), {
+      memberId: id,
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      branchId,
+    });
+    if (!result.ok) return sendControlled(req, res, result.code === "unauthorized" ? 403 : 400, "Member approval could not be completed.");
+    return res.status(303).set("Location", `/hq/members/${id}`).send("");
   });
 
   router.get("/hq/members/:id", rejectApex, gateHq, async (req, res) => {
