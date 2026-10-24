@@ -71,4 +71,12 @@ describe("ActiveClinic editor client contracts", () => {
     assert.equal(wantsV5PrivateNoStore("/clinics/demo/patient"), true);
     assert.equal(wantsV5PrivateNoStore("/"), false);
   });
+
+  it("preserves escaped multiline website text in public and editor displays", () => {
+    const partial = read("views/activeclinic/partials/website-editable-field.ejs");
+    const css = read("public/platform/website-inline-edit.css");
+    assert.match(partial, /class="ac-website-editable__value"><%= value %>/);
+    assert.match(css, /\.ac-website-editable__value[\s\S]*white-space:\s*pre-line/);
+    assert.doesNotMatch(partial, /<%-\s*value\s*%>/);
+  });
 });

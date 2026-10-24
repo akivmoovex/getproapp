@@ -172,6 +172,7 @@ body.gp-website-preview-open .gp-website-chrome-stack {
 .ac-website-editable__value {
   min-width: 0;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 .ac-website-editable__editor {
   display: grid;

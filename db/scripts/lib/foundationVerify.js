@@ -233,6 +233,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "member_journey_handovers",
     "member_notification_preferences",
     "member_notifications",
+    "member_portal_invitations",
     "member_registration_review_events",
     "member_registrations",
     "member_request_status_history",
