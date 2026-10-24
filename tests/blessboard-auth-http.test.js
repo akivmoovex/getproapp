@@ -393,14 +393,14 @@ describe("blessboard v5 auth http", () => {
     assert.equal(account.headers.location, "/login");
   });
 
-  it("foundation health and unavailable routes remain stable", async () => {
+  it("foundation health and unauthenticated member access remain stable", async () => {
     requireDb();
     assert.equal((await request(app).get("/healthz")).status, 200);
     assert.equal((await request(app).get("/").set("Host", "blessboard.org")).status, 200);
     assert.equal(
       (await request(app).get("/member").set("Host", "blessboard.org").set("Accept", "text/plain"))
         .status,
-      UNAVAILABLE_STATUS
+      401
     );
     await loginFlow("admin@example.org", "bad");
     assert.equal((await request(app).get("/healthz")).status, 200);
