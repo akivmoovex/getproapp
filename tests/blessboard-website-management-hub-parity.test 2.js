@@ -367,7 +367,8 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /Customize branding/);
     assert.match(page.text, /Build your website/);
     assert.match(page.text, /data-bb-build-website="1"/);
-    assert.doesNotMatch(page.text, /data-bb-website-action="branding"/);
+    assert.match(page.text, /data-bb-website-action="branding"/);
+    assert.equal(hrefForWebsiteAction(page.text, "branding"), expectedBranding);
     const buildHref = hrefForWebsiteAction(page.text, "edit");
     assert.equal(
       buildHref,
@@ -432,7 +433,8 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       .set("Host", church.host)
       .set("Cookie", cookie);
     assert.equal(hub.status, 200, hub.text && hub.text.slice(0, 300));
-    assert.doesNotMatch(hub.text, /data-bb-website-action="branding"/);
+    assert.match(hub.text, /data-bb-website-action="branding"/);
+    assert.equal(hrefForWebsiteAction(hub.text, "branding"), "/hq/website/branding");
 
     const brandingPage = await request(makeBbApp())
       .get("/hq/website/branding")
