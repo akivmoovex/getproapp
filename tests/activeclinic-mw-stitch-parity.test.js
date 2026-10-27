@@ -96,11 +96,11 @@ describe("activeclinic MW Stitch parity chrome", () => {
 
   it("tenant home uses Stitch section labels without fake listing badges", () => {
     const home = read("views/activeclinic/tenant/home.ejs");
-    assert.match(home, /Our Services/);
-    assert.match(home, /Lead Physicians/);
-    assert.match(home, /Opening Hours/);
-    assert.match(home, /Visit Our Campus/);
-    assert.match(home, /Book Appointment/);
+    assert.match(home, /html\.servicesHeading/);
+    assert.match(home, /html\.doctorsHeading/);
+    assert.match(home, /html\.visitHeading/);
+    assert.match(home, /html\.location/);
+    assert.match(home, /html\.conversion/);
     assert.doesNotMatch(home, /Listed on ActiveClinic/);
     assert.doesNotMatch(home, /Emergency/);
 
