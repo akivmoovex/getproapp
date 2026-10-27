@@ -13,6 +13,13 @@
     : (hubWebsite.liveAvailable ? 'No draft changes' : 'Not published yet');
   var websitePlanKey = typeof planKey !== 'undefined' && planKey ? String(planKey) : '';
   var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+  var contentEditBase = actions.editWebsite || '';
+  function contentEditPage(pageKey) {
+    if (!contentEditBase) return '';
+    var queryIndex = contentEditBase.indexOf('?');
+    var pathname = queryIndex >= 0 ? contentEditBase.slice(0, queryIndex) : contentEditBase;
+    return pathname.replace(/\/+$/, '') + '/' + pageKey + '?website_edit=1&website_mode=draft';
+  }
 %>
 <section
   class="bb-wm"
@@ -219,6 +226,14 @@
   <div class="bb-wm-hub-quick" data-bb-website-actions="1">
     <p class="bb-wm-hub-quick__label">Quick actions</p>
     <div class="bb-wm-actions bb-wm-hub-quick__row">
+      <% if (hubWebsite.canEdit && contentEditBase) { %>
+      <a class="bb-wm-btn" href="<%= contentEditPage('sermons') %>" data-bb-website-action="add-sermon">
+        Add Sermon
+      </a>
+      <a class="bb-wm-btn" href="<%= contentEditPage('events') %>" data-bb-website-action="add-event">
+        Add Event
+      </a>
+      <% } %>
       <% if (actions.viewLive) { %>
       <a class="bb-wm-btn" href="<%= actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">View live</a>
       <% } %>
