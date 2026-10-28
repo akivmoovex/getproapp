@@ -21,7 +21,7 @@
     <% } else { %>
       <h1>Accept member invitation</h1>
       <p>Confirm to activate your existing BlessBoard member access.</p>
-      <form method="post" action="/member-invite/accept" autocomplete="off">
+      <form method="post" action="/invite/accept" autocomplete="off">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
         <input type="hidden" name="token" value="<%= token %>">
         <button type="submit">Accept invitation</button>

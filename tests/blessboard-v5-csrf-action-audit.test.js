@@ -104,6 +104,14 @@ function expandHandlerWindow(window, fnBodies) {
     }
     if (fnBodies.has(name)) called.add(name);
   }
+  // Route registrations commonly pass a named handler directly, e.g.
+  // router.post(`${prefix}/:id/invitation`, postAction). That handler is
+  // referenced without a call expression in the registration window.
+  const handlerRefRe = /,\s*([A-Za-z_][\w]*)\s*\)?\s*;?/g;
+  let hr;
+  while ((hr = handlerRefRe.exec(window))) {
+    if (fnBodies.has(hr[1])) called.add(hr[1]);
+  }
   for (const name of called) {
     expanded += `\n/* handler:${name} */\n${fnBodies.get(name)}`;
   }
