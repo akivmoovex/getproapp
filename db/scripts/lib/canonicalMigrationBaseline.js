@@ -45,8 +45,8 @@ const CANONICAL_CEILING = Object.freeze({
     filename: "047_approval_request_foundation.sql",
   }),
   blessboard: Object.freeze({
-    version: "128",
-    filename: "128_canonical_hq_website_scope_ref.sql",
+    version: "130",
+    filename: "130_member_portal_invitations.sql",
   }),
   activeclinic: Object.freeze({
     version: "042",

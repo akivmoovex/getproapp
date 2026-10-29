@@ -36,6 +36,7 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const {
   verifyCanonicalFreshSchema,
   assertCeilingMatchesDisk,
+  assertRequiredMigrationsOnDisk,
   CANONICAL_CEILING,
 } = require("../db/scripts/lib/canonicalMigrationBaseline");
 const {
@@ -323,8 +324,9 @@ describe("V203 QA06 critical platform — canonical bootstrap contract", () => {
   it("canonical migration ceiling matches disk (no drift)", () => {
     const mismatches = assertCeilingMatchesDisk();
     assert.deepEqual(mismatches, []);
+    assert.deepEqual(assertRequiredMigrationsOnDisk(), []);
     assert.equal(CANONICAL_CEILING.platform.version, "047");
-    assert.equal(CANONICAL_CEILING.blessboard.version, "128");
+    assert.equal(CANONICAL_CEILING.blessboard.version, "130");
     assert.equal(CANONICAL_CEILING.activeclinic.version, "042");
   });
 });
