@@ -40,6 +40,13 @@
   border-color: var(--ac-mw-primary);
   color: var(--color-text-inverse);
 }
+
+.ac-mw-hub-activity a[data-ac-website-action="history-link"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+}
 .ac-mw-head {
   display: flex;
   flex-wrap: wrap;

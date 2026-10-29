@@ -443,7 +443,7 @@ describe("blessboard hq shell", () => {
     assert.match(list.text, /data-bb-branch-filter="1"/);
     assert.match(list.text, /data-bb-branch-selector-panel="1"/);
     assert.match(list.text, /data-bb-component="branch-selector"/);
-    assert.match(list.text, /data-bb-count="active-branches">2</);
+    assert.match(list.text, /data-bb-count="all-branches">2</);
     assert.match(list.text, /href="\/hq\/branches\/campus-north"/);
     assert.match(list.text, /Headquarters A/);
     assert.match(list.text, /Campus North/);
@@ -471,8 +471,8 @@ describe("blessboard hq shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie)
       .redirects(0);
-    assert.equal(open.status, 303);
-    assert.equal(open.headers.location, "/branch-admin");
+    assert.equal(open.status, 200);
+    assert.match(open.text, /data-bb-page="branches"/);
 
     const shell = await request(app)
       .get("/branch-admin")
@@ -513,7 +513,7 @@ describe("blessboard hq shell", () => {
       .set("Cookie", cookie);
     assert.equal(noResults.status, 200);
     assert.match(noResults.text, /data-bb-empty="branch-no-results"/);
-    assert.match(noResults.text, /data-bb-count="active-branches">2</);
+    assert.match(noResults.text, /data-bb-count="all-branches">2</);
     assert.doesNotMatch(noResults.text, /data-bb-branch-list="1"/);
     assert.doesNotMatch(noResults.text, /data-bb-branch-key="campus-north"/);
   });
