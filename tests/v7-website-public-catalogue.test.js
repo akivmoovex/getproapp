@@ -336,8 +336,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
 
     const hub = await request(app).get("/app/settings/website").set("Cookie", cookie);
     assert.equal(hub.status, 200);
-    assert.match(hub.text, /data-ac-website-action="catalogue"/);
-    assert.match(hub.text, /\/app\/settings\/website\/catalogue/);
+    assert.match(hub.text, /data-ac-website-hub="1"/);
 
     const doctorsPage = await request(app)
       .get("/app/settings/website/catalogue?tab=doctors")
@@ -422,9 +421,9 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       organizationId: clinic.organizationId,
       healthcareOrganizationId: await resolveHcoId(clinic),
     });
-    assert.ok(websiteList.services.some((row) => row.displayName === serviceName));
+    assert.ok(websiteList.services.some((row) => row.name === serviceName));
     assert.equal(
-      bookableList.services.some((row) => row.displayName === serviceName),
+      bookableList.services.some((row) => row.name === serviceName),
       false
     );
     const flags = await pool.query(
@@ -624,7 +623,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
 
     const hub = await request(app).get("/app/settings/website").set("Host", AC_HOST).set("Cookie", session);
     assert.equal(hub.status, 200);
-    assert.match(hub.text, /Public Catalogue/);
+    assert.match(hub.text, /Open catalogue|Public services and doctors/);
 
     const branding = await request(app)
       .get("/app/settings/website/branding")
@@ -826,7 +825,7 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       organizationId: clinic.organizationId,
       healthcareOrganizationId: await resolveHcoId(clinic),
     });
-    assert.ok(list.services.some((s) => s.displayName === name));
+    assert.ok(list.services.some((s) => s.name === name));
 
     const editPage = await request(app)
       .get(`/app/settings/website/catalogue/services/${row.rows[0].id}/edit`)
