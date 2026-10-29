@@ -708,6 +708,14 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           title: req.body && req.body.title,
           heading: req.body && req.body.heading,
           body: req.body && req.body.body,
+          image:
+            req.body && (req.body.imageMediaId || req.body.imageSrc)
+              ? {
+                  mediaId: req.body.imageMediaId || null,
+                  src: req.body.imageSrc || null,
+                  alt: req.body.imageAlt || "",
+                }
+              : undefined,
           buttonLabel: req.body && req.body.buttonLabel,
           buttonUrl: req.body && req.body.buttonUrl,
           visible: boolValue(req.body && req.body.visible, false),

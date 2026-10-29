@@ -21,6 +21,22 @@
       Body
       <textarea name="body" maxlength="4000"><%= section.body || '' %></textarea>
     </label>
+    <% if (section.type === 'image' || section.type === 'image_text') { %>
+    <fieldset class="ac-mw-fieldset" data-ac-section-image-fields="1">
+      <legend>Image</legend>
+      <p class="ac-mw-muted">Choose an authorized image from the Media Library.</p>
+      <input type="hidden" name="imageMediaId" value="<%= section.image && section.image.mediaId || '' %>"/>
+      <label>
+        Image URL
+        <input type="url" name="imageSrc" value="<%= section.image && section.image.src || '' %>" placeholder="/clinics/<%= cms.clinicKey || '' %>/website/media/..."/>
+      </label>
+      <label>
+        Alt text
+        <input type="text" name="imageAlt" maxlength="240" value="<%= section.image && section.image.alt || '' %>" required/>
+      </label>
+      <a class="ac-mw-btn" href="/app/settings/website/media?select=1">Open Media Library</a>
+    </fieldset>
+    <% } %>
     <label>
       Button label
       <input type="text" name="buttonLabel" maxlength="60" value="<%= section.button_label || '' %>"/>

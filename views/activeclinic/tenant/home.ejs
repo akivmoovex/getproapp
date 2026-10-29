@@ -89,5 +89,30 @@
   </section>
   <% } %>
 
+  <% homeSections.forEach(function (section) {
+    if (!section || section.visible === false) return;
+    var image = section.image && typeof section.image === 'object' ? section.image : null;
+    var sectionClass = section.type === 'image_text' ? ' ac-stitch-section--image-text' : '';
+  %>
+  <section
+    class="ac-stitch-section ac-tenant-cms-section<%= sectionClass %>"
+    data-ac-home-section="<%= section.type %>"
+    data-ac-cms-section-id="<%= section.id %>"
+    data-ac-cms-section-type="<%= section.type %>"
+  >
+    <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
+    <% if ((section.type === 'image' || section.type === 'image_text') && image && image.src) { %>
+      <img src="<%= image.src %>" alt="<%= image.alt || '' %>" data-ac-cms-section-image="1"/>
+    <% } %>
+    <% if (section.body) { %><div data-ac-cms-section-body="1"><%= section.body %></div><% } %>
+    <% if (section.button_label && section.button_url) { %>
+      <a href="<%= section.button_url %>"><%= section.button_label %></a>
+    <% } %>
+    <% if (editingHome) { %>
+      <a href="/app/settings/website/sections/<%= section.id %>" data-ac-cms-section-edit="1">Edit section</a>
+    <% } %>
+  </section>
+  <% }); %>
+
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_home', librarySkipTypes: ['faq'] }) %>
 </article>

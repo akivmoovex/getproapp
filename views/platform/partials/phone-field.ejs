@@ -152,6 +152,8 @@
         autocomplete="<%= isIdentifierMode ? 'username' : 'tel-national' %>"
         value="<%= nationalVal %>"
         placeholder="<%= placeholderText %>"
+        pattern="[0-9][0-9 ()-]{6,24}"
+        title="Enter a valid phone number"
         <%= isRequired && !isDisabled ? 'required' : '' %>
         <%= isDisabled ? 'disabled' : '' %>
         <% if (isRequired && !isDisabled) { %>aria-required="true"<% } %>

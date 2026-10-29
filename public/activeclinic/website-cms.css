@@ -41,6 +41,17 @@
   color: var(--color-text-inverse);
 }
 
+.ac-tenant-cms-section {
+  display: block;
+  margin-block: 1.5rem;
+}
+
+.ac-tenant-cms-section img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .ac-mw-hub-activity a[data-ac-website-action="history-link"] {
   display: inline-flex;
   align-items: center;
