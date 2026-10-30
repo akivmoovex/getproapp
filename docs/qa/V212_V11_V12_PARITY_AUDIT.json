@@ -1,0 +1,72 @@
+{
+  "originV11": "fbe7bea01f4e8d107b519b52b68e42e5b1c55686",
+  "originV12": "7a6c68d948f16d1f282531fbf7f6716dccfeefde",
+  "mergeBase": "fbe7bea01f4e8d107b519b52b68e42e5b1c55686",
+  "filesDifferent": 9,
+  "commitsV11ToV12": [
+    "7a6c68d9 V2.12: initialize About pages and release notes",
+    "a0ac0938 V2.12: initialize development branch from V2.11"
+  ],
+  "commitsV12ToV11": [],
+  "uncommittedV12Changes": [],
+  "differences": [
+    {
+      "paths": ["src/platform/build/applicationBuildInfo.js"],
+      "classification": "A",
+      "finding": "Canonical product version changes from 2.11 to 2.12; build SHA remains independently resolved."
+    },
+    {
+      "paths": ["src/platform/release-notes/releaseNotesCatalog.js"],
+      "classification": "A",
+      "finding": "V2.11 and V2.12 catalog entries are added while historical entries remain."
+    },
+    {
+      "paths": [
+        "views/activeclinic/public/about.ejs",
+        "views/blessboard/v5/apex/about.ejs"
+      ],
+      "classification": "A",
+      "finding": "About display and development-baseline copy updated to V2.12."
+    },
+    {
+      "paths": [
+        "tests/about-v11-platform.test.js",
+        "tests/v211-version-legacy-route-contract.test.js",
+        "tests/v8-about-version-2.test.js",
+        "tests/v212-version-initialization.test.js"
+      ],
+      "classification": "A",
+      "finding": "Version contracts updated and V2.12 initialization tests added."
+    },
+    {
+      "paths": ["docs/releases/V212_DEVELOPMENT_BASELINE.md"],
+      "classification": "A",
+      "finding": "V2.12 development handoff documentation added."
+    }
+  ],
+  "runtimeParity": {
+    "sourceBaseline": "V12 is based directly on V11",
+    "missingFunctionalityInDiff": [],
+    "untested": [
+      "member approvals",
+      "invitations",
+      "UUID account binding",
+      "migration 130",
+      "website sections",
+      "announcements",
+      "events",
+      "sermons",
+      "tenant isolation",
+      "Admin Console workflows"
+    ]
+  },
+  "classificationCounts": {
+    "A": 9,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "E": 0,
+    "F": 0
+  },
+  "qualification": "SOURCE_PARITY_ONLY_RUNTIME_UNTESTED"
+}

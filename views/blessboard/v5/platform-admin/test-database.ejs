@@ -1,0 +1,74 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var m = databaseManagement || {};
+  var db = m.database || {};
+  var eligibility = m.eligibility || {};
+%>
+<section class="bb-pa-settings" data-bb-test-database-management="1" aria-label="Test Database Management">
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin/settings">Settings</a>
+    <span aria-hidden="true">/</span>
+    <span>Test Database Management</span>
+  </nav>
+  <header class="bb-pa-page-head">
+    <div>
+      <p class="bb-pa-settings__eyebrow">Testing only · read-only foundation</p>
+      <h1 class="bb-pa-page-head__title">Test Database Management</h1>
+      <p class="bb-pa-lede">Inspect the dedicated testing database and preview impact. Reset execution is disabled.</p>
+    </div>
+  </header>
+
+  <section class="bb-pa-panel" aria-labelledby="test-db-status">
+    <h2 id="test-db-status" class="bb-pa-section-title">Verified environment</h2>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div><dt>Deployment environment</dt><dd><%= m.deploymentEnvironment || '—' %></dd></div>
+      <div><dt>Database identity</dt><dd><code class="bb-pa-key"><%= db.identityKey || '—' %></code></dd></div>
+      <div><dt>Database environment</dt><dd><%= db.environmentCode || '—' %></dd></div>
+      <div><dt>Connection status</dt><dd><%= db.connection || '—' %></dd></div>
+      <div><dt>Database name</dt><dd><%= db.databaseName || '—' %></dd></div>
+      <div><dt>Host fingerprint</dt><dd><%= db.hostFingerprint || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="test-db-counts">
+    <h2 id="test-db-counts" class="bb-pa-section-title">Application tenant counts</h2>
+    <ul class="bb-pa-hint-list">
+      <% (m.tenantCounts || []).forEach(function (item) { %>
+      <li><strong><%= item.environment %></strong>: <%= item.count %></li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="test-db-inventory">
+    <h2 id="test-db-inventory" class="bb-pa-section-title">Table inventory</h2>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <% (m.inventory || []).forEach(function (item) { %>
+      <div><dt><%= item.table %> · <%= item.owner %></dt><dd><%= item.recordCount == null ? 'not present' : item.recordCount %></dd></div>
+      <% }) %>
+    </dl>
+    <p class="bb-pa-hint">Protected schema and migration tables are inspection-only.</p>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="test-db-migrations">
+    <h2 id="test-db-migrations" class="bb-pa-section-title">Migration status</h2>
+    <p><%= (m.migrations && m.migrations.appliedCount) || 0 %> migrations applied.
+      Latest: <%= (m.migrations && m.migrations.latestAppliedAt) || '—' %></p>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="test-db-preview">
+    <h2 id="test-db-preview" class="bb-pa-section-title">Read-only reset preview</h2>
+    <p>Preview endpoints perform database reads only. There is no reset execution control in this phase.</p>
+    <ul class="bb-pa-hint-list">
+      <% (m.scopes || []).forEach(function (scope) { %>
+      <li><a class="bb-pa-link" href="/admin/settings/test-database/preview?scope=<%= encodeURIComponent(scope) %>"><%= scope %></a></li>
+      <% }) %>
+    </ul>
+    <p data-bb-test-db-eligibility="1"><strong>Eligibility:</strong> <%= eligibility.eligible ? 'eligible for preview only' : 'blocked' %></p>
+    <% if ((eligibility.missingPrerequisites || []).length) { %>
+    <ul class="bb-pa-hint-list">
+      <% eligibility.missingPrerequisites.forEach(function (item) { %><li><%= item %></li><% }) %>
+    </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

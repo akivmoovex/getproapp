@@ -150,6 +150,10 @@ const {
   STATUS: SETTINGS_STATUS,
 } = require("../services/getPlatformAdminSettingsView");
 const {
+  inspectTestDatabase,
+  previewTestDatabaseReset,
+} = require("../services/testDatabaseManagementService");
+const {
   listPlatformRoleCatalogue,
   getPlatformRoleDetail,
   STATUS: ROLES_STATUS,
@@ -2962,6 +2966,57 @@ function createPlatformAdminRouter(deps) {
     );
     return res.status(200).type("html").send(html);
   });
+
+  router.get(
+    "/admin/settings/test-database",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const model = await inspectTestDatabase(getPool(), { env });
+      if (!model.ok) {
+        return sendControlled(
+          req,
+          res,
+          model.status === "forbidden" || model.status === "identity_blocked" ? 403 : 503,
+          "Test database management is unavailable."
+        );
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/test-database.ejs",
+        shellLocals(req, res, "settings", {
+          pageTitle: "Test Database Management",
+          databaseManagement: model,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/settings/test-database/preview",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const preview = await previewTestDatabaseReset(getPool(), {
+        env,
+        scope: req.query.scope,
+        actorUserId: getUserIdForAudit(req),
+        sessionSecret: env.PLATFORM_SESSION_SECRET || env.SESSION_SECRET || "",
+      });
+      if (!preview.ok) {
+        return res.status(
+          preview.status === "forbidden" || preview.status === "identity_blocked" ? 403 : 503
+        ).json({
+          ok: false,
+          blocked: true,
+          reason: preview.reason || "preview_unavailable",
+        });
+      }
+      return res.status(200).json(preview);
+    }
+  );
 
   router.get(
     "/admin/roles",
