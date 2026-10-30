@@ -32,7 +32,7 @@ describe("V2.11 BlessBoard version and legacy-route contracts", () => {
     const buildInfo = read("src/platform/build/applicationBuildInfo.js");
     assert.match(server, /app\.get\("\/login"/);
     assert.match(server, /app\.post\("\/login"/);
-    assert.match(buildInfo, /V2\.11/);
+    assert.match(buildInfo, /V2\.12/);
   });
 
   it("does not introduce legacy branding or bypass markers", () => {

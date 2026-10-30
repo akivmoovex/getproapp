@@ -40,6 +40,8 @@ const VERSION_ORDER = Object.freeze([
   "2.05",
   "2.07",
   "2.10",
+  "2.11",
+  "2.12",
 ]);
 
 /**
@@ -3448,6 +3450,88 @@ const VERSIONS = Object.freeze([
     qaChecklist: [],
     testCases: [],
     sources: ["src/platform/build/applicationBuildInfo.js"],
+  }),
+  Object.freeze({
+    version: "2.12",
+    summary:
+      "V2.12 is the new development baseline created from the frozen V2.11 source. Planned work and inherited QA debt are recorded without claiming new feature completion.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V12. Not released or deployed.",
+    qaVerification:
+      "NOT TESTED — V2.12 development baseline only; inherited V2.11 hosted acceptance gaps remain open.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.12",
+      "V2.12 development status is clearly identified",
+      "V2.11 release history and unresolved QA findings remain available",
+    ],
+    pendingDevelopment: [
+      "BlessBoard authenticated E2E fixture coverage",
+      "ActiveClinic authenticated editor and synthetic patient workflows",
+      "Testing metadata and hosted acceptance closure",
+    ],
+    knownIssues: [
+      "Inherited V2.11 QA debt remains unresolved; no V2.12 fix is claimed.",
+    ],
+    documentationGaps: [
+      "QA244 administrator identity recovery and hosted fixture evidence remain pending.",
+    ],
+    architectureWork: {
+      title: "V2.12 development foundation",
+      body:
+        "Created from the frozen V2.11 source baseline on branch V12. Feature development has not started.",
+      items: [
+        "V2.11 source freeze carried forward",
+        "Current About version initialized to 2.12",
+        "Inherited hosted QA blockers documented",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "BlessBoard V2.12 development baseline; planned work is not yet started.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Planned",
+            items: Object.freeze([
+              "Complete authenticated fixture-based E2E coverage.",
+              "Close inherited hosted testing metadata and QA evidence gaps.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "ActiveClinic V2.12 development baseline; planned work is not yet started.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Planned",
+            items: Object.freeze([
+              "Complete authorized editor and synthetic patient workflow coverage.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared V2.12 development baseline on branch V12.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Status",
+            items: Object.freeze([
+              "No new shared runtime feature is claimed as complete.",
+              "Security and migration gates remain required for every release candidate.",
+            ]),
+          }),
+        ]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: [
+      "docs/releases/V211_FINAL_SOURCE_FREEZE_AND_V212_HANDOFF.md",
+      "docs/releases/V212_DEVELOPMENT_BASELINE.md",
+      "src/platform/build/applicationBuildInfo.js",
+    ],
   }),
 ]);
 
