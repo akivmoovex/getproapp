@@ -207,7 +207,7 @@ const { PRODUCT, resolvePostLoginPath } = require("../onboarding");
 const { sha256Hex } = require("../session/sessionToken");
 
 const UNAVAILABLE_STATUS = 503;
-const UNAVAILABLE_MESSAGE = "This page is not yet available in BlessBoard V5.";
+const UNAVAILABLE_MESSAGE = "This BlessBoard route is unavailable.";
 
 /** @deprecated Prefer resolveApexHosts() — org-only default for unprofiled tests. */
 const APEX_HOSTS = new Set(["blessboard.org", "www.blessboard.org"]);
