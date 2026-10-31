@@ -64,21 +64,36 @@
       e.preventDefault();
       return;
     }
-    var btn = form.querySelector('button[type="submit"]:not([disabled])');
+    var btn =
+      e.submitter ||
+      form.querySelector('button[type="submit"]:not([disabled])');
     if (!btn) return;
-    form.setAttribute("aria-busy", "true");
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
     var loading = btn.getAttribute("data-loading") || "Please wait…";
     if (!btn.getAttribute("data-original-label")) {
       btn.setAttribute("data-original-label", btn.textContent.trim());
     }
-    btn.textContent = loading;
+    if (btn.name && btn.value) {
+      var submittedState = document.createElement("input");
+      submittedState.type = "hidden";
+      submittedState.name = btn.name;
+      submittedState.value = btn.value;
+      submittedState.setAttribute("data-ac-submitted-control", "1");
+      form.appendChild(submittedState);
+    }
     var live =
       document.getElementById("ac-form-busy-live") ||
       document.getElementById("ac-public-live") ||
       document.getElementById("ac-patient-live");
+    form.setAttribute("aria-busy", "true");
+    btn.setAttribute("aria-busy", "true");
     if (live) live.textContent = loading;
+    // Preserve the clicked submit button's name/value (wizard steps depend on
+    // it) during native form serialization. Disabling it synchronously here
+    // causes Chromium to omit `step` from the submitted payload.
+    window.setTimeout(function () {
+      btn.disabled = true;
+      btn.textContent = loading;
+    }, 0);
   });
 
   if (document.readyState === "loading") {
