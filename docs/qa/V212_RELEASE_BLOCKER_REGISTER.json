@@ -1,0 +1,80 @@
+{
+  "version": "2.12",
+  "status": "BLOCKED",
+  "blockers": [
+    {
+      "id": "AC-AUTH-WORKFLOW",
+      "product": "ActiveClinic",
+      "severity": "low",
+      "classification": "CLOSED_QA_GATE",
+      "summary": "AC-01 approved staff-created portal activation passes independently of public booking; AC-04 cross-tenant acceptance is preserved as passed.",
+      "evidence": "V212_AC_PORTAL_ACTIVATION_ACCEPTANCE.md; V212_AC_FINAL_ACCEPTANCE.md.",
+      "severityBasis": "The approved independent portal workflow and AC-04 evidence are complete.",
+      "closure": "No AC-01/AC-04 closure action remains in this scope.",
+      "responsible": "ActiveClinic QA/provisioning",
+      "releaseImpact": "No remaining release impact."
+    },
+    {
+      "id": "AC-05-PLATFORM-ADMIN",
+      "product": "ActiveClinic",
+      "severity": "critical",
+      "classification": "SECURITY_VERIFICATION_GAP",
+      "summary": "Super Admin, read-only preview, unauthenticated denial, and safety refusal pass; lower-privilege negative authorization remains blocked.",
+      "evidence": "V212_AC_ADMIN_NEGATIVE_RBAC.md; final-ac05-runtime-authorized-scope.tap.",
+      "severityBasis": "Administrative authorization cannot be released without authenticated positive and negative evidence.",
+      "closure": "Establish a supported lower-privilege shared-platform principal and execute page/API denial checks.",
+      "responsible": "ActiveClinic platform QA",
+      "releaseImpact": "Blocks ActiveClinic and overall V2.12 qualification."
+    },
+    {
+      "id": "BB-MEMBER-SCHEMA-EXPECTATION",
+      "product": "BlessBoard",
+      "severity": "medium",
+      "classification": "TEST_MAINTENANCE",
+      "summary": "Member schema test expects date_of_birth to be absent although migration 120 includes it identically in V11 and V12.",
+      "evidence": "V212_BB_PHASE5E_PRIORITY_QA.md; V212_BB_MEMBER_SCHEMA_DIAGNOSIS.md.",
+      "severityBasis": "Test expectation is stale; no V12 regression or exposed unauthorized field was confirmed.",
+      "closure": "Review and update the test contract in a separate approved change.",
+      "responsible": "BlessBoard test maintenance",
+      "releaseImpact": "Does not establish a product defect; leaves BB evidence maintenance open."
+    },
+    {
+      "id": "BB-HISTORICAL-COVERAGE",
+      "product": "BlessBoard",
+      "severity": "high",
+      "classification": "QA_INFRASTRUCTURE",
+      "summary": "The historical 749 applicable blocked files lack individual execution evidence; aggregate 78 failures are not identifiable case evidence.",
+      "evidence": "V212_BB_TEST_EXECUTION_MANIFEST.json; V212_BB_FAILURE_ROOT_CAUSE_REGISTER.json.",
+      "severityBasis": "Coverage gaps cannot be counted as passes or used to claim complete release readiness.",
+      "closure": "Execute bounded, fixture-backed coverage in a separately authorized QA run.",
+      "responsible": "BlessBoard QA",
+      "releaseImpact": "Blocks complete BB release qualification."
+    },
+    {
+      "id": "SHARED-HOSTED-VERIFICATION",
+      "product": "Shared",
+      "severity": "medium",
+      "classification": "DEPLOYMENT_VERIFICATION",
+      "summary": "Hosted/production verification remains unresolved; isolated Chromium also records optional external-font DNS warnings.",
+      "evidence": "V212_AC_FINAL_ACCEPTANCE.md and existing QA environment notes.",
+      "severityBasis": "Deployment identity and production behavior were not verified in this read-only audit.",
+      "closure": "Run approved testing-deployment verification with matching release SHA; do not use production credentials.",
+      "responsible": "Release/deployment QA",
+      "releaseImpact": "Blocks shared-platform and overall release readiness."
+    },
+    {
+      "id": "BB-BRANCH-EVENTS-FIXTURE",
+      "product": "BlessBoard",
+      "severity": "low",
+      "classification": "NONBLOCKING",
+      "summary": "Phase 5H fixture correction passes 3/3 on the isolated disposable database on two repeat runs; it is integrated in the working tree but remains uncommitted.",
+      "evidence": "V212_FINAL_BB_BRANCH_QA.md; phase5h-first.tap; phase5h-second.tap.",
+      "closure": "Review and commit the approved test-only correction if desired; no automatic commit performed.",
+      "responsible": "BlessBoard QA maintenance",
+      "releaseImpact": "No focused-scenario blocker after QA correction."
+    }
+  ],
+  "confirmedProductDefects": [],
+  "productionMutation": false,
+  "databaseResetExecuted": false
+}

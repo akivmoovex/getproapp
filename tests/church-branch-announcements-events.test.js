@@ -105,11 +105,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `ae_a_${suffix}`,
       name: `AE Branch A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `ae_b_${suffix}`,
       name: `AE Branch B ${suffix}`,
     });
     const passwordHash = await bcrypt.hash("testpass123", 12);

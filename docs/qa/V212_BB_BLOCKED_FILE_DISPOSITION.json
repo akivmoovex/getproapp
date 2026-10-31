@@ -1,0 +1,24 @@
+{
+  "application": "BlessBoard",
+  "reportedBlockedFiles": 749,
+  "classifiedFiles": 0,
+  "evidenceStatus": "INVENTORY_ONLY",
+  "priorityCounts": {
+    "P0": "unknown",
+    "P1": "unknown",
+    "P2": "unknown"
+  },
+  "dispositionCounts": {
+    "independentlyRunnable": "unknown",
+    "fixtureDependent": "unknown",
+    "harnessDependent": "unknown",
+    "securityCritical": "unknown"
+  },
+  "missingEvidence": [
+    "No 749-file blocked subset was recorded.",
+    "No per-file domain or priority mapping was recorded.",
+    "No per-file prerequisite or execution result was recorded."
+  ],
+  "releaseDisposition": "BLOCKING_QA_EVIDENCE",
+  "note": "The 1049-file inventory is present, but the evidence does not identify which 749 files were blocked. Per-file dispositions cannot be invented."
+}

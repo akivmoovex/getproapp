@@ -1,0 +1,98 @@
+{
+  "application": "BlessBoard",
+  "reportedFailures": 78,
+  "identifiedFailures": 0,
+  "classifiedFailures": 78,
+  "evidenceStatus": "AGGREGATED_ONLY",
+  "classificationCounts": {
+    "DATABASE_CONFIGURATION": 0,
+    "TEST_HARNESS": 0,
+    "MISSING_FIXTURE": 0,
+    "AUTH_RBAC": 0,
+    "TENANT_ISOLATION": 0,
+    "APPLICATION_DEFECT": 0,
+    "PRE_EXISTING_FAILURE": 0,
+    "UNKNOWN": 78
+  },
+  "aggregateEvidence": {
+    "source": "BB_V212_FAILURE_REGISTER.json",
+    "suite": "blessboard-public-pages/branch-list/home-service-times/tenant-routing",
+    "reason": "Required per-suite database/tenant fixture and harness prerequisites were not established",
+    "caseNames": "not recorded",
+    "stackTraces": "not recorded",
+    "baselineComparison": "not recorded"
+  },
+  "disposition": "BLOCKING_QA_EVIDENCE",
+  "confirmedProductDefects": 0,
+  "newEvidence": {
+    "batchId": "phase5d-batch-001",
+    "cases": 114,
+    "pass": 114,
+    "fail": 0,
+    "rawLog": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5d-batch-001.tap"
+  },
+  "focusedFollowup": {
+    "memberSchemaFailure": {
+      "classification": "STALE_TEST_EXPECTATION",
+      "v12Regression": false,
+      "evidence": "blessboard migration 120 is byte-identical in V11 and V12"
+    },
+    "branchAnnouncementsEventsSkip": {
+      "classification": "DATABASE_ENVIRONMENT",
+      "status": "BLOCKED",
+      "evidence": "Phase 5F recovered the database configuration; Phase 5G supported canonical bootstrap created public.tenants and eight canonical rows. The focused rerun now reaches the second branch fixture and fails with 23505 duplicate host_slug main."
+    }
+  },
+  "phase5gCanonicalSchemaDiagnosis": {
+    "database": "getpro_v212_bb_test_ephemeral_202610310942",
+    "bootstrap": "scripts/apply-test-db-schema.js",
+    "publicTenantsExists": true,
+    "canonicalTenantRows": 8,
+    "classification": "INCOMPLETE_SUPPORTED_DATABASE_BOOTSTRAP_THEN_TEST_FIXTURE_CONTRACT",
+    "v12Regression": false,
+    "rerun": {
+      "cases": 3,
+      "pass": 2,
+      "fail": 1,
+      "skip": 0,
+      "exitCode": 1,
+      "firstFailure": "tests/church-branch-announcements-events.test.js:110 branchesRepo.createBranch",
+      "error": "23505 duplicate key value violates unique constraint idx_church_branches_host_slug_unique",
+      "rawTap": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5g-branch-announcements-events.tap",
+      "stderr": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5g-branch-announcements-events.stderr"
+    },
+    "v11Comparison": "db/postgres/072_church_branch_host_slug.sql and affected test are byte-identical in V11 and V12",
+    "confirmedProductDefects": 0,
+    "remainingDisposition": "RESOLVED_BY_SUPPORTED_BOOTSTRAP_AND_TEST_FIXTURE_CORRECTION"
+  },
+  "phase5hBranchFixtureRecovery": {
+    "index": "idx_church_branches_host_slug_unique",
+    "indexScope": "global lower(trim(host_slug)) for nonblank values",
+    "existingHostSlugMain": {
+      "organizationId": 1,
+      "organizationSlug": "ae_a_ae_1793432580830_hx93ms",
+      "branchSlug": "main",
+      "hostSlug": "main"
+    },
+    "attemptedFixture": "Two branches both supplied slug main and omitted host_slug; repository defaulted host_slug to slug",
+    "rootCause": "TEST_FIXTURE_CONTRACT",
+    "v11Comparison": "Affected test and migration 072 are byte-identical in V11 and V12",
+    "remedy": "Test-only explicit run-scoped host_slug values ae_a_${suffix} and ae_b_${suffix}",
+    "firstRerun": {
+      "database": "getpro_v212_bb_test_ephemeral_202610310942",
+      "pass": 3,
+      "fail": 0,
+      "skip": 0,
+      "rawTap": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5h-first-rerun-patched.tap"
+    },
+    "secondRerun": {
+      "database": "getpro_v212_bb_test_ephemeral_202610310943",
+      "pass": 3,
+      "fail": 0,
+      "skip": 0,
+      "rawTap": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5h-second-rerun.tap"
+    },
+    "confirmedProductDefects": 0
+  },
+  "note": "The source evidence contains one aggregate count of 78 and cannot support per-test classification without fabrication. The new passing batch does not reclassify the aggregate failures."
+}

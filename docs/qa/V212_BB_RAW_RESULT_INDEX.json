@@ -1,0 +1,49 @@
+{
+  "application": "BlessBoard",
+  "batches": [
+    {
+      "batchId": "phase5d-batch-001",
+      "result": "PASS",
+      "exitCode": 0,
+      "tests": 114,
+      "pass": 114,
+      "fail": 0,
+      "skip": 0,
+      "started": "2026-10-31",
+      "rawStdout": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5d-batch-001.tap",
+      "rawStderr": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5d-batch-001.tap.stderr",
+      "reporterValidation": "PASS"
+    },
+    {
+      "batchId": "phase5d-reporter-json-probe",
+      "result": "BLOCKED",
+      "exitCode": 7,
+      "tests": 0,
+      "error": "Node interpreted --test-reporter=json as an unavailable reporter package named json.",
+      "rawStdout": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5d-batch-001.json",
+      "rawStderr": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5d-batch-001.stderr"
+    },
+    {
+      "batchId": "phase5e-p0",
+      "result": "PASS",
+      "exitCode": 0,
+      "tests": 82,
+      "pass": 82,
+      "fail": 0,
+      "skip": 0,
+      "rawStdout": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5e-p0.tap",
+      "rawStderr": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5e-p0.stderr"
+    },
+    {
+      "batchId": "phase5e-p1",
+      "result": "FAIL_WITH_SKIP",
+      "exitCode": 1,
+      "tests": 167,
+      "pass": 165,
+      "fail": 1,
+      "skip": 1,
+      "rawStdout": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5e-p1.tap",
+      "rawStderr": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw/phase5e-p1.stderr"
+    }
+  ]
+}

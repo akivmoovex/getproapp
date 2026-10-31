@@ -1,0 +1,65 @@
+{
+  "application": "BlessBoard",
+  "version": "2.12",
+  "branch": "V12",
+  "head": "07f4fcdfd9f7ab22585b59e3cbebf608b4569687",
+  "inventory": {
+    "discoveredFiles": 1049,
+    "bbRelevant": 507,
+    "sharedPlatform": 242,
+    "applicable": 749
+  },
+  "reporter": {
+    "tap": "validated",
+    "jsonAttempt": "failed: Node interpreted json as an unavailable reporter package",
+    "rawDirectory": "/private/tmp/v212-bb-qa-output/docs/qa/v212/bb/raw"
+  },
+  "batches": [
+    {
+      "id": "phase5d-batch-001",
+      "files": [
+        "tests/blessboard-design-system.test.js",
+        "tests/blessboard-v5-a11y-structure.test.js",
+        "tests/blessboard-v5-route-link-audit.test.js"
+      ],
+      "category": "BB_RELEVANT",
+      "priority": "P0/P1 structural",
+      "command": "NODE_ENV=test node --test --test-reporter=tap tests/blessboard-design-system.test.js tests/blessboard-v5-a11y-structure.test.js tests/blessboard-v5-route-link-audit.test.js",
+      "status": "PASS",
+      "cases": 114,
+      "pass": 114,
+      "fail": 0,
+      "skip": 0,
+      "blocked": 0,
+      "rawLog": "raw/phase5d-batch-001.tap"
+    },
+    {
+      "id": "phase5e-p0",
+      "category": "BB_RELEVANT",
+      "priority": "P0",
+      "status": "PASS",
+      "filesExecuted": 7,
+      "cases": 82,
+      "pass": 82,
+      "fail": 0,
+      "skip": 0,
+      "blocked": 0,
+      "rawLog": "raw/phase5e-p0.tap"
+    },
+    {
+      "id": "phase5e-p1",
+      "category": "BB_RELEVANT",
+      "priority": "P1",
+      "status": "FAIL_WITH_SKIP",
+      "filesExecuted": 12,
+      "cases": 167,
+      "pass": 165,
+      "fail": 1,
+      "skip": 1,
+      "blocked": 0,
+      "rawLog": "raw/phase5e-p1.tap"
+    }
+  ],
+  "unexecutedApplicableFiles": 746,
+  "note": "The prior 749 blocked subset was not per-file recorded; this manifest records only files actually executed."
+}
