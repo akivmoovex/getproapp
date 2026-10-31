@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "V212 read-only reset impact manifest",
+  "type": "object",
+  "required": [
+    "dryRun",
+    "scope",
+    "affectedTenants",
+    "records",
+    "sessions",
+    "tokens",
+    "jobs",
+    "media",
+    "protectedRecords",
+    "destructiveActions",
+    "databaseMutation"
+  ],
+  "properties": {
+    "dryRun": { "const": true },
+    "scope": { "type": "string" },
+    "affectedTenants": { "type": "array" },
+    "records": { "type": "array" },
+    "sessions": { "type": "array" },
+    "tokens": { "type": "array" },
+    "jobs": { "type": "array" },
+    "media": { "type": "array" },
+    "protectedRecords": { "type": "array" },
+    "destructiveActions": { "const": [] },
+    "databaseMutation": { "const": false },
+    "sessionInvalidation": { "const": false },
+    "jobCancellation": { "const": false },
+    "mediaDeletion": { "const": false }
+  }
+}

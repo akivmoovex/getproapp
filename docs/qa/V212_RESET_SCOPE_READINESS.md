@@ -11,3 +11,5 @@
 No scope is READY. No scope is UNSUPPORTED; each remains technically possible only after its safety prerequisites are proven. No destructive endpoint or operation was added.
 
 Phase 3F adds operational blockers: coordinated session/token invalidation, queue admission/drain/reconciliation, and an approved external-media contract. The default media policy is preserve. No sessions, jobs, or media were mutated.
+
+Phase 3G adds an executable read-only impact analyzer and synthetic simulations. The analyzer fail-closes on non-testing environments, non-allowlisted database identity, non-Super-Admin actors, invalid scopes, and malformed tenant IDs. Shared administrators, jobs, and media are classified `BLOCKED`; no simulation invalidates, cancels, deletes, or rewrites anything. Simulations reduce classification uncertainty but do not make any scope READY.

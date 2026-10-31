@@ -1,0 +1,27 @@
+{
+  "phase": "3G",
+  "status": "PASS_WITH_BLOCKERS",
+  "analyzer": "src/platform/services/resetImpactAnalyzer.js",
+  "simulations": {
+    "sessions": "PASS: affected tenant sessions classified; shared administrator protected",
+    "jobs": "PASS: affected and unaffected jobs classified; shared jobs BLOCKED",
+    "media": "PASS: tenant media classified; shared/external references preserved and BLOCKED",
+    "crossTenant": "PASS: selected scope excludes unrelated tenant records",
+    "securityGates": "PASS: environment, identity, role, scope and identifier checks fail closed",
+    "mutation": "PASS: databaseMutation=false; no invalidation, cancellation or deletion"
+  },
+  "scopeReadiness": {
+    "selected_blessboard_tenant": "BLOCKED",
+    "selected_activeclinic_tenant": "BLOCKED",
+    "all_blessboard_test_tenants": "BLOCKED",
+    "all_activeclinic_test_tenants": "BLOCKED",
+    "full_test_database": "BLOCKED"
+  },
+  "blockers": [
+    "Real session invalidation contract is not executed",
+    "Queue drain/reconciliation is not implemented",
+    "External media cleanup contract is not approved"
+  ],
+  "resetExecuted": false,
+  "productionMutation": false
+}
