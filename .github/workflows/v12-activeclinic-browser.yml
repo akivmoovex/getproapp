@@ -1,0 +1,64 @@
+name: V12 ActiveClinic Browser CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activeclinic-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: getpro_ac_browser_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d getpro_ac_browser_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DEPLOYMENT_ENV: testing
+      GETPRO_TEST_DB: "1"
+      GETPRO_PG_SSL: "off"
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_ac_browser_ci
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_ac_browser_ci
+      PLAYWRIGHT_PORT: "4175"
+      BASE_DOMAIN: activeclinic.local.test
+      PLAYWRIGHT_TENANT_HOST: activeclinic.local.test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Prepare disposable schema
+        run: npm run test:db:schema
+      - name: Run real ActiveClinic browser smoke suite
+        run: npx playwright test tests/browser/v210-ac-smoke.spec.js --config=playwright.config.cjs
+      - name: Report current AC smoke coverage
+        if: always()
+        run: |
+          echo "Historical target: 14 checks"
+          echo "Current executable suite: tests/browser/v210-ac-smoke.spec.js (3 tests)"
+          echo "AC07 patient self-service coverage is not claimed."
+      - name: Upload sanitized Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v12-activeclinic-playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
