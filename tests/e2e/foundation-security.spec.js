@@ -299,8 +299,11 @@ test.describe("Foundation release security E2E", () => {
     await failPage.goto("/branch/login");
     await failPage.locator("#identifier").fill(shared.baEmail);
     await failPage.locator("#password").fill(oldPassword);
-    await failPage.getByRole("button", { name: /^Login$/i }).click();
-    await expect(failPage).toHaveURL(/\/branch\/login/);
+    const oldPasswordSubmit = failPage.getByRole("button", { name: /^(Sign in|Login)$/i });
+    await expect(oldPasswordSubmit).toHaveCount(1);
+    await expect(oldPasswordSubmit).toBeVisible();
+    await oldPasswordSubmit.click();
+    await expect(failPage).toHaveURL(/\/login$/);
     await expect(failPage.getByRole("alert").or(failPage.locator(".church-alert--error"))).toBeVisible();
     await failLogin.close();
 
