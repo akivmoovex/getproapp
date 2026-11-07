@@ -72,6 +72,13 @@ jobs:
           sudo cp "$CERT_DIR/ca.crt" /usr/local/share/ca-certificates/getpro-bb-ci.crt
           sudo update-ca-certificates
           sudo setcap 'cap_net_bind_service=+ep' "$(readlink -f "$(command -v node)")"
+          mkdir -p "$HOME/.pki/nssdb"
+          if [ ! -f "$HOME/.pki/nssdb/cert9.db" ]; then
+            certutil -d "sql:$HOME/.pki/nssdb" -N --empty-password
+          fi
+          certutil -d "sql:$HOME/.pki/nssdb" -D -n "GetPro CI BlessBoard Test CA" 2>/dev/null || true
+          certutil -d "sql:$HOME/.pki/nssdb" -A -n "GetPro CI BlessBoard Test CA" \
+            -t "C,," -i "$CERT_DIR/ca.crt"
           echo "BB_TLS_CERT_DIR=$CERT_DIR" >> "$GITHUB_ENV"
       - name: Run real BlessBoard foundation browser suite
         run: npx playwright test --config=playwright.foundation.config.cjs
