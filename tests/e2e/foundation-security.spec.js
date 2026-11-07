@@ -83,7 +83,10 @@ test.describe("Foundation release security E2E", () => {
     await expect(
       page.locator("dt", { hasText: "Members (verified / total)" }).locator("xpath=following-sibling::dd[1]")
     ).toHaveText("0 / 0");
-    await expect(page.getByText(new RegExp(`${slug}\\.local\\.test`))).toBeVisible();
+    const expectedHost = `${slug}.local.test`;
+    const hostname = page.getByText(expectedHost, { exact: true });
+    await expect(hostname).toHaveCount(1);
+    await expect(hostname).toBeVisible();
 
     const orgMatch = page.url().match(/\/admin\/churches\/(\d+)/);
     expect(orgMatch).toBeTruthy();
