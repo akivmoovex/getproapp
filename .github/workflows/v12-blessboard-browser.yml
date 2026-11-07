@@ -1,0 +1,62 @@
+name: V12 BlessBoard Browser CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blessboard-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: getpro_bb_browser_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d getpro_bb_browser_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DEPLOYMENT_ENV: testing
+      EXPECTED_DATABASE_ENV: testing
+      GETPRO_TEST_DB: "1"
+      GETPRO_PG_SSL: "off"
+      E2E_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_bb_browser_ci
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_bb_browser_ci
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_bb_browser_ci
+      PLAYWRIGHT_E2E_PORT: "4185"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run real BlessBoard foundation browser suite
+        run: npx playwright test --config=playwright.foundation.config.cjs
+      - name: Report current BB smoke coverage
+        if: always()
+        run: |
+          echo "Historical target: 16 checks"
+          echo "Current executable foundation suite: tests/e2e/foundation-security.spec.js"
+          echo "Coverage is reported by Playwright; no placeholder checks are added."
+      - name: Upload sanitized Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v12-blessboard-playwright-report
+          path: |
+            playwright-report/foundation-e2e
+            test-results/foundation-e2e
+          if-no-files-found: ignore
+          retention-days: 7
