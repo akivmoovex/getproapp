@@ -27,9 +27,15 @@ function event(name, details = {}) {
   fs.appendFileSync(reportPath, `${new Date().toISOString()} ${name} ${JSON.stringify(details)}\n`);
 }
 
-function probe(pathname, label) {
-  const request = http.get({ host, port, path: pathname, timeout: 1500 }, (response) => {
-    event(label, { status: response.statusCode });
+function probe(pathname, label, headers = {}) {
+  const request = http.get({ host, port, path: pathname, headers, timeout: 1500 }, (response) => {
+    event(label, {
+      status: response.statusCode,
+      location: response.headers.location || "UNSET",
+      hostRequested: headers.host || "UNSET",
+      forwardedHost: headers["x-forwarded-host"] || "UNSET",
+      forwardedProto: headers["x-forwarded-proto"] || "UNSET",
+    });
     response.resume();
   });
   request.on("error", (error) => event(label, { error: error.code || error.message }));
@@ -54,6 +60,12 @@ child.on("exit", (code, signal) => {
 const interval = setInterval(() => {
   event("PROCESS_STATE", { pid: child.pid, alive: exitInfo === null });
   probe("/healthz", "HEALTH_PROBE");
+  probe("/admin/login", "ADMIN_DIRECT_PROBE");
+  probe("/admin/login", "ADMIN_HOST_PROBE", {
+    Host: process.env.E2E_PLATFORM_HOST || "admin.local.test",
+    "X-Forwarded-Host": process.env.E2E_PLATFORM_HOST || "admin.local.test",
+    "X-Forwarded-Proto": "http",
+  });
 }, 1000);
 
 function shutdown(signal) {

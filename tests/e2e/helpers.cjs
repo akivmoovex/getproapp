@@ -19,6 +19,16 @@ function lifecycleEvent(name, details = {}) {
   );
 }
 
+function safeNavigationUrl(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.search = parsed.search ? "?[REDACTED]" : "";
+    return parsed.toString();
+  } catch {
+    return "[invalid-url]";
+  }
+}
+
 function tenantHost(hostSlug) {
   return `${hostSlug}.${DOMAIN}`;
 }
@@ -47,6 +57,25 @@ async function fillAndSubmit(page, submitName) {
 }
 
 async function platformLogin(page, username, password) {
+  page.on("request", (request) => {
+    lifecycleEvent("BROWSER_REQUEST", {
+      method: request.method(),
+      url: safeNavigationUrl(request.url()),
+    });
+  });
+  page.on("response", (response) => {
+    lifecycleEvent("BROWSER_RESPONSE", {
+      status: response.status(),
+      url: safeNavigationUrl(response.url()),
+      location: response.headers().location || "UNSET",
+    });
+  });
+  page.on("requestfailed", (request) => {
+    lifecycleEvent("BROWSER_REQUEST_FAILED", {
+      url: safeNavigationUrl(request.url()),
+      failure: request.failure()?.errorText || "UNSET",
+    });
+  });
   lifecycleEvent("T10_ADMIN_LOGIN_NAVIGATION", { url: "/admin/login" });
   await page.goto("/admin/login");
   await page.locator("#username").fill(username);
