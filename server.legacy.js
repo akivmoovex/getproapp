@@ -186,6 +186,28 @@ const sessionStore = new PgSession({
   tableName: "session",
   createTableIfMissing: true,
 });
+const sessionDiagnosticsEnabled =
+  process.env.GETPRO_SESSION_DIAGNOSTICS === "1" && process.env.DEPLOYMENT_ENV === "testing";
+if (sessionDiagnosticsEnabled) {
+  for (const method of ["get", "set"]) {
+    const original = sessionStore[method].bind(sessionStore);
+    sessionStore[method] = (sid, data, callback) => {
+      const cb = method === "get" ? data : callback;
+      const wrapped = (err, value) => {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[session-diagnostic] store-${method}-${err ? "error" : "complete"} ${JSON.stringify({
+            errorCode: err && err.code ? err.code : null,
+            valuePresent: method === "get" ? Boolean(value) : null,
+          })}`
+        );
+        if (method === "get") return cb(err, value);
+        return cb(err);
+      };
+      return method === "get" ? original(sid, wrapped) : original(sid, data, wrapped);
+    };
+  }
+}
 // eslint-disable-next-line no-console
 console.log("[getpro] Session store: PostgreSQL (public.session via connect-pg-simple)");
 
@@ -205,6 +227,24 @@ app.use(
     },
   })
 );
+if (sessionDiagnosticsEnabled) {
+  app.use((req, res, next) => {
+    if (req.path === "/branch/account" || req.path === "/branch/account/change-password") {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[session-diagnostic] request-session-state ${JSON.stringify({
+          method: req.method,
+          path: req.path,
+          sessionPresent: Boolean(req.session),
+          authPayloadPresent: Boolean(req.session && req.session.churchBranchAdmin),
+          branchContextPresent: Boolean(req.churchContext && req.churchContext.branch),
+          saveAvailable: Boolean(req.session && typeof req.session.save === "function"),
+        })}`
+      );
+    }
+    next();
+  });
+}
 
 // Determine whether this request is coming from a company subdomain
 app.use((req, res, next) => {
