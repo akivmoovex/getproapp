@@ -33,12 +33,19 @@ function tenantHost(hostSlug) {
   return `${hostSlug}.${DOMAIN}`;
 }
 
-function foundationAttemptSlug(slugPrefix, retry) {
-  const suffix = `-r${Number(retry) || 0}-main`;
+function foundationFixtureSlug(slugPrefix, retry, fixtureName) {
+  const safeFixtureName = String(fixtureName || "fixture")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-");
+  const suffix = `-r${Number(retry) || 0}-${safeFixtureName}`;
   const prefixLimit = Math.max(1, 40 - suffix.length);
   return `${String(slugPrefix).toLowerCase().slice(0, prefixLimit)}${suffix}`
     .replace(/[^a-z0-9-]/gi, "-")
     .slice(0, 40);
+}
+
+function foundationAttemptSlug(slugPrefix, retry) {
+  return foundationFixtureSlug(slugPrefix, retry, "main");
 }
 
 function readState() {
@@ -97,18 +104,31 @@ async function platformLogin(page, username, password) {
 async function portalLogin(page, loginPath, identifier, password, expectedPath, options = {}) {
   const diagnostic = options && options.diagnosticLabel ? String(options.diagnosticLabel) : "";
   const observed = [];
+  let loginPostPath = loginPath;
+  let renderedLoginPath = loginPath;
   const record = (event, details) => {
     if (diagnostic) lifecycleEvent(`${diagnostic}_${event}`, details);
   };
   const onRequest = (request) => {
-    if (request.method() === "POST" && new URL(request.url()).pathname === loginPath) {
+    const requestPath = new URL(request.url()).pathname;
+    if (request.method() === "POST" && requestPath === loginPostPath) {
       observed.push("post-request");
-      record("POST_REQUEST", { observed: true, method: "POST", path: loginPath });
+      record("POST_REQUEST", { observed: true, method: "POST", path: loginPostPath });
+    }
+    if (requestPath === expectedPath) {
+      observed.push("dashboard-request");
+      record("DASHBOARD_REQUEST", { observed: true, method: request.method(), path: expectedPath });
     }
   };
   const onResponse = (response) => {
     const url = new URL(response.url());
-    if (diagnostic && (url.pathname === loginPath || url.pathname === expectedPath)) {
+    if (
+      diagnostic &&
+      (url.pathname === loginPath ||
+        url.pathname === renderedLoginPath ||
+        url.pathname === loginPostPath ||
+        url.pathname === expectedPath)
+    ) {
       record("NAV_RESPONSE", {
         method: response.request().method(),
         path: url.pathname,
@@ -116,7 +136,7 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
         location: response.headers().location || "UNSET",
       });
     }
-    if (url.pathname === loginPath && response.request().method() === "POST") {
+    if (url.pathname === loginPostPath && response.request().method() === "POST") {
       observed.push("post-response");
       record("POST_RESPONSE", {
         observed: true,
@@ -146,6 +166,13 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
     }
   };
   await page.goto(loginPath);
+  renderedLoginPath = currentPath();
+  const formAction = await page.locator("form").first().getAttribute("action");
+  loginPostPath = new URL(formAction || renderedLoginPath, page.url()).pathname;
+  record("FORM", {
+    pagePath: renderedLoginPath,
+    postPath: loginPostPath,
+  });
   await page.locator("#identifier").fill(identifier);
   await page.locator("#password").fill(password);
   try {
@@ -170,7 +197,7 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
         loginErrorVisible: alertVisible,
         loginErrorCategory: alertVisible ? errorCategory : "none",
         dashboardRequested: observed.includes("dashboard-request"),
-        redirectedBackToLogin: currentPath() === loginPath,
+        redirectedBackToLogin: currentPath() === renderedLoginPath,
       });
     }
     removeDiagnosticListeners();
@@ -196,9 +223,7 @@ async function expectDeniedOrGone(response) {
 }
 
 async function seedSiblingBranchAndLeader(pool, shared, slugPrefix, retry = 0) {
-  const suffix = `${String(slugPrefix).toLowerCase()}-r${Number(retry) || 0}-b2`
-    .replace(/[^a-z0-9-]/gi, "-")
-    .slice(0, 40);
+  const suffix = foundationFixtureSlug(slugPrefix, retry, "b2");
   const password = "SiblingBranch_pw_2026!";
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -260,9 +285,7 @@ async function seedSiblingBranchAndLeader(pool, shared, slugPrefix, retry = 0) {
 }
 
 async function seedUnrelatedTenant(pool, slugPrefix, retry = 0) {
-  const slug = `${String(slugPrefix).toLowerCase()}-r${Number(retry) || 0}-other`
-    .replace(/[^a-z0-9-]/gi, "-")
-    .slice(0, 40);
+  const slug = foundationFixtureSlug(slugPrefix, retry, "other");
   const password = "UnrelatedTenant_pw_2026!";
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -305,8 +328,8 @@ async function seedUnrelatedTenant(pool, slugPrefix, retry = 0) {
   };
 }
 
-async function seedForeignIdorFixtures(pool, slugPrefix) {
-  const slug = `${slugPrefix}-fx`.replace(/[^a-z0-9-]/gi, "-").slice(0, 40);
+async function seedForeignIdorFixtures(pool, slugPrefix, retry = 0) {
+  const slug = foundationFixtureSlug(slugPrefix, retry, "fx");
   const passwordHash = await bcrypt.hash("ForeignFixture_pw_2026!", 12);
 
   const orgRes = await pool.query(
@@ -412,6 +435,7 @@ module.exports = {
   PLATFORM_HOST,
   TENANT_ZM,
   tenantHost,
+  foundationFixtureSlug,
   foundationAttemptSlug,
   readState,
   writeState,

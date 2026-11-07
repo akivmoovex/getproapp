@@ -129,6 +129,9 @@ test.describe("Foundation release security E2E", () => {
     expect(packageRow.rows[0].plan_code).toBe("foundation");
     expect(packageRow.rows[0].status).toBe("active");
 
+    for (const key of ["memberId", "unrelated", "sibling", "foreign"]) {
+      delete shared[key];
+    }
     Object.assign(shared, {
       organizationId,
       organizationSlug: slug,
@@ -521,7 +524,7 @@ test.describe("Foundation release security E2E", () => {
     );
 
     if (!shared.foreign) {
-      shared.foreign = await seedForeignIdorFixtures(db, e2eState.slugPrefix);
+      shared.foreign = await seedForeignIdorFixtures(db, e2eState.slugPrefix, testInfo.retry);
     }
     const fx = shared.foreign;
 
@@ -576,6 +579,11 @@ test.describe("Foundation release security E2E", () => {
         expect(body).not.toContain(marker);
       }
     }
+    const foreignSession = await db.query(
+      `SELECT status FROM public.church_attendance_service_sessions WHERE id = $1`,
+      [fx.attendanceSession.id]
+    );
+    expect(foreignSession.rows[0]?.status).toBe("open");
 
     // HQ-authenticated probe for branch registry IDOR
     const hqCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
@@ -586,6 +594,7 @@ test.describe("Foundation release security E2E", () => {
         "X-Forwarded-Host": shared.tenantHost,
         "X-Forwarded-Proto": "https",
       },
+      maxRedirects: 0,
     });
     await expectDeniedOrGone(hqBranch);
     expect(await hqBranch.text()).not.toContain("Foreign Main");
@@ -620,11 +629,11 @@ test.describe("Foundation release security E2E", () => {
       },
       headers: {
         "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "http",
+        "X-Forwarded-Proto": "https",
       },
       maxRedirects: 0,
     });
-    expect([403, 400, 409]).toContain(schedulePost.status());
+    expect(schedulePost.status()).toBe(403);
 
     await baPage.goto("/branch/dashboard");
     await expect(baPage).toHaveURL(/\/branch\/dashboard/);
@@ -637,6 +646,8 @@ test.describe("Foundation release security E2E", () => {
     await portalLogin(hqPage, "/hq/login", shared.hqEmail, shared.hqPassword, "/hq/dashboard");
     await hqPage.goto("/hq/scheduled-broadcasts");
     await expect(hqPage.getByText(/Growth|upgrade|not included|scheduled broadcast/i).first()).toBeVisible();
+    await hqPage.goto("/hq/broadcasts/new");
+    const broadcastCsrf = await hqPage.locator('input[name="_csrf"]').first().inputValue();
 
     const future = new Date(Date.now() + 3 * 60 * 60 * 1000);
     const publishAt = future.toISOString().slice(0, 16);
@@ -644,21 +655,18 @@ test.describe("Foundation release security E2E", () => {
       multipart: {
         title: "E2E scheduled attempt",
         body: "Should be denied on Foundation",
-        audience: "all_members",
+        audience: "members",
         priority: "normal",
         publish_at: publishAt,
+        _csrf: broadcastCsrf,
       },
       headers: {
         "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "http",
+        "X-Forwarded-Proto": "https",
       },
       maxRedirects: 0,
     });
-    expect([403, 400, 409, 302, 303]).toContain(broadcastPost.status());
-    if ([302, 303].includes(broadcastPost.status())) {
-      const loc = String(broadcastPost.headers().location || "");
-      expect(loc).not.toMatch(/notice=.*created|scheduled/i);
-    }
+    expect(broadcastPost.status()).toBe(403);
 
     await hqPage.goto("/hq/dashboard");
     await expect(hqPage).toHaveURL(/\/hq\/dashboard/);
@@ -700,9 +708,16 @@ test.describe("Foundation release security E2E", () => {
     await expect(baPage.getByRole("heading", { name: /Service check-in/i })).toBeVisible();
 
     await baPage.goto(`/branch/attendance/check-in/report?from=${today}&to=${today}`);
-    await expect(baPage.getByText(new RegExp(shared.memberFullName, "i")).or(baPage.getByText(/1/)).first()).toBeVisible();
+    const checkInSummary = baPage.locator("dl.church-branch-dl");
+    await expect(checkInSummary.locator("div").filter({ hasText: "Sessions" }).locator("dd")).toHaveText("1");
+    await expect(
+      checkInSummary.locator("div").filter({ hasText: "Member check-ins" }).locator("dd")
+    ).toHaveText("1");
+    await expect(
+      checkInSummary.locator("div").filter({ hasText: "Visitor check-ins" }).locator("dd")
+    ).toHaveText("0");
 
-    await baPage.goto("/branch/attendance");
+    await baPage.goto("/branch/attendance?new=1");
     await baPage.locator("#attendance_type").selectOption("Sunday service");
     await baPage.locator("#service_name").fill("E2E Submitted Headcount");
     await baPage.locator("#attendance_date").fill(today);
@@ -715,9 +730,11 @@ test.describe("Foundation release security E2E", () => {
 
     await baPage.goto(`/branch/reports/basic?date_from=${today}&date_to=${today}`);
     await expect(baPage.getByRole("heading", { name: /basic report|reports/i }).first()).toBeVisible();
-    await expect(baPage.getByText(/Monthly attendance|attendance/i).first()).toBeVisible();
-    const reportText = await baPage.locator("main, .church-branch-shell, body").innerText();
-    expect(reportText).toMatch(/1/);
+    const monthlyAttendanceRow = baPage
+      .locator("table[aria-describedby='basic-report-kpi-summary'] tbody tr")
+      .filter({ hasText: "Monthly attendance" });
+    await expect(monthlyAttendanceRow).toHaveCount(1);
+    await expect(monthlyAttendanceRow.locator("td").first()).toHaveText("1");
 
     await baCtx.close();
   });
