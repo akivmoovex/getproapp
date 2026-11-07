@@ -399,9 +399,18 @@ function registerBranchAdminRoutes(router) {
           security_version: updated.security_version,
         });
         if (process.env.GETPRO_SESSION_DIAGNOSTICS === "1" && process.env.DEPLOYMENT_ENV === "testing") {
+          req.__getproPasswordPostCorrelation = true;
           // eslint-disable-next-line no-console
           console.log(
             `[session-diagnostic] password-update-committed ${JSON.stringify({
+              sessionPresent: Boolean(req.session),
+              authPayloadPresent: Boolean(req.session && req.session.churchBranchAdmin),
+              authVersionMatchesUpdatedDb: Boolean(
+                req.session &&
+                  req.session.churchBranchAdmin &&
+                  Number(req.session.churchBranchAdmin.security_version) ===
+                    Number(updated.security_version)
+              ),
               databaseVersionPresent: updated.security_version != null,
               restampedVersionPresent: Boolean(
                 req.session &&
@@ -411,6 +420,9 @@ function registerBranchAdminRoutes(router) {
               sessionSaveAvailable: Boolean(req.session && typeof req.session.save === "function"),
             })}`
           );
+          // The store wrapper cannot receive request-local state, so expose only
+          // the opaque session identity internally for correlation.
+          req.app.locals.__getproPasswordPostSessionId = req.sessionID || null;
         }
       } catch (err) {
         await client.query("ROLLBACK");

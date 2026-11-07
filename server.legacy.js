@@ -188,12 +188,49 @@ const sessionStore = new PgSession({
 });
 const sessionDiagnosticsEnabled =
   process.env.GETPRO_SESSION_DIAGNOSTICS === "1" && process.env.DEPLOYMENT_ENV === "testing";
+const sessionDiagnosticCorrelation = sessionDiagnosticsEnabled
+  ? { passwordPostSessionId: null, writeSequence: 0 }
+  : null;
 if (sessionDiagnosticsEnabled) {
   for (const method of ["get", "set"]) {
     const original = sessionStore[method].bind(sessionStore);
     sessionStore[method] = (sid, data, callback) => {
       const cb = method === "get" ? data : callback;
       const wrapped = (err, value) => {
+        const isCorrelated = sessionDiagnosticCorrelation && sid === sessionDiagnosticCorrelation.passwordPostSessionId;
+        if (isCorrelated && method === "get") {
+          // eslint-disable-next-line no-console
+          console.log(
+            `[session-diagnostic] correlation-get ${JSON.stringify({
+              readSucceeded: !err,
+              sameSessionRow: true,
+              persistedAuthPayloadPresent: Boolean(value && value.churchBranchAdmin),
+              persistedVersionPresent: Boolean(
+                value &&
+                  value.churchBranchAdmin &&
+                  value.churchBranchAdmin.security_version != null
+              ),
+            })}`
+          );
+        }
+        if (isCorrelated && method === "set") {
+          sessionDiagnosticCorrelation.writeSequence += 1;
+          // eslint-disable-next-line no-console
+          console.log(
+            `[session-diagnostic] correlation-set ${JSON.stringify({
+              writeObserved: true,
+              writeCompleted: !err,
+              writeError: err ? err.code || "store-error" : null,
+              persistedAuthPayloadPresent: Boolean(data && data.churchBranchAdmin),
+              persistedVersionPresent: Boolean(
+                data &&
+                  data.churchBranchAdmin &&
+                  data.churchBranchAdmin.security_version != null
+              ),
+              writeSequence: sessionDiagnosticCorrelation.writeSequence,
+            })}`
+          );
+        }
         // eslint-disable-next-line no-console
         console.log(
           `[session-diagnostic] store-${method}-${err ? "error" : "complete"} ${JSON.stringify({
@@ -230,6 +267,10 @@ app.use(
 if (sessionDiagnosticsEnabled) {
   app.use((req, res, next) => {
     if (req.path === "/branch/account" || req.path === "/branch/account/change-password") {
+      if (req.method === "POST" && req.path === "/branch/account/change-password") {
+        sessionDiagnosticCorrelation.passwordPostSessionId = req.sessionID || null;
+        sessionDiagnosticCorrelation.writeSequence = 0;
+      }
       // eslint-disable-next-line no-console
       console.log(
         `[session-diagnostic] request-session-state ${JSON.stringify({
