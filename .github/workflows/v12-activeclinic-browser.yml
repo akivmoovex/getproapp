@@ -40,12 +40,18 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: Bootstrap disposable testing database
+        env:
+          DATABASE_IDENTITY_EXPECTED: moovex-platform-v7
+          DATABASE_IDENTITY_ENV: testing
+          FOUNDATION_ALLOW_LOCALHOST: "1"
+        run: |
+          npm run db:bootstrap:foundation
+          npm run db:verify:foundation
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Prepare disposable schema
-        run: npm run test:db:schema
       - name: Run real ActiveClinic browser smoke suite
-        run: npx playwright test tests/browser/v210-ac-smoke.spec.js --config=playwright.config.cjs
+        run: npx playwright test --config=playwright.activeclinic.config.cjs
       - name: Report current AC smoke coverage
         if: always()
         run: |

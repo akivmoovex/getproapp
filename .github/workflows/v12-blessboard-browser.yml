@@ -40,6 +40,14 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: Bootstrap disposable Foundation database
+        env:
+          DATABASE_IDENTITY_EXPECTED: moovex-platform-v7
+          DATABASE_IDENTITY_ENV: testing
+          FOUNDATION_ALLOW_LOCALHOST: "1"
+        run: |
+          npm run db:bootstrap:foundation
+          npm run db:verify:foundation
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run real BlessBoard foundation browser suite
