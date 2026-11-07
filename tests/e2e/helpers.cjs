@@ -121,6 +121,22 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
     page.on("request", onRequest);
     page.on("response", onResponse);
   }
+  const removeDiagnosticListeners = () => {
+    if (!diagnostic) return;
+    try {
+      page.off("request", onRequest);
+      page.off("response", onResponse);
+    } catch {
+      // Preserve the original Playwright failure if the page is already closed.
+    }
+  };
+  const currentPath = () => {
+    try {
+      return new URL(page.url()).pathname;
+    } catch {
+      return "UNAVAILABLE";
+    }
+  };
   await page.goto(loginPath);
   await page.locator("#identifier").fill(identifier);
   await page.locator("#password").fill(password);
@@ -142,32 +158,28 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
       record("SUMMARY", {
         postRequestObserved: observed.includes("post-request"),
         postResponseObserved: observed.includes("post-response"),
-        finalPath: new URL(page.url()).pathname,
+        finalPath: currentPath(),
         loginErrorVisible: alertVisible,
         loginErrorCategory: alertVisible ? errorCategory : "none",
         dashboardRequested: observed.includes("dashboard-request"),
-        redirectedBackToLogin: new URL(page.url()).pathname === loginPath,
-        sessionCookiePresent: (await page.context().cookies()).some((cookie) => Boolean(cookie.name)),
+        redirectedBackToLogin: currentPath() === loginPath,
       });
-      page.off("request", onRequest);
-      page.off("response", onResponse);
     }
+    removeDiagnosticListeners();
     throw error;
   }
   if (diagnostic) {
     record("SUMMARY", {
       postRequestObserved: observed.includes("post-request"),
       postResponseObserved: observed.includes("post-response"),
-      finalPath: new URL(page.url()).pathname,
+      finalPath: currentPath(),
       loginErrorVisible: false,
       loginErrorCategory: "none",
       dashboardRequested: new URL(page.url()).pathname === expectedPath,
       redirectedBackToLogin: false,
-      sessionCookiePresent: (await page.context().cookies()).some((cookie) => Boolean(cookie.name)),
     });
-    page.off("request", onRequest);
-    page.off("response", onResponse);
   }
+  removeDiagnosticListeners();
 }
 
 async function expectDeniedOrGone(response) {
