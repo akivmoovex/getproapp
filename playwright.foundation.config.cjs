@@ -39,7 +39,7 @@ module.exports = defineConfig({
     ...devices["Desktop Chrome"],
     launchOptions: {
       args: [
-        "--host-resolver-rules=MAP admin.local.test 127.0.0.1,MAP local.test 127.0.0.1",
+        "--host-resolver-rules=MAP *.local.test 127.0.0.1,MAP local.test 127.0.0.1",
       ],
     },
     viewport: { width: 1280, height: 800 },

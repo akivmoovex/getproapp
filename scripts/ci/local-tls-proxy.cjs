@@ -3,7 +3,6 @@
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
-const net = require("net");
 
 const certDir = process.env.BB_TLS_CERT_DIR;
 const allowedHosts = new Set(
@@ -16,13 +15,24 @@ const upstreamPort = Number(process.env.BB_HTTP_UPSTREAM_PORT || 4185);
 const bindHost = "127.0.0.1";
 const bindPort = 443;
 
+function isAllowedHost(rawHost) {
+  const value = String(rawHost || "");
+  if (/[^\x21-\x7e]/.test(value) || value.includes("@") || value.includes(":")) return false;
+  const host = value.toLowerCase();
+  if (allowedHosts.has(host)) return true;
+  const labels = host.split(".");
+  return labels.length === 3 && labels[0].length > 0 && /^[a-z0-9-]+$/.test(labels[0]) &&
+    labels[1] === "local" && labels[2] === "test";
+}
+
+if (require.main === module) {
 if (!certDir) throw new Error("BB_TLS_CERT_DIR is required");
 const key = fs.readFileSync(`${certDir}/local.test.key`);
 const cert = fs.readFileSync(`${certDir}/local.test.crt`);
-
 const server = https.createServer({ key, cert }, (request, response) => {
-  const host = String(request.headers.host || "").split(":")[0].toLowerCase();
-  if (!allowedHosts.has(host)) {
+  const rawHost = String(request.headers.host || "");
+  const host = rawHost.toLowerCase();
+  if (!isAllowedHost(rawHost)) {
     response.writeHead(421, { "content-type": "text/plain" });
     response.end("Unrecognized CI testing host");
     return;
@@ -65,3 +75,6 @@ function shutdown() {
 }
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+}
+
+module.exports = { isAllowedHost };
