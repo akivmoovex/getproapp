@@ -31,8 +31,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_ac_browser_ci
       TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/getpro_ac_browser_ci
       PLAYWRIGHT_PORT: "4175"
-      BASE_DOMAIN: activeclinic.local.test
-      PLAYWRIGHT_TENANT_HOST: activeclinic.local.test
+      BASE_DOMAIN: activeclinic-demo.local.test
+      PLAYWRIGHT_TENANT_HOST: activeclinic-demo.local.test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -48,6 +48,8 @@ jobs:
         run: |
           npm run db:bootstrap:foundation
           npm run db:verify:foundation
+          npm run church:db-identity:init -- --env testing --confirm
+          npm run activeclinic:seed-demo-clinics -- --confirm --clinic=activeclinic-demo
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run real ActiveClinic browser smoke suite

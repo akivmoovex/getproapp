@@ -1,5 +1,7 @@
 const { test, expect } = require("@playwright/test");
 
+const ACTIVECLINIC_HOST = process.env.PLAYWRIGHT_TENANT_HOST || "activeclinic.pronline.org";
+
 async function smokePage(page, path, markers) {
   const errors = [];
   page.on("console", (message) => {
@@ -14,12 +16,12 @@ async function smokePage(page, path, markers) {
 
 test.describe("V2.10 ActiveClinic browser smoke", () => {
   test("public About is 2.10", async ({ page }) => {
-    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "activeclinic.pronline.org" });
+    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": ACTIVECLINIC_HOST });
     await smokePage(page, "/about", ["ActiveClinic", "2.10"]);
   });
 
   test("registration, login, portal and directory entry surfaces load", async ({ page }) => {
-    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "activeclinic.pronline.org" });
+    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": ACTIVECLINIC_HOST });
     await smokePage(page, "/register-clinic", ["Clinic Name"]);
     await smokePage(page, "/login", ["Log in"]);
     await smokePage(page, "/clinics", []);
@@ -28,7 +30,7 @@ test.describe("V2.10 ActiveClinic browser smoke", () => {
   });
 
   test("guest booking and theme routes remain reachable", async ({ page }) => {
-    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": "activeclinic.pronline.org" });
+    await page.setExtraHTTPHeaders({ "X-Forwarded-Host": ACTIVECLINIC_HOST });
     const booking = await page.goto("/clinics", { waitUntil: "domcontentloaded" });
     expect(booking.status()).toBeLessThan(500);
     const theme = await page.goto("/clinics/activeclinic-demo/website/themes", {
