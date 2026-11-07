@@ -552,7 +552,7 @@ test.describe("Foundation release security E2E", () => {
               form: probe.form || {},
               headers: {
                 "X-Forwarded-Host": shared.tenantHost,
-                "X-Forwarded-Proto": "http",
+                "X-Forwarded-Proto": "https",
                 ...(probe.headers || {}),
               },
               maxRedirects: 0,
@@ -560,7 +560,7 @@ test.describe("Foundation release security E2E", () => {
           : await baPage.request.get(probe.path, {
               headers: {
                 "X-Forwarded-Host": shared.tenantHost,
-                "X-Forwarded-Proto": "http",
+                "X-Forwarded-Proto": "https",
                 ...(probe.headers || {}),
               },
               maxRedirects: 0,
@@ -579,7 +579,7 @@ test.describe("Foundation release security E2E", () => {
     const hqBranch = await hqPage.request.get(`/hq/branches/${fx.branch.id}`, {
       headers: {
         "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "http",
+        "X-Forwarded-Proto": "https",
       },
     });
     await expectDeniedOrGone(hqBranch);
