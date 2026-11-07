@@ -617,10 +617,18 @@ test.describe("Foundation release security E2E", () => {
     const baCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const baPage = await baCtx.newPage();
     await portalLogin(baPage, "/branch/login", shared.baEmail, shared.baPassword, "/branch/dashboard");
+    const baControl = await browserOriginRequest(baPage, "/branch/dashboard");
+    expectAuthenticatedControl(baControl, "/branch/dashboard", "Foundation scheduled-report control request");
 
     await baPage.goto("/branch/scheduled-reports");
     await expect(baPage.getByText(/Growth|upgrade|not included|scheduled reports/i).first()).toBeVisible();
 
+    const scheduledReportsBefore = await db.query(
+      `SELECT COUNT(*)::int AS count
+         FROM public.church_scheduled_reports
+        WHERE organization_id = $1 AND branch_id = $2`,
+      [shared.organizationId, shared.branchId]
+    );
     const schedulePost = await browserOriginRequest(baPage, "/branch/scheduled-reports", {
       method: "POST",
       form: {
@@ -633,7 +641,16 @@ test.describe("Foundation release security E2E", () => {
       },
     });
     expectProtectedProbeReached(schedulePost, "/branch/scheduled-reports", "Foundation scheduled-report probe");
-    expect(schedulePost.status).toBe(403);
+    expect(schedulePost.status).toBe(409);
+    expect(schedulePost.body).toContain('data-failure-kind="package_restricted"');
+    expect(schedulePost.body).toContain('data-failure-code="package_restricted"');
+    const scheduledReportsAfter = await db.query(
+      `SELECT COUNT(*)::int AS count
+         FROM public.church_scheduled_reports
+        WHERE organization_id = $1 AND branch_id = $2`,
+      [shared.organizationId, shared.branchId]
+    );
+    expect(scheduledReportsAfter.rows[0]?.count).toBe(scheduledReportsBefore.rows[0]?.count);
 
     await baPage.goto("/branch/dashboard");
     await expect(baPage).toHaveURL(/\/branch\/dashboard/);
@@ -644,6 +661,8 @@ test.describe("Foundation release security E2E", () => {
     const hqCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const hqPage = await hqCtx.newPage();
     await portalLogin(hqPage, "/hq/login", shared.hqEmail, shared.hqPassword, "/hq/dashboard");
+    const hqControl = await browserOriginRequest(hqPage, "/hq/dashboard");
+    expectAuthenticatedControl(hqControl, "/hq/dashboard", "Foundation scheduled-broadcast control request");
     await hqPage.goto("/hq/scheduled-broadcasts");
     await expect(hqPage.getByText(/Growth|upgrade|not included|scheduled broadcast/i).first()).toBeVisible();
     await hqPage.goto("/hq/broadcasts/new");
@@ -651,10 +670,17 @@ test.describe("Foundation release security E2E", () => {
 
     const future = new Date(Date.now() + 3 * 60 * 60 * 1000);
     const publishAt = future.toISOString().slice(0, 16);
+    const broadcastTitle = `E2E scheduled attempt ${shared.organizationSlug}`;
+    const broadcastsBefore = await db.query(
+      `SELECT COUNT(*)::int AS count
+         FROM public.church_hq_broadcasts
+        WHERE organization_id = $1 AND title = $2`,
+      [shared.organizationId, broadcastTitle]
+    );
     const broadcastPost = await browserOriginRequest(hqPage, "/hq/broadcasts", {
       method: "POST",
       multipart: {
-        title: "E2E scheduled attempt",
+        title: broadcastTitle,
         body: "Should be denied on Foundation",
         audience: "members",
         priority: "normal",
@@ -664,6 +690,15 @@ test.describe("Foundation release security E2E", () => {
     });
     expectProtectedProbeReached(broadcastPost, "/hq/broadcasts", "Foundation scheduled-broadcast probe");
     expect(broadcastPost.status).toBe(403);
+    expect(broadcastPost.body).toContain("Scheduled broadcasts require Growth");
+    expect(broadcastPost.body).toContain("Current package: Foundation");
+    const broadcastsAfter = await db.query(
+      `SELECT COUNT(*)::int AS count
+         FROM public.church_hq_broadcasts
+        WHERE organization_id = $1 AND title = $2`,
+      [shared.organizationId, broadcastTitle]
+    );
+    expect(broadcastsAfter.rows[0]?.count).toBe(broadcastsBefore.rows[0]?.count);
 
     await hqPage.goto("/hq/dashboard");
     await expect(hqPage).toHaveURL(/\/hq\/dashboard/);
@@ -717,7 +752,7 @@ test.describe("Foundation release security E2E", () => {
     await baPage.goto("/branch/attendance?new=1");
     await baPage.locator("#attendance_type").selectOption("Sunday service");
     await baPage.locator("#service_name").fill("E2E Submitted Headcount");
-    await baPage.locator("#attendance_date").fill(today);
+    await baPage.locator("#form_attendance_date").fill(today);
     await baPage.locator("#adults_count").fill("1");
     await Promise.all([
       baPage.waitForURL(/\/branch\/attendance/),

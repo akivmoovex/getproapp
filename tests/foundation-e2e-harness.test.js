@@ -90,8 +90,16 @@ test("Foundation plan probes use valid CSRF and require entitlement denial", () 
   assert.match(planSection, /broadcastCsrf/);
   assert.match(planSection, /_csrf: broadcastCsrf/);
   assert.match(planSection, /audience: "members"/);
-  assert.equal((planSection.match(/\.status\)\.toBe\(403\)/g) || []).length, 2);
-  assert.equal((planSection.match(/browserOriginRequest/g) || []).length, 2);
+  assert.equal((planSection.match(/\.status\)\.toBe\(409\)/g) || []).length, 1);
+  assert.equal((planSection.match(/\.status\)\.toBe\(403\)/g) || []).length, 1);
+  assert.match(planSection, /data-failure-kind="package_restricted"/);
+  assert.match(planSection, /data-failure-code="package_restricted"/);
+  assert.match(planSection, /Scheduled broadcasts require Growth/);
+  assert.match(planSection, /scheduledReportsAfter\.rows\[0\]\?\.count\)\.toBe\(scheduledReportsBefore/);
+  assert.match(planSection, /broadcastsAfter\.rows\[0\]\?\.count\)\.toBe\(broadcastsBefore/);
+  assert.equal((planSection.match(/expectAuthenticatedControl/g) || []).length, 2);
+  assert.equal((planSection.match(/expectProtectedProbeReached/g) || []).length, 2);
+  assert.equal((planSection.match(/browserOriginRequest/g) || []).length, 4);
   assert.doesNotMatch(planSection, /\.request\.(post|get)/);
 });
 
@@ -116,6 +124,8 @@ test("Foundation attendance verification opens the form and asserts exact report
   const attendanceSection = source.slice(source.indexOf('test("8) basic attendance'));
 
   assert.match(attendanceSection, /\/branch\/attendance\?new=1/);
+  assert.match(attendanceSection, /locator\("#form_attendance_date"\)/);
+  assert.doesNotMatch(attendanceSection, /locator\("#attendance_date"\)/);
   assert.match(attendanceSection, /hasText: "Sessions"/);
   assert.match(attendanceSection, /hasText: "Member check-ins"/);
   assert.match(attendanceSection, /hasText: "Visitor check-ins"/);
