@@ -136,7 +136,9 @@ test.describe("Foundation release security E2E", () => {
     await expect(baPage.getByRole("heading", { name: /dashboard/i }).first()).toBeVisible();
 
     const hqPage = await tenant.newPage();
-    await portalLogin(hqPage, "/hq/login", hqEmail, hqPassword, "/hq/dashboard");
+    await portalLogin(hqPage, "/hq/login", hqEmail, hqPassword, "/hq/dashboard", {
+      diagnosticLabel: "HQ_LOGIN_TEST1",
+    });
     await expect(hqPage.getByRole("heading", { name: /dashboard/i }).first()).toBeVisible();
     await tenant.close();
   });

@@ -86,14 +86,80 @@ async function platformLogin(page, username, password) {
   ]);
 }
 
-async function portalLogin(page, loginPath, identifier, password, expectedPath) {
+async function portalLogin(page, loginPath, identifier, password, expectedPath, options = {}) {
+  const diagnostic = options && options.diagnosticLabel ? String(options.diagnosticLabel) : "";
+  const observed = [];
+  const record = (event, details) => {
+    if (diagnostic) lifecycleEvent(`${diagnostic}_${event}`, details);
+  };
+  const onRequest = (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === loginPath) {
+      observed.push("post-request");
+      record("POST_REQUEST", { observed: true, method: "POST", path: loginPath });
+    }
+  };
+  const onResponse = (response) => {
+    const url = new URL(response.url());
+    if (url.pathname === loginPath && response.request().method() === "POST") {
+      observed.push("post-response");
+      record("POST_RESPONSE", {
+        observed: true,
+        status: response.status(),
+        location: response.headers().location || "UNSET",
+      });
+    }
+  };
+  if (diagnostic) {
+    page.on("request", onRequest);
+    page.on("response", onResponse);
+  }
   await page.goto(loginPath);
   await page.locator("#identifier").fill(identifier);
   await page.locator("#password").fill(password);
-  await Promise.all([
-    page.waitForURL(new RegExp(expectedPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))),
-    page.getByRole("button", { name: /^(Sign in|Login)$/i }).click(),
-  ]);
+  try {
+    await Promise.all([
+      page.waitForURL(new RegExp(expectedPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))),
+      page.getByRole("button", { name: /^(Sign in|Login)$/i }).click(),
+    ]);
+  } catch (error) {
+    if (diagnostic) {
+      const alertVisible = await page.getByRole("alert").isVisible().catch(() => false);
+      const bodyText = await page.locator("body").innerText().catch(() => "");
+      const errorCategory =
+        /csrf|token|form token/i.test(bodyText)
+          ? "csrf"
+          : /incorrect|invalid|unable|sign in/i.test(bodyText)
+            ? "login-error"
+            : "not-visible";
+      record("SUMMARY", {
+        postRequestObserved: observed.includes("post-request"),
+        postResponseObserved: observed.includes("post-response"),
+        finalPath: new URL(page.url()).pathname,
+        loginErrorVisible: alertVisible,
+        loginErrorCategory: alertVisible ? errorCategory : "none",
+        dashboardRequested: observed.includes("dashboard-request"),
+        redirectedBackToLogin: new URL(page.url()).pathname === loginPath,
+        sessionCookiePresent: (await page.context().cookies()).some((cookie) => Boolean(cookie.name)),
+      });
+      page.off("request", onRequest);
+      page.off("response", onResponse);
+    }
+    throw error;
+  }
+  if (diagnostic) {
+    record("SUMMARY", {
+      postRequestObserved: observed.includes("post-request"),
+      postResponseObserved: observed.includes("post-response"),
+      finalPath: new URL(page.url()).pathname,
+      loginErrorVisible: false,
+      loginErrorCategory: "none",
+      dashboardRequested: new URL(page.url()).pathname === expectedPath,
+      redirectedBackToLogin: false,
+      sessionCookiePresent: (await page.context().cookies()).some((cookie) => Boolean(cookie.name)),
+    });
+    page.off("request", onRequest);
+    page.off("response", onResponse);
+  }
 }
 
 async function expectDeniedOrGone(response) {
