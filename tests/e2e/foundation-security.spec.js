@@ -188,7 +188,11 @@ test.describe("Foundation release security E2E", () => {
     await portalLogin(baPage, "/branch/login", shared.baEmail, shared.baPassword, "/branch/dashboard");
     await baPage.goto("/branch/member-verification");
     await expect(baPage.getByRole("heading", { name: /Member Verification Queue/i })).toBeVisible();
-    await baPage.getByRole("link", { name: new RegExp(`(Review|View) ${shared.memberFullName}`) }).first().click();
+    const memberRow = baPage.getByRole("row").filter({ hasText: shared.memberFullName });
+    await expect(memberRow).toHaveCount(1);
+    const reviewLink = memberRow.getByRole("link", { name: "Review", exact: true });
+    await expect(reviewLink).toHaveCount(1);
+    await reviewLink.click();
     await expect(baPage).toHaveURL(new RegExp(`/branch/members/${shared.memberId}`));
     await baPage.getByRole("button", { name: "Approve" }).click();
     await expect
