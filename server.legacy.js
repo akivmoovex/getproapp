@@ -244,6 +244,36 @@ if (sessionDiagnosticsEnabled) {
       return method === "get" ? original(sid, wrapped) : original(sid, data, wrapped);
     };
   }
+  for (const method of ["touch", "destroy"]) {
+    const original = sessionStore[method].bind(sessionStore);
+    sessionStore[method] = (sid, data, callback) => {
+      const cb = method === "touch" ? callback : data;
+      const isCorrelated = sessionDiagnosticCorrelation && sid === sessionDiagnosticCorrelation.passwordPostSessionId;
+      const stack = new Error().stack || "";
+      const caller = stack.includes("accountSecurityVersion")
+        ? "accountSecurityVersion"
+        : stack.includes("branchAdminAuth")
+          ? "branchAdminAuth"
+          : stack.includes("server.legacy")
+            ? "server.legacy"
+            : "other";
+      const wrapped = (err) => {
+        if (isCorrelated) {
+          // eslint-disable-next-line no-console
+          console.log(
+            `[session-diagnostic] correlation-${method} ${JSON.stringify({
+              observed: true,
+              completed: !err,
+              errorCode: err ? err.code || "store-error" : null,
+              caller,
+            })}`
+          );
+        }
+        return cb(err);
+      };
+      return method === "touch" ? original(sid, data, wrapped) : original(sid, wrapped);
+    };
+  }
 }
 // eslint-disable-next-line no-console
 console.log("[getpro] Session store: PostgreSQL (public.session via connect-pg-simple)");
