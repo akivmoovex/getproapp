@@ -7,7 +7,7 @@ const { runTestable } = require("../combinedNightlyCoordinator");
 const good = {
   source: { sha: "1c79bd77bd76a968fe69aff678e0380e2a5be463", tree: "2ab57811f443dfe32e04b95a48b0c7567b1b6815" },
   database: { bb: "bb_d122c_foundation_qa_2158z", ac: "d120_ac_foundation_qa_2143z" },
-  network: { bb: "d57a-20261031-1455z-bb-internal", ac: "d57a-20261031-1455z-ac-internal" },
+  network: { bb: "UNCONFIGURED", ac: "UNCONFIGURED" },
   credentials: { bb: true, ac: true },
 };
 

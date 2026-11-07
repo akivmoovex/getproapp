@@ -8,9 +8,10 @@ const runtime = require("./runtime/qaDockerRuntime");
 const QA_ROOT = path.resolve(__dirname, "..");
 const EXPECTED_SHA = "1c79bd77bd76a968fe69aff678e0380e2a5be463";
 const LOCK_ROOT = path.join(QA_ROOT, "locks");
-const BB_BROWSER = process.env.DAILY_QA_BB_BROWSER || "d124-bb-playwright-20261031-2202z";
-const AC_BROWSER = process.env.DAILY_QA_AC_BROWSER || "d125-ac-playwright-20261031-2205z";
-const BB_APP = "d115b-ac-runner";
+const BB_BROWSER = process.env.DAILY_QA_BB_BROWSER || "";
+const AC_BROWSER = process.env.DAILY_QA_AC_BROWSER || "";
+const EXPECTED_BB_NETWORK = process.env.QA_EXPECTED_BB_NETWORK || "UNCONFIGURED";
+const EXPECTED_AC_NETWORK = process.env.QA_EXPECTED_AC_NETWORK || "UNCONFIGURED";
 const RUN_ID = `combined-${new Date().toISOString().replace(/[:.]/g, "-")}`;
 const RUN_ROOT = path.join(QA_ROOT, "runs", RUN_ID);
 
@@ -80,7 +81,7 @@ function runTestable(options = {}) {
   const source = options.source || { sha: EXPECTED_SHA, tree: "2ab57811f443dfe32e04b95a48b0c7567b1b6815" };
   if (source.sha !== EXPECTED_SHA || source.tree !== "2ab57811f443dfe32e04b95a48b0c7567b1b6815") throw new Error("source identity gate failed");
   if (options.database && (!options.database.bb || !options.database.ac)) throw new Error("database identity gate failed");
-  if (options.network && (options.network.bb !== "d57a-20261031-1455z-bb-internal" || options.network.ac !== "d57a-20261031-1455z-ac-internal")) throw new Error("network isolation gate failed");
+  if (options.network && (options.network.bb !== EXPECTED_BB_NETWORK || options.network.ac !== EXPECTED_AC_NETWORK)) throw new Error("network isolation gate failed");
   if (options.credentials && (!options.credentials.bb || !options.credentials.ac)) throw new Error("credential gate failed");
   if (options.locked) return { exitCode: 3, status: "ALREADY_RUNNING" };
   if (options.isolationViolation) throw new Error("cross-product isolation violation");
