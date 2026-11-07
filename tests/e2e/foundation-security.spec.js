@@ -208,7 +208,11 @@ test.describe("Foundation release security E2E", () => {
     await baPage.goto("/branch/account");
     const packageUsage = baPage.locator("section#package");
     await expect(packageUsage).toHaveCount(1);
-    const activeMembersLabel = packageUsage.locator("dt").filter({ hasText: /^Active members$/ });
+    const currentUsage = packageUsage
+      .getByRole("heading", { name: "Current usage", exact: true })
+      .locator("xpath=following-sibling::dl[1]");
+    await expect(currentUsage).toHaveCount(1);
+    const activeMembersLabel = currentUsage.locator("dt").filter({ hasText: /^Active members$/ });
     await expect(activeMembersLabel).toHaveCount(1);
     await expect(activeMembersLabel).toBeVisible();
     await expect(activeMembersLabel.locator("xpath=following-sibling::dd[1]")).toContainText(/^1\b|1\s*\//);
