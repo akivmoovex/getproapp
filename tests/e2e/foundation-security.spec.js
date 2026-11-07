@@ -16,6 +16,7 @@ const {
   seedUnrelatedTenant,
   seedForeignIdorFixtures,
   uniquePhone,
+  lifecycleEvent,
 } = require("./helpers.cjs");
 
 test.describe.configure({ mode: "serial" });
@@ -40,6 +41,20 @@ test.describe("Foundation release security E2E", () => {
       baseURL,
     });
     const page = await platform.newPage();
+    page.on("response", (response) => {
+      const url = new URL(response.url());
+      if (
+        (response.request().method() === "POST" && url.pathname === "/admin/churches") ||
+        /^\/admin\/churches\/\d+$/.test(url.pathname)
+      ) {
+        lifecycleEvent("TEST1_PROVISION_NAV_RESPONSE", {
+          method: response.request().method(),
+          path: url.pathname,
+          status: response.status(),
+          location: response.headers().location || "UNSET",
+        });
+      }
+    });
 
     await platformLogin(page, e2eState.adminUsername, e2eState.adminPassword);
     await page.goto("/admin/churches/new");
@@ -132,12 +147,14 @@ test.describe("Foundation release security E2E", () => {
 
     const tenant = await newHostContext(browser, shared.tenantHost, { baseURL });
     const baPage = await tenant.newPage();
-    await portalLogin(baPage, "/branch/login", baEmail, baPassword, "/branch/dashboard");
+    await portalLogin(baPage, "/branch/login", baEmail, baPassword, "/branch/dashboard", {
+      diagnosticLabel: "TEST1_BRANCH_LOGIN",
+    });
     await expect(baPage.getByRole("heading", { name: /dashboard/i }).first()).toBeVisible();
 
     const hqPage = await tenant.newPage();
     await portalLogin(hqPage, "/hq/login", hqEmail, hqPassword, "/hq/dashboard", {
-      diagnosticLabel: "HQ_LOGIN_TEST1",
+      diagnosticLabel: "TEST1_HQ_LOGIN",
     });
     await expect(hqPage.getByRole("heading", { name: /dashboard/i }).first()).toBeVisible();
     await tenant.close();

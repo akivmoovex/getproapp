@@ -100,6 +100,14 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
   };
   const onResponse = (response) => {
     const url = new URL(response.url());
+    if (diagnostic && (url.pathname === loginPath || url.pathname === expectedPath)) {
+      record("NAV_RESPONSE", {
+        method: response.request().method(),
+        path: url.pathname,
+        status: response.status(),
+        location: response.headers().location || "UNSET",
+      });
+    }
     if (url.pathname === loginPath && response.request().method() === "POST") {
       observed.push("post-response");
       record("POST_RESPONSE", {
@@ -365,6 +373,7 @@ async function seedForeignIdorFixtures(pool, slugPrefix) {
 }
 
 module.exports = {
+  lifecycleEvent,
   STATE_PATH,
   DOMAIN,
   PLATFORM_HOST,
