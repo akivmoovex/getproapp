@@ -167,7 +167,7 @@ test.describe("Foundation release security E2E", () => {
     e2eState,
     shared,
     db,
-  }) => {
+  }, testInfo) => {
     await expectTestingDatabaseIdentity(db);
     expect(shared.tenantHost).toBeTruthy();
 
@@ -324,11 +324,11 @@ test.describe("Foundation release security E2E", () => {
     e2eState,
     shared,
     db,
-  }) => {
+  }, testInfo) => {
     await expectTestingDatabaseIdentity(db);
 
     if (!shared.unrelated) {
-      shared.unrelated = await seedUnrelatedTenant(db, e2eState.slugPrefix);
+      shared.unrelated = await seedUnrelatedTenant(db, e2eState.slugPrefix, testInfo.retry);
     }
 
     const memberCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
@@ -378,7 +378,8 @@ test.describe("Foundation release security E2E", () => {
       "/branch/login",
       shared.unrelated.branchAdmin.email,
       shared.unrelated.branchAdmin.password,
-      "/branch/dashboard"
+      "/branch/dashboard",
+      { diagnosticLabel: "UNRELATED_TENANT_BRANCH_LOGIN" }
     );
     await unrelatedCtx.close();
 
@@ -410,11 +411,11 @@ test.describe("Foundation release security E2E", () => {
     e2eState,
     shared,
     db,
-  }) => {
+  }, testInfo) => {
     await expectTestingDatabaseIdentity(db);
 
     if (!shared.sibling) {
-      shared.sibling = await seedSiblingBranchAndLeader(db, shared, e2eState.slugPrefix);
+      shared.sibling = await seedSiblingBranchAndLeader(db, shared, e2eState.slugPrefix, testInfo.retry);
     }
 
     const leaderCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
@@ -447,7 +448,8 @@ test.describe("Foundation release security E2E", () => {
       "/branch/login",
       shared.sibling.siblingBranchAdmin.email,
       shared.sibling.siblingBranchAdmin.password,
-      "/branch/dashboard"
+      "/branch/dashboard",
+      { diagnosticLabel: "SIBLING_BRANCH_ADMIN_LOGIN" }
     );
 
     const platform = await newHostContext(browser, e2eState.platformHost || PLATFORM_HOST, {
@@ -497,7 +499,7 @@ test.describe("Foundation release security E2E", () => {
     e2eState,
     shared,
     db,
-  }) => {
+  }, testInfo) => {
     await expectTestingDatabaseIdentity(db);
 
     // Reactivate primary branch so branch-admin can authenticate for IDOR probes.

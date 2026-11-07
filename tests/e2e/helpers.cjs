@@ -195,8 +195,10 @@ async function expectDeniedOrGone(response) {
   expect([403, 404]).toContain(status);
 }
 
-async function seedSiblingBranchAndLeader(pool, shared, slugPrefix) {
-  const suffix = `${slugPrefix}-b2`.replace(/[^a-z0-9-]/gi, "-").slice(0, 40);
+async function seedSiblingBranchAndLeader(pool, shared, slugPrefix, retry = 0) {
+  const suffix = `${String(slugPrefix).toLowerCase()}-r${Number(retry) || 0}-b2`
+    .replace(/[^a-z0-9-]/gi, "-")
+    .slice(0, 40);
   const password = "SiblingBranch_pw_2026!";
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -225,14 +227,23 @@ async function seedSiblingBranchAndLeader(pool, shared, slugPrefix) {
     ]
   );
 
+  const ministryRes = await pool.query(
+    `INSERT INTO public.church_ministries
+       (organization_id, branch_id, name, slug, visibility, status)
+     VALUES ($1, $2, $3, $4, 'leaders', 'published')
+     RETURNING id`,
+    [shared.organizationId, shared.branchId, `E2E Ministry ${suffix}`, `e2e-${suffix}`.slice(0, 40)]
+  );
+
   const leaderRes = await pool.query(
     `INSERT INTO public.church_ministry_leaders
-       (organization_id, branch_id, full_name, email, phone, phone_normalized, password_hash, role, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'ministry_leader', 'active')
+       (organization_id, branch_id, ministry_id, full_name, email, phone, phone_normalized, password_hash, role, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ministry_leader', 'active')
      RETURNING *`,
     [
       shared.organizationId,
       shared.branchId,
+      ministryRes.rows[0].id,
       "Primary Ministry Leader",
       `leader_${suffix}@example.com`,
       uniquePhone(shared.branchId + 9),
@@ -248,8 +259,10 @@ async function seedSiblingBranchAndLeader(pool, shared, slugPrefix) {
   };
 }
 
-async function seedUnrelatedTenant(pool, slugPrefix) {
-  const slug = `${slugPrefix}-other`.replace(/[^a-z0-9-]/gi, "-").slice(0, 40);
+async function seedUnrelatedTenant(pool, slugPrefix, retry = 0) {
+  const slug = `${String(slugPrefix).toLowerCase()}-r${Number(retry) || 0}-other`
+    .replace(/[^a-z0-9-]/gi, "-")
+    .slice(0, 40);
   const password = "UnrelatedTenant_pw_2026!";
   const passwordHash = await bcrypt.hash(password, 12);
 
