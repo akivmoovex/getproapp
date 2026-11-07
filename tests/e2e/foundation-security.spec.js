@@ -206,10 +206,12 @@ test.describe("Foundation release security E2E", () => {
     await expect(baPage.getByText(/verified/i).first()).toBeVisible();
 
     await baPage.goto("/branch/account");
-    await expect(baPage.getByText(/Active members/i)).toBeVisible();
-    await expect(baPage.locator("dt", { hasText: "Active members" }).locator("xpath=following-sibling::dd[1]")).toContainText(
-      /^1\b|1\s*\//
-    );
+    const packageUsage = baPage.locator("section#package");
+    await expect(packageUsage).toHaveCount(1);
+    const activeMembersLabel = packageUsage.locator("dt").filter({ hasText: /^Active members$/ });
+    await expect(activeMembersLabel).toHaveCount(1);
+    await expect(activeMembersLabel).toBeVisible();
+    await expect(activeMembersLabel.locator("xpath=following-sibling::dd[1]")).toContainText(/^1\b|1\s*\//);
     await baCtx.close();
 
     const memberCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
