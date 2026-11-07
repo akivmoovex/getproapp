@@ -52,6 +52,26 @@ jobs:
           npm run church:db-identity:init -- --env testing --confirm
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Generate isolated CI TLS certificate
+        run: |
+          set -eu
+          CERT_DIR="$RUNNER_TEMP/getpro-bb-tls"
+          mkdir -p "$CERT_DIR"
+          openssl genrsa -out "$CERT_DIR/ca.key" 2048
+          openssl req -x509 -new -nodes -key "$CERT_DIR/ca.key" -sha256 -days 1 \
+            -out "$CERT_DIR/ca.crt" -subj "/CN=GetPro CI BlessBoard Test CA"
+          openssl genrsa -out "$CERT_DIR/local.test.key" 2048
+          openssl req -new -key "$CERT_DIR/local.test.key" -out "$CERT_DIR/local.test.csr" \
+            -subj "/CN=local.test"
+          printf '%s\n' \
+            'subjectAltName=DNS:local.test,DNS:*.local.test,DNS:admin.local.test' \
+            'basicConstraints=CA:FALSE' > "$CERT_DIR/local.test.ext"
+          openssl x509 -req -in "$CERT_DIR/local.test.csr" -CA "$CERT_DIR/ca.crt" \
+            -CAkey "$CERT_DIR/ca.key" -CAcreateserial -out "$CERT_DIR/local.test.crt" \
+            -days 1 -sha256 -extfile "$CERT_DIR/local.test.ext"
+          sudo cp "$CERT_DIR/ca.crt" /usr/local/share/ca-certificates/getpro-bb-ci.crt
+          sudo update-ca-certificates
+          echo "BB_TLS_CERT_DIR=$CERT_DIR" >> "$GITHUB_ENV"
       - name: Run real BlessBoard foundation browser suite
         run: npx playwright test --config=playwright.foundation.config.cjs
       - name: Mark and collect server lifecycle diagnostics
@@ -75,3 +95,11 @@ jobs:
             bb-lifecycle.log
           if-no-files-found: ignore
           retention-days: 7
+      - name: Stop isolated CI HTTPS termination
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/getpro-bb-tls/proxy.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/getpro-bb-tls/proxy.pid")" 2>/dev/null || true
+          fi
+          rm -f "$RUNNER_TEMP/getpro-bb-tls/ca.key" \
+            "$RUNNER_TEMP/getpro-bb-tls/local.test.key"

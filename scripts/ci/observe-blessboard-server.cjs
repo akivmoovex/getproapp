@@ -13,6 +13,13 @@ const child = spawn(process.execPath, ["server.js"], {
   env: process.env,
   stdio: ["inherit", "pipe", "pipe"],
 });
+const tlsProxy = process.env.BB_TLS_CERT_DIR
+  ? spawn(process.execPath, ["scripts/ci/local-tls-proxy.cjs"], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+  : null;
 const startedAt = Date.now();
 let exitInfo = null;
 fs.mkdirSync(path.dirname(reportPath), { recursive: true });
@@ -71,6 +78,7 @@ const interval = setInterval(() => {
 function shutdown(signal) {
   event("WRAPPER_SIGNAL", { signal, childAlive: exitInfo === null });
   clearInterval(interval);
+  if (tlsProxy) tlsProxy.kill(signal);
   if (exitInfo === null) child.kill(signal);
   setTimeout(() => process.exit(exitInfo ? (exitInfo.code || 0) : 1), 2000).unref();
 }
