@@ -250,7 +250,9 @@ test.describe("Foundation release security E2E", () => {
 
     const staleCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const stalePage = await staleCtx.newPage();
-    await portalLogin(stalePage, "/branch/login", shared.baEmail, oldPassword, "/branch/dashboard");
+    await portalLogin(stalePage, "/branch/login", shared.baEmail, oldPassword, "/branch/dashboard", {
+      diagnosticLabel: "BRANCH_LOGIN_TEST3_FIRST",
+    });
 
     const mutateCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const mutatePage = await mutateCtx.newPage();
