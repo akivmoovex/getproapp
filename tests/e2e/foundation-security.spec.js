@@ -239,7 +239,9 @@ test.describe("Foundation release security E2E", () => {
 
     const memberCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const memberPage = await memberCtx.newPage();
-    await portalLogin(memberPage, "/login", shared.memberEmail, shared.memberPassword, "/member/dashboard");
+    await portalLogin(memberPage, "/login", shared.memberEmail, shared.memberPassword, "/member/dashboard", {
+      diagnosticLabel: "MEMBER_LOGIN_TEST2",
+    });
     await expect(memberPage.getByRole("heading", { name: /dashboard|welcome/i }).first()).toBeVisible();
     await memberCtx.close();
 
