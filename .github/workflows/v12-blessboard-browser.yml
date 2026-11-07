@@ -48,6 +48,7 @@ jobs:
         run: |
           npm run db:bootstrap:foundation
           npm run db:verify:foundation
+          npm run test:db:schema
           npm run church:db-identity:init -- --env testing --confirm
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
