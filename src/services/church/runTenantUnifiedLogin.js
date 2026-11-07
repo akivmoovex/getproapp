@@ -16,6 +16,33 @@ const {
   storePortalChoice,
 } = require("../../church/tenantLoginSession");
 
+function persistAuthenticatedSession(req) {
+  return new Promise((resolve, reject) => {
+    if (!req || !req.session || typeof req.session.save !== "function") {
+      const unavailable = new Error("Unable to complete sign-in.");
+      unavailable.code = "AUTH_SESSION_SAVE_UNAVAILABLE";
+      reject(unavailable);
+      return;
+    }
+    const rejectPersistenceFailure = () => {
+      const persistenceError = new Error("Unable to complete sign-in.");
+      persistenceError.code = "AUTH_SESSION_SAVE_FAILED";
+      reject(persistenceError);
+    };
+    try {
+      req.session.save((err) => {
+        if (err) {
+          rejectPersistenceFailure();
+          return;
+        }
+        resolve();
+      });
+    } catch {
+      rejectPersistenceFailure();
+    }
+  });
+}
+
 /**
  * @param {import("pg").Pool} pool
  * @param {import("express").Request} req
@@ -61,23 +88,27 @@ async function runTenantUnifiedLoginPost(pool, req, res, opts) {
       organizationId: organization.id,
       branchId: branch.id,
     });
+    await persistAuthenticatedSession(req);
     return res.redirect(303, "/choose-portal");
   }
 
   clearAllChurchRoleSessions(req);
   applyRoleSession(req, result.primaryRole);
   const requested = String(opts.nextPath || "").trim();
+  let destination = destinationForRole(result.primaryRole);
   if (
     requested === "/member/dashboard" ||
     requested.startsWith("/member/") &&
       !requested.includes("://") &&
       !requested.startsWith("//")
   ) {
-    return res.redirect(303, requested);
+    destination = requested;
   }
-  return res.redirect(303, destinationForRole(result.primaryRole));
+  await persistAuthenticatedSession(req);
+  return res.redirect(303, destination);
 }
 
 module.exports = {
+  persistAuthenticatedSession,
   runTenantUnifiedLoginPost,
 };
