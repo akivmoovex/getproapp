@@ -16,6 +16,7 @@ const {
   seedUnrelatedTenant,
   seedForeignIdorFixtures,
   uniquePhone,
+  foundationAttemptSlug,
   lifecycleEvent,
 } = require("./helpers.cjs");
 
@@ -28,10 +29,10 @@ test.describe("Foundation release security E2E", () => {
     e2eState,
     shared,
     db,
-  }) => {
+    }, testInfo) => {
     await expectTestingDatabaseIdentity(db);
 
-    const slug = `${e2eState.slugPrefix}-main`.replace(/[^a-z0-9-]/gi, "-").slice(0, 40);
+    const slug = foundationAttemptSlug(e2eState.slugPrefix, testInfo.retry);
     const hqPassword = "HqTemp_pass_2026!";
     const baPassword = "BaTemp_pass_2026!";
     const hqEmail = `hq_${slug}@example.com`;

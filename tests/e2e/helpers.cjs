@@ -33,6 +33,14 @@ function tenantHost(hostSlug) {
   return `${hostSlug}.${DOMAIN}`;
 }
 
+function foundationAttemptSlug(slugPrefix, retry) {
+  const suffix = `-r${Number(retry) || 0}-main`;
+  const prefixLimit = Math.max(1, 40 - suffix.length);
+  return `${String(slugPrefix).toLowerCase().slice(0, prefixLimit)}${suffix}`
+    .replace(/[^a-z0-9-]/gi, "-")
+    .slice(0, 40);
+}
+
 function readState() {
   if (!fs.existsSync(STATE_PATH)) {
     throw new Error("Foundation E2E state is missing; global setup did not complete.");
@@ -391,6 +399,7 @@ module.exports = {
   PLATFORM_HOST,
   TENANT_ZM,
   tenantHost,
+  foundationAttemptSlug,
   readState,
   writeState,
   uniquePhone,
