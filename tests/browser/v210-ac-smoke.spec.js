@@ -14,10 +14,10 @@ async function smokePage(page, path, markers) {
   expect(errors, `console errors on ${path}`).toEqual([]);
 }
 
-test.describe("V2.10 ActiveClinic browser smoke", () => {
-  test("public About is 2.10", async ({ page }) => {
+test.describe("V12 ActiveClinic browser smoke", () => {
+  test("public About is 2.12", async ({ page }) => {
     await page.setExtraHTTPHeaders({ "X-Forwarded-Host": ACTIVECLINIC_HOST });
-    await smokePage(page, "/about", ["ActiveClinic", "2.10"]);
+    await smokePage(page, "/about", ["ActiveClinic", "2.12"]);
   });
 
   test("registration, login, portal and directory entry surfaces load", async ({ page }) => {
