@@ -73,7 +73,11 @@ test.describe("Foundation release security E2E", () => {
 
     await expect(page.getByText(/provisioned successfully/i)).toBeVisible();
     await expect(page.getByText(/Foundation/i).first()).toBeVisible();
-    const branchLabel = page.locator("dt").filter({ hasText: /^Branches$/ });
+    const overviewSection = page.locator("section").filter({
+      has: page.getByRole("heading", { name: "Overview", exact: true }),
+    });
+    await expect(overviewSection).toHaveCount(1);
+    const branchLabel = overviewSection.locator("dt").filter({ hasText: /^Branches$/ });
     await expect(branchLabel).toHaveCount(1);
     await expect(branchLabel.locator("xpath=following-sibling::dd[1]")).toHaveText("1");
     await expect(
