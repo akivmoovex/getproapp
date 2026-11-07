@@ -9,6 +9,14 @@ const {
 } = require("./accountSecurityVersion");
 
 const SESSION_KEY = "churchBranchAdmin";
+const sessionDiagnosticsEnabled =
+  process.env.GETPRO_SESSION_DIAGNOSTICS === "1" && process.env.DEPLOYMENT_ENV === "testing";
+function sessionDiagnostic(event, details) {
+  if (sessionDiagnosticsEnabled) {
+    // eslint-disable-next-line no-console
+    console.log(`[session-diagnostic] ${event} ${JSON.stringify(details)}`);
+  }
+}
 
 /**
  * @returns {{ admin_id: number, organization_id: number, branch_id: number, full_name: string, role: string, status: string, security_version: number } | null}
@@ -16,6 +24,12 @@ const SESSION_KEY = "churchBranchAdmin";
 function getChurchBranchAdminSession(req) {
   const s = req.session && req.session[SESSION_KEY];
   if (!s || typeof s.admin_id !== "number" || typeof s.branch_id !== "number") {
+    sessionDiagnostic("missing-auth-payload", {
+      sessionPresent: Boolean(req.session),
+      payloadPresent: Boolean(s),
+      adminIdType: s ? typeof s.admin_id : "unset",
+      branchIdType: s ? typeof s.branch_id : "unset",
+    });
     return null;
   }
   return {
@@ -66,6 +80,10 @@ async function requireChurchBranchAdminSession(req, res, next) {
   }
   const branch = req.churchContext && req.churchContext.branch;
   if (!branch || Number(branch.id) !== Number(admin.branch_id)) {
+    sessionDiagnostic("branch-mismatch", {
+      branchPresent: Boolean(branch),
+      sessionBranchPresent: Boolean(admin.branch_id),
+    });
     clearChurchBranchAdminSession(req);
     return res.redirect("/branch/login");
   }
@@ -82,10 +100,20 @@ async function requireChurchBranchAdminSession(req, res, next) {
     const { wantsJson } = require("./churchFailureStates");
     const row = await branchAdminsRepo.findBranchAdminById(getPgPool(), admin.admin_id);
     if (!row || row.status !== "active" || Number(row.branch_id) !== Number(admin.branch_id)) {
+      sessionDiagnostic("account-invalid", {
+        rowPresent: Boolean(row),
+        active: Boolean(row && row.status === "active"),
+        branchMatch: Boolean(row && Number(row.branch_id) === Number(admin.branch_id)),
+      });
       clearChurchBranchAdminSession(req);
       return res.redirect("/branch/login");
     }
     if (!sessionMatchesSecurityVersion(admin, row)) {
+      sessionDiagnostic("security-version-mismatch", {
+        sessionVersionPresent: admin.security_version != null,
+        databaseVersionPresent: row.security_version != null,
+        versionsEqual: Number(admin.security_version) === Number(row.security_version),
+      });
       return rejectStaleSecuritySession(req, res, {
         loginPath: "/branch/login",
         clearFn: clearChurchBranchAdminSession,

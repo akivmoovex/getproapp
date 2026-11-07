@@ -398,6 +398,20 @@ function registerBranchAdminRoutes(router) {
           status: updated.status,
           security_version: updated.security_version,
         });
+        if (process.env.GETPRO_SESSION_DIAGNOSTICS === "1" && process.env.DEPLOYMENT_ENV === "testing") {
+          // eslint-disable-next-line no-console
+          console.log(
+            `[session-diagnostic] password-update-committed ${JSON.stringify({
+              databaseVersionPresent: updated.security_version != null,
+              restampedVersionPresent: Boolean(
+                req.session &&
+                  req.session.churchBranchAdmin &&
+                  req.session.churchBranchAdmin.security_version != null
+              ),
+              sessionSaveAvailable: Boolean(req.session && typeof req.session.save === "function"),
+            })}`
+          );
+        }
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;

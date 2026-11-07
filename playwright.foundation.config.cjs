@@ -84,6 +84,7 @@ module.exports = defineConfig({
       // Prefer realistic CSRF enforcement; UI forms always include tokens.
       GETPRO_REQUIRE_PLATFORM_CSRF: "1",
       GETPRO_REQUIRE_CHURCH_CSRF: "1",
+      GETPRO_SESSION_DIAGNOSTICS: "1",
       BB_LIFECYCLE_REPORT: process.env.BB_LIFECYCLE_REPORT,
     },
   },
