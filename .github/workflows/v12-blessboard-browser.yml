@@ -71,6 +71,7 @@ jobs:
             -days 1 -sha256 -extfile "$CERT_DIR/local.test.ext"
           sudo cp "$CERT_DIR/ca.crt" /usr/local/share/ca-certificates/getpro-bb-ci.crt
           sudo update-ca-certificates
+          sudo setcap 'cap_net_bind_service=+ep' "$(readlink -f "$(command -v node)")"
           echo "BB_TLS_CERT_DIR=$CERT_DIR" >> "$GITHUB_ENV"
       - name: Run real BlessBoard foundation browser suite
         run: npx playwright test --config=playwright.foundation.config.cjs

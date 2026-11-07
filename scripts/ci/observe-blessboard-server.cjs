@@ -63,6 +63,11 @@ child.on("exit", (code, signal) => {
   exitInfo = { code, signal, aliveMs: Date.now() - startedAt };
   event("SERVER_EXIT", exitInfo);
 });
+if (tlsProxy) {
+  tlsProxy.stdout.on("data", (chunk) => event("TLS_PROXY_STDOUT", sanitize(chunk.toString()).slice(0, 2000)));
+  tlsProxy.stderr.on("data", (chunk) => event("TLS_PROXY_STDERR", sanitize(chunk.toString()).slice(0, 2000)));
+  tlsProxy.on("exit", (code, signal) => event("TLS_PROXY_EXIT", { code, signal }));
+}
 
 const interval = setInterval(() => {
   event("PROCESS_STATE", { pid: child.pid, alive: exitInfo === null });
