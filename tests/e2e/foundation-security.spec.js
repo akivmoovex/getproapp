@@ -205,7 +205,9 @@ test.describe("Foundation release security E2E", () => {
 
     const baCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const baPage = await baCtx.newPage();
-    await portalLogin(baPage, "/branch/login", shared.baEmail, shared.baPassword, "/branch/dashboard");
+    await portalLogin(baPage, "/branch/login", shared.baEmail, shared.baPassword, "/branch/dashboard", {
+      diagnosticLabel: "TEST2_BRANCH_LOGIN",
+    });
     await baPage.goto("/branch/member-verification");
     await expect(baPage.getByRole("heading", { name: /Member Verification Queue/i })).toBeVisible();
     const memberRow = baPage.getByRole("row").filter({ hasText: shared.memberFullName });
