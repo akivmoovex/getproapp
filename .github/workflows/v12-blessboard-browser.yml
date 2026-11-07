@@ -54,6 +54,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run real BlessBoard foundation browser suite
         run: npx playwright test --config=playwright.foundation.config.cjs
+      - name: Mark and collect server lifecycle diagnostics
+        if: always()
+        run: |
+          printf '%s WORKFLOW_DIAGNOSTIC_COLLECTION %s\n' "$(date -u +%FT%TZ)" '{"status":"collecting"}' >> test-results/foundation-e2e/bb-lifecycle.log 2>/dev/null || true
       - name: Report current BB smoke coverage
         if: always()
         run: |
@@ -68,5 +72,6 @@ jobs:
           path: |
             playwright-report/foundation-e2e
             test-results/foundation-e2e
+            bb-lifecycle.log
           if-no-files-found: ignore
           retention-days: 7

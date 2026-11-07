@@ -10,6 +10,14 @@ const STATE_PATH = path.join(__dirname, ".foundation-e2e-state.json");
 const TENANT_ZM = 1;
 const DOMAIN = "local.test";
 const PLATFORM_HOST = process.env.E2E_PLATFORM_HOST || "admin.local.test";
+function lifecycleEvent(name, details = {}) {
+  const target = process.env.BB_LIFECYCLE_REPORT;
+  if (!target) return;
+  fs.appendFileSync(
+    target,
+    `${new Date().toISOString()} ${name} ${JSON.stringify(details)}\n`
+  );
+}
 
 function tenantHost(hostSlug) {
   return `${hostSlug}.${DOMAIN}`;
@@ -39,6 +47,7 @@ async function fillAndSubmit(page, submitName) {
 }
 
 async function platformLogin(page, username, password) {
+  lifecycleEvent("T10_ADMIN_LOGIN_NAVIGATION", { url: "/admin/login" });
   await page.goto("/admin/login");
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(password);

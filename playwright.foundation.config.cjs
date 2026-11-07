@@ -14,6 +14,12 @@ const runId =
   process.env.BLESSBOARD_E2E_RUN_ID ||
   `${Date.now().toString(36)}-${process.pid.toString(36)}`;
 process.env.BLESSBOARD_E2E_RUN_ID = runId;
+process.env.BB_LIFECYCLE_REPORT = path.join(
+  __dirname,
+  "test-results",
+  "foundation-e2e",
+  "bb-lifecycle.log"
+);
 
 const platformHost = process.env.E2E_PLATFORM_HOST || "admin.local.test";
 
@@ -47,7 +53,7 @@ module.exports = defineConfig({
     timeout: 10_000,
   },
   webServer: {
-    command: "node server.js",
+    command: "node scripts/ci/observe-blessboard-server.cjs",
     url: `${baseURL}/healthz`,
     reuseExistingServer: false,
     timeout: 120_000,
@@ -78,6 +84,7 @@ module.exports = defineConfig({
       // Prefer realistic CSRF enforcement; UI forms always include tokens.
       GETPRO_REQUIRE_PLATFORM_CSRF: "1",
       GETPRO_REQUIRE_CHURCH_CSRF: "1",
+      BB_LIFECYCLE_REPORT: process.env.BB_LIFECYCLE_REPORT,
     },
   },
 });

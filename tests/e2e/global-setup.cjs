@@ -7,6 +7,11 @@ const bcrypt = require("bcryptjs");
 const STATE_PATH = path.join(__dirname, ".foundation-e2e-state.json");
 
 module.exports = async function globalSetup() {
+  const lifecycleReport = process.env.BB_LIFECYCLE_REPORT;
+  if (lifecycleReport) {
+    fs.mkdirSync(path.dirname(lifecycleReport), { recursive: true });
+    fs.appendFileSync(lifecycleReport, `${new Date().toISOString()} T7_GLOBAL_SETUP_BEGIN {}\n`);
+  }
   const databaseUrl = String(process.env.E2E_DATABASE_URL || "").trim();
   if (!databaseUrl) {
     throw new Error("E2E_DATABASE_URL is required for the Foundation release E2E suite.");
@@ -94,4 +99,7 @@ module.exports = async function globalSetup() {
       2
     )
   );
+  if (lifecycleReport) {
+    fs.appendFileSync(lifecycleReport, `${new Date().toISOString()} T8_GLOBAL_SETUP_END {}\n`);
+  }
 };
