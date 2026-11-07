@@ -289,7 +289,8 @@ test.describe("Foundation release security E2E", () => {
     await expect(mutatePage.getByRole("heading", { name: /dashboard/i }).first()).toBeVisible();
 
     await stalePage.goto("/branch/dashboard");
-    await expect(stalePage).toHaveURL(/\/branch\/login/);
+    await expect(stalePage).toHaveURL(/\/login$/);
+    await expect(stalePage.getByRole("heading", { name: /dashboard/i })).not.toBeVisible();
 
     const failLogin = await newHostContext(browser, shared.tenantHost, { baseURL });
     const failPage = await failLogin.newPage();
