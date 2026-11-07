@@ -5,8 +5,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const {
+  browserOriginRequest,
   foundationAttemptSlug,
   foundationFixtureSlug,
+  resolveAuthenticatedProbeUrl,
 } = require("./e2e/helpers.cjs");
 
 test("Foundation fixture slugs remain unique and preserve retry suffixes at the length limit", () => {
@@ -28,21 +30,50 @@ test("Foundation fixture slugs remain unique and preserve retry suffixes at the 
   }
 });
 
-test("Foundation direct authenticated probes preserve the D183R HTTPS forwarding contract", () => {
+test("authenticated probe URLs resolve against and remain on the browser tenant origin", async () => {
+  const authenticatedPageUrl = "https://primary-tenant.local.test/branch/dashboard";
+
+  assert.equal(
+    resolveAuthenticatedProbeUrl(authenticatedPageUrl, "/branch/members/42"),
+    "https://primary-tenant.local.test/branch/members/42"
+  );
+  assert.throws(
+    () => resolveAuthenticatedProbeUrl(authenticatedPageUrl, "https://foreign-tenant.local.test/branch/members/42"),
+    /AUTHENTICATED_PROBE_CROSS_ORIGIN/
+  );
+
+  const page = {
+    url: () => authenticatedPageUrl,
+    evaluate: async (_callback, payload) => payload,
+  };
+  const payload = await browserOriginRequest(page, "/branch/members/42", {
+    method: "POST",
+    form: { _csrf: "controlled-test-token" },
+  });
+  assert.equal(payload.requestUrl, "https://primary-tenant.local.test/branch/members/42");
+  assert.equal(payload.requestMethod, "POST");
+  assert.deepEqual(payload.form, { _csrf: "controlled-test-token" });
+});
+
+test("Foundation direct authenticated probes preserve browser-origin HTTPS transport", () => {
   const source = fs.readFileSync(
     path.join(__dirname, "e2e", "foundation-security.spec.js"),
     "utf8"
   );
+  const helperSource = fs.readFileSync(path.join(__dirname, "e2e", "helpers.cjs"), "utf8");
   const protectedProbeSection = source.slice(
     source.indexOf('test("6) cross-tenant IDOR'),
-    source.indexOf('test("8) basic attendance')
+    source.indexOf('test("7) Foundation scheduled reports')
   );
 
-  assert.match(source, /"X-Forwarded-Proto": "https"/);
-  assert.doesNotMatch(source, /"X-Forwarded-Proto": "http"/);
-  assert.match(protectedProbeSection, /baPage\.request\.(post|get)/);
-  assert.match(protectedProbeSection, /hqPage\.request\.(post|get)/);
-  assert.match(protectedProbeSection, /maxRedirects: 0/);
+  assert.match(protectedProbeSection, /browserOriginRequest\(baPage/);
+  assert.match(protectedProbeSection, /browserOriginRequest\(hqPage/);
+  assert.match(protectedProbeSection, /expectAuthenticatedControl\(branchControl/);
+  assert.match(protectedProbeSection, /expectAuthenticatedControl\(hqControl/);
+  assert.doesNotMatch(protectedProbeSection, /\.request\.(post|get)/);
+  assert.match(helperSource, /target\.origin !== authenticatedUrl\.origin/);
+  assert.match(helperSource, /credentials: "same-origin"/);
+  assert.match(helperSource, /redirect: "follow"/);
   assert.doesNotMatch(protectedProbeSection, /Cookie:/);
 });
 
@@ -59,8 +90,9 @@ test("Foundation plan probes use valid CSRF and require entitlement denial", () 
   assert.match(planSection, /broadcastCsrf/);
   assert.match(planSection, /_csrf: broadcastCsrf/);
   assert.match(planSection, /audience: "members"/);
-  assert.equal((planSection.match(/status\(\)\)\.toBe\(403\)/g) || []).length, 2);
-  assert.doesNotMatch(planSection, /"X-Forwarded-Proto": "http"/);
+  assert.equal((planSection.match(/\.status\)\.toBe\(403\)/g) || []).length, 2);
+  assert.equal((planSection.match(/browserOriginRequest/g) || []).length, 2);
+  assert.doesNotMatch(planSection, /\.request\.(post|get)/);
 });
 
 test("Foundation login diagnostics follow the rendered form action and protected request", () => {

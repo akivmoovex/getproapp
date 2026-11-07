@@ -11,6 +11,7 @@ const {
 const {
   platformLogin,
   portalLogin,
+  browserOriginRequest,
   expectDeniedOrGone,
   seedSiblingBranchAndLeader,
   seedUnrelatedTenant,
@@ -19,6 +20,20 @@ const {
   foundationAttemptSlug,
   lifecycleEvent,
 } = require("./helpers.cjs");
+
+function expectProtectedProbeReached(response, expectedPath, label) {
+  expect(response.redirected, `${label} unexpectedly redirected; authentication context was not preserved`).toBe(
+    false
+  );
+  expect(new URL(response.url).pathname, `${label} did not reach its intended protected endpoint`).toBe(
+    new URL(expectedPath, "https://probe.invalid").pathname
+  );
+}
+
+function expectAuthenticatedControl(response, expectedPath, label) {
+  expectProtectedProbeReached(response, expectedPath, label);
+  expect(response.status, `${label} did not carry an authenticated session`).toBe(200);
+}
 
 test.describe.configure({ mode: "serial" });
 
@@ -532,6 +547,9 @@ test.describe("Foundation release security E2E", () => {
     const baPage = await baCtx.newPage();
     await portalLogin(baPage, "/branch/login", shared.baEmail, shared.baPassword, "/branch/dashboard");
 
+    const branchControl = await browserOriginRequest(baPage, "/branch/dashboard");
+    expectAuthenticatedControl(branchControl, "/branch/dashboard", "Branch IDOR control request");
+
     const csrfPage = await baPage.goto("/branch/attendance/check-in");
     expect(csrfPage.status()).toBe(200);
     const csrf = await baPage.locator('input[name="_csrf"]').first().inputValue();
@@ -554,29 +572,15 @@ test.describe("Foundation release security E2E", () => {
     ];
 
     for (const probe of probes) {
-      const response =
-        probe.method === "post"
-          ? await baPage.request.post(probe.path, {
-              form: probe.form || {},
-              headers: {
-                "X-Forwarded-Host": shared.tenantHost,
-                "X-Forwarded-Proto": "https",
-                ...(probe.headers || {}),
-              },
-              maxRedirects: 0,
-            })
-          : await baPage.request.get(probe.path, {
-              headers: {
-                "X-Forwarded-Host": shared.tenantHost,
-                "X-Forwarded-Proto": "https",
-                ...(probe.headers || {}),
-              },
-              maxRedirects: 0,
-            });
+      const response = await browserOriginRequest(baPage, probe.path, {
+        method: probe.method,
+        form: probe.form,
+        headers: probe.headers,
+      });
+      expectProtectedProbeReached(response, probe.path, `Branch IDOR ${probe.method.toUpperCase()} probe`);
       await expectDeniedOrGone(response);
-      const body = await response.text();
       for (const marker of fx.secretMarkers) {
-        expect(body).not.toContain(marker);
+        expect(response.body).not.toContain(marker);
       }
     }
     const foreignSession = await db.query(
@@ -589,15 +593,14 @@ test.describe("Foundation release security E2E", () => {
     const hqCtx = await newHostContext(browser, shared.tenantHost, { baseURL });
     const hqPage = await hqCtx.newPage();
     await portalLogin(hqPage, "/hq/login", shared.hqEmail, shared.hqPassword, "/hq/dashboard");
-    const hqBranch = await hqPage.request.get(`/hq/branches/${fx.branch.id}`, {
-      headers: {
-        "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "https",
-      },
-      maxRedirects: 0,
-    });
+    const hqControl = await browserOriginRequest(hqPage, "/hq/dashboard");
+    expectAuthenticatedControl(hqControl, "/hq/dashboard", "HQ IDOR control request");
+
+    const hqBranchPath = `/hq/branches/${fx.branch.id}`;
+    const hqBranch = await browserOriginRequest(hqPage, hqBranchPath);
+    expectProtectedProbeReached(hqBranch, hqBranchPath, "HQ branch-registry IDOR probe");
     await expectDeniedOrGone(hqBranch);
-    expect(await hqBranch.text()).not.toContain("Foreign Main");
+    expect(hqBranch.body).not.toContain("Foreign Main");
 
     await baCtx.close();
     await hqCtx.close();
@@ -618,7 +621,8 @@ test.describe("Foundation release security E2E", () => {
     await baPage.goto("/branch/scheduled-reports");
     await expect(baPage.getByText(/Growth|upgrade|not included|scheduled reports/i).first()).toBeVisible();
 
-    const schedulePost = await baPage.request.post("/branch/scheduled-reports", {
+    const schedulePost = await browserOriginRequest(baPage, "/branch/scheduled-reports", {
+      method: "POST",
       form: {
         report_type: "branch_monthly_summary",
         export_format: "csv",
@@ -627,13 +631,9 @@ test.describe("Foundation release security E2E", () => {
         delivery_time_local: "09:00",
         day_of_month: "1",
       },
-      headers: {
-        "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "https",
-      },
-      maxRedirects: 0,
     });
-    expect(schedulePost.status()).toBe(403);
+    expectProtectedProbeReached(schedulePost, "/branch/scheduled-reports", "Foundation scheduled-report probe");
+    expect(schedulePost.status).toBe(403);
 
     await baPage.goto("/branch/dashboard");
     await expect(baPage).toHaveURL(/\/branch\/dashboard/);
@@ -651,7 +651,8 @@ test.describe("Foundation release security E2E", () => {
 
     const future = new Date(Date.now() + 3 * 60 * 60 * 1000);
     const publishAt = future.toISOString().slice(0, 16);
-    const broadcastPost = await hqPage.request.post("/hq/broadcasts", {
+    const broadcastPost = await browserOriginRequest(hqPage, "/hq/broadcasts", {
+      method: "POST",
       multipart: {
         title: "E2E scheduled attempt",
         body: "Should be denied on Foundation",
@@ -660,13 +661,9 @@ test.describe("Foundation release security E2E", () => {
         publish_at: publishAt,
         _csrf: broadcastCsrf,
       },
-      headers: {
-        "X-Forwarded-Host": shared.tenantHost,
-        "X-Forwarded-Proto": "https",
-      },
-      maxRedirects: 0,
     });
-    expect(broadcastPost.status()).toBe(403);
+    expectProtectedProbeReached(broadcastPost, "/hq/broadcasts", "Foundation scheduled-broadcast probe");
+    expect(broadcastPost.status).toBe(403);
 
     await hqPage.goto("/hq/dashboard");
     await expect(hqPage).toHaveURL(/\/hq\/dashboard/);

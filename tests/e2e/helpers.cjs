@@ -217,8 +217,72 @@ async function portalLogin(page, loginPath, identifier, password, expectedPath, 
   removeDiagnosticListeners();
 }
 
+function resolveAuthenticatedProbeUrl(pageUrl, requestTarget) {
+  const authenticatedUrl = new URL(pageUrl);
+  if (!["http:", "https:"].includes(authenticatedUrl.protocol)) {
+    throw new Error("AUTHENTICATED_PROBE_INVALID_PAGE_ORIGIN");
+  }
+  const target = new URL(requestTarget, authenticatedUrl);
+  if (target.origin !== authenticatedUrl.origin) {
+    throw new Error("AUTHENTICATED_PROBE_CROSS_ORIGIN");
+  }
+  return target.toString();
+}
+
+async function browserOriginRequest(page, requestTarget, options = {}) {
+  const url = resolveAuthenticatedProbeUrl(page.url(), requestTarget);
+  const method = String(options.method || "GET").toUpperCase();
+  if (options.form && options.multipart) {
+    throw new Error("AUTHENTICATED_PROBE_AMBIGUOUS_BODY");
+  }
+
+  return page.evaluate(
+    async ({ requestUrl, requestMethod, requestHeaders, form, multipart }) => {
+      const headers = { ...(requestHeaders || {}) };
+      const init = {
+        method: requestMethod,
+        headers,
+        credentials: "same-origin",
+        redirect: "follow",
+      };
+
+      if (form) {
+        const body = new URLSearchParams();
+        for (const [key, value] of Object.entries(form)) {
+          body.append(key, value == null ? "" : String(value));
+        }
+        init.body = body;
+        if (!Object.keys(headers).some((name) => name.toLowerCase() === "content-type")) {
+          headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8";
+        }
+      } else if (multipart) {
+        const body = new FormData();
+        for (const [key, value] of Object.entries(multipart)) {
+          body.append(key, value == null ? "" : String(value));
+        }
+        init.body = body;
+      }
+
+      const response = await fetch(requestUrl, init);
+      return {
+        status: response.status,
+        url: response.url,
+        redirected: response.redirected,
+        body: await response.text(),
+      };
+    },
+    {
+      requestUrl: url,
+      requestMethod: method,
+      requestHeaders: options.headers || {},
+      form: options.form || null,
+      multipart: options.multipart || null,
+    }
+  );
+}
+
 async function expectDeniedOrGone(response) {
-  const status = response.status();
+  const status = typeof response.status === "function" ? response.status() : response.status;
   expect([403, 404]).toContain(status);
 }
 
@@ -443,6 +507,8 @@ module.exports = {
   fillAndSubmit,
   platformLogin,
   portalLogin,
+  resolveAuthenticatedProbeUrl,
+  browserOriginRequest,
   expectDeniedOrGone,
   seedSiblingBranchAndLeader,
   seedUnrelatedTenant,
