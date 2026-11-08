@@ -164,25 +164,9 @@ function localDatabaseUrlForName(dbName, adminUrl) {
   assertLocalNonProductionAdminUrl(admin, {
     allowDatabaseNames: ["postgres"],
   });
-  const user = parsePgUrl(admin).username || localOsUser();
-  let socketDir = null;
-  try {
-    const u = new URL(String(admin).replace(/^postgresql:/i, "postgres:"));
-    socketDir = u.searchParams.get("host");
-  } catch {
-    socketDir = null;
-  }
-  if (socketDir && socketDir.startsWith("/")) {
-    const q = `host=${encodeURIComponent(socketDir)}`;
-    if (user) {
-      return `postgresql://${encodeURIComponent(user)}@127.0.0.1/${name}?${q}`;
-    }
-    return `postgresql://127.0.0.1/${name}?${q}`;
-  }
-  if (user) {
-    return `postgresql://${encodeURIComponent(user)}@127.0.0.1:5432/${name}`;
-  }
-  return `postgresql://127.0.0.1:5432/${name}`;
+  const url = new URL(String(admin).replace(/^postgresql:/i, "postgres:"));
+  url.pathname = `/${name}`;
+  return url.toString().replace(/^postgres:/i, "postgresql:");
 }
 
 module.exports = {
