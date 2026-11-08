@@ -2,6 +2,11 @@ name: V12 ActiveClinic Browser CI
 
 on:
   workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Immutable approved test SHA; omit only for manual current-ref mode"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -35,6 +40,21 @@ jobs:
       PLAYWRIGHT_TENANT_HOST: activeclinic-demo.local.test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_sha || github.ref }}
+      - name: Verify pinned test checkout
+        env:
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: |
+          set -eu
+          if [ -n "$TARGET_SHA" ]; then
+            printf '%s' "$TARGET_SHA" | grep -Eq '^[0-9a-fA-F]{40}$'
+            git fetch --no-tags origin V12
+            test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+            git merge-base --is-ancestor "$TARGET_SHA" origin/V12
+          fi
+          printf 'CHECKOUT_SHA=%s\n' "$(git rev-parse HEAD)"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -57,6 +77,12 @@ jobs:
           DATABASE_URL_ADMIN: postgresql://postgres:postgres@127.0.0.1:5432/postgres
         run: |
           node --test tests/activeclinic-batch3-acn20.test.js
+      - name: Run ActiveClinic RBAC and facility authorization suite
+        env:
+          FOUNDATION_ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          DATABASE_URL_ADMIN: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          node --test tests/v203-ac-batch3-test-readiness.test.js
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run real ActiveClinic browser smoke suite
