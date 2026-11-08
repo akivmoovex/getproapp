@@ -126,6 +126,10 @@ test("Foundation attendance verification opens the form and asserts exact report
   assert.match(attendanceSection, /\/branch\/attendance\?new=1/);
   assert.match(attendanceSection, /locator\("#form_attendance_date"\)/);
   assert.doesNotMatch(attendanceSection, /locator\("#attendance_date"\)/);
+  assert.match(attendanceSection, /"1 members · 0 visitors"/);
+  assert.match(attendanceSection, /getByText\(shared\.memberFullName, \{ exact: true \}\)\)\.toHaveCount\(0\)/);
+  assert.match(attendanceSection, /activeMemberCheckIn\.rows\[0\]\)\.toMatchObject/);
+  assert.match(attendanceSection, /closedSession\.rows\[0\]\?\.status\)\.toBe\("closed"\)/);
   assert.match(attendanceSection, /hasText: "Sessions"/);
   assert.match(attendanceSection, /hasText: "Member check-ins"/);
   assert.match(attendanceSection, /hasText: "Visitor check-ins"/);

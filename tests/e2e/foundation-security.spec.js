@@ -729,15 +729,36 @@ test.describe("Foundation release security E2E", () => {
     ]);
     await expect(baPage.getByText(/Active session|E2E Morning Service/i).first()).toBeVisible();
 
+    const attendanceSessionId = Number(
+      await baPage.locator('input[name="session_id"]').first().inputValue()
+    );
+    expect(attendanceSessionId).toBeGreaterThan(0);
     await baPage.locator("#member_id").selectOption(String(shared.memberId));
     await Promise.all([
       baPage.waitForURL(/\/branch\/attendance\/check-in/),
       baPage.getByRole("button", { name: "Check in member" }).click(),
     ]);
-    await expect(baPage.getByText(new RegExp(shared.memberFullName, "i")).first()).toBeVisible();
+    await expect(baPage.getByText("1 members · 0 visitors", { exact: true })).toBeVisible();
+    await expect(baPage.getByText(shared.memberFullName, { exact: true })).toHaveCount(0);
+    const activeMemberCheckIn = await db.query(
+      `SELECT method, status
+         FROM public.church_attendance_check_ins
+        WHERE service_session_id = $1 AND member_id = $2
+        ORDER BY id DESC
+        LIMIT 1`,
+      [attendanceSessionId, shared.memberId]
+    );
+    expect(activeMemberCheckIn.rows[0]).toMatchObject({ method: "manual", status: "active" });
 
     await baPage.getByRole("button", { name: "Close session" }).click();
     await expect(baPage.getByRole("heading", { name: /Service check-in/i })).toBeVisible();
+    const closedSession = await db.query(
+      `SELECT status
+         FROM public.church_attendance_service_sessions
+        WHERE id = $1 AND branch_id = $2`,
+      [attendanceSessionId, shared.branchId]
+    );
+    expect(closedSession.rows[0]?.status).toBe("closed");
 
     await baPage.goto(`/branch/attendance/check-in/report?from=${today}&to=${today}`);
     const checkInSummary = baPage.locator("dl.church-branch-dl");
