@@ -51,6 +51,12 @@ jobs:
           npm run test:db:schema
           npm run church:db-identity:init -- --env testing --confirm
           npm run activeclinic:seed-demo-clinics -- --confirm --clinic=activeclinic-demo
+      - name: Run isolated ACN20 authenticated authorization suite
+        env:
+          FOUNDATION_ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          DATABASE_URL_ADMIN: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          node --test tests/activeclinic-batch3-acn20.test.js
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run real ActiveClinic browser smoke suite

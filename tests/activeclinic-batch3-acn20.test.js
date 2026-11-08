@@ -383,10 +383,42 @@ describe("V2.03 Batch 3 ACN20 referral presentation leaf", () => {
     });
     const denyCookie = await sessionCookie(denyIdentity.identity.id, clinical.organizationId);
     await selectFacility(app, denyCookie, clinical.facilityId);
+    const cashierOwnRoute = await request(app)
+      .get("/app/cashier")
+      .set("Cookie", denyCookie);
+    assert.notEqual(cashierOwnRoute.status, 403);
     const denied = await request(app)
       .get("/app/clinical/referrals")
       .set("Cookie", denyCookie);
     assert.ok([403, 302, 303].includes(denied.status));
     assert.doesNotMatch(String(denied.text || ""), /Cardiac rehab referral/);
+
+    const referralBefore = await pool.query(
+      `SELECT status, version
+         FROM activeclinic.clinical_follow_up_items
+        WHERE id = $1 AND organization_id = $2`,
+      [created.item.id, clinical.organizationId]
+    );
+    const { cookie: denyPostCookie, csrf: denyPostCsrf } = withCsrf(denyCookie);
+    const deniedStatusUpdate = await request(app)
+      .post(`/app/clinical/follow-up/${created.item.id}/status`)
+      .set("Cookie", denyPostCookie)
+      .type("form")
+      .redirects(0)
+      .send({
+        [CSRF_FIELD]: denyPostCsrf,
+        version: created.item.version,
+        status: "completed",
+        return_to: "/app/clinical/referrals",
+      });
+    assert.equal(deniedStatusUpdate.status, 403);
+    assert.doesNotMatch(String(deniedStatusUpdate.text || ""), /Cardiac rehab referral|Phase II rehab/i);
+    const referralAfter = await pool.query(
+      `SELECT status, version
+         FROM activeclinic.clinical_follow_up_items
+        WHERE id = $1 AND organization_id = $2`,
+      [created.item.id, clinical.organizationId]
+    );
+    assert.deepEqual(referralAfter.rows[0], referralBefore.rows[0]);
   });
 });
