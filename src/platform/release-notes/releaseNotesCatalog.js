@@ -42,6 +42,7 @@ const VERSION_ORDER = Object.freeze([
   "2.10",
   "2.11",
   "2.12",
+  "2.13",
 ]);
 
 /**
@@ -3532,6 +3533,87 @@ const VERSIONS = Object.freeze([
       "docs/releases/V212_DEVELOPMENT_BASELINE.md",
       "src/platform/build/applicationBuildInfo.js",
     ],
+  }),
+  Object.freeze({
+    version: "2.13",
+    summary:
+      "Version 2.13 is the next development release, focusing on bug fixes, stability improvements, security enhancements, and shared-platform improvements for BlessBoard and ActiveClinic.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V13. Not released or deployed.",
+    qaVerification:
+      "NOT TESTED — V2.13 development baseline only; inherited V2.12 verification gaps remain open.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.13",
+      "V2.13 development status is clearly identified",
+      "V2.12 release history and unresolved findings remain available",
+    ],
+    pendingDevelopment: [
+      "BlessBoard bug fixes and reliability improvements",
+      "ActiveClinic stability and security verification closure",
+      "Shared-platform email/SMS OTP authentication (Planned)",
+    ],
+    knownIssues: [
+      "Inherited V2.12 verification gaps remain unresolved; no unfinished V2.13 feature is claimed complete.",
+    ],
+    documentationGaps: [
+      "Hosted acceptance evidence and remaining V2.12 release holds remain open.",
+    ],
+    architectureWork: {
+      title: "V2.13 development foundation",
+      body:
+        "Created from the verified V2.12 source tip on branch V13. Feature completion is not claimed by this baseline.",
+      items: [
+        "V2.12 source tip carried forward",
+        "Current About version initialized to 2.13",
+        "Historical release notes preserved",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro:
+          "Version 2.13 is the next development release for BlessBoard, focusing on bug fixes, reliability, security improvements, and shared-platform enhancements.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Planned",
+            items: Object.freeze([
+              "Shared-platform email/SMS OTP authentication.",
+              "Bug fixes and reliability improvements without claiming unfinished work as released.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro:
+          "Version 2.13 is the next development release for ActiveClinic, focusing on stability, bug fixes, security improvements, and shared-platform enhancements.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Planned",
+            items: Object.freeze([
+              "Shared-platform email/SMS OTP authentication.",
+              "Stability and security improvements without claiming unfinished work as released.",
+            ]),
+          }),
+        ]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared V2.13 development baseline on branch V13.",
+        sections: Object.freeze([
+          Object.freeze({
+            title: "Planned",
+            items: Object.freeze([
+              "Shared-platform email/SMS OTP authentication.",
+              "No new shared runtime feature is claimed as complete in this baseline.",
+            ]),
+          }),
+        ]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: ["src/platform/build/applicationBuildInfo.js"],
   }),
 ]);
 

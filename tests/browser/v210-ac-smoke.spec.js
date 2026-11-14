@@ -15,9 +15,9 @@ async function smokePage(page, path, markers) {
 }
 
 test.describe("V12 ActiveClinic browser smoke", () => {
-  test("public About is 2.12", async ({ page }) => {
+  test("public About is 2.13", async ({ page }) => {
     await page.setExtraHTTPHeaders({ "X-Forwarded-Host": ACTIVECLINIC_HOST });
-    await smokePage(page, "/about", ["ActiveClinic", "2.12"]);
+    await smokePage(page, "/about", ["ActiveClinic", "2.13"]);
   });
 
   test("registration, login, portal and directory entry surfaces load", async ({ page }) => {
