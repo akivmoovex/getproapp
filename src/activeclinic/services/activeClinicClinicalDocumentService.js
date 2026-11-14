@@ -8,6 +8,10 @@
 const repo = require("../repositories/clinicalDocumentRepository");
 const facilityRepo = require("../repositories/facilityRepository");
 const {
+  documentMatchesCallerPatient,
+  documentMatchesCallerFacility,
+} = require("./documentScope");
+const {
   getPatientByOrgAndId,
 } = require("./activeClinicPatientService");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
@@ -206,7 +210,7 @@ async function writeEventAndAudit(db, {
   detailJson,
   actionKey,
 }) {
-  await repo.insertEvent(db, {
+  const event = await repo.insertEvent(db, {
     organizationId,
     documentId,
     eventType,
@@ -214,6 +218,7 @@ async function writeEventAndAudit(db, {
     actorPlatformIdentityId: actor && actor.platformIdentityId,
     detailJson,
   });
+  if (!event) return;
   await recordAuditEventSafe(db, {
     organizationId,
     actorPlatformIdentityId: actor && actor.platformIdentityId,
@@ -230,6 +235,10 @@ async function writeEventAndAudit(db, {
  * @param {object} input
  */
 async function createClinicalDocument(db, input) {
+  const earlyType = String((input && input.documentType) || "").trim();
+  if (earlyType === "clinical_attachment" && !trimOptional(input && input.bodyText, 20000)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
   const organizationId = input && input.organizationId;
   const patientGate = await requireOrgPatient(db, {
     organizationId,
@@ -324,9 +333,11 @@ async function updateClinicalDocumentDraft(db, input) {
     return { ok: false, code: RESULT.FINAL_IMMUTABLE };
   }
 
-  // Patient scope: if caller provides patientId, must match
-  if (input.patientId && String(input.patientId) !== String(existing.patient_id)) {
+  if (!documentMatchesCallerPatient(existing, input.patientId)) {
     return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+  }
+  if (!documentMatchesCallerFacility(existing, input.facilityId)) {
+    return { ok: false, code: RESULT.NOT_FOUND };
   }
 
   const title = trimRequired(input.title, 200);
@@ -354,6 +365,7 @@ async function updateClinicalDocumentDraft(db, input) {
     id: existing.id,
     organizationId,
     patientId: existing.patient_id,
+    facilityId: existing.facility_id,
     encounterId: encGate.encounterId,
     documentType,
     title,
@@ -399,8 +411,11 @@ async function finalizeClinicalDocument(db, input) {
     organizationId,
   });
   if (!existing) return { ok: false, code: RESULT.NOT_FOUND };
-  if (input.patientId && String(input.patientId) !== String(existing.patient_id)) {
+  if (!documentMatchesCallerPatient(existing, input.patientId)) {
     return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+  }
+  if (!documentMatchesCallerFacility(existing, input.facilityId)) {
+    return { ok: false, code: RESULT.NOT_FOUND };
   }
   if (existing.status !== "draft") {
     return { ok: false, code: RESULT.NOT_DRAFT };
@@ -410,6 +425,7 @@ async function finalizeClinicalDocument(db, input) {
     id: existing.id,
     organizationId,
     patientId: existing.patient_id,
+    facilityId: existing.facility_id,
     finalizedByStaffId: staffId,
   });
   if (!finalized) {
@@ -445,7 +461,10 @@ async function getClinicalDocument(db, input) {
     organizationId,
   });
   if (!row) return { ok: false, code: RESULT.NOT_FOUND };
-  if (input.patientId && String(input.patientId) !== String(row.patient_id)) {
+  if (!documentMatchesCallerPatient(row, input.patientId)) {
+    return { ok: false, code: RESULT.NOT_FOUND };
+  }
+  if (!documentMatchesCallerFacility(row, input.facilityId)) {
     return { ok: false, code: RESULT.NOT_FOUND };
   }
   const events = await repo.listEvents(db, {

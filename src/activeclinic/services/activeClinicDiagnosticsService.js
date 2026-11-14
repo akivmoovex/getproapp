@@ -8,6 +8,10 @@ const {
   authorizeStaffPermission,
   RESULT: AUTHZ_RESULT,
 } = require("./activeClinicAuthorizationService");
+const {
+  canAttachLaboratoryResult,
+  isClosedDiagnosticStatus,
+} = require("./clinicalOperationsRules");
 
 const RESULT = {
   OK: "OK",
@@ -150,12 +154,20 @@ async function collectSpecimen(pool, params) {
     );
 
     // Update laboratory request status
-    await client.query(
+    const collected = await client.query(
       `UPDATE activeclinic.laboratory_requests
        SET status = 'collected', collected_at = now()
-       WHERE id = $1`,
-      [laboratoryRequestId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND facility_id = $4
+         AND status = 'pending_collection'`,
+      [laboratoryRequestId, organizationId, healthcareOrganizationId, facilityId]
     );
+    if (!collected.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     await client.query("COMMIT");
 
@@ -222,20 +234,32 @@ async function receiveSpecimen(pool, params) {
     );
 
     // Update specimen status
-    await client.query(
+    const receivedSpecimen = await client.query(
       `UPDATE activeclinic.specimens
        SET status = 'received'
-       WHERE id = $1`,
-      [specimenId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND status = 'collected'`,
+      [specimenId, organizationId, healthcareOrganizationId]
     );
+    if (!receivedSpecimen.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
-    // Update laboratory request status
-    await client.query(
+    const receivedRequest = await client.query(
       `UPDATE activeclinic.laboratory_requests
        SET status = 'received'
-       WHERE id = $1`,
-      [specimen.laboratory_request_id]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [specimen.laboratory_request_id, organizationId, healthcareOrganizationId]
     );
+    if (!receivedRequest.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.REQUEST_NOT_FOUND };
+    }
 
     await client.query("COMMIT");
 
@@ -296,20 +320,31 @@ async function rejectSpecimen(pool, params) {
     );
 
     // Update specimen status
-    await client.query(
+    const rejectedSpecimen = await client.query(
       `UPDATE activeclinic.specimens
        SET status = 'rejected'
-       WHERE id = $1`,
-      [specimenId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [specimenId, organizationId, healthcareOrganizationId]
     );
+    if (!rejectedSpecimen.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.SPECIMEN_NOT_FOUND };
+    }
 
-    // Update laboratory request status
-    await client.query(
+    const rejectedRequest = await client.query(
       `UPDATE activeclinic.laboratory_requests
        SET status = 'rejected'
-       WHERE id = $1`,
-      [specimen.laboratory_request_id]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [specimen.laboratory_request_id, organizationId, healthcareOrganizationId]
     );
+    if (!rejectedRequest.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.REQUEST_NOT_FOUND };
+    }
 
     await client.query("COMMIT");
 
@@ -359,6 +394,17 @@ async function enterLaboratoryResult(pool, params) {
     }
 
     const request = requestRes.rows[0];
+    if (
+      params.patientId &&
+      String(params.patientId) !== String(request.patient_id)
+    ) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+    }
+    if (!canAttachLaboratoryResult(request.status)) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     // Create result
     const resultRes = await client.query(
@@ -412,12 +458,20 @@ async function enterLaboratoryResult(pool, params) {
     }
 
     // Update laboratory request status
-    await client.query(
+    const resulted = await client.query(
       `UPDATE activeclinic.laboratory_requests
        SET status = 'resulted', resulted_at = now()
-       WHERE id = $1`,
-      [laboratoryRequestId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND facility_id = $4
+         AND status IN ('pending_collection', 'collected', 'received', 'processing')`,
+      [laboratoryRequestId, organizationId, healthcareOrganizationId, facilityId]
     );
+    if (!resulted.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     // If critical, create alert
     if (isCritical) {
@@ -486,6 +540,13 @@ async function enterRadiologyReport(pool, params) {
     }
 
     const request = requestRes.rows[0];
+    if (
+      params.patientId &&
+      String(params.patientId) !== String(request.patient_id)
+    ) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+    }
 
     // Create report
     const reportRes = await client.query(
@@ -512,12 +573,19 @@ async function enterRadiologyReport(pool, params) {
     const reportId = reportRes.rows[0].id;
 
     // Update radiology request status
-    await client.query(
+    const reported = await client.query(
       `UPDATE activeclinic.radiology_requests
        SET status = 'reported', reported_at = now()
-       WHERE id = $1`,
-      [radiologyRequestId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND facility_id = $4`,
+      [radiologyRequestId, organizationId, healthcareOrganizationId, facilityId]
     );
+    if (!reported.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.REQUEST_NOT_FOUND };
+    }
 
     // If critical, create alert
     if (isCritical) {
@@ -580,7 +648,14 @@ async function verifyLaboratoryResult(pool, params) {
     }
 
     const result = resultRes.rows[0];
-    if (result.status === "verified" || result.status === "released") {
+    if (
+      params.patientId &&
+      String(params.patientId) !== String(result.patient_id)
+    ) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+    }
+    if (isClosedDiagnosticStatus(result.status)) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.ALREADY_VERIFIED };
     }
@@ -592,12 +667,20 @@ async function verifyLaboratoryResult(pool, params) {
     }
 
     // Update result status
-    await client.query(
+    const verified = await client.query(
       `UPDATE activeclinic.laboratory_results
        SET status = 'verified', verified_by_staff_id = $1, verified_at = now()
-       WHERE id = $2`,
-      [actor.staffId, laboratoryResultId]
+       WHERE id = $2
+         AND organization_id = $3
+         AND healthcare_organization_id = $4
+         AND status NOT IN ('verified', 'released')
+         AND entered_by_staff_id IS DISTINCT FROM $1`,
+      [actor.staffId, laboratoryResultId, organizationId, healthcareOrganizationId]
     );
+    if (!verified.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     await client.query("COMMIT");
 
@@ -642,7 +725,7 @@ async function verifyRadiologyReport(pool, params) {
     }
 
     const report = reportRes.rows[0];
-    if (report.status === "verified" || report.status === "released") {
+    if (isClosedDiagnosticStatus(report.status)) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.ALREADY_VERIFIED };
     }
@@ -654,12 +737,20 @@ async function verifyRadiologyReport(pool, params) {
     }
 
     // Update report status
-    await client.query(
+    const verified = await client.query(
       `UPDATE activeclinic.radiology_reports
        SET status = 'verified', verified_by_staff_id = $1, verified_at = now()
-       WHERE id = $2`,
-      [actor.staffId, radiologyReportId]
+       WHERE id = $2
+         AND organization_id = $3
+         AND healthcare_organization_id = $4
+         AND status NOT IN ('verified', 'released')
+         AND reported_by_staff_id IS DISTINCT FROM $1`,
+      [actor.staffId, radiologyReportId, organizationId, healthcareOrganizationId]
     );
+    if (!verified.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     await client.query("COMMIT");
 
@@ -741,20 +832,32 @@ async function releaseLaboratoryResult(pool, params) {
     }
 
     // Update result status
-    await client.query(
+    const released = await client.query(
       `UPDATE activeclinic.laboratory_results
        SET status = 'released', released_at = now()
-       WHERE id = $1`,
-      [laboratoryResultId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND status = 'verified'`,
+      [laboratoryResultId, organizationId, healthcareOrganizationId]
     );
+    if (!released.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
-    // Update request status
-    await client.query(
+    const releasedRequest = await client.query(
       `UPDATE activeclinic.laboratory_requests
        SET status = 'released', released_at = now()
-       WHERE id = $1`,
-      [result.laboratory_request_id]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [result.laboratory_request_id, organizationId, healthcareOrganizationId]
     );
+    if (!releasedRequest.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.REQUEST_NOT_FOUND };
+    }
 
     await client.query("COMMIT");
 
@@ -836,20 +939,32 @@ async function releaseRadiologyReport(pool, params) {
     }
 
     // Update report status
-    await client.query(
+    const released = await client.query(
       `UPDATE activeclinic.radiology_reports
        SET status = 'released', released_at = now()
-       WHERE id = $1`,
-      [radiologyReportId]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+         AND status = 'verified'`,
+      [radiologyReportId, organizationId, healthcareOrganizationId]
     );
+    if (!released.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
-    // Update request status
-    await client.query(
+    const releasedRequest = await client.query(
       `UPDATE activeclinic.radiology_requests
        SET status = 'released', released_at = now()
-       WHERE id = $1`,
-      [report.radiology_request_id]
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [report.radiology_request_id, organizationId, healthcareOrganizationId]
     );
+    if (!releasedRequest.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.REQUEST_NOT_FOUND };
+    }
 
     await client.query("COMMIT");
 
@@ -876,7 +991,7 @@ async function acknowledgeCriticalResult(pool, params) {
     deploymentCode,
   } = params;
 
-  if (!recipientName || !notificationMethod) {
+  if (!recipientName || !notificationMethod || !resultId) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
 
@@ -884,28 +999,51 @@ async function acknowledgeCriticalResult(pool, params) {
   try {
     await client.query("BEGIN");
 
-    // Find and acknowledge alert
+    const linked = await client.query(
+      `SELECT patient_id
+       FROM activeclinic.laboratory_results
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3`,
+      [resultId, organizationId, healthcareOrganizationId]
+    );
+    if (linked.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.RESULT_NOT_FOUND };
+    }
+
     const alertRes = await client.query(
       `SELECT id
        FROM activeclinic.clinical_alerts
        WHERE organization_id = $1
          AND healthcare_organization_id = $2
+         AND patient_id = $3
          AND alert_type = 'critical_result'
          AND status = 'active'
        ORDER BY created_at DESC
        LIMIT 1`,
-      [organizationId, healthcareOrganizationId]
+      [organizationId, healthcareOrganizationId, linked.rows[0].patient_id]
     );
 
-    if (alertRes.rows.length > 0) {
-      await client.query(
-        `UPDATE activeclinic.clinical_alerts
-         SET status = 'acknowledged',
-             acknowledged_by_staff_id = $1,
-             acknowledged_at = now()
-         WHERE id = $2`,
-        [actor.staffId, alertRes.rows[0].id]
-      );
+    if (alertRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.RESULT_NOT_FOUND };
+    }
+
+    const updated = await client.query(
+      `UPDATE activeclinic.clinical_alerts
+       SET status = 'acknowledged',
+           acknowledged_by_staff_id = $1,
+           acknowledged_at = now()
+       WHERE id = $2
+         AND organization_id = $3
+         AND patient_id = $4
+         AND status = 'active'`,
+      [actor.staffId, alertRes.rows[0].id, organizationId, linked.rows[0].patient_id]
+    );
+    if (!updated.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.RESULT_NOT_FOUND };
     }
 
     await client.query("COMMIT");

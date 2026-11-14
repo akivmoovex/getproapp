@@ -1,0 +1,102 @@
+name: V13 ActiveClinic QA Regression
+
+# D16: ActiveClinic regression CI. Does not alter V12 workflows.
+# Stages B–D stay gated. Database-writing jobs are not enabled.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Immutable approved test SHA; omit only for manual current-ref mode"
+        required: false
+        type: string
+      enable_db_stages:
+        description: "Authorize Stages B–D. Must remain false until separately approved."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CI_DATABASE_WRITING_ENABLED: "NO"
+  GETPRO_V13_ALLOW_DB_WRITES: "0"
+  GETPRO_V13_DB_STAGES_AUTHORIZED: "0"
+
+jobs:
+  stage-a-static-unit:
+    name: Stage A — ActiveClinic static and contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_sha || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Syntax and trigger checks
+        run: |
+          set -eu
+          node --check tests/v13/contract/d16-ac-v213-contract.test.js
+          node --check tests/v13/integration/d16-ac-auth.integration.test.js
+          node --check tests/e2e/v13/v13-ac-platform-qa.spec.js
+          node --check tests/v13/fixtures/v13SyntheticFixtures.js
+          node --check tests/v13/integration/v13AuthorizedScenarios.js
+          node --check tests/v13/contract/d19-qa-implementation.test.js
+          test -f .github/workflows/v12-shared-ci.yml
+          grep -q 'workflow_dispatch' .github/workflows/v13-ac-qa-regression.yml
+          grep -q 'enable_db_stages' .github/workflows/v13-ac-qa-regression.yml
+          ! grep -E '^\s+push:' .github/workflows/v13-ac-qa-regression.yml
+          ! grep -E '^\s+pull_request:' .github/workflows/v13-ac-qa-regression.yml
+          ! grep -E '^\s+schedule:' .github/workflows/v13-ac-qa-regression.yml
+      - name: ActiveClinic V2.13 contracts
+        run: npm run test:v13:ac
+
+  stage-d-nonmutating-security:
+    name: Stage D — Nonmutating security
+    needs: stage-a-static-unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: ActiveClinic nonmutating security
+        run: npm run test:v13:ac
+
+  stage-b-integration:
+    name: Stage B — ActiveClinic integration (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: database integration is not authorized"
+
+  stage-c-browser:
+    name: Stage C — ActiveClinic browser (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: browser provisioning is not authorized"
+
+  stage-d-security:
+    name: Stage D — Authenticated security journeys (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: live AC-05 denial and authenticated sessions are not authorized"

@@ -1,0 +1,8 @@
+scenario_id,test_name,test_file,real_routes,authenticated_session,hold_before_ui,ci_job,execution,completeness
+AC-ADMIN-LOGIN,AC administrator login reaches the clinic workspace,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body
+AC-STAFF-LOGIN,AC staff login reaches the staff home,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body
+AC-PATIENT-ACTIVATION,AC patient portal activation sets a password and signs in,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,registration_then_login,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body
+AC-APPOINTMENT-CONFLICT,AC appointment creation rejects a second booking,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body
+BILLING-DENIAL,receptionist is denied the billing route,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body_not_ac05
+SEC-01-02,AC-05 lower privilege denied test database management,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body
+PAT-01,PAT-01 wrong-clinic portal registration is denied,tests/e2e/v13/v13-ac-platform-qa.spec.js,yes_after_hold,yes_after_hold,throws_NOT_RUN,v13-ac-qa-regression.yml stage-c-browser,NOT_RUN,prepared_route_body

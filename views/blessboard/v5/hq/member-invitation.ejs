@@ -7,16 +7,20 @@
     <dt>Invitation</dt><dd><%= invitation ? invitation.status : 'none' %></dd>
     <% if (invitation && invitation.expires_at) { %><dt>Expires</dt><dd><%= invitation.expires_at %></dd><% } %>
   </dl>
-  <% if (!member.user_id) { %>
-    <p role="status">Portal invitation unavailable: a verified existing-user identity is required.</p>
+  <% var formAction = typeof formAction !== 'undefined' && formAction ? formAction : ('/hq/members/' + member.id + '/invitation'); %>
+  <% var portalStatus = String(member.portal_access_status || 'not_activated'); %>
+  <% var canInvite = portalStatus !== 'active' && portalStatus !== 'blocked'; %>
+  <% var acceptPath = member.user_id ? '/member-invite/accept' : '/member/invite/accept'; %>
+  <% if (!member.email_display && !member.user_id) { %>
+    <p role="status">Add an email address before issuing a portal invitation. The member can also activate with Church ID, name, and phone on the church site.</p>
   <% } %>
   <% if (message) { %><p role="status"><%= message %></p><% } %>
   <% if (oneTimeToken) { %>
-    <textarea readonly aria-label="Invitation link" rows="3" style="width:100%">/member-invite/accept?token=<%= oneTimeToken %></textarea>
-    <p>Copy this link now. It will not be shown again.</p>
+    <textarea readonly aria-label="Invitation link" rows="3" style="width:100%"><%= acceptPath %>?token=<%= oneTimeToken %></textarea>
+    <p>Copy this link now. It will not be shown again. It expires and works once.</p>
   <% } %>
-  <% if (member.portal_access_status !== 'active' && member.user_id) { %>
-    <form method="post" action="<%= member.branch_id ? '/hq/members/' + member.id + '/invitation' : '/hq/members/' + member.id + '/invitation' %>">
+  <% if (canInvite && (member.email_display || member.user_id)) { %>
+    <form method="post" action="<%= formAction %>">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
       <button name="action" value="<%= invitation && invitation.status === 'pending' ? 'resend' : 'issue' %>" type="submit">
         <%= invitation && invitation.status === 'pending' ? 'Resend invitation' : 'Issue invitation' %>

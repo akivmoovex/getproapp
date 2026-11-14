@@ -28,6 +28,7 @@ const {
 const {
   assertEditableMutation,
   ensureProductFieldsRegistered,
+  resolveEditableField,
   PRODUCT_CODE,
 } = require("../src/platform/website/editableFieldSchema");
 const { applyStructuredDraftsToModel } = require("../src/blessboard/services/websiteStructuredDraftService");
@@ -232,7 +233,7 @@ describe("shared website section lifecycle (BUG-007)", () => {
     assert.ok(!withRemove.sections.some((s) => s.sectionKey === "text_abc123"));
   });
 
-  it("BB allowlists dynamic text_/cta_ section field locators", () => {
+  it("BB allowlists dynamic text_/cta_/image_/story_ section field locators", () => {
     ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
     const ok = assertEditableMutation({
       productCode: PRODUCT_CODE.BLESSBOARD,
@@ -244,6 +245,31 @@ describe("shared website section lifecycle (BUG-007)", () => {
     });
     assert.equal(ok.ok, true);
     assert.equal(ok.value, "Fresh heading");
+
+    // DOM contentKeys use camelCase bodyText; normalizeContentKey lowercases to bodytext.
+    const bodyViaDomKey = assertEditableMutation({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      contentKey: "home.text_deadbeef.bodyText",
+      value: "Fresh body",
+      grantedPermissions: ["website.edit"],
+    });
+    assert.equal(bodyViaDomKey.ok, true);
+    assert.equal(bodyViaDomKey.value, "Fresh body");
+
+    for (const sectionKey of ["image_deadbeef", "story_deadbeef", "cta_aabb11"]) {
+      const heading = assertEditableMutation({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        contentKey: `home.${sectionKey}.heading`,
+        value: "Section heading",
+        grantedPermissions: ["website.edit"],
+      });
+      assert.equal(heading.ok, true, sectionKey);
+      const image = resolveEditableField({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        contentKey: `home.${sectionKey}.image`,
+      });
+      assert.equal(image.ok, true, `${sectionKey}.image`);
+    }
   });
 
   it("BB about/page templates expose editable wrappers for generic sections", () => {

@@ -1,0 +1,7 @@
+mutation_id,candidate,sandbox_file,change,test,first_result,failure_kind,follow_up_result
+M1,Inverted authorization decision,src/activeclinic/services/activeClinicFinanceAuthz.js,Treat a denied permission as allowed,denies payment collection,DETECTED,assertion expected access_denied,not_required
+M2,Removed tenant validation,src/activeclinic/repositories/facilityRepository.js,Drop organization_id from the facility lookup,keeps a facility read inside the organization,DETECTED,assertion SQL no longer matches,not_required
+M3,Accepted expired activation token,src/platform/otp/otpService.js,Skip the expiry return,expires an OTP on the exact ttl boundary,DETECTED,assertion expected expired,not_required
+M4,Removed appointment overlap validation,src/activeclinic/repositories/appointmentRepository.js,Return null before the overlap query,returns a staff appointment collision,DETECTED,test read kind on a null collision,not_required
+M5,Accepted duplicate request,src/activeclinic/services/activeClinicBillingService.js,Change the duplicate row check so it never matches,denies payment collection,SURVIVED,payment test returns before the duplicate branch,DETECTED_BY_SOURCE_GUARD
+M6,Incorrect error classification,src/activeclinic/services/activeClinicClinicalService.js,Return access_denied for an unknown encounter type,rejects an unknown encounter type,DETECTED,assertion expected invalid_input,not_required

@@ -49,6 +49,31 @@ function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+async function recoverIdempotentBooking(db, organizationId, idempotencyKey, err) {
+  if (!err || err.code !== "23505") return null;
+  const existingRow = await db.query(
+    `SELECT b.id, b.request_number, b.status, b.created_at
+     FROM activeclinic.public_booking_requests b
+     WHERE b.organization_id = $1 AND b.idempotency_key = $2
+     LIMIT 1`,
+    [organizationId, idempotencyKey]
+  );
+  if (!existingRow.rows.length) return null;
+  const existing = existingRow.rows[0];
+  return {
+    ok: true,
+    code: RESULT.OK,
+    duplicate: true,
+    booking: {
+      id: existing.id,
+      requestNumber: existing.request_number,
+      status: existing.status,
+      createdAt: existing.created_at,
+      accessToken: null,
+    },
+  };
+}
+
 /**
  * @deprecated Phone-only match must not auto-link. Use assessBookingIdentityMatches.
  * Retained for tests that assert non-creation behavior.
@@ -215,7 +240,9 @@ async function createConsultationBookingRequest(db, input) {
 
   const requestNumber = generateRequestNumber();
 
-  const bookingRow = await db.query(
+  let bookingRow;
+  try {
+    bookingRow = await db.query(
     `INSERT INTO activeclinic.public_booking_requests (
       organization_id, healthcare_organization_id, facility_id,
       request_number, booking_kind, status,
@@ -252,6 +279,11 @@ async function createConsultationBookingRequest(db, input) {
       linkPrep.patientMatchCount,
     ]
   );
+  } catch (err) {
+    const recovered = await recoverIdempotentBooking(db, organizationId, idempotencyKey, err);
+    if (recovered) return recovered;
+    throw err;
+  }
 
   const booking = bookingRow.rows[0];
 
@@ -414,7 +446,9 @@ async function createProcedureBookingRequest(db, input) {
   // If no upload infra, use clinic_follow_up for referral_required cases
   const finalReferralStatus = referralStatus === "required_missing" ? "clinic_follow_up" : referralStatus;
 
-  const bookingRow = await db.query(
+  let bookingRow;
+  try {
+    bookingRow = await db.query(
     `INSERT INTO activeclinic.public_booking_requests (
       organization_id, healthcare_organization_id, facility_id,
       request_number, booking_kind, status,
@@ -453,6 +487,11 @@ async function createProcedureBookingRequest(db, input) {
       linkPrep.patientMatchCount,
     ]
   );
+  } catch (err) {
+    const recovered = await recoverIdempotentBooking(db, organizationId, idempotencyKey, err);
+    if (recovered) return recovered;
+    throw err;
+  }
 
   const booking = bookingRow.rows[0];
 

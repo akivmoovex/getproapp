@@ -173,11 +173,15 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     website_submissions: "Change requests",
   };
 
+  // Caller extras may supply page/view fields, but must never override shell CSRF.
+  // Spreading extras after csrfToken historically risked BB-05 (form ≠ cookie).
+  const extra = { ...(opts.extra || {}) };
+  delete extra.csrfToken;
+  delete extra.csrfField;
+
   return {
     pageTitle: opts.pageTitle || defaultTitles[activeNav] || "Branch admin",
     activeNav,
-    csrfToken,
-    csrfField: CSRF_FIELD,
     churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
     // Identify the branch this admin actually administers, not the church
     // primary branch, which would mislabel every multi-branch branch admin.
@@ -204,7 +208,9 @@ async function buildBranchAdminShellLocals(req, res, opts) {
             exitAction: "/branch-admin/support/exit",
           }
         : null,
-    ...(opts.extra || {}),
+    ...extra,
+    csrfToken,
+    csrfField: CSRF_FIELD,
   };
 }
 

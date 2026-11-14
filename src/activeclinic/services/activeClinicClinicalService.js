@@ -34,6 +34,21 @@ const RESULT = Object.freeze({
   OBSERVATION_NOT_FOUND: "observation_not_found",
 });
 
+const {
+  rowBelongsToOrganization,
+  isStoredPainLevel,
+  isStoredTriageCategory,
+  isStoredTriageStatus,
+  isStoredEncounterType,
+} = require("./clinicalScope");
+
+const {
+  isStoredOrderType,
+} = require("./clinicalOperationsRules");
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const PERM = Object.freeze({
   VIEW: "activeclinic.encounter.view",
   MANAGE: "activeclinic.encounter.manage",
@@ -262,8 +277,9 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
     const existing = await db.query(
       `SELECT id FROM activeclinic.laboratory_requests
         WHERE clinical_order_id = $1
+          AND organization_id = $2
         LIMIT 1`,
-      [orderRow.id]
+      [orderRow.id, orderRow.organization_id]
     );
     if (existing.rows[0]) return { kind: "laboratory", id: existing.rows[0].id, created: false };
     const inserted = await db.query(
@@ -295,8 +311,9 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
     const existing = await db.query(
       `SELECT id FROM activeclinic.radiology_requests
         WHERE clinical_order_id = $1
+          AND organization_id = $2
         LIMIT 1`,
-      [orderRow.id]
+      [orderRow.id, orderRow.organization_id]
     );
     if (existing.rows[0]) return { kind: "radiology", id: existing.rows[0].id, created: false };
     const studyDescription =
@@ -360,22 +377,61 @@ function mapClinicalAlert(row) {
  * Start a new clinical encounter for a patient.
  */
 async function startEncounter(db, input) {
+  if (!isStoredEncounterType(input && input.encounterType)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, encounter: null };
+  }
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  const facilityId = String((input && input.facilityId) || "").trim();
+  const patientId = String((input && input.patientId) || "").trim();
+  const actor = input && input.actor;
+  if (
+    !UUID_RE.test(organizationId) ||
+    !UUID_RE.test(healthcareOrganizationId) ||
+    !UUID_RE.test(facilityId) ||
+    !UUID_RE.test(patientId) ||
+    !actor ||
+    !UUID_RE.test(String(actor.staffMemberId || ""))
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, encounter: null };
+  }
   const authz = await authorizeStaffPermission(db, {
-    organizationId: input.organizationId,
-    staffMemberId: input.actor.staffMemberId,
-    platformIdentityId: input.actor.platformIdentityId,
+    organizationId,
+    staffMemberId: actor.staffMemberId,
+    platformIdentityId: actor.platformIdentityId,
     permissionKey: PERM.MANAGE,
-    facilityId: input.facilityId,
+    facilityId,
   });
   if (!authz.ok) {
     return { ok: false, code: RESULT.ACCESS_DENIED, encounter: null };
   }
 
+  const facility = await db.query(
+    `SELECT id FROM activeclinic.facilities
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [facilityId, organizationId]
+  );
+  if (!facility.rows[0]) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, encounter: null };
+  }
+  const patient = await db.query(
+    `SELECT id FROM activeclinic.patients
+      WHERE id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+      LIMIT 1`,
+    [patientId, organizationId, healthcareOrganizationId]
+  );
+  if (!patient.rows[0]) {
+    return { ok: false, code: RESULT.PATIENT_NOT_FOUND, encounter: null };
+  }
+
   const checkActive = await db.query(
     `SELECT id FROM activeclinic.encounters
-     WHERE patient_id = $1 AND facility_id = $2 AND status = 'open'
+     WHERE patient_id = $1 AND facility_id = $2 AND organization_id = $3 AND status = 'open'
      LIMIT 1`,
-    [input.patientId, input.facilityId]
+    [patientId, facilityId, organizationId]
   );
   if (checkActive.rows.length > 0) {
     return { ok: false, code: RESULT.DUPLICATE_ACTIVE_ENCOUNTER, encounter: null };
@@ -389,14 +445,14 @@ async function startEncounter(db, input) {
      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
-      input.organizationId,
-      input.healthcareOrganizationId,
-      input.facilityId,
-      input.patientId,
+      organizationId,
+      healthcareOrganizationId,
+      facilityId,
+      patientId,
       input.arrivalId || null,
       encounterNumber,
       input.encounterType || "outpatient",
-      input.actor.staffMemberId,
+      actor.staffMemberId,
     ]
   );
 
@@ -406,25 +462,25 @@ async function startEncounter(db, input) {
        event_type, actor_staff_id
      ) VALUES ($1, $2, $3, $4, $5)`,
     [
-      input.organizationId,
-      input.healthcareOrganizationId,
+      organizationId,
+      healthcareOrganizationId,
       row.rows[0].id,
       "opened",
-      input.actor.staffMemberId,
+      actor.staffMemberId,
     ]
   );
 
   await recordAuditEventSafe(db, {
     deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
-    organizationId: input.organizationId,
-    actorUserId: input.actor.platformIdentityId || null,
+    organizationId,
+    actorUserId: actor.platformIdentityId || null,
     actionKey: "activeclinic.encounter.started",
     entityType: "encounter",
     entityId: row.rows[0].id,
     outcome: "success",
     metadataJson: {
-      facility_id: input.facilityId,
-      patient_id: input.patientId,
+      facility_id: facilityId,
+      patient_id: patientId,
       encounter_type: input.encounterType || "outpatient",
     },
   });
@@ -456,10 +512,11 @@ async function listOpenEncounters(db, input) {
        JOIN activeclinic.patients p ON p.id = e.patient_id
        JOIN activeclinic.staff_members s ON s.id = e.opened_by_staff_id
       WHERE e.facility_id = $1
+        AND e.organization_id = $2
         AND e.status = 'open'
       ORDER BY e.opened_at DESC
       LIMIT 100`,
-    [input.facilityId]
+    [input.facilityId, input.organizationId]
   );
 
   return {
@@ -509,6 +566,23 @@ async function getEncounterById(db, input) {
  * Record or update triage assessment.
  */
 async function recordTriageAssessment(db, input) {
+  if (
+    !isStoredPainLevel(input.painLevel) ||
+    !isStoredTriageCategory(input.triageCategory) ||
+    !isStoredTriageStatus(input.status)
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, triage: null };
+  }
+  const triageActor = input && input.actor;
+  if (
+    !triageActor ||
+    !UUID_RE.test(String(triageActor.staffMemberId || "")) ||
+    !UUID_RE.test(String((input && input.organizationId) || "")) ||
+    !UUID_RE.test(String((input && input.facilityId) || "")) ||
+    !UUID_RE.test(String((input && input.encounterId) || ""))
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, triage: null };
+  }
   const authz = await authorizeStaffPermission(db, {
     organizationId: input.organizationId,
     staffMemberId: input.actor.staffMemberId,
@@ -526,8 +600,9 @@ async function recordTriageAssessment(db, input) {
   }
 
   const existing = await db.query(
-    `SELECT * FROM activeclinic.triage_assessments WHERE encounter_id = $1`,
-    [input.encounterId]
+    `SELECT * FROM activeclinic.triage_assessments
+      WHERE encounter_id = $1 AND organization_id = $2`,
+    [input.encounterId, input.organizationId]
   );
 
   let row;
@@ -572,6 +647,14 @@ async function recordTriageAssessment(db, input) {
       ]
     );
   } else {
+    if (
+      existing.rows[0].facility_id &&
+      String(existing.rows[0].facility_id) !== String(input.facilityId)
+    ) {
+      return { ok: false, code: RESULT.ACCESS_DENIED, triage: null };
+    }
+    const expectedVersion =
+      input.version != null ? Number(input.version) : existing.rows[0].version;
     row = await db.query(
       `UPDATE activeclinic.triage_assessments
           SET triage_category = $1,
@@ -585,6 +668,8 @@ async function recordTriageAssessment(db, input) {
               version = version + 1
         WHERE id = $9
           AND version = $10
+          AND organization_id = $11
+          AND facility_id = $12
        RETURNING *`,
       [
         input.triageCategory || null,
@@ -596,7 +681,9 @@ async function recordTriageAssessment(db, input) {
         input.painLevel || null,
         input.status || existing.rows[0].status,
         existing.rows[0].id,
-        existing.rows[0].version,
+        expectedVersion,
+        input.organizationId,
+        input.facilityId,
       ]
     );
 
@@ -786,8 +873,10 @@ async function listNursingIntakesForEncounter(db, input) {
        FROM activeclinic.nursing_intake_notes n
        JOIN activeclinic.staff_members s ON s.id = n.recorded_by_staff_id
       WHERE n.encounter_id = $1
+        AND n.organization_id = $2
+        AND n.facility_id = $3
       ORDER BY n.created_at DESC`,
-    [input.encounterId]
+    [input.encounterId, input.organizationId, input.facilityId]
   );
 
   return {
@@ -817,8 +906,10 @@ async function listVitalSignsForEncounter(db, input) {
        FROM activeclinic.vital_sign_observations v
        JOIN activeclinic.staff_members s ON s.id = v.recorded_by_staff_id
       WHERE v.encounter_id = $1
+        AND v.organization_id = $2
+        AND v.facility_id = $3
       ORDER BY v.observed_at DESC`,
-    [input.encounterId]
+    [input.encounterId, input.organizationId, input.facilityId]
   );
 
   return {
@@ -850,29 +941,31 @@ async function recordConsultationNote(db, input) {
 
   const existing = await db.query(
     `SELECT * FROM activeclinic.consultation_notes
-     WHERE encounter_id = $1 AND status = 'draft'
-     ORDER BY created_at DESC
+     WHERE encounter_id = $1
+       AND organization_id = $2
+       AND facility_id = $3
+     ORDER BY CASE WHEN status = 'signed' THEN 0 ELSE 1 END, created_at DESC
      LIMIT 1`,
-    [input.encounterId]
+    [input.encounterId, input.organizationId, input.facilityId]
   );
 
   let row;
   if (existing.rows.length === 0) {
     const subjectiveText = trimClinicalText(
       input.subjectiveText != null ? input.subjectiveText : input.chiefComplaint,
-      8000
+      5000
     );
     const objectiveText = trimClinicalText(
       input.objectiveText != null ? input.objectiveText : input.observations,
-      8000
+      5000
     );
     const assessmentText = trimClinicalText(
       input.assessmentText != null ? input.assessmentText : input.diagnosis,
-      8000
+      5000
     );
     const planText = trimClinicalText(
       input.planText != null ? input.planText : input.treatmentPlan,
-      8000
+      5000
     );
     const historyText = trimClinicalText(input.historyText || input.history, 8000);
     const medicationText = trimClinicalText(
@@ -887,7 +980,7 @@ async function recordConsultationNote(db, input) {
       input.referralText || input.referral,
       4000
     );
-    const additionalNotes = trimClinicalText(input.additionalNotes, 8000);
+    const additionalNotes = trimClinicalText(input.additionalNotes, 3000);
 
     row = await db.query(
       `INSERT INTO activeclinic.consultation_notes (
@@ -934,6 +1027,12 @@ async function recordConsultationNote(db, input) {
     if (existing.rows[0].status === "signed") {
       return { ok: false, code: RESULT.CANNOT_EDIT_SIGNED, consultation: null };
     }
+    if (
+      existing.rows[0].patient_id &&
+      String(existing.rows[0].patient_id) !== String(encounter.encounter.patientId)
+    ) {
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND, consultation: null };
+    }
 
     const expectedVersion =
       input.version != null ? Number(input.version) : existing.rows[0].version;
@@ -952,31 +1051,38 @@ async function recordConsultationNote(db, input) {
               updated_at = now()
         WHERE id = $10
           AND version = $11
+          AND organization_id = $12
+          AND facility_id = $13
+          AND patient_id = $14
+          AND status = 'draft'
        RETURNING *`,
       [
         trimClinicalText(
           input.subjectiveText != null ? input.subjectiveText : input.chiefComplaint,
-          8000
+          5000
         ),
         trimClinicalText(
           input.objectiveText != null ? input.objectiveText : input.observations,
-          8000
+          5000
         ),
         trimClinicalText(
           input.assessmentText != null ? input.assessmentText : input.diagnosis,
-          8000
+          5000
         ),
         trimClinicalText(
           input.planText != null ? input.planText : input.treatmentPlan,
-          8000
+          5000
         ),
-        trimClinicalText(input.additionalNotes, 8000),
+        trimClinicalText(input.additionalNotes, 3000),
         trimClinicalText(input.historyText || input.history, 8000),
         trimClinicalText(input.medicationText || input.medication, 4000),
         trimClinicalText(input.followUpPlanText || input.followUp, 4000),
         trimClinicalText(input.referralText || input.referral, 4000),
         existing.rows[0].id,
         expectedVersion,
+        input.organizationId,
+        input.facilityId,
+        encounter.encounter.patientId,
       ]
     );
 
@@ -1018,10 +1124,11 @@ async function signConsultationNote(db, input) {
   }
 
   const existing = await db.query(
-    `SELECT * FROM activeclinic.consultation_notes WHERE id = $1`,
-    [input.consultationNoteId]
+    `SELECT * FROM activeclinic.consultation_notes
+      WHERE id = $1 AND organization_id = $2 AND facility_id = $3`,
+    [input.consultationNoteId, input.organizationId, input.facilityId]
   );
-  if (existing.rows.length === 0) {
+  if (existing.rows.length === 0 || !rowBelongsToOrganization(existing.rows[0], input.organizationId)) {
     return { ok: false, code: RESULT.CONSULTATION_NOT_FOUND, consultation: null };
   }
 
@@ -1036,9 +1143,18 @@ async function signConsultationNote(db, input) {
             signed_by_staff_id = $1,
             version = version + 1
       WHERE id = $2
+        AND organization_id = $4
+        AND facility_id = $5
         AND version = $3
+        AND status = 'draft'
      RETURNING *`,
-    [input.actor.staffMemberId, input.consultationNoteId, existing.rows[0].version]
+    [
+      input.actor.staffMemberId,
+      input.consultationNoteId,
+      existing.rows[0].version,
+      input.organizationId,
+      input.facilityId,
+    ]
   );
 
   if (row.rows.length === 0) {
@@ -1079,6 +1195,9 @@ async function signConsultationNote(db, input) {
  * Create clinical order (lab/prescription/radiology).
  */
 async function createClinicalOrder(db, input) {
+  if (!isStoredOrderType(input.orderType)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, order: null };
+  }
   const authz = await authorizeStaffPermission(db, {
     organizationId: input.organizationId,
     staffMemberId: input.actor.staffMemberId,
@@ -1351,13 +1470,18 @@ async function listActiveAlertsForFacility(db, input) {
             (p.first_name || ' ' || p.last_name) AS patient_display_name,
             s.display_name AS raised_by_staff_display_name
        FROM activeclinic.clinical_alerts a
-       JOIN activeclinic.patients p ON p.id = a.patient_id
-       JOIN activeclinic.staff_members s ON s.id = a.raised_by_staff_id
+       JOIN activeclinic.patients p
+         ON p.id = a.patient_id
+        AND p.organization_id = a.organization_id
+       JOIN activeclinic.staff_members s
+         ON s.id = a.raised_by_staff_id
+        AND s.organization_id = a.organization_id
       WHERE a.facility_id = $1
+        AND a.organization_id = $2
         AND a.status = 'active'
       ORDER BY a.priority DESC, a.created_at DESC
       LIMIT 50`,
-    [input.facilityId]
+    [input.facilityId, input.organizationId]
   );
 
   return {
@@ -1371,6 +1495,16 @@ async function listActiveAlertsForFacility(db, input) {
  * Close encounter.
  */
 async function closeEncounter(db, input) {
+  const actor = input && input.actor;
+  if (
+    !actor ||
+    !UUID_RE.test(String(actor.staffMemberId || "")) ||
+    !UUID_RE.test(String((input && input.organizationId) || "")) ||
+    !UUID_RE.test(String((input && input.facilityId) || "")) ||
+    !UUID_RE.test(String((input && input.encounterId) || ""))
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, encounter: null };
+  }
   const authz = await authorizeStaffPermission(db, {
     organizationId: input.organizationId,
     staffMemberId: input.actor.staffMemberId,
@@ -1391,15 +1525,17 @@ async function closeEncounter(db, input) {
             version = version + 1
       WHERE id = $3
         AND facility_id = $4
+        AND organization_id = $6
         AND status = 'open'
         AND version = $5
      RETURNING *`,
     [
       input.actor.staffMemberId,
-      input.closureNote || null,
+      input.closureNote ? String(input.closureNote).slice(0, 500) : null,
       input.encounterId,
       input.facilityId,
       input.version,
+      input.organizationId,
     ]
   );
 

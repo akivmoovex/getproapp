@@ -26,7 +26,11 @@ const {
   legacyBranchKeyRedirectTarget,
 } = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
-const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
+const {
+  publicBranchHomePath,
+  publicBranchPagePath,
+  publicChurchHomePath,
+} = require("../urls/churchUrlHelper");
 const {
   attachWebsiteAdminChrome,
   resolveAuthorizedPublicPreview,
@@ -288,8 +292,14 @@ function createPathPublicRouter(deps) {
       if (!model.loginHref) model.loginHref = "/login";
     }
 
+    const {
+      attachPublicChurchContactForm,
+    } = require("./publicChurchContactHttp");
+    attachPublicChurchContactForm(req, res, model, getEnv());
+
     const html = renderTenantPublicPage(model);
-    return res.status(200).type("html").send(html);
+    const status = Number(req.publicContactStatus) || 200;
+    return res.status(status).type("html").send(html);
   }
 
   async function resolvePrimaryBranchKey(churchId) {
@@ -833,6 +843,80 @@ function createPathPublicRouter(deps) {
     req.params[0] = "";
     Promise.resolve(handleOrgHomeRedirect(req, res)).catch(next);
   });
+
+  const {
+    acceptPublicChurchContact,
+    createPublicChurchContactLimiter,
+  } = require("./publicChurchContactHttp");
+  const publicContactLimiter = createPublicChurchContactLimiter();
+
+  router.post(
+    "/c/:organizationKey/:branchKey/contact",
+    publicContactLimiter,
+    (req, res, next) => {
+      Promise.resolve(
+        (async () => {
+          const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+          if (!resolved) return;
+          const branchKey = normalizeBranchKey(req.params.branchKey);
+          if (!branchKey) {
+            return res
+              .status(404)
+              .type("html")
+              .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+          }
+          let websiteMode;
+          try {
+            websiteMode = await resolveWebsiteMode(getPool(), {
+              churchId: resolved.tenant.church.id,
+              branchKey,
+            });
+          } catch {
+            return res
+              .status(503)
+              .type("html")
+              .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+          }
+          const activeBranch =
+            websiteMode.ok &&
+            (websiteMode.activeBranches || []).find((b) => b.key === branchKey);
+          if (!activeBranch) {
+            return res
+              .status(404)
+              .type("html")
+              .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+          }
+          const accepted = await acceptPublicChurchContact(req, res, {
+            pool: getPool(),
+            env: getEnv(),
+            organizationId: resolved.tenant.organization && resolved.tenant.organization.id,
+            churchId: resolved.tenant.church && resolved.tenant.church.id,
+            branchId: activeBranch.id,
+          });
+          const pathPrefix = publicBranchHomePath(resolved.organizationKey, activeBranch.key);
+          if (!accepted.ok) {
+            return renderPublicModel(req, res, {
+              tenant: resolved.tenant,
+              pageKey: "contact",
+              pathPrefix,
+              selectedBranch: {
+                id: activeBranch.id,
+                key: activeBranch.key,
+                displayName: activeBranch.displayName,
+                branchType: activeBranch.branchType,
+                isPrimary: activeBranch.isPrimary,
+              },
+              routingMode: "path",
+            });
+          }
+          const dest =
+            publicBranchPagePath(resolved.organizationKey, activeBranch.key, "contact") ||
+            `${pathPrefix}/contact`;
+          return res.redirect(303, `${dest}?submitted=1`);
+        })()
+      ).catch(next);
+    }
+  );
 
   // Canonical flat branch mini-sites: /c/:org/:branchKey(/page)?
   for (const suffix of PAGE_SUFFIXES) {

@@ -29,7 +29,7 @@
   <p class="bb-v204-m05__eyebrow" data-bb-m05-roster="1">Roster Confirmation</p>
   <%- include('../partials/v204/success-state', {
     title: 'Church Member Successfully Registered',
-    body: displayHeading + ' has been enrolled in the congregation roster. Portal account not provisioned. Invitations can be sent from the Member Access tab when ready.'
+    body: displayHeading + ' has been enrolled in the congregation roster. Portal access stays not activated until the member accepts an invitation or verifies Church ID, name, and phone.'
   }) %>
 
   <section class="bb-v204-m02__section bb-v204-m05__summary" data-bb-m05-summary="1" aria-labelledby="bb-m05-summary-heading">
@@ -59,6 +59,12 @@
       <span class="material-symbols-outlined" aria-hidden="true">person</span>
       View Member Profile (<%= churchId %>)
     </a>
+    <% if (String(m.portalAccessStatus || 'not_activated') !== 'active') { %>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/members/<%= m.id %>/invitation" data-bb-member-invitation="1">
+      <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+      Issue portal invitation
+    </a>
+    <% } %>
     <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/members/new" data-bb-m05-add-another="1">
       <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
       + Add Another Member

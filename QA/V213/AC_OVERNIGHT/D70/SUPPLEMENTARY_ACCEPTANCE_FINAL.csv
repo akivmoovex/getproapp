@@ -1,0 +1,9 @@
+acx_id,uncovered_requirement,approval_state,d70_acceptance,d70_release_scope,certification
+ACX-001,Consent capture and withdrawal,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-002,Representatives and witnesses,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-003,Structured allergy review before dispense,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-004,Clinical accessibility,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-005,"Monitoring of authentication, OTP delivery, queue age, critical acknowledgement, backup, and import exceptions",PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-006,"Availability SLOs, hosting location, and controller roles",PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-007,Transactional outbox after commit,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED
+ACX-008,Versioned clinical HTTP paths,PENDING,NOT_RUN,NOT_IN_V213_RELEASE,NOT_CERTIFIED

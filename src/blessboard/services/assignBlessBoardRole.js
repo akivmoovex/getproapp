@@ -177,6 +177,22 @@ async function assignBlessBoardRole(db, input, options) {
   }
   const req = validated.value;
   const dryRun = Boolean(input && input.dryRun);
+  const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+  const otpHold = await holdIfOtpRequired({
+    workflow: "blessboard.role_permission_change",
+    activation: options && options.otpActivation,
+    env: options && options.env,
+    verification: options && options.otpVerification,
+    organizationId: req.organizationId,
+    accountId: req.userId,
+    sessionId: input && input.sessionId,
+    channel: "email",
+    identifier: req.email,
+    service: options && options.otpService,
+  });
+  if (otpHold) {
+    return { ok: false, status: "otp_required", message: "otp_required", role: null };
+  }
 
   const resolved = resolveManageTransactionOption(db, options);
   if (!resolved.ok) {

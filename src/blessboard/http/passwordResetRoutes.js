@@ -192,6 +192,22 @@ function createPasswordResetRouter(opts) {
       return res.status(403).type("html").send(html);
     }
 
+    const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+    const otpHold = await holdIfOtpRequired({
+      workflow: "blessboard.forgot_password",
+      env,
+    });
+    if (otpHold) {
+      const html = renderV5Ejs(
+        "apex/forgot-password.ejs",
+        forgotLocals(req, res, {
+          error: "Additional verification is required.",
+          emailValue: emailRaw,
+        })
+      );
+      return res.status(401).type("html").send(html);
+    }
+
     let emailForReset = emailRaw;
     // Phone-first: resolve account by phone, then deliver reset via email when present.
     // Apex staff recovery does not send SMS/OTP (member portal recovery is separate).

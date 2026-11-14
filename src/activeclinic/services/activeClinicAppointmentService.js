@@ -35,6 +35,9 @@ const {
 const {
   normalizeTimezone,
 } = require("./normalizeActiveClinicContact");
+const {
+  isUsableAssignedStaffId,
+} = require("./appointmentSchedulingRules");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -363,7 +366,8 @@ async function createAppointment(db, input) {
     !UUID_RE.test(patientId) ||
     !UUID_RE.test(serviceTypeId) ||
     !actor ||
-    !UUID_RE.test(String(actor.staffMemberId || ""))
+    !UUID_RE.test(String(actor.staffMemberId || "")) ||
+    !isUsableAssignedStaffId(input.assignedStaffId)
   ) {
     return { ok: false, code: RESULT.INVALID_INPUT, appointment: null };
   }
@@ -729,6 +733,9 @@ async function markNoShowAppointment(db, input) {
 }
 
 async function updateAppointment(db, input) {
+  if (!isUsableAssignedStaffId(input.assignedStaffId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, appointment: null };
+  }
   const detail = await getAppointmentDetail(db, input);
   if (!detail.ok) return detail;
   if (!ACTIVE_BOOKING.includes(detail.appointment.status)) {
@@ -826,6 +833,9 @@ async function updateAppointment(db, input) {
  * in one transaction (no orphan bookings).
  */
 async function rescheduleAppointment(db, input) {
+  if (!isUsableAssignedStaffId(input.assignedStaffId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, appointment: null };
+  }
   const detail = await getAppointmentDetail(db, input);
   if (!detail.ok) return detail;
   if (!["requested", "confirmed", "arrived"].includes(detail.appointment.status)) {
@@ -947,6 +957,9 @@ async function rescheduleAppointment(db, input) {
  * when no staff collision for optional assigned staff. Full calendar grids deferred.
  */
 async function listAvailableAppointmentSlots(db, input) {
+  if (!isUsableAssignedStaffId(input.assignedStaffId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, slots: [] };
+  }
   const authz = await authorize(db, {
     organizationId: input.organizationId,
     facilityId: input.facilityId || null,

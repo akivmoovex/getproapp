@@ -1,0 +1,16 @@
+{
+  "release_ready": true,
+  "source_sha": "",
+  "run_id": "",
+  "environment_identity": "",
+  "g2_execution": "NOT_RUN",
+  "g3_execution": "NOT_RUN",
+  "g4_execution": "ABSENT",
+  "cases": {
+    "TEN-01-01": {
+      "status": "PASS",
+      "database_evidence": "NOT_RUN",
+      "coverage": "MOCK_ONLY"
+    }
+  }
+}

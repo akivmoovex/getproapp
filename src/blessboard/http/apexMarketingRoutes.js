@@ -1130,6 +1130,7 @@ function createApexMarketingRouter(deps) {
             env,
             isProduction,
             getPool,
+            otpWorkflow: "blessboard.hq_administrator_login",
           });
           sessionOk = true;
           logRegistrationTrace(req, {

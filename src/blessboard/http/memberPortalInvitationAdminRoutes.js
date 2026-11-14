@@ -86,7 +86,15 @@ function createMemberPortalInvitationAdminRouter(deps) {
     if (!loaded) return res.status(404).send("Member not found.");
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: production, env, req });
-    return page(res, { ...input, ...loaded, csrfToken, csrfField: CSRF_FIELD, oneTimeToken: null, message: null });
+    return page(res, {
+      ...input,
+      ...loaded,
+      csrfToken,
+      csrfField: CSRF_FIELD,
+      formAction: req.path,
+      oneTimeToken: null,
+      message: null,
+    });
   }
 
   async function postAction(req, res) {
@@ -117,6 +125,7 @@ function createMemberPortalInvitationAdminRouter(deps) {
     setCsrfCookie(res, csrfToken, { secure: production, env, req });
     return page(res, {
       ...input, ...latest, csrfToken, csrfField: CSRF_FIELD,
+      formAction: req.path,
       oneTimeToken: result.ok && result.rawToken ? result.rawToken : null,
       message: result.ok ? (result.rawToken ? "Invitation link generated once. Do not claim delivery." : "Invitation updated.") : "Invitation action was not permitted.",
     }, result.ok ? 200 : 400);

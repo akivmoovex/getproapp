@@ -1,0 +1,9 @@
+acx_id,package,related_decision,approval_state,g1_safe,database_evidence,release_scope,contract
+ACX-001,F,D29-16,PENDING,CHARACTERIZATION_ONLY,REQUIRED_NOT_RUN,NOT_IN_V213_RELEASE,Do not add consent types or a legal basis. guardian_* capture methods are not an approved representative policy.
+ACX-002,F,D29-16,PENDING,NOT_SAFE_UNTIL_APPROVED,REQUIRED_AFTER_APPROVAL,NOT_IN_V213_RELEASE,No representative record is approved. Do not treat guardian_verbal or guardian_written as this criterion.
+ACX-003,D,D29-17,PENDING,CHARACTERIZATION_ONLY,REQUIRED_NOT_RUN,NOT_IN_V213_RELEASE,Current allergies are free text on triage. That is not a blocking check.
+ACX-004,G,D29-18,PENDING,NOT_SAFE,NOT_REQUIRED,NOT_IN_V213_RELEASE,No screen list or contrast number is approved in D29.
+ACX-005,G,D29-18,PENDING,NOT_SAFE,NOT_REQUIRED,NOT_IN_V213_RELEASE,Queue age and critical acknowledgement depend on D21-02 and D21-06. OTP monitors do not activate delivery.
+ACX-006,G,D21-10,PENDING,NOT_SAFE,NOT_REQUIRED,NOT_IN_V213_RELEASE,"No availability number, RPO, or RTO is chosen here."
+ACX-007,G,D21-02,PENDING,CHARACTERIZATION_ONLY,REQUIRED_AFTER_APPROVAL,NOT_IN_V213_RELEASE,No outbox table is authorized. Characterization may only show that current services do not publish one.
+ACX-008,C,D21-02,PENDING,CONTRACT_ONLY_NO_NEW_ROUTES,REQUIRED_AFTER_APPROVAL,NOT_IN_V213_RELEASE,The specification says exact paths are not approved. This stage adds none.

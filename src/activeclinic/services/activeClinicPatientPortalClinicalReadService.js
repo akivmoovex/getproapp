@@ -237,8 +237,12 @@ async function listPatientReleasedResults(db, input) {
             req.test_panel_name, lr.result_summary, lr.released_at, lr.status,
             f.display_name AS facility_display_name, 'laboratory' AS modality
        FROM activeclinic.laboratory_results lr
-       JOIN activeclinic.laboratory_requests req ON req.id = lr.laboratory_request_id
-       JOIN activeclinic.facilities f ON f.id = lr.facility_id
+       JOIN activeclinic.laboratory_requests req
+         ON req.id = lr.laboratory_request_id
+        AND req.organization_id = lr.organization_id
+       JOIN activeclinic.facilities f
+         ON f.id = lr.facility_id
+        AND f.organization_id = lr.organization_id
       WHERE lr.organization_id = $1
         AND lr.patient_id = $2
         AND lr.status = 'released'
@@ -253,8 +257,12 @@ async function listPatientReleasedResults(db, input) {
             rr.impression AS result_summary, rr.released_at, rr.status,
             f.display_name AS facility_display_name, 'radiology' AS modality
        FROM activeclinic.radiology_reports rr
-       JOIN activeclinic.radiology_requests req ON req.id = rr.radiology_request_id
-       JOIN activeclinic.facilities f ON f.id = rr.facility_id
+       JOIN activeclinic.radiology_requests req
+         ON req.id = rr.radiology_request_id
+        AND req.organization_id = rr.organization_id
+       JOIN activeclinic.facilities f
+         ON f.id = rr.facility_id
+        AND f.organization_id = rr.organization_id
       WHERE rr.organization_id = $1
         AND rr.patient_id = $2
         AND rr.status = 'released'
@@ -299,8 +307,12 @@ async function getPatientReleasedResult(db, input) {
               lr.result_summary, lr.released_at, lr.status,
               f.display_name AS facility_display_name
          FROM activeclinic.laboratory_results lr
-         JOIN activeclinic.laboratory_requests req ON req.id = lr.laboratory_request_id
-         JOIN activeclinic.facilities f ON f.id = lr.facility_id
+         JOIN activeclinic.laboratory_requests req
+           ON req.id = lr.laboratory_request_id
+          AND req.organization_id = lr.organization_id
+         JOIN activeclinic.facilities f
+           ON f.id = lr.facility_id
+          AND f.organization_id = lr.organization_id
         WHERE lr.id = $1
           AND lr.organization_id = $2
           AND lr.patient_id = $3
@@ -336,8 +348,12 @@ async function getPatientReleasedResult(db, input) {
             rr.findings, rr.impression, rr.released_at, rr.status,
             f.display_name AS facility_display_name
        FROM activeclinic.radiology_reports rr
-       JOIN activeclinic.radiology_requests req ON req.id = rr.radiology_request_id
-       JOIN activeclinic.facilities f ON f.id = rr.facility_id
+       JOIN activeclinic.radiology_requests req
+         ON req.id = rr.radiology_request_id
+        AND req.organization_id = rr.organization_id
+       JOIN activeclinic.facilities f
+         ON f.id = rr.facility_id
+        AND f.organization_id = rr.organization_id
       WHERE rr.id = $1
         AND rr.organization_id = $2
         AND rr.patient_id = $3

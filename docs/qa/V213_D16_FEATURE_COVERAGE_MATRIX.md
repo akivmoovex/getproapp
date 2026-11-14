@@ -1,0 +1,40 @@
+# V2.13 D16 feature coverage matrix
+
+Evidence is the database-independent run on branch V13 at `b8f6b420d25e908de64ba292866c218c32edc30c`. `PASS` means those assertions ran and held. `NOT_RUN` means the scenario is prepared and was not executed. `BLOCKED` means a required live proof is still unauthorized. Integration and browser results are not passes.
+
+| FEATURE_ID | PRODUCT | UNIT | CONTRACT | INTEGRATION | BROWSER | SECURITY | TENANT | EXECUTION | BLOCKER |
+|---|---|---|---|---|---|---|---|---|---|
+| BB-01 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-02 | blessboard | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| BB-03 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-04 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-05 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-06 | blessboard | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| BB-24 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| INV-01 | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | PASS | BLOCKED | YES |
+| BB-REGISTRATION | blessboard | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | NOT_RUN | YES |
+| BB-LOGIN-LOGOUT | blessboard | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-CONTENT | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| BB-BRANCH | blessboard | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| AC-STAFF-AUTH | activeclinic | PASS | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| AC-CLINIC-ADMIN-AUTH | activeclinic | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | NOT_RUN | YES |
+| AC-PATIENT-LOGIN | activeclinic | PASS | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| AC-PATIENT-ACTIVATION | activeclinic | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | NOT_RUN | YES |
+| AC-RECOVERY | activeclinic | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| AC-STAFF-ROLE | activeclinic | PASS | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_RUN | YES |
+| AC-05 | activeclinic | NOT_IMPLEMENTED | PASS | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | BLOCKED | YES |
+| AC-APPOINTMENTS | activeclinic | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NO |
+| PF-OTP-ENGINE | shared_platform | PASS | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | PASS | NOT_RUN | YES |
+| PF-OTP-ENV | shared_platform | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | PASS | YES |
+| PF-OTP-PROVIDERS | shared_platform | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | PASS | YES |
+| PF-OTP-PHONE | shared_platform | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | PASS | NO |
+| PF-OTP-ACTIVATION | shared_platform | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_IMPLEMENTED | BLOCKED | YES |
+| PF-SESSION | shared_platform | PASS | PASS | NOT_RUN | NOT_RUN | PASS | PASS | NOT_RUN | YES |
+| PF-WORKFLOWS | shared_platform | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | PASS | PASS | YES |
+| PF-CSRF | shared_platform | PASS | PASS | NOT_RUN | NOT_RUN | PASS | NOT_RUN | NOT_RUN | YES |
+| PF-AUDIT | shared_platform | PASS | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | NOT_RUN | YES |
+| PF-VERSION | shared_platform | PASS | PASS | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | NOT_IMPLEMENTED | PASS | NO |
+| PF-CI-GUARDS | shared_platform | PASS | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | NOT_IMPLEMENTED | PASS | YES |
+| PF-RATE-REPLAY | shared_platform | PASS | PASS | NOT_RUN | NOT_IMPLEMENTED | PASS | PASS | NOT_RUN | YES |
+
+Machine-readable rows, source files, and test files are in `docs/qa/V213_D16_FEATURE_COVERAGE_MATRIX.json`.

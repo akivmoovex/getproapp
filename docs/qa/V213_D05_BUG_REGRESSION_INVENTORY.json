@@ -1,0 +1,159 @@
+{
+  "version": "2.13",
+  "task": "D05",
+  "baselineCommit": "b8f6b420d25e908de64ba292866c218c32edc30c",
+  "csrfShellHardening": {
+    "files": [
+      "src/blessboard/http/hqAdminShellLocals.js",
+      "src/blessboard/http/branchAdminShellLocals.js"
+    ],
+    "change": "Strip csrfToken/csrfField from opts.extra and force shell-owned values after extras spread",
+    "legitimateCallerConflicts": "NONE_FOUND",
+    "websiteEditorReusePreserved": true
+  },
+  "bugs": [
+    {
+      "BUG_ID": "BB-01",
+      "FEATURE": "Homepage section creation and editing",
+      "EXISTING_TESTS": [
+        "tests/bb-v211-add-section-images.test.js",
+        "tests/v13/contract/bb01-homepage-sections-contract.test.js",
+        "tests/v13/unit/bb01-homepage-section-editor.test.js",
+        "tests/shared-website-section-lifecycle.test.js"
+      ],
+      "MISSING_BEFORE_D05": ["image_*/story_* alias documentation", "CTA contract", "edit journey split"],
+      "TEST_FILE": "tests/v13/unit/bb01-homepage-section-editor.test.js; tests/v13/contract/bb01-homepage-sections-contract.test.js; tests/v13/integration/bb01-homepage-sections.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "ROUTES": ["GET/POST {prefix}/website/add-section", "POST {prefix}/website/drafts", "content admin sections"],
+      "PERMISSIONS": ["website.edit"],
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_EDITOR_CONTRACT; authorized DB persistence/publish evidence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED blessboardAddedSectionField text_|cta_|image_|story_ heading/bodyText/image including bodyText→bodytext; cta_ buttonText and buttonUrl rendered and URL-validated",
+      "CI_JOB": "v13-bb-bug-regressions / contract",
+      "EVIDENCE": "DB-independent editor contract for every Add Section prefix and CTA button URL safety. Integration and browser NOT_RUN.",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-02",
+      "FEATURE": "Announcement image upload and public visibility",
+      "EXISTING_TESTS": [
+        "tests/blessboard-announcements.test.js",
+        "tests/v13/contract/bb02-announcements-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/contract/bb02-announcements-contract.test.js; tests/v13/integration/bb02-announcements.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_EDITOR_CONTRACT; authorized upload/publish persistence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED announcement media library routes; church-wide public feed includes branch rows; public images use /_bb/media when the announcement is published and public",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "MIME allowlist, media route order, public image URL, church-wide branch inclusion",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-03",
+      "FEATURE": "Event creation and publishing",
+      "EXISTING_TESTS": [
+        "tests/church-branch-announcements-events.test.js",
+        "tests/v13/unit/bb03-event-creation.test.js",
+        "tests/v13/contract/bb03-events-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/unit/bb03-event-creation.test.js; tests/v13/contract/bb03-events-contract.test.js; tests/v13/integration/bb03-events.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_EDITOR_CONTRACT; authorized create/publish persistence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED event create form stays open and Create event focuses it; starts/ends validated before SQL; branch clock end-before-start rejected; duplicate create submit locked",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "New form, required fields, POST action, CSRF, date/time, publication, duplicate submit, unauthorized and cross-tenant source contracts",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-04",
+      "FEATURE": "Sermon creation and publishing",
+      "EXISTING_TESTS": [
+        "tests/v2-bb-sermon-image-persistence.test.js",
+        "tests/v13/unit/bb04-sermon-creation.test.js",
+        "tests/v13/contract/bb04-sermons-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/unit/bb04-sermon-creation.test.js; tests/v13/contract/bb04-sermons-contract.test.js; tests/v13/integration/bb04-sermons.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_EDITOR_CONTRACT; authorized create/publish persistence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED visible Add sermon button; sermon create form stays open; thumbnail imageUrl stored on create; branch create rejects bad dates and non-https media",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "Visible Add sermon, required metadata, valid/invalid submissions, image attachment, publication, existing edit, unauthorized and cross-tenant source contracts",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-05",
+      "FEATURE": "HQ member registration and CSRF",
+      "EXISTING_TESTS": [
+        "tests/bb05-hq-add-member-csrf-contract.test.js",
+        "tests/v211-hq-add-member-get.test.js",
+        "tests/v13/contract/bb05-member-registration-csrf-contract.test.js",
+        "tests/v13/contract/csrf-shell-extra-override-hardening.test.js"
+      ],
+      "TEST_FILE": "tests/bb05-hq-add-member-csrf-contract.test.js; tests/v13/contract/bb05-member-registration-csrf-contract.test.js; tests/v13/contract/csrf-shell-extra-override-hardening.test.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "duplicate email/phone + persistence gated",
+      "REQUIRED_FIX": "Commit local CSRF repair + hosted retest; shell hardening included in D05",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "Single issuance + override rejection + cookie pairing",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-06",
+      "FEATURE": "Member activation and portal access",
+      "EXISTING_TESTS": [
+        "tests/v211-member-activation-identity-ownership.test.js",
+        "tests/v13/contract/bb06-member-activation-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/contract/bb06-member-activation-contract.test.js; tests/v13/integration/bb06-member-activation.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_INVITATION_CONTRACT; authorized acceptance and login persistence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED Add Member links to portal invitation; invitation form works without a pre-existing login; new-member password accept sets portal active; existing-account accept posts to /member-invite/accept",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "Staff eligibility, invitation link, identity ownership, expiry, replay, password accept, unauthorized and cross-tenant contracts",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "BB-24",
+      "FEATURE": "Public directory contact/join navigation",
+      "EXISTING_TESTS": [
+        "tests/blessboard-apex-directory.test.js",
+        "tests/v13/contract/bb24-public-directory-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/contract/bb24-public-directory-contract.test.js; tests/v13/integration/bb24-public-directory.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "DATABASE_DEPENDENCY": "integration/browser only",
+      "REQUIRED_FIX": "NONE_FOR_DIRECTORY_CONTRACT; authorized two-church enquiry persistence still required",
+      "PRODUCT_REPAIR": "LOCAL_UNCOMMITTED directory Visit, Contact, and Join keep the selected church; church contact form writes public_contact_submissions for that church; platform /contact stays BlessBoard support; Join uses membership registration",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "Two-church directory links, enquiry binding, incorrect recipient, cross-tenant inbox query, platform enquiry separation",
+      "RELEASE_BLOCKER": true
+    },
+    {
+      "BUG_ID": "INV-01",
+      "FEATURE": "Staff invitation acceptance and login",
+      "EXISTING_TESTS": [
+        "tests/blessboard-staff-invitation.test.js",
+        "tests/v13/contract/inv01-staff-invitation-contract.test.js"
+      ],
+      "TEST_FILE": "tests/v13/contract/inv01-staff-invitation-contract.test.js; tests/v13/integration/inv01-staff-invitation.integration.test.js; tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "TEST_LEVEL": "UNIT+INTEGRATION+BROWSER",
+      "TEST_STATUS": "UNIT_PASS; CONTRACT_PASS; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN; LOGIN_NOT_EXECUTED",
+      "DATABASE_DEPENDENCY": "first login, session persistence, and revocation require an authorized database",
+      "REQUIRED_FIX": "NONE_PROVEN_IN_SOURCE; authorized first login still required",
+      "CI_JOB": "v13-bb-bug-regressions",
+      "EVIDENCE": "Password policy, invalid/expired/replayed tokens, role escalation denial, tenant binding, failed session persistence, and logout revocation. Login itself was not executed.",
+      "RELEASE_BLOCKER": true
+    }
+  ]
+}

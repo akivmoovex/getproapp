@@ -1,0 +1,9 @@
+acx_id,uncovered_requirement,package,approval_state,d35_acceptance,g1_safe,database_evidence,browser_evidence,operational_evidence,release_scope,d52_code,d52_acceptance,d52_release_scope,d52_note
+ACX-001,Consent capture and withdrawal,F,PENDING,NOT_RUN,CHARACTERIZATION_ONLY,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,PARTIAL_CODE_NOT_ACCEPTED,NOT_RUN,NOT_IN_V213_RELEASE,PARTIAL_CODE_NOT_ACCEPTED. Withdrawal stays granted and organization-scoped. No new consent type.
+ACX-002,Representatives and witnesses,F,PENDING,NOT_RUN,NOT_SAFE_UNTIL_APPROVED,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. No representative record.
+ACX-003,Structured allergy review before dispense,D,PENDING,NOT_RUN,CHARACTERIZATION_ONLY,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. Dispense has no allergy blocker.
+ACX-004,Clinical accessibility,G,PENDING,NOT_RUN,NOT_SAFE,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. No approved screen list.
+ACX-005,"Monitoring of authentication, OTP delivery, queue age, critical acknowledgement, backup, and import exceptions",G,PENDING,NOT_RUN,NOT_SAFE,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. No monitor exporter.
+ACX-006,"Availability SLOs, hosting location, and controller roles",G,PENDING,NOT_RUN,NOT_SAFE,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. No availability number.
+ACX-007,Transactional outbox after commit,G,PENDING,NOT_RUN,CHARACTERIZATION_ONLY,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,"BLOCKED. Clinical, billing, and diagnostics services do not publish an outbox."
+ACX-008,Versioned clinical HTTP paths,C,PENDING,NOT_RUN,CONTRACT_ONLY_NO_NEW_ROUTES,NOT_RUN,NOT_RUN,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED,NOT_RUN,NOT_IN_V213_RELEASE,BLOCKED. No versioned clinical path was added.

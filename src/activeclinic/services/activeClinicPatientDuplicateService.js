@@ -155,6 +155,7 @@ async function findPotentialPatientDuplicates(db, input) {
   const candidates = [];
   for (const row of rows) {
     if (excludeId && row.id === excludeId) continue;
+    if (row.organization_id && String(row.organization_id) !== organizationId) continue;
     const patient = mapPatientLite(row);
     const productIdentifiers = [
       {

@@ -192,20 +192,27 @@ async function updatePatientProfile(db, input) {
   updates.push(`updated_at = now()`);
   values.push(patientId, organizationId);
 
-  await db.query(
+  const updated = await db.query(
     `UPDATE activeclinic.patients
      SET ${updates.join(", ")}
      WHERE id = $${paramIndex++} AND organization_id = $${paramIndex++}`,
     values
   );
+  if (!updated.rowCount) {
+    return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+  }
 
-  await db.query(
+  const event = await db.query(
     `INSERT INTO activeclinic.patient_portal_link_events
       (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, metadata_json)
      SELECT organization_id, healthcare_organization_id, id, platform_identity_id, 'profile_updated', '{}'::jsonb
-     FROM activeclinic.patients WHERE id = $1`,
-    [patientId]
+     FROM activeclinic.patients
+     WHERE id = $1 AND organization_id = $2`,
+    [patientId, organizationId]
   );
+  if (!event.rowCount) {
+    return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+  }
 
   return { ok: true, code: RESULT.OK };
 }

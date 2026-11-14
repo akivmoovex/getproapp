@@ -151,6 +151,7 @@ function createMemberPortalAuthRouter(deps) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "blessboard.member_login",
       });
       return res.redirect(303, "/member");
     }

@@ -1,0 +1,340 @@
+name: V13 BlessBoard Bug Regressions
+
+# D05: Prepared V13 bug-regression CI (extends D04 architecture). Does not alter V12 workflows.
+# Database-writing stages (B/C) are prepared but NOT activated by default.
+# Activation requires separate authorization (enable_db_stages + dual env gates).
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Immutable approved test SHA; omit only for manual current-ref mode"
+        required: false
+        type: string
+      enable_db_stages:
+        description: "Authorize Stages B/C (database writing). Must remain false until separately approved."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CI_DATABASE_WRITING_ENABLED: "NO"
+  GETPRO_V13_ALLOW_DB_WRITES: "0"
+  GETPRO_V13_DB_STAGES_AUTHORIZED: "0"
+
+jobs:
+  stage-a-static-unit:
+    name: Stage A — Static and unit contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      checkout_sha: ${{ steps.pin.outputs.checkout_sha }}
+      stage_a_result: ${{ steps.unit.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_sha || github.ref }}
+
+      - name: Verify pinned test checkout
+        id: pin
+        env:
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: |
+          set -eu
+          if [ -n "${TARGET_SHA}" ]; then
+            printf '%s' "$TARGET_SHA" | grep -Eq '^[0-9a-fA-F]{40}$'
+            git fetch --no-tags origin V13
+            test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+            git merge-base --is-ancestor "$TARGET_SHA" origin/V13
+          fi
+          SHA="$(git rev-parse HEAD)"
+          echo "checkout_sha=${SHA}" >> "$GITHUB_OUTPUT"
+          printf 'CHECKOUT_SHA=%s\n' "$SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Syntax validation (V13 QA infrastructure)
+        run: |
+          set -eu
+          node --check tests/v13/helpers/v13QaStatus.js
+          node --check tests/v13/helpers/v13CiDatabaseGuard.js
+          node --check tests/v13/helpers/v13DbWriteGate.js
+          node --check scripts/ci/v13-assert-db-isolation.cjs
+          node --check scripts/ci/v13-qa-report.cjs
+          node --check playwright.v13-bb-qa.config.cjs
+          node --check tests/v13/fixtures/v13SyntheticFixtures.js
+          node --check tests/v13/integration/v13AuthorizedScenarios.js
+          for f in tests/v13/contract/*.test.js tests/v13/integration/*.test.js tests/e2e/v13/*.spec.js; do
+            node --check "$f"
+          done
+          # Existing BB-05 contracts + D05 shell hardening (must remain)
+          node --check tests/bb05-hq-add-member-csrf-contract.test.js
+          node --check tests/v211-hq-add-member-get.test.js
+          node --check src/blessboard/http/hqAdminShellLocals.js
+          node --check src/blessboard/http/branchAdminShellLocals.js
+          node --check tests/v13/contract/csrf-shell-extra-override-hardening.test.js
+
+      - name: Workflow static validation
+        run: |
+          set -eu
+          test -f .github/workflows/v13-bb-bug-regressions.yml
+          test -f .github/workflows/v13-bb-qa-regression.yml
+          # V12 workflows must remain present and untouched by this job's edits
+          test -f .github/workflows/v12-shared-ci.yml
+          test -f .github/workflows/v12-blessboard-browser.yml
+          grep -q 'workflow_dispatch' .github/workflows/v13-bb-bug-regressions.yml
+          grep -q 'enable_db_stages' .github/workflows/v13-bb-bug-regressions.yml
+          grep -q 'CI_DATABASE_WRITING_ENABLED' .github/workflows/v13-bb-bug-regressions.yml
+          # Refuse accidental push/pull_request triggers on this workflow
+          ! grep -E '^\s+push:' .github/workflows/v13-bb-bug-regressions.yml
+          ! grep -E '^\s+pull_request:' .github/workflows/v13-bb-bug-regressions.yml
+
+      - name: Isolation guard unit tests
+        run: node --test --test-concurrency=1 tests/v13/contract/v13-ci-isolation-guards.test.js
+
+      - name: V13 BB contract unit tests (database-independent)
+        id: unit
+        run: |
+          set -eu
+          test -f docs/qa/V213_D05_BUG_REGRESSION_INVENTORY.json
+          test -f docs/qa/V213_D05_REGRESSION_REPORT.md
+          set +e
+          node --test --test-concurrency=1 \
+            tests/v13/contract/*.test.js \
+            tests/v13/unit/*.test.js \
+            tests/v13/quality/d17-mutation-probes.test.js \
+            tests/shared-website-section-lifecycle.test.js \
+            tests/bb05-hq-add-member-csrf-contract.test.js \
+            tests/v211-hq-add-member-get.test.js \
+            tests/v213-version-initialization.test.js
+          CODE=$?
+          set -e
+          if [ "$CODE" -eq 0 ]; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            exit "$CODE"
+          fi
+
+      - name: Upload Stage A logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v13-bb-bug-regressions-stage-a
+          path: |
+            docs/qa/V213_BB_REGRESSION_MATRIX.json
+            docs/qa/V213_RELEASE_BLOCKER_REPORT.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+  stage-b-integration:
+    name: Stage B — Integration (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    # D04 hard-hold: prepared only. Do not flip without separate authorization.
+    # Future activation also requires inputs.enable_db_stages == true and dual env gates.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      NODE_ENV: test
+      DEPLOYMENT_ENV: testing
+      EXPECTED_DATABASE_ENV: testing
+      DATABASE_IDENTITY_ENV: testing
+      GETPRO_TEST_DB: "1"
+      GETPRO_PG_SSL: "off"
+      GETPRO_V13_ALLOW_DB_WRITES: "1"
+      GETPRO_V13_DB_STAGES_AUTHORIZED: "1"
+      GETPRO_V13_REQUIRE_DB_WRITE_AUTH: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.stage-a-static-unit.outputs.checkout_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Create run-owned disposable database
+        id: db
+        run: |
+          set -eu
+          RUN_ID="$(echo "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" | tr -cd 'a-zA-Z0-9' | cut -c1-20 | tr 'A-Z' 'a-z')"
+          echo "GETPRO_V13_CI_RUN_ID=${RUN_ID}" >> "$GITHUB_ENV"
+          export GETPRO_V13_CI_RUN_ID="$RUN_ID"
+          DB_NAME="$(node - <<'NODE'
+          const { buildOwnedDatabaseName } = require("./tests/v13/helpers/v13CiDatabaseGuard");
+          process.stdout.write(buildOwnedDatabaseName(process.env.GETPRO_V13_CI_RUN_ID, "int"));
+          NODE
+          )"
+          echo "GETPRO_V13_OWNED_DB_NAME=${DB_NAME}" >> "$GITHUB_ENV"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "CREATE DATABASE \"${DB_NAME}\";"
+          echo "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/${DB_NAME}" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/${DB_NAME}" >> "$GITHUB_ENV"
+      - name: Assert disposable DB isolation
+        run: node scripts/ci/v13-assert-db-isolation.cjs
+      - name: Migrate only the owned disposable database
+        run: |
+          set -eu
+          node scripts/ci/v13-assert-db-isolation.cjs
+          npm run db:bootstrap:foundation
+          npm run db:verify:foundation
+      - name: Run V13 integration suites
+        run: |
+          node --test --test-concurrency=1 tests/v13/integration/*.test.js
+      - name: Drop only run-owned database
+        if: always()
+        run: |
+          set -eu
+          if [ -n "${GETPRO_V13_OWNED_DB_NAME:-}" ]; then
+            PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+              -c "DROP DATABASE IF EXISTS \"${GETPRO_V13_OWNED_DB_NAME}\";"
+          fi
+
+  stage-c-browser:
+    name: Stage C — Browser E2E (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    # D04 hard-hold: prepared only.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DEPLOYMENT_ENV: testing
+      EXPECTED_DATABASE_ENV: testing
+      DATABASE_IDENTITY_ENV: testing
+      GETPRO_TEST_DB: "1"
+      GETPRO_PG_SSL: "off"
+      GETPRO_V13_ALLOW_DB_WRITES: "1"
+      GETPRO_V13_DB_STAGES_AUTHORIZED: "1"
+      GETPRO_V13_REQUIRE_DB_WRITE_AUTH: "1"
+      PLAYWRIGHT_E2E_PORT: "4186"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.stage-a-static-unit.outputs.checkout_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Create run-owned disposable browser database
+        run: |
+          set -eu
+          RUN_ID="$(echo "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" | tr -cd 'a-zA-Z0-9' | cut -c1-20 | tr 'A-Z' 'a-z')"
+          echo "GETPRO_V13_CI_RUN_ID=${RUN_ID}" >> "$GITHUB_ENV"
+          export GETPRO_V13_CI_RUN_ID="$RUN_ID"
+          DB_NAME="$(node - <<'NODE'
+          const { buildOwnedDatabaseName } = require("./tests/v13/helpers/v13CiDatabaseGuard");
+          process.stdout.write(buildOwnedDatabaseName(process.env.GETPRO_V13_CI_RUN_ID, "e2e"));
+          NODE
+          )"
+          echo "GETPRO_V13_OWNED_DB_NAME=${DB_NAME}" >> "$GITHUB_ENV"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "CREATE DATABASE \"${DB_NAME}\";"
+          URL="postgresql://postgres:postgres@127.0.0.1:5432/${DB_NAME}"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "E2E_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+      - name: Assert disposable DB isolation
+        run: node scripts/ci/v13-assert-db-isolation.cjs
+      - name: Bootstrap disposable Foundation database
+        env:
+          DATABASE_IDENTITY_EXPECTED: moovex-platform-v7
+          DATABASE_IDENTITY_ENV: testing
+          FOUNDATION_ALLOW_LOCALHOST: "1"
+        run: |
+          npm run db:bootstrap:foundation
+          npm run db:verify:foundation
+          npm run test:db:schema
+          npm run church:db-identity:init -- --env testing --confirm
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run V13 BB QA browser regression
+        run: npx playwright test --config=playwright.v13-bb-qa.config.cjs
+      - name: Upload Playwright artifacts (sanitized)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v13-bb-bug-regressions-playwright
+          path: |
+            playwright-report/v13-bb-qa
+            test-results/v13-bb-qa
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Drop only run-owned database
+        if: always()
+        run: |
+          set -eu
+          if [ -n "${GETPRO_V13_OWNED_DB_NAME:-}" ]; then
+            PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+              -c "DROP DATABASE IF EXISTS \"${GETPRO_V13_OWNED_DB_NAME}\";"
+          fi
+
+  stage-d-qa-report:
+    name: Stage D — QA report
+    needs: stage-a-static-unit
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.stage-a-static-unit.outputs.checkout_sha || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Generate consolidated QA report
+        env:
+          GITHUB_SHA: ${{ needs.stage-a-static-unit.outputs.checkout_sha }}
+          DEPLOYMENT_ENV: testing
+          DATABASE_IDENTITY: none
+          V13_STAGE_A_RESULT: ${{ needs.stage-a-static-unit.outputs.stage_a_result || 'NOT_RUN' }}
+          V13_STAGE_B_RESULT: NOT_RUN
+          V13_STAGE_C_RESULT: NOT_RUN
+          V13_QA_REPORT_DIR: test-results/v13-bb-bug-regressions-report
+        run: node scripts/ci/v13-qa-report.cjs
+      - name: Upload QA report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v13-bb-bug-regressions-report
+          path: test-results/v13-bb-bug-regressions-report
+          if-no-files-found: ignore
+          retention-days: 30

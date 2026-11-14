@@ -261,10 +261,11 @@ async function addMedication(pool, input) {
     const existing = await pool.query(
       `SELECT id FROM activeclinic.medication_catalogue_items
        WHERE healthcare_organization_id = $1
-         AND generic_name = $2
-         AND strength = $3
-         AND dosage_form = $4`,
-      [healthcareOrganizationId, genericName, strength, dosageForm]
+         AND organization_id = $2
+         AND generic_name = $3
+         AND strength = $4
+         AND dosage_form = $5`,
+      [healthcareOrganizationId, organizationId, genericName, strength, dosageForm]
     );
 
     if (existing.rows.length > 0) {
@@ -438,8 +439,8 @@ async function receiveStock(pool, input) {
     // Check medication exists.
     const medicationCheck = await client.query(
       `SELECT id FROM activeclinic.medication_catalogue_items
-       WHERE id = $1 AND healthcare_organization_id = $2`,
-      [medicationCatalogueItemId, healthcareOrganizationId]
+       WHERE id = $1 AND healthcare_organization_id = $2 AND organization_id = $3`,
+      [medicationCatalogueItemId, healthcareOrganizationId, organizationId]
     );
 
     if (medicationCheck.rows.length === 0) {
@@ -464,8 +465,10 @@ async function receiveStock(pool, input) {
     // Get or create inventory item.
     let inventoryItemResult = await client.query(
       `SELECT * FROM activeclinic.inventory_items
-       WHERE facility_id = $1 AND medication_catalogue_item_id = $2`,
-      [facilityId, medicationCatalogueItemId]
+       WHERE facility_id = $1
+         AND medication_catalogue_item_id = $2
+         AND organization_id = $3`,
+      [facilityId, medicationCatalogueItemId, organizationId]
     );
 
     let inventoryItem;
@@ -481,9 +484,14 @@ async function receiveStock(pool, input) {
       inventoryItem = mapInventoryItem(insertInventoryItem.rows[0]);
     } else {
       const locked = await client.query(
-        `SELECT * FROM activeclinic.inventory_items WHERE id = $1 FOR UPDATE`,
-        [inventoryItemResult.rows[0].id]
+        `SELECT * FROM activeclinic.inventory_items
+          WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
+        [inventoryItemResult.rows[0].id, organizationId]
       );
+      if (!locked.rowCount) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.INVENTORY_ITEM_NOT_FOUND };
+      }
       inventoryItem = mapInventoryItem(locked.rows[0]);
     }
 
@@ -526,10 +534,14 @@ async function receiveStock(pool, input) {
     const refreshedInventory = await client.query(
       `UPDATE activeclinic.inventory_items
           SET last_restocked_at = now()
-        WHERE id = $1
+        WHERE id = $1 AND organization_id = $2
       RETURNING *`,
-      [inventoryItem.id]
+      [inventoryItem.id, organizationId]
     );
+    if (!refreshedInventory.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.INVENTORY_ITEM_NOT_FOUND };
+    }
     inventoryItem = mapInventoryItem(refreshedInventory.rows[0]);
 
     await client.query("COMMIT");
@@ -884,6 +896,14 @@ async function dispensePrescription(pool, input) {
 
     const prescription = mapPharmacyPrescription(prescriptionResult.rows[0]);
 
+    if (
+      input.patientId &&
+      String(input.patientId) !== String(prescription.patientId)
+    ) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.PATIENT_NOT_FOUND };
+    }
+
     if (!["pending", "in_preparation", "partially_dispensed"].includes(prescription.status)) {
       await client.query("ROLLBACK");
       return { ok: false, result: RESULT.INVALID_STATUS };
@@ -924,8 +944,12 @@ async function dispensePrescription(pool, input) {
       // Load prescription item.
       const itemResult = await client.query(
         `SELECT * FROM activeclinic.pharmacy_prescription_items
-         WHERE id = $1 AND pharmacy_prescription_id = $2 FOR UPDATE`,
-        [prescriptionItemId, prescriptionId]
+         WHERE id = $1
+           AND pharmacy_prescription_id = $2
+           AND organization_id = $3
+           AND healthcare_organization_id = $4
+         FOR UPDATE`,
+        [prescriptionItemId, prescriptionId, organizationId, prescription.healthcareOrganizationId]
       );
 
       if (itemResult.rows.length === 0) {
@@ -945,8 +969,8 @@ async function dispensePrescription(pool, input) {
       // Load batch.
       const batchResult = await client.query(
         `SELECT * FROM activeclinic.inventory_batches
-         WHERE id = $1 AND healthcare_organization_id = $2`,
-        [batchId, prescription.healthcareOrganizationId]
+         WHERE id = $1 AND healthcare_organization_id = $2 AND organization_id = $3`,
+        [batchId, prescription.healthcareOrganizationId, organizationId]
       );
 
       if (batchResult.rows.length === 0) {
@@ -969,8 +993,8 @@ async function dispensePrescription(pool, input) {
       // Load inventory item to check stock.
       const inventoryItemResult = await client.query(
         `SELECT * FROM activeclinic.inventory_items
-         WHERE id = $1 FOR UPDATE`,
-        [batch.inventoryItemId]
+         WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
+        [batch.inventoryItemId, organizationId]
       );
 
       if (inventoryItemResult.rows.length === 0) {
@@ -1016,12 +1040,26 @@ async function dispensePrescription(pool, input) {
       const newQuantityDispensed = prescriptionItem.quantityDispensed + quantityToDispense;
       const newItemStatus = newQuantityDispensed >= prescriptionItem.quantityOrdered ? "dispensed" : "partially_dispensed";
 
-      await client.query(
+      const itemUpdate = await client.query(
         `UPDATE activeclinic.pharmacy_prescription_items
          SET quantity_dispensed = $1, status = $2
-         WHERE id = $3`,
-        [newQuantityDispensed, newItemStatus, prescriptionItemId]
+         WHERE id = $3
+           AND organization_id = $4
+           AND healthcare_organization_id = $5
+           AND pharmacy_prescription_id = $6`,
+        [
+          newQuantityDispensed,
+          newItemStatus,
+          prescriptionItemId,
+          organizationId,
+          prescription.healthcareOrganizationId,
+          prescriptionId,
+        ]
       );
+      if (!itemUpdate.rowCount) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.PRESCRIPTION_ITEM_NOT_FOUND };
+      }
     }
 
     // Update prescription status.
@@ -1041,12 +1079,23 @@ async function dispensePrescription(pool, input) {
       newPrescriptionStatus = "partially_dispensed";
     }
 
-    await client.query(
+    const prescriptionUpdate = await client.query(
       `UPDATE activeclinic.pharmacy_prescriptions
        SET status = $1, version = version + 1
-       WHERE id = $2`,
-      [newPrescriptionStatus, prescriptionId]
+       WHERE id = $2
+         AND organization_id = $3
+         AND healthcare_organization_id = $4`,
+      [
+        newPrescriptionStatus,
+        prescriptionId,
+        organizationId,
+        prescription.healthcareOrganizationId,
+      ]
     );
+    if (!prescriptionUpdate.rowCount) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.PRESCRIPTION_NOT_FOUND };
+    }
 
     await client.query("COMMIT");
 

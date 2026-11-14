@@ -760,6 +760,29 @@ function buildMinistryFields(raw, { partial }) {
   return { ok: true, fields };
 }
 
+/**
+ * Accept ISO datetimes and datetime-local values (no zone → UTC).
+ * Blank is "not present". Unparseable values are rejected before SQL.
+ * @param {unknown} value
+ * @param {string} reason
+ * @returns {{ ok: true, present: boolean, value: string|null } | { ok: false, reason: string }}
+ */
+function parseEventInstant(value, reason) {
+  if (value == null) return { ok: true, present: false, value: null };
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return { ok: false, reason };
+    return { ok: true, present: true, value: value.toISOString() };
+  }
+  const raw = String(value).trim();
+  if (!raw) return { ok: true, present: false, value: null };
+  let normalized = raw;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) normalized = `${raw}:00.000Z`;
+  else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) normalized = `${raw}.000Z`;
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return { ok: false, reason };
+  return { ok: true, present: true, value: parsed.toISOString() };
+}
+
 function buildEventFields(raw, { partial }) {
   const fields = {};
   if (!partial || raw.title !== undefined) {
@@ -774,10 +797,21 @@ function buildEventFields(raw, { partial }) {
     fields.summary = n.value;
   }
   if (!partial || raw.startsAt !== undefined) {
-    if (raw.startsAt == null && !partial) return { ok: false, reason: "starts_at" };
-    if (raw.startsAt != null) fields.startsAt = raw.startsAt;
+    const start = parseEventInstant(raw.startsAt, "starts_at");
+    if (!start.ok) return start;
+    if (!start.present) return { ok: false, reason: "starts_at" };
+    fields.startsAt = start.value;
   }
-  if (raw.endsAt !== undefined) fields.endsAt = raw.endsAt;
+  if (raw.endsAt !== undefined) {
+    const end = parseEventInstant(raw.endsAt, "ends_at");
+    if (!end.ok) return end;
+    fields.endsAt = end.present ? end.value : null;
+  }
+  if (fields.startsAt && fields.endsAt) {
+    const startMs = new Date(fields.startsAt).getTime();
+    const endMs = new Date(fields.endsAt).getTime();
+    if (endMs < startMs) return { ok: false, reason: "ends_at" };
+  }
   if (!partial || raw.timezone !== undefined) {
     const n = plainText(raw.timezone, "timezone", { required: !partial, max: 64 });
     if (!n.ok) return n;
@@ -916,6 +950,11 @@ function buildSermonFields(raw, { partial }) {
     const n = httpsMediaUrl(raw.resourceUrl, "resource_url");
     if (!n.ok) return n;
     fields.resourceUrl = n.value;
+  }
+  if (raw.imageUrl !== undefined) {
+    const n = httpsMediaUrl(raw.imageUrl, "image_url");
+    if (!n.ok) return n;
+    fields.imageUrl = n.value;
   }
   if (raw.status !== undefined || !partial) {
     const status = raw.status != null ? String(raw.status).trim().toLowerCase() : "draft";

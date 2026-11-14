@@ -81,6 +81,37 @@ function parseOptionalDateTime(value) {
   return { ok: true, value: d };
 }
 
+/**
+ * Clock text used by the branch event form.
+ * Free-text labels that are not clock times stay allowed.
+ * Impossible clock values and end-before-start pairs are rejected.
+ * @param {unknown} value
+ * @returns {{ ok: true, minutes: number|null } | { ok: false }}
+ */
+function parseClockMinutes(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return { ok: true, minutes: null };
+  const ampm = raw.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  const hm = raw.match(/^(\d{1,2}):(\d{2})$/);
+  let hours;
+  let minutes;
+  if (ampm) {
+    hours = Number(ampm[1]);
+    minutes = Number(ampm[2]);
+    if (hours < 1 || hours > 12 || minutes > 59) return { ok: false };
+    const meridiem = ampm[3].toLowerCase();
+    if (meridiem === "pm" && hours !== 12) hours += 12;
+    if (meridiem === "am" && hours === 12) hours = 0;
+  } else if (hm) {
+    hours = Number(hm[1]);
+    minutes = Number(hm[2]);
+    if (hours > 23 || minutes > 59) return { ok: false };
+  } else {
+    return { ok: true, minutes: null };
+  }
+  return { ok: true, minutes: hours * 60 + minutes };
+}
+
 function parseEventDate(value) {
   const raw = String(value || "").trim();
   if (!raw) {
@@ -232,6 +263,25 @@ function validateEventBody(body) {
   }
   if (!EVENT_VISIBILITIES.includes(visibility)) {
     return { ok: false, error: "Invalid visibility.", form: { ...form, title } };
+  }
+  const startClock = parseClockMinutes(startTime);
+  if (!startClock.ok) {
+    return { ok: false, error: "Invalid start time.", form: { ...form, title, event_date: eventDate.value } };
+  }
+  const endClock = parseClockMinutes(endTime);
+  if (!endClock.ok) {
+    return { ok: false, error: "Invalid end time.", form: { ...form, title, event_date: eventDate.value } };
+  }
+  if (
+    startClock.minutes != null &&
+    endClock.minutes != null &&
+    endClock.minutes < startClock.minutes
+  ) {
+    return {
+      ok: false,
+      error: "End time cannot be earlier than start time.",
+      form: { ...form, title, event_date: eventDate.value },
+    };
   }
 
   return {

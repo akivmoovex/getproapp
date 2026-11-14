@@ -1156,12 +1156,8 @@ async function getPublicWebsiteAnnouncement(db, input) {
       if (!existing || String(existing.churchId) !== churchId) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
-      if (branchId) {
-        if (existing.branchId && String(existing.branchId) !== branchId) {
-          return { ok: false, status: STATUS.NOT_FOUND, item: null };
-        }
-      } else if (existing.branchId) {
-        // Church-wide site does not expose branch-only announcements.
+      if (branchId && existing.branchId && String(existing.branchId) !== branchId) {
+        // Selected branch site: church-wide rows stay visible; other branches do not.
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
       const audiences = await repo.listAudiences(client, id);
@@ -1195,17 +1191,20 @@ async function getPublicWebsiteAnnouncement(db, input) {
 }
 
 function publicAnnouncementImageDto(attachments, churchId, env) {
+  const { PUBLIC_MEDIA_PATH_PREFIX } = require("../media/mediaConstants");
   return (Array.isArray(attachments) ? attachments : [])
     .filter((attachment) =>
       attachment &&
       attachment.churchId === churchId &&
-      attachment.visibility === "public" &&
       attachment.mediaStatus === "active" &&
-      attachment.storageKey
+      attachment.mediaAssetId
     )
     .map((attachment) => {
       const imageUrl = /^image\//i.test(String(attachment.mimeType || ""))
-        ? presentRuntimeImageSrc(`/media/${String(attachment.storageKey).replace(/^\/+/, "")}`, env || process.env)
+        ? presentRuntimeImageSrc(
+            `${PUBLIC_MEDIA_PATH_PREFIX}${attachment.mediaAssetId}`,
+            env || process.env
+          )
         : null;
       return {
         imageUrl: imageUrl || null,
@@ -1214,9 +1213,23 @@ function publicAnnouncementImageDto(attachments, churchId, env) {
         originalFilename: attachment.originalFilename,
         mimeType: attachment.mimeType,
         sizeBytes: attachment.sizeBytes,
+        mediaAssetId: attachment.mediaAssetId,
       };
     })
     .filter(Boolean);
+}
+
+async function mediaAssetVisibleOnPublicAnnouncement(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const mediaAssetId = String((input && input.mediaAssetId) || "").trim();
+  if (!churchId || !mediaAssetId) return false;
+  try {
+    return await withClient(db, (client) =>
+      repo.mediaAssetIsOnPublicAnnouncement(client, { churchId, mediaAssetId })
+    );
+  } catch {
+    return false;
+  }
 }
 
 function publicAnnouncementPresentation(item, attachments) {
@@ -1273,5 +1286,6 @@ module.exports = {
   listPublicWebsiteAnnouncements,
   getPublicWebsiteAnnouncement,
   publicAnnouncementImageDto,
+  mediaAssetVisibleOnPublicAnnouncement,
   listAnnouncementPublicationHistory,
 };

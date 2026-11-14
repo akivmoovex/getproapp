@@ -462,6 +462,72 @@ function createAnnouncementAdminRouter(deps) {
       }
     );
 
+    // Picker library/preview/archive. Must precede /:id so "media" is not an announcement id.
+    router.get(`${mountPrefix}/media`, rejectApex, gateManage, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const visibilityRaw = String((req.query && req.query.visibility) || "")
+        .trim()
+        .toLowerCase();
+      const visibility =
+        visibilityRaw === VISIBILITY.PUBLIC || visibilityRaw === VISIBILITY.PRIVATE
+          ? visibilityRaw
+          : VISIBILITY.PRIVATE;
+      const listed = await mediaService.listMediaAssets(getPool(), {
+        churchId: scope.churchId,
+        visibility,
+        limit: req.query && req.query.limit,
+      });
+      if (!listed.ok) {
+        return res.status(503).json({ ok: false, reason: listed.reason || "lookup", assets: [] });
+      }
+      const base = String(scope.basePath || mountPrefix).replace(/\/$/, "");
+      const assets = (listed.assets || []).map((asset) => ({
+        ...asset,
+        previewPath: `${base}/media/${asset.id}`,
+      }));
+      return res.status(200).json({ ok: true, assets });
+    });
+
+    router.post(`${mountPrefix}/media/:assetId/archive`, rejectApex, gateManage, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const submitted =
+        (req.body && req.body[CSRF_FIELD]) ||
+        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).json({ ok: false, reason: "csrf" });
+      }
+      const result = await mediaService.archiveMediaAsset(getPool(), {
+        assetId: req.params.assetId,
+        churchId: scope.churchId,
+      });
+      if (!result.ok) {
+        const status = result.status === "not_found" ? 404 : 400;
+        return res.status(status).json({ ok: false, reason: result.reason || "archive_failed" });
+      }
+      return res.status(200).json({ ok: true, assetId: result.asset.id, status: result.asset.status });
+    });
+
+    router.get(`${mountPrefix}/media/:assetId`, rejectApex, gateManage, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const loaded = await mediaService.loadMediaBytes(getPool(), {
+        assetId: req.params.assetId,
+        viewerChurchId: scope.churchId,
+        allowPrivate: true,
+      });
+      if (!loaded.ok) {
+        const code = loaded.status === "forbidden" ? 403 : loaded.status === "not_found" ? 404 : 503;
+        return res.status(code).json({ ok: false, reason: loaded.reason || "not_found" });
+      }
+      if (loaded.redirectUrl) return res.redirect(302, loaded.redirectUrl);
+      res.setHeader("Content-Type", loaded.asset.mimeType || "application/octet-stream");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.status(200).send(loaded.buffer);
+    });
+
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;

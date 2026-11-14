@@ -138,6 +138,22 @@ function mapRoleAssignment(row) {
  * }} input
  */
 async function assignStaffRole(db, input) {
+  const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+  const otpHold = await holdIfOtpRequired({
+    workflow: "activeclinic.staff_role_change",
+    activation: input && input.otpActivation,
+    env: input && input.env,
+    verification: input && input.otpVerification,
+    organizationId: input && input.organizationId,
+    accountId: input && input.staffMemberId,
+    sessionId: input && input.sessionId,
+    channel: "email",
+    identifier: input && input.identifier,
+    service: input && input.otpService,
+  });
+  if (otpHold) {
+    return { ok: false, code: "otp_required", assignment: null };
+  }
   const staff = await getStaffMemberByIdAndOrganization(db, {
     id: input.staffMemberId,
     organizationId: input.organizationId,

@@ -1,6 +1,7 @@
 "use strict";
 
 const { loadAssetMap } = require("../platform/assetUrls");
+const { assertOtpProductionStartup } = require("../platform/otp/otpEnvironment");
 
 function warn(message) {
   // eslint-disable-next-line no-console
@@ -13,6 +14,7 @@ function warn(message) {
  */
 function runProductionStartupChecks() {
   if (process.env.NODE_ENV !== "production") return;
+  assertOtpProductionStartup(process.env);
 
   const base = (process.env.BASE_DOMAIN || "").trim();
   if (!base) {

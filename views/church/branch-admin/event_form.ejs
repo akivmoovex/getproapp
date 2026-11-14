@@ -55,4 +55,19 @@
           <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
         </div>
       </form>
+      <% if (!isEdit) { %>
+      <script>
+      (function () {
+        var form = document.querySelector("form.church-form");
+        if (!form) return;
+        form.addEventListener("submit", function (ev) {
+          if (form.getAttribute("data-bb-submit-lock") === "1") {
+            ev.preventDefault();
+            return;
+          }
+          form.setAttribute("data-bb-submit-lock", "1");
+        });
+      })();
+      </script>
+      <% } %>
 <%- include('../partials/branch_admin_shell_end') %>

@@ -730,7 +730,7 @@
     <p class="bb-ba-lede bb-ba-lede--compact">
       New items start as drafts unless you choose published and confirm.
     </p>
-    <details class="bb-ba-entities-create__details" <%= createOpen ? 'open' : '' %>>
+    <details class="bb-ba-entities-create__details" id="bb-ca-entity-create-form" <%= (createOpen || isEvents || isSermons) ? 'open' : '' %>>
       <summary class="bb-ba-entities-create__summary">Show create form</summary>
       <form
         method="post"
@@ -806,6 +806,29 @@
     }
   }
   document.querySelectorAll("[data-bb-ministries-form], [data-bb-events-form], [data-bb-sermons-form]").forEach(wireForm);
+
+  function openEventCreate(focusTitle) {
+    var details = document.getElementById("bb-ca-entity-create-form");
+    if (details) details.open = true;
+    if (!focusTitle) return;
+    var title = document.getElementById("create_title");
+    if (title) title.focus();
+  }
+  document.querySelectorAll("[data-bb-entity-action='new'], [data-bb-events-create-card], [data-bb-sermons-create-card]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      openEventCreate(true);
+    });
+  });
+  if (window.location.hash === "#bb-ca-entity-create") openEventCreate(false);
+  document.querySelectorAll("[data-bb-events-form='create']").forEach(function (form) {
+    form.addEventListener("submit", function (ev) {
+      if (form.getAttribute("data-bb-submit-lock") === "1") {
+        ev.preventDefault();
+        return;
+      }
+      form.setAttribute("data-bb-submit-lock", "1");
+    });
+  });
 })();
 </script>
 <% } %>

@@ -1,0 +1,25 @@
+area_id,feature,d62_status,meaningful_test,database_evidence,ci_job,certification
+01,"Tenants, facilities, departments, service points",PARTIAL,source_and_fake_query,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+02,"Clinical role grants and tenant isolation",PARTIAL,in_process_query_double,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+03,"Patient registration and identity matching",PARTIAL,fake_database,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+04,"Merging, lineage, and unmerge",IMPLEMENTATION_MISSING,absence_only,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+05,"Consent, withdrawal, and representatives",PARTIAL,fake_database_and_source,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+06,"Encounters, visits, and queues",PARTIAL,fake_database_and_source,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+07,"Nursing, triage, and vital signs",PARTIAL,source,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+08,"Consultation notes and amendments",PARTIAL,source,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+09,"Laboratory orders and results",PARTIAL,source_and_fake_database,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+10,"Critical-result escalation",PARTIAL,fake_database,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+11,"Prescriptions, allergies, and dispensing",PARTIAL,fake_database,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+12,"Billing, receipts, reversals, reconciliation",PARTIAL,denial_before_transaction,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+13,"Document scanning, provenance, quarantine",PARTIAL,fake_row,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+14,"Retention, legal hold, and disposal",IMPLEMENTATION_MISSING,absence_only,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+15,"Patient portal activation",PREPARED_NOT_RUN,fake_database,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+16,"Appointment booking and capacity",PREPARED_NOT_RUN,collision_helper_only,NOT_RUN,held_stage_b,NOT_CERTIFIED
+17,"OTP, sessions, CSRF, authorization",PARTIAL,memory_store,NOT_RUN,stage_a_runs_14_cases_only,NOT_CERTIFIED
+18,Break-glass,APPROVAL_BLOCKED,absence_only,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+19,"Backups, restore, RPO/RTO",IMPLEMENTATION_MISSING,none,NOT_RUN,none,NOT_CERTIFIED
+20,"Offline operation and reconciliation",IMPLEMENTATION_MISSING,source_503,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+21,"Accessibility and monitoring",IMPLEMENTATION_MISSING,none,NOT_RUN,none,NOT_CERTIFIED
+22,"Juflona two-screen signing",DEFERRED,absence_only,NOT_RUN,not_in_stage_a,NOT_CERTIFIED
+23,BlessBoard shared reuse,PARTIAL,source_scan,NOT_RUN,blessboard_stage_a_not_dispatched,NOT_CERTIFIED
+24,"Privacy, audit, and deployment",PARTIAL,source,NOT_RUN,not_in_stage_a,NOT_CERTIFIED

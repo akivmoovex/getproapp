@@ -42,7 +42,7 @@ const {
   PRODUCT_CODE: REG_PRODUCT,
 } = require("../../platform/registration/registrationRenderLocals");
 const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
-const BB_APEX_ASSET_VERSION = "v206-qa-1";
+const BB_APEX_ASSET_VERSION = "v213-d11-1";
 
 function registrationLocalsFromOpts(opts) {
   const step = (opts && opts.wizardStep) || null;

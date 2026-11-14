@@ -1,0 +1,85 @@
+acceptance_id,feature,implementation_class,persistence_required,test_file,uses_real_service,mocks_database,observable_outcome,cleanup,ci_job,execution,completeness
+TEN-01-01,"Tenants, facilities, departments and service points",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+TEN-01-02,"Tenants, facilities, departments and service points",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+TEN-01-03,"Tenants, facilities, departments and service points",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ID-01-01,"Patient identity, matching and merge",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ID-01-02,"Patient identity, matching and merge",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ID-01-03,"Patient identity, matching and merge",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ID-02-01,"Patient identity, matching and merge",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+ID-02-02,"Patient identity, matching and merge",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ID-02-03,"Patient identity, matching and merge",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+VIS-01-01,"Encounters, visits and queues",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+VIS-01-02,"Encounters, visits and queues",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+VIS-01-03,"Encounters, visits and queues",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+VIS-02-01,"Encounters, visits and queues",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+VIS-02-02,"Encounters, visits and queues",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+VIS-02-03,"Encounters, visits and queues",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+NUR-01-01,"Nursing, triage and vital signs",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+NUR-01-02,"Nursing, triage and vital signs",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+NUR-01-03,"Nursing, triage and vital signs",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+CLN-01-01,Consultation notes and amendments,IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+CLN-01-02,Consultation notes and amendments,IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+CLN-01-03,Consultation notes and amendments,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+ORD-01-01,Laboratory orders,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ORD-01-02,Laboratory orders,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+ORD-01-03,Laboratory orders,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+LAB-01-01,Laboratory results and critical escalation,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+LAB-01-02,Laboratory results and critical escalation,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+LAB-01-03,Laboratory results and critical escalation,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+RX-01-01,Prescriptions and dispensing,IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+RX-01-02,Prescriptions and dispensing,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+RX-01-03,Prescriptions and dispensing,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+FIN-01-01,"Billing, receipts and reversals",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+FIN-01-02,"Billing, receipts and reversals",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+FIN-01-03,"Billing, receipts and reversals",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+DOC-01-01,Document scanning and provenance,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+DOC-01-02,Document scanning and provenance,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+DOC-01-03,Document scanning and provenance,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+RET-01-01,"Retention, legal hold and disposal",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+RET-01-02,"Retention, legal hold and disposal",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+RET-01-03,"Retention, legal hold and disposal",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+SEC-01-01,"Authorization, audit and break-glass",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+SEC-01-02,"Authorization, audit and break-glass",BLOCKED_SECURITY,YES,tests/v13/integration/d16-ac-auth.integration.test.js,different_body,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,BLOCKED_SECURITY
+SEC-01-03,"Authorization, audit and break-glass",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+SEC-02-01,"Authorization, audit and break-glass",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+SEC-02-02,"Authorization, audit and break-glass",IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+SEC-02-03,"Authorization, audit and break-glass",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+PAT-01-01,Patient portal activation,EVIDENCE_MISSING,YES,tests/v13/integration/d24-patient-portal.integration.test.js,yes_input_check_only,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,GATED_NO_STORED_ROW
+PAT-01-02,Patient portal activation,PARTIAL,YES,tests/v13/integration/d24-patient-portal.integration.test.js,yes_input_check_only,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,GATED_NO_STORED_ROW
+PAT-01-03,Patient portal activation,PARTIAL,YES,tests/v13/integration/d24-patient-portal.integration.test.js,yes_input_check_only,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,GATED_NO_STORED_ROW
+APT-01-01,Appointment booking and capacity,IMPLEMENTED_NOT_EXECUTED,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+APT-01-02,Appointment booking and capacity,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+APT-01-03,Appointment booking and capacity,MISSING,YES,tests/v13/integration/d25-appointment-concurrency.integration.test.js,throws_before_assert,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OTP-01-01,"OTP, sessions and delivery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OTP-01-02,"OTP, sessions and delivery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OTP-01-03,"OTP, sessions and delivery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+OTP-02-01,"OTP, sessions and delivery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OTP-02-02,"OTP, sessions and delivery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OTP-02-03,"OTP, sessions and delivery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+OTP-03-01,"OTP, sessions and delivery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+OTP-03-02,"OTP, sessions and delivery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+OTP-03-03,"OTP, sessions and delivery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-01-01,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-01-02,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-01-03,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-02-01,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-02-02,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-02-03,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-03-01,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-03-02,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+PLT-03-03,"Shared platform CSRF, media and roles",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+BBF-01-01,BlessBoard shared infrastructure reuse,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+BBF-01-02,BlessBoard shared infrastructure reuse,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+BBF-01-03,BlessBoard shared infrastructure reuse,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+BBF-02-01,BlessBoard shared infrastructure reuse,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+BBF-02-02,BlessBoard shared infrastructure reuse,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+BBF-02-03,BlessBoard shared infrastructure reuse,PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+OPS-01-01,"Backup, restore and offline recovery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OPS-01-02,"Backup, restore and offline recovery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OPS-01-03,"Backup, restore and offline recovery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OPS-02-01,"Backup, restore and offline recovery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OPS-02-02,"Backup, restore and offline recovery",MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+OPS-02-03,"Backup, restore and offline recovery",PARTIAL,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,NO_EXECUTABLE_PERSISTENCE_TEST
+JUF-01-01,Juflona two-screen document signing,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+JUF-01-02,Juflona two-screen document signing,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED
+JUF-01-03,Juflona two-screen document signing,MISSING,YES,,no,no_database_opened,NOT_RUN,no_activeclinic_cleanup,v13-ac-qa-regression.yml stage-b-integration,NOT_RUN,FEATURE_NOT_IMPLEMENTED

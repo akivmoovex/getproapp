@@ -767,6 +767,58 @@
           editMultiline: true
         }) %>
       </p>
+      <%
+        var freeformMeta = freeformSec.layoutMetadata && typeof freeformSec.layoutMetadata === 'object' ? freeformSec.layoutMetadata : {};
+        var freeformIsCta = /^cta_/i.test(String(freeformSec.sectionKey || '')) || freeformMeta.layout === 'cta';
+        var freeformButtonLabel = freeformMeta.buttonText != null ? String(freeformMeta.buttonText) : '';
+        var freeformButtonRaw = freeformMeta.buttonUrl != null ? String(freeformMeta.buttonUrl).trim() : '';
+        var freeformButtonHref = '';
+        if (/^https?:\/\//i.test(freeformButtonRaw)) {
+          freeformButtonHref = freeformButtonRaw;
+        } else if (
+          freeformButtonRaw.charAt(0) === '/' &&
+          freeformButtonRaw.charAt(1) !== '/' &&
+          freeformButtonRaw.indexOf('\\') < 0 &&
+          !/[\s<>"']/.test(freeformButtonRaw)
+        ) {
+          freeformButtonHref = freeformButtonRaw;
+        }
+      %>
+      <% if (freeformIsCta && (editingHome || freeformButtonLabel || freeformButtonHref)) { %>
+      <div class="bb-tp-content-block__actions" data-bb-home-cta="1">
+        <% if (editingHome) { %>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: freeformSec.sectionKey,
+          editFieldKey: 'buttonText',
+          editValue: freeformButtonLabel,
+          editLabel: 'Edit button label',
+          editTag: 'a',
+          editClass: 'bb-tp-btn bb-tp-btn--primary',
+          editHref: freeformButtonHref,
+          editType: 'buttonText',
+          editMaxLength: 48,
+          editMultiline: false
+        }) %>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: freeformSec.sectionKey,
+          editFieldKey: 'buttonUrl',
+          editValue: freeformButtonHref,
+          editLabel: 'Edit button link',
+          editTag: 'span',
+          editClass: 'bb-tp-se-hint',
+          editType: 'buttonUrl',
+          editMaxLength: 500,
+          editMultiline: false
+        }) %>
+        <% } else if (freeformButtonLabel && freeformButtonHref) { %>
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= freeformButtonHref %>" data-bb-home-cta-button="1"><%= freeformButtonLabel %></a>
+        <% } else if (freeformButtonLabel) { %>
+        <span class="bb-tp-btn bb-tp-btn--primary" data-bb-home-cta-button="1"><%= freeformButtonLabel %></span>
+        <% } %>
+      </div>
+      <% } %>
     </div>
   </section>
   <% } %>

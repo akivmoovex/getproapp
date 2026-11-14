@@ -1,0 +1,21 @@
+{
+  "task": "V213_D17",
+  "head": "b8f6b420d25e908de64ba292866c218c32edc30c",
+  "branch": "V13",
+  "note": "PASS means the named in-process behavior ran. It does not close database, browser, or live AC-05 evidence.",
+  "features": [
+    {"FEATURE_ID": "BB-01", "ENTRY": "editable field schema and home template", "RESULT": "PASS", "UNTESTED": "database draft/publish and cross-tenant save"},
+    {"FEATURE_ID": "BB-02", "ENTRY": "listPublicWebsiteAnnouncements and getPublicWebsiteAnnouncement", "RESULT": "PASS", "UNTESTED": "database persistence and real upload bytes"},
+    {"FEATURE_ID": "BB-03", "ENTRY": "buildEventFields and validateEventBody", "RESULT": "PASS", "UNTESTED": "POST /branch/events database write"},
+    {"FEATURE_ID": "BB-04", "ENTRY": "buildSermonFields", "RESULT": "PARTIAL", "UNTESTED": "branch sermon HTTP handler"},
+    {"FEATURE_ID": "BB-05", "ENTRY": "Express /hq/members form using issueCsrfToken and validateCsrf", "RESULT": "PASS", "UNTESTED": "member row persistence and hosted retest"},
+    {"FEATURE_ID": "BB-06", "ENTRY": "acceptMemberPortalInvitation", "RESULT": "PASS", "UNTESTED": "password persistence and member login"},
+    {"FEATURE_ID": "BB-24", "ENTRY": "submitPublicChurchEnquiry", "RESULT": "PASS", "UNTESTED": "church inbox database read"},
+    {"FEATURE_ID": "INV-01", "ENTRY": "staff invitation acceptance and first login", "RESULT": "BLOCKED", "UNTESTED": "first authenticated login"},
+    {"FEATURE_ID": "AC-STAFF-ROLE", "ENTRY": "assignStaffRole", "RESULT": "PASS", "UNTESTED": "live AC-05 session"},
+    {"FEATURE_ID": "AC-APPOINTMENT", "ENTRY": "createAppointment and cancelAppointment", "RESULT": "PARTIAL", "UNTESTED": "collision and status persistence"},
+    {"FEATURE_ID": "AC-ORG-SWITCH", "ENTRY": "POST /app/select-organization", "RESULT": "PASS", "UNTESTED": "authenticated browser execution"},
+    {"FEATURE_ID": "PF-OTP", "ENTRY": "createOtpService", "RESULT": "PASS", "UNTESTED": "multi-worker persistence and production activation"},
+    {"FEATURE_ID": "PF-VERSION", "ENTRY": "getApplicationBuildInfo and release notes", "RESULT": "PASS", "UNTESTED": "hosted About pages"}
+  ]
+}

@@ -16,7 +16,9 @@ describe("V211 HQ Add Member GET preparation", () => {
     assert.ok(source.indexOf('router.get("/hq/members/new"') < source.indexOf('router.get("/hq/members/:id"'));
     assert.match(source, /buildAddMemberFormModel/);
     assert.match(source, /listBlessBoardBranches\(getPool\(\), scope\.churchId/);
-    assert.match(source, /issueCsrfToken/);
+    // CSRF is issued once by buildHqAdminShellLocals; do not pre-issue here (BB-05).
+    assert.match(source, /buildHqAdminShellLocals/);
+    assert.doesNotMatch(source, /issueCsrfToken\s*\(/);
   });
 
   it("exposes an authorized directory action and an operational form", () => {

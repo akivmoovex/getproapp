@@ -373,6 +373,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           env,
           isProduction,
           getPool,
+          otpWorkflow: "activeclinic.patient_login",
         });
         return res.redirect(303, `/clinics/${clinicKey}/patient`);
       } catch (err) {
@@ -499,6 +500,8 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             email: email || null,
             deploymentCode,
             country: phoneCountry,
+            organizationId: clinic.organizationId,
+            healthcareOrganizationId: clinic.healthcareOrganizationId,
           });
         } else {
           if (!firstName || !lastName) {
@@ -608,6 +611,22 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         }
 
         const identifier = String((req.body && req.body.identifier) || "").trim();
+        const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+        const otpHold = await holdIfOtpRequired({
+          workflow: "activeclinic.patient_forgot_password",
+          env,
+        });
+        if (otpHold) {
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res.status(401).type("html").send(
+            renderPatientView("patient/forgot-password", {
+              csrfToken,
+              csrfField: CSRF_FIELD,
+              clinicKey,
+              error: "Additional verification is required.",
+            })
+          );
+        }
 
         if (!identifier) {
           const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -745,6 +764,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         const reset = await resetPatientPassword(getPool(), {
           token,
           newPassword,
+          organizationId: clinic.organizationId,
         });
 
         if (!reset.ok) {

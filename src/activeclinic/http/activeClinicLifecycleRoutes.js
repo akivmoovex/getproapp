@@ -197,6 +197,22 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
           })
         );
       }
+      const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+      const otpHold = await holdIfOtpRequired({
+        workflow: "activeclinic.forgot_password",
+        env,
+      });
+      if (otpHold) {
+        return res.status(401).type("html").send(
+          renderForgotPage({
+            csrfToken,
+            message: null,
+            error: "Additional verification is required.",
+            identifier: req.body && req.body.identifier,
+            phoneCountry: req.body && req.body.phone_country,
+          })
+        );
+      }
       const deployment = getPlatformDeploymentCode(env);
       await requestActiveClinicPasswordReset(getPool(), {
         identifier: req.body && req.body.identifier,

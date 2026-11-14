@@ -1550,6 +1550,13 @@ ul.bb-apex-features {
   color: var(--bb-color-muted);
 }
 
+.bb-apex-directory-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
 .bb-apex-directory-empty {
   text-align: center;
   padding: 2.5rem 1.25rem;

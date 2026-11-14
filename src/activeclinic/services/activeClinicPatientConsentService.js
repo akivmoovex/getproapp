@@ -288,6 +288,12 @@ async function withdrawPatientConsent(db, input) {
   );
   const row = existing.rows[0];
   if (!row) return { ok: false, code: RESULT.NOT_FOUND, consent: null };
+  if (
+    input.patientId &&
+    String(input.patientId).trim() !== String(row.patient_id)
+  ) {
+    return { ok: false, code: RESULT.PATIENT_NOT_FOUND, consent: null };
+  }
   if (row.status !== "granted") {
     return { ok: false, code: RESULT.INVALID_STATUS, consent: mapConsent(row) };
   }
@@ -302,6 +308,8 @@ async function withdrawPatientConsent(db, input) {
       WHERE id = $1
         AND organization_id = $2
         AND healthcare_organization_id = $3
+        AND patient_id = $6
+        AND status = 'granted'
       RETURNING *`,
     [
       consentId,
@@ -309,9 +317,13 @@ async function withdrawPatientConsent(db, input) {
       input.healthcareOrganizationId,
       input.actor.staffMemberId,
       reason.slice(0, 500),
+      row.patient_id,
     ]
   );
   const next = updated.rows[0];
+  if (!next) {
+    return { ok: false, code: RESULT.INVALID_STATUS, consent: null };
+  }
   await db.query(
     `INSERT INTO activeclinic.patient_consent_events (
        organization_id, healthcare_organization_id, patient_consent_id,

@@ -272,12 +272,16 @@ async function buildHqAdminShellLocals(req, res, opts) {
     governance: "Governance",
   };
 
+  // Caller extras may supply page/view fields, but must never override shell CSRF.
+  // Spreading extras after csrfToken historically recreated BB-05 (form ≠ cookie).
+  const extra = { ...(opts.extra || {}) };
+  delete extra.csrfToken;
+  delete extra.csrfField;
+
   return {
     pageTitle: opts.pageTitle || defaultTitles[activeNav] || defaultTitles.content || "Church HQ",
     activeNav,
     shellKind: "hq",
-    csrfToken,
-    csrfField: CSRF_FIELD,
     churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
     hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
     roleLabel: primaryHqRoleLabel(req),
@@ -301,7 +305,9 @@ async function buildHqAdminShellLocals(req, res, opts) {
             exitAction: "/hq/support/exit",
           }
         : null,
-    ...(opts.extra || {}),
+    ...extra,
+    csrfToken,
+    csrfField: CSRF_FIELD,
   };
 }
 

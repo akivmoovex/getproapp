@@ -963,7 +963,7 @@ describe("blessboard public pages", () => {
     assert.equal(validCoordinates(-15.7, 28.1).latitude, -15.7);
   });
 
-  it("contact: branch/church settings hierarchy, published channels, map rules, no form", async () => {
+  it("contact: branch/church settings hierarchy, published channels, map rules, church form", async () => {
     requireDb();
     const pages = await provisionEmptyPublicPages(pool, { churchId: churchA.id });
     const contactPage = pages.pages.find((p) => p.pageKey === "contact");
@@ -990,12 +990,13 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /(?:bb-tp-nav__link|bb-tp-nav-dropdown__link)[^>]*is-active[^>]*>Contact</);
     assert.match(res.text, /church-office@example\.org|\+260900000001/);
     assert.match(res.text, /mailto:church-office@example\.org|tel:\+?260900000001/);
-    assert.match(res.text, /data-bb-contact-message="unavailable"/);
-    assert.match(res.text, /data-bb-contact-(?:form|message)="unavailable"/);
+    assert.match(res.text, /data-bb-contact-message="church"/);
+    assert.match(res.text, /data-bb-contact-form="church"/);
+    assert.match(res.text, /data-bb-church-contact-form="1"/);
     assert.doesNotMatch(res.text, /data-bb-contact-map=/);
-    assert.doesNotMatch(res.text, /123 Faith Lane|<form/i);
-    assert.doesNotMatch(res.text, /name="message"|name="full_name"|newsletter|mailing list|Stay Connected With/i);
-    assert.doesNotMatch(res.text, /name="_csrf"|csrfField|Prayer Request/i);
+    assert.doesNotMatch(res.text, /123 Faith Lane/);
+    assert.doesNotMatch(res.text, /newsletter|mailing list|Stay Connected With/i);
+    assert.doesNotMatch(res.text, /action="\/contact"|Prayer Request/i);
 
     const branchUp = await updateBranchSettings(pool, branchA.id, {
       publicName: BRANCH_A,
@@ -1044,7 +1045,8 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(res.text, /\+260900000099/);
     assert.match(res.text, /bb-tp-contact-main/);
     assert.match(res.text, /Send a Message/);
-    assert.doesNotMatch(res.text, /<form|name="full_name"|name="message"|name="_csrf"|csrfField/i);
+    assert.match(res.text, /data-bb-church-contact-form="1"/);
+    assert.doesNotMatch(res.text, /action="\/contact"/);
     assert.doesNotMatch(res.text, /within 24 hours|office hours for immediate|Stay Connected With/i);
 
     // Clear coordinates — map must not render without a valid pair; address still shown.

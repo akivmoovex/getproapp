@@ -41,6 +41,7 @@ async function updateDraftDocument(db, row) {
       WHERE id = $1
         AND organization_id = $2
         AND patient_id = $3
+        AND facility_id = $9
         AND status = 'draft'
       RETURNING *`,
     [
@@ -52,6 +53,7 @@ async function updateDraftDocument(db, row) {
       row.title,
       row.bodyText || null,
       row.documentDate || null,
+      row.facilityId,
     ]
   );
   return r.rows[0] || null;
@@ -67,9 +69,10 @@ async function finalizeDocument(db, row) {
       WHERE id = $1
         AND organization_id = $2
         AND patient_id = $3
+        AND facility_id = $5
         AND status = 'draft'
       RETURNING *`,
-    [row.id, row.organizationId, row.patientId, row.finalizedByStaffId]
+    [row.id, row.organizationId, row.patientId, row.finalizedByStaffId, row.facilityId]
   );
   return r.rows[0] || null;
 }
@@ -87,11 +90,21 @@ async function findByIdAndOrganization(db, { id, organizationId }) {
             fs.first_name AS finalized_by_first_name,
             fs.last_name AS finalized_by_last_name
        FROM activeclinic.clinical_documents d
-       JOIN activeclinic.patients p ON p.id = d.patient_id
-       JOIN activeclinic.facilities f ON f.id = d.facility_id
-       JOIN activeclinic.staff_members cs ON cs.id = d.created_by_staff_id
-       LEFT JOIN activeclinic.encounters e ON e.id = d.encounter_id
-       LEFT JOIN activeclinic.staff_members fs ON fs.id = d.finalized_by_staff_id
+       JOIN activeclinic.patients p
+         ON p.id = d.patient_id
+        AND p.organization_id = d.organization_id
+       JOIN activeclinic.facilities f
+         ON f.id = d.facility_id
+        AND f.organization_id = d.organization_id
+       JOIN activeclinic.staff_members cs
+         ON cs.id = d.created_by_staff_id
+        AND cs.organization_id = d.organization_id
+       LEFT JOIN activeclinic.encounters e
+         ON e.id = d.encounter_id
+        AND e.organization_id = d.organization_id
+       LEFT JOIN activeclinic.staff_members fs
+         ON fs.id = d.finalized_by_staff_id
+        AND fs.organization_id = d.organization_id
       WHERE d.id = $1
         AND d.organization_id = $2`,
     [id, organizationId]
@@ -135,8 +148,12 @@ async function listForPatient(db, input) {
             cs.first_name AS created_by_first_name,
             cs.last_name AS created_by_last_name
        FROM activeclinic.clinical_documents d
-       JOIN activeclinic.staff_members cs ON cs.id = d.created_by_staff_id
-       LEFT JOIN activeclinic.encounters e ON e.id = d.encounter_id
+       JOIN activeclinic.staff_members cs
+         ON cs.id = d.created_by_staff_id
+        AND cs.organization_id = d.organization_id
+       LEFT JOIN activeclinic.encounters e
+         ON e.id = d.encounter_id
+        AND e.organization_id = d.organization_id
       WHERE ${where.join(" AND ")}
       ORDER BY d.created_at DESC
       LIMIT $${params.length}`,
@@ -150,7 +167,11 @@ async function insertEvent(db, row) {
     `INSERT INTO activeclinic.clinical_document_events (
        organization_id, document_id, event_type,
        actor_staff_id, actor_platform_identity_id, detail_json
-     ) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+     )
+     SELECT $1, d.id, $3, $4, $5, $6::jsonb
+       FROM activeclinic.clinical_documents d
+      WHERE d.id = $2
+        AND d.organization_id = $1
      RETURNING *`,
     [
       row.organizationId,
@@ -170,7 +191,9 @@ async function listEvents(db, { organizationId, documentId }) {
             s.first_name AS actor_first_name,
             s.last_name AS actor_last_name
        FROM activeclinic.clinical_document_events ev
-       LEFT JOIN activeclinic.staff_members s ON s.id = ev.actor_staff_id
+       LEFT JOIN activeclinic.staff_members s
+         ON s.id = ev.actor_staff_id
+        AND s.organization_id = ev.organization_id
       WHERE ev.organization_id = $1
         AND ev.document_id = $2
       ORDER BY ev.created_at ASC`,

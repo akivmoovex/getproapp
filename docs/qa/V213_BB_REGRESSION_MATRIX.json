@@ -1,0 +1,312 @@
+{
+  "version": "2.13",
+  "task": "D04",
+  "title": "BlessBoard V2.12 sanity defect regression matrix",
+  "baselineCommit": "b8f6b420d25e908de64ba292866c218c32edc30c",
+  "productStatusPolicy": "Do not mark unresolved product defects as fixed. BB-05 has a local uncommitted repair only.",
+  "resultTaxonomy": ["PASS", "FAIL", "BLOCKED", "NOT_IMPLEMENTED", "NOT_RUN"],
+  "issues": [
+    {
+      "id": "BB-01",
+      "title": "Homepage section editing",
+      "originalDefect": "Administrators cannot reliably create/edit homepage sections with correct editor controls for supported section types.",
+      "reproductionSteps": [
+        "Sign in as church website editor/admin",
+        "Open website home editor / add-section flow",
+        "Add or edit plain_text, image, and image_text sections",
+        "Observe editor resolution, validation, and permission enforcement"
+      ],
+      "expectedBehavior": "Supported section types resolve to the correct editor; text/image schemas validate; unsupported types fail safely; unauthorized actors are denied.",
+      "routes": [
+        "GET /hq/website and branch website editor chrome",
+        "GET {prefix}/website/add-section/types",
+        "POST {prefix}/website/add-section",
+        "GET/POST /hq/content/pages/:pageKey/sections*"
+      ],
+      "permissions": ["website.edit", "content manage"],
+      "validInputs": ["plain_text", "image", "image_text with schema-compliant heading/body/mediaUrl"],
+      "invalidInputs": ["unknown section type", "malformed media payload", "cross-product ActiveClinic-only types"],
+      "crossTenant": "Section mutations must remain scoped to the actor church/branch; foreign church IDs denied.",
+      "dataSetupTeardown": "Synthetic church + website draft fixtures; disposable CI DB only.",
+      "automatedTests": {
+        "unit": "tests/v13/unit/bb01-homepage-section-editor.test.js",
+        "contract": "tests/v13/contract/bb01-homepage-sections-contract.test.js",
+        "lifecycle": "tests/shared-website-section-lifecycle.test.js",
+        "integration": "tests/v13/integration/bb01-homepage-sections.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-01"
+      },
+      "ciJob": "v13-bb-qa-regression / stage-a-static-unit (unit); stage-b/c gated",
+      "implementationStatus": "EDITOR_REPAIRED_LOCALLY_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized integration + browser journey showing add/edit/persist/publish of text_/cta_/image_/story_ sections, including CTA buttonText and buttonUrl. DB-independent editor contract already passes. Database journeys are not passed."
+    },
+    {
+      "id": "BB-02",
+      "title": "Announcement image upload and public visibility",
+      "originalDefect": "Announcement attachment upload/publish does not reliably keep media tenant-owned or publicly visible when published.",
+      "reproductionSteps": [
+        "HQ/branch admin opens /hq/announcements/new or /branch-admin/announcements/new",
+        "Attach media asset and publish with audience_public",
+        "Visit public announcement URL as anonymous visitor"
+      ],
+      "expectedBehavior": "Upload validation rejects unsupported MIME; attachments associate to church; drafts stay private; published+public audience exposes images.",
+      "routes": [
+        "GET/POST /hq/announcements",
+        "GET/POST /branch-admin/announcements",
+        "POST announcement attachment upload",
+        "GET /announcements/:id and /c/:organizationKey/announcements/:id"
+      ],
+      "permissions": ["announcements.manage"],
+      "validInputs": ["image/jpeg|png|webp|gif", "application/pdf within size limits"],
+      "invalidInputs": ["image/svg+xml", "text/html", "oversized files", "foreign church media_asset_id"],
+      "crossTenant": "Attachment and announcement rows must match churchId; foreign asset IDs rejected.",
+      "dataSetupTeardown": "Synthetic announcement + media asset; no production media.",
+      "automatedTests": {
+        "unit": "tests/v13/contract/bb02-announcements-contract.test.js",
+        "integration": "tests/v13/integration/bb02-announcements.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-02/BB-02-public"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "EDITOR_REPAIRED_LOCALLY_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized upload + publish + anonymous public image visibility. DB-independent contracts already pass."
+    },
+    {
+      "id": "BB-03",
+      "title": "New event creation",
+      "originalDefect": "New event creation fails or does not persist with correct branch/tenant scoping.",
+      "reproductionSteps": [
+        "Open GET /branch/events/new or content-admin events form",
+        "Submit required fields via POST /branch/events or POST /hq/content/events",
+        "Confirm list/detail persistence"
+      ],
+      "expectedBehavior": "GET renders create form; POST validates required fields; CSRF enforced; branch/org scoped; unauthorized denied.",
+      "routes": ["GET /branch/events/new", "POST /branch/events", "GET/POST /hq/content/events", "GET/POST /branch-admin/content/events"],
+      "permissions": ["branch admin session", "content manage"],
+      "validInputs": ["title", "event_date", "visibility public|members|leaders"],
+      "invalidInputs": ["missing title", "invalid date", "invalid visibility"],
+      "crossTenant": "Events created only for authenticated branch organization_id/branch_id.",
+      "dataSetupTeardown": "Synthetic branch admin + disposable DB.",
+      "automatedTests": {
+        "unit": "tests/v13/unit/bb03-event-creation.test.js + tests/v13/contract/bb03-events-contract.test.js",
+        "integration": "tests/v13/integration/bb03-events.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-03"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "EDITOR_REPAIRED_LOCALLY_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized create+publish persistence. DB-independent form, CSRF, date, and scope contracts already pass."
+    },
+    {
+      "id": "BB-04",
+      "title": "New sermon creation",
+      "originalDefect": "New sermon creation fails or does not publish with correct visibility.",
+      "reproductionSteps": [
+        "Open GET /branch/sermons/new",
+        "POST /branch/sermons with title and optional media",
+        "Confirm draft vs published visibility"
+      ],
+      "expectedBehavior": "Form contracts intact; title required; CSRF on POST; branch scoping; publication status honored.",
+      "routes": ["GET /branch/sermons/new", "POST /branch/sermons", "GET/POST /hq/content/sermons"],
+      "permissions": ["branch admin session", "content manage"],
+      "validInputs": ["title required", "optional speaker/date/media_url"],
+      "invalidInputs": ["empty title"],
+      "crossTenant": "Sermon rows bound to organization_id and branch_id of actor.",
+      "dataSetupTeardown": "Synthetic branch admin + disposable DB.",
+      "automatedTests": {
+        "unit": "tests/v13/unit/bb04-sermon-creation.test.js + tests/v13/contract/bb04-sermons-contract.test.js",
+        "integration": "tests/v13/integration/bb04-sermons.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-04"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "EDITOR_REPAIRED_LOCALLY_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized create/publish and public visibility. DB-independent Add sermon, metadata, image, and scope contracts already pass."
+    },
+    {
+      "id": "BB-05",
+      "title": "HQ member registration CSRF failure",
+      "originalDefect": "POST /hq/members/new fails with Unavailable: Invalid or missing CSRF token due to double CSRF issuance.",
+      "reproductionSteps": [
+        "GET /hq/members/new",
+        "Submit member registration form",
+        "Observe 403 Unavailable CSRF page"
+      ],
+      "expectedBehavior": "Single CSRF issuance; form token matches cookie; missing/invalid/cross-session rejected; duplicates validated.",
+      "routes": ["GET /hq/members/new", "POST /hq/members/new", "POST /hq/members/new/match|review"],
+      "permissions": ["members.create", "HQ session"],
+      "validInputs": ["paired csrf cookie+field", "unique email/phone"],
+      "invalidInputs": ["missing csrf", "invalid csrf", "cross-session csrf", "duplicate email/phone"],
+      "crossTenant": "Member creation scoped to HQ church; foreign church denied.",
+      "dataSetupTeardown": "DB-independent CSRF contracts always; duplicate/persistence under authorized DB stages only.",
+      "automatedTests": {
+        "unit": "tests/bb05-hq-add-member-csrf-contract.test.js; tests/v13/contract/bb05-member-registration-csrf-contract.test.js; tests/v211-hq-add-member-get.test.js",
+        "integration": "tests/v13/integration/bb05-member-registration.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-05"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "FIXED_LOCALLY_UNCOMMITTED; CONTRACT_COVERAGE_PRESERVED_AND_EXTENDED",
+      "evidenceToClose": "Committed BB-05 fix + hosted retest + authorized integration persistence"
+    },
+    {
+      "id": "BB-06",
+      "title": "Member portal activation",
+      "originalDefect": "Staff-created members remain not_activated; portal activation/login journey incomplete or unverified.",
+      "reproductionSteps": [
+        "Create member via HQ Add Member",
+        "Issue portal invitation / activation",
+        "Accept invitation, set credentials, log in"
+      ],
+      "expectedBehavior": "Authorized invitation; verified identity before linking; expiry/replay rejected; member-church association correct; unauthorized activation denied.",
+      "routes": [
+        "POST /hq/members/:id/invitation",
+        "GET/POST /member/invite/accept",
+        "GET/POST /member/activate",
+        "POST /member/activate/password"
+      ],
+      "permissions": ["members.create", "invitation recipient"],
+      "validInputs": ["pending invitation token for bound recipient"],
+      "invalidInputs": ["expired token", "replayed token", "wrong user", "foreign church"],
+      "crossTenant": "Activation cannot link member to foreign church/org.",
+      "dataSetupTeardown": "Synthetic member + invitation; disposable DB.",
+      "automatedTests": {
+        "unit": "tests/v13/contract/bb06-member-activation-contract.test.js; tests/v211-member-activation-identity-ownership.test.js",
+        "integration": "tests/v13/integration/bb06-member-activation.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-06"
+      },
+      "ciJob": "v13-bb-qa-regression stage-a documents NOT_IMPLEMENTED gaps; no default failing blocker job for missing product wiring",
+      "implementationStatus": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized invitation acceptance, password setup, and member login. DB-independent invitation and identity contracts already pass."
+    },
+    {
+      "id": "BB-24",
+      "title": "Public directory and church-specific contact/join workflow",
+      "originalDefect": "Directory/contact/join flows lose selected church identity or route into church-owner registration.",
+      "reproductionSteps": [
+        "Open /directory and select a church card",
+        "Follow visit_href to tenant site",
+        "Submit contact/join on selected church",
+        "Confirm enquiry lands on that tenant; join does not open /register-church owner flow"
+      ],
+      "expectedBehavior": "Cards target selected church; contact retains church identity; messages routed to correct tenant; join ≠ owner registration; cross-tenant enquiry denied.",
+      "routes": ["GET /directory", "GET /c/:organizationKey*", "tenant contact/join paths", "HQ member-journey contacts"],
+      "permissions": ["public visitor", "church admin for enquiry inbox"],
+      "validInputs": ["directory visit_href for slug/branch", "tenant-scoped contact payload"],
+      "invalidInputs": ["cross-tenant enquiry id", "owner registration fields on join"],
+      "crossTenant": "Enquiry access denied across churches.",
+      "dataSetupTeardown": "Two synthetic churches; disposable DB.",
+      "automatedTests": {
+        "unit": "tests/v13/contract/bb24-public-directory-contract.test.js",
+        "integration": "tests/v13/integration/bb24-public-directory.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::BB-24"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized two-church enquiry persistence and inbox isolation. Directory and identity contracts already pass."
+    },
+    {
+      "id": "INV-01",
+      "title": "Invited staff password setup and login",
+      "originalDefect": "Staff invitation acceptance, password setup, and post-accept role authorization incompletely verified.",
+      "reproductionSteps": [
+        "HQ posts /hq/roles/invite",
+        "Open /invite/accept?token=...",
+        "Set password and sign in",
+        "Confirm catalogue role authorization"
+      ],
+      "expectedBehavior": "Invitation create/validate; password setup; expiry/replay rejected; user/tenant association correct; login + role authz after accept.",
+      "routes": ["POST /hq/roles/invite", "GET/POST /invite/accept", "tenant /login"],
+      "permissions": ["HQ roles.assign / invite", "invitee"],
+      "validInputs": ["catalogue role keys", "valid password pair"],
+      "invalidInputs": ["expired/replayed token", "platform_administrator invite", "weak password"],
+      "crossTenant": "Invitation acceptance limited to invitation organization/church.",
+      "dataSetupTeardown": "Synthetic org/church; disposable DB.",
+      "automatedTests": {
+        "unit": "tests/v13/contract/inv01-staff-invitation-contract.test.js",
+        "integration": "tests/v13/integration/inv01-staff-invitation.integration.test.js",
+        "browser": "tests/e2e/v13/v13-bb-qa-regression.spec.js::INV-01"
+      },
+      "ciJob": "v13-bb-qa-regression",
+      "implementationStatus": "SOURCE_VERIFIED_LOGIN_NOT_EXECUTED; INTEGRATION_NOT_RUN; BROWSER_NOT_RUN",
+      "evidenceToClose": "Authorized first login with the new password, including role, tenant, session persistence, and revocation. Source contracts do not close this."
+    }
+  ],
+  "previouslyPassingSanity": [
+    {
+      "id": "SANITY-01",
+      "title": "Platform admin login contract",
+      "coverage": "tests/v13/contract/v13-previously-passing-sanity-coverage.test.js + foundation e2e helpers"
+    },
+    {
+      "id": "SANITY-02",
+      "title": "Public directory route renders",
+      "coverage": "tests/v13/contract/bb24-public-directory-contract.test.js + tests/blessboard-apex-directory.test.js"
+    },
+    {
+      "id": "SANITY-03",
+      "title": "Path-mode public church home /c/:organizationKey",
+      "coverage": "tests/v13/contract/v13-previously-passing-sanity-coverage.test.js"
+    },
+    {
+      "id": "SANITY-04",
+      "title": "Admin CSRF field contract present on HQ forms",
+      "coverage": "tests/v13/contract/v13-previously-passing-sanity-coverage.test.js"
+    },
+    {
+      "id": "SANITY-05",
+      "title": "Announcement admin list/new routes mounted",
+      "coverage": "tests/v13/contract/bb02-announcements-contract.test.js"
+    },
+    {
+      "id": "SANITY-06",
+      "title": "About/version surfaces report 2.13 on V13",
+      "coverage": "tests/v213-version-initialization.test.js"
+    }
+  ],
+  "releaseBlockers": [
+    {
+      "id": "BB-01",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Editor allowlist and homepage CTA buttonText/buttonUrl rendering repaired locally. Script URLs are rejected. Integration and browser persistence remain NOT_RUN."
+    },
+    {
+      "id": "BB-02",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Announcement media picker routes and public announcement/image visibility repaired locally. Integration and browser persistence remain NOT_RUN."
+    },
+    {
+      "id": "BB-03",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Event create form stays available when events already exist, and start/end values are validated before save. Integration and browser persistence remain NOT_RUN."
+    },
+    {
+      "id": "BB-04",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Add sermon is a visible button, the content-admin create form stays available, and thumbnails are stored with the sermon. Integration and browser persistence remain NOT_RUN."
+    },
+    {
+      "id": "BB-05",
+      "releaseBlocker": true,
+      "status": "FIXED_LOCALLY_UNCOMMITTED",
+      "summary": "CSRF repair exists only in working tree; not committed/hosted-verified."
+    },
+    {
+      "id": "BB-06",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Staff-created members can be issued a single-use portal invitation, and acceptance activates that member identity. Integration and browser login remain NOT_RUN."
+    },
+    {
+      "id": "BB-24",
+      "releaseBlocker": true,
+      "status": "REPAIRED_DB_INDEPENDENT_UNCOMMITTED",
+      "summary": "Directory cards keep the selected church for visit, contact, and join. Church enquiries use that church's inbox. Integration and browser persistence remain NOT_RUN."
+    },
+    {
+      "id": "INV-01",
+      "releaseBlocker": true,
+      "status": "LOGIN_NOT_EXECUTED",
+      "summary": "Invitation acceptance and password setup are implemented. First authenticated login has not been executed. Contract tests do not close this."
+    }
+  ]
+}

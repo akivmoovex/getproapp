@@ -17,8 +17,8 @@ test("member invitation acceptance form targets the canonical invitation route",
     "utf8"
   );
 
-  assert.match(template, /method="post"\s+action="\/invite\/accept"/);
-  assert.doesNotMatch(template, /action="\/member-invite\/accept"/);
-  assert.match(routes, /router\.post\(["']\/invite\/accept["']/);
+  assert.match(template, /method="post"\s+action="\/member-invite\/accept"/);
+  assert.doesNotMatch(template, /action="\/invite\/accept"/);
+  assert.match(routes, /router\.post\(["']\/member\/invite\/accept["']/);
   assert.match(template, /name="<%= csrfField %>"\s+value="<%= csrfToken %>"/);
 });

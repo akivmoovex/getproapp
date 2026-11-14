@@ -15,6 +15,52 @@ const SERMON_NOTICES = {
 
 const SERMON_FILTERS = ["all", "draft", "published"];
 
+function optionalSermonDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return { ok: true, value: null };
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return { ok: false, error: "Sermon date must be YYYY-MM-DD." };
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (
+    utc.getUTCFullYear() !== year ||
+    utc.getUTCMonth() !== month - 1 ||
+    utc.getUTCDate() !== day
+  ) {
+    return { ok: false, error: "Sermon date must be YYYY-MM-DD." };
+  }
+  return { ok: true, value: raw };
+}
+
+function optionalHttpsMedia(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return { ok: true, value: null };
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, error: "Media URL must be an https link." };
+  }
+  if (parsed.protocol !== "https:" || !parsed.hostname) {
+    return { ok: false, error: "Media URL must be an https link." };
+  }
+  return { ok: true, value: raw };
+}
+
+function sermonCreateError(res, req, body, error) {
+  return res.status(400).render(
+    "church/branch-admin/sermon_form",
+    branchAdminLocals(req, {
+      form: formFromSermon(body),
+      error,
+      isEdit: false,
+      sermonId: null,
+    })
+  );
+}
+
 function formFromSermon(item) {
   if (!item) {
     return {
@@ -83,15 +129,15 @@ module.exports = function registerBranchAdminSermonsRoutes(router) {
       const body = req.body || {};
       const title = String(body.title || "").trim();
       if (!title) {
-        return res.render(
-          "church/branch-admin/sermon_form",
-          branchAdminLocals(req, {
-            form: formFromSermon(body),
-            error: "Title is required.",
-            isEdit: false,
-            sermonId: null,
-          })
-        );
+        return sermonCreateError(res, req, body, "Title is required.");
+      }
+      const sermonDate = optionalSermonDate(body.sermon_date);
+      if (!sermonDate.ok) {
+        return sermonCreateError(res, req, body, sermonDate.error);
+      }
+      const mediaUrl = optionalHttpsMedia(body.media_url);
+      if (!mediaUrl.ok) {
+        return sermonCreateError(res, req, body, mediaUrl.error);
       }
       const publish = body._intent === "publish";
       const created = await sermonsRepo.createSermonForBranch(pool, {
@@ -99,9 +145,9 @@ module.exports = function registerBranchAdminSermonsRoutes(router) {
         branch_id: branch.id,
         title,
         speaker: String(body.speaker || "").trim(),
-        sermon_date: String(body.sermon_date || "").trim() || null,
+        sermon_date: sermonDate.value,
         description: String(body.description || "").trim(),
-        media_url: String(body.media_url || "").trim() || null,
+        media_url: mediaUrl.value,
         scripture: String(body.scripture || "").trim() || null,
         category: String(body.category || "Sunday Sermon").trim(),
         status: publish ? "published" : "draft",

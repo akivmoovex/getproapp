@@ -580,10 +580,19 @@ async function createInvoice({
         ]
       );
 
-      await client.query(
-        `UPDATE activeclinic.patient_charges SET status = 'invoiced' WHERE id = $1`,
-        [charge.id]
+      const marked = await client.query(
+        `UPDATE activeclinic.patient_charges
+            SET status = 'invoiced'
+          WHERE id = $1
+            AND tenant_id = $2
+            AND facility_id = $3
+            AND status = 'pending'`,
+        [charge.id, tenantId, facilityId]
       );
+      if (!marked.rowCount) {
+        await client.query("ROLLBACK");
+        return { result: RESULT.INVALID_INPUT, reason: "invalid_charges" };
+      }
     }
 
     await client.query("COMMIT");
@@ -639,6 +648,9 @@ async function postInvoice({ pool, tenantId, facilityId, staffId, invoiceId }) {
      RETURNING *`,
     [INVOICE_STATUS.POSTED, staffId, invoiceId, tenantId]
   );
+  if (!updateResult.rowCount) {
+    return { result: RESULT.NOT_FOUND };
+  }
 
   await writeFinanceAudit(pool, {
     tenantId,
@@ -659,8 +671,9 @@ async function generateInvoiceNumber(client, tenantId, facilityId) {
   const year = new Date().getFullYear();
   await advisoryXactLock(client, `ac-invoice-no:${tenantId}:${facilityId}:${year}`);
   const facilityResult = await client.query(
-    `SELECT facility_key FROM activeclinic.facilities WHERE id = $1`,
-    [facilityId]
+    `SELECT facility_key FROM activeclinic.facilities
+      WHERE id = $1 AND organization_id = $2`,
+    [facilityId, tenantId]
   );
   const facilityCode = String(facilityResult.rows[0]?.facility_key || "fac")
     .toUpperCase()
@@ -791,8 +804,9 @@ async function recordPayment({
         `SELECT p.*, r.receipt_number
            FROM activeclinic.payments p
            LEFT JOIN activeclinic.receipts r ON r.payment_id = p.id
-          WHERE p.idempotency_key = $1`,
-        [idempotencyKey]
+          WHERE p.idempotency_key = $1
+            AND p.tenant_id = $2`,
+        [idempotencyKey, tenantId]
       );
       if (dupCheck.rows.length > 0) {
         await client.query("ROLLBACK");
@@ -879,7 +893,7 @@ async function recordPayment({
     }
 
     const receiptNumber = await generateReceiptNumber(client, tenantId, facilityId);
-    const patientName = await getPatientName(client, patientId);
+    const patientName = await getPatientName(client, patientId, tenantId);
 
     await client.query(
       `INSERT INTO activeclinic.receipts (
@@ -939,8 +953,9 @@ async function generateReceiptNumber(client, tenantId, facilityId) {
   const year = new Date().getFullYear();
   await advisoryXactLock(client, `ac-receipt-no:${tenantId}:${facilityId}:${year}`);
   const facilityResult = await client.query(
-    `SELECT facility_key FROM activeclinic.facilities WHERE id = $1`,
-    [facilityId]
+    `SELECT facility_key FROM activeclinic.facilities
+      WHERE id = $1 AND organization_id = $2`,
+    [facilityId, tenantId]
   );
   const facilityCode = String(facilityResult.rows[0]?.facility_key || "fac")
     .toUpperCase()
@@ -954,10 +969,11 @@ async function generateReceiptNumber(client, tenantId, facilityId) {
   return `${facilityCode}-${year}-${sequence.toString().padStart(6, "0")}`;
 }
 
-async function getPatientName(client, patientId) {
+async function getPatientName(client, patientId, tenantId) {
   const result = await client.query(
-    `SELECT first_name, last_name FROM activeclinic.patients WHERE id = $1`,
-    [patientId]
+    `SELECT first_name, last_name FROM activeclinic.patients
+      WHERE id = $1 AND organization_id = $2`,
+    [patientId, tenantId]
   );
   if (result.rows.length === 0) return "Unknown";
   const { first_name, last_name } = result.rows[0];

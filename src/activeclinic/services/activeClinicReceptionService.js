@@ -457,12 +457,20 @@ async function createQueueEntry(db, input) {
   return withClient(db, async (client) => {
     await client.query("BEGIN");
     try {
-      const queueNumber = await repo.allocateQueueNumber(client, { servicePointId });
+      const queueNumber = await repo.allocateQueueNumber(client, {
+        servicePointId,
+        organizationId,
+      });
+      if (queueNumber == null) {
+        await client.query("ROLLBACK");
+        return { ok: false, code: RESULT.SERVICE_POINT_NOT_FOUND, queueEntry: null };
+      }
       const activeCount = await client.query(
         `SELECT COUNT(*)::int AS c FROM activeclinic.queue_entries
           WHERE service_point_id = $1
+            AND organization_id = $2
             AND status IN ('waiting', 'called', 'serving', 'paused')`,
-        [servicePointId]
+        [servicePointId, organizationId]
       );
       const currentActive = activeCount.rows[0].c;
       if (
@@ -598,6 +606,13 @@ async function appendQueueStatusEvent(db, input) {
   const detail = await getQueueEntryDetail(db, input);
   if (!detail.ok) return detail;
 
+  if (
+    input.facilityId &&
+    String(input.facilityId) !== String(detail.queueEntry.facilityId)
+  ) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, queueEntry: null };
+  }
+
   const toStatus = String(input.toStatus || "").trim();
   const fromStatus = detail.queueEntry.status;
   if (toStatus === fromStatus) {
@@ -656,6 +671,7 @@ async function appendQueueStatusEvent(db, input) {
         id: detail.queueEntry.id,
         organizationId: input.organizationId,
         healthcareOrganizationId: input.healthcareOrganizationId,
+        facilityId: detail.queueEntry.facilityId,
         expectedVersion: detail.queueEntry.version,
         patch,
       });
@@ -761,6 +777,7 @@ async function assignQueueEntryRoom(db, input) {
         id: detail.queueEntry.id,
         organizationId: input.organizationId,
         healthcareOrganizationId: input.healthcareOrganizationId,
+        facilityId: detail.queueEntry.facilityId,
         expectedVersion: detail.queueEntry.version,
         patch: {
           assignedRoom,

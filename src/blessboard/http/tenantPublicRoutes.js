@@ -216,8 +216,19 @@ function createTenantPublicRouter(deps) {
       if (!model.loginHref) model.loginHref = "/login";
     }
 
+    const {
+      attachPublicChurchContactForm,
+    } = require("./publicChurchContactHttp");
+    attachPublicChurchContactForm(
+      req,
+      res,
+      model,
+      typeof deps.getEnv === "function" ? deps.getEnv() : process.env
+    );
+
     const html = renderTenantPublicPage(model);
-    return res.status(200).type("html").send(html);
+    const status = Number(req.publicContactStatus) || 200;
+    return res.status(status).type("html").send(html);
   }
 
   async function handlePublicPage(req, res) {
@@ -476,6 +487,113 @@ function createTenantPublicRouter(deps) {
 
   router.get("/robots.txt", (req, res, next) => {
     Promise.resolve(handleTenantRobots(req, res))
+      .then((handled) => {
+        if (handled === null) return next();
+        return undefined;
+      })
+      .catch(next);
+  });
+
+  const {
+    acceptPublicChurchContact,
+    createPublicChurchContactLimiter,
+  } = require("./publicChurchContactHttp");
+  const publicContactLimiter = createPublicChurchContactLimiter();
+
+  async function postTenantContact(req, res, branchId, redirectPath, renderOpts) {
+    if (isApexHost(req)) return null;
+    const gate = foundationOrNull(req, res, "/contact");
+    if (gate !== "ready") return gate;
+    const tenant = req.blessBoardTenantContext;
+    const env = typeof deps.getEnv === "function" ? deps.getEnv() : process.env;
+    const accepted = await acceptPublicChurchContact(req, res, {
+      pool: getPool(),
+      env,
+      organizationId: tenant.organization && tenant.organization.id,
+      churchId: tenant.church && tenant.church.id,
+      branchId,
+    });
+    if (!accepted.ok) {
+      return renderTenantModel(req, res, renderOpts);
+    }
+    return res.redirect(303, redirectPath);
+  }
+
+  router.post("/contact", publicContactLimiter, (req, res, next) => {
+    Promise.resolve()
+      .then(async () => {
+        if (isApexHost(req)) return null;
+        const gate = foundationOrNull(req, res, "/contact");
+        if (gate !== "ready") return gate;
+        const tenant = req.blessBoardTenantContext;
+        const branchId = tenant.primaryBranch && tenant.primaryBranch.id;
+        return postTenantContact(req, res, branchId, "/contact?submitted=1", {
+          pageKey: "contact",
+          pathPrefix: "",
+          selectedBranch: null,
+        });
+      })
+      .then((handled) => {
+        if (handled === null) return next();
+        return undefined;
+      })
+      .catch(next);
+  });
+
+  router.post("/branches/:branchKey/contact", publicContactLimiter, (req, res, next) => {
+    Promise.resolve()
+      .then(async () => {
+        if (isApexHost(req)) return null;
+        const gate = foundationOrNull(req, res, req.path || "/contact");
+        if (gate !== "ready") return gate;
+        const parsed = parseTenantBranchPublicPath(`/branches/${req.params.branchKey}/contact`);
+        if (!parsed) {
+          return res
+            .status(404)
+            .type("html")
+            .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+        }
+        const tenant = req.blessBoardTenantContext;
+        let websiteMode;
+        try {
+          websiteMode = await resolveWebsiteMode(getPool(), {
+            churchId: tenant.church.id,
+            branchKey: parsed.branchKey,
+          });
+        } catch {
+          return res
+            .status(503)
+            .type("html")
+            .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+        }
+        const activeBranch = websiteMode.ok
+          ? (websiteMode.activeBranches || []).find((b) => b.key === parsed.branchKey)
+          : null;
+        if (!activeBranch) {
+          return res
+            .status(404)
+            .type("html")
+            .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+        }
+        const pathPrefix = tenantBranchHomePath(activeBranch.key);
+        return postTenantContact(
+          req,
+          res,
+          activeBranch.id,
+          `${pathPrefix}/contact?submitted=1`,
+          {
+            pageKey: "contact",
+            pathPrefix,
+            selectedBranch: {
+              id: activeBranch.id,
+              key: activeBranch.key,
+              displayName: activeBranch.displayName,
+              branchType: activeBranch.branchType,
+              isPrimary: activeBranch.isPrimary,
+            },
+          }
+        );
+      })
       .then((handled) => {
         if (handled === null) return next();
         return undefined;

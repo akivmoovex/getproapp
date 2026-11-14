@@ -7,6 +7,7 @@
 
 const express = require("express");
 const { createMediaUploadService, STATUS, VISIBILITY } = require("../media/mediaUploadService");
+const { mediaAssetVisibleOnPublicAnnouncement } = require("../services/announcementsService");
 const { OUTCOME } = require("./evaluateTenantRoute");
 
 const UUID_RE =
@@ -48,11 +49,26 @@ function createPublicMediaRouter(deps) {
       return res.status(404).type("text").send("Not found");
     }
 
-    const loaded = await mediaService.loadMediaBytes(getPool(), {
+    let loaded = await mediaService.loadMediaBytes(getPool(), {
       assetId,
       viewerChurchId: ctx.church.id,
       allowPrivate: false,
     });
+
+    const privateOnPublicAnnouncement =
+      !loaded.ok &&
+      loaded.reason === "private" &&
+      (await mediaAssetVisibleOnPublicAnnouncement(getPool(), {
+        churchId: ctx.church.id,
+        mediaAssetId: assetId,
+      }));
+    if (privateOnPublicAnnouncement) {
+      loaded = await mediaService.loadMediaBytes(getPool(), {
+        assetId,
+        viewerChurchId: ctx.church.id,
+        allowPrivate: true,
+      });
+    }
 
     if (!loaded.ok) {
       const code =
@@ -64,7 +80,10 @@ function createPublicMediaRouter(deps) {
       return res.status(code).type("text").send(code === 403 ? "Forbidden" : "Not found");
     }
 
-    if (loaded.asset.visibility !== VISIBILITY.PUBLIC) {
+    if (
+      loaded.asset.visibility !== VISIBILITY.PUBLIC &&
+      !privateOnPublicAnnouncement
+    ) {
       return res.status(403).type("text").send("Forbidden");
     }
 

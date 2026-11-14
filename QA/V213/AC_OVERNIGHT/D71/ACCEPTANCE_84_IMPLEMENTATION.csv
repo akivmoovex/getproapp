@@ -1,0 +1,85 @@
+acceptance_id,package,implementation_class,approval_dependency,d70_execution,unit_contract,database_test,browser_test,security_test,completion_gate
+TEN-01-01,B,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+TEN-01-02,B,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+TEN-01-03,B,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+ID-01-01,B,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+ID-01-02,B,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+ID-01-03,B,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+ID-02-01,B,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+ID-02-02,B,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+ID-02-03,B,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+VIS-01-01,C,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+VIS-01-02,C,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+VIS-01-03,C,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+VIS-02-01,C,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+VIS-02-02,C,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+VIS-02-03,C,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+NUR-01-01,C,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+NUR-01-02,C,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+NUR-01-03,C,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+CLN-01-01,C,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+CLN-01-02,C,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+CLN-01-03,C,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+ORD-01-01,D,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+ORD-01-02,D,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+ORD-01-03,D,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+LAB-01-01,D,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+LAB-01-02,D,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+LAB-01-03,D,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+RX-01-01,D,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+RX-01-02,D,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+RX-01-03,D,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+FIN-01-01,E,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+FIN-01-02,E,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+FIN-01-03,E,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+DOC-01-01,F,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+DOC-01-02,F,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+DOC-01-03,F,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+RET-01-01,F,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+RET-01-02,F,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+RET-01-03,F,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+SEC-01-01,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,REQUIRED_NOT_RUN,Stored evidence on a run-owned database. No new clinical rule.
+SEC-01-02,A,BLOCKED_SECURITY,BLOCKED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,REQUIRED_NOT_RUN,Live HTTP 403 for the lower-privilege session. A redirect to login is not the denial.
+SEC-01-03,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,REQUIRED_NOT_RUN,Stored evidence on a run-owned database. No new clinical rule.
+SEC-02-01,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,REQUIRED_NOT_RUN,Stored evidence on a run-owned database. No new clinical rule.
+SEC-02-02,A,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,REQUIRED_NOT_RUN,Stored evidence on a run-owned database. No new clinical rule.
+SEC-02-03,H,MISSING,DEFERRED,NOT_RUN,existing_or_source,NOT_AUTHORIZED,NOT_RUN,REQUIRED_NOT_RUN,Deferred. Do not activate.
+PAT-01-01,A,EVIDENCE_MISSING,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PAT-01-02,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PAT-01-03,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+APT-01-01,A,IMPLEMENTED_NOT_EXECUTED,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+APT-01-02,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+APT-01-03,A,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-01-01,A,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-01-02,A,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-01-03,A,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-02-01,A,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-02-02,A,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-02-03,A,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-03-01,A,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-03-02,A,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OTP-03-03,A,PARTIAL,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+PLT-01-01,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-01-02,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-01-03,A,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-02-01,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-02-02,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-02-03,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-03-01,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-03-02,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+PLT-03-03,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+BBF-01-01,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+BBF-01-02,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+BBF-01-03,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+BBF-02-01,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+BBF-02-02,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+BBF-02-03,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+OPS-01-01,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OPS-01-02,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OPS-01-03,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OPS-02-01,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OPS-02-02,G,MISSING,DESIGN_REQUIRED,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,No new behavior until the named decision is approved.
+OPS-02-03,G,PARTIAL,EXECUTION_ONLY,NOT_RUN,existing_or_source,REQUIRED_NOT_RUN,NOT_RUN,AS_SPECIFIED,Stored evidence on a run-owned database. No new clinical rule.
+JUF-01-01,H,MISSING,DEFERRED,NOT_RUN,existing_or_source,NOT_AUTHORIZED,NOT_RUN,AS_SPECIFIED,Deferred. Do not activate.
+JUF-01-02,H,MISSING,DEFERRED,NOT_RUN,existing_or_source,NOT_AUTHORIZED,NOT_RUN,AS_SPECIFIED,Deferred. Do not activate.
+JUF-01-03,H,MISSING,DEFERRED,NOT_RUN,existing_or_source,NOT_AUTHORIZED,NOT_RUN,AS_SPECIFIED,Deferred. Do not activate.

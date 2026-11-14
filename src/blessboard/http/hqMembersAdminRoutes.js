@@ -9,7 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const express = require("express");
-const { CSRF_FIELD, issueCsrfToken, setCsrfCookie, validateCsrf } = require("../../platform/http/v5Csrf");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 
 const {
   createRequireBlessBoardPermission,
@@ -185,14 +185,12 @@ function createHqMembersAdminRouter(deps) {
       fieldErrors: options.fieldErrors || [],
       errors: options.errors || {},
     });
-    const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env, req });
+    // CSRF is issued once by buildHqAdminShellLocals. Do not pre-issue a second
+    // token here — an earlier Set-Cookie plus a form override caused BB-05.
     const html = renderHqView("hq/member-add.ejs", await shellLocals(req, res, "members", {
       pageTitle: "Add member",
       form,
       branches: branches.ok ? branches.branches : [],
-      csrfField: CSRF_FIELD,
-      csrfToken: token,
       memberSubmissionEnabled: true,
     }));
     return res.status(options.status || 200).type("html").send(html);
@@ -207,12 +205,8 @@ function createHqMembersAdminRouter(deps) {
   }
 
   async function renderHqFlowView(req, res, scope, name, locals, status) {
-    const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env, req });
     const html = renderHqView(`hq/${name}.ejs`, await shellLocals(req, res, "members", {
       ...locals,
-      csrfField: CSRF_FIELD,
-      csrfToken: token,
     }));
     return res.status(status || 200).type("html").send(html);
   }
@@ -431,22 +425,19 @@ function createHqMembersAdminRouter(deps) {
     if (!scope) return;
     const branches = await listBlessBoardBranches(getPool(), scope.churchId, { includeIds: true });
     if (!branches.ok) return sendControlled(req, res, 503, "Branches are temporarily unavailable.");
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     const form = await buildAddMemberFormModel(getPool(), {
       churchId: scope.churchId,
       defaultBranchId: scope.tenant && scope.tenant.primaryBranch
         ? scope.tenant.primaryBranch.id
         : "",
     });
+    // CSRF cookie + form field must come from the same shell issuance.
     const html = renderHqView(
       "hq/member-add.ejs",
       await shellLocals(req, res, "members", {
         pageTitle: "Add member",
         form,
         branches: branches.branches,
-        csrfField: CSRF_FIELD,
-        csrfToken,
         memberSubmissionEnabled: false,
       })
     );

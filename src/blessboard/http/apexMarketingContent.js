@@ -14,7 +14,11 @@ const {
   THIRD_PARTY_COSTS_NOTE,
 } = require("../../church/platformPricingContent");
 const { PLATFORM_FAQ_ITEMS } = require("../../church/platformFaqContent");
-const { publicBranchHomePath } = require("../urls/churchUrlHelper");
+const {
+  publicBranchHomePath,
+  publicBranchPagePath,
+  publicChurchHomePath,
+} = require("../urls/churchUrlHelper");
 
 const SAFE_FAQ_IDS = new Set([
   "what-is-blessboard",
@@ -49,22 +53,41 @@ function buildApexPricingFaq() {
   return PLATFORM_FAQ_ITEMS.filter((item) => SAFE_FAQ_IDS.has(item.id));
 }
 
+function directoryBranchKey(item) {
+  if (!item) return null;
+  return item.preview_branch_slug || item.branch_slug || "hq";
+}
+
 function mapDirectoryVisitUrl(item) {
   if (!item || !item.slug) return null;
-  const branchKey = item.preview_branch_slug || item.branch_slug;
-  if (branchKey) {
-    return publicBranchHomePath(item.slug, branchKey);
-  }
-  return publicBranchHomePath(item.slug, "hq");
+  return publicBranchHomePath(item.slug, directoryBranchKey(item));
+}
+
+function mapDirectoryContactUrl(item) {
+  if (!item || !item.slug) return null;
+  return publicBranchPagePath(item.slug, directoryBranchKey(item), "contact");
+}
+
+function mapDirectoryJoinUrl(item) {
+  if (!item || !item.slug) return null;
+  const home = publicChurchHomePath(item.slug);
+  if (!home) return null;
+  return `${home}/register`;
 }
 
 function mapDirectoryItems(items) {
   return (items || []).map((item) => {
     const visitUrl = mapDirectoryVisitUrl(item);
+    const contactUrl = mapDirectoryContactUrl(item);
+    const joinUrl = mapDirectoryJoinUrl(item);
     return {
       ...item,
       visit_href: visitUrl,
       visit_label: visitUrl ? "Visit Church" : null,
+      contact_href: contactUrl,
+      contact_label: contactUrl ? "Contact Church" : null,
+      join_href: joinUrl,
+      join_label: joinUrl ? "Join Church" : null,
     };
   });
 }
@@ -79,4 +102,6 @@ module.exports = {
   buildApexPricingFaq,
   mapDirectoryItems,
   mapDirectoryVisitUrl,
+  mapDirectoryContactUrl,
+  mapDirectoryJoinUrl,
 };

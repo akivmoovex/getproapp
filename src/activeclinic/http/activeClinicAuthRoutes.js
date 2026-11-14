@@ -274,6 +274,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "activeclinic.staff_login",
       });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (result.mustChangePassword || result.status === AUTH_STATUS.MUST_CHANGE_PASSWORD) {
@@ -380,6 +381,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "activeclinic.staff_login",
       });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (completed.mustChangePassword) {

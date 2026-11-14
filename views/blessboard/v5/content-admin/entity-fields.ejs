@@ -95,10 +95,12 @@
 
 <% if (entityKind === 'events') { %>
   <%
-    function isoField(snake, camel) {
+    function dateTimeLocalField(snake, camel) {
       var v = val(snake, camel, '');
-      if (v && typeof v === 'object' && v.toISOString) return v.toISOString();
-      return v;
+      if (v && typeof v === 'object' && v.toISOString) v = v.toISOString();
+      var s = String(v == null ? '' : v).trim();
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 16);
+      return '';
     }
   %>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_event_heading" data-bb-events-section="details">
@@ -116,12 +118,12 @@
     <h3 id="<%= mode %>_schedule_heading" class="bb-ba-entities-form__section-title">Schedule</h3>
     <div class="bb-ba-entities-form__grid">
       <div class="bb-ba-field">
-        <label for="<%= mode %>_starts_at">Starts at (ISO datetime)</label>
-        <input id="<%= mode %>_starts_at" name="starts_at" type="text" required value="<%= isoField('starts_at', 'startsAt') %>" placeholder="2026-07-18T10:00:00Z" autocomplete="off" data-bb-events-field="starts_at" />
+        <label for="<%= mode %>_starts_at">Starts at</label>
+        <input id="<%= mode %>_starts_at" name="starts_at" type="datetime-local" required value="<%= dateTimeLocalField('starts_at', 'startsAt') %>" autocomplete="off" data-bb-events-field="starts_at" />
       </div>
       <div class="bb-ba-field">
-        <label for="<%= mode %>_ends_at">Ends at (ISO datetime)</label>
-        <input id="<%= mode %>_ends_at" name="ends_at" type="text" value="<%= isoField('ends_at', 'endsAt') %>" placeholder="2026-07-18T12:00:00Z" autocomplete="off" data-bb-events-field="ends_at" />
+        <label for="<%= mode %>_ends_at">Ends at</label>
+        <input id="<%= mode %>_ends_at" name="ends_at" type="datetime-local" value="<%= dateTimeLocalField('ends_at', 'endsAt') %>" autocomplete="off" data-bb-events-field="ends_at" />
       </div>
     </div>
     <div class="bb-ba-entities-form__grid">

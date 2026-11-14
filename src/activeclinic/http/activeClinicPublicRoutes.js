@@ -1111,6 +1111,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
                 env,
                 isProduction,
                 getPool,
+                otpWorkflow: "activeclinic.clinic_administrator_login",
               });
             }
           } catch {

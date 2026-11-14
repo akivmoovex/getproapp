@@ -49,7 +49,7 @@
         <% if (q) { %>
         We couldn’t find any results matching your search. Try adjusting your keywords.
         <% } else { %>
-        No active churches are listed yet. Check back soon, or register your congregation.
+        No active churches are listed yet. Register Your Church lists a new congregation. It is not how a visitor joins a church that is already listed.
         <% } %>
       </p>
       <div class="bb-apex-directory-empty__actions">
@@ -84,8 +84,18 @@
         <% if (item.registration_label) { %>
         <p class="bb-apex-directory-card__reg"><%= item.registration_label %></p>
         <% } %>
-        <% if (item.visit_href) { %>
-        <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= item.visit_href %>" rel="noopener"><%= item.visit_label || 'Visit Church' %></a>
+        <% if (item.visit_href || item.contact_href || item.join_href) { %>
+        <div class="bb-apex-directory-card__actions">
+          <% if (item.visit_href) { %>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= item.visit_href %>" rel="noopener" data-bb-directory-action="visit"><%= item.visit_label || 'Visit Church' %></a>
+          <% } %>
+          <% if (item.contact_href) { %>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= item.contact_href %>" rel="noopener" data-bb-directory-action="contact"><%= item.contact_label || 'Contact Church' %></a>
+          <% } %>
+          <% if (item.join_href) { %>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= item.join_href %>" rel="noopener" data-bb-directory-action="join"><%= item.join_label || 'Join Church' %></a>
+          <% } %>
+        </div>
         <% } else { %>
         <p class="bb-apex-directory-card__hint">Multi-branch organization — open a branch site from your invitation or bookmark.</p>
         <% } %>

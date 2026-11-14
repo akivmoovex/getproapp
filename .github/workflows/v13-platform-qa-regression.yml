@@ -1,0 +1,103 @@
+name: V13 Shared Platform QA Regression
+
+# D16: Shared-platform regression CI. Does not alter V12 workflows.
+# Stages B–D stay gated. Database-writing jobs are not enabled.
+# Database-independent OTP and CSRF security tests run in Stage A.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Immutable approved test SHA; omit only for manual current-ref mode"
+        required: false
+        type: string
+      enable_db_stages:
+        description: "Authorize Stages B–D. Must remain false until separately approved."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CI_DATABASE_WRITING_ENABLED: "NO"
+  GETPRO_V13_ALLOW_DB_WRITES: "0"
+  GETPRO_V13_DB_STAGES_AUTHORIZED: "0"
+
+jobs:
+  stage-a-static-unit:
+    name: Stage A — Platform static, OTP, and CSRF contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_sha || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Syntax and trigger checks
+        run: |
+          set -eu
+          node --check tests/v13/unit/d16-otp-security.test.js
+          node --check tests/v13/contract/d16-platform-shared-contract.test.js
+          node --check tests/v13/integration/d16-platform-otp.integration.test.js
+          node --check tests/v13/fixtures/v13SyntheticFixtures.js
+          node --check tests/v13/integration/v13AuthorizedScenarios.js
+          node --check tests/v13/contract/d19-qa-implementation.test.js
+          test -f .github/workflows/v12-shared-ci.yml
+          grep -q 'workflow_dispatch' .github/workflows/v13-platform-qa-regression.yml
+          grep -q 'enable_db_stages' .github/workflows/v13-platform-qa-regression.yml
+          ! grep -E '^\s+push:' .github/workflows/v13-platform-qa-regression.yml
+          ! grep -E '^\s+pull_request:' .github/workflows/v13-platform-qa-regression.yml
+          ! grep -E '^\s+schedule:' .github/workflows/v13-platform-qa-regression.yml
+      - name: Platform, OTP, and CSRF contracts
+        run: npm run test:v13:platform
+
+  stage-d-nonmutating-security:
+    name: Stage D — Nonmutating OTP and CSRF security
+    needs: stage-a-static-unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Platform nonmutating security
+        run: npm run test:v13:platform
+
+  stage-b-integration:
+    name: Stage B — Platform integration (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: OTP persistence against a database is not authorized"
+
+  stage-c-browser:
+    name: Stage C — Platform browser (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: browser provisioning is not authorized"
+
+  stage-d-security:
+    name: Stage D — Live security sessions (gated)
+    needs: stage-a-static-unit
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: echo "D16 hold: authenticated multi-tenant security sessions are not authorized"

@@ -31,7 +31,13 @@
     gallery_3: 1,
     visitor_cta: 1
   };
-  var _useInlinePencil = Boolean(_editing && _page && _inlineImageSections[_sectionKey]);
+  // Freeform Add Section keys (image_*/story_*/text_*/cta_*) resolve via
+  // blessboardAddedSectionField — enable WE01 inline image pencil for them.
+  var _useInlinePencil = Boolean(
+    _editing &&
+      _page &&
+      (_inlineImageSections[_sectionKey] || /^(text|cta|image|story)_[a-z0-9]+$/i.test(_sectionKey))
+  );
   var _contentKey = _page + '.' + _sectionKey + '.image';
 %>
 <% if (_media || _editing) { %>

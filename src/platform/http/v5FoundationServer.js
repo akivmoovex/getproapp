@@ -1558,6 +1558,7 @@ function createV5FoundationApp(options) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "blessboard.unified_staff_login",
       });
       setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       authLog.logAuthEvent(req, "apex_login_session_created", {
@@ -1675,6 +1676,7 @@ function createV5FoundationApp(options) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "blessboard.unified_staff_login",
       });
       const {
         resolveTenantPortalAccess,

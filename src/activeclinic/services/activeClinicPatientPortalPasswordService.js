@@ -16,6 +16,7 @@ const {
 const {
   setPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
+const tokenRepo = require("../../platform/repositories/platformIdentityActionTokenRepository");
 
 const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
@@ -151,8 +152,9 @@ async function requestPatientPasswordReset(db, input) {
 async function resetPatientPassword(db, input) {
   const rawToken = String((input && input.token) || "").trim();
   const newPassword = String((input && input.newPassword) || "");
+  const organizationId = String((input && input.organizationId) || "").trim();
 
-  if (!rawToken || !newPassword) {
+  if (!rawToken || !newPassword || !organizationId) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
 
@@ -163,11 +165,13 @@ async function resetPatientPassword(db, input) {
   const tokenHash = hashToken(rawToken);
 
   const tokenRow = await db.query(
-    `SELECT id, platform_identity_id, expires_at, consumed_at, revoked_at
+    `SELECT id, platform_identity_id, organization_id, expires_at, consumed_at, revoked_at
      FROM platform.identity_action_tokens
-     WHERE token_hash = $1 AND purpose = 'activeclinic_patient_password_reset'
+     WHERE token_hash = $1
+       AND purpose = 'activeclinic_patient_password_reset'
+       AND organization_id = $2
      LIMIT 1`,
-    [tokenHash]
+    [tokenHash, organizationId]
   );
 
   if (!tokenRow.rows[0]) {
@@ -188,6 +192,10 @@ async function resetPatientPassword(db, input) {
     return { ok: false, code: RESULT.TOKEN_EXPIRED };
   }
 
+  if (String(token.organization_id || "") !== organizationId) {
+    return { ok: false, code: RESULT.TOKEN_INVALID };
+  }
+
   const client =
     typeof db.connect === "function" && typeof db.release !== "function"
       ? await db.connect()
@@ -196,6 +204,12 @@ async function resetPatientPassword(db, input) {
 
   try {
     if (client) await client.query("BEGIN");
+
+    const consumed = await tokenRepo.markConsumed(q, token.id, organizationId);
+    if (!consumed) {
+      if (client) await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.TOKEN_ALREADY_USED };
+    }
 
     const updated = await setPlatformIdentityPassword(q, {
       identityId: token.platform_identity_id,
@@ -207,13 +221,6 @@ async function resetPatientPassword(db, input) {
       if (client) await client.query("ROLLBACK");
       return { ok: false, code: RESULT.TRANSACTION_ERROR };
     }
-
-    await q.query(
-      `UPDATE platform.identity_action_tokens
-       SET consumed_at = now()
-       WHERE id = $1`,
-      [token.id]
-    );
 
     if (client) await client.query("COMMIT");
 

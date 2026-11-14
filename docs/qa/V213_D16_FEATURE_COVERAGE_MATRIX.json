@@ -1,0 +1,805 @@
+{
+  "task": "V213_D16",
+  "head": "b8f6b420d25e908de64ba292866c218c32edc30c",
+  "branch": "V13",
+  "evidence": "Statuses come from the D16 nonmutating run. NOT_RUN means a scenario file exists and the database or browser stage was not executed. PASS on a unit row is not release approval.",
+  "coverage_measurement": {
+    "tool": "c8 10.1.3",
+    "suite": "tests/v13/contract and tests/v13/unit, database-independent",
+    "full_product_coverage": "NOT_MEASURED",
+    "full_product_reason": "npm run test:coverage:* was not executed because that runner is not limited to database-independent tests.",
+    "changed_code": {
+      "blessboard": {
+        "statements": "17.34% (2042/11779)",
+        "branches": "59.11% (357/604)",
+        "functions": "24.18% (44/182)",
+        "lines": "17.34% (2042/11779)"
+      },
+      "activeclinic": {
+        "statements": "4.30% (208/4826)",
+        "branches": "13.33% (2/15)",
+        "functions": "10.00% (1/10)",
+        "lines": "4.30% (208/4826)",
+        "note": "Changed route modules were not imported, so their executed line coverage is 0. Branch and function totals only include loaded modules."
+      },
+      "shared_platform": {
+        "statements": "83.30% (1417/1701)",
+        "branches": "66.73% (305/457)",
+        "functions": "84.05% (58/69)",
+        "lines": "83.30% (1417/1701)",
+        "scope": "src/platform/otp, sharedSessionSecurity.js, productionStartupChecks.js"
+      }
+    }
+  },
+  "features": [
+    {
+      "FEATURE_ID": "BB-01",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Homepage sections and CTA",
+      "SOURCE_FILES": [
+        "src/platform/website/editableFieldSchema.js",
+        "views/blessboard/v5/public/home.ejs",
+        "views/blessboard/v5/public/partials/content-block-media.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb01-homepage-section-editor.test.js",
+        "tests/v13/contract/bb01-homepage-sections-contract.test.js",
+        "tests/v13/integration/bb01-homepage-sections.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-02",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Announcement uploads and public visibility",
+      "SOURCE_FILES": [
+        "src/blessboard/http/announcementAdminRoutes.js",
+        "src/blessboard/http/publicMediaRoutes.js",
+        "src/blessboard/services/announcementsService.js",
+        "src/blessboard/repositories/announcementsRepository.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/bb02-announcements-contract.test.js",
+        "tests/v13/integration/bb02-announcements.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-03",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Event creation and publishing",
+      "SOURCE_FILES": [
+        "src/blessboard/services/publicContentAdminService.js",
+        "src/church/announcementsEventsValidation.js",
+        "views/church/branch-admin/event_form.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb03-event-creation.test.js",
+        "tests/v13/contract/bb03-events-contract.test.js",
+        "tests/v13/integration/bb03-events.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-04",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Sermon creation and publishing",
+      "SOURCE_FILES": [
+        "src/routes/church/branchAdminSermons.js",
+        "src/blessboard/services/publicContentAdminService.js",
+        "views/blessboard/v5/public/sermons.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb04-sermon-creation.test.js",
+        "tests/v13/contract/bb04-sermons-contract.test.js",
+        "tests/v13/integration/bb04-sermons.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-05",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "HQ member registration and CSRF",
+      "SOURCE_FILES": [
+        "src/blessboard/http/hqMembersAdminRoutes.js",
+        "src/blessboard/http/hqAdminShellLocals.js",
+        "src/blessboard/http/branchAdminShellLocals.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/bb05-member-registration-csrf-contract.test.js",
+        "tests/bb05-hq-add-member-csrf-contract.test.js",
+        "tests/v13/contract/csrf-shell-extra-override-hardening.test.js",
+        "tests/v13/integration/bb05-member-registration.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-06",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Member portal activation",
+      "SOURCE_FILES": [
+        "src/blessboard/services/memberPortalInvitationService.js",
+        "src/blessboard/http/memberPortalInvitationAdminRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/bb06-member-activation-contract.test.js",
+        "tests/v13/integration/bb06-member-activation.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-24",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Directory contact and join",
+      "SOURCE_FILES": [
+        "src/blessboard/services/publicChurchContactService.js",
+        "src/blessboard/http/publicChurchContactHttp.js",
+        "views/blessboard/v5/apex/directory.ejs",
+        "views/blessboard/v5/public/contact.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb24-public-directory.test.js",
+        "tests/v13/contract/bb24-public-directory-contract.test.js",
+        "tests/v13/integration/bb24-public-directory.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "INV-01",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Staff invitation and first login",
+      "SOURCE_FILES": [
+        "No V2.13 product change. Existing invitation acceptance remains in the invitation service."
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/inv01-staff-invitation.test.js",
+        "tests/v13/contract/inv01-staff-invitation-contract.test.js",
+        "tests/v13/integration/inv01-staff-invitation.integration.test.js",
+        "tests/e2e/v13/v13-bb-qa-regression.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "BLOCKED",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-REGISTRATION",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Existing church registration session hook",
+      "SOURCE_FILES": [
+        "src/blessboard/http/apexMarketingRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d14c-otp-auth-contract.test.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "NOT_IMPLEMENTED",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-LOGIN-LOGOUT",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Existing login session hook and logout CSRF",
+      "SOURCE_FILES": [
+        "src/platform/http/v5FoundationServer.js",
+        "src/blessboard/http/memberPortalAuthRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14c-otp-auth.test.js",
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d16-platform-shared-contract.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-CONTENT",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Existing website content editing",
+      "SOURCE_FILES": [
+        "src/platform/website/editableFieldSchema.js",
+        "views/blessboard/v5/content-admin/entities.ejs",
+        "views/blessboard/v5/content-admin/entity-fields.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb01-homepage-section-editor.test.js",
+        "tests/shared-website-section-lifecycle.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "BB-BRANCH",
+      "PRODUCT": "blessboard",
+      "FEATURE_NAME": "Existing branch administration",
+      "SOURCE_FILES": [
+        "src/routes/church/branchAdminSermons.js",
+        "src/blessboard/http/branchAdminShellLocals.js",
+        "views/church/branch-admin/event_form.ejs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/bb03-event-creation.test.js",
+        "tests/v13/unit/bb04-sermon-creation.test.js",
+        "tests/v13/contract/csrf-shell-extra-override-hardening.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-STAFF-AUTH",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Staff authentication OTP hook",
+      "SOURCE_FILES": [
+        "src/activeclinic/http/activeClinicAuthRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/unit/d14c-otp-auth.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js",
+        "tests/e2e/v13/v13-ac-platform-qa.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-CLINIC-ADMIN-AUTH",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Clinic administrator registration session hook",
+      "SOURCE_FILES": [
+        "src/activeclinic/http/activeClinicPublicRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "NOT_IMPLEMENTED",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-PATIENT-LOGIN",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Patient portal login OTP hook",
+      "SOURCE_FILES": [
+        "src/activeclinic/http/activeClinicPatientPortalRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js",
+        "tests/e2e/v13/v13-ac-platform-qa.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-PATIENT-ACTIVATION",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Staff-created patient activation workflow",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpWorkflows.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d14c-otp-auth-contract.test.js",
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "NOT_IMPLEMENTED",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-RECOVERY",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Password recovery OTP hold",
+      "SOURCE_FILES": [
+        "src/activeclinic/http/activeClinicLifecycleRoutes.js",
+        "src/activeclinic/http/activeClinicPatientPortalRoutes.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js",
+        "tests/e2e/v13/v13-ac-platform-qa.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-STAFF-ROLE",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Staff role change OTP hold",
+      "SOURCE_FILES": [
+        "src/activeclinic/services/activeClinicAuthorizationService.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14c-otp-auth.test.js",
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-05",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Preserved lower-privilege authorization blocker",
+      "SOURCE_FILES": [
+        "src/activeclinic/services/activeClinicAuthorizationService.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/integration/d16-ac-auth.integration.test.js",
+        "tests/e2e/v13/v13-ac-platform-qa.spec.js"
+      ],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "NOT_RUN",
+      "NEGATIVE_TESTS": "NOT_RUN",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "BLOCKED",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "AC-APPOINTMENTS",
+      "PRODUCT": "activeclinic",
+      "FEATURE_NAME": "Existing appointment workflows",
+      "SOURCE_FILES": [
+        "No V2.13 appointment route or service is in the working-tree diff."
+      ],
+      "TEST_FILES": [],
+      "UNIT_COVERAGE": "NOT_IMPLEMENTED",
+      "CONTRACT_COVERAGE": "NOT_IMPLEMENTED",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "NOT_IMPLEMENTED",
+      "NEGATIVE_TESTS": "NOT_IMPLEMENTED",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-ac-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_IMPLEMENTED",
+      "RELEASE_BLOCKER": "NO"
+    },
+    {
+      "FEATURE_ID": "PF-OTP-ENGINE",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Shared OTP challenge lifecycle",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpService.js",
+        "src/platform/otp/otpChallengeStore.js",
+        "src/platform/otp/otpPolicy.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14a-shared-otp.test.js",
+        "tests/v13/unit/d14b-otp-providers.test.js",
+        "tests/v13/unit/d14c-otp-auth.test.js",
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d14a-shared-otp-contract.test.js",
+        "tests/v13/contract/d14b-otp-providers-contract.test.js",
+        "tests/v13/contract/d14c-otp-auth-contract.test.js",
+        "tests/v13/integration/d16-platform-otp.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-OTP-ENV",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "OTP environment policy and fixed code 1234",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpEnvironment.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/unit/d14a-shared-otp.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-OTP-PROVIDERS",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Email, SMS, and fake provider interfaces",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpProviders.js",
+        "src/platform/otp/otpDelivery.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14b-otp-providers.test.js",
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d14b-otp-providers-contract.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-OTP-PHONE",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Zambia SMS number normalization",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpPhone.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14b-otp-providers.test.js",
+        "tests/v13/unit/d16-otp-security.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "NO"
+    },
+    {
+      "FEATURE_ID": "PF-OTP-ACTIVATION",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Production activation hold",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpActivation.js",
+        "src/startup/productionStartupChecks.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/contract/d14c-otp-auth-contract.test.js",
+        "tests/e2e/v13/v13-ac-platform-qa.spec.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "BLOCKED",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-SESSION",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Authenticated session gate",
+      "SOURCE_FILES": [
+        "src/platform/session/sharedSessionSecurity.js",
+        "src/platform/otp/otpSessionGate.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14c-otp-auth.test.js",
+        "tests/v13/unit/d16-otp-security.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-WORKFLOWS",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "BlessBoard and ActiveClinic workflow registry",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpWorkflows.js",
+        "src/platform/otp/otpProtectedActions.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/d14c-otp-auth-contract.test.js",
+        "tests/v13/contract/d16-ac-v213-contract.test.js",
+        "tests/v13/unit/d16-otp-security.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-CSRF",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "CSRF issuance, validation, and shell hardening",
+      "SOURCE_FILES": [
+        "src/platform/http/v5Csrf.js",
+        "src/blessboard/http/hqAdminShellLocals.js",
+        "src/blessboard/http/branchAdminShellLocals.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/csrf-shell-extra-override-hardening.test.js",
+        "tests/bb05-hq-add-member-csrf-contract.test.js",
+        "tests/v13/contract/d16-platform-shared-contract.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_RUN",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_RUN",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-AUDIT",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "OTP audit redaction and provider failure handling",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpChallengeStore.js",
+        "src/platform/otp/otpDelivery.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/unit/d14b-otp-providers.test.js",
+        "tests/v13/integration/d16-platform-otp.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-VERSION",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Release version 2.13 and release notes",
+      "SOURCE_FILES": [
+        "tests/v213-version-initialization.test.js"
+      ],
+      "TEST_FILES": [
+        "tests/v213-version-initialization.test.js",
+        "tests/v13/contract/v13-previously-passing-sanity-coverage.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_IMPLEMENTED",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "NOT_IMPLEMENTED",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "NO"
+    },
+    {
+      "FEATURE_ID": "PF-CI-GUARDS",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Database and CI safety guards",
+      "SOURCE_FILES": [
+        "tests/v13/helpers/v13CiDatabaseGuard.js",
+        "tests/v13/helpers/v13DbWriteGate.js",
+        "scripts/ci/v13-assert-db-isolation.cjs"
+      ],
+      "TEST_FILES": [
+        "tests/v13/contract/v13-ci-isolation-guards.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "NOT_IMPLEMENTED",
+      "CI_JOB": "v13-bb-qa-regression.yml",
+      "EXECUTION_STATUS": "PASS",
+      "RELEASE_BLOCKER": "YES"
+    },
+    {
+      "FEATURE_ID": "PF-RATE-REPLAY",
+      "PRODUCT": "shared_platform",
+      "FEATURE_NAME": "Rate limit, cooldown, expiry, and replay prevention",
+      "SOURCE_FILES": [
+        "src/platform/otp/otpService.js",
+        "src/platform/otp/otpPolicy.js"
+      ],
+      "TEST_FILES": [
+        "tests/v13/unit/d14a-shared-otp.test.js",
+        "tests/v13/unit/d16-otp-security.test.js",
+        "tests/v13/integration/d16-platform-otp.integration.test.js"
+      ],
+      "UNIT_COVERAGE": "PASS",
+      "CONTRACT_COVERAGE": "PASS",
+      "INTEGRATION_COVERAGE": "NOT_RUN",
+      "BROWSER_COVERAGE": "NOT_IMPLEMENTED",
+      "SECURITY_COVERAGE": "PASS",
+      "NEGATIVE_TESTS": "PASS",
+      "TENANT_ISOLATION": "PASS",
+      "CI_JOB": "v13-platform-qa-regression.yml",
+      "EXECUTION_STATUS": "NOT_RUN",
+      "RELEASE_BLOCKER": "YES"
+    }
+  ]
+}

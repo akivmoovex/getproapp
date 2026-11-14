@@ -298,11 +298,9 @@
               'message',
               'bodyText',
               (demoFb && demoFb.messageBody) ||
-                ('Online message forms are not available on this site. Use the published contact details above' +
-                  (messageEmailHref ? ', or email us directly' : '') +
-                  '.')
+                'Send a message to this church. It is delivered only to this church.'
             )
-          : (demoFb && demoFb.messageBody) || null);
+          : (demoFb && demoFb.messageBody) || 'Send a message to this church. It is delivered only to this church.');
     %>
 
     <% if ((demoFb && demoFb.visitorGuidance) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
@@ -421,7 +419,8 @@
       <section
         class="bb-tp-contact-message"
         aria-labelledby="bb-tp-contact-message-heading"
-        data-bb-contact-message="unavailable"
+        data-bb-contact-message="church"
+        data-bb-contact-form="church"
       >
         <%- include('../partials/editable-text', {
           editPageKey: 'contact',
@@ -439,13 +438,32 @@
           editPageKey: 'contact',
           editSectionKey: 'message',
           editFieldKey: 'bodyText',
-          editValue: messageBody || ('Online message forms are not available on this site. Use the published contact details above' + (messageEmailHref ? ', or email us directly' : '') + '.'),
+          editValue: messageBody,
           editTag: 'p',
           editClass: 'bb-tp-contact-message__status',
           editType: 'paragraph',
           editMaxLength: 1000,
           editMultiline: true
         }) %>
+        <% if (typeof contactSubmitted !== 'undefined' && contactSubmitted) { %>
+        <p role="status" data-bb-church-contact-submitted="1">Your message was sent to this church.</p>
+        <% } else if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+        <% if (typeof contactError !== 'undefined' && contactError) { %>
+        <p role="alert"><%= contactError %></p>
+        <% } %>
+        <form method="post" action="<%= hrefFor('/contact') %>" data-bb-church-contact-form="1">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+          <label for="bb-church-contact-name">Your name</label>
+          <input id="bb-church-contact-name" name="full_name" type="text" required maxlength="200" autocomplete="name" value="<%= (contactForm && contactForm.full_name) || '' %>">
+          <label for="bb-church-contact-email">Email</label>
+          <input id="bb-church-contact-email" name="email" type="email" maxlength="200" autocomplete="email" value="<%= (contactForm && contactForm.email) || '' %>">
+          <label for="bb-church-contact-phone">Phone</label>
+          <input id="bb-church-contact-phone" name="phone" type="tel" maxlength="50" autocomplete="tel" value="<%= (contactForm && contactForm.phone) || '' %>">
+          <label for="bb-church-contact-message">Message</label>
+          <textarea id="bb-church-contact-message" name="message" required maxlength="5000" rows="4"><%= (contactForm && contactForm.message) || '' %></textarea>
+          <button class="bb-tp-btn bb-tp-btn--primary" type="submit">Send to this church</button>
+        </form>
+        <% } %>
         <div class="bb-tp-page-hero__cta">
           <% if (messageEmailHref) { %>
           <a

@@ -80,6 +80,10 @@ function mapAttachment(row) {
     originalFilename: row.original_filename || null,
     mimeType: row.mime_type || null,
     mediaStatus: row.media_status || null,
+    churchId: row.church_id || null,
+    visibility: row.visibility || null,
+    storageKey: row.storage_key || null,
+    sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : null,
   };
 }
 
@@ -375,7 +379,8 @@ async function replaceAudiences(client, announcementId, audienceKeys) {
 async function listAttachments(client, announcementId) {
   const { rows } = await client.query(
     `SELECT att.id, att.announcement_id, att.media_asset_id, att.sort_order, att.created_at,
-            m.original_filename, m.mime_type, m.status AS media_status
+            m.original_filename, m.mime_type, m.status AS media_status,
+            m.church_id, m.visibility, m.storage_key, m.size_bytes
        FROM blessboard.announcement_attachments att
        INNER JOIN blessboard.media_assets m ON m.id = att.media_asset_id
       WHERE att.announcement_id = $1
@@ -543,9 +548,11 @@ async function listPublicWebsiteAnnouncements(client, opts) {
     opts.branchId != null && String(opts.branchId).trim()
       ? String(opts.branchId).trim()
       : null;
+  // Church-wide public site includes every branch of this church.
+  // A selected branch still sees church-wide rows plus its own, not other branches.
   const branchClause = branchId
     ? "(a.branch_id IS NULL OR a.branch_id = $2)"
-    : "a.branch_id IS NULL";
+    : "TRUE";
   const params = branchId
     ? [opts.churchId, branchId, limit, offset]
     : [opts.churchId, limit, offset];
@@ -585,6 +592,43 @@ async function listPublicWebsiteAnnouncements(client, opts) {
 /**
  * Publication audit history from platform.audit_events (append-only writes).
  */
+/**
+ * True when this church owns an in-window published/public announcement that
+ * attaches the asset. Drafts, other churches, and members-only rows do not qualify.
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, mediaAssetId: string }} input
+ */
+async function mediaAssetIsOnPublicAnnouncement(client, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const mediaAssetId = String((input && input.mediaAssetId) || "").trim();
+  if (!churchId || !mediaAssetId) return false;
+  const { rows } = await client.query(
+    `SELECT 1
+       FROM blessboard.announcement_attachments att
+       INNER JOIN blessboard.announcements a ON a.id = att.announcement_id
+       INNER JOIN blessboard.announcement_audiences aud
+         ON aud.announcement_id = a.id AND aud.audience_key = 'public'
+      WHERE att.media_asset_id = $1
+        AND a.church_id = $2
+        AND (
+          (
+            a.status = 'published'
+            AND (a.starts_at IS NULL OR a.starts_at <= now())
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+          OR (
+            a.status = 'scheduled'
+            AND a.starts_at IS NOT NULL
+            AND a.starts_at <= now()
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+        )
+      LIMIT 1`,
+    [mediaAssetId, churchId]
+  );
+  return rows.length > 0;
+}
+
 async function listAnnouncementAuditEvents(client, { churchId, announcementId, limit }) {
   const lim = Math.min(Math.max(Number(limit) || 40, 1), 100);
   const { rows } = await client.query(
@@ -616,6 +660,7 @@ module.exports = {
   listAnnouncements,
   listMemberAnnouncements,
   listPublicWebsiteAnnouncements,
+  mediaAssetIsOnPublicAnnouncement,
   listAnnouncementAuditEvents,
   insertAnnouncement,
   updateAnnouncement,

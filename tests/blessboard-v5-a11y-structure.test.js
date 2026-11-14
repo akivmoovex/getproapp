@@ -2464,17 +2464,21 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(css, /@media \(max-width:\s*320px\)/);
   });
 
-  it("contact and giving templates keep safe semantics without payment or contact forms", () => {
+  it("contact and giving templates keep safe semantics without payment forms", () => {
     const contact = read("views/blessboard/v5/public/contact.ejs");
     const giving = read("views/blessboard/v5/public/giving.ejs");
     assert.match(contact, /role="status"/);
     assert.match(contact, /aria-label="Email/);
     assert.match(contact, /aria-label="Call/);
     assert.match(contact, /data-bb-contact-map="unavailable"/);
-    assert.match(contact, /bb-tp-contact-message__status|data-bb-contact-(?:form|message)="unavailable"/);
+    assert.match(contact, /data-bb-contact-form="church"/);
     assert.match(contact, /Send a Message/);
     assert.doesNotMatch(contact, /data-bb-empty="contact"/);
-    assert.doesNotMatch(contact, /<form|name="_csrf"|csrfField|name="full_name"|name="message"/i);
+    assert.match(contact, /data-bb-church-contact-form="1"/);
+    assert.match(contact, /name="full_name"/);
+    assert.match(contact, /name="message"/);
+    assert.doesNotMatch(contact, /action="\/contact"/);
+    assert.doesNotMatch(contact, /register-church/);
     assert.match(giving, /role="note"/);
     assert.match(giving, /data-bb-giving-notice="1"/);
     assert.match(giving, /does not process payments/i);
@@ -2484,19 +2488,21 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.doesNotMatch(giving, /<form|Give Online|Donate Now|card number|cvv/i);
   });
 
-  it("contact template keeps Stitch cards/map hierarchy without POST form", () => {
+  it("contact template keeps Stitch cards/map hierarchy and a church-scoped message form", () => {
     const contact = read("views/blessboard/v5/public/contact.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(contact, /data-bb-stitch-contact="phase7-v1"/);
     assert.match(contact, /aria-label="Contact"/);
     assert.match(contact, /Get In Touch/);
     assert.match(contact, /bb-tp-contact-main/);
-    assert.match(contact, /data-bb-contact-message="unavailable"/);
+    assert.match(contact, /data-bb-contact-message="church"/);
     assert.match(contact, /phoneHref|emailHref|channel\.href/);
     assert.match(contact, /mapEmbedUrl|directionsUrl/);
     assert.match(contact, /Service Times|Office Hours/);
     assert.match(contact, /partials\/page-hero/);
-    assert.doesNotMatch(contact, /method="post"|action="\/contact"/i);
+    assert.match(contact, /method="post"/);
+    assert.match(contact, /hrefFor\('\/contact'\)/);
+    assert.doesNotMatch(contact, /action="\/contact"/);
     assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(contact, /bb-tp-contact-card__label/);
     assert.match(contact, /<h3 class="bb-tp-contact-card__label"/);

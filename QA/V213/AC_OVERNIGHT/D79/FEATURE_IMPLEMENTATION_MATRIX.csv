@@ -1,0 +1,25 @@
+area_id,feature,d70_status,d79_status,d79_safeguard,database_evidence,certification
+01,"Tenants, facilities, departments, service points",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+02,"Clinical role grants and tenant isolation",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+03,"Patient registration and identity matching",PARTIAL,PARTIAL,"D72 duplicate filter and D64 booking scope have G1 denials",NOT_RUN,NOT_CERTIFIED
+04,"Merging, lineage, and unmerge",IMPLEMENTATION_MISSING,MISSING,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+05,"Consent, withdrawal, and representatives",PARTIAL,PARTIAL,"D76 withdrawal refuses another patient. Representatives are not built",NOT_RUN,NOT_CERTIFIED
+06,"Encounters, visits, and queues",PARTIAL,PARTIAL,"D73 encounter and queue checks have G1 denials",NOT_RUN,NOT_CERTIFIED
+07,"Nursing, triage, and vital signs",PARTIAL,PARTIAL,"D73 triage version and facility checks have G1 denials",NOT_RUN,NOT_CERTIFIED
+08,"Consultation notes and amendments",PARTIAL,PARTIAL,"D74 signed-note refusal has a G1 denial. Amendments are not built",NOT_RUN,NOT_CERTIFIED
+09,"Laboratory orders and results",PARTIAL,PARTIAL,"D74 result-to-patient refusal has a G1 denial",NOT_RUN,NOT_CERTIFIED
+10,"Critical-result escalation",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+11,"Prescriptions, allergies, and dispensing",PARTIAL,PARTIAL,"D74 dispense refusal has a G1 denial. No allergy blocker",NOT_RUN,NOT_CERTIFIED
+12,"Billing, receipts, reversals, reconciliation",PARTIAL,PARTIAL,"D65 and D74 payment retry and reversal denials have G1 coverage",NOT_RUN,NOT_CERTIFIED
+13,"Document scanning, provenance, quarantine",PARTIAL,PARTIAL,"D75 and D77 facility and empty-attachment denials have G1 coverage. No quarantine",NOT_RUN,NOT_CERTIFIED
+14,"Retention, legal hold, and disposal",IMPLEMENTATION_MISSING,MISSING,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+15,"Patient portal activation",PREPARED_NOT_RUN,PARTIAL,"D72 reset-token denial has G1 coverage. Persistence was not run",NOT_RUN,NOT_CERTIFIED
+16,"Appointment booking and capacity",PREPARED_NOT_RUN,PARTIAL,"Overlap is in memory only. Capacity stays unapproved",NOT_RUN,NOT_CERTIFIED
+17,"OTP, sessions, CSRF, authorization",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+18,"Break-glass",APPROVAL_BLOCKED,DEFERRED,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+19,"Backups, restore, RPO/RTO",IMPLEMENTATION_MISSING,MISSING,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+20,"Offline operation and reconciliation",IMPLEMENTATION_MISSING,MISSING,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+21,"Accessibility and monitoring",IMPLEMENTATION_MISSING,MISSING,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+22,"Juflona two-screen signing",DEFERRED,DEFERRED,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+23,"BlessBoard shared reuse",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED
+24,"Privacy, audit, and deployment",PARTIAL,PARTIAL,"No new completion. The area status is unchanged.",NOT_RUN,NOT_CERTIFIED

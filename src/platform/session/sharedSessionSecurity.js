@@ -113,9 +113,32 @@ function applyLogoutResponseHeaders(res) {
 async function issueAuthenticatedSessionCookie(req, res, opts) {
   const options = opts || {};
   const env = options.env || process.env;
-  const rawToken = String(options.rawToken || "");
+    const rawToken = String(options.rawToken || "");
   if (!rawToken) {
     return { ok: false, code: "missing_token", priorRevoked: false };
+  }
+
+  if (options.otpWorkflow) {
+    const { evaluateOtpSessionGate } = require("../otp/otpSessionGate");
+    const gate = await evaluateOtpSessionGate(
+      {
+        workflow: options.otpWorkflow,
+        activation: options.otpActivation,
+        verification: options.otpVerification,
+        organizationId: options.organizationId,
+        accountId: options.accountId,
+        sessionId: options.sessionId,
+        channel: options.otpChannel,
+        identifier: options.otpIdentifier,
+        accountResolved: options.accountResolved,
+        context: options.otpContext,
+        service: options.otpService,
+      },
+      env
+    );
+    if (!gate.sessionAllowed) {
+      return { ok: false, code: "otp_required", priorRevoked: false, gate };
+    }
   }
 
   const prior = readV5SessionCookie(req, env);

@@ -59,16 +59,78 @@ function stableKeyFromLocator(pageKey, sectionKey, fieldKey) {
 }
 
 /**
- * Allowlist dynamically added BlessBoard text/cta sections for heading/body edits.
+ * Allowlist dynamically added BlessBoard freeform sections (text_/cta_/image_/story_)
+ * for heading, body, and image edits. DOM contentKeys use camelCase (bodyText); after
+ * normalizeContentKey they become lowercase (bodytext) — accept both forms plus body_text.
  */
 function blessboardAddedSectionField(input) {
   const pageKey = String((input && input.pageKey) || "").trim();
   const sectionKey = String((input && input.sectionKey) || "").trim();
   const fieldKey = String((input && input.fieldKey) || "").trim();
   if (!pageKey || !sectionKey || !fieldKey) return null;
-  if (!/^(text|cta)_[a-z0-9]+$/i.test(sectionKey)) return null;
-  if (fieldKey !== "heading" && fieldKey !== "bodyText" && fieldKey !== "body_text") return null;
-  const normalizedField = fieldKey === "body_text" ? "bodyText" : fieldKey;
+  if (!/^(text|cta|image|story)_[a-z0-9]+$/i.test(sectionKey)) return null;
+
+  const fieldCompact = fieldKey.replace(/_/g, "").toLowerCase();
+  if (fieldCompact === "image") {
+    return {
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key: stableKeyFromLocator(pageKey, sectionKey, "image"),
+      type: CONTENT_TYPES.IMAGE,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: true,
+      acceptObject: true,
+      storage: {
+        kind: STORAGE_KIND.BLESSBOARD_INLINE,
+        pageKey,
+        sectionKey,
+        fieldKey: "image",
+      },
+    };
+  }
+
+  const isCtaSection = /^cta_[a-z0-9]+$/i.test(sectionKey);
+  if (isCtaSection && fieldCompact === "buttontext") {
+    return {
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key: stableKeyFromLocator(pageKey, sectionKey, "buttonText"),
+      type: CONTENT_TYPES.SHORT_TEXT,
+      maxLen: 48,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.BLESSBOARD_INLINE,
+      inline: true,
+      storage: {
+        kind: STORAGE_KIND.BLESSBOARD_INLINE,
+        pageKey,
+        sectionKey,
+        fieldKey: "buttonText",
+      },
+    };
+  }
+  if (isCtaSection && fieldCompact === "buttonurl") {
+    return {
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key: stableKeyFromLocator(pageKey, sectionKey, "buttonUrl"),
+      type: CONTENT_TYPES.URL,
+      maxLen: 500,
+      allowRelativeUrl: true,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.BLESSBOARD_INLINE,
+      inline: true,
+      storage: {
+        kind: STORAGE_KIND.BLESSBOARD_INLINE,
+        pageKey,
+        sectionKey,
+        fieldKey: "buttonUrl",
+      },
+    };
+  }
+
+  let normalizedField = null;
+  if (fieldCompact === "heading") normalizedField = "heading";
+  else if (fieldCompact === "bodytext") normalizedField = "bodyText";
+  else return null;
+
   const maxLen = normalizedField === "heading" ? 200 : 4000;
   return {
     productCode: PRODUCT_CODE.BLESSBOARD,
@@ -123,6 +185,9 @@ function validateBlessboardInline(field, raw) {
     if (!trimmed) {
       if (field.required) return { ok: false, code: "validation_failed", reason: "required", message: "This field is required." };
       return { ok: true, value: "" };
+    }
+    if (/^(javascript|data|vbscript):/i.test(trimmed) || trimmed.startsWith("//")) {
+      return { ok: false, code: "validation_failed", reason: "invalid_url", message: "Only http or https links are allowed." };
     }
     if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
       if (trimmed.length > (field.maxLen || 500)) {
@@ -370,10 +435,12 @@ function resolveEditableField(input) {
       if (!field && productCode === PRODUCT_CODE.BLESSBOARD) {
         const parts = keyNorm.key.split(".");
         if (parts.length === 3) {
+          // keyNorm lowercases bodyText → bodytext; blessboardAddedSectionField
+          // accepts bodytext / body_text / bodyText for freeform added sections.
           field = blessboardAddedSectionField({
             pageKey: parts[0],
             sectionKey: parts[1],
-            fieldKey: parts[2] === "body_text" ? "bodyText" : parts[2],
+            fieldKey: parts[2],
           });
         }
       }

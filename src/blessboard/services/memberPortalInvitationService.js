@@ -152,6 +152,19 @@ async function resendMemberPortalInvitation(db, input) {
 }
 
 async function acceptMemberPortalInvitation(db, input) {
+  const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
+  const otpHold = await holdIfOtpRequired({
+    workflow: "blessboard.member_activation",
+    activation: input && input.otpActivation,
+    env: input && input.env,
+    verification: input && input.otpVerification,
+    organizationId: input && input.organizationId,
+    accountId: input && input.accountId,
+    channel: input && input.otpChannel,
+    identifier: input && input.identifier,
+    service: input && input.otpService,
+  });
+  if (otpHold) return result("otp_required");
   const tokenHash = hashSessionToken(String(input.token || ""));
   const password = String(input.password || "");
   if (!tokenHash || password.length < 10) return result("invalid_input");
@@ -177,7 +190,14 @@ async function acceptMemberPortalInvitation(db, input) {
         `SELECT * FROM blessboard.members WHERE id=$1 AND church_id=$2 FOR UPDATE`,
         [invite.member_id, invite.church_id]
       )).rows[0];
-      if (!member || member.user_id || member.portal_access_status === "blocked") return result("member_unavailable");
+      if (
+        !member ||
+        member.user_id ||
+        member.portal_access_status === "blocked" ||
+        member.portal_access_status === "active"
+      ) {
+        return result("member_unavailable");
+      }
       const existing = member.email_normalized
         ? await require("../repositories/blessBoardAuthRepository").findUserByEmail(client, member.email_normalized)
         : null;
@@ -195,7 +215,9 @@ async function acceptMemberPortalInvitation(db, input) {
         displayName: [member.first_name, member.last_name].filter(Boolean).join(" "),
       });
       await client.query(
-        `UPDATE blessboard.members SET user_id=$1,updated_at=now() WHERE id=$2`,
+        `UPDATE blessboard.members
+            SET user_id=$1, portal_access_status='active', updated_at=now()
+          WHERE id=$2 AND portal_access_status <> 'blocked'`,
         [user.id, member.id]
       );
       await client.query(

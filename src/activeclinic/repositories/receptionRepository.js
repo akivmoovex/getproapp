@@ -155,17 +155,20 @@ async function listReceptionArrivalsByFacility(db, input) {
 }
 
 async function allocateQueueNumber(db, input) {
-  await db.query(
+  const locked = await db.query(
     `SELECT 1 FROM activeclinic.service_points
-      WHERE id = $1 FOR UPDATE`,
-    [input.servicePointId]
+      WHERE id = $1 AND organization_id = $2
+      FOR UPDATE`,
+    [input.servicePointId, input.organizationId]
   );
+  if (!locked.rowCount) return null;
   const result = await db.query(
     `SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_number
        FROM activeclinic.queue_entries
       WHERE service_point_id = $1
+        AND organization_id = $2
         AND created_at >= CURRENT_DATE`,
-    [input.servicePointId]
+    [input.servicePointId, input.organizationId]
   );
   return result.rows[0].next_number;
 }
@@ -260,6 +263,10 @@ async function updateQueueEntryByOrgAndId(db, input) {
   if (input.expectedVersion != null) {
     params.push(input.expectedVersion);
     sql += ` AND version = $${i++}`;
+  }
+  if (input.facilityId) {
+    params.push(input.facilityId);
+    sql += ` AND facility_id = $${i++}`;
   }
   sql += ` RETURNING *`;
   const result = await db.query(sql, params);

@@ -42,6 +42,12 @@
       <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-m09-restore="1">Restore Portal Access</button>
     </form>
     <% } else { %>
+    <% if (portal !== 'active') { %>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/members/<%= m.id %>/invitation" data-bb-member-invitation="1">
+      <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+      Issue portal invitation
+    </a>
+    <% } %>
     <a class="bb-ba-btn bb-ba-btn--danger" href="/branch-admin/members/<%= m.id %>/access/block" data-bb-m09-block="1">
       <span class="material-symbols-outlined" aria-hidden="true">block</span>
       Block Member Access

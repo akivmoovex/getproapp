@@ -152,16 +152,22 @@ async function findLatestActiveToken(db, input) {
  * @param {{ query: Function }} db
  * @param {string} tokenId
  */
-async function markConsumed(db, tokenId) {
+async function markConsumed(db, tokenId, organizationId) {
+  const params = [tokenId];
+  let organizationSql = "";
+  if (organizationId) {
+    params.push(organizationId);
+    organizationSql = " AND organization_id = $2";
+  }
   const res = await db.query(
     `UPDATE platform.identity_action_tokens
         SET consumed_at = now()
       WHERE id = $1
         AND consumed_at IS NULL
         AND revoked_at IS NULL
-        AND expires_at > now()
+        AND expires_at > now()${organizationSql}
       RETURNING *`,
-    [tokenId]
+    params
   );
   return mapToken(res.rows[0] || null);
 }

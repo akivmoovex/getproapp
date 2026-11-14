@@ -1,0 +1,9 @@
+stage,command,finished,executed,passed,failed,skipped,notes
+D69,safe G1,/tmp/d69-g1.log,344,344,0,0,Prior cycle. Not re-counted as D78.
+D72,safe G1,/tmp/d72-g1.log,353,353,0,0,Identity and facility checks.
+D73,safe G1,/tmp/d73-g1.log,369,369,0,0,Encounter and queue checks.
+D74,safe G1,/tmp/d74-g1.log,381,381,0,0,Consultation laboratory and pharmacy checks.
+D75,safe G1,/tmp/d75-g1.log,391,391,0,0,Appointment billing and document checks.
+D76,safe G1,/tmp/d76-g1.log,397,397,0,0,Consent characterization.
+D77,safe G1,/tmp/d77-g1.log,399,399,0,0,Finalization denials added.
+D78,safe G1,/tmp/d78-g1.log,399,399,0,0,Fresh run. No product repair.

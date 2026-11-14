@@ -1,0 +1,25 @@
+area_id,feature,status,d38_d44_note
+01,"Tenants, facilities, departments, service points",PARTIAL,Organization predicates added on queue and clinical reads. Live isolation not executed.
+02,Clinical role grants and tenant isolation,PARTIAL,AC-05 route guards unchanged. Live lower-privilege denial not run.
+03,Patient registration and identity matching,PARTIAL,Guest registration requires the clinic organization and one portal owner.
+04,"Merging, lineage, and unmerge",MISSING,No merge writer.
+05,"Consent, withdrawal, and representatives",PARTIAL,Forged organization is refused. No representative field.
+06,"Encounters, visits, and queues",PARTIAL,Stored statuses only. Queue allocation requires the organization.
+07,"Nursing, triage, and vital signs",PARTIAL,Pain outside 0-10 is rejected. No diagnostic threshold.
+08,Consultation notes and amendments,PARTIAL,Signed notes are not overwritten. Amendment table unused.
+09,Laboratory orders and results,PARTIAL,Unknown order types and closed requests are rejected.
+10,Critical-result escalation,PARTIAL,Acknowledgement follows the result patient. No escalation timer.
+11,"Prescriptions, allergies, and dispensing",PARTIAL,Stock lock is organization-scoped. No substitution or allergy block.
+12,"Billing, receipts, reversals, reconciliation",PARTIAL,Payment retry key includes tenant. No live payment or reversal.
+13,"Document scanning, provenance, quarantine",PARTIAL,Document joins and events stay in the organization. No quarantine or checksum.
+14,"Retention, legal hold, and disposal",MISSING,No period and no deleter.
+15,Patient portal activation,PARTIAL,Registration still does not issue a session. Persistence not run.
+16,Appointment booking and capacity,PARTIAL,Bad staff ids are rejected. Capacity remains null.
+17,"OTP, sessions, CSRF, authorization",PARTIAL,Memory store only. Production activation blocked.
+18,Break-glass,DEFERRED,No break-glass path.
+19,"Backups, restore, RPO/RTO",MISSING,No restore module and no drill.
+20,Offline operation and reconciliation,MISSING,Offline route stays 503 with no writer.
+21,Accessibility and monitoring,MISSING,No approved monitor or browser accessibility pass.
+22,Juflona two-screen signing,DEFERRED,Signing flags absent. Disabled by default.
+23,BlessBoard shared reuse,PARTIAL,D38-D44 did not edit BlessBoard. Earlier dirty BlessBoard files remain in the worktree.
+24,"Privacy, audit, and deployment",PARTIAL,Document audit is skipped when the event insert matches nothing. No release.

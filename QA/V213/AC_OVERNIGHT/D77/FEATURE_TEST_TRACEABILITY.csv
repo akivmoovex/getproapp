@@ -1,0 +1,24 @@
+feature_id,stage,behavior,g1_test,g1_result,persistence,browser,security,quality
+D64-01,D64,Guest booking is re-read in the caller organization,tests/v13/unit/d64-patient-identity.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,ORG_SCOPED_READ,MEANINGFUL_G1_NOT_PERSISTENCE
+D64-02,D64,A guest booking is not linked to another clinic's patient,tests/v13/unit/d64-patient-identity.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,PATIENT_BINDING,MEANINGFUL_G1_NOT_PERSISTENCE
+D65-01,D65,A repeated payment key in the same tenant does not insert again,tests/v13/unit/d65-transaction-integrity.test.js,MOCK_ROLLBACK,NOT_RUN,NOT_RUN,TENANT_SCOPE,MEANINGFUL_G1_NOT_PERSISTENCE
+D65-02,D65,Staff overlap is checked before a transaction and is not locked,tests/v13/unit/d65-transaction-integrity.test.js,IN_MEMORY_RACE_OPEN,NOT_VERIFIED,NOT_RUN,NOT_A_LOCK,MEANINGFUL_G1_NOT_PERSISTENCE
+D66-01,D66,A closed laboratory result and a self-verify are refused,tests/v13/unit/d66-clinical-components.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,STATUS_AND_ACTOR,MEANINGFUL_G1_NOT_PERSISTENCE
+D66-02,D66,A dispense without an active clinic product does not connect,tests/v13/unit/d66-clinical-components.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,PERMISSION,MEANINGFUL_G1_NOT_PERSISTENCE
+D72-01,D72,A reset token from another clinic is not consumed,tests/v13/unit/d72-patient-facility.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,ORG_SCOPE,MEANINGFUL_G1_NOT_PERSISTENCE
+D72-02,D72,A duplicate candidate from another organization is dropped,tests/v13/unit/d72-patient-facility.test.js,MOCK_FILTER,NOT_RUN,NOT_RUN,ORG_SCOPE,MEANINGFUL_G1_NOT_PERSISTENCE
+D73-01,D73,An encounter requires the facility and patient in the caller organization,tests/v13/unit/d73-encounter-nursing.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,ORG_AND_FACILITY,MEANINGFUL_G1_NOT_PERSISTENCE
+D73-02,D73,Triage update uses the supplied version and stays in the facility,tests/v13/unit/d73-encounter-nursing.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,VERSION_AND_FACILITY,MEANINGFUL_G1_NOT_PERSISTENCE
+D73-03,D73,A queue change refuses another facility and records the transfer actor,tests/v13/unit/d73-encounter-nursing.test.js,MOCK_DENIAL_AND_ACTOR,NOT_RUN,NOT_RUN,FACILITY_AND_ACTOR,MEANINGFUL_G1_NOT_PERSISTENCE
+D74-01,D74,A signed consultation note is not rewritten,tests/v13/unit/d74-clinical-operations.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,IMMUTABILITY,MEANINGFUL_G1_NOT_PERSISTENCE
+D74-02,D74,A laboratory or radiology result is not attached to another patient,tests/v13/unit/d74-clinical-operations.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,PATIENT_BINDING,MEANINGFUL_G1_NOT_PERSISTENCE
+D74-03,D74,A dispense refuses another patient and a prescription that is already dispensed,tests/v13/unit/d74-clinical-operations.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,PERMISSION_AND_STATUS,MEANINGFUL_G1_NOT_PERSISTENCE
+D75-01,D75,Document read update and finalization stay in the stored facility,tests/v13/unit/d75-appointment-billing-documents.test.js;tests/v13/unit/d77-coverage-gaps.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,FACILITY_SCOPE,MEANINGFUL_G1_NOT_PERSISTENCE
+D75-02,D75,A clinical attachment with no body is rejected before a query,tests/v13/unit/d75-appointment-billing-documents.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,MISSING_BODY,MEANINGFUL_G1_NOT_PERSISTENCE
+D76-01,D76,Consent withdrawal refuses another patient and an unknown type,tests/v13/unit/d76-supplementary.test.js,MOCK_DENIAL,NOT_RUN,NOT_RUN,PATIENT_AND_ALLOW_LIST,MEANINGFUL_G1_NOT_PERSISTENCE
+AC-05,D22,Lower-privilege live HTTP 403,tests/v13/contract/d22-ac05-contract.test.js,IN_PROCESS_NOT_LIVE,NOT_RUN,NOT_RUN,BLOCKED,INCOMPLETE_LIVE_DENIAL
+CAPACITY,D65,Slot capacity,tests/v13/unit/d65-transaction-integrity.test.js,BLOCKED_APPROVAL_REQUIRED,NOT_AUTHORIZED,NOT_RUN,NOT_APPLICABLE,NOT_IMPLEMENTED
+ACX-002,D76,Representative identity,none,NOT_SAFE,NOT_AUTHORIZED,NOT_RUN,BLOCKED,NOT_IMPLEMENTED
+ACX-004,D76,Accessibility program,none,NOT_SAFE,NOT_REQUIRED,NOT_RUN,BLOCKED,NOT_IMPLEMENTED
+ACX-005,D76,Monitoring,none,NOT_SAFE,NOT_REQUIRED,NOT_RUN,BLOCKED,NOT_IMPLEMENTED
+ACX-006,D76,SLO numbers,none,NOT_SAFE,NOT_REQUIRED,NOT_RUN,BLOCKED,NOT_IMPLEMENTED

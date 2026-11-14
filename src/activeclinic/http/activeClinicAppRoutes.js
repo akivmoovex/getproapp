@@ -382,6 +382,9 @@ function registerActiveClinicAppRoutes(app, deps) {
         env,
         isProduction,
         getPool,
+        otpWorkflow: "activeclinic.staff_login",
+        organizationId,
+        accountId: identityId,
       });
       issuePageCsrf(res, req);
       return res.redirect(303, "/app");

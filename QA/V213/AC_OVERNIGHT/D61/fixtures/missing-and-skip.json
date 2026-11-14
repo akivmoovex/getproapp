@@ -1,0 +1,22 @@
+{
+  "release_ready": true,
+  "source_sha": "b8f6b420d25e908de64ba292866c218c32edc30c",
+  "run_id": "",
+  "environment_identity": "production",
+  "g2_execution": "PASS",
+  "g3_execution": "NOT_RUN",
+  "g4_execution": "ABSENT",
+  "skipped_as_pass": true,
+  "cases": {
+    "SEC-01-02": {
+      "status": "PASS",
+      "database_evidence": "VERIFIED",
+      "authenticated_security_evidence": "NOT_RUN"
+    },
+    "APT-01-03": {
+      "status": "PASS",
+      "database_evidence": "SKIPPED",
+      "concurrency_evidence": "NOT_RUN"
+    }
+  }
+}
