@@ -1,0 +1,2 @@
+bug_id,severity,worktree,origin,regression
+CI-001,P0,FIXED_LOCALLY,UNFIXED_AT_c2cd146b,tests/v13/contract/d96-workflow-yaml-contract.test.js

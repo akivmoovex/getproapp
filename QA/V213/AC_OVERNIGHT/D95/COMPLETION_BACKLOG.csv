@@ -1,0 +1,22 @@
+order,item_id,kind,depends_on,release_impact,completion_criteria,status
+1,CI-001,DEFECT,NONE,P0,"Origin workflow parses. Held jobs stay if false. A failed test fails the job.",FIXED_LOCALLY_UNCOMMITTED
+2,STAGE-A-TRIGGER,APPROVAL,CI-001,P0,"Push on V13 runs only Stage A. Main is unchanged. An artifact records the SHA.",NOT_APPROVED
+3,D21-D29,APPROVAL,NONE,P0,"Each of the 18 decisions is approved or explicitly rejected. No rule is invented.",PENDING
+4,DB-GATE,APPROVAL,NONE,P0,"Both write flags are 1. Run id and testing identity exist. URL is local and matches the disposable name pattern.",NOT_APPROVED
+5,MIGRATION-GATE,APPROVAL,D21-D29,P0,"A named migration is authorized only after the decision that needs it.",NOT_APPROVED
+6,G2-CURRENT,TEST,DB-GATE,P0,"Existing behavior is asserted on stored rows. Rollback is shown. A mock is not a pass.",NOT_RUN
+7,BROWSER-GATE,APPROVAL,DB-GATE,P0,"Browser flag is 1 and the same disposable URL passes the guard.",NOT_APPROVED
+8,G3-AC05,TEST,BROWSER-GATE,P0,"A signed-in non-administrator receives HTTP 403 on the test-database route. A login redirect is not that denial.",NOT_RUN
+9,PORTAL-PERSIST,TEST,G2-CURRENT,P0,"Activation writes the account link. Wrong patient, expiry, and replay are denied on stored state.",NOT_RUN
+10,CAPACITY,IMPLEMENTATION,D21-D29;DB-GATE,P1,"An approved capacity rule rejects a second competing session. In-memory overlap is not the evidence.",NOT_IMPLEMENTED
+11,MERGE,IMPLEMENTATION,D21-03;MIGRATION-GATE,P1,"Approved merge keeps lineage. Automatic merge is not added.",NOT_IMPLEMENTED
+12,CLINICAL-POLICY,IMPLEMENTATION,D21-D29,P1,"Amendment, escalation, substitution, and allergy follow the approved rule only.",NOT_IMPLEMENTED
+13,RETENTION,IMPLEMENTATION,D21-D29;MIGRATION-GATE,P1,"Hold and disposal follow the approved period. No deletion runs before that.",NOT_IMPLEMENTED
+14,RESTORE,IMPLEMENTATION,D21-D29,P1,"An authorized restore drill records the result. A plan is not evidence.",NOT_IMPLEMENTED
+15,OFFLINE,IMPLEMENTATION,D21-D29,P2,"Writes stay disabled until an approved recovery rule exists. The current route remains HTTP 503.",NOT_IMPLEMENTED
+16,A11Y-SLO,IMPLEMENTATION,D21-D29,P2,"Targets come from an approved number. No threshold is invented.",NOT_IMPLEMENTED
+17,API-OUTBOX,IMPLEMENTATION,D21-D29;MIGRATION-GATE,P2,"A versioned clinical API and outbox exist only after that decision.",NOT_IMPLEMENTED
+18,BREAK-GLASS,DEFERRED,D21-D29,P2,"Remains off until emergency-access policy is approved.",DEFERRED
+19,JUFLONA,DEFERRED,D21-D29,P2,"Signing stays disabled. Optional tests do not activate it.",DEFERRED
+20,ACX,SCOPE,NONE,P3,"ACX-001 through ACX-008 stay outside this release until separately approved.",NOT_IN_RELEASE
+21,SEC-01-02,ACCEPTANCE,G3-AC05,P0,"The blocked acceptance case is evidenced by the live denial, not by a route-source assertion.",BLOCKED

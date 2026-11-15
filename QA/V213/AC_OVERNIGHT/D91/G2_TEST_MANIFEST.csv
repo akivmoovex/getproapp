@@ -1,0 +1,22 @@
+scenario_id,behavior,prepared_file,result,database_identity,run_id,artifact
+G2-01,Tenant and facility isolation,tests/v13/integration/d16-ac-auth.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-02,Patient registration persistence,tests/v13/integration/d24-patient-portal.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-03,Portal activation and account linking,tests/v13/integration/d24-patient-portal.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-04,Duplicate prevention,tests/v13/integration/d24-patient-portal.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-05,Patient merge lineage,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-06,Encounter creation and check-in,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-07,Queue state transitions,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-08,Nursing observations,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-09,Signed-note immutability,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-10,Laboratory result association,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-11,Dispensing provenance,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-12,Duplicate payment protection,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-13,Document provenance,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-14,Retention and legal hold,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-15,Appointment transaction conflict,tests/v13/integration/d25-appointment-concurrency.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-16,Concurrent slot capacity,tests/v13/integration/d25-appointment-concurrency.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-17,Idempotent retries,tests/v13/integration/d25-appointment-concurrency.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-18,Rollback on failure,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-19,Cross-tenant attachment access,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-20,Audit provenance,tests/v13/integration/d16-ac-auth.integration.test.js,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE
+G2-21,Transactional outbox,NONE,BLOCKED_APPROVAL_REQUIRED,UNSET,NONE,NONE

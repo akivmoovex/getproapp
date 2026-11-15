@@ -1,0 +1,2 @@
+defect_id,severity,reproduction,expected,fix,regression,result
+CI-001,P0,"GitHub annotation on line 84 and 85: unquoted echo with a colon. Ruby reports mapping values are not allowed at column 28.","Held jobs stay disabled and the workflow file parses.","The six hold commands are single-quoted. That edit was already in the worktree. D96 did not add a push trigger.",tests/v13/contract/d96-workflow-yaml-contract.test.js,FIXED

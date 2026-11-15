@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: OTP persistence against a database is not authorized"
+      - run: 'echo "D16 hold: OTP persistence against a database is not authorized"'
 
   stage-c-browser:
     name: Stage C — Platform browser (gated)
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: browser provisioning is not authorized"
+      - run: 'echo "D16 hold: browser provisioning is not authorized"'
 
   stage-d-security:
     name: Stage D — Live security sessions (gated)
@@ -100,4 +100,4 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: authenticated multi-tenant security sessions are not authorized"
+      - run: 'echo "D16 hold: authenticated multi-tenant security sessions are not authorized"'

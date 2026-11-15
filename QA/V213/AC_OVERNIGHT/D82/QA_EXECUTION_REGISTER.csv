@@ -1,0 +1,4 @@
+command,sha,started,finished,duration_ms,executed,passed,failed,skipped,artifact,outcome
+"node --test tests/v13/contract tests/v13/unit tests/v13/quality/d17-mutation-probes.test.js tests/shared-website-section-lifecycle.test.js tests/bb05-hq-add-member-csrf-contract.test.js tests/v211-hq-add-member-get.test.js tests/v213-version-initialization.test.js tests/v2-02-platform-admin-rbac-convergence.test.js",c2cd146b01c6a9cfd92db65c2862320892c0888c,2026-11-15T03:30:15+0200,2026-11-15T03:30:20+0200,5148,399,399,0,0,/tmp/d82-g1.log,PASS
+"npm run lint:css",c2cd146b01c6a9cfd92db65c2862320892c0888c,2026-11-15T03:30:20+0200,2026-11-15T03:30:22+0200,2006,1,1,0,0,/tmp/d82-lint-css.log,PASS
+"ruby YAML.load_file on the two repaired workflows",c2cd146b01c6a9cfd92db65c2862320892c0888c,2026-11-15T03:30:15+0200,2026-11-15T03:30:15+0200,0,2,2,0,0,local parser,PASS

@@ -1,0 +1,2 @@
+bug_id,severity,feature,actual,expected,source,evidence,status,approval
+CI-001,P2,V13 workflow parse,"Held-job echo commands used an unquoted colon, so GitHub rejected the file before creating a job","The command is a quoted YAML string and the held jobs stay if false",.github/workflows/v13-ac-qa-regression.yml:84,"Run 43654736449 line 84 and run 43654737245 line 85. Ruby reported the same lines before the quote.",FIXED_LOCALLY,NONE_FOR_THE_QUOTE

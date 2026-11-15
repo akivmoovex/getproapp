@@ -1,0 +1,44 @@
+journey_id,journey,behavior,prepared_test,status
+A-01,Registration,Staff creates a patient,NONE,BLOCKED_APPROVAL_REQUIRED
+A-02,Registration,Duplicate detection,NONE,BLOCKED_APPROVAL_REQUIRED
+A-03,Registration,Tenant and facility association,NONE,BLOCKED_APPROVAL_REQUIRED
+A-04,Registration,Portal activation,AC patient portal activation sets a password and signs in,BLOCKED_APPROVAL_REQUIRED
+A-05,Registration,Wrong-patient activation denied,PAT-01 wrong-clinic portal registration is denied,BLOCKED_APPROVAL_REQUIRED
+A-06,Registration,Expired or replayed activation denied,NONE,BLOCKED_APPROVAL_REQUIRED
+B-01,Appointments,Book a valid appointment,NONE,BLOCKED_APPROVAL_REQUIRED
+B-02,Appointments,Reject a conflicting booking,AC appointment creation rejects a second booking in the same slot,BLOCKED_APPROVAL_REQUIRED
+B-03,Appointments,Simultaneous slot capacity,NONE,FEATURE_NOT_IMPLEMENTED
+B-04,Appointments,Cancellation or rescheduling,NONE,BLOCKED_APPROVAL_REQUIRED
+B-05,Appointments,Stored appointment row,NONE,BLOCKED_APPROVAL_REQUIRED
+C-01,Visit,Check in,NONE,BLOCKED_APPROVAL_REQUIRED
+C-02,Visit,Open encounter,NONE,BLOCKED_APPROVAL_REQUIRED
+C-03,Visit,Assign queue,NONE,BLOCKED_APPROVAL_REQUIRED
+C-04,Visit,Nursing and triage,NONE,BLOCKED_APPROVAL_REQUIRED
+C-05,Visit,Clinical handoff,NONE,FEATURE_NOT_IMPLEMENTED
+C-06,Visit,Consultation note,NONE,BLOCKED_APPROVAL_REQUIRED
+C-07,Visit,Audit and state,NONE,BLOCKED_APPROVAL_REQUIRED
+D-01,Clinical,Laboratory order,NONE,BLOCKED_APPROVAL_REQUIRED
+D-02,Clinical,Result entry,NONE,BLOCKED_APPROVAL_REQUIRED
+D-03,Clinical,Critical acknowledgement,NONE,BLOCKED_APPROVAL_REQUIRED
+D-04,Clinical,Dispense authorization,NONE,BLOCKED_APPROVAL_REQUIRED
+D-05,Clinical,Wrong-patient denial,NONE,BLOCKED_APPROVAL_REQUIRED
+E-01,Finance,Synthetic invoice and receipt,NONE,BLOCKED_APPROVAL_REQUIRED
+E-02,Finance,Payment idempotency,NONE,BLOCKED_APPROVAL_REQUIRED
+E-03,Finance,Document access,NONE,BLOCKED_APPROVAL_REQUIRED
+E-04,Finance,Secure import,NONE,FEATURE_NOT_IMPLEMENTED
+E-05,Finance,Consent workflow,NONE,BLOCKED_APPROVAL_REQUIRED
+F-01,Security,Administrator sign-in,AC administrator login reaches the clinic workspace,BLOCKED_APPROVAL_REQUIRED
+F-02,Security,Lower-privilege staff sign-in,AC staff login reaches the staff home and not clinic administration,BLOCKED_APPROVAL_REQUIRED
+F-03,Security,AC-05 protected operation,AC-05 authenticated user without platform administrator is denied test database management,BLOCKED_APPROVAL_REQUIRED
+F-04,Security,Authenticated denial,AC-05 authenticated user without platform administrator is denied test database management,BLOCKED_APPROVAL_REQUIRED
+F-05,Security,No privileged mutation,NONE,BLOCKED_APPROVAL_REQUIRED
+F-06,Security,Wrong tenant and facility,PAT-01 wrong-clinic portal registration is denied,BLOCKED_APPROVAL_REQUIRED
+F-07,Security,Revoked session,NONE,BLOCKED_APPROVAL_REQUIRED
+F-08,Security,CSRF denial,NONE,BLOCKED_APPROVAL_REQUIRED
+F-09,Security,BlessBoard account cannot read an ActiveClinic patient,NONE,BLOCKED_APPROVAL_REQUIRED
+G-01,Failure,Dependency unavailable,NONE,BLOCKED_APPROVAL_REQUIRED
+G-02,Failure,Network failure during submission,NONE,BLOCKED_APPROVAL_REQUIRED
+G-03,Failure,Retry and duplicate prevention,NONE,BLOCKED_APPROVAL_REQUIRED
+G-04,Failure,State after failure,NONE,BLOCKED_APPROVAL_REQUIRED
+G-05,Failure,Error text hides private data,NONE,BLOCKED_APPROVAL_REQUIRED
+BILL,Security,Receptionist billing route denial,receptionist is denied the billing route by the application,BLOCKED_APPROVAL_REQUIRED

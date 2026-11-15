@@ -1,0 +1,25 @@
+area_id,feature,d82_status,database_evidence
+01,"Tenants, facilities, departments, service points",PARTIALLY_IMPLEMENTED,NOT_RUN
+02,"Clinical role grants and tenant isolation",PARTIALLY_IMPLEMENTED,NOT_RUN
+03,"Patient registration and identity matching",PARTIALLY_IMPLEMENTED,NOT_RUN
+04,"Merging, lineage, and unmerge",NOT_IMPLEMENTED,NOT_RUN
+05,"Consent, withdrawal, and representatives",PARTIALLY_IMPLEMENTED,NOT_RUN
+06,"Encounters, visits, and queues",PARTIALLY_IMPLEMENTED,NOT_RUN
+07,"Nursing, triage, and vital signs",PARTIALLY_IMPLEMENTED,NOT_RUN
+08,"Consultation notes and amendments",PARTIALLY_IMPLEMENTED,NOT_RUN
+09,"Laboratory orders and results",PARTIALLY_IMPLEMENTED,NOT_RUN
+10,"Critical-result escalation",PARTIALLY_IMPLEMENTED,NOT_RUN
+11,"Prescriptions, allergies, and dispensing",PARTIALLY_IMPLEMENTED,NOT_RUN
+12,"Billing, receipts, reversals, reconciliation",PARTIALLY_IMPLEMENTED,NOT_RUN
+13,"Document scanning, provenance, quarantine",PARTIALLY_IMPLEMENTED,NOT_RUN
+14,"Retention, legal hold, and disposal",NOT_IMPLEMENTED,NOT_RUN
+15,"Patient portal activation",PARTIALLY_IMPLEMENTED,NOT_RUN
+16,"Appointment booking and capacity",PARTIALLY_IMPLEMENTED,NOT_RUN
+17,"OTP, sessions, CSRF, authorization",PARTIALLY_IMPLEMENTED,NOT_RUN
+18,"Break-glass",DEFERRED,NOT_RUN
+19,"Backups, restore, RPO/RTO",NOT_IMPLEMENTED,NOT_RUN
+20,"Offline operation and reconciliation",NOT_IMPLEMENTED,NOT_RUN
+21,"Accessibility and monitoring",NOT_IMPLEMENTED,NOT_RUN
+22,"Juflona two-screen signing",DEFERRED,NOT_RUN
+23,"BlessBoard shared reuse",PARTIALLY_IMPLEMENTED,NOT_RUN
+24,"Privacy, audit, and deployment",PARTIALLY_IMPLEMENTED,NOT_RUN

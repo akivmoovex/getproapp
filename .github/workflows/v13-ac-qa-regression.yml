@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: database integration is not authorized"
+      - run: 'echo "D16 hold: database integration is not authorized"'
 
   stage-c-browser:
     name: Stage C — ActiveClinic browser (gated)
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: browser provisioning is not authorized"
+      - run: 'echo "D16 hold: browser provisioning is not authorized"'
 
   stage-d-security:
     name: Stage D — Authenticated security journeys (gated)
@@ -99,4 +99,4 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - run: echo "D16 hold: live AC-05 denial and authenticated sessions are not authorized"
+      - run: 'echo "D16 hold: live AC-05 denial and authenticated sessions are not authorized"'

@@ -1,0 +1,5 @@
+command,finished,executed,passed,failed,skipped,artifact,status
+"node --test tests/v13/contract tests/v13/unit d17-mutation-probes and the shared BlessBoard files",2026-11-15T03:46:45+0200,416,416,0,0,/tmp/d93-g1.log,PASS
+"npm run lint:css",2026-11-15T03:46:45+0200,1,1,0,0,/tmp/d93-lint.log,PASS
+G2 integration,2026-11-15T03:46:45+0200,0,0,0,0,NONE,NOT_RUN
+G3 browser,2026-11-15T03:46:45+0200,0,0,0,0,NONE,NOT_RUN

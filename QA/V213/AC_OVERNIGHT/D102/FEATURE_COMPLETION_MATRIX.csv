@@ -1,0 +1,25 @@
+area_id,feature,status,g1,g2,g3
+01,"Tenants, facilities, departments, service points",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+02,"Clinical role grants and tenant isolation",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+03,"Patient registration and identity matching",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+04,"Merging, lineage, and unmerge",MISSING,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+05,"Consent, withdrawal, and representatives",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+06,"Encounters, visits, and queues",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+07,"Nursing, triage, and vital signs",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+08,"Consultation notes and amendments",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+09,"Laboratory orders and results",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+10,"Critical-result escalation",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+11,"Prescriptions, allergies, and dispensing",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+12,"Billing, receipts, reversals, reconciliation",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+13,"Document scanning, provenance, quarantine",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+14,"Retention, legal hold, and disposal",MISSING,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+15,"Patient portal activation",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+16,"Appointment booking and capacity",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+17,"OTP, sessions, CSRF, authorization",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+18,"Break-glass",DEFERRED,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+19,"Backups, restore, RPO/RTO",MISSING,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+20,"Offline operation and reconciliation",MISSING,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+21,"Accessibility and monitoring",MISSING,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+22,"Juflona two-screen signing",DEFERRED,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+23,"BlessBoard shared reuse",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
+24,"Privacy, audit, and deployment",PARTIAL,MOCK_NOT_ACCEPTANCE,NOT_RUN,NOT_RUN
