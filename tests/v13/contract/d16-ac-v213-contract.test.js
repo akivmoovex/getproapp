@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * ActiveClinic V2.13 deltas only. Does not claim pre-existing clinical features.
+ * ActiveClinic V2.13.1 deltas only. Does not claim pre-existing clinical features.
  * AC-05 live lower-privilege denial remains unproven.
  */
 
@@ -15,7 +15,7 @@ const { getOtpWorkflow } = require("../../../src/platform/otp/otpWorkflows");
 const ROOT = path.join(__dirname, "../../..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
-describe("D16 ActiveClinic V2.13 contracts", () => {
+describe("D16 ActiveClinic V2.13.1 contracts", () => {
   it("hooks staff, patient, recovery, and role changes to the shared OTP gate", () => {
     const staff = read("src/activeclinic/http/activeClinicAuthRoutes.js");
     const patient = read("src/activeclinic/http/activeClinicPatientPortalRoutes.js");

@@ -42,14 +42,15 @@ function sessionCalls(file) {
 }
 
 describe("D17 shared platform behavior", () => {
-  it("shows version 2.13 for both products and keeps the earlier release notes", () => {
+  it("shows version 2.13.1 for both products and keeps the earlier release notes", () => {
     const info = getApplicationBuildInfo({ env: process.env });
-    assert.equal(info.productVersion, "2.13");
-    assert.equal(info.version, "2.13");
-    const notes = VERSIONS.find((note) => note.version === "2.13");
+    assert.equal(info.productVersion, "2.13.1");
+    assert.equal(info.version, "2.13.1");
+    const notes = VERSIONS.find((note) => note.version === "2.13.1");
     assert.ok(notes.products.includes(PRODUCTS.BB));
     assert.ok(notes.products.includes(PRODUCTS.AC));
-    assert.match(notes.pendingDevelopment.join(" "), /Planned/);
+    assert.equal(notes.pendingDevelopment.length, 0);
+    assert.match(notes.knownIssues.join(" "), /No specific bug fix is claimed/i);
     assert.ok(VERSIONS.some((note) => note.version === "2.12"));
   });
 

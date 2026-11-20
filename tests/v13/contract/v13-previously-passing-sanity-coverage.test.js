@@ -46,7 +46,7 @@ describe("V13 previously passing sanity coverage", () => {
     assert.match(src, /router\.get\(mountPrefix/);
   });
 
-  it("SANITY-06 About/version surfaces are pinned to 2.13 on V13", () => {
+  it("SANITY-06 About/version surfaces are pinned to 2.13.1 on V13", () => {
     const about = read("views/blessboard/v5/apex/about.ejs");
     assert.match(about, /2\.13/);
     const build = read("src/platform/build/applicationBuildInfo.js");

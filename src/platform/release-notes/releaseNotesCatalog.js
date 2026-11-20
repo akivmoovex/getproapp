@@ -43,6 +43,7 @@ const VERSION_ORDER = Object.freeze([
   "2.11",
   "2.12",
   "2.13",
+  "2.13.1",
 ]);
 
 /**
@@ -3607,6 +3608,51 @@ const VERSIONS = Object.freeze([
             ]),
           }),
         ]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: ["src/platform/build/applicationBuildInfo.js"],
+  }),
+  Object.freeze({
+    version: "2.13.1",
+    summary:
+      "Version 2.13.1 is a bug-fix maintenance version for BlessBoard and ActiveClinic on branch V13.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V13. Not released or deployed.",
+    qaVerification: "NOT TESTED — maintenance version pending validation.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.13.1",
+      "Historical release notes remain available",
+    ],
+    pendingDevelopment: [],
+    knownIssues: [
+      "No specific bug fix is claimed by this maintenance entry.",
+    ],
+    documentationGaps: [
+      "Release approval and deployment evidence are not claimed.",
+    ],
+    architectureWork: {
+      title: "V2.13.1 maintenance version",
+      body:
+        "Version metadata and product-facing maintenance notes updated on branch V13.",
+      items: ["Shared version metadata updated", "Historical release notes preserved"],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "BlessBoard 2.13.1 maintenance version on branch V13.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "ActiveClinic 2.13.1 maintenance version on branch V13.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared 2.13.1 maintenance version on branch V13.",
+        sections: Object.freeze([]),
       }),
     }),
     features: [],

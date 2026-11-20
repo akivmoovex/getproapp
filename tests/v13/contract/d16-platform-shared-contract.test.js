@@ -12,7 +12,7 @@ const ROOT = path.join(__dirname, "../../..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
 describe("D16 shared platform contracts", () => {
-  it("keeps one OTP policy for both products and pins version 2.13", () => {
+  it("keeps one OTP policy for both products and pins version 2.13.1", () => {
     assert.equal(OTP_POLICY.codeLength, 6);
     assert.equal(OTP_POLICY.ttlSeconds, 300);
     assert.equal(OTP_POLICY.maxAttempts, 5);
