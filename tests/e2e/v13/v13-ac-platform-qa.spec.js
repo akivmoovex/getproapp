@@ -104,6 +104,48 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.getByText(/collision|already|conflict/i)).toBeVisible();
   });
 
+  test("G13 receptionist is denied the practitioner worklist", async ({ page }, testInfo) => {
+    hold(testInfo, "G13");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    await expect(page).not.toHaveURL(/\/login$/);
+    const denied = await page.request.get("/app/clinical");
+    expect([401, 403]).toContain(denied.status());
+    const body = await denied.text();
+    expect(body).not.toMatch(/Practitioner worklist/);
+  });
+
+  test("G05 receptionist is denied clinical documents", async ({ page }, testInfo) => {
+    hold(testInfo, "G05");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    await expect(page).not.toHaveURL(/\/login$/);
+    const denied = await page.request.get(
+      "/app/clinical/patients/00000000-0000-4000-8000-000000000099/documents"
+    );
+    expect([401, 403]).toContain(denied.status());
+    const body = await denied.text();
+    expect(body).not.toMatch(/Clinical Documents/);
+  });
+
+  test("G04 receptionist is denied the pharmacy dashboard", async ({ page }, testInfo) => {
+    hold(testInfo, "G04");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    await expect(page).not.toHaveURL(/\/login$/);
+    const denied = await page.request.get("/app/pharmacy");
+    expect([401, 403]).toContain(denied.status());
+    const body = await denied.text();
+    expect(body).not.toMatch(/Prescription queue, inventory, and dispensing/);
+  });
+
+  test("G03 receptionist is denied the laboratory queue", async ({ page }, testInfo) => {
+    hold(testInfo, "G03");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    await expect(page).not.toHaveURL(/\/login$/);
+    const denied = await page.request.get("/app/diagnostics/laboratory/queue");
+    expect([401, 403]).toContain(denied.status());
+    const body = await denied.text();
+    expect(body).not.toMatch(/Laboratory orders/);
+  });
+
   test("receptionist is denied the billing route by the application", async ({ page }, testInfo) => {
     hold(testInfo, "BILLING-DENIAL");
     await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));

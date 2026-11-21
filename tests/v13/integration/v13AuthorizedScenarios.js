@@ -702,8 +702,56 @@ async function runPlatformOtp(pool) {
   );
 }
 
+async function runG03Laboratory(pool) {
+  const { collectSpecimen, RESULT } = require(
+    "../../../src/activeclinic/services/activeClinicDiagnosticsService"
+  );
+  const missing = await collectSpecimen(pool, {
+    organizationId: "00000000-0000-4000-8000-000000000001",
+    healthcareOrganizationId: "00000000-0000-4000-8000-000000000002",
+    facilityId: "00000000-0000-4000-8000-000000000003",
+    laboratoryRequestId: "00000000-0000-4000-8000-000000000004",
+    specimenType: "blood",
+    actor: { staffId: "00000000-0000-4000-8000-000000000005" },
+  });
+  assert.equal(missing.code, RESULT.REQUEST_NOT_FOUND);
+}
+
+async function runG04PharmacyBilling(pool) {
+  const { dispensePrescription, RESULT } = require(
+    "../../../src/activeclinic/services/activeClinicPharmacyService"
+  );
+  const denied = await dispensePrescription(pool, {
+    staffId: "00000000-0000-4000-8000-000000000021",
+    organizationId: "00000000-0000-4000-8000-000000000022",
+    facilityId: "00000000-0000-4000-8000-000000000023",
+    prescriptionId: "00000000-0000-4000-8000-000000000024",
+    itemDispenses: [{
+      prescriptionItemId: "00000000-0000-4000-8000-000000000025",
+      quantityToDispense: 1,
+      batchId: "00000000-0000-4000-8000-000000000026",
+    }],
+  });
+  assert.equal(denied.ok, false);
+  assert.equal(denied.result, RESULT.ACCESS_DENIED);
+}
+
+async function runG05Records(pool) {
+  const { requestPaperDisposal, RESULT } = require(
+    "../../../src/activeclinic/services/activeClinicRecordMigrationService"
+  );
+  const refused = requestPaperDisposal({ elapsedDays: 3650 });
+  assert.equal(refused.deleted, false);
+  assert.equal(refused.code, RESULT.LEGAL_APPROVAL_REQUIRED);
+  const probe = await pool.query("SELECT 1 AS n");
+  assert.equal(Number(probe.rows[0].n), 1);
+}
+
 module.exports = {
   runGated,
+  runG03Laboratory,
+  runG04PharmacyBilling,
+  runG05Records,
   runBb01,
   runBb02,
   runBb03,

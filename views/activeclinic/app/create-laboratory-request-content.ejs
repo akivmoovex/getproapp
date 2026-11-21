@@ -12,7 +12,21 @@
     </div>
     
     <div class="ac-field">
-      <label for="instructions">Instructions</label>
+      <label for="urgency">Priority</label>
+      <select id="urgency" name="urgency">
+        <option value="routine" selected>Routine</option>
+        <option value="urgent">Urgent</option>
+        <option value="stat">Stat</option>
+      </select>
+    </div>
+
+    <div class="ac-field">
+      <label for="reason">Reason</label>
+      <textarea id="reason" name="reason" rows="2"></textarea>
+    </div>
+
+    <div class="ac-field">
+      <label for="instructions">Clinical context</label>
       <textarea id="instructions" name="instructions" rows="3" placeholder="Special handling, fasting requirements, etc."></textarea>
     </div>
     

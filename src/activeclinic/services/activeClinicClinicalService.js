@@ -44,6 +44,9 @@ const {
 
 const {
   isStoredOrderType,
+  storedDiagnosticUrgency,
+  prescriptionDosageInstructions,
+  positiveDispenseQuantity,
 } = require("./clinicalOperationsRules");
 
 const UUID_RE =
@@ -245,6 +248,13 @@ function laboratoryPanelCode(details) {
   return clipText(details.test_panel_code || details.test_code || details.testCode, 64);
 }
 
+function diagnosticClinicalNotes(instructions, details) {
+  const reason = clipText(details.reason || details.clinical_reason, 2000);
+  const notes = clipText(instructions, 2000);
+  if (reason && notes && reason !== notes) return clipText(`${reason}\n${notes}`, 2000);
+  return reason || notes;
+}
+
 function radiologyStudyType(details) {
   const raw = String(details.imaging_type || details.study_type || details.studyType || "")
     .trim()
@@ -270,7 +280,8 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
   const orderType = String(input.orderType || "");
   const orderRow = input.orderRow;
   const details = parseOrderDetails(input.orderDetails);
-  const instructions = clipText(input.instructions, 2000);
+  const instructions = diagnosticClinicalNotes(input.instructions, details);
+  const urgency = storedDiagnosticUrgency(details.urgency || details.priority) || "routine";
   const requestedByStaffId = input.actor && input.actor.staffMemberId;
 
   if (orderType === "laboratory") {
@@ -287,8 +298,8 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
          organization_id, healthcare_organization_id, facility_id,
          clinical_order_id, encounter_id, patient_id,
          request_number, test_panel_code, test_panel_name, clinical_notes,
-         status, requested_by_staff_id
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending_collection', $11)
+         status, urgency, requested_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending_collection', $11, $12)
        RETURNING id`,
       [
         orderRow.organization_id,
@@ -301,6 +312,7 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
         laboratoryPanelCode(details),
         laboratoryPanelName(details),
         instructions,
+        urgency,
         requestedByStaffId,
       ]
     );
@@ -323,8 +335,8 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
          organization_id, healthcare_organization_id, facility_id,
          clinical_order_id, encounter_id, patient_id,
          request_number, study_type, study_description, clinical_indication,
-         status, requested_by_staff_id
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11)
+         status, urgency, requested_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11, $12)
        RETURNING id`,
       [
         orderRow.organization_id,
@@ -337,10 +349,78 @@ async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
         radiologyStudyType(details),
         studyDescription,
         instructions,
+        urgency,
         requestedByStaffId,
       ]
     );
     return { kind: "radiology", id: inserted.rows[0].id, created: true };
+  }
+
+  if (orderType === "prescription") {
+    const catalogueId = String(
+      details.medication_catalogue_item_id || details.medicationCatalogueItemId || ""
+    ).trim();
+    const quantity = positiveDispenseQuantity(details.quantity);
+    const dosage = prescriptionDosageInstructions(details);
+    if (!UUID_RE.test(catalogueId) || !quantity || !dosage) {
+      return { kind: "prescription", id: null, created: false };
+    }
+    const existing = await db.query(
+      `SELECT id FROM activeclinic.pharmacy_prescriptions
+        WHERE clinical_order_id = $1
+          AND organization_id = $2
+        LIMIT 1`,
+      [orderRow.id, orderRow.organization_id]
+    );
+    if (existing.rows[0]) {
+      return { kind: "prescription", id: existing.rows[0].id, created: false };
+    }
+    const medication = await db.query(
+      `SELECT id FROM activeclinic.medication_catalogue_items
+        WHERE id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3`,
+      [catalogueId, orderRow.organization_id, orderRow.healthcare_organization_id]
+    );
+    if (!medication.rows[0]) {
+      return { kind: "prescription", id: null, created: false };
+    }
+    const priority = String(details.priority || "").trim().toLowerCase() === "urgent"
+      ? "urgent"
+      : "normal";
+    const inserted = await db.query(
+      `INSERT INTO activeclinic.pharmacy_prescriptions (
+         organization_id, healthcare_organization_id, facility_id, encounter_id, patient_id,
+         clinical_order_id, prescriber_staff_id, prescription_number, status, priority
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
+       RETURNING id`,
+      [
+        orderRow.organization_id,
+        orderRow.healthcare_organization_id,
+        orderRow.facility_id,
+        orderRow.encounter_id,
+        orderRow.patient_id,
+        orderRow.id,
+        requestedByStaffId,
+        nextDiagnosticRequestNumber("RX"),
+        priority,
+      ]
+    );
+    await db.query(
+      `INSERT INTO activeclinic.pharmacy_prescription_items (
+         organization_id, healthcare_organization_id, pharmacy_prescription_id,
+         medication_catalogue_item_id, quantity_ordered, dosage_instructions, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+      [
+        orderRow.organization_id,
+        orderRow.healthcare_organization_id,
+        inserted.rows[0].id,
+        catalogueId,
+        quantity,
+        dosage,
+      ]
+    );
+    return { kind: "prescription", id: inserted.rows[0].id, created: true };
   }
 
   return null;
@@ -1284,6 +1364,18 @@ async function signConsultationNote(db, input) {
 async function createClinicalOrder(db, input) {
   if (!isStoredOrderType(input.orderType)) {
     return { ok: false, code: RESULT.INVALID_INPUT, order: null };
+  }
+  if (input.orderType === "laboratory" || input.orderType === "radiology") {
+    const details = parseOrderDetails(input.orderDetails);
+    if (!storedDiagnosticUrgency(details.urgency || details.priority)) {
+      return { ok: false, code: RESULT.INVALID_INPUT, order: null };
+    }
+  }
+  if (input.orderType === "prescription") {
+    const details = parseOrderDetails(input.orderDetails);
+    if (!prescriptionDosageInstructions(details)) {
+      return { ok: false, code: RESULT.INVALID_INPUT, order: null };
+    }
   }
   const authz = await authorizeStaffPermission(db, {
     organizationId: input.organizationId,

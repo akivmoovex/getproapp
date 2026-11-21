@@ -33,10 +33,56 @@ function canAttachLaboratoryResult(status) {
   return RESULTABLE_LABORATORY_REQUEST_STATUSES.includes(status);
 }
 
+const STORED_DIAGNOSTIC_URGENCIES = Object.freeze(["routine", "urgent", "stat"]);
+
 const CLOSED_DIAGNOSTIC_STATUSES = Object.freeze(["verified", "released"]);
 
 function isClosedDiagnosticStatus(status) {
   return CLOSED_DIAGNOSTIC_STATUSES.includes(status);
+}
+
+/**
+ * Map a supplied priority onto the laboratory_requests urgency check.
+ * An empty value stays the stored default. An unknown word is rejected
+ * rather than translated into a clinical category.
+ */
+function storedDiagnosticUrgency(value) {
+  const raw = String(value == null ? "" : value).trim().toLowerCase();
+  if (!raw) return "routine";
+  return STORED_DIAGNOSTIC_URGENCIES.includes(raw) ? raw : null;
+}
+
+function clipPrescriptionText(value, max) {
+  const text = String(value == null ? "" : value).trim();
+  if (!text) return "";
+  return text.slice(0, max);
+}
+
+/**
+ * Join the clinician-entered dose fields. This does not choose a dose,
+ * route, or duration.
+ */
+function prescriptionDosageInstructions(details) {
+  const source = details && typeof details === "object" ? details : {};
+  const drug = clipPrescriptionText(source.drug_name || source.drugName, 200);
+  const dose = clipPrescriptionText(source.dose, 100);
+  const route = clipPrescriptionText(source.route, 80);
+  const frequency = clipPrescriptionText(source.frequency, 100);
+  const duration = clipPrescriptionText(source.duration, 100);
+  if (!drug || !dose || !frequency || !duration) return null;
+  const parts = [`Dose: ${dose}`];
+  if (route) parts.push(`Route: ${route}`);
+  parts.push(`Frequency: ${frequency}`, `Duration: ${duration}`);
+  return parts.join("; ").slice(0, 1000);
+}
+
+function positiveDispenseQuantity(value) {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 999999) {
+    return value;
+  }
+  const text = String(value == null ? "" : value).trim();
+  if (!/^[1-9][0-9]{0,5}$/.test(text)) return null;
+  return Number(text);
 }
 
 module.exports = {
@@ -48,4 +94,8 @@ module.exports = {
   canAttachLaboratoryResult,
   CLOSED_DIAGNOSTIC_STATUSES,
   isClosedDiagnosticStatus,
+  STORED_DIAGNOSTIC_URGENCIES,
+  storedDiagnosticUrgency,
+  prescriptionDosageInstructions,
+  positiveDispenseQuantity,
 };
