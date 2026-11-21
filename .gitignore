@@ -37,6 +37,10 @@ tmp/
 .tmp-mw-qa/
 .tmp_runtime_audit/
 
+# V13 isolated PostgreSQL data, socket, and local password file.
+# This is not the shared Postgres.app cluster.
+.v13-isolated-pg/
+
 # Shared Hostinger build-identity metadata (written at runtime by apex worker)
 .getpro/
 tests/e2e/.foundation-e2e-state.json

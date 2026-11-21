@@ -461,6 +461,7 @@ function createHqMembersAdminRouter(deps) {
     } else {
       parsed.branchId = branch.id;
       parsed.values.branchId = branch.id;
+      parsed.values.branchName = branch.displayName || branch.key || "";
     }
     const started = await beginStaffAddMemberFlow(getPool(), {
       actorUserId: scope.actorUserId,

@@ -89,6 +89,12 @@ function sanitizeCatalogueReturnTo(raw) {
   return value;
 }
 
+function sectionErrorStatus(code) {
+  if (code === "not_found" || code === "website_instance_not_found") return 404;
+  if (code === "forbidden") return 403;
+  return 400;
+}
+
 function slugErrorMessage(code) {
   if (code === "reserved_slug") return "That URL is reserved for clinic pages. Choose another slug.";
   if (code === "duplicate_slug") return "That URL is already used by another page.";
@@ -639,7 +645,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           pageId: (req.body && req.body.pageId) || "tpl_home",
           type: req.body && req.body.type,
         });
-        if (!added.ok) return deny(res, 400, "Add section", slugErrorMessage(added.code));
+        if (!added.ok) return deny(res, sectionErrorStatus(added.code), "Add section", slugErrorMessage(added.code));
         return res.redirect(303, "/app/settings/website/sections");
       } catch (err) {
         return next(err);
@@ -685,7 +691,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
             { label: "Sections", href: "/app/settings/website/sections" },
             { label: "Settings" },
           ]),
-          pageData: { cms: { section } },
+          pageData: { cms: { section, clinicKey: clinicKeyFromAuth(req.activeClinicAuth) } },
         });
       } catch (err) {
         return next(err);
@@ -720,7 +726,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           buttonUrl: req.body && req.body.buttonUrl,
           visible: boolValue(req.body && req.body.visible, false),
         });
-        if (!updated.ok) return deny(res, 400, "Section settings", slugErrorMessage(updated.code));
+        if (!updated.ok) {
+          return deny(res, sectionErrorStatus(updated.code), "Section settings", slugErrorMessage(updated.code));
+        }
         return res.redirect(303, "/app/settings/website/sections");
       } catch (err) {
         return next(err);
@@ -762,7 +770,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           ...cmsInput(req),
           sectionId: req.params.sectionId,
         });
-        if (!deleted.ok) return deny(res, 400, "Delete section", slugErrorMessage(deleted.code));
+        if (!deleted.ok) {
+          return deny(res, sectionErrorStatus(deleted.code), "Delete section", slugErrorMessage(deleted.code));
+        }
         return res.redirect(303, "/app/settings/website/sections");
       } catch (err) {
         return next(err);

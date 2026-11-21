@@ -41,6 +41,8 @@ const {
   checkInScheduledPatient,
   checkInWalkInPatient,
   createQueueEntry,
+  requireServicePointInFacility,
+  createFacilityServicePoint,
   callNextQueueEntry,
   startServingQueueEntry,
   completeQueueEntry,
@@ -331,6 +333,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           facilityId: auth.selectedFacility.id,
           servicePointId,
           arrivalId: arrival.arrival.id,
+          permissionKey: PERM.CHECK_IN,
           actor: actor(auth),
           deploymentCode: requirePlatformDeploymentCode(env).code,
         });
@@ -345,6 +348,62 @@ function registerActiveClinicReceptionRoutes(app, deps) {
         }
 
         return res.redirect(303, `/app/reception/queue/${queue.queueEntry.id}?checked_in=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/reception/service-points",
+    requireAuth,
+    requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const postedOrg = String(req.body.organization_id || "").trim();
+        const postedFacility = String(req.body.facility_id || "").trim();
+        if (
+          (postedOrg && postedOrg !== auth.organization.id) ||
+          (postedFacility && postedFacility !== auth.selectedFacility.id)
+        ) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Access restricted",
+              "Service points stay inside the signed-in clinic and facility.",
+              { status: 403, linkHref: "/app/reception/walk-in", linkLabel: "Back to walk-in" }
+            )
+          );
+        }
+        const created = await createFacilityServicePoint(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          requestedOrganizationId: postedOrg,
+          requestedFacilityId: postedFacility,
+          displayName: req.body.display_name,
+          serviceType: req.body.service_type,
+          actor: actor(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!created.ok) {
+          const loaded = await loadActiveClinicReceptionWalkInScreen(getPool(), {
+            auth,
+            error: mapReceptionError(created.code),
+          });
+          return renderShell(req, res, {
+            activeNav: "reception",
+            content: "app/reception-walk-in-content.ejs",
+            status: created.code === QUEUE_RESULT.ACCESS_DENIED ? 403 : 400,
+            pageHeader: { title: "Walk-in check-in" },
+            pageData: { walkIn: loaded.walkIn },
+          });
+        }
+        return res.redirect(303, "/app/reception/walk-in?service_point=1");
       } catch (err) {
         return next(err);
       }
@@ -447,6 +506,27 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           });
         }
 
+        const servicePoint = await requireServicePointInFacility(pool, {
+          servicePointId,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+        });
+        if (!servicePoint.ok) {
+          const loaded = await loadActiveClinicReceptionWalkInScreen(pool, {
+            auth,
+            values: { patientNumber, servicePointId, checkInNote },
+            error: "Service point is unavailable.",
+          });
+          return renderShell(req, res, {
+            activeNav: "reception",
+            content: "app/reception-walk-in-content.ejs",
+            status: 400,
+            pageHeader: { title: "Walk-in check-in" },
+            pageData: { walkIn: loaded.walkIn },
+          });
+        }
+
         const arrival = await checkInWalkInPatient(pool, {
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,
@@ -477,6 +557,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           facilityId: auth.selectedFacility.id,
           servicePointId,
           arrivalId: arrival.arrival.id,
+          permissionKey: PERM.CHECK_IN,
           actor: actor(auth),
           deploymentCode: requirePlatformDeploymentCode(env).code,
         });

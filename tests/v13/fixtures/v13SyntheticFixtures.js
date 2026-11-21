@@ -11,6 +11,7 @@ const {
   assertV13CiDatabaseUrl,
   assertV13CiEnvironmentIdentity,
 } = require("../helpers/v13CiDatabaseGuard");
+const { assertIsolatedBootstrapLaunch } = require("../helpers/v13IsolatedExecutionPlan");
 
 const SYNTHETIC_PASSWORD = "V13-synthetic-qa-password";
 const DEPLOYMENT_CODE = "moovex-platform-testing";
@@ -178,6 +179,184 @@ function buildAppointmentConcurrencyPlan() {
   };
 }
 
+function buildV213RegressionFixturePlan() {
+  const churchA = "v13d19-church-a";
+  const churchB = "v13d19-church-b";
+  const clinicA = "v13d19-clinic-a";
+  const clinicB = "v13d19-clinic-b";
+  const facilityA = "v13d19-facility-a";
+  const facilityB = "v13d19-facility-b";
+  return {
+    synthetic: true,
+    persisted: false,
+    createsDatabaseRecords: false,
+    requestedDatabaseName: "getpro_v13_e2e_regression213101",
+    blessboard: {
+      church: { key: churchA, displayName: "V13 D19 Church A" },
+      otherChurch: { key: churchB, displayName: "V13 D19 Church B" },
+      branch: { key: "hq", displayName: "Headquarters", churchKey: churchA },
+      administrator: {
+        email: "admin-church-a@v13d19.example",
+        roleKey: "church_hq_admin",
+        churchKey: churchA,
+      },
+      member: {
+        email: "member-church-a@v13d19.example",
+        phoneNational: "977000111",
+        churchKey: churchA,
+        otpProvider: "test",
+        otpDelivery: "peekTestCode",
+        exposeCodeOnPage: false,
+      },
+      invitation: {
+        email: "member-church-a@v13d19.example",
+        churchKey: churchA,
+        delivery: "testing-only",
+        tokenExposed: false,
+      },
+      staffInvite: {
+        email: "staff-church-a@v13d19.example",
+        roleKey: "ministry_leader",
+        churchKey: churchA,
+        tokenExposed: false,
+      },
+      theme: { key: "bb.community", churchKey: churchA },
+      websiteSection: { pageKey: "home", sectionKey: "welcome", churchKey: churchA },
+      publicHost: `${churchA}.local.test`,
+      otherPublicHost: `${churchB}.local.test`,
+      sermon: { title: "V13 regression sermon", status: "draft", churchKey: churchA },
+      event: { title: "V13 regression event", status: "draft", churchKey: churchA },
+      announcement: {
+        title: "V13 regression announcement",
+        status: "draft",
+        attachment: "testing-only-png",
+        churchKey: churchA,
+      },
+      publicRoutes: {
+        home: "/",
+        announcements: "/announcements",
+        sermons: "/sermons",
+        events: "/events",
+      },
+    },
+    activeclinic: {
+      publicBookingEnabled: false,
+      coupon: null,
+      clinic: { key: clinicA, displayName: "V13 D19 Clinic A", facilityKey: facilityA },
+      otherClinic: { key: clinicB, displayName: "V13 D19 Clinic B", facilityKey: facilityB },
+      staff: { email: "staff-a@v13d19.example", clinicKey: clinicA },
+      receptionist: {
+        email: "reception-a@v13d19.example",
+        clinicKey: clinicA,
+        facilityKey: facilityA,
+        departmentKey: "reception",
+        roleKey: "activeclinic_receptionist",
+        scopeType: "facility",
+      },
+      clinician: {
+        email: "clinical-a@v13d19.example",
+        clinicKey: clinicA,
+        facilityKey: facilityA,
+        departmentKey: "opd",
+        roleKey: "activeclinic_clinician",
+        scopeType: "facility",
+      },
+      patient: { email: "patient-a@v13d19.example", clinicKey: clinicA },
+      departments: [
+        { key: "reception", type: "reception", name: "Reception", clinicKey: clinicA, facilityKey: facilityA },
+        { key: "opd", type: "opd", name: "OPD", clinicKey: clinicA, facilityKey: facilityA },
+      ],
+      clinicalDepartment: { key: "opd", type: "opd", name: "OPD", clinicKey: clinicA },
+      walkInService: {
+        serviceKey: "v13d19-consult",
+        displayName: "V13 D19 Consultation",
+        clinicKey: clinicA,
+        facilityKey: facilityA,
+        servicePointRequired: true,
+      },
+      servicePoint: {
+        servicePointKey: "v13d19-walk-in",
+        displayName: "V13 D19 Walk-in",
+        serviceType: "general",
+        acceptsWalkIn: true,
+        acceptsScheduled: false,
+        clinicKey: clinicA,
+        facilityKey: facilityA,
+      },
+      theme: { key: "ac.family-wellness-mint", clinicKey: clinicA },
+      websiteSection: { pageKey: "home", sectionKey: "welcome", clinicKey: clinicA },
+      recovery: { channel: "testing-outbox", liveEmail: false, clinicKey: clinicA },
+      publicRoutes: {
+        book: "/clinics/:key/book",
+        register: "/clinics/:key/patient/register",
+      },
+    },
+  };
+}
+
+function buildBlessBoardWebsiteSectionFixture(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const churchId = source.churchId == null ? "" : String(source.churchId).trim();
+  const organizationId = source.organizationId == null ? "" : String(source.organizationId).trim();
+  if (!churchId || churchId.toLowerCase() === "null") {
+    const error = new Error("V13_FIXTURE: BlessBoard website section requires a church id");
+    error.code = "V13_FIXTURE_CHURCH_REQUIRED";
+    throw error;
+  }
+  if (!organizationId) {
+    const error = new Error("V13_FIXTURE: BlessBoard website section requires its organization");
+    error.code = "V13_FIXTURE_ORGANIZATION_REQUIRED";
+    throw error;
+  }
+  if (source.ownerChurchId != null && String(source.ownerChurchId).trim() !== churchId) {
+    const error = new Error("V13_FIXTURE: website section church does not match the owning church");
+    error.code = "V13_FIXTURE_CHURCH_MISMATCH";
+    throw error;
+  }
+  if (source.otherChurchId != null && String(source.otherChurchId).trim() === churchId) {
+    const error = new Error("V13_FIXTURE: website section must stay on its own church");
+    error.code = "V13_FIXTURE_CROSS_CHURCH";
+    throw error;
+  }
+  return {
+    action: "add",
+    productCode: "blessboard",
+    organizationId,
+    churchId,
+    branchId:
+      source.branchId == null || String(source.branchId).trim() === ""
+        ? null
+        : String(source.branchId).trim(),
+    pageKey: source.pageKey || "home",
+    type: "plain_text",
+    heading: source.heading || "V13 draft welcome",
+    bodyText: source.bodyText || "Synthetic draft section",
+    published: false,
+  };
+}
+
+/**
+ * Product contract for an existing clinic login. A matching password on another
+ * clinic reuses the identity and creates the new clinic. A mismatch does not.
+ * This does not change registration policy.
+ */
+function classifyClinicCredentialReuse(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const sameEmail = source.sameEmail === true;
+  const passwordMatched = source.passwordMatched === true;
+  const sameClinic = source.sameClinic === true;
+  if (sameEmail && !passwordMatched) {
+    return { classification: "REJECTED_PASSWORD_MISMATCH", clinicCreated: false };
+  }
+  if (sameEmail && passwordMatched && sameClinic) {
+    return { classification: "ALREADY_PROVISIONED", clinicCreated: false };
+  }
+  if (sameEmail && passwordMatched && !sameClinic) {
+    return { classification: "EXPECTED_MULTI_CLINIC_REUSE", clinicCreated: true };
+  }
+  return { classification: "FRESH_IDENTITY", clinicCreated: true };
+}
+
 function assertSyntheticPlan(plan) {
   if (!plan || plan.synthetic !== true) {
     throw new Error("V13_FIXTURE: plan is not marked synthetic");
@@ -200,6 +379,11 @@ function assertApplyPermitted(connectionString, env) {
   }
   assertV13CiDatabaseUrl(connectionString);
   assertV13CiEnvironmentIdentity(env);
+  const source = env || {};
+  if (String(source.E2E_DATABASE_URL || "") !== String(connectionString || "")) {
+    throw new Error("V13_FIXTURE: fixture URL must be the isolated E2E_DATABASE_URL");
+  }
+  assertIsolatedBootstrapLaunch(source);
 }
 
 async function applyBlessBoardFixtures(db, connectionString, env) {
@@ -254,29 +438,357 @@ async function applyBlessBoardFixtures(db, connectionString, env) {
   return { plan, created };
 }
 
-async function applyActiveClinicFixtures(db, connectionString, env) {
-  assertApplyPermitted(connectionString, env);
-  const plan = assertSyntheticPlan(buildActiveClinicFixturePlan());
-  const { provisionHostedAuthQaClinic } = require("../../../src/activeclinic/qa/activeClinicHostedAuthQaFixture");
-  const created = [];
+function buildRegressionClinicOperationsPlan() {
+  const source = buildV213RegressionFixturePlan();
+  const ac = source.activeclinic;
+  return {
+    synthetic: true,
+    persisted: false,
+    publicBookingEnabled: false,
+    coupon: null,
+    clinics: [
+      {
+        key: ac.clinic.key,
+        displayName: ac.clinic.displayName,
+        facilityKey: ac.clinic.facilityKey,
+        adminEmail: "admin-a@v13d19.example",
+        adminPhone: "+260977100001",
+        receptionist: { ...ac.receptionist, phone: "+260977100002" },
+        clinician: { ...ac.clinician, phone: "+260977100003" },
+        departments: ac.departments,
+        servicePoint: ac.servicePoint,
+        walkInService: ac.walkInService,
+      },
+      {
+        key: ac.otherClinic.key,
+        displayName: ac.otherClinic.displayName,
+        facilityKey: ac.otherClinic.facilityKey,
+        adminEmail: "admin-b@v13d19.example",
+        adminPhone: "+260977200001",
+        receptionist: {
+          email: "reception-b@v13d19.example",
+          phone: "+260977200002",
+          clinicKey: ac.otherClinic.key,
+          facilityKey: ac.otherClinic.facilityKey,
+          departmentKey: "reception",
+          roleKey: "activeclinic_receptionist",
+          scopeType: "facility",
+        },
+        clinician: {
+          email: "clinical-b@v13d19.example",
+          phone: "+260977200003",
+          clinicKey: ac.otherClinic.key,
+          facilityKey: ac.otherClinic.facilityKey,
+          departmentKey: "opd",
+          roleKey: "activeclinic_clinician",
+          scopeType: "facility",
+        },
+        departments: [
+          { key: "reception", type: "reception", name: "Reception", clinicKey: ac.otherClinic.key, facilityKey: ac.otherClinic.facilityKey },
+          { key: "opd", type: "opd", name: "OPD", clinicKey: ac.otherClinic.key, facilityKey: ac.otherClinic.facilityKey },
+        ],
+        servicePoint: {
+          servicePointKey: "v13d19-walk-in-b",
+          displayName: "V13 D19 Walk-in B",
+          serviceType: "general",
+          acceptsWalkIn: true,
+          clinicKey: ac.otherClinic.key,
+          facilityKey: ac.otherClinic.facilityKey,
+        },
+        walkInService: {
+          serviceKey: "v13d19-consult-b",
+          displayName: "V13 D19 Consultation B",
+          clinicKey: ac.otherClinic.key,
+          facilityKey: ac.otherClinic.facilityKey,
+          servicePointRequired: true,
+        },
+      },
+    ],
+  };
+}
+
+function assertRegressionClinicOperationsPlan(plan) {
+  if (!plan || plan.publicBookingEnabled !== false || plan.coupon != null) {
+    throw new Error("V13_FIXTURE: public booking must stay disabled and coupons stay deferred");
+  }
+  if (!Array.isArray(plan.clinics) || plan.clinics.length < 2) {
+    throw new Error("V13_FIXTURE: two isolated clinics are required");
+  }
+  const [primary, other] = plan.clinics;
+  if (primary.key === other.key || primary.facilityKey === other.facilityKey) {
+    throw new Error("V13_FIXTURE: clinics must not share a facility");
+  }
   for (const clinic of plan.clinics) {
-    const result = await provisionHostedAuthQaClinic(
-      db,
-      { password: plan.password, passwordConfirm: plan.password },
-      env || process.env
-    );
-    if (!result.ok) {
-      throw new Error(`clinic ${clinic.key}: ${result.reason || "provision_failed"}`);
+    if (!clinic.receptionist || clinic.receptionist.roleKey !== "activeclinic_receptionist") {
+      throw new Error("V13_FIXTURE: receptionist role is missing");
     }
-    created.push({
-      key: clinic.key,
-      organizationId: result.organizationId,
-      organizationKey: result.organizationKey,
-      adminEmail: result.adminEmail,
-      clinicKey: result.clinicKey,
+    if (clinic.receptionist.departmentKey !== "reception" || clinic.receptionist.facilityKey !== clinic.facilityKey) {
+      throw new Error("V13_FIXTURE: receptionist department membership is missing");
+    }
+    if (!clinic.clinician || clinic.clinician.roleKey !== "activeclinic_clinician") {
+      throw new Error("V13_FIXTURE: clinical staff role is missing");
+    }
+    if (clinic.clinician.departmentKey !== "opd" || clinic.clinician.facilityKey !== clinic.facilityKey) {
+      throw new Error("V13_FIXTURE: clinical department membership is missing");
+    }
+    const departmentKeys = (clinic.departments || []).map((row) => row.key);
+    if (!departmentKeys.includes("reception") || !departmentKeys.includes("opd")) {
+      throw new Error("V13_FIXTURE: reception and clinical departments are required");
+    }
+    if (
+      !clinic.servicePoint ||
+      clinic.servicePoint.acceptsWalkIn !== true ||
+      clinic.servicePoint.facilityKey !== clinic.facilityKey ||
+      !clinic.servicePoint.servicePointKey
+    ) {
+      throw new Error("V13_FIXTURE: walk-in service point is missing");
+    }
+    if (!clinic.walkInService || clinic.walkInService.servicePointRequired !== true) {
+      throw new Error("V13_FIXTURE: walk-in service is missing");
+    }
+  }
+  if (primary.servicePoint.servicePointKey === other.servicePoint.servicePointKey) {
+    throw new Error("V13_FIXTURE: service points must not be shared across clinics");
+  }
+  return plan;
+}
+
+function staffName(email) {
+  const local = String(email || "staff").split("@")[0];
+  return {
+    firstName: local.slice(0, 40) || "Staff",
+    lastName: "V13",
+  };
+}
+
+async function requireDisabledBooking(db, organizationId, healthcareOrganizationId) {
+  const booking = await db.query(
+    `SELECT public_booking_enabled
+       FROM activeclinic.healthcare_organizations
+      WHERE id = $1 AND organization_id = $2`,
+    [healthcareOrganizationId, organizationId]
+  );
+  if (!booking.rows.length || booking.rows[0].public_booking_enabled === true) {
+    throw new Error("V13_FIXTURE: public booking must stay disabled");
+  }
+}
+
+async function provisionFacilityStaff(db, input, person, roleKey) {
+  const { createStaffMember } = require("../../../src/activeclinic/services/activeClinicStaffService");
+  const { assignStaffToFacility } = require("../../../src/activeclinic/services/activeClinicStaffFacilityService");
+  const { assignStaffRole } = require("../../../src/activeclinic/services/activeClinicAuthorizationService");
+  const name = staffName(person.email);
+  const staff = await createStaffMember(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    firstName: name.firstName,
+    lastName: name.lastName,
+    displayName: person.email,
+    email: person.email,
+    phone: person.phone,
+    employmentType: "permanent",
+    status: "active",
+  });
+  if (!staff.ok) {
+    throw new Error(`V13_FIXTURE: staff ${person.email} was not created (${staff.code || "failed"})`);
+  }
+  const facility = await assignStaffToFacility(db, {
+    organizationId: input.organizationId,
+    staffMemberId: staff.staffMember.id,
+    facilityId: input.facilityId,
+    isPrimary: true,
+  });
+  if (!facility.ok && facility.code !== "facility_assignment_exists") {
+    throw new Error(`V13_FIXTURE: facility assignment failed (${facility.code || "failed"})`);
+  }
+  const role = await assignStaffRole(db, {
+    organizationId: input.organizationId,
+    staffMemberId: staff.staffMember.id,
+    roleKey,
+    scopeType: "facility",
+    facilityId: input.facilityId,
+    assignmentOrigin: "system",
+    env: input.env,
+  });
+  if (!role.ok && role.code !== "role_assignment_exists") {
+    throw new Error(`V13_FIXTURE: role ${roleKey} was not assigned (${role.code || "failed"})`);
+  }
+  return staff.staffMember.id;
+}
+
+async function attachRegressionClinicOperations(db, input) {
+  const spec = input && input.spec;
+  if (!spec || spec.publicBookingEnabled !== false) {
+    throw new Error("V13_FIXTURE: public booking must stay disabled");
+  }
+  const organizationId = String(input.organizationId || "");
+  const healthcareOrganizationId = String(input.healthcareOrganizationId || "");
+  const facilityId = String(input.facilityId || "");
+  const adminStaffId = String(input.adminStaffId || "");
+  if (!organizationId || !healthcareOrganizationId || !facilityId || !adminStaffId) {
+    throw new Error("V13_FIXTURE: clinic, facility, and administrator are required");
+  }
+  await requireDisabledBooking(db, organizationId, healthcareOrganizationId);
+  const { ensureDefaultDepartments } = require("../../../src/activeclinic/services/activeClinicDepartmentService");
+  const { assignStaffToFacility } = require("../../../src/activeclinic/services/activeClinicStaffFacilityService");
+  const { assignStaffRole, RECEPTIONIST, CLINICIAN, NURSE } = require("../../../src/activeclinic/services/activeClinicAuthorizationService");
+  const { createFacilityServicePoint } = require("../../../src/activeclinic/services/activeClinicReceptionService");
+  const departments = await ensureDefaultDepartments(db, {
+    organizationId,
+    healthcareOrganizationId,
+    facilityId,
+  });
+  if (!departments.ok) {
+    throw new Error("V13_FIXTURE: default departments were not provisioned");
+  }
+  const scope = {
+    organizationId,
+    healthcareOrganizationId,
+    facilityId,
+    env: input.env,
+  };
+  let adminFacility = await assignStaffToFacility(db, {
+    organizationId,
+    staffMemberId: adminStaffId,
+    facilityId,
+    isPrimary: true,
+  });
+  if (adminFacility.code === "primary_facility_conflict") {
+    adminFacility = await assignStaffToFacility(db, {
+      organizationId,
+      staffMemberId: adminStaffId,
+      facilityId,
+      isPrimary: false,
     });
   }
-  return { plan, created };
+  if (!adminFacility.ok && adminFacility.code !== "facility_assignment_exists") {
+    throw new Error(`V13_FIXTURE: administrator facility assignment failed (${adminFacility.code || "failed"})`);
+  }
+  const receptionistId = await provisionFacilityStaff(db, scope, {
+    email: spec.receptionist.email,
+    phone: spec.receptionist.phone,
+  }, RECEPTIONIST);
+  const adminReception = await assignStaffRole(db, {
+    organizationId,
+    staffMemberId: adminStaffId,
+    roleKey: RECEPTIONIST,
+    scopeType: "facility",
+    facilityId,
+    assignmentOrigin: "system",
+    env: input.env,
+  });
+  if (!adminReception.ok && adminReception.code !== "role_assignment_exists") {
+    throw new Error(`V13_FIXTURE: receptionist role was not assigned (${adminReception.code || "failed"})`);
+  }
+  const clinicianId = await provisionFacilityStaff(db, scope, {
+    email: spec.clinician.email,
+    phone: spec.clinician.phone,
+  }, CLINICIAN);
+  const nurse = await assignStaffRole(db, {
+    organizationId,
+    staffMemberId: clinicianId,
+    roleKey: NURSE,
+    scopeType: "facility",
+    facilityId,
+    assignmentOrigin: "system",
+    env: input.env,
+  });
+  if (!nurse.ok && nurse.code !== "role_assignment_exists") {
+    throw new Error(`V13_FIXTURE: vitals role was not assigned (${nurse.code || "failed"})`);
+  }
+  const adminNurse = await assignStaffRole(db, {
+    organizationId,
+    staffMemberId: adminStaffId,
+    roleKey: NURSE,
+    scopeType: "facility",
+    facilityId,
+    assignmentOrigin: "system",
+    env: input.env,
+  });
+  if (!adminNurse.ok && adminNurse.code !== "role_assignment_exists") {
+    throw new Error(`V13_FIXTURE: vitals role was not assigned (${adminNurse.code || "failed"})`);
+  }
+  const point = await createFacilityServicePoint(db, {
+    organizationId,
+    healthcareOrganizationId,
+    facilityId,
+    displayName: spec.servicePoint.displayName,
+    serviceType: spec.servicePoint.serviceType || "general",
+    servicePointKey: spec.servicePoint.servicePointKey,
+    actor: {
+      staffMemberId: receptionistId,
+      organizationId,
+    },
+  });
+  if (!point.ok) {
+    throw new Error(`V13_FIXTURE: service point was not provisioned (${point.code || "failed"})`);
+  }
+  await requireDisabledBooking(db, organizationId, healthcareOrganizationId);
+  return {
+    publicBookingEnabled: false,
+    receptionistId,
+    clinicianId,
+    servicePointId: point.servicePoint.id,
+    servicePointKey: spec.servicePoint.servicePointKey,
+  };
+}
+
+async function applyActiveClinicFixtures(db, connectionString, env) {
+  assertApplyPermitted(connectionString, env);
+  const operations = assertRegressionClinicOperationsPlan(buildRegressionClinicOperationsPlan());
+  const { submitAndProvisionClinicRegistration } = require("../../../src/activeclinic/services/submitClinicRegistrationService");
+  const created = [];
+  for (const clinic of operations.clinics) {
+    const registered = await submitAndProvisionClinicRegistration(db, {
+      clinicName: clinic.displayName,
+      contactName: `${clinic.displayName} Admin`,
+      contactEmail: clinic.adminEmail,
+      contactPhone: clinic.adminPhone,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "1 Cairo Road",
+      countryCode: "ZM",
+      password: SYNTHETIC_PASSWORD,
+      passwordConfirm: SYNTHETIC_PASSWORD,
+      acceptTerms: "on",
+      registration_consent: "on",
+      deploymentCode: DEPLOYMENT_CODE,
+      dataEnvironment: "testing",
+      organizationKey: clinic.key,
+      env: env || process.env,
+    });
+    if (!registered.ok || registered.reviewRequired || !registered.organizationId) {
+      throw new Error(`clinic ${clinic.key}: ${registered.reason || registered.code || "provision_failed"}`);
+    }
+    if (!registered.facility || !registered.healthcareOrganization || !registered.staffMemberId) {
+      throw new Error(`clinic ${clinic.key}: registration did not return a facility and administrator`);
+    }
+    const spec = { ...clinic, publicBookingEnabled: false };
+    if (spec.publicBookingEnabled !== false) {
+      throw new Error("V13_FIXTURE: public booking must stay disabled");
+    }
+    const attached = await attachRegressionClinicOperations(db, {
+      organizationId: registered.organizationId,
+      healthcareOrganizationId: registered.healthcareOrganization.id,
+      facilityId: registered.facility.id,
+      adminStaffId: registered.staffMemberId,
+      spec,
+      env: env || process.env,
+    });
+    created.push({
+      key: clinic.key,
+      organizationId: registered.organizationId,
+      organizationKey: registered.slug || clinic.key,
+      adminEmail: clinic.adminEmail,
+      clinicKey: registered.slug || clinic.key,
+      publicBookingEnabled: attached.publicBookingEnabled,
+      receptionistId: attached.receptionistId,
+      clinicianId: attached.clinicianId,
+      servicePointId: attached.servicePointId,
+      servicePointKey: attached.servicePointKey,
+    });
+  }
+  return { plan: operations, created };
 }
 
 async function cleanupBlessBoardFixtures(db, connectionString, created, env) {
@@ -334,6 +846,12 @@ module.exports = {
   DEPLOYMENT_CODE,
   buildBlessBoardFixturePlan,
   buildActiveClinicFixturePlan,
+  buildV213RegressionFixturePlan,
+  buildBlessBoardWebsiteSectionFixture,
+  classifyClinicCredentialReuse,
+  buildRegressionClinicOperationsPlan,
+  assertRegressionClinicOperationsPlan,
+  attachRegressionClinicOperations,
   buildAc05EvidencePlan,
   buildAppointmentConcurrencyPlan,
   assertSyntheticPlan,

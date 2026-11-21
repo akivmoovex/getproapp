@@ -35,9 +35,6 @@
   <div class="bb-auth-field">
     <label class="bb-auth-label" for="code">Security code</label>
     <input class="bb-auth-input bb-auth-input--mono" id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required maxlength="8" />
-    <% if (typeof testCode !== 'undefined' && testCode) { %>
-    <p class="bb-auth-hint" data-bb-test-otp="1">Test code: <%= testCode %></p>
-    <% } %>
   </div>
   <div class="bb-auth-field">
     <label class="bb-auth-label" for="password">New password</label>

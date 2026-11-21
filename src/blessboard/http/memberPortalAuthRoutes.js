@@ -383,7 +383,6 @@ function createMemberPortalAuthRouter(deps) {
         passwordRules: getPasswordRuleLabels(),
         error: null,
         message: started.message || NEUTRAL_RECOVERY,
-        testCode: started.testCode || null,
       });
     }
 
@@ -466,7 +465,6 @@ function createMemberPortalAuthRouter(deps) {
         passwordRules: getPasswordRuleLabels(),
         error: completed.message || "Unable to reset password.",
         message: null,
-        testCode: null,
       },
       400
     );

@@ -2,6 +2,12 @@
 <section class="bb-hq-panel" data-bb-hq-member-created="1" role="status">
   <h1 class="bb-hq-page-head__title">Member created</h1>
   <p><strong><%= member && member.firstName %> <%= member && member.lastName %></strong> was added to the church membership directory.</p>
+  <dl data-bb-member-fields="full_name,phone,email,branch_id">
+    <dt>Phone</dt><dd><%= (member && (member.phoneDisplay || member.phone)) || '—' %></dd>
+    <dt>Email</dt><dd><%= (member && (member.emailDisplay || member.email)) || 'Not provided' %></dd>
+    <dt>Authorized branch</dt><dd><%= (member && (member.branchDisplayName || member.branchName)) || 'Authorized branch' %></dd>
+    <dt>Portal access</dt><dd><%= (member && member.portalAccessStatus) || 'not_activated' %></dd>
+  </dl>
   <p>Portal access is <%= (member && member.portalAccessStatus) || 'not_activated' %>. Membership does not grant a login until the member activates.</p>
   <% if (!member || String(member.portalAccessStatus || 'not_activated') !== 'active') { %>
   <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/members/<%= member && member.id %>/invitation" data-bb-member-invitation="1">Issue portal invitation</a>

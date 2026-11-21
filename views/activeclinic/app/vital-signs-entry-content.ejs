@@ -22,13 +22,21 @@
     return map[type] || String(type || 'Observation').replace(/_/g, ' ');
   }
 
+  function formatVitalNumber(value) {
+    if (value == null || value === '') return '';
+    var n = Number(value);
+    if (!isFinite(n)) return String(value);
+    return String(n);
+  }
+
   function formatObs(obs) {
     if (!obs) return '—';
-    if (obs.observationType === 'blood_pressure' && obs.systolic && obs.diastolic) {
-      return obs.systolic + '/' + obs.diastolic + (obs.unit ? ' ' + obs.unit : ' mmHg');
+    if (obs.observationType === 'blood_pressure' && obs.systolic != null && obs.diastolic != null && obs.systolic !== '' && obs.diastolic !== '') {
+      return formatVitalNumber(obs.systolic) + '/' + formatVitalNumber(obs.diastolic) + (obs.unit ? ' ' + obs.unit : ' mmHg');
     }
     if (obs.valueNumeric != null && obs.valueNumeric !== '') {
-      return String(obs.valueNumeric) + (obs.unit ? ' ' + obs.unit : '');
+      var shown = formatVitalNumber(obs.valueNumeric);
+      return shown + (obs.unit ? ' ' + obs.unit : '');
     }
     return obs.valueText || '—';
   }

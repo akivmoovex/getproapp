@@ -314,6 +314,11 @@ function newCmsId(prefix) {
   return `${prefix}${raw}`.slice(0, 20);
 }
 
+/** Stable section entity id. Fits the 40-character CMS id field and the section URL. */
+function newSectionId() {
+  return crypto.randomUUID();
+}
+
 function sortKey(value) {
   const n = Number.parseInt(String(value == null ? "0" : value), 10);
   return Number.isFinite(n) ? n : 0;
@@ -658,6 +663,7 @@ module.exports = {
   LIBRARY_ITEM_SCHEMA,
   PLACEMENT_ITEM_SCHEMA,
   newCmsId,
+  newSectionId,
   sortKey,
   boolValue,
   normalizeSlug,

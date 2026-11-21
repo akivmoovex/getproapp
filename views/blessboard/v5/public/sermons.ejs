@@ -11,7 +11,9 @@
     return s && (s.heading || s.bodyText || s.mediaUrl);
   });
   var sermons = (entities || []).filter(function (s) {
-    return s && String(s.title || '').trim();
+    if (!s || !String(s.title || '').trim()) return false;
+    var status = String(s.status || 'published').toLowerCase();
+    return status === 'published';
   });
   var featured = sermons.length ? sermons[0] : null;
   var rest = sermons.length > 1 ? sermons.slice(1) : [];

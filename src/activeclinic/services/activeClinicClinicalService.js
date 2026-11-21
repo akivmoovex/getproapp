@@ -709,10 +709,88 @@ async function recordTriageAssessment(db, input) {
   return { ok: true, code: RESULT.OK, triage: mapTriageAssessment(row.rows[0]) };
 }
 
+const VITAL_OBSERVATION_TYPES = Object.freeze([
+  "blood_pressure",
+  "heart_rate",
+  "respiratory_rate",
+  "temperature",
+  "oxygen_saturation",
+  "weight",
+  "height",
+  "bmi",
+  "other",
+]);
+
+const VITAL_NUMERIC_TYPES = new Set([
+  "heart_rate",
+  "respiratory_rate",
+  "temperature",
+  "oxygen_saturation",
+  "weight",
+  "height",
+  "bmi",
+]);
+
+function finiteNumberOrNull(value) {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Display a stored DECIMAL vital without a trailing .00 so a heart rate of 72
+ * reads "72 bpm" after reload. Fractions such as 36.6 are preserved.
+ */
+function formatVitalDisplay(value, unit) {
+  const n = finiteNumberOrNull(value);
+  const shown = n == null ? "" : String(n);
+  const unitText = String(unit || "").trim();
+  if (!shown) return unitText;
+  return unitText ? `${shown} ${unitText}` : shown;
+}
+
+function validateVitalObservationInput(raw) {
+  const observationType = String((raw && raw.observationType) || "").trim();
+  if (!VITAL_OBSERVATION_TYPES.includes(observationType)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const valueNumeric = finiteNumberOrNull(raw && raw.valueNumeric);
+  const systolicValue = finiteNumberOrNull(raw && raw.systolic);
+  const diastolicValue = finiteNumberOrNull(raw && raw.diastolic);
+  const unit = String((raw && raw.unit) || "").trim();
+  if (unit.length > 20) return { ok: false, code: RESULT.INVALID_INPUT };
+  if (observationType === "blood_pressure") {
+    if (systolicValue == null || diastolicValue == null) {
+      return { ok: false, code: RESULT.INVALID_INPUT };
+    }
+  } else if (VITAL_NUMERIC_TYPES.has(observationType) && valueNumeric == null) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  return {
+    ok: true,
+    observationType,
+    valueNumeric,
+    systolic: systolicValue == null ? null : Math.trunc(systolicValue),
+    diastolic: diastolicValue == null ? null : Math.trunc(diastolicValue),
+    unit: unit || null,
+  };
+}
+
 /**
  * Record vital sign observation (immutable).
+ * Observation types stay inside the existing vital_sign_observations CHECK.
  */
 async function recordVitalSignObservation(db, input) {
+  const validated = validateVitalObservationInput(input || {});
+  if (
+    !validated.ok ||
+    !input ||
+    !input.actor ||
+    !input.actor.staffMemberId
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT, observation: null };
+  }
+
   const authz = await authorizeStaffPermission(db, {
     organizationId: input.organizationId,
     staffMemberId: input.actor.staffMemberId,
@@ -742,12 +820,12 @@ async function recordVitalSignObservation(db, input) {
       input.facilityId,
       input.encounterId,
       encounter.encounter.patientId,
-      input.observationType,
-      input.valueNumeric || null,
+      validated.observationType,
+      validated.valueNumeric,
       input.valueText || null,
-      input.unit || null,
-      input.systolic || null,
-      input.diastolic || null,
+      validated.unit,
+      validated.systolic,
+      validated.diastolic,
       input.observedAt || new Date(),
       input.actor.staffMemberId,
       input.correctsObservationId || null,
@@ -779,7 +857,7 @@ async function recordVitalSignObservation(db, input) {
     outcome: "success",
     metadataJson: {
       encounter_id: input.encounterId,
-      observation_type: input.observationType,
+      observation_type: validated.observationType,
     },
   });
 
@@ -1843,6 +1921,9 @@ module.exports = {
   getEncounterById,
   recordTriageAssessment,
   recordVitalSignObservation,
+  validateVitalObservationInput,
+  formatVitalDisplay,
+  VITAL_OBSERVATION_TYPES,
   listVitalSignsForEncounter,
   recordNursingIntake,
   listNursingIntakesForEncounter,

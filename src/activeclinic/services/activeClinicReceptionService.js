@@ -67,6 +67,59 @@ const ACTIVE_QUEUE = Object.freeze(["waiting", "called", "serving", "paused"]);
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const SERVICE_POINT_TYPES = Object.freeze([
+  "general",
+  "triage",
+  "consultation",
+  "laboratory",
+  "pharmacy",
+  "radiology",
+  "cashier",
+  "records",
+  "other",
+]);
+
+function validateServicePointInput(raw) {
+  const displayName = String((raw && raw.displayName) || "").trim();
+  if (!displayName || displayName.length > 100) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const serviceType = String((raw && raw.serviceType) || "general").trim().toLowerCase();
+  if (!SERVICE_POINT_TYPES.includes(serviceType)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  let servicePointKey = String((raw && raw.servicePointKey) || "").trim().toLowerCase();
+  if (!servicePointKey) {
+    servicePointKey = displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64);
+  }
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(servicePointKey)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const description = String((raw && raw.description) || "").trim();
+  if (description.length > 300) return { ok: false, code: RESULT.INVALID_INPUT };
+  const facilityId = String((raw && raw.facilityId) || "").trim();
+  const requestedFacilityId = String((raw && raw.requestedFacilityId) || "").trim();
+  if (requestedFacilityId && requestedFacilityId !== facilityId) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
+  const organizationId = String((raw && raw.organizationId) || "").trim();
+  const requestedOrganizationId = String((raw && raw.requestedOrganizationId) || "").trim();
+  if (requestedOrganizationId && requestedOrganizationId !== organizationId) {
+    return { ok: false, code: RESULT.ACCESS_DENIED };
+  }
+  return {
+    ok: true,
+    displayName,
+    serviceType,
+    servicePointKey,
+    description: description || null,
+  };
+}
+
 function mapServicePoint(row) {
   if (!row) return null;
   return {
@@ -407,10 +460,12 @@ async function createQueueEntry(db, input) {
   });
   if (!enabled) return { ok: false, code: RESULT.PRODUCT_NOT_ENABLED, queueEntry: null };
 
+  const queuePermission =
+    input.permissionKey === PERM.CHECK_IN ? PERM.CHECK_IN : PERM.MANAGE_QUEUE;
   const authz = await authorize(db, {
     organizationId,
     facilityId,
-    permissionKey: PERM.MANAGE_QUEUE,
+    permissionKey: queuePermission,
     actor,
   });
   if (!authz.ok) return { ok: false, code: authz.code, queueEntry: null };
@@ -818,9 +873,116 @@ async function assignQueueEntryRoom(db, input) {
   });
 }
 
+async function requireServicePointInFacility(db, input) {
+  const servicePointId = String((input && input.servicePointId) || "").trim();
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  const facilityId = String((input && input.facilityId) || "").trim();
+  if (
+    !UUID_RE.test(servicePointId) ||
+    !UUID_RE.test(organizationId) ||
+    !UUID_RE.test(healthcareOrganizationId) ||
+    !UUID_RE.test(facilityId)
+  ) {
+    return { ok: false, code: RESULT.SERVICE_POINT_NOT_FOUND, servicePoint: null };
+  }
+  const row = await repo.findServicePointByOrgAndId(db, {
+    id: servicePointId,
+    organizationId,
+    healthcareOrganizationId,
+  });
+  if (!row || row.facility_id !== facilityId || row.status !== "active") {
+    return { ok: false, code: RESULT.SERVICE_POINT_NOT_FOUND, servicePoint: null };
+  }
+  return { ok: true, code: RESULT.OK, servicePoint: mapServicePoint(row) };
+}
+
+async function createFacilityServicePoint(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  const facilityId = String((input && input.facilityId) || "").trim();
+  const actor = input && input.actor;
+  const validated = validateServicePointInput(input);
+  if (
+    !validated.ok ||
+    !UUID_RE.test(organizationId) ||
+    !UUID_RE.test(healthcareOrganizationId) ||
+    !UUID_RE.test(facilityId) ||
+    !actor ||
+    !UUID_RE.test(String(actor.staffMemberId || ""))
+  ) {
+    return {
+      ok: false,
+      code: validated.ok ? RESULT.INVALID_INPUT : validated.code,
+      servicePoint: null,
+    };
+  }
+
+  const enabled = await organizationHasActiveProduct(db, {
+    organizationId,
+    applicationCode: "activeclinic",
+  });
+  if (!enabled) return { ok: false, code: RESULT.PRODUCT_NOT_ENABLED, servicePoint: null };
+
+  const authz = await authorize(db, {
+    organizationId,
+    facilityId,
+    permissionKey: PERM.MANAGE_QUEUE,
+    actor,
+  });
+  if (!authz.ok) return { ok: false, code: authz.code, servicePoint: null };
+
+  const scope = await resolveFacilityScope(db, {
+    organizationId,
+    staffMemberId: actor.staffMemberId,
+  });
+  if (!scope.orgWide && !(scope.facilityIds || []).includes(facilityId)) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, servicePoint: null };
+  }
+
+  const facility = await requireActiveFacility(db, {
+    organizationId,
+    facilityId,
+  });
+  if (!facility || facility.ok === false || !facility.facility) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, servicePoint: null };
+  }
+  if (
+    facility.facility.healthcareOrganizationId &&
+    facility.facility.healthcareOrganizationId !== healthcareOrganizationId
+  ) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, servicePoint: null };
+  }
+
+  try {
+    const row = await repo.insertServicePoint(db, {
+      organizationId,
+      healthcareOrganizationId,
+      facilityId,
+      servicePointKey: validated.servicePointKey,
+      displayName: validated.displayName,
+      description: validated.description,
+      serviceType: validated.serviceType,
+      status: "active",
+      acceptsWalkIn: true,
+      acceptsScheduled: true,
+    });
+    return { ok: true, code: RESULT.OK, servicePoint: mapServicePoint(row) };
+  } catch (err) {
+    if (err && err.code === "23505") {
+      return { ok: false, code: RESULT.INVALID_INPUT, servicePoint: null };
+    }
+    throw err;
+  }
+}
+
 module.exports = {
   RESULT,
   PERM,
+  SERVICE_POINT_TYPES,
+  validateServicePointInput,
+  requireServicePointInFacility,
+  createFacilityServicePoint,
   checkInScheduledPatient,
   checkInWalkInPatient,
   createQueueEntry,

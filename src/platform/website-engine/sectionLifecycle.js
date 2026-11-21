@@ -11,7 +11,13 @@ const { PERMISSIONS } = require("../website/permissions");
 const { PRODUCT_CODE } = require("../website/publicWebsiteUrl");
 
 const CMS_SECTION_FIELD_RE =
-  /^cms\.section\.([a-z0-9][a-z0-9_-]{0,39})\.(heading|body|button_label|button_url|image)$/i;
+  /^cms\.section\.([a-z0-9][a-z0-9_-]{0,39})\.(heading|body|bodytext|button_label|buttonlabel|button_url|buttonurl|image)$/i;
+
+const CMS_SECTION_FIELD_ALIASES = Object.freeze({
+  bodytext: "body",
+  buttonlabel: "button_label",
+  buttonurl: "button_url",
+});
 
 const CMS_SECTION_FIELD_META = Object.freeze({
   heading: { type: CONTENT_TYPES.SHORT_TEXT, maxLen: 160 },
@@ -30,10 +36,11 @@ function parseCmsSectionFieldKey(contentKey) {
   const raw = String(contentKey || "").trim().toLowerCase();
   const match = CMS_SECTION_FIELD_RE.exec(raw);
   if (!match) return null;
+  const rawField = match[2].toLowerCase();
   return {
     sectionId: match[1],
-    field: match[2].toLowerCase(),
-    contentKey: raw,
+    field: CMS_SECTION_FIELD_ALIASES[rawField] || rawField,
+    contentKey: `cms.section.${match[1].toLowerCase()}.${CMS_SECTION_FIELD_ALIASES[rawField] || rawField}`,
   };
 }
 

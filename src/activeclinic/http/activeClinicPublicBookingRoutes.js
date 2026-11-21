@@ -82,7 +82,9 @@ function procedureWizardLocals(extra) {
 async function resolveBookableClinic(getPool, req, res, respondDeps) {
   const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
   if (!clinic) return { ok: false, sent: true };
-  if (!clinic.publicBookingEnabled) {
+  // Public booking stays off unless the clinic flag is strictly true.
+  // Confirmation pages and coupon or voucher fields are deferred product scope.
+  if (clinic.publicBookingEnabled !== true) {
     const csrfToken = respondDeps.issuePageCsrf(res, respondDeps.env, respondDeps.isProduction);
     res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
       csrfToken,
@@ -137,19 +139,19 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
       if (!clinic) return undefined;
       const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
       const mergedClinic = website.clinic || clinic;
-      if (!clinic.publicBookingEnabled && !website.websiteEdit) {
+      if (clinic.publicBookingEnabled !== true && !website.websiteEdit) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
         res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
+          ...website,
           csrfToken,
+          shellVariant: "tenant",
+          clinic: mergedClinic,
           pageTitle: "Booking not available",
           pageLead: "Online booking is not enabled for this clinic yet. Use the contact page to request an appointment — this page does not take live bookings.",
-          shellVariant: "tenant",
-          ...website,
-          clinic: mergedClinic,
         }));
         return undefined;
       }
-      if (!clinic.publicBookingEnabled && website.websiteEdit) {
+      if (clinic.publicBookingEnabled !== true && website.websiteEdit) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res.status(200).type("html").send(renderPublicView("booking/consultation-type", withBookingEntryPresentation(wizardLocals({
           csrfToken,

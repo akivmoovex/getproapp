@@ -1006,10 +1006,13 @@
         social_link: "new-social",
       }[kind];
       // Exact template keys only — do not remint already-unique draft member keys.
-      if (newKeyPrefix && entityKey === newKeyPrefix) {
+      if (
+        newKeyPrefix &&
+        (entityKey === newKeyPrefix || entityKey.indexOf(newKeyPrefix + "-") === 0)
+      ) {
         entityKey =
           newKeyPrefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-        openBtn.setAttribute("data-bb-entity", entityKey);
+        openBtn.setAttribute("data-bb-entity", newKeyPrefix);
       }
       openEditor({
         kind: kind,

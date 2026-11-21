@@ -15,6 +15,7 @@ const {
   PAGE_KIND,
   PAGE_STATUS,
   newCmsId,
+  newSectionId,
   sortKey,
   boolValue,
   validateCustomSlug,
@@ -434,7 +435,7 @@ async function addSection(db, input) {
   }
   const nextOrder = pageSections.reduce((max, section) => Math.max(max, sortKey(section.sort_order)), -1) + 1;
   const section = {
-    id: newCmsId("s"),
+    id: newSectionId(),
     page_id: pageId,
     type,
     title: String((input && input.title) || type).trim().slice(0, 80) || type,

@@ -4,6 +4,16 @@
   var values = f.values || {};
   var branchesList = branches || [];
   var errors = f.fieldErrors || [];
+  function fieldMessage(name) {
+    for (var i = 0; i < errors.length; i++) {
+      if (errors[i] && errors[i].field === name) return errors[i].message;
+    }
+    return '';
+  }
+  var nameError = fieldMessage('full_name');
+  var phoneError = fieldMessage('phone');
+  var emailError = fieldMessage('email');
+  var branchError = fieldMessage('branch_id');
 %>
 <section class="bb-hq-members" data-bb-hq-member-add="1" aria-labelledby="bb-hq-add-member-title">
   <header class="bb-hq-page-head">
@@ -24,27 +34,28 @@
     <form class="bb-hq-filter" method="post" action="/hq/members/new" data-bb-hq-add-member-form="1" aria-describedby="bb-hq-add-member-status">
       <div class="bb-hq-field">
         <label for="hq_add_full_name">Full name</label>
-        <input id="hq_add_full_name" name="full_name" type="text" value="<%= values.fullName || '' %>" autocomplete="name" required />
+        <input id="hq_add_full_name" name="full_name" type="text" value="<%= values.fullName || '' %>" autocomplete="name" required aria-required="true"<% if (nameError) { %> aria-invalid="true" aria-describedby="hq_add_full_name_error"<% } %> />
+        <% if (nameError) { %><p id="hq_add_full_name_error" class="bb-hq-field-error" role="alert"><%= nameError %></p><% } %>
       </div>
       <div class="bb-hq-field">
-        <label for="hq_add_last_name">Last name</label>
-        <input id="hq_add_last_name" name="last_name" type="hidden" value="<%= values.lastName || '' %>" />
-      </div>
-      <div class="bb-hq-field">
-        <label for="hq_add_email">Email</label>
-        <input id="hq_add_email" name="email" type="email" value="<%= values.email || '' %>" autocomplete="email" />
+        <label for="hq_add_email">Email <span class="bb-hq-muted">(optional)</span></label>
+        <input id="hq_add_email" name="email" type="email" value="<%= values.email || '' %>" autocomplete="email"<% if (emailError) { %> aria-invalid="true" aria-describedby="hq_add_email_error"<% } %> />
+        <% if (emailError) { %><p id="hq_add_email_error" class="bb-hq-field-error" role="alert"><%= emailError %></p><% } %>
       </div>
       <div class="bb-hq-field">
         <label for="hq_add_phone">Phone</label>
-        <input id="hq_add_phone" name="phone" type="tel" value="<%= values.phone || '' %>" autocomplete="tel" required />
+        <input id="hq_add_phone" name="phone" type="tel" value="<%= values.phone || '' %>" autocomplete="tel" required aria-required="true"<% if (phoneError) { %> aria-invalid="true" aria-describedby="hq_add_phone_error"<% } %> />
+        <% if (phoneError) { %><p id="hq_add_phone_error" class="bb-hq-field-error" role="alert"><%= phoneError %></p><% } %>
       </div>
       <div class="bb-hq-field">
         <label for="hq_add_branch">Authorized branch</label>
-        <select id="hq_add_branch" name="branch_id" required>
+        <select id="hq_add_branch" name="branch_id" required aria-required="true"<% if (branchError) { %> aria-invalid="true" aria-describedby="hq_add_branch_error"<% } %>>
+          <option value="" <%= values.branchId ? '' : 'selected' %>>Select a branch</option>
           <% branchesList.forEach(function (branch) { %>
           <option value="<%= branch.id || '' %>" <%= String(values.branchId || '') === String(branch.id || '') ? 'selected' : '' %>><%= branch.displayName || branch.key %></option>
           <% }) %>
         </select>
+        <% if (branchError) { %><p id="hq_add_branch_error" class="bb-hq-field-error" role="alert"><%= branchError %></p><% } %>
       </div>
       <p id="bb-hq-add-member-status" class="bb-hq-lede" role="status">Portal activation remains pending after creation.</p>
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />

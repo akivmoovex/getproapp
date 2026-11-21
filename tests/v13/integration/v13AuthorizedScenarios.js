@@ -29,23 +29,21 @@ async function count(db, sql, params) {
   return Number(result.rows[0].n);
 }
 
-async function openPool(connectionString) {
-  const { Pool } = require("pg");
-  return new Pool({ connectionString, max: 2, ssl: false });
-}
-
 async function runGated(t, label, runner) {
   assert.equal(typeof runner, "function");
   if (!requireDbWriteAuthorization(t, label)) {
     assert.equal(RESULTS.NOT_RUN, "NOT_RUN");
     return RESULTS.NOT_RUN;
   }
-  const connectionString = String(process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || "");
-  const pool = await openPool(connectionString);
+  const { openAuthorizedPool } = require("../helpers/v13CiDatabaseGuard");
+  const opened = openAuthorizedPool(process.env, (options) => {
+    const { Pool } = require("pg");
+    return new Pool(options);
+  });
   try {
-    await runner(pool, connectionString, process.env);
+    await runner(opened.pool, opened.connectionString, process.env);
   } finally {
-    await pool.end();
+    await opened.pool.end();
   }
   return RESULTS.PASS;
 }

@@ -140,10 +140,17 @@ function mapRegistrationPersistError(req, err) {
       httpStatus: 400,
     };
   }
-  if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
+  if (
+    err &&
+    (err.code === "duplicate_registration_phone" ||
+      err.name === "DuplicateRegistrationPhoneError" ||
+      repo.isUniquePhoneViolation(err))
+  ) {
     return {
       ok: false,
-      error: err.message || DUPLICATE_PHONE_MESSAGE,
+      error: repo.isUniquePhoneViolation(err)
+        ? DUPLICATE_PHONE_MESSAGE
+        : err.message || DUPLICATE_PHONE_MESSAGE,
       field: "phone",
       code: "duplicate_registration_phone",
       httpStatus: 400,

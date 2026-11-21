@@ -1,34 +1,29 @@
 const path = require("path");
 const { defineConfig, devices } = require("@playwright/test");
+const {
+  assertV13BrowserHarness,
+  buildLocalServerEnv,
+  LOCAL_HOST_RESOLVER_ARG,
+} = require("./tests/v13/helpers/v13BrowserIsolation");
 
 /**
  * V13 BlessBoard QA browser regression config.
- * Requires E2E_DATABASE_URL pointing at a run-owned disposable database.
- * Not activated in D04 CI Stage C (separate authorization required).
+ * E2E_DATABASE_URL is required and must be an approved local disposable database.
+ * The guard below runs at load, before global setup, webServer, or navigation.
  */
 
-const e2eDatabaseUrl = String(process.env.E2E_DATABASE_URL || "").trim();
-if (!e2eDatabaseUrl) {
-  throw new Error(
-    "E2E_DATABASE_URL is required for V13 BB QA browser tests and must be a disposable CI database."
-  );
-}
-
-const port = process.env.PLAYWRIGHT_E2E_PORT || "4186";
-const baseURL = `http://127.0.0.1:${port}`;
-const runId =
-  process.env.BLESSBOARD_E2E_RUN_ID ||
-  process.env.GETPRO_V13_CI_RUN_ID ||
-  `${Date.now().toString(36)}-${process.pid.toString(36)}`;
+const harness = assertV13BrowserHarness(process.env, { fallbackPort: "4186" });
+const port = harness.port;
+const baseURL = harness.baseURL;
+const runId = process.env.BLESSBOARD_E2E_RUN_ID || process.env.GETPRO_V13_CI_RUN_ID;
 process.env.BLESSBOARD_E2E_RUN_ID = runId;
-
-const platformHost = process.env.E2E_PLATFORM_HOST || "admin.local.test";
+const platformHost = "admin.local.test";
 
 module.exports = defineConfig({
   testDir: "./tests/e2e/v13",
   testMatch: /v13-bb-qa-regression\.spec\.js/,
-  globalSetup: require.resolve("./tests/e2e/global-setup.cjs"),
-  globalTeardown: require.resolve("./tests/e2e/global-teardown.cjs"),
+  globalSetup: require.resolve("./tests/e2e/v13/v13-bb-global-setup.cjs"),
+  globalTeardown: require.resolve("./tests/e2e/v13/v13-bb-global-teardown.cjs"),
   outputDir: path.join(__dirname, "test-results", "v13-bb-qa"),
   fullyParallel: false,
   workers: 1,
@@ -41,11 +36,10 @@ module.exports = defineConfig({
   ],
   use: {
     baseURL,
+    storageState: { cookies: [], origins: [] },
     ...devices["Desktop Chrome"],
     launchOptions: {
-      args: [
-        "--host-resolver-rules=MAP *.local.test 127.0.0.1,MAP local.test 127.0.0.1",
-      ],
+      args: [LOCAL_HOST_RESOLVER_ARG],
     },
     viewport: { width: 1280, height: 800 },
     trace: "retain-on-failure",
@@ -56,34 +50,19 @@ module.exports = defineConfig({
   },
   expect: { timeout: 10_000 },
   webServer: {
-    command: "node scripts/ci/observe-blessboard-server.cjs",
+    command: "node scripts/ci/observe-v13-local-server.cjs",
     url: `${baseURL}/healthz`,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      ...process.env,
-      PORT: port,
-      HOST: "127.0.0.1",
-      NODE_ENV: "test",
-      DEPLOYMENT_ENV: "testing",
-      EXPECTED_DATABASE_ENV: "testing",
-      DATABASE_URL: e2eDatabaseUrl,
-      TEST_DATABASE_URL: e2eDatabaseUrl,
-      GETPRO_TEST_DB: "1",
-      GETPRO_PG_SSL: process.env.GETPRO_PG_SSL || "off",
-      BASE_DOMAIN: "local.test",
-      BLESSBOARD_CANONICAL_DOMAIN: "local.test",
-      CHURCH_HOST_DOMAIN: "local.test",
-      BLESSBOARD_APEX_DOMAINS: "local.test,www.local.test,admin.local.test",
-      BLESSBOARD_PUBLIC_URL: "http://local.test",
-      BLESSBOARD_ADMIN_URL: `http://${platformHost}`,
-      TRUST_PROXY: "1",
+      ...buildLocalServerEnv(process.env, harness),
       ADMIN_USERNAME: process.env.E2E_ADMIN_USERNAME || "v13_bb_qa_admin",
       ADMIN_PASSWORD: process.env.E2E_ADMIN_PASSWORD || "V13BbQa-admin-2026!",
       ADMIN_ROLE: "super_admin",
       SESSION_SECRET: process.env.E2E_SESSION_SECRET || `v13-bb-qa-${runId}`,
       BLESSBOARD_E2E_RUN_ID: runId,
       E2E_PLATFORM_HOST: platformHost,
+      BLESSBOARD_ADMIN_URL: `http://${platformHost}`,
       GETPRO_REQUIRE_PLATFORM_CSRF: "1",
       GETPRO_REQUIRE_CHURCH_CSRF: "1",
     },

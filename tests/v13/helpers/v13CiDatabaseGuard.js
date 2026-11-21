@@ -161,6 +161,76 @@ function buildOwnedDatabaseName(runId, kind) {
   return assertOwnedDisposableDatabaseName(`getpro_v13_${safeKind}_${safeRun}`);
 }
 
+/**
+ * Select an explicit disposable URL. DATABASE_URL and GETPRO_DATABASE_URL
+ * are never used as the credential source.
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function assertHarnessDatabaseTarget(env = process.env) {
+  if (String(env.DEPLOYMENT_ENV || "") !== "testing") {
+    throw new Error("V13_CI_DB_GUARD: DEPLOYMENT_ENV must be testing");
+  }
+  if (String(env.GETPRO_DATABASE_URL || "").trim()) {
+    throw new Error(
+      "V13_CI_DB_GUARD: refusing GETPRO_DATABASE_URL; disposable tests do not inherit that credential"
+    );
+  }
+  assertV13CiEnvironmentIdentity(env);
+
+  const e2e = String(env.E2E_DATABASE_URL || "").trim();
+  const testUrl = String(env.TEST_DATABASE_URL || "").trim();
+  const databaseUrl = String(env.DATABASE_URL || "").trim();
+  const selected = e2e || testUrl;
+  if (!selected) {
+    throw new Error(
+      "V13_CI_DB_GUARD: E2E_DATABASE_URL is required for the disposable harness; DATABASE_URL is not a credential source"
+    );
+  }
+  if (e2e && testUrl && e2e !== testUrl) {
+    throw new Error("V13_CI_DB_GUARD: E2E_DATABASE_URL and TEST_DATABASE_URL disagree");
+  }
+  if (databaseUrl && databaseUrl !== selected) {
+    throw new Error("V13_CI_DB_GUARD: DATABASE_URL must match the disposable test URL");
+  }
+
+  const expected = String(env.GETPRO_V13_OWNED_DB_NAME || "").trim();
+  const parsed = assertV13CiDatabaseUrl(selected, {
+    expectedDatabaseName: expected || undefined,
+    requireLocalhost: true,
+  });
+  if (databaseUrl) {
+    assertV13CiDatabaseUrl(databaseUrl, {
+      expectedDatabaseName: parsed.database,
+      requireLocalhost: true,
+    });
+  }
+  return { connectionString: selected, database: parsed.database, hostname: parsed.hostname };
+}
+
+/**
+ * Write authorization plus the disposable target. Does not open a connection.
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function resolveDisposableConnectionString(env = process.env) {
+  assertDbWritingStagesAuthorized(env);
+  return assertHarnessDatabaseTarget(env);
+}
+
+/**
+ * @param {NodeJS.ProcessEnv} env
+ * @param {(options: { connectionString: string, max: number, ssl: false }) => object} poolFactory
+ */
+function openAuthorizedPool(env, poolFactory) {
+  const target = resolveDisposableConnectionString(env);
+  if (typeof poolFactory !== "function") {
+    throw new Error("V13_CI_DB_GUARD: pool factory is required");
+  }
+  return {
+    connectionString: target.connectionString,
+    pool: poolFactory({ connectionString: target.connectionString, max: 2, ssl: false }),
+  };
+}
+
 module.exports = {
   LOCAL_HOSTS,
   BANNED_HOST_MARKERS,
@@ -171,4 +241,7 @@ module.exports = {
   assertV13CiEnvironmentIdentity,
   assertDbWritingStagesAuthorized,
   buildOwnedDatabaseName,
+  assertHarnessDatabaseTarget,
+  resolveDisposableConnectionString,
+  openAuthorizedPool,
 };

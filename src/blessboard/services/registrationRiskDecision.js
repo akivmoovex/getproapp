@@ -8,6 +8,7 @@
 const {
   resolveCallingCode,
   DUPLICATE_PHONE_MESSAGE,
+  phoneUniquenessSqlPredicate,
 } = require("./normalizeRegistrationPhone");
 const { isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
 
@@ -266,10 +267,7 @@ async function findOccupyingPhoneMatch(db, contactPhoneNormalized) {
     `SELECT id, contact_email, application_status, provisioning_status
        FROM ${TARGET_RELATION}
       WHERE contact_phone_normalized = $1
-        AND (
-          application_status IN ('submitted', 'review_required', 'provisioning')
-          OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
-        )
+        AND ${phoneUniquenessSqlPredicate()}
       ORDER BY created_at DESC
       LIMIT 1`,
     [phone]

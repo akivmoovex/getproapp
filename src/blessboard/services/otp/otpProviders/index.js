@@ -6,6 +6,7 @@
  */
 
 const { createTestOtpProvider } = require("./testProvider");
+const { isProductionSignal } = require("../../../../platform/otp/otpEnvironment");
 
 function createUnavailableProvider(name, reason) {
   return {
@@ -31,7 +32,7 @@ function resolveOtpProvider(env) {
     .trim()
     .toLowerCase();
 
-  if (deployment === "production" && requested === "test") {
+  if ((deployment === "production" || isProductionSignal(e)) && requested === "test") {
     return createUnavailableProvider("test", "test_provider_forbidden_in_production");
   }
 

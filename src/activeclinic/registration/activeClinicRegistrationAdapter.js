@@ -5,6 +5,7 @@ const {
   validateClinicRegistrationInput,
   createClinicRegistrationApplication,
   findSoftTwinClinicRegistrationApplication,
+  findOccupyingClinicPhoneCredentials,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
   approveAndProvisionClinicRegistration,
@@ -17,6 +18,10 @@ const {
   ACTION: IDENTITY_ACTION,
   resolveActiveClinicRegistrationAdministrator,
 } = require("../services/resolveActiveClinicRegistrationAdministrator");
+const {
+  decideClinicPhoneOccupancy,
+  registrationIdentityFieldErrors,
+} = require("../../platform/registration/resolveRegistrationContactIdentity");
 const { appendReviewEvent } = require("../services/clinicRegistrationReviewService");
 const { ensureDefaultDepartments } = require("../services/activeClinicDepartmentService");
 const { CODE_ACTIVECLINIC_ORG_V6 } = require("../../platform/config/deploymentProfiles");
@@ -29,6 +34,75 @@ const { starterOverrides } = require("../website/provisionActiveClinicWebsite");
 const { FACILITY_TYPES } = require("../services/facilityService");
 
 const productCode = PRODUCT.ACTIVECLINIC;
+
+const PHONE_AUTH_FAILURES = new Set([
+  "existing_identity_acknowledgement_required",
+  "existing_account_requires_sign_in",
+  "existing_account_password_mismatch",
+  "identity_conflict",
+  "reject_suspended",
+]);
+
+async function withClinicPhoneLock(db, phone, fn) {
+  const normalized = String(phone || "").trim();
+  if (!normalized || !db || typeof db.connect !== "function") return fn(db);
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `ac-reg-phone|${normalized}`.slice(0, 200),
+    ]);
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function discardUnauthorizedClinicApplication(db, applicationId) {
+  const id = String(applicationId || "").trim();
+  if (!id || !db || typeof db.query !== "function") return;
+  const existing = await db.query(
+    `SELECT organization_id
+       FROM activeclinic.clinic_registration_applications
+      WHERE id = $1`,
+    [id]
+  );
+  if (!existing.rows[0] || existing.rows[0].organization_id) return;
+  await db.query(
+    `DELETE FROM activeclinic.clinic_registration_review_events WHERE application_id = $1`,
+    [id]
+  );
+  await db.query(
+    `DELETE FROM activeclinic.clinic_registration_applications
+      WHERE id = $1
+        AND organization_id IS NULL`,
+    [id]
+  );
+}
+
+function passwordReuseError(reason) {
+  const errors = registrationIdentityFieldErrors(reason);
+  return {
+    ok: false,
+    code: reason,
+    error: errors.password || "An account already exists for this contact. Sign in with your existing password.",
+    field: "password",
+    errors: {
+      password:
+        errors.password || "An account already exists for this contact. Sign in with your existing password.",
+    },
+    requiresSecondClinicAcknowledgement: reason === "existing_identity_acknowledgement_required",
+  };
+}
 
 function administratorPasswordFrom(input) {
   const normalized = (input && input.normalized) || {};
@@ -59,6 +133,13 @@ async function findDuplicate() {
 }
 
 async function persistSubmitted(db, input) {
+  const normalized = input.normalized || {};
+  return withClinicPhoneLock(db, normalized.contactPhone, (client) =>
+    persistSubmittedLocked(client, input)
+  );
+}
+
+async function persistSubmittedLocked(db, input) {
   const normalized = input.normalized || {};
   const password = administratorPasswordFrom(input);
 
@@ -152,6 +233,18 @@ async function persistSubmitted(db, input) {
       requiresSecondClinicAcknowledgement:
         preResolve.requiresSecondClinicAcknowledgement === true,
     };
+  }
+
+  if (preResolve.action === IDENTITY_ACTION.CREATE && normalized.contactPhone) {
+    const applicationHashes = await findOccupyingClinicPhoneCredentials(
+      db,
+      normalized.contactPhone
+    );
+    const occupancy = await decideClinicPhoneOccupancy({
+      password,
+      applicationHashes,
+    });
+    if (!occupancy.ok) return passwordReuseError(occupancy.reason);
   }
 
   const created = await createClinicRegistrationApplication(db, {
@@ -288,6 +381,9 @@ async function provision(db, input) {
         (input.normalized && input.normalized.acknowledgeExistingIdentity)
     ),
   });
+  if (provisioned && PHONE_AUTH_FAILURES.has(provisioned.code)) {
+    await discardUnauthorizedClinicApplication(db, input.application && input.application.id);
+  }
   if (
     !provisioned.ok &&
     (provisioned.code === "existing_identity_acknowledgement_required" ||

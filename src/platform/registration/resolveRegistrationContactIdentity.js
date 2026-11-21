@@ -177,6 +177,47 @@ async function authorizeExistingPrincipalReuse(input = {}) {
 }
 
 /**
+ * Decide whether a normalized phone may open another clinic.
+ * An existing identity hash is authoritative. Application hashes apply only
+ * when no identity exists yet. A match reuses the principal. A mismatch
+ * does not create a clinic.
+ *
+ * @param {{
+ *   password?: string|null,
+ *   identityHash?: string|null,
+ *   applicationHashes?: Array<string|null>,
+ * }} input
+ */
+async function decideClinicPhoneOccupancy(input = {}) {
+  const identityHash = input.identityHash != null ? String(input.identityHash) : "";
+  const applicationHashes = Array.isArray(input.applicationHashes)
+    ? input.applicationHashes.map((hash) => (hash == null ? "" : String(hash))).filter(Boolean)
+    : [];
+  const hashes = identityHash ? [identityHash] : applicationHashes;
+  if (!hashes.length) {
+    return {
+      ok: true,
+      action: REGISTRATION_IDENTITY_ACTION.CREATE,
+      reason: REGISTRATION_IDENTITY_REASON.FRESH,
+    };
+  }
+  const password = input.password != null ? String(input.password) : "";
+  for (const hash of hashes) {
+    const authorized = await authorizeExistingPrincipalReuse({
+      passwordHash: hash,
+      password,
+      multiTenant: true,
+    });
+    if (authorized.ok) return authorized;
+  }
+  return authorizeExistingPrincipalReuse({
+    passwordHash: hashes[0],
+    password,
+    multiTenant: true,
+  });
+}
+
+/**
  * Safe field errors for registration forms (no cross-account PII).
  * @param {string} reason
  * @returns {Record<string, string>}
@@ -222,5 +263,6 @@ module.exports = {
   REGISTRATION_IDENTITY_REASON,
   matchRegistrationContactPrincipals,
   authorizeExistingPrincipalReuse,
+  decideClinicPhoneOccupancy,
   registrationIdentityFieldErrors,
 };

@@ -88,7 +88,16 @@
         <a href="<%= hrefFor('/announcements/' + featured.id) %>"><%= featured.title %></a>
       </h2>
       <p class="bb-tp-ann-body"><%= snippet(featured.body) %></p>
-      <% if (featured.attachments && featured.attachments.length) { %><span class="bb-tp-ann-attachment">Attachment</span><% } %>
+      <% if (featured.attachments && featured.attachments.length) { %>
+      <ul class="bb-tp-ann-attachments" data-bb-ann-attachments="1">
+        <% featured.attachments.forEach(function (attachment) { %>
+        <li>
+          <span class="bb-tp-ann-attachment"><%= attachment.originalFilename || 'Attachment' %></span>
+          <% if (attachment.mediaAssetId) { %><span class="bb-tp-sr-only"><%= attachment.mediaAssetId %></span><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
       <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/announcements/' + featured.id) %>">Open announcement</a>
     </article>
     <% } %>
@@ -110,7 +119,16 @@
           <a href="<%= hrefFor('/announcements/' + item.id) %>"><%= item.title %></a>
         </h3>
         <p class="bb-tp-ann-body"><%= snippet(item.body) %></p>
-        <% if (item.attachments && item.attachments.length) { %><span class="bb-tp-ann-attachment">Attachment</span><% } %>
+        <% if (item.attachments && item.attachments.length) { %>
+        <ul class="bb-tp-ann-attachments" data-bb-ann-attachments="1">
+          <% item.attachments.forEach(function (attachment) { %>
+          <li>
+            <span class="bb-tp-ann-attachment"><%= attachment.originalFilename || 'Attachment' %></span>
+            <% if (attachment.mediaAssetId) { %><span class="bb-tp-sr-only"><%= attachment.mediaAssetId %></span><% } %>
+          </li>
+          <% }) %>
+        </ul>
+        <% } %>
         <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/announcements/' + item.id) %>">Open announcement</a>
       </li>
       <% }) %>

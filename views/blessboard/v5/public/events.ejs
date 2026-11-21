@@ -11,7 +11,9 @@
     return s && (s.heading || s.bodyText || s.mediaUrl);
   });
   var events = (entities || []).filter(function (e) {
-    return e && String(e.title || '').trim();
+    if (!e || !String(e.title || '').trim()) return false;
+    var status = String(e.status || 'published').toLowerCase();
+    return status === 'published';
   });
   var featured = events.length ? events[0] : null;
   var rest = events.length > 1 ? events.slice(1) : [];

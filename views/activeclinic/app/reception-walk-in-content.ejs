@@ -63,4 +63,33 @@
   </form>
 
   <p class="ac-sr-only">This form does not create a clinical encounter, diagnoses, or vitals.</p>
+
+  <% if (actions.canManageQueue) { %>
+  <form class="ac-panel" method="post" action="/app/reception/service-points" data-ac-form="reception-service-point">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+    <h2 class="ac-panel__title">Service points for this facility</h2>
+    <p class="ac-muted">Add a queue destination for <%= facility.displayName || 'this facility' %>. It is not shared with another clinic.</p>
+    <div class="ac-form-field">
+      <label class="ac-label" for="service_point_name">Display name</label>
+      <input class="ac-input" id="service_point_name" name="display_name" type="text" required maxlength="100" />
+    </div>
+    <div class="ac-form-field">
+      <label class="ac-label" for="service_point_type">Service type</label>
+      <select class="ac-select" id="service_point_type" name="service_type" required>
+        <option value="general">General</option>
+        <option value="triage">Triage</option>
+        <option value="consultation">Consultation</option>
+        <option value="laboratory">Laboratory</option>
+        <option value="pharmacy">Pharmacy</option>
+        <option value="radiology">Radiology</option>
+        <option value="cashier">Cashier</option>
+        <option value="records">Records</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Save service point</button>
+    </div>
+  </form>
+  <% } %>
 </section>

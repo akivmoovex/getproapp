@@ -208,29 +208,37 @@ function parseAddMemberFormBody(body) {
       emailDisplay = email.display;
     }
   }
-  if (!values.addressLine1) {
-    fieldErrors.push({ field: "address_line_1", message: "Residential address is required." });
+  if (values.addressLine1 && values.addressLine1.length > 300) {
+    fieldErrors.push({
+      field: "address_line_1",
+      message: "Residential address must be 300 characters or fewer.",
+    });
   }
   if (!values.branchId) {
     fieldErrors.push({ field: "branch_id", message: "Assigned branch is required." });
   }
-  if (!values.maritalStatus || !MARITAL_STATUS.includes(values.maritalStatus)) {
+  if (values.maritalStatus && !MARITAL_STATUS.includes(values.maritalStatus)) {
     fieldErrors.push({ field: "marital_status", message: "Select a marital status." });
   }
-  if (!values.nextOfKinName) {
+  const kinProvided = Boolean(
+    values.nextOfKinName || values.nextOfKinRelationship || values.nextOfKinPhone
+  );
+  if (kinProvided && !values.nextOfKinName) {
     fieldErrors.push({ field: "next_of_kin_name", message: "Emergency contact name is required." });
   }
   if (
-    !values.nextOfKinRelationship ||
-    !RELATIONSHIP_OPTIONS.includes(values.nextOfKinRelationship)
+    kinProvided &&
+    (!values.nextOfKinRelationship || !RELATIONSHIP_OPTIONS.includes(values.nextOfKinRelationship))
   ) {
     fieldErrors.push({
       field: "next_of_kin_relationship",
       message: "Select an emergency relationship.",
     });
   }
-  const kinPhone = normalizePersonPhone({ phone: values.nextOfKinPhone });
-  if (!kinPhone.ok) {
+  const kinPhone = values.nextOfKinPhone
+    ? normalizePersonPhone({ phone: values.nextOfKinPhone, required: true })
+    : { ok: true, display: null, normalized: null };
+  if (values.nextOfKinPhone && !kinPhone.ok) {
     fieldErrors.push({
       field: "next_of_kin_phone",
       message: "Enter a valid emergency phone.",
@@ -271,7 +279,7 @@ function parseAddMemberFormBody(body) {
       maritalStatus: values.maritalStatus || null,
       numberOfChildren,
       address: {
-        line1: values.addressLine1,
+        line1: values.addressLine1 || null,
         line2: null,
         city: null,
         district: null,
@@ -280,9 +288,9 @@ function parseAddMemberFormBody(body) {
         postalCode: null,
       },
       nextOfKin: {
-        name: values.nextOfKinName,
-        relationship: values.nextOfKinRelationship,
-        phoneDisplay: kinPhone.ok ? kinPhone.display : values.nextOfKinPhone,
+        name: values.nextOfKinName || null,
+        relationship: values.nextOfKinRelationship || null,
+        phoneDisplay: kinPhone.ok ? kinPhone.display : values.nextOfKinPhone || null,
         phoneNormalized: kinPhone.ok ? kinPhone.normalized : null,
       },
     },

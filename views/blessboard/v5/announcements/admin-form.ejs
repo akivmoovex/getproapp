@@ -339,6 +339,13 @@
             autocomplete="off"
           />
           <% if (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) { %>
+          <input
+            type="file"
+            data-gp-we-media-file
+            accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
+            data-bb-ann-upload-url="<%= mediaUploadUrl %>"
+          />
+          <p data-gp-we-media-status role="status"></p>
           <%- include('../content-admin/media-upload', {
                 uploadUrl: mediaUploadUrl,
                 targetInputId: 'media_asset_id',
@@ -512,6 +519,45 @@
   }
   if (titleIn) titleIn.addEventListener("input", syncPreview);
   if (bodyIn) bodyIn.addEventListener("input", syncPreview);
+
+  var fileInput = document.querySelector("[data-gp-we-media-file][data-bb-ann-upload-url]");
+  var fileStatus = document.querySelector("[data-gp-we-media-status]");
+  var assetInput = document.getElementById("media_asset_id");
+  var csrfInput = form ? form.querySelector("input[name='_csrf']") : null;
+  if (fileInput && assetInput) {
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      var body = new FormData();
+      body.append("file", file, file.name);
+      if (csrfInput) body.append("_csrf", csrfInput.value);
+      body.append("visibility", "private");
+      if (fileStatus) fileStatus.textContent = "Uploading…";
+      fetch(fileInput.getAttribute("data-bb-ann-upload-url"), {
+        method: "POST",
+        body: body,
+        credentials: "same-origin",
+      })
+        .then(function (response) {
+          return response.json().then(function (payload) {
+            return { ok: response.ok, payload: payload || {} };
+          });
+        })
+        .then(function (result) {
+          if (!result.ok || !result.payload.ok || !result.payload.assetId) {
+            assetInput.value = "";
+            if (fileStatus) fileStatus.textContent = "This file was rejected.";
+            return;
+          }
+          assetInput.value = result.payload.assetId;
+          if (fileStatus) fileStatus.textContent = result.payload.originalFilename || file.name;
+        })
+        .catch(function () {
+          assetInput.value = "";
+          if (fileStatus) fileStatus.textContent = "This file was rejected.";
+        });
+    });
+  }
 })();
 </script>
 

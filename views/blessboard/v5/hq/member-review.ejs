@@ -1,13 +1,16 @@
 <%- include('../partials/hq-shell-start') %>
 <section class="bb-hq-panel" data-bb-hq-member-review="1">
   <h1 class="bb-hq-page-head__title">Review new member</h1>
-  <p>Confirm the church membership record. Portal activation remains pending.</p>
+  <p>Confirm the church membership record. Portal activation remains pending after creation.</p>
   <% if (review && review.fieldErrors && review.fieldErrors.length) { %>
   <%- include('../partials/form-errors', { title: 'Unable to create member', errors: review.fieldErrors }) %>
   <% } %>
-  <dl>
-    <dt>Name</dt><dd><%= (review && review.values && review.values.fullName) || 'New member' %></dd>
-    <dt>Branch</dt><dd><%= (review && review.values && review.values.branchId) || 'Authorized branch' %></dd>
+  <dl data-bb-member-fields="full_name,phone,email,branch_id">
+    <dt>Full name</dt><dd><%= (review && review.values && review.values.fullName) || 'New member' %></dd>
+    <dt>Phone</dt><dd><%= (review && review.values && review.values.phone) || '—' %></dd>
+    <dt>Email</dt><dd><%= (review && review.values && review.values.email) || 'Not provided' %></dd>
+    <dt>Authorized branch</dt><dd><%= (review && review.values && (review.values.branchName || review.values.branchId)) || 'Authorized branch' %></dd>
+    <dt>Portal access</dt><dd>not_activated</dd>
   </dl>
   <form method="post" action="/hq/members/new/review">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />

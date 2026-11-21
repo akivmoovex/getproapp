@@ -491,7 +491,12 @@ async function loadActiveClinicReceptionWalkInScreen(db, input) {
     walkIn: {
       values: formValues,
       facility: selectedFacility,
-      servicePoints: servicePoints.map(mapServicePoint),
+      servicePoints: servicePoints
+        .filter(
+          (row) =>
+            row.facility_id === selectedFacility.id && row.accepts_walk_in !== false
+        )
+        .map(mapServicePoint),
       error: error || null,
       bookingLinkage,
       actions: {

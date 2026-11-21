@@ -128,6 +128,24 @@ function presentAnnouncementForRender(item) {
   };
 }
 
+/**
+ * The create form posts a visibility select and a submit button that share
+ * `status`. A publish click must win over the select's draft value.
+ * A single unsupported value is returned unchanged so validation can reject it.
+ * @param {unknown} raw
+ */
+function normalizePostedAnnouncementStatus(raw) {
+  const values = (Array.isArray(raw) ? raw : [raw])
+    .flatMap((value) => String(value == null ? "" : value).split(","))
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (values.includes("published")) return "published";
+  if (values.includes("timed") || values.includes("scheduled")) return "scheduled";
+  if (values.includes("archived")) return "archived";
+  if (values.includes("draft") || values.length === 0) return "draft";
+  return values[0];
+}
+
 function requirePublishConfirm(existingStatus, nextStatus, confirmPublish, enforce) {
   if (!enforce) return { ok: true };
   if (nextStatus === "published" && existingStatus !== "published") {
@@ -1264,6 +1282,7 @@ async function listAnnouncementPublicationHistory(db, input) {
 }
 
 module.exports = {
+  normalizePostedAnnouncementStatus,
   STATUS,
   AUDIENCE_KEYS,
   SCHEDULER_DEPENDENCY,

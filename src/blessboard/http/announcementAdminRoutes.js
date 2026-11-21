@@ -27,6 +27,7 @@ const {
 const {
   STATUS,
   SCHEDULER_DEPENDENCY,
+  normalizePostedAnnouncementStatus,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,
@@ -641,10 +642,7 @@ function createAnnouncementAdminRouter(deps) {
         env,
         title: body.title,
         body: body.body,
-        status:
-          body.status === "timed" || body.status === "scheduled"
-            ? "scheduled"
-            : body.status || "draft",
+        status: normalizePostedAnnouncementStatus(body.status),
         isPinned: body.is_pinned === "1" || body.is_pinned === "on",
         isFeatured: body.is_featured === "1" || body.is_featured === "on",
         actionUrl: body.action_url,

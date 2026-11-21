@@ -342,6 +342,12 @@ async function checkVerification(db, input, env) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.INVALID_CODE, reason: "already_used" };
         }
+        const expectedUserId =
+          input.expectedUserId != null ? String(input.expectedUserId).trim() : "";
+        if (expectedUserId && String(row.userId || "") !== expectedUserId) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.INVALID_CODE, reason: "subject_mismatch" };
+        }
         if (row.status !== "pending" || new Date(row.expiresAt).getTime() <= Date.now()) {
           await repo.markExpired(client, row.id);
           await client.query("COMMIT");

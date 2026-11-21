@@ -415,6 +415,31 @@ async function createClinicRegistrationApplication(db, input) {
   };
 }
 
+/**
+ * Password hashes for non-rejected applications that already occupy this phone.
+ * Used when an identity row does not exist yet.
+ *
+ * @param {{ query: Function }} db
+ * @param {string|null} phoneNormalized
+ */
+async function findOccupyingClinicPhoneCredentials(db, phoneNormalized) {
+  const phone = String(phoneNormalized || "").trim();
+  if (!phone || !db || typeof db.query !== "function") return [];
+  const rows = await db.query(
+    `SELECT administrator_password_hash
+       FROM activeclinic.clinic_registration_applications
+      WHERE contact_phone_normalized = $1
+        AND status IS DISTINCT FROM 'rejected'
+        AND administrator_password_hash IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT 5`,
+    [phone]
+  );
+  return (rows.rows || [])
+    .map((row) => (row.administrator_password_hash ? String(row.administrator_password_hash) : ""))
+    .filter(Boolean);
+}
+
 module.exports = {
   RESULT,
   FACILITY_TYPES,
@@ -422,6 +447,7 @@ module.exports = {
   validateClinicRegistrationInput,
   createClinicRegistrationApplication,
   findSoftTwinClinicRegistrationApplication,
+  findOccupyingClinicPhoneCredentials,
   clinicTypeLabel,
   listClinicTypeOptions,
   isZambiaCountryCode,

@@ -28,9 +28,46 @@ function grantedList(grantedPermissions) {
 
 function unwrapThemeValue(raw) {
   if (raw == null) return null;
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object" && raw.value != null) return String(raw.value);
-  return String(raw);
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    return text || null;
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    if (Object.prototype.hasOwnProperty.call(raw, "v")) return unwrapThemeValue(raw.v);
+    if (Object.prototype.hasOwnProperty.call(raw, "value")) return unwrapThemeValue(raw.value);
+  }
+  return null;
+}
+
+/**
+ * Draft selection stays off the public page until publish.
+ * A theme from the other product is never applied.
+ */
+function selectAppliedTheme(input) {
+  const productCode = String((input && (input.productCode || input.product)) || "")
+    .trim()
+    .toLowerCase();
+  const mode = input && input.mode === "draft" ? "draft" : "live";
+  const fallback = defaultThemeIdForProduct(productCode);
+  const draftId = normalizeThemeId(unwrapThemeValue(input && input.draftThemeId) || fallback, productCode);
+  const publishedId = normalizeThemeId(
+    unwrapThemeValue(input && input.publishedThemeId) || fallback,
+    productCode
+  );
+  const chosen = mode === "draft" ? draftId : publishedId;
+  const theme = getTheme(chosen, productCode);
+  if (!theme || theme.productCode !== productCode) {
+    return { ok: false, code: "invalid_theme", themeId: null, cssClass: "", published: false };
+  }
+  return {
+    ok: true,
+    code: "ok",
+    themeId: theme.id,
+    cssClass: theme.cssClass || "",
+    stylesheetHref: theme.stylesheetHref || "",
+    published: mode === "live",
+    mode,
+  };
 }
 
 function previewThemeIdFromInput(input) {
@@ -123,7 +160,13 @@ async function loadWebsiteThemeState(db, input) {
   const draftId = normalizeThemeId(draftRaw || defaultId, productCode);
   const publishedId = normalizeThemeId(publishedRaw || defaultId, productCode);
   const preferDraft = input && input.preferDraft === true;
-  let activeId = preferDraft ? draftId : publishedId;
+  const applied = selectAppliedTheme({
+    productCode,
+    draftThemeId: draftRaw,
+    publishedThemeId: publishedRaw,
+    mode: preferDraft ? "draft" : "live",
+  });
+  let activeId = applied.ok ? applied.themeId : preferDraft ? draftId : publishedId;
   let previewOnly = false;
   const previewCandidate = previewThemeIdFromInput(input);
   if (previewCandidate && preferDraft) {
@@ -236,6 +279,8 @@ function presentThemeAttrs(presentation) {
 module.exports = {
   THEME_CONTENT_KEY,
   THEME_PREVIEW_QUERY,
+  unwrapThemeValue,
+  selectAppliedTheme,
   evaluateThemeCompatibility,
   loadWebsiteThemeState,
   saveWebsiteThemeDraft,

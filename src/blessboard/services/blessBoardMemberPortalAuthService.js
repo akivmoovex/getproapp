@@ -666,6 +666,16 @@ async function completeMemberPasswordRecovery(db, input, env, deps) {
     return { ok: false, code: RESULT.INVALID_DRAFT, message: "Recovery session expired." };
   }
 
+  const verificationId = String(draft.verificationId || "").trim();
+  const suppliedVerificationId = String((input && input.verificationId) || "").trim();
+  if (!verificationId || (suppliedVerificationId && suppliedVerificationId !== verificationId)) {
+    return {
+      ok: false,
+      code: RESULT.OTP_FAILED,
+      message: "Verification failed. Check the code and try again.",
+    };
+  }
+
   const password = validateMemberPortalPassword(input.password, input.passwordConfirm);
   if (!password.ok) {
     return {
@@ -685,13 +695,14 @@ async function completeMemberPasswordRecovery(db, input, env, deps) {
   const checked = await checkOtp(
     db,
     {
-      verificationId: input.verificationId || draft.verificationId,
+      verificationId,
       purpose: "password_recovery",
       code: input.code,
+      expectedUserId: draft.userId,
     },
     env
   );
-  if (!checked.ok) {
+  if (!checked.ok || (checked.userId && String(checked.userId) !== String(draft.userId))) {
     return {
       ok: false,
       code: RESULT.OTP_FAILED,

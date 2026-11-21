@@ -53,12 +53,11 @@
       <section class="bb-tp-ann-detail__attachments" aria-labelledby="announcement-attachments">
         <h2 id="announcement-attachments">Attachments</h2>
         <ul>
-          <% item.attachments.filter(function (attachment) {
-            return !primaryAttachment || attachment.imageUrl !== primaryAttachment.imageUrl;
-          }).forEach(function (attachment) { %>
+          <% item.attachments.forEach(function (attachment) { %>
           <li>
             <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
             <span><%= attachment.originalFilename || 'Attachment' %></span>
+            <% if (attachment.mediaAssetId) { %><span class="bb-tp-sr-only"><%= attachment.mediaAssetId %></span><% } %>
             <% if (attachment.mimeType) { %><small><%= attachment.mimeType %></small><% } %>
             <% if (attachment.sizeBytes != null) { %><small><%= attachment.sizeBytes %> bytes</small><% } %>
           </li>

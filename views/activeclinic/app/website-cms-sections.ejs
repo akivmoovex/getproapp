@@ -26,6 +26,7 @@
         </div>
         <div>
           <h3><%= section.title || section.type %></h3>
+          <% if (section.heading) { %><p><%= section.heading %></p><% } %>
           <p class="ac-mw-card__meta"><%= section.type %></p>
           <span class="ac-mw-badge<%= section.visible === false ? ' ac-mw-badge--hidden' : '' %>"><%= section.visible === false ? 'Hidden' : 'Visible' %></span>
         </div>
