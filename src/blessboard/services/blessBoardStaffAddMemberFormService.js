@@ -15,7 +15,6 @@ const {
   MARITAL_STATUS,
 } = require("./memberDomainConstants");
 const {
-  normalizePersonPhone,
   normalizePersonEmail,
   normalizePersonDateOfBirth,
 } = require("../../platform/person/personNormalization");
@@ -208,7 +207,9 @@ function parseAddMemberFormBody(body) {
       emailDisplay = email.display;
     }
   }
-  if (values.addressLine1 && values.addressLine1.length > 300) {
+  if (!values.addressLine1) {
+    fieldErrors.push({ field: "address_line_1", message: "Residential address is required." });
+  } else if (values.addressLine1.length > 300) {
     fieldErrors.push({
       field: "address_line_1",
       message: "Residential address must be 300 characters or fewer.",
@@ -217,28 +218,34 @@ function parseAddMemberFormBody(body) {
   if (!values.branchId) {
     fieldErrors.push({ field: "branch_id", message: "Assigned branch is required." });
   }
-  if (values.maritalStatus && !MARITAL_STATUS.includes(values.maritalStatus)) {
+  if (!values.maritalStatus || !MARITAL_STATUS.includes(values.maritalStatus)) {
     fieldErrors.push({ field: "marital_status", message: "Select a marital status." });
   }
-  const kinProvided = Boolean(
-    values.nextOfKinName || values.nextOfKinRelationship || values.nextOfKinPhone
-  );
-  if (kinProvided && !values.nextOfKinName) {
+  if (!values.nextOfKinName) {
     fieldErrors.push({ field: "next_of_kin_name", message: "Emergency contact name is required." });
   }
   if (
-    kinProvided &&
-    (!values.nextOfKinRelationship || !RELATIONSHIP_OPTIONS.includes(values.nextOfKinRelationship))
+    !values.nextOfKinRelationship ||
+    !RELATIONSHIP_OPTIONS.includes(values.nextOfKinRelationship)
   ) {
     fieldErrors.push({
       field: "next_of_kin_relationship",
       message: "Select an emergency relationship.",
     });
   }
-  const kinPhone = values.nextOfKinPhone
-    ? normalizePersonPhone({ phone: values.nextOfKinPhone, required: true })
-    : { ok: true, display: null, normalized: null };
-  if (values.nextOfKinPhone && !kinPhone.ok) {
+  const kinResolved = resolveBlessBoardFormPhone(
+    { phone: values.nextOfKinPhone },
+    { required: true, allowLegacyPhone: true }
+  );
+  const kinPhone =
+    kinResolved && kinResolved.result && kinResolved.result.ok
+      ? {
+          ok: true,
+          display: kinResolved.result.display || kinResolved.e164,
+          normalized: kinResolved.result.normalized || kinResolved.e164,
+        }
+      : { ok: false };
+  if (!kinPhone.ok) {
     fieldErrors.push({
       field: "next_of_kin_phone",
       message: "Enter a valid emergency phone.",

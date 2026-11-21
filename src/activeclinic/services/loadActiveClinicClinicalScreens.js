@@ -103,6 +103,7 @@ async function loadActiveClinicClinicalQueueScreen(db, input) {
       },
       actions: {
         canStartEncounter: await hasPerm(db, input.auth, PERM.MANAGE),
+        canRecordTriage: await hasPerm(db, input.auth, PERM.TRIAGE),
         canOpenFollowUp: true,
       },
     },

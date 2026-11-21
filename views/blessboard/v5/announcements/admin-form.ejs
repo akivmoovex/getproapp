@@ -546,7 +546,18 @@
         .then(function (result) {
           if (!result.ok || !result.payload.ok || !result.payload.assetId) {
             assetInput.value = "";
-            if (fileStatus) fileStatus.textContent = "This file was rejected.";
+            var reason = String((result.payload && (result.payload.reason || result.payload.code)) || "");
+            var rejected =
+              reason === "media_uploads_disabled"
+                ? "Media uploads are turned off for this deployment."
+                : reason === "size_limit"
+                  ? "This file is larger than the upload limit."
+                  : reason === "csrf"
+                    ? "Reload the page, then upload again."
+                    : reason === "mime_not_allowed" || reason === "signature_unrecognized"
+                      ? "Use a JPEG, PNG, WebP, GIF, or PDF."
+                      : "This file was rejected.";
+            if (fileStatus) fileStatus.textContent = rejected;
             return;
           }
           assetInput.value = result.payload.assetId;

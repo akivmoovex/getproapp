@@ -14,6 +14,13 @@
   var phoneError = fieldMessage('phone');
   var emailError = fieldMessage('email');
   var branchError = fieldMessage('branch_id');
+  var addressError = fieldMessage('address_line_1');
+  var maritalError = fieldMessage('marital_status');
+  var kinNameError = fieldMessage('next_of_kin_name');
+  var kinRelError = fieldMessage('next_of_kin_relationship');
+  var kinPhoneError = fieldMessage('next_of_kin_phone');
+  var maritalOptions = f.maritalOptions || [];
+  var relationshipOptions = f.relationshipOptions || [];
 %>
 <section class="bb-hq-members" data-bb-hq-member-add="1" aria-labelledby="bb-hq-add-member-title">
   <header class="bb-hq-page-head">
@@ -46,6 +53,41 @@
         <label for="hq_add_phone">Phone</label>
         <input id="hq_add_phone" name="phone" type="tel" value="<%= values.phone || '' %>" autocomplete="tel" required aria-required="true"<% if (phoneError) { %> aria-invalid="true" aria-describedby="hq_add_phone_error"<% } %> />
         <% if (phoneError) { %><p id="hq_add_phone_error" class="bb-hq-field-error" role="alert"><%= phoneError %></p><% } %>
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_address">Residential address</label>
+        <input id="hq_add_address" name="address_line_1" type="text" maxlength="300" value="<%= values.addressLine1 || '' %>" autocomplete="street-address" required aria-required="true"<% if (addressError) { %> aria-invalid="true"<% } %> />
+        <% if (addressError) { %><p class="bb-hq-field-error" role="alert"><%= addressError %></p><% } %>
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_marital">Marital status</label>
+        <select id="hq_add_marital" name="marital_status" required aria-required="true"<% if (maritalError) { %> aria-invalid="true"<% } %>>
+          <option value="">Select a marital status</option>
+          <% maritalOptions.forEach(function (option) { %>
+          <option value="<%= option %>" <%= values.maritalStatus === option ? 'selected' : '' %>><%= option %></option>
+          <% }) %>
+        </select>
+        <% if (maritalError) { %><p class="bb-hq-field-error" role="alert"><%= maritalError %></p><% } %>
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_kin_name">Emergency contact name</label>
+        <input id="hq_add_kin_name" name="next_of_kin_name" type="text" maxlength="120" value="<%= values.nextOfKinName || '' %>" required aria-required="true"<% if (kinNameError) { %> aria-invalid="true"<% } %> />
+        <% if (kinNameError) { %><p class="bb-hq-field-error" role="alert"><%= kinNameError %></p><% } %>
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_kin_rel">Emergency relationship</label>
+        <select id="hq_add_kin_rel" name="next_of_kin_relationship" required aria-required="true"<% if (kinRelError) { %> aria-invalid="true"<% } %>>
+          <option value="">Select a relationship</option>
+          <% relationshipOptions.forEach(function (option) { %>
+          <option value="<%= option %>" <%= values.nextOfKinRelationship === option ? 'selected' : '' %>><%= option %></option>
+          <% }) %>
+        </select>
+        <% if (kinRelError) { %><p class="bb-hq-field-error" role="alert"><%= kinRelError %></p><% } %>
+      </div>
+      <div class="bb-hq-field">
+        <label for="hq_add_kin_phone">Emergency phone</label>
+        <input id="hq_add_kin_phone" name="next_of_kin_phone" type="tel" value="<%= values.nextOfKinPhone || '' %>" autocomplete="tel" required aria-required="true"<% if (kinPhoneError) { %> aria-invalid="true"<% } %> />
+        <% if (kinPhoneError) { %><p class="bb-hq-field-error" role="alert"><%= kinPhoneError %></p><% } %>
       </div>
       <div class="bb-hq-field">
         <label for="hq_add_branch">Authorized branch</label>

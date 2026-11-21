@@ -57,6 +57,9 @@
         <h3 class="ac-card__title"><a href="/app/clinical/encounter/<%= enc.id %>"><%= enc.patientDisplayName %></a></h3>
         <p class="ac-muted"><%= enc.encounterNumber %> · <%= enc.patientNumber %></p>
         <a class="ac-btn ac-btn--ghost" href="/app/clinical/encounter/<%= enc.id %>">Resume / complete</a>
+        <% if (actions.canRecordTriage) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/clinical/encounter/<%= enc.id %>/vitals" data-ac-action="record-vitals">Record vitals</a>
+        <% } %>
       </li>
       <% }) %>
     </ul>
@@ -89,8 +92,8 @@
             <td><%= row.serviceName || '—' %></td>
             <td><span class="ac-status"><%= row.queueStatus %></span></td>
             <td>
-              <% if (actions.canStartEncounter) { %>
-              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/start-encounter?patient_number=<%= encodeURIComponent(row.patientNumber) %>">Start encounter</a>
+              <% if (actions.canStartEncounter || actions.canRecordTriage) { %>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/start-encounter?patient_id=<%= encodeURIComponent(row.patientId) %><%= actions.canStartEncounter ? '' : '&intent=triage' %>" data-ac-action="<%= actions.canStartEncounter ? 'start-encounter' : 'start-triage' %>"><%= actions.canStartEncounter ? 'Start encounter' : 'Start triage' %></a>
               <% } else { %>—<% } %>
             </td>
           </tr>

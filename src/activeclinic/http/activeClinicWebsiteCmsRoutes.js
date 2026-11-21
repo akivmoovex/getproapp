@@ -143,7 +143,11 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
   }
 
   async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res, req);
+    const provided = options && options.csrfToken ? String(options.csrfToken) : "";
+    const csrfToken = provided || issuePageCsrf(res, req);
+    if (provided) {
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    }
     const shell = await buildActiveClinicShellViewModel(getPool(), {
       req,
       auth: req.activeClinicAuth,
@@ -233,6 +237,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           csrfToken,
         });
         return renderShell(req, res, {
+          csrfToken,
           content: "app/settings-website-themes.ejs",
           cmsActive: "themes",
           pageHeader: {

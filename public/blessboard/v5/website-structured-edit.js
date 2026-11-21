@@ -619,12 +619,18 @@
       };
     }
     if (kind === "event") {
+      var eventDate = val("date");
+      var eventStart = val("startTime") || "00:00";
+      var eventEnd = val("endTime");
       return {
         title: val("title"),
-        date: val("date"),
+        date: eventDate,
         startTime: val("startTime"),
-        endTime: val("endTime"),
+        endTime: eventEnd,
+        startsAt: eventDate ? new Date(eventDate + "T" + eventStart + ":00").toISOString() : "",
+        endsAt: eventDate && eventEnd ? new Date(eventDate + "T" + eventEnd + ":00").toISOString() : "",
         location: val("location"),
+        summary: val("description"),
         description: val("description"),
         organizer: val("organizer"),
         registrationUrl: val("registrationUrl"),
@@ -636,12 +642,15 @@
       };
     }
     if (kind === "sermon") {
+      var sermonDate = val("date");
       return {
         title: val("title"),
         speakerName: val("speakerName"),
-        date: val("date"),
+        date: sermonDate,
+        preachedAt: sermonDate ? new Date(sermonDate + "T12:00:00").toISOString() : "",
         scripture: val("scripture"),
         series: val("series"),
+        summary: val("description"),
         description: val("description"),
         mediaUrl: val("mediaUrl"),
         imageUrl: val("imageUrl"),
@@ -690,8 +699,14 @@
       baselineJson: JSON.stringify(cfg.payload || {}),
     };
     $("[data-bb-structured-body='1']", host).innerHTML = renderForm(current.kind, cfg.payload || {});
+    var addTitle =
+      String(current.entityKey || "").indexOf("new-sermon") === 0
+        ? "Add sermon"
+        : String(current.entityKey || "").indexOf("new-event") === 0
+          ? "Add event"
+          : "";
     $("#bb-tp-structured-editor-title", host).textContent =
-      (cfg.dialogTitle && String(cfg.dialogTitle).trim()) || titleFor(current.kind);
+      (cfg.dialogTitle && String(cfg.dialogTitle).trim()) || addTitle || titleFor(current.kind);
     setStatus("", "");
     host.hidden = false;
     document.body.classList.add("bb-tp-structured-open");

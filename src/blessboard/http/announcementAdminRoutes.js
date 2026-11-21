@@ -703,16 +703,19 @@ function createAnnouncementAdminRouter(deps) {
           error: null,
           saved: String((req.query && req.query.saved) || ""),
           publicAnnouncementUrl: (item.audiences || []).includes("public")
-            ? (scope.branchKey
-              ? publicBranchPagePath(
-                  scope.tenant.organization.key,
-                  scope.branchKey,
-                  "announcements"
-                )
-              : publicChurchPagePath(
-                  scope.tenant.organization.key,
-                  "announcements"
-                ))
+            ? (function () {
+                const listPath = scope.branchKey
+                  ? publicBranchPagePath(
+                      scope.tenant.organization.key,
+                      scope.branchKey,
+                      "announcements"
+                    )
+                  : publicChurchPagePath(
+                      scope.tenant.organization.key,
+                      "announcements"
+                    );
+                return listPath ? `${listPath}/${item.id}` : null;
+              })()
             : null,
           publicAnnouncementScopeLabel: scope.branchKey
             ? scope.branchDisplayName

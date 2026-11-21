@@ -5,10 +5,15 @@
   <% if (review && review.fieldErrors && review.fieldErrors.length) { %>
   <%- include('../partials/form-errors', { title: 'Unable to create member', errors: review.fieldErrors }) %>
   <% } %>
-  <dl data-bb-member-fields="full_name,phone,email,branch_id">
+  <dl data-bb-member-fields="full_name,phone,email,address_line_1,marital_status,next_of_kin_name,next_of_kin_relationship,next_of_kin_phone,branch_id">
     <dt>Full name</dt><dd><%= (review && review.values && review.values.fullName) || 'New member' %></dd>
     <dt>Phone</dt><dd><%= (review && review.values && review.values.phone) || '—' %></dd>
     <dt>Email</dt><dd><%= (review && review.values && review.values.email) || 'Not provided' %></dd>
+    <dt>Residential address</dt><dd><%= (review && review.values && review.values.addressLine1) || '—' %></dd>
+    <dt>Marital status</dt><dd><%= (review && review.values && review.values.maritalStatus) || '—' %></dd>
+    <dt>Emergency contact</dt><dd><%= (review && review.values && review.values.nextOfKinName) || '—' %></dd>
+    <dt>Emergency relationship</dt><dd><%= (review && review.values && review.values.nextOfKinRelationship) || '—' %></dd>
+    <dt>Emergency phone</dt><dd><%= (review && review.values && review.values.nextOfKinPhone) || '—' %></dd>
     <dt>Authorized branch</dt><dd><%= (review && review.values && (review.values.branchName || review.values.branchId)) || 'Authorized branch' %></dd>
     <dt>Portal access</dt><dd>not_activated</dd>
   </dl>

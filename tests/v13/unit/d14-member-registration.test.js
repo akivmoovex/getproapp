@@ -82,20 +82,25 @@ const HQ_FORM = {
   full_name: "D14 Member Example",
   email: "member.d14@example.invalid",
   phone: "+2609771234567",
+  address_line_1: "1 QA Street",
+  marital_status: "single",
+  next_of_kin_name: "QA Contact",
+  next_of_kin_relationship: "sibling",
+  next_of_kin_phone: "+260971234567",
   branch_id: BRANCH_ID,
 };
 
 describe("D14 HQ member registration", () => {
-  it("accepts the HQ field contract and keeps extra profile fields optional", () => {
+  it("accepts the HQ field contract and requires the membership profile fields", () => {
     const parsed = parseAddMemberFormBody(HQ_FORM);
     assert.equal(parsed.ok, true, JSON.stringify(parsed.fieldErrors));
     assert.equal(parsed.values.fullName, "D14 Member Example");
     assert.equal(parsed.values.email, "member.d14@example.invalid");
     assert.equal(parsed.branchId, BRANCH_ID);
     assert.ok(parsed.demographics.phoneNormalized);
-    assert.equal(parsed.profile.address.line1, null);
-    assert.equal(parsed.profile.maritalStatus, null);
-    assert.equal(parsed.profile.nextOfKin.name, null);
+    assert.equal(parsed.profile.address.line1, "1 QA Street");
+    assert.equal(parsed.profile.maritalStatus, "single");
+    assert.equal(parsed.profile.nextOfKin.name, "QA Contact");
 
     const blankEmail = parseAddMemberFormBody({ ...HQ_FORM, email: "" });
     assert.equal(blankEmail.ok, true, JSON.stringify(blankEmail.fieldErrors));
@@ -108,14 +113,16 @@ describe("D14 HQ member registration", () => {
     assert.ok(missing.fieldErrors.some((item) => item.field === "branch_id"));
     assert.ok(missing.fieldErrors.some((item) => item.field === "email"));
     assert.ok(missing.fieldErrors.some((item) => item.field === "marital_status"));
-    assert.equal(missing.fieldErrors.some((item) => item.field === "address_line_1"), false);
+    assert.ok(missing.fieldErrors.some((item) => item.field === "address_line_1"));
+    assert.ok(missing.fieldErrors.some((item) => item.field === "next_of_kin_name"));
+    assert.ok(missing.fieldErrors.some((item) => item.field === "next_of_kin_relationship"));
+    assert.ok(missing.fieldErrors.some((item) => item.field === "next_of_kin_phone"));
 
     const badKin = parseAddMemberFormBody({
       ...HQ_FORM,
       next_of_kin_phone: "not-a-phone",
     });
     assert.equal(badKin.ok, false);
-    assert.ok(badKin.fieldErrors.some((item) => item.field === "next_of_kin_name"));
     assert.ok(badKin.fieldErrors.some((item) => item.field === "next_of_kin_phone"));
   });
 
@@ -128,8 +135,11 @@ describe("D14 HQ member registration", () => {
           { field: "full_name", message: "Full legal name is required." },
           { field: "phone", message: "Enter a valid primary phone number." },
           { field: "email", message: "Enter a valid email or leave blank." },
+          { field: "address_line_1", message: "Residential address is required." },
           { field: "branch_id", message: "Assigned branch is required." },
         ],
+        maritalOptions: ["single"],
+        relationshipOptions: ["sibling"],
       },
       branches: [{ id: BRANCH_ID, displayName: "Central", key: "central", status: "active" }],
     });
@@ -138,6 +148,12 @@ describe("D14 HQ member registration", () => {
     assert.match(html, /name="full_name"[^>]*required/);
     assert.match(html, /name="phone"[^>]*required/);
     assert.match(html, /name="branch_id"[^>]*required/);
+    assert.match(html, /name="address_line_1"[^>]*required/);
+    assert.match(html, /name="marital_status"[^>]*required/);
+    assert.match(html, /name="next_of_kin_name"[^>]*required/);
+    assert.match(html, /name="next_of_kin_relationship"[^>]*required/);
+    assert.match(html, /name="next_of_kin_phone"[^>]*required/);
+    assert.match(html, /Residential address is required/);
     assert.match(html, /Portal activation remains pending after creation/);
     assert.match(html, /aria-invalid="true"/);
     assert.match(html, /Full legal name is required/);
@@ -162,6 +178,11 @@ describe("D14 HQ member registration", () => {
           email: "member.d14@example.invalid",
           branchId: BRANCH_ID,
           branchName: "Central",
+          addressLine1: "1 QA Street",
+          maritalStatus: "single",
+          nextOfKinName: "QA Contact",
+          nextOfKinRelationship: "sibling",
+          nextOfKinPhone: "+260971234567",
         },
       },
     });
@@ -171,6 +192,8 @@ describe("D14 HQ member registration", () => {
     assert.match(review, /\+2609771234567/);
     assert.match(review, /member\.d14@example\.invalid/);
     assert.match(review, /Central/);
+    assert.match(review, /1 QA Street/);
+    assert.match(review, /QA Contact/);
     assert.match(review, /not_activated/);
     assert.match(review, /name="draft_token" value="draft-token-d14"/);
     assert.match(review, /name="action" value="confirm_create"/);

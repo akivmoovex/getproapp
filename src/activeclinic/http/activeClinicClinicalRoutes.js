@@ -156,7 +156,9 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             actions: [
               ...(loaded.queue.actions.canStartEncounter
                 ? [{ href: "/app/clinical/start-encounter", label: "Start encounter" }]
-                : []),
+                : loaded.queue.actions.canRecordTriage
+                  ? [{ href: "/app/clinical/start-encounter?intent=triage", label: "Start triage" }]
+                  : []),
               { href: "/app/clinical/follow-up", label: "Follow-up", ghost: true },
             ],
           },
@@ -176,15 +178,16 @@ function registerActiveClinicClinicalRoutes(app, deps) {
   app.get(
     "/app/clinical/start-encounter",
     requireAuth,
-    requirePermission(PERM.MANAGE),
+    requirePermission([PERM.MANAGE, PERM.TRIAGE]),
     requireDepartment("clinical"),
     async (req, res, next) => {
       try {
+        const intent = String((req.query && req.query.intent) || "").trim();
         return renderShell(req, res, {
           activeNav: "clinical",
           content: "app/clinical-start-encounter-content.ejs",
           pageHeader: {
-            title: "Start encounter",
+            title: intent === "triage" ? "Start triage" : "Start encounter",
             description: "Start a new clinical encounter for a patient.",
           },
           breadcrumbs: [
@@ -196,6 +199,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             values: {
               patientId: String((req.query && req.query.patient_id) || "").trim(),
               appointmentId: String((req.query && req.query.appointment_id) || "").trim(),
+              intent: intent === "triage" ? "triage" : "",
             },
             error: null,
           },
@@ -210,7 +214,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
   app.post(
     "/app/clinical/start-encounter",
     requireAuth,
-    requirePermission(PERM.MANAGE),
+    requirePermission([PERM.MANAGE, PERM.TRIAGE]),
     requireDepartment("clinical"),
     async (req, res, next) => {
       try {
@@ -219,6 +223,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         }
         const patientId = String(req.body.patient_id || "").trim();
         const encounterType = String(req.body.encounter_type || "outpatient").trim();
+        const intent = String(req.body.intent || "").trim();
         const auth = req.activeClinicAuth;
 
         if (!UUID_RE.test(patientId)) {
@@ -258,7 +263,11 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           });
         }
 
-        return res.redirect(303, `/app/clinical/encounter/${result.encounter.id}?started=1`);
+        const nextPath =
+          intent === "triage"
+            ? `/app/clinical/encounter/${result.encounter.id}/vitals?recorded=0`
+            : `/app/clinical/encounter/${result.encounter.id}?started=1`;
+        return res.redirect(303, nextPath);
       } catch (err) {
         return next(err);
       }

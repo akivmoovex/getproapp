@@ -29,6 +29,45 @@ function presentDraftImageUrl(value) {
   return presentRuntimeImageSrc(value, process.env) || null;
 }
 
+function isoFromDateAndTime(dateValue, timeValue, fallbackTime) {
+  const date = String(dateValue || "").trim();
+  if (!date) return "";
+  const time = String(timeValue || fallbackTime || "").trim();
+  const stamp = time ? `${date}T${time.length === 5 ? `${time}:00` : time}` : `${date}T12:00:00`;
+  const parsed = new Date(stamp);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+}
+
+/**
+ * Editor forms post a date and description. Sermon pages read preachedAt and summary.
+ */
+function normalizeStructuredSermonPayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const preachedAt = source.preachedAt || isoFromDateAndTime(source.date, "12:00");
+  return {
+    ...source,
+    preachedAt: preachedAt || null,
+    summary: source.summary || source.description || "",
+  };
+}
+
+/**
+ * Editor forms post date, start time, and description. Event pages read startsAt and summary.
+ */
+function normalizeStructuredEventPayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const startsAt = source.startsAt || isoFromDateAndTime(source.date, source.startTime, "00:00");
+  const endsAt = source.endsAt || (source.date && source.endTime
+    ? isoFromDateAndTime(source.date, source.endTime, "")
+    : "");
+  return {
+    ...source,
+    startsAt: startsAt || null,
+    endsAt: endsAt || null,
+    summary: source.summary || source.description || "",
+  };
+}
+
 const ENTITY_FINDERS = Object.freeze({
   leader: contentRepo.findLeaderById,
   ministry: contentRepo.findMinistryById,
@@ -650,7 +689,9 @@ function applyStructuredDraftsToModel(model, drafts) {
   }
 
   if (model.pageKey === "events" || model.pageKey === "home") {
-    const mapEv = (p, key) => ({
+    const mapEv = (raw, key) => {
+      const p = normalizeStructuredEventPayload(raw);
+      return {
       id: key,
       title: p.title,
       summary: p.summary,
@@ -664,7 +705,8 @@ function applyStructuredDraftsToModel(model, drafts) {
       featured: p.featured,
       visible: p.visible !== false,
       organizer: p.organizer,
-    });
+    };
+    };
     if (model.pageKey === "events") {
       model.entities = applyCollection(model.entities, byKind.event, mapEv).filter((ev) => {
         if (!ev.startsAt) return true;
@@ -683,7 +725,8 @@ function applyStructuredDraftsToModel(model, drafts) {
   }
 
   if (model.pageKey === "sermons" || model.pageKey === "home") {
-    const mapS = (p, key) => {
+    const mapS = (raw, key) => {
+      const p = normalizeStructuredSermonPayload(raw);
       const series = p.series || p.category || null;
       return {
         id: key,
@@ -755,6 +798,8 @@ function applyStructuredDraftsToModel(model, drafts) {
 }
 
 module.exports = {
+  normalizeStructuredSermonPayload,
+  normalizeStructuredEventPayload,
   saveStructuredDraft,
   cancelStructuredDraft,
   countAllWebsiteDrafts,

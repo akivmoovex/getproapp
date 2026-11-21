@@ -5,6 +5,9 @@
   
   <form method="post" action="/app/clinical/start-encounter">
     <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    <% if (pageData.values && pageData.values.intent === 'triage') { %>
+    <input type="hidden" name="intent" value="triage" />
+    <% } %>
     
     <div class="ac-field">
       <label for="patient_id">Patient ID *</label>

@@ -42,13 +42,17 @@
 
     <div class="ac-form-field">
       <label class="ac-label" for="walkin_service_point">Service point</label>
+      <% if (!servicePoints.length) { %>
+      <p class="ac-alert" role="status" data-ac-walkin-empty="1">No walk-in service points are configured for <%= facility.displayName || 'this facility' %>. <% if (actions.canManageQueue) { %>Add one for this facility below.<% } else { %>A reception manager needs to add a service point for this facility.<% } %> Points from another facility are not listed here.</p>
+      <% } else { %>
       <select class="ac-select" id="walkin_service_point" name="service_point_id" required>
         <option value="">Select service point</option>
         <% servicePoints.forEach(function (sp) { %>
         <option value="<%= sp.id %>" <%= values.servicePointId === sp.id ? 'selected' : '' %>><%= sp.displayName %></option>
         <% }) %>
       </select>
-      <p class="ac-hint">Where the patient should queue.</p>
+      <p class="ac-hint">Where the patient should queue. A scheduled intake flag does not turn on public booking.</p>
+      <% } %>
     </div>
 
     <div class="ac-form-field">

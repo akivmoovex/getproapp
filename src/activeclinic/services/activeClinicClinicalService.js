@@ -395,13 +395,22 @@ async function startEncounter(db, input) {
   ) {
     return { ok: false, code: RESULT.INVALID_INPUT, encounter: null };
   }
-  const authz = await authorizeStaffPermission(db, {
+  let authz = await authorizeStaffPermission(db, {
     organizationId,
     staffMemberId: actor.staffMemberId,
     platformIdentityId: actor.platformIdentityId,
     permissionKey: PERM.MANAGE,
     facilityId,
   });
+  if (!authz.ok) {
+    authz = await authorizeStaffPermission(db, {
+      organizationId,
+      staffMemberId: actor.staffMemberId,
+      platformIdentityId: actor.platformIdentityId,
+      permissionKey: PERM.TRIAGE,
+      facilityId,
+    });
+  }
   if (!authz.ok) {
     return { ok: false, code: RESULT.ACCESS_DENIED, encounter: null };
   }
