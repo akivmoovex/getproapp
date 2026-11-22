@@ -191,8 +191,49 @@ function retainLaboratoryInterpretation(previous, next, reassessAuthorized) {
   return next == null ? null : next;
 }
 
+function previewReferenceRule(input) {
+  const source = input && typeof input === "object" ? input : {};
+  if (source.alreadyApproved !== true) {
+    return {
+      ok: false,
+      persisted: false,
+      migration: "044_not_applied",
+      status: "not_approved",
+      reason: "clinic_approval_required",
+    };
+  }
+  const checked = validateReferenceRangeRule(source, source);
+  if (!checked.ok) {
+    return {
+      ok: false,
+      persisted: false,
+      migration: "044_not_applied",
+      status: checked.status,
+      reason: checked.reason,
+    };
+  }
+  const judgement = interpretLaboratoryValue({
+    value: source.sampleValue,
+    unit: source.unit,
+    recordedAt: source.recordedAt || source.effectiveFrom,
+    organizationId: source.organizationId,
+    facilityId: source.facilityId,
+    testCode: source.testCode,
+    patientGroup: source.patientGroup || null,
+    rules: [source],
+  });
+  return {
+    ok: judgement.status === "applicable",
+    persisted: false,
+    migration: "044_not_applied",
+    status: judgement.status,
+    judgement,
+  };
+}
+
 module.exports = {
   validateReferenceRangeRule,
   interpretLaboratoryValue,
   retainLaboratoryInterpretation,
+  previewReferenceRule,
 };

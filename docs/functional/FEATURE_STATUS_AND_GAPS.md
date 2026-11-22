@@ -1,6 +1,6 @@
 # Feature status and gaps
 
-G35 counts stand after G56–G63. The reference-range engine, optional prescription fields, duplicate-dispense guard, and retention metadata did not finish a partial requirement. Stored clinical thresholds, migration 043, migration 044, media enablement, and production OTP delivery remain unactivated.
+G65–G76 keep the G35 counts. A saved prescription now says when it is not on the pharmacy queue. The laboratory reference-rule page previews a rule and does not store it. Stored clinical thresholds, migration 043, migration 044, media enablement, and production OTP delivery remain unactivated.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |

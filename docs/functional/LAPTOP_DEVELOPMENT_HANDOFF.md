@@ -1,6 +1,6 @@
 # Laptop development handoff
 
-Continue on branch `V13` only. The G55 handoff commit is `b1aee6322588b0a1c8125cd7038e6ecefb3aa023`. G56–G64 add a laboratory reference-rule engine, migration 044, manual prescription fields, a duplicate-dispense guard, and retention metadata. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
+Continue on branch `V13` only. The G64 handoff commit is `a62a2be44529028ada2d2538802cb18c469a0ff2`. G65–G76 add an explicit pharmacy-queue notice, a non-persistent laboratory reference-rule preview, and fail-closed G66 persistence and browser tests. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
 
 Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `https://github.com/akivmoovex/getproapp.git`.
 
@@ -35,7 +35,7 @@ Unset database URLs and the authorization flags, then run:
 
 `node --test --test-concurrency=1 --test-timeout=30000 tests/v13/contract/*.test.js tests/v13/unit/*.test.js`
 
-The suite before G44’s new contract file was 467 passed and 0 failed. G44’s validation records the new total. A failure there is a real failure. A gated file that skips is `NOT_RUN`.
+The suite before this pass was 486 passed and 0 failed. This pass is 487 passed and 0 failed. A failure there is a real failure. A gated file that skips is `NOT_RUN`.
 
 ## Product version
 

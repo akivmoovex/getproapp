@@ -16,10 +16,12 @@ const {
 const {
   prescriptionDosageInstructions,
   duplicatePrescriptionItemIds,
+  prescriptionQueueQuery,
 } = require("../../../src/activeclinic/services/clinicalOperationsRules");
 const { createOtpProvider } = require("../../../src/platform/otp/otpProviders");
 const { validateMediaFile } = require("../../../src/blessboard/media/validateMediaFile");
 const { areMediaUploadsEnabled } = require("../../../src/blessboard/config/mediaUploadsEnabled");
+const { previewReferenceRule } = require("../../../src/activeclinic/services/laboratoryReferenceRangeEngine");
 
 const ORG = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const OTHER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -219,5 +221,28 @@ describe("manual prescription and closed delivery controls", () => {
     assert.equal(named.ok, true);
     assert.equal(named.originalFilename.includes("/"), false);
     assert.equal(named.originalFilename.includes(".."), false);
+  });
+
+  it("states when a saved prescription is not on the pharmacy queue", () => {
+    assert.equal(
+      prescriptionQueueQuery({ kind: "prescription", created: false }),
+      "&pharmacy_queue=waiting_for_catalogue"
+    );
+    assert.equal(prescriptionQueueQuery({ kind: "prescription", created: true }), "");
+    assert.equal(prescriptionQueueQuery({ kind: "laboratory", created: false }), "");
+    const preview = previewReferenceRule({
+      organizationId: ORG,
+      facilityId: FACILITY,
+      testCode: "HGB",
+      unit: "g/dL",
+      low: 12,
+      high: 16,
+      version: 1,
+      effectiveFrom: "2026-01-01T00:00:00.000Z",
+      alreadyApproved: false,
+    });
+    assert.equal(preview.persisted, false);
+    assert.equal(preview.status, "not_approved");
+    assert.equal(preview.migration, "044_not_applied");
   });
 });

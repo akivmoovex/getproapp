@@ -34,13 +34,13 @@ describe("D19 QA implementation discovery", () => {
     assert.doesNotMatch(spec, /NOT_IMPLEMENTED/);
     const names = [...spec.matchAll(/test\("([^"]+)"/g)].map((match) => match[1]);
     assert.match(spec, /PAT-01/);
-    assert.equal(names.length, 18);
+    assert.equal(names.length, 20);
   });
 
   it("points every integration file at a real gated runner", () => {
     const dir = path.join(ROOT, "tests/v13/integration");
     const files = fs.readdirSync(dir).filter((name) => name.endsWith(".integration.test.js"));
-    assert.equal(files.length, 18);
+    assert.equal(files.length, 19);
     for (const file of files) {
       const source = fs.readFileSync(path.join(dir, file), "utf8");
       assert.match(source, /runGated/);

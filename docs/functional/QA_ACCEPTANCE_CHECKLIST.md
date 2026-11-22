@@ -13,7 +13,8 @@ A box may be checked only after an authorized run. Nothing below was executed in
 - [ ] Order a laboratory test with urgency routine, urgent, or stat
 - [ ] Confirm an unknown urgency is rejected and no reference range is invented
 - [ ] Enter a manual prescription with dose, frequency, and duration
-- [ ] Confirm the form still says manual entry only
+- [ ] Confirm a prescription without a catalogue id says it is not on the pharmacy queue
+- [ ] Preview a laboratory reference rule and confirm nothing is saved
 - [ ] Dispense no more than the remaining quantity
 - [ ] Invoice in minor units and refuse a second reversal
 - [ ] Close the encounter once and get `STALE_VERSION` on a stale retry

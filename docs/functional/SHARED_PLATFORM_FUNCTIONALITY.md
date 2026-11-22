@@ -1,6 +1,6 @@
 # Shared platform functionality
 
-Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.1 in `src/platform/build/applicationBuildInfo.js`. No shared source was changed in G41.
+Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.1 in `src/platform/build/applicationBuildInfo.js`. G65–G76 did not change OTP delivery, CSRF, or tenant isolation. Production OTP delivery stays inactive.
 
 | Area | Status | Current behavior | Next action |
 | --- | --- | --- | --- |

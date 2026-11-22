@@ -472,6 +472,28 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.getByText(/coupon/i)).toHaveCount(0);
     await expect(page.getByText(/appointment confirmed/i)).toHaveCount(0);
   });
+
+  test("G66 reference rule preview is not saved", async ({ page }, testInfo) => {
+    hold(testInfo, "G66");
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/diagnostics/laboratory/reference-rules");
+    await expect(page.getByText("Nothing is saved")).toBeVisible();
+    await expect(page.locator("form[action='/app/diagnostics/laboratory/reference-rules'] input[name='_csrf']")).toHaveCount(1);
+    await expect(page.locator("input[name='test_code']")).toBeVisible();
+    await page.locator("button[type='submit']").click();
+    await expect(page.getByText("Nothing is saved")).toBeVisible();
+  });
+
+  test("G67 prescription editor explains the pharmacy queue", async ({ page }, testInfo) => {
+    hold(testInfo, "G67");
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    const encounterId = required("E2E_AC_ENCOUNTER_ID");
+    await page.goto(`/app/clinical/encounter/${encounterId}/order/prescription`);
+    await expect(page.getByText("Manual entry only")).toBeVisible();
+    await expect(page.getByLabel("Medication / active compound")).toBeVisible();
+    await expect(page.getByText("without placing it on the pharmacy queue")).toBeVisible();
+    await expect(page.locator("input[name='medication_catalogue_item_id']")).toHaveCount(1);
+  });
 });
 
 async function fillVisible(page, name, value) {

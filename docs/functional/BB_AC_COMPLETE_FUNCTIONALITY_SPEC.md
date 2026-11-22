@@ -1,6 +1,6 @@
 # BlessBoard and ActiveClinic complete functionality specification
 
-Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G39–G42. It does not describe a production deployment.
+Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G65–G76. It does not describe a production deployment.
 
 The healthcare brief PDF and both office QA documents are `SOURCE_UNAVAILABLE`. Repository evidence is the source, the migrations, the database-free tests, and the G01–G36 reports.
 

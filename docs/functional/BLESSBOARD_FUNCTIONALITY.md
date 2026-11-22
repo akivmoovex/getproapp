@@ -1,6 +1,6 @@
 # BlessBoard functionality
 
-Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. Nothing is `VERIFIED_E2E`.
+Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. Nothing is `VERIFIED_E2E`. G65–G76 did not enable media uploads and did not insert public-page rows.
 
 Shared fields: tenant scope is the church organisation; branch scope is the selected branch; latest evidence is database-free tests; HTTP and browser are `NOT_RUN`.
 

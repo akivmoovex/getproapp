@@ -89,6 +89,12 @@ function duplicatePrescriptionItemIds(itemDispenses) {
   return false;
 }
 
+function prescriptionQueueQuery(diagnosticRequest) {
+  if (!diagnosticRequest || diagnosticRequest.kind !== "prescription") return "";
+  if (diagnosticRequest.created === true) return "";
+  return "&pharmacy_queue=waiting_for_catalogue";
+}
+
 function positiveDispenseQuantity(value) {
   if (typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 999999) {
     return value;
@@ -112,4 +118,5 @@ module.exports = {
   prescriptionDosageInstructions,
   positiveDispenseQuantity,
   duplicatePrescriptionItemIds,
+  prescriptionQueueQuery,
 };

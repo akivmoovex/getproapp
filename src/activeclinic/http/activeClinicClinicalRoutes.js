@@ -50,6 +50,7 @@ const {
   RESULT: CLINICAL_RESULT,
   PERM,
 } = require("../services/activeClinicClinicalService");
+const { prescriptionQueueQuery } = require("../services/clinicalOperationsRules");
 const {
   updateClinicalFollowUpStatus,
 } = require("../services/activeClinicClinicalFollowUpService");
@@ -319,6 +320,12 @@ function registerActiveClinicClinicalRoutes(app, deps) {
                   ? { type: "success", message: "Consultation note signed." }
                   : req.query.diagnosis_recorded === "1"
                     ? { type: "success", message: "Diagnosis recorded." }
+                  : req.query.pharmacy_queue === "waiting_for_catalogue"
+                    ? {
+                        type: "warning",
+                        message:
+                          "Prescription saved. It is not on the pharmacy queue until a catalogue item id from this organisation is entered. No medication was selected.",
+                      }
                     : req.query.order_created === "1"
                       ? { type: "success", message: "Clinical order created." }
                       : req.query.intake_recorded === "1"
@@ -1155,7 +1162,10 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           );
         }
 
-        return res.redirect(303, `/app/clinical/encounter/${encounterId}?order_created=1`);
+        return res.redirect(
+          303,
+          `/app/clinical/encounter/${encounterId}?order_created=1${prescriptionQueueQuery(result.diagnosticRequest)}`
+        );
       } catch (err) {
         return next(err);
       }

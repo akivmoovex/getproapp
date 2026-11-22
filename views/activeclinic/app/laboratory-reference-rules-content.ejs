@@ -1,0 +1,57 @@
+<%
+  var preview = (pageData && pageData.referencePreview) || {};
+  var values = preview.values || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section data-ac-page-section="laboratory-reference-rules" data-ac-reference-rules="preview">
+  <p class="ac-notice" data-ac-reference-persistence="not-saved">Nothing is saved. Migration 044 is not applied, and this preview does not approve a clinical threshold.</p>
+  <% if (preview.status) { %>
+  <p class="ac-muted" data-ac-reference-status="<%= preview.status %>">Preview status: <%= preview.status %><% if (preview.reason) { %> (<%= preview.reason %>)<% } %><% if (preview.interpretation) { %> · <%= preview.interpretation %><% } %></p>
+  <% } %>
+  <form method="post" action="/app/diagnostics/laboratory/reference-rules">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <div class="ac-field">
+      <label for="test_code">Test code</label>
+      <input id="test_code" name="test_code" maxlength="80" value="<%= values.test_code || '' %>" required />
+    </div>
+    <div class="ac-field">
+      <label for="unit">Unit</label>
+      <input id="unit" name="unit" maxlength="40" value="<%= values.unit || '' %>" required />
+    </div>
+    <div class="ac-field">
+      <label for="low">Low</label>
+      <input id="low" name="low" value="<%= values.low || '' %>" required />
+    </div>
+    <div class="ac-field">
+      <label for="high">High</label>
+      <input id="high" name="high" value="<%= values.high || '' %>" required />
+    </div>
+    <div class="ac-field">
+      <label for="critical_low">Critical low</label>
+      <input id="critical_low" name="critical_low" value="<%= values.critical_low || '' %>" />
+    </div>
+    <div class="ac-field">
+      <label for="critical_high">Critical high</label>
+      <input id="critical_high" name="critical_high" value="<%= values.critical_high || '' %>" />
+    </div>
+    <div class="ac-field">
+      <label for="version">Version</label>
+      <input id="version" name="version" value="<%= values.version || '1' %>" />
+    </div>
+    <div class="ac-field">
+      <label for="effective_from">Effective from</label>
+      <input id="effective_from" name="effective_from" value="<%= values.effective_from || '' %>" required />
+    </div>
+    <div class="ac-field">
+      <label for="sample_value">Sample value</label>
+      <input id="sample_value" name="sample_value" value="<%= values.sample_value || '' %>" />
+    </div>
+    <div class="ac-field">
+      <label for="already_approved">
+        <input type="checkbox" id="already_approved" name="already_approved" value="1" <% if (values.already_approved === '1') { %>checked<% } %> />
+        The clinic has already approved this rule
+      </label>
+    </div>
+    <button type="submit" class="ac-btn">Preview rule</button>
+  </form>
+</section>

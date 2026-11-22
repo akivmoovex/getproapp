@@ -61,6 +61,7 @@ const {
   canEnterDiagnosticsHub,
 } = require("../services/activeClinicDiagnosticsService");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { previewReferenceRule } = require("../services/laboratoryReferenceRangeEngine");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -261,6 +262,99 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
             { label: "Queue" },
           ],
           pageData: { queue: loaded.queue },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/diagnostics/laboratory/reference-rules",
+    requireAuth,
+    requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
+    async (req, res, next) => {
+      try {
+        if (!req.activeClinicAuth.selectedFacility) {
+          return res.redirect(303, "/app/select-facility?return=/app/diagnostics/laboratory/reference-rules");
+        }
+        return renderShell(req, res, {
+          activeNav: "diagnostics",
+          content: "app/laboratory-reference-rules-content.ejs",
+          pageHeader: {
+            title: "Laboratory reference rules",
+            description: "Preview only. Nothing is saved until migration 044 is applied.",
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Laboratory", href: "/app/diagnostics/laboratory" },
+            { label: "Reference rules" },
+          ],
+          pageData: {
+            referencePreview: { persisted: false, migration: "044_not_applied", values: {} },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/diagnostics/laboratory/reference-rules",
+    requireAuth,
+    requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        if (!auth.selectedFacility) {
+          return res.redirect(303, "/app/select-facility?return=/app/diagnostics/laboratory/reference-rules");
+        }
+        const preview = previewReferenceRule({
+          organizationId: auth.organization.id,
+          facilityId: auth.selectedFacility.id,
+          testCode: req.body.test_code,
+          unit: req.body.unit,
+          low: req.body.low,
+          high: req.body.high,
+          criticalLow: req.body.critical_low,
+          criticalHigh: req.body.critical_high,
+          version: req.body.version,
+          effectiveFrom: req.body.effective_from,
+          effectiveUntil: req.body.effective_until,
+          patientGroup: req.body.patient_group,
+          sampleValue: req.body.sample_value,
+          alreadyApproved: req.body.already_approved === "1",
+          status: "approved",
+        });
+        return renderShell(req, res, {
+          activeNav: "diagnostics",
+          content: "app/laboratory-reference-rules-content.ejs",
+          status: preview.ok ? 200 : 400,
+          pageHeader: {
+            title: "Laboratory reference rules",
+            description: "Preview only. Nothing is saved until migration 044 is applied.",
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Laboratory", href: "/app/diagnostics/laboratory" },
+            { label: "Reference rules" },
+          ],
+          pageData: {
+            referencePreview: {
+              persisted: false,
+              migration: preview.migration,
+              status: preview.status,
+              reason: preview.reason || null,
+              interpretation: preview.judgement ? preview.judgement.interpretation : null,
+              values: req.body,
+            },
+          },
         });
       } catch (err) {
         return next(err);

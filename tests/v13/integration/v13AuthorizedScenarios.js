@@ -747,11 +747,26 @@ async function runG05Records(pool) {
   assert.equal(Number(probe.rows[0].n), 1);
 }
 
+async function runG66ReferenceRules(pool) {
+  const { previewReferenceRule } = require("../../../src/activeclinic/services/laboratoryReferenceRangeEngine");
+  const preview = previewReferenceRule({ alreadyApproved: false });
+  assert.equal(preview.persisted, false);
+  assert.equal(preview.migration, "044_not_applied");
+  const found = await pool.query(
+    `SELECT to_regclass('activeclinic.laboratory_reference_rules') AS rules,
+            to_regclass('activeclinic.record_migration_batches') AS batches`
+  );
+  if (!found.rows[0].rules || !found.rows[0].batches) {
+    throw new Error("MIGRATION_PENDING: migration 043 or 044 is not applied");
+  }
+}
+
 module.exports = {
   runGated,
   runG03Laboratory,
   runG04PharmacyBilling,
   runG05Records,
+  runG66ReferenceRules,
   runBb01,
   runBb02,
   runBb03,
