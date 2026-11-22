@@ -12,6 +12,9 @@ const {
   canAttachLaboratoryResult,
   isClosedDiagnosticStatus,
 } = require("./clinicalOperationsRules");
+const {
+  interpretLaboratoryValue,
+} = require("./laboratoryReferenceRangeEngine");
 
 const RESULT = {
   OK: "OK",
@@ -406,6 +409,8 @@ async function enterLaboratoryResult(pool, params) {
       return { ok: false, code: RESULT.INVALID_STATUS };
     }
 
+    let criticalFlag = isCritical === true;
+
     // Create result
     const resultRes = await client.query(
       `INSERT INTO activeclinic.laboratory_results (
@@ -421,7 +426,7 @@ async function enterLaboratoryResult(pool, params) {
         laboratoryRequestId,
         request.patient_id,
         resultSummary,
-        isCritical,
+        criticalFlag,
         actor.staffId,
       ]
     );
@@ -431,6 +436,40 @@ async function enterLaboratoryResult(pool, params) {
     // Create result components
     for (let i = 0; i < components.length; i++) {
       const comp = components[i];
+      let rangeLow = comp.reference_range_low == null ? null : comp.reference_range_low;
+      let rangeHigh = comp.reference_range_high == null ? null : comp.reference_range_high;
+      let rangeText = comp.reference_range_text || null;
+      let interpretation = comp.interpretation || null;
+      let abnormal =
+        comp.is_abnormal === true ? true : comp.is_abnormal === false ? false : null;
+      if (comp.approvedReferenceRule) {
+        const judged = interpretLaboratoryValue({
+          value: comp.value_numeric,
+          unit: comp.unit,
+          recordedAt: comp.recordedAt || new Date().toISOString(),
+          organizationId,
+          facilityId,
+          testCode: comp.test_code,
+          patientGroup: comp.patientGroup || null,
+          rules: [comp.approvedReferenceRule],
+        });
+        if (
+          judged.status !== "applicable" &&
+          judged.status !== "unconfigured" &&
+          judged.status !== "not_applicable"
+        ) {
+          await client.query("ROLLBACK");
+          return { ok: false, code: RESULT.INVALID_INPUT };
+        }
+        if (judged.status === "applicable") {
+          rangeLow = judged.low;
+          rangeHigh = judged.high;
+          rangeText = judged.displayText || `configuration_version:${judged.configurationVersion}`;
+          interpretation = judged.interpretation;
+          abnormal = judged.isAbnormal;
+          if (judged.isCritical === true) criticalFlag = true;
+        }
+      }
       await client.query(
         `INSERT INTO activeclinic.laboratory_result_components (
           organization_id, healthcare_organization_id, laboratory_result_id,
@@ -447,11 +486,11 @@ async function enterLaboratoryResult(pool, params) {
           comp.value_numeric || null,
           comp.value_text || null,
           comp.unit || null,
-          comp.reference_range_low || null,
-          comp.reference_range_high || null,
-          comp.reference_range_text || null,
-          comp.interpretation || null,
-          comp.is_abnormal || null,
+          rangeLow,
+          rangeHigh,
+          rangeText,
+          interpretation,
+          abnormal,
           i + 1,
         ]
       );
@@ -474,7 +513,7 @@ async function enterLaboratoryResult(pool, params) {
     }
 
     // If critical, create alert
-    if (isCritical) {
+    if (criticalFlag) {
       await client.query(
         `INSERT INTO activeclinic.clinical_alerts (
           organization_id, healthcare_organization_id, facility_id,
@@ -491,7 +530,7 @@ async function enterLaboratoryResult(pool, params) {
       ok: true,
       result: {
         id: resultId,
-        isCritical,
+        isCritical: criticalFlag,
       },
     };
   } catch (err) {

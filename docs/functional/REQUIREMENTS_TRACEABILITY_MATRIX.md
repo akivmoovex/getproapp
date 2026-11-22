@@ -19,9 +19,9 @@ Sources in the repository: G27 register, G35 matrix, current routes, and databas
 | AC-09 | IMPLEMENTED_UNVERIFIED | Triage permission and vitals | No invented threshold |
 | AC-10 | IMPLEMENTED_UNVERIFIED | Signed notes cannot be overwritten | Amendments table unused |
 | AC-11 | PARTIAL | Free-text diagnosis | No code catalogue |
-| AC-12 | PARTIAL | Dose fields required | Manual form, no queue handoff |
-| AC-13 | PARTIAL | Orders, queue, results | No approved ranges |
-| AC-14 | PARTIAL | Dispense and remaining quantity | Handoff is AC-12 |
+| AC-12 | PARTIAL | Manual dose, optional unit, optional catalogue id | No picker and no queue handoff without a catalogue id |
+| AC-13 | PARTIAL | Orders, queue, results, and an approved-rule engine | No stored thresholds. Migration 044 is not applied |
+| AC-14 | PARTIAL | Dispense, remainder, and one-request duplicate rejection | Handoff is AC-12 |
 | AC-15 | IMPLEMENTED_UNVERIFIED | Minor units, reversals | No payment provider |
 | AC-16 | IMPLEMENTED_UNVERIFIED | Versioned close | HTTP not run |
 | AC-17 | PARTIAL | Text documents | Binary deferred |

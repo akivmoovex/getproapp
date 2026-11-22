@@ -69,7 +69,12 @@
 
         <div class="ac-field">
           <label for="dose">Strength / dose *</label>
-          <input type="text" id="dose" name="dose" required maxlength="100" value="<%= values.dose || '' %>" placeholder="e.g. 500mg" />
+          <input type="text" id="dose" name="dose" required maxlength="100" value="<%= values.dose || '' %>" placeholder="Clinician-entered dose" />
+        </div>
+
+        <div class="ac-field">
+          <label for="dose_unit">Dose unit</label>
+          <input type="text" id="dose_unit" name="dose_unit" maxlength="40" value="<%= values.dose_unit || '' %>" placeholder="Clinician-entered unit" />
         </div>
 
         <div class="ac-field">
@@ -89,7 +94,12 @@
 
         <div class="ac-field">
           <label for="quantity">Dispense quantity</label>
-          <input type="text" id="quantity" name="quantity" maxlength="80" value="<%= values.quantity || '' %>" placeholder="e.g. 14 tablets" />
+          <input type="text" id="quantity" name="quantity" maxlength="80" value="<%= values.quantity || '' %>" placeholder="Whole number, for example 14" />
+        </div>
+
+        <div class="ac-field">
+          <label for="medication_catalogue_item_id">Catalogue item id</label>
+          <input type="text" id="medication_catalogue_item_id" name="medication_catalogue_item_id" maxlength="36" value="<%= values.medication_catalogue_item_id || '' %>" placeholder="Optional. Does not choose a medication." autocomplete="off" />
         </div>
 
         <div class="ac-field">

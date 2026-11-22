@@ -10,6 +10,9 @@ const { recordAuditEventSafe } = require("../../platform/services/auditEventServ
 const {
   authorizeStaffPermission,
 } = require("./activeClinicAuthorizationService");
+const {
+  duplicatePrescriptionItemIds,
+} = require("./clinicalOperationsRules");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -865,6 +868,9 @@ async function dispensePrescription(pool, input) {
   } = input;
 
   if (!staffId || !organizationId || !prescriptionId || !itemDispenses || itemDispenses.length === 0) {
+    return { ok: false, result: RESULT.INVALID_INPUT };
+  }
+  if (duplicatePrescriptionItemIds(itemDispenses)) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 

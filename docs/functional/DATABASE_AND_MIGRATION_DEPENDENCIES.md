@@ -2,7 +2,7 @@
 
 The shared PostgreSQL cluster on port 5432 is out of scope. The isolated instance, when a later phase is authorized, is `127.0.0.1:55432`, database `getpro_v13_e2e_regression213101`, role `v13_regression_213101`. This phase did not connect to either.
 
-Foundation bootstrap already ran once in D24. Do not run it again. Seeds `001`–`011` stay as they are. The safe migration-count contract expects 222 files: the historical set plus `db/migrations/activeclinic/043_record_migration_inventory.sql`.
+Foundation bootstrap already ran once in D24. Do not run it again. Seeds `001`–`011` stay as they are. The safe migration-count contract expects 223 files: the historical set, `043_record_migration_inventory.sql`, and `044_laboratory_reference_rules.sql`. Neither 043 nor 044 has been executed.
 
 ## Migration 043
 

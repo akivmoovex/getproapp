@@ -60,7 +60,7 @@ ActiveClinic screens are the EJS app pages for those routes. BlessBoard screens 
 
 ## 14. Business rules
 
-Laboratory urgency is only routine, urgent, or stat. Prescription entry is manual and requires drug name, dose, frequency, and duration. Dispense quantity must be a positive integer within the remaining amount and requires the dispense permission. Billing uses integer minor units. A signed consultation cannot be overwritten. Paper disposal returns legal approval required and does not delete. Patient merge stays deferred. Diagnosis codes, reference ranges, and payment providers are not invented.
+Laboratory urgency is only routine, urgent, or stat. A laboratory result is abnormal or critical only when the component includes an approved reference rule for that organisation, facility, test, and unit. No default range is stored in code. Migration 044 can hold those rules later and has not been applied. Prescription entry is manual and requires drug name, dose, frequency, and duration. An optional unit and an optional catalogue item id do not choose a drug. Dispense quantity must be a positive integer within the remaining amount, the same item cannot be repeated in one request, and dispense requires the dispense permission. Billing uses integer minor units. A signed consultation cannot be overwritten. Paper disposal returns legal approval required and does not delete. Patient merge stays deferred. Diagnosis codes, reference ranges, and payment providers are not invented.
 
 ## 15. Security requirements
 

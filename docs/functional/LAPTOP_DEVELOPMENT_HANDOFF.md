@@ -1,6 +1,6 @@
 # Laptop development handoff
 
-Continue on branch `V13` only. The G44 documentation commit is `43c298182d1ac0be8d22dbdcc32bc17cb78187bf`. G46–G54 add permission-scoped encounter handoff links and a permission check on `openMigrationBatch`. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
+Continue on branch `V13` only. The G55 handoff commit is `b1aee6322588b0a1c8125cd7038e6ecefb3aa023`. G56–G64 add a laboratory reference-rule engine, migration 044, manual prescription fields, a duplicate-dispense guard, and retention metadata. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
 
 Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `https://github.com/akivmoovex/getproapp.git`.
 

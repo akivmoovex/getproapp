@@ -66,14 +66,27 @@ function prescriptionDosageInstructions(details) {
   const source = details && typeof details === "object" ? details : {};
   const drug = clipPrescriptionText(source.drug_name || source.drugName, 200);
   const dose = clipPrescriptionText(source.dose, 100);
+  const unit = clipPrescriptionText(source.dose_unit || source.doseUnit, 40);
   const route = clipPrescriptionText(source.route, 80);
   const frequency = clipPrescriptionText(source.frequency, 100);
   const duration = clipPrescriptionText(source.duration, 100);
   if (!drug || !dose || !frequency || !duration) return null;
-  const parts = [`Dose: ${dose}`];
+  const doseText = unit ? `${dose} ${unit}` : dose;
+  const parts = [`Dose: ${doseText}`];
   if (route) parts.push(`Route: ${route}`);
   parts.push(`Frequency: ${frequency}`, `Duration: ${duration}`);
   return parts.join("; ").slice(0, 1000);
+}
+
+function duplicatePrescriptionItemIds(itemDispenses) {
+  const seen = new Set();
+  for (const item of Array.isArray(itemDispenses) ? itemDispenses : []) {
+    const id = String((item && item.prescriptionItemId) || "");
+    if (!id) continue;
+    if (seen.has(id)) return true;
+    seen.add(id);
+  }
+  return false;
 }
 
 function positiveDispenseQuantity(value) {
@@ -98,4 +111,5 @@ module.exports = {
   storedDiagnosticUrgency,
   prescriptionDosageInstructions,
   positiveDispenseQuantity,
+  duplicatePrescriptionItemIds,
 };

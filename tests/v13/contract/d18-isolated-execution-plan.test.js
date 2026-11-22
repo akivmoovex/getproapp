@@ -47,10 +47,10 @@ function authorized(stageExtra = {}) {
 }
 
 describe("D18 isolated execution plan", () => {
-  it("counts 222 migrations and seeds 001 through 011 without a connection", () => {
+  it("counts 223 migrations and seeds 001 through 011 without a connection", () => {
     const migrations = discoverMigrations();
     const seeds = discoverSeeds().map((file) => file.filename);
-    assert.equal(migrations.length, 222);
+    assert.equal(migrations.length, 223);
     assert.deepEqual(seeds, [
       "001_deployments.sql",
       "002_products.sql",

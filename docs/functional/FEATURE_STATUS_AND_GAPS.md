@@ -1,6 +1,6 @@
 # Feature status and gaps
 
-G35 counts stand after G46–G53. Encounter department links and the migration-batch permission check did not finish a partial or blocked requirement. The remaining work still needs a policy, an unapplied migration, a fixture write, or an executed test.
+G35 counts stand after G56–G63. The reference-range engine, optional prescription fields, duplicate-dispense guard, and retention metadata did not finish a partial requirement. Stored clinical thresholds, migration 043, migration 044, media enablement, and production OTP delivery remain unactivated.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |
