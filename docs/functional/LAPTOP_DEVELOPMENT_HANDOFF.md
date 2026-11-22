@@ -1,6 +1,6 @@
 # Laptop development handoff
 
-Continue on branch `V13` only. The parent of the G44 documentation commit is `e85abff97306f723b90bde0b1a2362442882aecd`, which is the G37 checkpoint on `origin/V13`. After you pull, `git rev-parse HEAD` is the G44 commit if the push fast-forwarded. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
+Continue on branch `V13` only. The G44 documentation commit is `43c298182d1ac0be8d22dbdcc32bc17cb78187bf`. G46–G54 add permission-scoped encounter handoff links and a permission check on `openMigrationBatch`. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
 
 Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `https://github.com/akivmoovex/getproapp.git`.
 

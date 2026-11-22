@@ -25,6 +25,10 @@ const {
 const {
   PERM: VISIT_SUMMARY_PERM,
 } = require("./activeClinicVisitSummaryReleaseService");
+const {
+  handoffPermissionKeys,
+  selectEncounterHandoffLinks,
+} = require("./encounterHandoffLinks");
 
 const STITCH = Object.freeze({
   worklistDesktop: "ae083a2bfe324046b4d9a0648c516bbd",
@@ -194,6 +198,15 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
   const canTriage = await hasPerm(db, input.auth, PERM.TRIAGE);
   const canDiagnosis = await hasPerm(db, input.auth, PERM.DIAGNOSIS_RECORD);
   const canOrder = await hasPerm(db, input.auth, PERM.ORDER_CREATE);
+  const grantedHandoffs = [];
+  await Promise.all(
+    handoffPermissionKeys().map(async (permissionKey) => {
+      if (await hasPerm(db, input.auth, permissionKey)) {
+        grantedHandoffs.push(permissionKey);
+      }
+    })
+  );
+  const handoff = selectEncounterHandoffLinks(grantedHandoffs);
   const canReleaseVisitSummary = await hasPerm(
     db,
     input.auth,
@@ -228,6 +241,10 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
         orderPrescription: `/app/clinical/encounter/${eid}/order/prescription`,
         orderLab: `/app/clinical/encounter/${eid}/order/lab`,
         orderRadiology: `/app/clinical/encounter/${eid}/order/radiology`,
+        reception: handoff.reception || null,
+        laboratory: handoff.laboratory || null,
+        pharmacy: handoff.pharmacy || null,
+        billing: handoff.billing || null,
         documents: encounter.encounter.patientId
           ? `/app/clinical/patients/${encodeURIComponent(
               encounter.encounter.patientId

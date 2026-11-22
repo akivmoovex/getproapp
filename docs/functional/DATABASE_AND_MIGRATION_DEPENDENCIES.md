@@ -10,7 +10,7 @@ Status: committed in `ccb5859f`, reviewed in G36, not executed.
 
 It creates `record_migration_batches`, `record_migration_files`, `retention_categories`, and `retention_holds`. Foreign keys use `ON DELETE RESTRICT`. It does not alter patients or encounters. It has no `DELETE FROM`, `DROP TABLE`, or `TRUNCATE`. There is no down script.
 
-Current HTTP journeys do not need it. `openMigrationBatch` is not imported by any file in `src/activeclinic/http`. A future import screen is not deployable until 043 is applied and a permission check exists.
+Current HTTP journeys do not need it. `openMigrationBatch` is still not imported by any file in `src/activeclinic/http`. It now refuses the insert unless the caller passes a granted `activeclinic.clinical_document.create` authorization. A future import screen is not operational until 043 is applied on an authorized isolated database.
 
 ## What does not depend on 043
 

@@ -1,6 +1,6 @@
 # Feature status and gaps
 
-G35 counts stand. G39 through G42 did not move a row, because the remaining work needs a policy, an unapplied migration, a fixture write, or an executed test.
+G35 counts stand after G46–G53. Encounter department links and the migration-batch permission check did not finish a partial or blocked requirement. The remaining work still needs a policy, an unapplied migration, a fixture write, or an executed test.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |

@@ -25,7 +25,7 @@ Sources in the repository: G27 register, G35 matrix, current routes, and databas
 | AC-15 | IMPLEMENTED_UNVERIFIED | Minor units, reversals | No payment provider |
 | AC-16 | IMPLEMENTED_UNVERIFIED | Versioned close | HTTP not run |
 | AC-17 | PARTIAL | Text documents | Binary deferred |
-| AC-18 | BLOCKED | Migration 043 source only | Not applied, not routed |
+| AC-18 | BLOCKED | Migration 043 source only. Batch open now requires document-create authorization and is still unrouted | Not applied |
 | AC-19 | PARTIAL | Consent and refused disposal | Holds wait on 043 |
 | AC-20 | IMPLEMENTED_UNVERIFIED | Revenue report route | Not executed |
 | AC-21 | IMPLEMENTED_UNVERIFIED | Department permission keys | HTTP not run |

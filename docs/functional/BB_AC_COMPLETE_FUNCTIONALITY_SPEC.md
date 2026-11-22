@@ -80,7 +80,7 @@ No national registry, insurer, card processor, production SMS, production email,
 
 ## 19. Automated test coverage
 
-Database-free unit and contract tests are the executed evidence. G39–G42 added four contract assertions in `tests/v13/contract/g39-g42-boundary-contracts.test.js`. Integration files remain 18 and must call `runGated`. ActiveClinic Playwright names remain 18. BlessBoard Playwright names remain 23. Gated results are `NOT_RUN`.
+Database-free unit and contract tests are the executed evidence. G46–G52 added encounter handoff behavior tests and a denied migration-batch call. The safe suite passed 475 and failed 0. Integration files remain 18 and must call `runGated`. ActiveClinic Playwright names remain 18. BlessBoard Playwright names remain 23. Gated results are `NOT_RUN`.
 
 ## 20. Manual QA acceptance criteria
 

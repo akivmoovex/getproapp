@@ -58,10 +58,34 @@ describe("G05 record migration", () => {
         facilityId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
         openedByStaffId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
         sourceLabel: "Ward cabinet A",
+        authorization: {
+          ok: true,
+          permissionKey: "activeclinic.clinical_document.create",
+        },
       }
     );
     assert.equal(opened.ok, true);
     assert.match(queries[0], /organization_id/);
     assert.equal(/DELETE/i.test(queries[0]), false);
+    const deniedQueries = [];
+    const denied = await openMigrationBatch(
+      {
+        async query(sql) {
+          deniedQueries.push(sql);
+          return { rows: [{ id: ORG }] };
+        },
+      },
+      {
+        organizationId: ORG,
+        healthcareOrganizationId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        facilityId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        openedByStaffId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        sourceLabel: "Ward cabinet A",
+      }
+    );
+    assert.equal(denied.ok, false);
+    assert.equal(denied.code, RESULT.ACCESS_DENIED);
+    assert.equal(denied.batchId, null);
+    assert.equal(deniedQueries.length, 0);
   });
 });

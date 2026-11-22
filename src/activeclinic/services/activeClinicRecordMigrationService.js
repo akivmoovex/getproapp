@@ -8,9 +8,12 @@
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const IMPORT_PERMISSION = "activeclinic.clinical_document.create";
+
 const RESULT = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
+  ACCESS_DENIED: "access_denied",
   BINARY_STORAGE_DEFERRED: "binary_storage_deferred",
   CATEGORY_NOT_APPROVED: "category_not_approved",
   LEGAL_APPROVAL_REQUIRED: "legal_approval_required",
@@ -74,8 +77,20 @@ function requestPaperDisposal() {
   };
 }
 
+function migrationWriteAuthorized(source) {
+  const authz = source && source.authorization;
+  return Boolean(
+    authz &&
+      authz.ok === true &&
+      authz.permissionKey === IMPORT_PERMISSION
+  );
+}
+
 async function openMigrationBatch(db, input) {
   const source = input || {};
+  if (!migrationWriteAuthorized(source)) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, batchId: null };
+  }
   const sourceLabel = String(source.sourceLabel || "").trim();
   if (
     !UUID_RE.test(String(source.organizationId || "")) ||
@@ -104,7 +119,9 @@ async function openMigrationBatch(db, input) {
 }
 
 module.exports = {
+  IMPORT_PERMISSION,
   RESULT,
+  migrationWriteAuthorized,
   classifyRecordOrigin,
   reviewMigrationPatientMatch,
   declareMigrationFile,

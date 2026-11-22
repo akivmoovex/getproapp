@@ -26,7 +26,7 @@ Role: nurse with `activeclinic.triage.record`. Navigation: Start triage, then vi
 
 ### Consultation
 
-Role: clinician. Navigation: the encounter page. Preconditions: encounter manage. Steps: write and sign the note. Service: clinical notes. Persistence: note row. Outcome: a signed note. Errors: a later save cannot overwrite it. Security: amendments table stays unused. Status: `IMPLEMENTED_UNVERIFIED`. Dependency: isolated HTTP.
+Role: clinician. Navigation: the encounter page. Preconditions: encounter manage. Steps: write and sign the note. The banner shows Reception, Laboratory queue, Pharmacy, and Billing only when this staff member already holds that department’s view permission. Service: clinical notes and `selectEncounterHandoffLinks`. Persistence: note row. Outcome: a signed note, with department links that the existing routes still authorize. Errors: a later save cannot overwrite it. A staff member without the department permission does not see that link. Security: amendments table stays unused. The links do not grant a new permission. Status: `IMPLEMENTED_UNVERIFIED`. Dependency: isolated HTTP.
 
 ### Laboratory
 

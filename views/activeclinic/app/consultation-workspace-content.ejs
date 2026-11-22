@@ -93,6 +93,18 @@
         <% if (links.documents) { %>
         · <a href="<%= links.documents %>" data-ac-action="clinical-documents">Clinical Documents</a>
         <% } %>
+        <% if (links.reception) { %>
+        · <a href="<%= links.reception %>" data-ac-action="reception">Reception</a>
+        <% } %>
+        <% if (links.laboratory) { %>
+        · <a href="<%= links.laboratory %>" data-ac-action="laboratory-queue">Laboratory queue</a>
+        <% } %>
+        <% if (links.pharmacy) { %>
+        · <a href="<%= links.pharmacy %>" data-ac-action="pharmacy">Pharmacy</a>
+        <% } %>
+        <% if (links.billing) { %>
+        · <a href="<%= links.billing %>" data-ac-action="billing">Billing</a>
+        <% } %>
         <% if (actions.canReleaseVisitSummary && links.visitSummaryRelease) { %>
         · <a href="<%= links.visitSummaryRelease %>" data-ac-action="release-visit-summary">Release visit summary</a>
         <% } %>
