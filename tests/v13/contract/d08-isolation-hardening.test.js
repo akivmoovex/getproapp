@@ -193,6 +193,18 @@ describe("D08 browser isolation", () => {
     );
     assert.equal(setupLoaded, false);
     assert.equal(teardownLoaded, false);
+    let skippedSetup = false;
+    let skippedTeardown = false;
+    await v13BbGlobalSetup({
+      env: authorizedEnv({ GETPRO_V13_SKIP_LEGACY_CHURCH_SCHEMA: "1" }),
+      loadGlobalSetup() { skippedSetup = true; },
+    });
+    await v13BbGlobalTeardown({
+      env: authorizedEnv({ GETPRO_V13_SKIP_LEGACY_CHURCH_SCHEMA: "1" }),
+      loadGlobalTeardown() { skippedTeardown = true; },
+    });
+    assert.equal(skippedSetup, false);
+    assert.equal(skippedTeardown, false);
     const setup = read("tests/e2e/v13/v13-bb-global-setup.cjs");
     const teardown = read("tests/e2e/v13/v13-bb-global-teardown.cjs");
     assert.ok(setup.indexOf("assertV13BrowserHarness") < setup.indexOf('require("../global-setup.cjs")'));

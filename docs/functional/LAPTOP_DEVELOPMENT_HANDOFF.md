@@ -1,6 +1,6 @@
 # Laptop development handoff
 
-Continue on branch `V13` only. The G64 handoff commit is `a62a2be44529028ada2d2538802cb18c469a0ff2`. G65–G76 add an explicit pharmacy-queue notice, a non-persistent laboratory reference-rule preview, and fail-closed G66 persistence and browser tests. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`.
+Continue on branch `V13` only. The G64 handoff commit is `a62a2be44529028ada2d2538802cb18c469a0ff2`. G65–G76 add an explicit pharmacy-queue notice, a non-persistent laboratory reference-rule preview, and fail-closed G66 persistence and browser tests. G77–G82 add the disposable-database evidence in `docs/qa/V13_G82_FINAL_INTEGRATION_HANDOFF.md`. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. Local `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`. Do not touch `origin/main`.
 
 Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `https://github.com/akivmoovex/getproapp.git`.
 
@@ -19,8 +19,9 @@ Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `htt
 
 ## Do not do these on a fresh laptop without a new authorization
 
-- Connect to port 5432 or to `127.0.0.1:55432`
-- Apply migration 043 or rerun foundation bootstrap
+- Connect to port 5432 or to `getpro_v13_e2e_regression213101`
+- Apply migration 043 or 044 to hosted QA, production, or any database other than the existing disposable `getpro_v13_e2e_g78d2301`
+- Rerun foundation bootstrap
 - Insert BlessBoard public-page rows
 - Set the database-write, HTTP, or browser authorization flags
 - Set `BLESSBOARD_MEDIA_UPLOADS_ENABLED`
@@ -35,8 +36,8 @@ Unset database URLs and the authorization flags, then run:
 
 `node --test --test-concurrency=1 --test-timeout=30000 tests/v13/contract/*.test.js tests/v13/unit/*.test.js`
 
-The suite before this pass was 486 passed and 0 failed. This pass is 487 passed and 0 failed. A failure there is a real failure. A gated file that skips is `NOT_RUN`.
+The G76 safe command was 487 passed and 0 failed. The G82 safe command, including the quality, church-identity, and profile-conflict files, was 526 passed, 0 failed, and 2 skipped. A failure there is a real failure. A gated file that skips is `NOT_RUN`. HTTP and Playwright results are in the G82 handoff. They are not a release pass.
 
 ## Product version
 
-Stay on 2.13.1. Do not call the branch production-ready or healthcare-compliant. Isolated HTTP and Playwright are the next recommended action, in the order in the G36 readiness note, and only after those flags are explicitly authorized.
+Stay on 2.13.1. Do not call the branch production-ready or healthcare-compliant. G82 already ran isolated HTTP and Playwright and left critical failures open. The next action is to repair the reset-token replay hang, the unpublished website section, the mint-theme preview, the walk-in queue transition, the vitals screen, and the BlessBoard public markers, without enabling booking, media uploads, production OTP, or the missing OTP-challenge migration.

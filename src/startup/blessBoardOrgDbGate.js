@@ -348,6 +348,26 @@ async function assertPlatformDatabaseIdentityOrExit(pool, opts = {}) {
  * @param {{ deploymentEnv?: string }} [opts]
  * @returns {Promise<{ status: "skip"|"ok"|"fatal", reason: string, sanitizedMessage: string, identity?: object|null, deploymentEnv?: string }>}
  */
+async function readPlatformDatabaseIdentity(pool) {
+  try {
+    const result = await pool.query(
+      `SELECT environment_code, database_name, current_database() AS current_database
+         FROM platform.database_identity
+        WHERE id = 1`
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      environmentCode: String(row.environment_code || ""),
+      databaseName: String(row.database_name || ""),
+      currentDatabase: String(row.current_database || ""),
+    };
+  } catch (err) {
+    if (err && err.code === "42P01") return null;
+    throw err;
+  }
+}
+
 async function verifyDatabaseIdentity(pool, opts = {}) {
   const deploymentEnv =
     opts.deploymentEnv != null ? String(opts.deploymentEnv).trim().toLowerCase() : explicitDeploymentEnv();
@@ -390,6 +410,24 @@ async function verifyDatabaseIdentity(pool, opts = {}) {
   }
 
   if (!identity) {
+    const platformIdentity = await readPlatformDatabaseIdentity(pool);
+    if (
+      platformIdentity &&
+      platformIdentity.environmentCode === deploymentEnv &&
+      platformIdentity.databaseName === platformIdentity.currentDatabase
+    ) {
+      return {
+        status: "ok",
+        reason: "platform-identity",
+        deploymentEnv,
+        identity: {
+          environmentCode: platformIdentity.environmentCode,
+          deploymentName: platformIdentity.databaseName,
+          databaseInstanceId: null,
+        },
+        sanitizedMessage: `[blessboard] DB identity OK (platform.database_identity, DEPLOYMENT_ENV=${deploymentEnv}).`,
+      };
+    }
     return {
       status: "fatal",
       reason: "missing",

@@ -364,6 +364,23 @@ function getAuthoritativeDomainConfig(env) {
  * @param {NodeJS.ProcessEnv} [env]
  * @param {{ warnFn?: (msg: string) => void }} [opts]
  */
+function allowsLocalBrowserDomain(source, profile, host) {
+  if (!profile || profile.deploymentEnvironment !== "testing") return false;
+  if (String(source.GETPRO_V13_BROWSER_AUTHORIZED || "") !== "1") return false;
+  if (String(source.HOST || "") !== "127.0.0.1") return false;
+  if (String(source.NODE_ENV || "") !== "test") return false;
+  const value = String(host || "").toLowerCase();
+  return value === "local.test" || value === "127.0.0.1" || value.endsWith(".local.test");
+}
+
+function localBrowserUrlHost(value) {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "";
+  }
+}
+
 function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   const source = env || process.env;
   const resolved = resolveDeploymentProfileOrError(source, opts);
@@ -594,7 +611,7 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const raw = normalizeHost(envTrim(source, "BLESSBOARD_CANONICAL_DOMAIN"));
     if (raw) {
-      if (raw !== profile.canonicalDomain) {
+      if (raw !== profile.canonicalDomain && !allowsLocalBrowserDomain(source, profile, raw)) {
         return {
           ok: false,
           code: "canonical_domain_conflict",
@@ -614,7 +631,8 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
       const list = parseApexList(raw);
       const foreign = profile.foreignTlds || [];
       const hasForeign = list.some((h) => foreign.includes(h));
-      if (hasForeign || !apexSetsEqual(list, profile.apexDomains.slice())) {
+      const localApex = list.length > 0 && list.every((host) => allowsLocalBrowserDomain(source, profile, host));
+      if (!localApex && (hasForeign || !apexSetsEqual(list, profile.apexDomains.slice()))) {
         return {
           ok: false,
           code: "apex_domains_conflict",
@@ -632,7 +650,7 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const raw = normalizeHost(envTrim(source, "CHURCH_HOST_DOMAIN"));
     if (raw) {
-      if (raw !== profile.churchHostDomain) {
+      if (raw !== profile.churchHostDomain && !allowsLocalBrowserDomain(source, profile, raw)) {
         return {
           ok: false,
           code: "church_host_domain_conflict",
@@ -649,7 +667,7 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const pub = envTrim(source, "BLESSBOARD_PUBLIC_URL").replace(/\/$/, "");
     if (pub) {
-      if (pub.toLowerCase() !== profile.publicOrigin.toLowerCase()) {
+      if (pub.toLowerCase() !== profile.publicOrigin.toLowerCase() && !allowsLocalBrowserDomain(source, profile, localBrowserUrlHost(pub))) {
         return {
           ok: false,
           code: "public_url_conflict",
@@ -663,7 +681,7 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
     const admin = envTrim(source, "BLESSBOARD_ADMIN_URL").replace(/\/$/, "");
     if (admin) {
-      if (admin.toLowerCase() !== profile.adminOrigin.toLowerCase()) {
+      if (admin.toLowerCase() !== profile.adminOrigin.toLowerCase() && !allowsLocalBrowserDomain(source, profile, localBrowserUrlHost(admin))) {
         return {
           ok: false,
           code: "admin_url_conflict",
@@ -815,7 +833,7 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const raw = normalizeHost(envTrim(source, "BASE_DOMAIN"));
     if (raw) {
-      if (raw === profile.canonicalDomain) {
+      if (raw === profile.canonicalDomain || allowsLocalBrowserDomain(source, profile, raw)) {
         noteMatch("BASE_DOMAIN", raw);
       } else {
         return {

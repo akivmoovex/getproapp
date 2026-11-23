@@ -1,6 +1,6 @@
 # Shared platform functionality
 
-Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.1 in `src/platform/build/applicationBuildInfo.js`. G65–G76 did not change OTP delivery, CSRF, or tenant isolation. Production OTP delivery stays inactive.
+Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.1 in `src/platform/build/applicationBuildInfo.js`. G65–G82 did not change OTP delivery, CSRF, or tenant isolation. Production OTP delivery stays inactive. `platform.otp_challenges` is still absent by contract. G82 did not add that migration. The local-browser domain exception accepts `local.test` only when the profile is `testing`, the host is `127.0.0.1`, `NODE_ENV` is `test`, and `GETPRO_V13_BROWSER_AUTHORIZED` is `1`. Production profiles stay refused.
 
 | Area | Status | Current behavior | Next action |
 | --- | --- | --- | --- |

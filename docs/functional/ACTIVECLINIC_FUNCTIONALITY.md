@@ -1,8 +1,8 @@
 # ActiveClinic functionality
 
-Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. Nothing here is `VERIFIED_E2E`. The healthcare brief is `SOURCE_UNAVAILABLE`.
+Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 
-Shared fields for every row: tenant scope is `organization_id`; facility scope is the selected facility; latest execution evidence is database-free tests only; HTTP and browser evidence is `NOT_RUN`.
+Shared fields for every row: tenant scope is `organization_id`; facility scope is the selected facility. Implementation status stays the G35 class. G82 added HTTP and browser evidence only for the journeys named in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md), on `getpro_v13_e2e_g78d2301` only. Rows that are not named there still have no HTTP or browser assertion. Migration 044 is present on that disposable database and was not applied to a deployment database. No numeric reference range was inserted. Public booking stayed disabled.
 
 ### AC-01 Organisation and facilities
 

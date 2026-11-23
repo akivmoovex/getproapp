@@ -16,6 +16,9 @@ const {
   ISOLATED_POSTGRES_PORT,
   TARGET_DATABASE_NAME,
   TARGET_ROLE,
+  G78_HTTP_DATABASE,
+  isolatedBootstrapEnv,
+  assertIsolatedBootstrapLaunch,
   assertIsolatedConnectionTarget,
   assertIsolatedDataDirectory,
   assertIsolatedHba,
@@ -177,6 +180,66 @@ describe("D18 isolated execution plan", () => {
     assert.match(
       read("src/activeclinic/qa/activeClinicHostedAuthQaFixture.js"),
       /public_booking_enabled = true/
+    );
+  });
+
+  it("accepts only the G78 disposable database when HTTP execution is authorized", () => {
+    const base = {
+      ...isolatedBootstrapEnv(ROOT),
+      GETPRO_V13_ISOLATED_INSTANCE_AUTHORIZED: "1",
+      GETPRO_V13_ALLOW_DB_WRITES: "1",
+      GETPRO_V13_DB_STAGES_AUTHORIZED: "1",
+      GETPRO_V13_HTTP_AUTHORIZED: "1",
+      GETPRO_V13_HTTP_DATABASE_NAME: G78_HTTP_DATABASE,
+    };
+    const url = `postgresql://${TARGET_ROLE}@127.0.0.1:55432/${G78_HTTP_DATABASE}`;
+    const snapshot = JSON.stringify({
+      rolname: TARGET_ROLE,
+      rolsuper: false,
+      rolcreatedb: false,
+      rolcreaterole: false,
+      rolreplication: false,
+      rolbypassrls: false,
+      rolinherit: false,
+      rolcanlogin: true,
+      databases: [G78_HTTP_DATABASE],
+    });
+    const accepted = assertIsolatedBootstrapLaunch({
+      ...base,
+      E2E_DATABASE_URL: url,
+      TEST_DATABASE_URL: url,
+      DATABASE_URL: url,
+      GETPRO_V13_ROLE_CATALOG_SNAPSHOT: snapshot,
+    });
+    assert.equal(accepted.database, G78_HTTP_DATABASE);
+    assert.equal(accepted.port, "55432");
+    const oldUrl = `postgresql://${TARGET_ROLE}@127.0.0.1:55432/${TARGET_DATABASE_NAME}`;
+    assert.throws(
+      () =>
+        assertIsolatedBootstrapLaunch({
+          ...base,
+          E2E_DATABASE_URL: oldUrl,
+          TEST_DATABASE_URL: oldUrl,
+          DATABASE_URL: oldUrl,
+          GETPRO_V13_ROLE_CATALOG_SNAPSHOT: snapshot,
+        }),
+      /existing regression database/
+    );
+    const shared = `postgresql://${TARGET_ROLE}@127.0.0.1:5432/${G78_HTTP_DATABASE}`;
+    assert.throws(
+      () =>
+        assertIsolatedBootstrapLaunch({
+          ...base,
+          E2E_DATABASE_URL: shared,
+          TEST_DATABASE_URL: shared,
+          DATABASE_URL: shared,
+          GETPRO_V13_ROLE_CATALOG_SNAPSHOT: snapshot,
+        }),
+      /5432/
+    );
+    assert.throws(
+      () => assertIsolatedConnectionTarget(url),
+      /database must be/
     );
   });
 });

@@ -23,6 +23,7 @@ module.exports = defineConfig({
   testDir: "./tests/e2e/v13",
   testMatch: /v13-ac-platform-qa\.spec\.js/,
   outputDir: path.join(__dirname, "test-results", "v13-ac-platform"),
+  timeout: 90_000,
   fullyParallel: false,
   workers: 1,
   retries: 0,

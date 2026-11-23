@@ -1,8 +1,8 @@
 # BlessBoard functionality
 
-Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. Nothing is `VERIFIED_E2E`. G65–G76 did not enable media uploads and did not insert public-page rows.
+Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. G65–G82 did not enable media uploads and did not insert public-page rows.
 
-Shared fields: tenant scope is the church organisation; branch scope is the selected branch; latest evidence is database-free tests; HTTP and browser are `NOT_RUN`.
+Shared fields: tenant scope is the church organisation; branch scope is the selected branch. Implementation status stays the G35 class. G82 HTTP passed BB-01 through BB-05 content and member journeys that are listed as passed in the G79 and G82 HTTP logs, and the browser passed BB-05 member registration plus the blocked OTP gate. Public sermon, event, and announcement markers, member activation, invitations, and media upload remain failed. `BLESSBOARD_MEDIA_UPLOADS_ENABLED` stays unset. The HTTP attachment request returned 403 `media_uploads_disabled`.
 
 ### BB-01 Church registration
 

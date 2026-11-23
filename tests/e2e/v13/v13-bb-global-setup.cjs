@@ -13,6 +13,7 @@ async function v13BbGlobalSetup(options) {
   const env = injected ? options.env : process.env;
   const load = injected ? options.loadGlobalSetup : () => require("../global-setup.cjs");
   const harness = assertV13BrowserHarness(env, { fallbackPort: "4186" });
+  if (String(env.GETPRO_V13_SKIP_LEGACY_CHURCH_SCHEMA || "") === "1") return;
   if (!injected) {
     process.env.NODE_ENV = "test";
     process.env.GETPRO_TEST_DB = "1";

@@ -143,6 +143,54 @@ test("verifyDatabaseIdentity: production deployment + testing identity → fatal
 });
 
 // ---- 4. Missing identity fails ---------------------------------------------
+test("verifyDatabaseIdentity: platform testing identity for the current database is accepted", async () => {
+  const pool = {
+    query: async (sql) => {
+      const text = String(sql);
+      if (/church_database_identity/.test(text)) return { rows: [] };
+      if (/platform\.database_identity/.test(text)) {
+        return {
+          rows: [
+            {
+              environment_code: "testing",
+              database_name: "getpro_v13_e2e_g78d2301",
+              current_database: "getpro_v13_e2e_g78d2301",
+            },
+          ],
+        };
+      }
+      return { rows: [] };
+    },
+  };
+  const result = await verifyDatabaseIdentity(pool, { deploymentEnv: "testing" });
+  assert.equal(result.status, "ok");
+  assert.equal(result.reason, "platform-identity");
+});
+
+test("verifyDatabaseIdentity: platform identity for a different database stays fatal", async () => {
+  const pool = {
+    query: async (sql) => {
+      const text = String(sql);
+      if (/church_database_identity/.test(text)) return { rows: [] };
+      if (/platform\.database_identity/.test(text)) {
+        return {
+          rows: [
+            {
+              environment_code: "testing",
+              database_name: "getpro_v13_e2e_g78d2301",
+              current_database: "getpro_v13_e2e_regression213101",
+            },
+          ],
+        };
+      }
+      return { rows: [] };
+    },
+  };
+  const result = await verifyDatabaseIdentity(pool, { deploymentEnv: "testing" });
+  assert.equal(result.status, "fatal");
+  assert.equal(result.reason, "missing");
+});
+
 test("verifyDatabaseIdentity: missing identity → fatal missing", async () => {
   const result = await verifyDatabaseIdentity(stubPool(null), { deploymentEnv: "testing" });
   assert.equal(result.status, "fatal");

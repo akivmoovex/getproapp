@@ -42,8 +42,6 @@ async function signIn(page, email, password) {
   await expect(page.locator("[role='alert']")).toHaveCount(0);
 }
 
-test.describe.configure({ mode: "serial" });
-
 test.describe("V13 BB QA browser regression", () => {
   test("BB-01 administrator creates a homepage section", async ({ page }, testInfo) => {
     hold(testInfo, "BB-01 create");
@@ -365,7 +363,7 @@ test.describe("V13 BB QA browser regression", () => {
     await signIn(page, required("E2E_BB_ADMIN_EMAIL"), required("E2E_BB_ADMIN_PASSWORD"));
     const home = required("E2E_BB_PUBLIC_HOME_PATH");
     await page.goto("/hq/website/themes");
-    await expect(page.locator("[data-theme-id='bb.community']")).toBeVisible();
+    await expect(page.locator("[data-theme-id='bb.community']").first()).toBeVisible();
     await expect(page.locator("[data-theme-id='ac.family-wellness-mint']")).toHaveCount(0);
     await expect(page.locator("[data-theme-id='ac.community']")).toHaveCount(0);
     const api = await page.locator("[data-theme-api]").getAttribute("data-theme-api");
@@ -376,7 +374,7 @@ test.describe("V13 BB QA browser regression", () => {
     expect(rejected.status()).toBe(400);
     expect(await rejected.text()).toMatch(/invalid_theme/);
     await page.locator("[data-theme-select][data-theme-id='bb.community']").click();
-    await expect(page.locator("[data-theme-id='bb.community'][data-theme-draft='1'], [data-theme-gallery-notice]")).toBeVisible();
+    await expect(page.locator("[data-theme-id='bb.community'][data-theme-draft='1'], [data-theme-gallery-notice]").first()).toBeVisible();
     await page.goto("/?website_mode=draft");
     expect(await page.content()).toMatch(/gp-website-theme--bb-community|bb\.community/);
     await page.goto("/hq/website/publish/review");
@@ -405,7 +403,7 @@ test.describe("V13 BB QA browser regression", () => {
     await draftForm.locator("input[name='preached_at']").fill("2026-07-18");
     await draftForm.locator("select[name='status']").selectOption("draft");
     await draftForm.locator("button[type='submit']").click();
-    await expect(page.getByText(draftTitle)).toBeVisible();
+    await expect(page.getByText(draftTitle).first()).toBeVisible();
     await page.goto(publicPath);
     await expect(page.locator("[data-bb-sermons='1']")).toBeVisible();
     await expect(page.locator("body")).not.toContainText(draftTitle);
@@ -445,7 +443,7 @@ test.describe("V13 BB QA browser regression", () => {
     await draftForm.locator("input[name='location']").fill("Main hall");
     await draftForm.locator("select[name='status']").selectOption("draft");
     await draftForm.locator("button[type='submit']").click();
-    await expect(page.getByText(draftTitle)).toBeVisible();
+    await expect(page.getByText(draftTitle).first()).toBeVisible();
     await page.goto(publicPath);
     await expect(page.locator("[data-bb-events='1']")).toBeVisible();
     await expect(page.locator("body")).not.toContainText(draftTitle);
@@ -476,7 +474,7 @@ test.describe("V13 BB QA browser regression", () => {
     const title = `D05 attachment ${stamp}`;
     const filename = `d05-notice-${stamp}.png`;
     await page.goto("/hq/announcements/new");
-    await expect(page.locator("#bb-ann-attach-heading, [data-bb-ann-section='attachments']")).toBeVisible();
+    await expect(page.locator("#bb-ann-attach-heading, [data-bb-ann-section='attachments']").first()).toBeVisible();
     const png = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
       "base64"

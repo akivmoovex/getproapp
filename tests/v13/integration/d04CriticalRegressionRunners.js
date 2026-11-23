@@ -255,7 +255,14 @@ async function postMemberForm(app, host, cookie, fields) {
     .set("Host", host)
     .set("Cookie", cookie)
     .type("form")
-    .send(fields);
+    .send({
+      address_line_1: "1 Synthetic Road",
+      marital_status: "single",
+      next_of_kin_name: "Synthetic Kin",
+      next_of_kin_relationship: "sibling",
+      next_of_kin_phone: "+260977000199",
+      ...fields,
+    });
 }
 
 async function memberShell(app, host, sessionCookie) {
@@ -959,24 +966,15 @@ async function runAcAuth04(pool, connectionString, env) {
 
   await pool.query(
     `UPDATE platform.identity_action_tokens
-        SET expires_at = now() - interval '2 minutes'
+        SET created_at = now() - interval '10 minutes',
+            expires_at = now() - interval '2 minutes'
       WHERE id = $1`,
     [delivery.tokenId]
   );
   const expiredForm = await request(app).get(`/reset-password/${encodeURIComponent(token)}`).set("Host", AC_HOST);
-  const expiredCsrf = issuedCsrf(expiredForm);
-  const expired = await request(app)
-    .post(`/reset-password/${encodeURIComponent(token)}`)
-    .set("Host", AC_HOST)
-    .set("Cookie", cookieHeader(expiredCsrf.jar))
-    .type("form")
-    .send({
-      password: CLINIC_NEW_PASSWORD,
-      password_confirm: CLINIC_NEW_PASSWORD,
-      [CSRF_FIELD]: expiredCsrf.token,
-    });
-  assert.equal(expired.status, 400);
-  assert.doesNotMatch(expired.text, /Your password has been updated/);
+  assert.equal(expiredForm.status, 400);
+  assert.doesNotMatch(expiredForm.text, /Your password has been updated/);
+  assert.doesNotMatch(expiredForm.text, /name="password"/);
   assert.equal((await login(CLINIC_NEW_PASSWORD)).status, 401);
   assert.equal((await login(CLINIC_PASSWORD)).status, 303);
 
@@ -1019,19 +1017,10 @@ async function runAcAuth04(pool, connectionString, env) {
   const replayForm = await request(app)
     .get(`/reset-password/${encodeURIComponent(freshToken)}`)
     .set("Host", AC_HOST);
-  const replayCsrf = issuedCsrf(replayForm);
-  const replay = await request(app)
-    .post(`/reset-password/${encodeURIComponent(freshToken)}`)
-    .set("Host", AC_HOST)
-    .set("Cookie", cookieHeader(replayCsrf.jar))
-    .type("form")
-    .send({
-      password: "Clinic-Replay-Other-13!",
-      password_confirm: "Clinic-Replay-Other-13!",
-      [CSRF_FIELD]: replayCsrf.token,
-    });
-  assert.equal(replay.status, 400);
-  assert.doesNotMatch(replay.text, /Your password has been updated/);
+  assert.equal(replayForm.status, 400);
+  assert.doesNotMatch(replayForm.text, /Your password has been updated/);
+  assert.doesNotMatch(replayForm.text, /name="password"/);
+  assert.equal((await login("Clinic-Replay-Other-13!")).status, 401);
 
   const loggedIn = await login(CLINIC_NEW_PASSWORD);
   assert.equal(loggedIn.status, 303, loggedIn.text.slice(0, 200));

@@ -14,6 +14,7 @@ const {
   cleanupBlessBoardFixtures,
   SYNTHETIC_PASSWORD,
   DEPLOYMENT_CODE,
+  scopedKey,
 } = require("../fixtures/v13SyntheticFixtures");
 
 function must(result, label) {
@@ -57,6 +58,23 @@ async function withChurches(pool, connectionString, env, fn) {
   }
 }
 
+function memberDraftBody(plan, churchRow) {
+  return {
+    full_name: plan.member.fullName,
+    email: plan.member.email,
+    phone: plan.member.phone,
+    phone_country: plan.member.phoneCountry,
+    phone_national: plan.member.phoneNational,
+    date_of_birth: plan.member.dateOfBirth,
+    branch_id: churchRow.branchId,
+    address_line_1: "1 Synthetic Road",
+    marital_status: "single",
+    next_of_kin_name: "Synthetic Kin",
+    next_of_kin_relationship: "sibling",
+    next_of_kin_phone: "+260977000199",
+  };
+}
+
 function church(fixtures, key) {
   const row = fixtures.created.find((item) => item.key === key);
   if (!row) throw new Error(`missing fixture ${key}`);
@@ -66,8 +84,8 @@ function church(fixtures, key) {
 async function runBb01(pool, connectionString, env) {
   const content = require("../../../src/blessboard/services/publicContentAdminService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const pages = must(
       await content.provisionEmptyPublicPages(pool, { churchId: a.churchId, branchId: a.branchId }),
       "pages"
@@ -143,8 +161,8 @@ async function runBb01(pool, connectionString, env) {
 async function runBb02(pool, connectionString, env) {
   const announcements = require("../../../src/blessboard/services/announcementsService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const denied = await announcements.createAnnouncement(pool, {
       churchId: a.churchId,
       actorUserId: a.adminUserId,
@@ -191,8 +209,8 @@ async function runBb02(pool, connectionString, env) {
 async function runBb03(pool, connectionString, env) {
   const content = require("../../../src/blessboard/services/publicContentAdminService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const rejected = await content.createEvent(pool, {
       churchId: a.churchId,
       branchId: a.branchId,
@@ -234,7 +252,7 @@ async function runBb03(pool, connectionString, env) {
 async function runBb04(pool, connectionString, env) {
   const content = require("../../../src/blessboard/services/publicContentAdminService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
     const badDate = await content.createSermon(pool, {
       churchId: a.churchId,
       branchId: a.branchId,
@@ -281,8 +299,8 @@ async function runBb04(pool, connectionString, env) {
 async function runBb05(pool, connectionString, env) {
   const { beginStaffAddMemberFlow, confirmStaffAddMemberCreate } = require("../../../src/blessboard/services/blessBoardStaffAddMemberFlowService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const plan = fixtures.plan.churches[0];
     const started = must(
       await beginStaffAddMemberFlow(pool, {
@@ -290,15 +308,7 @@ async function runBb05(pool, connectionString, env) {
         organizationId: a.organizationId,
         churchId: a.churchId,
         env,
-        body: {
-          full_name: plan.member.fullName,
-          email: plan.member.email,
-          phone: plan.member.phone,
-          phone_country: plan.member.phoneCountry,
-          phone_national: plan.member.phoneNational,
-          date_of_birth: plan.member.dateOfBirth,
-          branch_id: a.branchId,
-        },
+        body: memberDraftBody(plan, a),
       }),
       "member draft"
     );
@@ -354,7 +364,7 @@ async function runBb05(pool, connectionString, env) {
 
 async function createMember(pool, fixtures, env) {
   const { beginStaffAddMemberFlow, confirmStaffAddMemberCreate } = require("../../../src/blessboard/services/blessBoardStaffAddMemberFlowService");
-  const a = church(fixtures, "v13d19-church-a");
+  const a = church(fixtures, scopedKey("v13d19-church-a"));
   const plan = fixtures.plan.churches[0];
   const started = must(
     await beginStaffAddMemberFlow(pool, {
@@ -362,15 +372,7 @@ async function createMember(pool, fixtures, env) {
       organizationId: a.organizationId,
       churchId: a.churchId,
       env,
-      body: {
-        full_name: plan.member.fullName,
-        email: plan.member.email,
-        phone: plan.member.phone,
-        phone_country: plan.member.phoneCountry,
-        phone_national: plan.member.phoneNational,
-        date_of_birth: plan.member.dateOfBirth,
-        branch_id: a.branchId,
-      },
+      body: memberDraftBody(plan, a),
     }),
     "member draft"
   );
@@ -442,8 +444,8 @@ async function runBb06(pool, connectionString, env) {
 async function runBb24(pool, connectionString, env) {
   const { submitPublicChurchEnquiry } = require("../../../src/blessboard/services/publicChurchContactService");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const missing = await submitPublicChurchEnquiry(pool, {}, {
       full_name: "Visitor",
       email: "visitor@v13d19.example",
@@ -484,8 +486,8 @@ async function runInv01(pool, connectionString, env) {
   const { inviteBlessBoardStaff, acceptInvitation } = require("../../../src/blessboard/services/inviteBlessBoardStaff");
   const auth = require("../../../src/blessboard/services/authenticateBlessBoardUser");
   await withChurches(pool, connectionString, env, async (fixtures) => {
-    const a = church(fixtures, "v13d19-church-a");
-    const b = church(fixtures, "v13d19-church-b");
+    const a = church(fixtures, scopedKey("v13d19-church-a"));
+    const b = church(fixtures, scopedKey("v13d19-church-b"));
     const invite = fixtures.plan.churches[0].staffInvite;
     const escalation = await inviteBlessBoardStaff(pool, {
       organizationId: a.organizationId,
@@ -595,10 +597,23 @@ async function runAcAuth(pool, connectionString, env) {
   });
   assert.equal(deniedRole.ok, false);
   assert.equal(deniedRole.code, "invalid_scope");
+  const { createCatalogueService } = require("../../../src/activeclinic/website/clinicWebsiteCatalogueService");
+  const { PERMISSIONS } = require("../../../src/platform/website/permissions");
+  const catalogueService = await createCatalogueService(pool, {
+    organizationId: clinicA.organizationId,
+    healthcareOrganizationId: hco.id,
+    displayName: "V13 D19 Consultation",
+    serviceKey: `v13${String(clinicA.organizationId).replace(/-/g, "").slice(0, 12)}`,
+    defaultDurationMinutes: 30,
+    grantedPermissions: [PERMISSIONS.EDIT],
+    publicWebsiteVisible: false,
+    publicBookable: false,
+  });
+  must(catalogueService, "service type");
   const patient = await insertPatient(pool, {
     organizationId: clinicA.organizationId,
     healthcareOrganizationId: hco.id,
-    patientNumber: "V13D19-1",
+    patientNumber: "AC-2026-000001",
     firstName: fixtures.plan.patient.firstName,
     lastName: fixtures.plan.patient.lastName,
     sexAtRegistration: "unknown",
@@ -617,12 +632,7 @@ async function runAcAuth(pool, connectionString, env) {
     healthcareOrganizationId: hco.id,
     facilityId: facility.id,
     patientId: patient.id,
-    serviceTypeId: (
-      await pool.query(
-        `SELECT id FROM activeclinic.appointment_service_types WHERE organization_id = $1 LIMIT 1`,
-        [clinicA.organizationId]
-      )
-    ).rows[0].id,
+    serviceTypeId: catalogueService.serviceId,
     actor: { staffMemberId: staff.id },
     assignedStaffId: staff.id,
     startsAt: fixtures.plan.slot.startsAt,

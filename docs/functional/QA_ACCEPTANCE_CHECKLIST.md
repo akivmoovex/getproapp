@@ -1,6 +1,6 @@
 # QA acceptance checklist
 
-A box may be checked only after an authorized run. Nothing below was executed in G37–G44. `NOT_RUN` is not a pass.
+A box may be checked only after an authorized run. Nothing below was executed in G37–G44. G82 executed the checked rows on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`. `NOT_RUN` is not a pass. A failed assertion stays unchecked.
 
 ## ActiveClinic
 
@@ -13,14 +13,14 @@ A box may be checked only after an authorized run. Nothing below was executed in
 - [ ] Order a laboratory test with urgency routine, urgent, or stat
 - [ ] Confirm an unknown urgency is rejected and no reference range is invented
 - [ ] Enter a manual prescription with dose, frequency, and duration
-- [ ] Confirm a prescription without a catalogue id says it is not on the pharmacy queue
-- [ ] Preview a laboratory reference rule and confirm nothing is saved
+- [x] Confirm a prescription without a catalogue id says it is not on the pharmacy queue (G82 browser G67)
+- [x] Preview a laboratory reference rule and confirm nothing is saved (G82 browser G66)
 - [ ] Dispense no more than the remaining quantity
 - [ ] Invoice in minor units and refuse a second reversal
 - [ ] Close the encounter once and get `STALE_VERSION` on a stale retry
 - [ ] Retrieve the text document and confirm a receptionist is denied
 - [ ] Confirm `/app/offline` is 503 and writes nothing
-- [ ] Confirm public booking stays unavailable and has no coupon
+- [x] Confirm public booking stays unavailable and has no coupon (G82 browser AC-PUB-01; HTTP text assertion failed and stays open)
 
 ## BlessBoard
 
@@ -38,7 +38,7 @@ A box may be checked only after an authorized run. Nothing below was executed in
 
 - [ ] OTP replay fails and no production message is sent
 - [ ] Export and restore are still not claimed
-- [ ] Migration 043 is still not applied
-- [ ] Isolated host is `127.0.0.1` port `55432`, never port `5432`
+- [x] Migration 043 and 044 are applied only on `getpro_v13_e2e_g78d2301`. Hosted QA and production were not migrated
+- [x] Isolated host used for G82 was `127.0.0.1` port `55432`. Port `5432` and `getpro_v13_e2e_regression213101` were not used
 
 Gated files and the required flags are listed in [../qa/V13_G36_ISOLATED_TEST_READINESS.md](../qa/V13_G36_ISOLATED_TEST_READINESS.md).

@@ -1,8 +1,8 @@
 # Requirements traceability matrix
 
-Sources in the repository: G27 register, G35 matrix, current routes, and database-free tests. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Counts are unchanged.
+Sources in the repository: G27 register, G35 matrix, current routes, and database-free tests. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Implementation counts are unchanged.
 
-`IMPLEMENTED` below means `IMPLEMENTED_UNVERIFIED`.
+`IMPLEMENTED` below means `IMPLEMENTED_UNVERIFIED`. G82 did not promote a row to `VERIFIED_E2E` in this table. The G82 classes for the original regression ids are in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md). HTTP and browser evidence exists only for the journeys named there, and only against `getpro_v13_e2e_g78d2301`.
 
 ## ActiveClinic — 30
 
@@ -20,12 +20,12 @@ Sources in the repository: G27 register, G35 matrix, current routes, and databas
 | AC-10 | IMPLEMENTED_UNVERIFIED | Signed notes cannot be overwritten | Amendments table unused |
 | AC-11 | PARTIAL | Free-text diagnosis | No code catalogue |
 | AC-12 | PARTIAL | Manual dose, optional unit, optional catalogue id, and an explicit not-queued notice | No picker and no queue handoff without a catalogue id |
-| AC-13 | PARTIAL | Orders, queue, results, an approved-rule engine, and a non-persistent preview | No stored thresholds. Migration 044 is not applied |
+| AC-13 | PARTIAL | Orders, queue, results, an approved-rule engine, and a non-persistent preview. G66 browser: preview is not saved | No stored thresholds. Migration 044 is applied only on the G78 disposable database |
 | AC-14 | PARTIAL | Dispense, remainder, and one-request duplicate rejection | Handoff is AC-12 |
 | AC-15 | IMPLEMENTED_UNVERIFIED | Minor units, reversals | No payment provider |
 | AC-16 | IMPLEMENTED_UNVERIFIED | Versioned close | HTTP not run |
 | AC-17 | PARTIAL | Text documents | Binary deferred |
-| AC-18 | BLOCKED | Migration 043 source only. Batch open now requires document-create authorization and is still unrouted | Not applied |
+| AC-18 | BLOCKED | Migration 043 source. Batch open now requires document-create authorization and is still unrouted | Applied only on the G78 disposable database. Deployment databases were not migrated |
 | AC-19 | PARTIAL | Consent and refused disposal | Holds wait on 043 |
 | AC-20 | IMPLEMENTED_UNVERIFIED | Revenue report route | Not executed |
 | AC-21 | IMPLEMENTED_UNVERIFIED | Department permission keys | HTTP not run |

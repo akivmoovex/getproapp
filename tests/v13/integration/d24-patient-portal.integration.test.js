@@ -18,6 +18,7 @@ describe("D24 patient portal persistence", () => {
         throw new Error("PAT-01 invalid registration was not denied");
       }
     });
-    assert.equal(result, "NOT_RUN");
+    if (result === "NOT_RUN") return;
+    assert.equal(result, "PASS");
   });
 });

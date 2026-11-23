@@ -231,4 +231,28 @@ describe("V8 Hostinger env profile conflict compat", () => {
       else process.env.PLATFORM_DEPLOYMENT_CODE = prevCode;
     }
   });
+
+  it("allows local.test only for an authorized localhost browser test", () => {
+    const local = {
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+      DEPLOYMENT_ENV: "testing",
+      DATABASE_IDENTITY_ENV: "testing",
+      EXPECTED_DATABASE_ENV: "testing",
+      DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+      HOST: "127.0.0.1",
+      NODE_ENV: "test",
+      GETPRO_V13_BROWSER_AUTHORIZED: "1",
+      BASE_DOMAIN: "local.test",
+      BLESSBOARD_CANONICAL_DOMAIN: "local.test",
+      CHURCH_HOST_DOMAIN: "local.test",
+      BLESSBOARD_APEX_DOMAINS: "local.test,www.local.test,admin.local.test",
+      BLESSBOARD_PUBLIC_URL: "http://local.test",
+      BLESSBOARD_ADMIN_URL: "http://admin.local.test",
+    };
+    assert.equal(validateAuthoritativeProfileCompatibility(local).ok, true);
+    const publicHost = { ...local, HOST: "0.0.0.0" };
+    assert.equal(validateAuthoritativeProfileCompatibility(publicHost).ok, false);
+    const foreign = { ...local, BASE_DOMAIN: "blessboard.com" };
+    assert.equal(validateAuthoritativeProfileCompatibility(foreign).ok, false);
+  });
 });

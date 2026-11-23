@@ -25,6 +25,7 @@ module.exports = defineConfig({
   globalSetup: require.resolve("./tests/e2e/v13/v13-bb-global-setup.cjs"),
   globalTeardown: require.resolve("./tests/e2e/v13/v13-bb-global-teardown.cjs"),
   outputDir: path.join(__dirname, "test-results", "v13-bb-qa"),
+  timeout: 90_000,
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

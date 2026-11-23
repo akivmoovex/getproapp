@@ -1,5 +1,7 @@
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
@@ -25,6 +27,19 @@ describe("D19 synthetic fixtures", () => {
     assert.equal(ac.denial.route, "/app/billing");
     assert.equal(ac.denial.roleKey, "activeclinic_receptionist");
     assert.notEqual(SYNTHETIC_PASSWORD, "1234");
+    const fixtureSource = fs.readFileSync(
+      path.join(__dirname, "../fixtures/v13SyntheticFixtures.js"),
+      "utf8"
+    );
+    assert.match(fixtureSource, /function ensureStaffLoginIdentity/);
+    assert.match(
+      fixtureSource,
+      /email: spec\.receptionist\.email,[\s\S]*password: SYNTHETIC_PASSWORD/
+    );
+    assert.match(
+      fixtureSource,
+      /email: spec\.clinician\.email,[\s\S]*password: SYNTHETIC_PASSWORD/
+    );
     for (const church of bb.churches) {
       assert.match(church.admin.email, /@v13d19\.example$/);
       assert.match(church.member.email, /@v13d19\.example$/);

@@ -13,6 +13,7 @@ const SHARED_POSTGRES_PORT = "5432";
 const ISOLATED_POSTGRES_PORT = "55432";
 const ISOLATED_HOST = "127.0.0.1";
 const TARGET_DATABASE_NAME = "getpro_v13_e2e_regression213101";
+const G78_HTTP_DATABASE = "getpro_v13_e2e_g78d2301";
 const TARGET_ROLE = "v13_regression_213101";
 const ISOLATED_DIR_NAME = ".v13-isolated-pg";
 const SHARED_DATA_MARKERS = Object.freeze([
@@ -175,7 +176,7 @@ function expectedRoleCatalogSnapshot() {
   };
 }
 
-function assertRoleCatalogSnapshot(raw) {
+function assertRoleCatalogSnapshot(raw, expectedDatabase = TARGET_DATABASE_NAME) {
   let parsed = raw;
   if (typeof raw === "string") {
     try {
@@ -190,7 +191,7 @@ function assertRoleCatalogSnapshot(raw) {
     if (parsed[key] !== false) fail(`role catalog snapshot prohibits ${key}`);
   }
   const databases = parsed.databases;
-  if (!Array.isArray(databases) || databases.length !== 1 || databases[0] !== TARGET_DATABASE_NAME) {
+  if (!Array.isArray(databases) || databases.length !== 1 || databases[0] !== expectedDatabase) {
     fail("role catalog snapshot must list only the disposable database");
   }
   return parsed;
@@ -291,6 +292,30 @@ function isolatedConnectionString() {
   return `postgresql://${TARGET_ROLE}@${ISOLATED_HOST}:${ISOLATED_POSTGRES_PORT}/${TARGET_DATABASE_NAME}`;
 }
 
+function resolveLaunchTarget(source) {
+  const override = String(source.GETPRO_V13_HTTP_DATABASE_NAME || "").trim();
+  if (!override) return assertIsolatedConnectionTarget(String(source.E2E_DATABASE_URL || "").trim());
+  if (String(source.GETPRO_V13_HTTP_AUTHORIZED || "") !== "1") {
+    fail("HTTP database override requires GETPRO_V13_HTTP_AUTHORIZED=1");
+  }
+  if (override !== G78_HTTP_DATABASE) {
+    fail("HTTP database override is not the authorized G78 disposable database");
+  }
+  const target = parseTargetUrl(String(source.E2E_DATABASE_URL || "").trim());
+  if (target.host !== ISOLATED_HOST) fail(`host must be ${ISOLATED_HOST}`);
+  if (target.port === SHARED_POSTGRES_PORT) fail("refusing shared PostgreSQL port 5432");
+  if (target.port !== ISOLATED_POSTGRES_PORT) fail(`port must be ${ISOLATED_POSTGRES_PORT}`);
+  if (target.username !== TARGET_ROLE) fail(`role must be ${TARGET_ROLE}`);
+  if (target.database === TARGET_DATABASE_NAME) fail("refusing the existing regression database");
+  if (target.database !== override) fail(`database must be ${override}`);
+  return {
+    host: target.host,
+    port: target.port,
+    database: target.database,
+    username: target.username,
+  };
+}
+
 /**
  * Connection-free launch gate. Port is necessary and not sufficient:
  * the data directory, cluster name, instance id, and role privileges must
@@ -309,7 +334,10 @@ function assertIsolatedBootstrapLaunch(env) {
     fail("GETPRO_DATABASE_URL must stay unset");
   }
   const selected = String(source.E2E_DATABASE_URL || "").trim();
-  const target = assertIsolatedConnectionTarget(selected);
+  const target = resolveLaunchTarget(source);
+  if (target.database !== parseTargetUrl(selected).database) {
+    fail("launch target does not match E2E_DATABASE_URL");
+  }
   const approvedPort = String(source.GETPRO_V13_ISOLATED_PG_PORT || "").trim();
   if (approvedPort !== ISOLATED_POSTGRES_PORT || target.port !== approvedPort) {
     fail(`approved isolated port must be ${ISOLATED_POSTGRES_PORT}`);
@@ -347,7 +375,7 @@ function assertIsolatedBootstrapLaunch(env) {
     bypassrls: false,
     inherit: false,
   });
-  assertRoleCatalogSnapshot(source.GETPRO_V13_ROLE_CATALOG_SNAPSHOT);
+  assertRoleCatalogSnapshot(source.GETPRO_V13_ROLE_CATALOG_SNAPSHOT, target.database);
   return {
     ...target,
     instanceId: ISOLATED_INSTANCE_ID,
@@ -388,6 +416,7 @@ module.exports = {
   ISOLATED_POSTGRES_PORT,
   ISOLATED_HOST,
   TARGET_DATABASE_NAME,
+  G78_HTTP_DATABASE,
   TARGET_ROLE,
   ISOLATED_DIR_NAME,
   SHARED_DATA_MARKERS,

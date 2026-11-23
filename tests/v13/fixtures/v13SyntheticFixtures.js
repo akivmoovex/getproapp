@@ -14,28 +14,59 @@ const {
 const { assertIsolatedBootstrapLaunch } = require("../helpers/v13IsolatedExecutionPlan");
 
 const SYNTHETIC_PASSWORD = "V13-synthetic-qa-password";
+let httpChurchSerial = 0;
+let httpClinicSerial = 0;
 const DEPLOYMENT_CODE = "moovex-platform-testing";
 
+function fixtureSuffix() {
+  const suffix = String(process.env.GETPRO_V13_HTTP_FIXTURE_SUFFIX || "").toLowerCase();
+  return /^[a-z0-9]{6,16}$/.test(suffix) ? suffix : "";
+}
+
+function scopedKey(key) {
+  const suffix = fixtureSuffix();
+  return suffix ? `${key}-${suffix}` : key;
+}
+
+function scopedEmail(email) {
+  const suffix = fixtureSuffix();
+  if (!suffix) return email;
+  const at = String(email).indexOf("@");
+  if (at < 1) return email;
+  return `${email.slice(0, at)}+${suffix}${email.slice(at)}`;
+}
+
+function scopedPhone(phone) {
+  const suffix = fixtureSuffix();
+  if (!suffix || !phone) return phone;
+  let mixed = 0;
+  for (const ch of suffix) mixed = (mixed * 33 + ch.charCodeAt(0)) % 1000;
+  const original = Number(String(phone).slice(-3)) || 0;
+  return String(phone).replace(/(\d{3})$/, String((mixed + original) % 1000).padStart(3, "0"));
+}
+
 function churchPlan(suffix, displayName) {
-  const key = `v13d19-${suffix}`;
+  const key = scopedKey(`v13d19-${suffix}`);
+  const phoneNational = scopedPhone(suffix === "church-a" ? "977000111" : "977000112");
+  const label = fixtureSuffix() ? `${displayName} ${fixtureSuffix()}` : displayName;
   return {
     key,
     tenant: {
       organizationKey: key,
-      displayName,
+      displayName: label,
       legalName: displayName,
       dataEnvironment: "testing",
       productKey: "blessboard",
       productTenantKey: key,
       deploymentCode: DEPLOYMENT_CODE,
       skipDomain: true,
-      skipDefaultSubscription: true,
+      skipDefaultSubscription: fixtureSuffix() ? false : true,
     },
     church: {
       organizationKey: key,
       churchKey: key,
-      displayName,
-      legalName: displayName,
+      displayName: label,
+      legalName: label,
       dataEnvironment: "testing",
       hqBranchKey: "hq",
       hqBranchDisplayName: "Headquarters",
@@ -43,20 +74,20 @@ function churchPlan(suffix, displayName) {
       countryCode: "ZM",
     },
     admin: {
-      email: `admin-${suffix}@v13d19.example`,
+      email: scopedEmail(`admin-${suffix}@v13d19.example`),
       displayName: `${displayName} Admin`,
       roleKey: "church_system_administrator",
     },
     member: {
       fullName: `${displayName} Member`,
-      email: `member-${suffix}@v13d19.example`,
-      phone: suffix === "church-a" ? "+260977000111" : "+260977000112",
+      email: scopedEmail(`member-${suffix}@v13d19.example`),
+      phone: `+260${phoneNational}`,
       phoneCountry: "ZM",
-      phoneNational: suffix === "church-a" ? "977000111" : "977000112",
+      phoneNational,
       dateOfBirth: "1990-01-15",
     },
     staffInvite: {
-      email: `staff-${suffix}@v13d19.example`,
+      email: scopedEmail(`staff-${suffix}@v13d19.example`),
       displayName: `${displayName} Staff`,
       roleKey: "ministry_leader",
     },
@@ -84,27 +115,27 @@ function buildActiveClinicFixturePlan() {
     deploymentCode: DEPLOYMENT_CODE,
     clinics: [
       {
-        key: "v13d19-clinic-a",
+        key: scopedKey("v13d19-clinic-a"),
         clinicName: "V13 D19 Clinic A",
         facilityName: "V13 D19 Facility A",
-        adminEmail: "admin-a@v13d19.example",
-        staffEmail: "staff-a@v13d19.example",
-        receptionistEmail: "reception-a@v13d19.example",
+        adminEmail: scopedEmail("admin-a@v13d19.example"),
+        staffEmail: scopedEmail("staff-a@v13d19.example"),
+        receptionistEmail: scopedEmail("reception-a@v13d19.example"),
       },
       {
-        key: "v13d19-clinic-b",
+        key: scopedKey("v13d19-clinic-b"),
         clinicName: "V13 D19 Clinic B",
         facilityName: "V13 D19 Facility B",
-        adminEmail: "admin-b@v13d19.example",
-        staffEmail: "staff-b@v13d19.example",
-        receptionistEmail: "reception-b@v13d19.example",
+        adminEmail: scopedEmail("admin-b@v13d19.example"),
+        staffEmail: scopedEmail("staff-b@v13d19.example"),
+        receptionistEmail: scopedEmail("reception-b@v13d19.example"),
       },
     ],
     patient: {
       firstName: "Pat",
       lastName: "Ient",
-      phone: "+260977000222",
-      email: "patient-a@v13d19.example",
+      phone: scopedPhone("+260977000222"),
+      email: scopedEmail("patient-a@v13d19.example"),
     },
     service: {
       serviceKey: "v13d19-consult",
@@ -180,10 +211,10 @@ function buildAppointmentConcurrencyPlan() {
 }
 
 function buildV213RegressionFixturePlan() {
-  const churchA = "v13d19-church-a";
-  const churchB = "v13d19-church-b";
-  const clinicA = "v13d19-clinic-a";
-  const clinicB = "v13d19-clinic-b";
+  const churchA = scopedKey("v13d19-church-a");
+  const churchB = scopedKey("v13d19-church-b");
+  const clinicA = scopedKey("v13d19-clinic-a");
+  const clinicB = scopedKey("v13d19-clinic-b");
   const facilityA = "v13d19-facility-a";
   const facilityB = "v13d19-facility-b";
   return {
@@ -196,13 +227,13 @@ function buildV213RegressionFixturePlan() {
       otherChurch: { key: churchB, displayName: "V13 D19 Church B" },
       branch: { key: "hq", displayName: "Headquarters", churchKey: churchA },
       administrator: {
-        email: "admin-church-a@v13d19.example",
+        email: scopedEmail("admin-church-a@v13d19.example"),
         roleKey: "church_hq_admin",
         churchKey: churchA,
       },
       member: {
-        email: "member-church-a@v13d19.example",
-        phoneNational: "977000111",
+        email: scopedEmail("member-church-a@v13d19.example"),
+        phoneNational: scopedPhone("977000111"),
         churchKey: churchA,
         otpProvider: "test",
         otpDelivery: "peekTestCode",
@@ -215,7 +246,7 @@ function buildV213RegressionFixturePlan() {
         tokenExposed: false,
       },
       staffInvite: {
-        email: "staff-church-a@v13d19.example",
+        email: scopedEmail("staff-church-a@v13d19.example"),
         roleKey: "ministry_leader",
         churchKey: churchA,
         tokenExposed: false,
@@ -242,11 +273,19 @@ function buildV213RegressionFixturePlan() {
     activeclinic: {
       publicBookingEnabled: false,
       coupon: null,
-      clinic: { key: clinicA, displayName: "V13 D19 Clinic A", facilityKey: facilityA },
-      otherClinic: { key: clinicB, displayName: "V13 D19 Clinic B", facilityKey: facilityB },
-      staff: { email: "staff-a@v13d19.example", clinicKey: clinicA },
+      clinic: {
+        key: clinicA,
+        displayName: fixtureSuffix() ? `V13 D19 Clinic A ${fixtureSuffix()}` : "V13 D19 Clinic A",
+        facilityKey: facilityA,
+      },
+      otherClinic: {
+        key: clinicB,
+        displayName: fixtureSuffix() ? `V13 D19 Clinic B ${fixtureSuffix()}` : "V13 D19 Clinic B",
+        facilityKey: facilityB,
+      },
+      staff: { email: scopedEmail("staff-a@v13d19.example"), clinicKey: clinicA },
       receptionist: {
-        email: "reception-a@v13d19.example",
+        email: scopedEmail("reception-a@v13d19.example"),
         clinicKey: clinicA,
         facilityKey: facilityA,
         departmentKey: "reception",
@@ -254,14 +293,14 @@ function buildV213RegressionFixturePlan() {
         scopeType: "facility",
       },
       clinician: {
-        email: "clinical-a@v13d19.example",
+        email: scopedEmail("clinical-a@v13d19.example"),
         clinicKey: clinicA,
         facilityKey: facilityA,
         departmentKey: "opd",
         roleKey: "activeclinic_clinician",
         scopeType: "facility",
       },
-      patient: { email: "patient-a@v13d19.example", clinicKey: clinicA },
+      patient: { email: scopedEmail("patient-a@v13d19.example"), clinicKey: clinicA },
       departments: [
         { key: "reception", type: "reception", name: "Reception", clinicKey: clinicA, facilityKey: facilityA },
         { key: "opd", type: "opd", name: "OPD", clinicKey: clinicA, facilityKey: facilityA },
@@ -396,7 +435,32 @@ async function applyBlessBoardFixtures(db, connectionString, env) {
   const bcrypt = require("bcryptjs");
   const passwordHash = await bcrypt.hash(plan.password, 12);
   const created = [];
-  for (const church of plan.churches) {
+  for (const source of plan.churches) {
+    httpChurchSerial += 1;
+    const serial = httpChurchSerial;
+    const church = fixtureSuffix()
+      ? {
+          ...source,
+          key: `${source.key}-r${serial}`,
+          tenant: {
+            ...source.tenant,
+            organizationKey: `${source.key}-r${serial}`,
+            productTenantKey: `${source.key}-r${serial}`,
+            displayName: `${source.tenant.displayName} ${serial}`,
+          },
+          church: {
+            ...source.church,
+            organizationKey: `${source.key}-r${serial}`,
+            churchKey: `${source.key}-r${serial}`,
+            displayName: `${source.church.displayName} ${serial}`,
+            legalName: `${source.church.legalName} ${serial}`,
+          },
+          admin: {
+            ...source.admin,
+            email: source.admin.email.replace("@", `+r${serial}@`),
+          },
+        }
+      : source;
     const tenant = await provisionPlatformTenant(db, church.tenant);
     if (!tenant.ok) {
       throw new Error(`tenant ${church.key}: ${tenant.status || ""} ${tenant.message || ""}`);
@@ -405,7 +469,8 @@ async function applyBlessBoardFixtures(db, connectionString, env) {
     if (!provisioned.ok) {
       throw new Error(`church ${church.key}: ${provisioned.status || ""} ${provisioned.message || ""}`);
     }
-    const user = await authRepo.insertUser(db, {
+    const existingUser = await authRepo.findUserByEmail(db, church.admin.email);
+    const user = existingUser || await authRepo.insertUser(db, {
       emailNormalized: church.admin.email,
       emailDisplay: church.admin.email,
       passwordHash,
@@ -427,7 +492,7 @@ async function applyBlessBoardFixtures(db, connectionString, env) {
       throw new Error(`role ${church.key}: ${role.status || ""} ${role.message || ""}`);
     }
     created.push({
-      key: church.key,
+      key: source.key,
       organizationId: provisioned.records.organization.id,
       churchId: provisioned.records.church.id,
       branchId: provisioned.records.hqBranch.id,
@@ -451,10 +516,10 @@ function buildRegressionClinicOperationsPlan() {
         key: ac.clinic.key,
         displayName: ac.clinic.displayName,
         facilityKey: ac.clinic.facilityKey,
-        adminEmail: "admin-a@v13d19.example",
-        adminPhone: "+260977100001",
-        receptionist: { ...ac.receptionist, phone: "+260977100002" },
-        clinician: { ...ac.clinician, phone: "+260977100003" },
+        adminEmail: scopedEmail("admin-a@v13d19.example"),
+        adminPhone: scopedPhone("+260977100001"),
+        receptionist: { ...ac.receptionist, phone: scopedPhone("+260977100002") },
+        clinician: { ...ac.clinician, phone: scopedPhone("+260977100003") },
         departments: ac.departments,
         servicePoint: ac.servicePoint,
         walkInService: ac.walkInService,
@@ -463,11 +528,11 @@ function buildRegressionClinicOperationsPlan() {
         key: ac.otherClinic.key,
         displayName: ac.otherClinic.displayName,
         facilityKey: ac.otherClinic.facilityKey,
-        adminEmail: "admin-b@v13d19.example",
-        adminPhone: "+260977200001",
+        adminEmail: scopedEmail("admin-b@v13d19.example"),
+        adminPhone: scopedPhone("+260977200001"),
         receptionist: {
-          email: "reception-b@v13d19.example",
-          phone: "+260977200002",
+          email: scopedEmail("reception-b@v13d19.example"),
+          phone: scopedPhone("+260977200002"),
           clinicKey: ac.otherClinic.key,
           facilityKey: ac.otherClinic.facilityKey,
           departmentKey: "reception",
@@ -475,8 +540,8 @@ function buildRegressionClinicOperationsPlan() {
           scopeType: "facility",
         },
         clinician: {
-          email: "clinical-b@v13d19.example",
-          phone: "+260977200003",
+          email: scopedEmail("clinical-b@v13d19.example"),
+          phone: scopedPhone("+260977200003"),
           clinicKey: ac.otherClinic.key,
           facilityKey: ac.otherClinic.facilityKey,
           departmentKey: "opd",
@@ -573,14 +638,32 @@ async function requireDisabledBooking(db, organizationId, healthcareOrganization
   }
 }
 
+async function ensureStaffLoginIdentity(db, person) {
+  if (!person || !person.password) return null;
+  const bcrypt = require("bcryptjs");
+  const { createPlatformIdentity } = require("../../../src/platform/services/platformIdentityService");
+  const passwordHash = await bcrypt.hash(String(person.password), 12);
+  const created = await createPlatformIdentity(db, {
+    status: "active",
+    primaryEmail: person.email,
+    passwordHash,
+    emailVerifiedAt: new Date().toISOString(),
+  });
+  if (created.ok && created.identity) return created.identity.id;
+  if (created.existingIdentityId) return created.existingIdentityId;
+  throw new Error(`V13_FIXTURE: staff login identity was not created (${created.code || "failed"})`);
+}
+
 async function provisionFacilityStaff(db, input, person, roleKey) {
   const { createStaffMember } = require("../../../src/activeclinic/services/activeClinicStaffService");
   const { assignStaffToFacility } = require("../../../src/activeclinic/services/activeClinicStaffFacilityService");
   const { assignStaffRole } = require("../../../src/activeclinic/services/activeClinicAuthorizationService");
   const name = staffName(person.email);
+  const platformIdentityId = await ensureStaffLoginIdentity(db, person);
   const staff = await createStaffMember(db, {
     organizationId: input.organizationId,
     healthcareOrganizationId: input.healthcareOrganizationId,
+    platformIdentityId,
     firstName: name.firstName,
     lastName: name.lastName,
     displayName: person.email,
@@ -667,6 +750,7 @@ async function attachRegressionClinicOperations(db, input) {
   const receptionistId = await provisionFacilityStaff(db, scope, {
     email: spec.receptionist.email,
     phone: spec.receptionist.phone,
+    password: SYNTHETIC_PASSWORD,
   }, RECEPTIONIST);
   const adminReception = await assignStaffRole(db, {
     organizationId,
@@ -683,6 +767,7 @@ async function attachRegressionClinicOperations(db, input) {
   const clinicianId = await provisionFacilityStaff(db, scope, {
     email: spec.clinician.email,
     phone: spec.clinician.phone,
+    password: SYNTHETIC_PASSWORD,
   }, CLINICIAN);
   const nurse = await assignStaffRole(db, {
     organizationId,
@@ -733,12 +818,39 @@ async function attachRegressionClinicOperations(db, input) {
   };
 }
 
+function isolateHttpClinic(clinic) {
+  if (!fixtureSuffix()) return clinic;
+  httpClinicSerial += 1;
+  const n = httpClinicSerial;
+  const tail = (offset) => String((n * 13 + offset) % 1000).padStart(3, "0");
+  const mail = (email) => String(email || "").replace("@", `+c${n}@`);
+  const phone = (value, offset) => String(value || "").replace(/(\d{3})$/, tail(offset));
+  return {
+    ...clinic,
+    key: `${clinic.key}-c${n}`,
+    displayName: `${clinic.displayName} ${n}`,
+    facilityKey: `${clinic.facilityKey}-c${n}`,
+    adminEmail: mail(clinic.adminEmail),
+    adminPhone: phone(clinic.adminPhone, 1),
+    receptionist: clinic.receptionist
+      ? { ...clinic.receptionist, email: mail(clinic.receptionist.email), phone: phone(clinic.receptionist.phone, 2) }
+      : clinic.receptionist,
+    clinician: clinic.clinician
+      ? { ...clinic.clinician, email: mail(clinic.clinician.email), phone: phone(clinic.clinician.phone, 3) }
+      : clinic.clinician,
+    servicePoint: clinic.servicePoint
+      ? { ...clinic.servicePoint, servicePointKey: `${clinic.servicePoint.servicePointKey}-c${n}` }
+      : clinic.servicePoint,
+  };
+}
+
 async function applyActiveClinicFixtures(db, connectionString, env) {
   assertApplyPermitted(connectionString, env);
   const operations = assertRegressionClinicOperationsPlan(buildRegressionClinicOperationsPlan());
   const { submitAndProvisionClinicRegistration } = require("../../../src/activeclinic/services/submitClinicRegistrationService");
   const created = [];
-  for (const clinic of operations.clinics) {
+  for (const sourceClinic of operations.clinics) {
+    const clinic = isolateHttpClinic(sourceClinic);
     const registered = await submitAndProvisionClinicRegistration(db, {
       clinicName: clinic.displayName,
       contactName: `${clinic.displayName} Admin`,
@@ -788,7 +900,59 @@ async function applyActiveClinicFixtures(db, connectionString, env) {
       servicePointKey: attached.servicePointKey,
     });
   }
-  return { plan: operations, created };
+  const activeClinicPlan = buildActiveClinicFixturePlan();
+  return {
+    plan: { ...operations, patient: activeClinicPlan.patient, slot: activeClinicPlan.slot },
+    created,
+  };
+}
+
+async function ignoreAppendOnly(client, run) {
+  try {
+    await client.query("SAVEPOINT fixture_cleanup");
+    await run();
+    await client.query("RELEASE SAVEPOINT fixture_cleanup");
+  } catch (error) {
+    await client.query("ROLLBACK TO SAVEPOINT fixture_cleanup");
+    if (error.code !== "23000" && error.code !== "23503") throw error;
+  }
+}
+
+function quoteIdent(value) {
+  if (!/^[a-z_][a-z0-9_]*$/.test(value)) {
+    throw new Error("V13_FIXTURE: unsafe identifier");
+  }
+  return `"${value}"`;
+}
+
+async function deleteDirectReferences(client, parent, ids) {
+  const refs = await client.query(
+    `SELECT n.nspname AS schema_name, child.relname AS table_name, a.attname AS column_name
+       FROM pg_constraint c
+       JOIN pg_class child ON child.oid = c.conrelid
+       JOIN pg_namespace n ON n.oid = child.relnamespace
+       JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+      WHERE c.contype = 'f'
+        AND c.confrelid = $1::regclass
+        AND cardinality(c.conkey) = 1`,
+    [parent]
+  );
+  for (let pass = 0; pass < 8; pass += 1) {
+    let blocked = false;
+    for (const ref of refs.rows) {
+      const table = `${quoteIdent(ref.schema_name)}.${quoteIdent(ref.table_name)}`;
+      const column = quoteIdent(ref.column_name);
+      try {
+        await client.query("SAVEPOINT fixture_cleanup");
+        await client.query(`DELETE FROM ${table} WHERE ${column} = ANY($1::uuid[])`, [ids]);
+        await client.query("RELEASE SAVEPOINT fixture_cleanup");
+      } catch (error) {
+        await client.query("ROLLBACK TO SAVEPOINT fixture_cleanup");
+        blocked = true;
+      }
+    }
+    if (!blocked) return;
+  }
 }
 
 async function cleanupBlessBoardFixtures(db, connectionString, created, env) {
@@ -796,53 +960,77 @@ async function cleanupBlessBoardFixtures(db, connectionString, created, env) {
   const churchIds = (created || []).map((row) => row.churchId).filter(Boolean);
   const orgIds = (created || []).map((row) => row.organizationId).filter(Boolean);
   if (!churchIds.length && !orgIds.length) return;
-  await db.query("BEGIN");
+  const client = typeof db.connect === "function" ? await db.connect() : db;
   try {
+    await client.query("BEGIN");
     if (churchIds.length) {
-      await db.query(
+      await client.query(
         `DELETE FROM blessboard.announcement_reads
           WHERE announcement_id IN (SELECT id FROM blessboard.announcements WHERE church_id = ANY($1::uuid[]))`,
         [churchIds]
       );
-      await db.query(
+      await client.query(
         `DELETE FROM blessboard.announcement_attachments
           WHERE announcement_id IN (SELECT id FROM blessboard.announcements WHERE church_id = ANY($1::uuid[]))`,
         [churchIds]
       );
-      await db.query(
+      await client.query(
         `DELETE FROM blessboard.announcement_audiences
           WHERE announcement_id IN (SELECT id FROM blessboard.announcements WHERE church_id = ANY($1::uuid[]))`,
         [churchIds]
       );
-      await db.query(`DELETE FROM blessboard.announcements WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(
+      await client.query(`DELETE FROM blessboard.announcements WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(
         `DELETE FROM blessboard.page_sections
           WHERE page_id IN (SELECT id FROM blessboard.public_pages WHERE church_id = ANY($1::uuid[]))`,
         [churchIds]
       );
-      await db.query(`DELETE FROM blessboard.public_pages WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.events WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.sermons WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.public_contact_submissions WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.member_portal_invitations WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.members WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.user_invitations WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.branches WHERE church_id = ANY($1::uuid[])`, [churchIds]);
-      await db.query(`DELETE FROM blessboard.churches WHERE id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.public_pages WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.events WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.sermons WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.public_contact_submissions WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.member_portal_invitations WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(
+        `DELETE FROM blessboard.member_branch_memberships
+          WHERE member_id IN (SELECT id FROM blessboard.members WHERE church_id = ANY($1::uuid[]))`,
+        [churchIds]
+      );
+      await client.query(`DELETE FROM blessboard.members WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(`DELETE FROM blessboard.user_invitations WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await client.query(
+        `DELETE FROM platform.deployment_sessions
+          WHERE church_id = ANY($1::uuid[])
+             OR branch_id IN (SELECT id FROM blessboard.branches WHERE church_id = ANY($1::uuid[]))`,
+        [churchIds]
+      );
+      await client.query(`DELETE FROM blessboard.branches WHERE church_id = ANY($1::uuid[])`, [churchIds]);
+      await ignoreAppendOnly(client, () =>
+        client.query(`DELETE FROM blessboard.user_role_assignments WHERE church_id = ANY($1::uuid[])`, [churchIds])
+      );
+      await deleteDirectReferences(client, "blessboard.churches", churchIds);
+      await ignoreAppendOnly(client, () =>
+        client.query(`DELETE FROM blessboard.churches WHERE id = ANY($1::uuid[])`, [churchIds])
+      );
     }
     if (orgIds.length) {
-      await db.query(`DELETE FROM platform.organization_products WHERE organization_id = ANY($1::uuid[])`, [orgIds]);
-      await db.query(`DELETE FROM platform.organizations WHERE id = ANY($1::uuid[])`, [orgIds]);
+      await client.query(`DELETE FROM platform.organization_products WHERE organization_id = ANY($1::uuid[])`, [orgIds]);
     }
-    await db.query("COMMIT");
+    await client.query("COMMIT");
   } catch (error) {
-    await db.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      // The connection may already have left the transaction.
+    }
     throw error;
+  } finally {
+    if (client !== db && typeof client.release === "function") client.release();
   }
 }
 
 module.exports = {
   SYNTHETIC_PASSWORD,
+  scopedKey,
   DEPLOYMENT_CODE,
   buildBlessBoardFixturePlan,
   buildActiveClinicFixturePlan,

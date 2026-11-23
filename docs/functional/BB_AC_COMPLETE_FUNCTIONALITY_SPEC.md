@@ -1,6 +1,8 @@
 # BlessBoard and ActiveClinic complete functionality specification
 
-Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G65–G76. It does not describe a production deployment.
+Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G82. It does not describe a production deployment.
+
+G82 executed safe tests, HTTP tests, and Playwright against the disposable database `getpro_v13_e2e_g78d2301` only. Safe tests: 526 passed, 0 failed, 2 skipped. HTTP: 34 executed, 16 passed, 18 failed, 0 skipped. Playwright full suites: 43 executed, 17 passed, 26 failed, 0 skipped. Migrations 043 and 044 are applied on that disposable database and were not applied to hosted QA or production. Implementation counts below are unchanged. AC-REG-01 is the only original regression id at `VERIFIED_E2E`. The release is not ready.
 
 The healthcare brief PDF and both office QA documents are `SOURCE_UNAVAILABLE`. Repository evidence is the source, the migrations, the database-free tests, and the G01–G36 reports.
 
@@ -8,7 +10,7 @@ The healthcare brief PDF and both office QA documents are `SOURCE_UNAVAILABLE`. 
 
 ActiveClinic covers organisation setup, patients, visits, reception, nursing, consultation, laboratory, pharmacy, billing, closeout, and text records. BlessBoard covers church registration, branches, members, the public website, themes, sermons, events, announcements, and a fail-closed media switch. The shared platform covers sessions, CSRF, OTP, roles, and jobs.
 
-Sixteen ActiveClinic requirements and thirteen BlessBoard requirements are implemented and unverified. Seven ActiveClinic and three BlessBoard requirements are partial. Six ActiveClinic requirements and one BlessBoard requirement are blocked. One ActiveClinic requirement is deferred. No requirement is `VERIFIED_E2E`.
+Sixteen ActiveClinic requirements and thirteen BlessBoard requirements are implemented and unverified as product rows. Seven ActiveClinic and three BlessBoard requirements are partial. Six ActiveClinic requirements and one BlessBoard requirement are blocked. One ActiveClinic requirement is deferred. Those are implementation counts. G82 browser passes cover staff sign-in, portal activation, appointment collision, selected clinical denials, G66 preview, G67 queue notice, AC-REG-01, AC-PUB-01’s disabled state, BB-05 member registration, and the D14C OTP gate staying blocked. Those passes do not change the 30 and 17 implementation totals, and they do not make the release ready.
 
 ## 2. Product architecture
 
