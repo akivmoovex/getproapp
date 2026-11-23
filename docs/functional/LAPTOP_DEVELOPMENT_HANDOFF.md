@@ -1,5 +1,7 @@
 # Laptop development handoff
 
+Tomorrow's QA uses branch V13 and disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`. The decision is NO-GO. Details are in `docs/qa/V13_G100_FINAL_QA_HANDOFF.md`.
+
 Continue on branch `V13` only. The G64 handoff commit is `a62a2be44529028ada2d2538802cb18c469a0ff2`. G65–G76 add an explicit pharmacy-queue notice, a non-persistent laboratory reference-rule preview, and fail-closed G66 persistence and browser tests. G77–G82 add the disposable-database evidence in `docs/qa/V13_G82_FINAL_INTEGRATION_HANDOFF.md`. After you pull, `git rev-parse HEAD` is the latest `origin/V13` commit. Local `main` must remain `44eafec486a18aeef2777bbcc9683e43f68ebe0d`. Do not touch `origin/main`.
 
 Worktree used here: `/Users/akivsolomon/Development/getproapp-v13`. Remote: `https://github.com/akivmoovex/getproapp.git`.

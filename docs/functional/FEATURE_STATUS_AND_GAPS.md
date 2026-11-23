@@ -6,7 +6,7 @@ G82 ran the safe suite, the HTTP suite, and Playwright only against the disposab
 
 G83–G89 repaired verified failures without a new feature cycle. The G88 HTTP run is 34 executed, 20 passed, 14 failed, 0 skipped. The G88 Playwright run is 43 executed, 19 passed, 24 failed, 0 skipped. AC-REG-01, AC-AUTH-04, and AC-REC-03 now have both HTTP and browser passes. AC-REC-02 and AC-WEB-09 remain HTTP-only. Implementation counts stay 16 / 7 / 6 / 1 for ActiveClinic and 13 / 3 / 1 for BlessBoard. The release is not ready.
 
-G90 continued on the same disposable database. The latest complete HTTP run is 34 executed, 28 passed, 6 failed, 0 skipped. An earlier cycle in the same session reached 29 passed and 5 failed; the later run replaces it because member recovery returned 429 before a second code was issued. The latest Playwright run, taken before that later HTTP edit, is 43 executed, 20 passed, 23 failed, 0 skipped. AC-REC-02 and AC-PUB-01 passed in both HTTP and the browser in that browser run. Queue numbers no longer restart each day, because the unique key covers every day. Church publish currently redirects to an error for missing contact and incomplete website information, so the live theme stays unpublished. The release is not ready.
+G90 continued on the same disposable database. Two complete HTTP runs after the fixture and recovery repairs each executed 34 tests, passed 30, failed 4, and skipped 0. The four failures are the absent OTP challenge table and the unimplemented appointment slot lock and staff overlap. Safe tests are 526 passed, 0 failed, and 2 skipped. The latest Playwright run is 43 executed, 20 passed, 23 failed, and 0 skipped. AC-REC-02 and AC-PUB-01 pass in both HTTP and the browser. The release is not ready. QA is NO-GO until the browser failures and the four blocked HTTP gates are resolved without enabling booking, media uploads, or platform.otp_challenges.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |
@@ -41,15 +41,15 @@ G82 verification of the original 16 regression ids:
 | AC-AUTH-04 | VERIFIED_E2E | HTTP reset path. Browser opens the used link and shows it is no longer valid | The earlier browser POST client hung. The GET replay is the passing assertion |
 | AC-REC-03 | VERIFIED_E2E | HTTP and browser save 72 bpm. An anonymous request is redirected to login. The other clinic receives 403 | None in the G88 run |
 | BB-REG-07 | VERIFIED_HTTP | HTTP duplicate church phone | Browser URL assertion failed |
-| BB-AUTH-04 | PARTIAL | HTTP recovery rejected a wrong code in the earlier cycle | The later run returned 429 before a second code existed. Browser requires `E2E_BB_MEMBER_OTP` |
+| BB-AUTH-04 | VERIFIED_HTTP | Two complete HTTP runs sign in after a wrong code, an expired challenge, and a valid code | Browser requires `E2E_BB_MEMBER_OTP` |
 | BB-MEM-01 | VERIFIED_HTTP | HTTP member form | Browser registration did not finish |
 | BB-MEM-02 | VERIFIED_HTTP | HTTP missing CSRF returns 403 | Browser status assertion failed |
-| AC-WEB-08 | PARTIAL | — | Draft section heading is absent on the public page |
+| AC-WEB-08 | VERIFIED_HTTP | HTTP drafts, previews, publishes, and isolates a section | The browser public page does not show the new heading |
 | AC-WEB-09 | VERIFIED_HTTP | HTTP clinic theme | Draft preview renders `ac.default`, not the mint theme |
 | BB-WEB-09 | VERIFIED_HTTP | HTTP public sermon marker after the test church website is published | Browser marker still missing |
 | BB-WEB-10 | VERIFIED_HTTP | HTTP public event marker after the test church website is published | Browser marker still missing |
 | BB-ANN-01 | VERIFIED_HTTP | HTTP public announcement marker after the test church website is published | Browser marker still missing |
 | AC-REC-02 | VERIFIED_E2E | HTTP creates the patient and the browser check-in reaches the queue | None in the G90 run |
 | AC-PUB-01 | VERIFIED_E2E | Browser and HTTP: booking stays disabled and no coupon | None in the G90 run |
-| BB-WEB-08 | PARTIAL | Canonical theme page returns 200 after one redirect | The page has no CSRF field the scenario can extract. Browser failed |
+| BB-WEB-08 | VERIFIED_HTTP | HTTP applies the church theme, publishes a church that has contact details and public pages, and the live page shows the theme | Browser theme journey still fails |
 | BB-ANN-02 | VERIFIED_HTTP | HTTP returned 403 `media_uploads_disabled` and the test now requires that refusal while the flag is unset | Browser upload journey still fails. Uploads stay disabled |

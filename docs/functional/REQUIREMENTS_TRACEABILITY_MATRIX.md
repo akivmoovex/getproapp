@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+The original 16 regressions are 5 VERIFIED_E2E and 11 VERIFIED_HTTP. None of those 16 are blocked. The OTP table and appointment locks are separate blocked gates. See `docs/qa/V13_G99_REGRESSION_ACCEPTANCE_MATRIX.md`.
+
 Sources in the repository: G27 register, G35 matrix, current routes, database-free tests, and the G88 isolated runs. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Implementation counts are unchanged.
 
 `IMPLEMENTED` below means `IMPLEMENTED_UNVERIFIED` unless [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md) records a later class. G88 classes are only for the journeys named there, on `getpro_v13_e2e_g78d2301`.

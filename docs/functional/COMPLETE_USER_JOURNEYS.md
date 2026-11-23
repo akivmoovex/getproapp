@@ -1,5 +1,7 @@
 # Complete user journeys
 
+The executed journeys that pass in the browser are registration denial, password-reset replay, disabled booking, walk-in, and vitals. Sermon, event, announcement, and theme browser journeys are not verified.
+
 Verification for every journey is `IMPLEMENTED_UNVERIFIED` or the more specific status in the traceability matrix, unless [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md) records a G82 class. G37–G44 did not execute HTTP or browser journeys. G82 did, only on `getpro_v13_e2e_g78d2301`. A journey that is not named in that G82 table was not promoted.
 
 ## ActiveClinic

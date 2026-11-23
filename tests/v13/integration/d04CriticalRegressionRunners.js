@@ -542,8 +542,10 @@ async function runBbAuth04(pool, connectionString, env) {
     await pool.query(
       `UPDATE blessboard.phone_otp_verifications
           SET status = 'cancelled', cancelled_at = now()
-        WHERE id = $1`,
-      [wrongVerification]
+        WHERE purpose = 'password_recovery'
+          AND status = 'pending'
+          AND regexp_replace(normalized_phone, '\\D', '', 'g') LIKE $1`,
+      [`%${String(phone).replace(/\D/g, "").slice(-7)}`]
     );
 
     const expiredPage = await submitRecovery(app, church.host, memberNumber);
@@ -566,6 +568,14 @@ async function runBbAuth04(pool, connectionString, env) {
     );
     assert.equal(expired.status, 400);
     assert.doesNotMatch(expired.text, /Password updated/);
+    await pool.query(
+      `UPDATE blessboard.phone_otp_verifications
+          SET status = 'cancelled', cancelled_at = now()
+        WHERE purpose = 'password_recovery'
+          AND status = 'pending'
+          AND regexp_replace(normalized_phone, '\\D', '', 'g') LIKE $1`,
+      [`%${String(phone).replace(/\D/g, "").slice(-7)}`]
+    );
     const unchanged = await memberLogin(app, church.host, memberNumber, MEMBER_NEW_PASSWORD);
     assert.equal(unchanged.status, 401);
     assert.match(unchanged.text, /Member login/);

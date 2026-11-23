@@ -1,5 +1,7 @@
 # BlessBoard and ActiveClinic complete functionality specification
 
+The latest disposable-database HTTP run passed 30 of 34 tests. The four failures are the unauthorized OTP challenge table and the unauthorized appointment locks. Playwright passed 20 of 43. QA is NO-GO. See `docs/qa/V13_G100_FINAL_QA_HANDOFF.md`.
+
 Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G82. It does not describe a production deployment.
 
 G82 executed safe tests, HTTP tests, and Playwright against the disposable database `getpro_v13_e2e_g78d2301` only. G88, after the G83–G87 repairs, recorded safe tests 526 passed, 0 failed, 2 skipped; HTTP 34 executed, 20 passed, 14 failed, 0 skipped; Playwright 43 executed, 19 passed, 24 failed, 0 skipped. Migrations 043 and 044 are applied on that disposable database and were not applied to hosted QA or production. Implementation counts below are unchanged. AC-REG-01, AC-AUTH-04, and AC-REC-03 are `VERIFIED_E2E`. The release is not ready.

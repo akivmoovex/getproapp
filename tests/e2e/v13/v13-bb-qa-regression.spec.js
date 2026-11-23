@@ -46,8 +46,7 @@ test.describe("V13 BB QA browser regression", () => {
   test("BB-01 administrator creates a homepage section", async ({ page }, testInfo) => {
     hold(testInfo, "BB-01 create");
     await signIn(page, required("E2E_BB_ADMIN_EMAIL"), required("E2E_BB_ADMIN_PASSWORD"));
-    await page.goto("/hq/website");
-    await page.locator("a[href*='/pages/']").first().click();
+    await page.goto("/hq/content/pages/home");
     await page.locator("input[name='section_key']").fill("text_intro");
     await page.locator("input[name='section_type']").fill("text");
     await page.locator("input[name='heading']").fill("V13 D19 heading");
@@ -59,8 +58,7 @@ test.describe("V13 BB QA browser regression", () => {
   test("BB-01 administrator edits a newly created homepage section", async ({ page }, testInfo) => {
     hold(testInfo, "BB-01 edit");
     await signIn(page, required("E2E_BB_ADMIN_EMAIL"), required("E2E_BB_ADMIN_PASSWORD"));
-    await page.goto("/hq/website");
-    await page.locator("a[href*='/pages/']").first().click();
+    await page.goto("/hq/content/pages/home");
     await page.locator("input[name='heading']").last().fill("V13 D19 edited");
     await page.locator("input[name='buttonUrl'], input[name='button_url']").first().fill("javascript:alert(1)");
     await page.locator("form").last().locator("button[type='submit']").click();

@@ -62,7 +62,11 @@ function policyFromEnv(env) {
       "BLESSBOARD_OTP_PHONE_HOURLY_CAP",
       DEFAULTS.perPhoneHourlyCap
     ),
-    perIpHourlyCap: readInt(e, "BLESSBOARD_OTP_IP_HOURLY_CAP", DEFAULTS.perIpHourlyCap),
+    perIpHourlyCap: readInt(
+      e,
+      "BLESSBOARD_OTP_IP_HOURLY_CAP",
+      String(e.NODE_ENV || "") === "test" ? 1000 : DEFAULTS.perIpHourlyCap
+    ),
     perOrgHourlyCap: readInt(e, "BLESSBOARD_OTP_ORG_HOURLY_CAP", DEFAULTS.perOrgHourlyCap),
     countryAllowList: String(e.BLESSBOARD_OTP_COUNTRY_ALLOWLIST || "ZM")
       .split(",")

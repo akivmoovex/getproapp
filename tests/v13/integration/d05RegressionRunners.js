@@ -156,12 +156,17 @@ async function provisionChurch(pool, id, host) {
   });
   assert.equal(website.ok, true, website.code || website.message);
   await pool.query(
-    `INSERT INTO blessboard.church_settings (church_id, public_name, website_status)
-     VALUES ($1, $2, 'published')
+    `INSERT INTO blessboard.church_settings (church_id, public_name, website_status, primary_email)
+     VALUES ($1, $2, 'published', $3)
      ON CONFLICT (church_id) DO UPDATE
-       SET website_status = 'published', updated_at = now()`,
-    [created.records.church.id, `D05 ${id}`]
+       SET website_status = 'published',
+           primary_email = EXCLUDED.primary_email,
+           updated_at = now()`,
+    [created.records.church.id, `D05 ${id}`, `office.${id}@example.invalid`]
   );
+  const { provisionEmptyPublicPages } = require("../../../src/blessboard/services/publicContentAdminService");
+  const pages = await provisionEmptyPublicPages(pool, { churchId: created.records.church.id });
+  assert.equal(pages.ok, true, pages.reason || pages.message || "public pages were not provisioned");
   const admin = await createBlessBoardUser(pool, {
     email: `admin.${id}@example.invalid`,
     displayName: "D05 Admin",
