@@ -705,6 +705,15 @@ async function publishChurchWebsite(db, input) {
               [inner.organizationId]
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
+        await client.query(
+          `UPDATE platform.website_content
+              SET published_value = draft_value,
+                  updated_at = now()
+            WHERE organization_id = $1
+              AND content_key = 'site.theme_id'
+              AND draft_value IS NOT NULL`,
+          [inner.organizationId]
+        );
         if (draftN === 0 && approvedN === 0 && pendingOverlayDrafts === 0) {
           const recent = await publicationVersionRepo.loadCurrentWebsitePublication(
             client,

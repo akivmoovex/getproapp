@@ -366,13 +366,20 @@ async function createMember(pool, fixtures, env) {
   const { beginStaffAddMemberFlow, confirmStaffAddMemberCreate } = require("../../../src/blessboard/services/blessBoardStaffAddMemberFlowService");
   const a = church(fixtures, scopedKey("v13d19-church-a"));
   const plan = fixtures.plan.churches[0];
+  const stamp = Date.now();
   const started = must(
     await beginStaffAddMemberFlow(pool, {
       actorUserId: a.adminUserId,
       organizationId: a.organizationId,
       churchId: a.churchId,
       env,
-      body: memberDraftBody(plan, a),
+      body: {
+        ...memberDraftBody(plan, a),
+        full_name: `BB06 Member ${stamp}`,
+        email: `bb06-${stamp}@v13d19.example`,
+        phone: `+26097${String(stamp).slice(-7)}`,
+        phone_national: `97${String(stamp).slice(-7)}`,
+      },
     }),
     "member draft"
   );
@@ -397,7 +404,10 @@ async function runBb06(pool, connectionString, env) {
     const memberCreate = await createMember(pool, fixtures, env);
     const a = memberCreate.church;
     const member = (
-      await pool.query(`SELECT id FROM blessboard.members WHERE church_id = $1 LIMIT 1`, [a.churchId])
+      await pool.query(
+        `SELECT id, email_normalized FROM blessboard.members WHERE id = $1 AND church_id = $2`,
+        [memberCreate.created.memberId, a.churchId]
+      )
     ).rows[0];
     assert.ok(member);
     const issued = must(
@@ -428,7 +438,7 @@ async function runBb06(pool, connectionString, env) {
     assert.equal(replay.ok, false);
     const login = must(
       await auth.authenticateBlessBoardUser(pool, {
-        email: fixtures.plan.churches[0].member.email,
+        email: member.email_normalized,
         password: SYNTHETIC_PASSWORD,
         deploymentCode: DEPLOYMENT_CODE,
         requireOrganizationId: a.organizationId,
@@ -488,14 +498,15 @@ async function runInv01(pool, connectionString, env) {
   await withChurches(pool, connectionString, env, async (fixtures) => {
     const a = church(fixtures, scopedKey("v13d19-church-a"));
     const b = church(fixtures, scopedKey("v13d19-church-b"));
-    const invite = fixtures.plan.churches[0].staffInvite;
+    const inviteStamp = Date.now();
+    const inviteEmail = `inv01-${inviteStamp}@v13d19.example`;
     const escalation = await inviteBlessBoardStaff(pool, {
       organizationId: a.organizationId,
       churchId: a.churchId,
       branchId: a.branchId,
       actorUserId: a.adminUserId,
-      email: invite.email,
-      displayName: invite.displayName,
+      email: inviteEmail,
+      displayName: `INV01 ${inviteStamp}`,
       roleKey: "platform_administrator",
     });
     assert.equal(escalation.ok, false);
@@ -505,9 +516,9 @@ async function runInv01(pool, connectionString, env) {
         churchId: a.churchId,
         branchId: a.branchId,
         actorUserId: a.adminUserId,
-        email: invite.email,
-        displayName: invite.displayName,
-        roleKey: invite.roleKey,
+        email: inviteEmail,
+        displayName: `INV01 ${inviteStamp}`,
+        roleKey: fixtures.plan.churches[0].staffInvite.roleKey,
       }),
       "staff invite"
     );
@@ -529,7 +540,7 @@ async function runInv01(pool, connectionString, env) {
     assert.equal(replay.ok, false);
     const session = must(
       await auth.authenticateBlessBoardUser(pool, {
-        email: invite.email,
+        email: inviteEmail,
         password: SYNTHETIC_PASSWORD,
         deploymentCode: DEPLOYMENT_CODE,
         requireOrganizationId: a.organizationId,
@@ -538,17 +549,20 @@ async function runInv01(pool, connectionString, env) {
     );
     assert.ok(session.session || session.user);
     const wrongOrg = await auth.authenticateBlessBoardUser(pool, {
-      email: invite.email,
+      email: inviteEmail,
       password: SYNTHETIC_PASSWORD,
       deploymentCode: DEPLOYMENT_CODE,
       requireOrganizationId: b.organizationId,
     });
     assert.equal(wrongOrg.ok, false);
+    const userId = accepted.userId || (accepted.user && accepted.user.id);
     const role = await pool.query(
-      `SELECT role_key FROM blessboard.user_role_assignments
-        WHERE user_id = $1 OR organization_id = $2
-        ORDER BY created_at DESC NULLS LAST LIMIT 5`,
-      [accepted.userId || accepted.user && accepted.user.id, a.organizationId]
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1
+          AND a.status = 'active'`,
+      [userId]
     );
     const keys = role.rows.map((row) => row.role_key);
     assert.equal(keys.includes("platform_administrator"), false);

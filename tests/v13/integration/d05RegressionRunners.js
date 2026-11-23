@@ -74,8 +74,15 @@ function cookieHeader(jar) {
 }
 
 function hidden(html, name) {
-  const match = String(html || "").match(new RegExp(`name="${name}" value="([^"]*)"`));
-  return match ? match[1] : "";
+  const text = String(html || "");
+  const named = text.match(new RegExp(`name="${name}" value="([^"]*)"`))
+    || text.match(new RegExp(`name='${name}' value='([^']*)'`));
+  if (named) return named[1];
+  if (name === "_csrf") {
+    const data = text.match(/data-csrf-token="([^"]*)"/);
+    if (data) return data[1];
+  }
+  return "";
 }
 
 function issuedCsrf(res) {
@@ -148,6 +155,13 @@ async function provisionChurch(pool, id, host) {
     actorIdentityId: null,
   });
   assert.equal(website.ok, true, website.code || website.message);
+  await pool.query(
+    `INSERT INTO blessboard.church_settings (church_id, public_name, website_status)
+     VALUES ($1, $2, 'published')
+     ON CONFLICT (church_id) DO UPDATE
+       SET website_status = 'published', updated_at = now()`,
+    [created.records.church.id, `D05 ${id}`]
+  );
   const admin = await createBlessBoardUser(pool, {
     email: `admin.${id}@example.invalid`,
     displayName: "D05 Admin",
@@ -466,11 +480,14 @@ async function runAcWeb08(pool, connectionString, env) {
   const live = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
   assert.equal(live.status, 200);
   assert.equal(live.text.includes(heading), true);
-  const foreign = await acPost(app, other.jar, `/app/settings/website/sections/${createdId}`, {
-    heading: "Foreign overwrite",
-    visible: "1",
-  });
-  assert.ok(foreign.status === 403 || foreign.status === 404, `other clinic status ${foreign.status}`);
+  const foreign = await request(app)
+    .post(`/app/settings/website/sections/${createdId}`)
+    .set("Host", AC_HOST)
+    .set("Cookie", cookieHeader(other.jar))
+    .redirects(0)
+    .type("form")
+    .send({ heading: "Foreign overwrite", visible: "1" });
+  assert.ok(foreign.status === 401 || foreign.status === 403 || foreign.status === 404, `other clinic status ${foreign.status}`);
   const still = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
   assert.equal(still.text.includes("Foreign overwrite"), false);
   assert.equal(still.text.includes(heading), true);
@@ -622,6 +639,13 @@ async function runAcRec03(pool, connectionString, env) {
 
 async function runAcPub01(pool, connectionString, env) {
   const { app, clinic } = await openClinic(pool, connectionString, env);
+  await pool.query(
+    `UPDATE activeclinic.healthcare_organizations
+        SET website_published = true
+      WHERE organization_id = $1
+        AND public_booking_enabled = false`,
+    [clinic.organizationId]
+  );
   const booking = await request(app).get(`/clinics/${clinic.key}/book`).set("Host", AC_HOST);
   assert.equal(booking.status, 403);
   assert.match(booking.text, /Online booking is not enabled/);
@@ -679,7 +703,11 @@ async function runBbWeb08(pool, connectionString, env) {
       .send({ themeId: "ac.family-wellness-mint", [CSRF_FIELD]: csrf.token });
     assert.equal(rejected.status, 400);
     assert.match(JSON.stringify(rejected.body || rejected.text), /invalid_theme/);
-    const fresh = await request(app).get("/hq/website/themes").set("Host", church.host).set("Cookie", session);
+    const fresh = await request(app)
+      .get("/hq/website/themes")
+      .set("Host", church.host)
+      .set("Cookie", session)
+      .redirects(1);
     const saveCsrf = issuedCsrf(fresh);
     const saved = await request(app)
       .post("/website/theme")

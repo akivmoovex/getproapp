@@ -822,14 +822,16 @@ function isolateHttpClinic(clinic) {
   if (!fixtureSuffix()) return clinic;
   httpClinicSerial += 1;
   const n = httpClinicSerial;
-  const tail = (offset) => String((n * 13 + offset) % 1000).padStart(3, "0");
-  const mail = (email) => String(email || "").replace("@", `+c${n}@`);
+  const unique = `${Date.now().toString(36)}${n}`;
+  const tick = Number(String(Date.now()).slice(-3));
+  const tail = (offset) => String((tick + n * 17 + offset) % 1000).padStart(3, "0");
+  const mail = (email) => String(email || "").replace("@", `+c${unique}@`);
   const phone = (value, offset) => String(value || "").replace(/(\d{3})$/, tail(offset));
   return {
     ...clinic,
-    key: `${clinic.key}-c${n}`,
+    key: `${clinic.key}-${unique}`,
     displayName: `${clinic.displayName} ${n}`,
-    facilityKey: `${clinic.facilityKey}-c${n}`,
+    facilityKey: `${clinic.facilityKey}-${unique}`,
     adminEmail: mail(clinic.adminEmail),
     adminPhone: phone(clinic.adminPhone, 1),
     receptionist: clinic.receptionist
@@ -839,7 +841,7 @@ function isolateHttpClinic(clinic) {
       ? { ...clinic.clinician, email: mail(clinic.clinician.email), phone: phone(clinic.clinician.phone, 3) }
       : clinic.clinician,
     servicePoint: clinic.servicePoint
-      ? { ...clinic.servicePoint, servicePointKey: `${clinic.servicePoint.servicePointKey}-c${n}` }
+      ? { ...clinic.servicePoint, servicePointKey: `${clinic.servicePoint.servicePointKey}-${unique}` }
       : clinic.servicePoint,
   };
 }

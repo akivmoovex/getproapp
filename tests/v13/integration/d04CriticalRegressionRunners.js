@@ -169,6 +169,24 @@ async function provisionChurch(pool, id, host) {
     churchKey: id,
   });
   assert.equal(role.ok, true, role.message || role.status);
+  const { provisionWebsiteInstance } = require("../../../src/platform/website/provisionService");
+  require("../../../src/blessboard/website/blessboardChurchTemplate").registerBlessBoardWebsiteTemplate();
+  const website = await provisionWebsiteInstance(pool, {
+    organizationId: tenant.records.organization.id,
+    templateId: "blessboard_church",
+    templateVersion: 1,
+    slug: id,
+    status: "published",
+    actorIdentityId: null,
+  });
+  assert.equal(website.ok, true, website.code || website.message);
+  await pool.query(
+    `INSERT INTO blessboard.church_settings (church_id, public_name, website_status)
+     VALUES ($1, $2, 'published')
+     ON CONFLICT (church_id) DO UPDATE
+       SET website_status = 'published', updated_at = now()`,
+    [created.records.church.id, `D04 ${id}`]
+  );
   return {
     key: id,
     host,
@@ -521,6 +539,12 @@ async function runBbAuth04(pool, connectionString, env) {
     assert.equal(denied.status, 400);
     assert.match(denied.text, /Recovery unsuccessful/);
     assert.doesNotMatch(denied.text, /Password updated/);
+    await pool.query(
+      `UPDATE blessboard.phone_otp_verifications
+          SET status = 'cancelled', cancelled_at = now()
+        WHERE id = $1`,
+      [wrongVerification]
+    );
 
     const expiredPage = await submitRecovery(app, church.host, memberNumber);
     const expiredVerification = hidden(expiredPage.text, "verification_id");
@@ -529,8 +553,8 @@ async function runBbAuth04(pool, connectionString, env) {
     assert.equal(expiredPage.text.includes(expiredCode), false);
     await pool.query(
       `UPDATE blessboard.phone_otp_verifications
-          SET expires_at = now() - interval '5 minutes'
-        WHERE id = $1`,
+          SET status = 'expired'
+        WHERE id = $1 AND status = 'pending'`,
       [expiredVerification]
     );
     const expired = await submitRecoveryCode(

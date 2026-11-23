@@ -166,8 +166,7 @@ async function allocateQueueNumber(db, input) {
     `SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_number
        FROM activeclinic.queue_entries
       WHERE service_point_id = $1
-        AND organization_id = $2
-        AND created_at >= CURRENT_DATE`,
+        AND organization_id = $2`,
     [input.servicePointId, input.organizationId]
   );
   return result.rows[0].next_number;
