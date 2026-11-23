@@ -6,7 +6,7 @@ G82 ran the safe suite, the HTTP suite, and Playwright only against the disposab
 
 G83–G89 repaired verified failures without a new feature cycle. The G88 HTTP run is 34 executed, 20 passed, 14 failed, 0 skipped. The G88 Playwright run is 43 executed, 19 passed, 24 failed, 0 skipped. AC-REG-01, AC-AUTH-04, and AC-REC-03 now have both HTTP and browser passes. AC-REC-02 and AC-WEB-09 remain HTTP-only. Implementation counts stay 16 / 7 / 6 / 1 for ActiveClinic and 13 / 3 / 1 for BlessBoard. The release is not ready.
 
-G90 continued on the same disposable database. The latest complete HTTP run is 34 executed, 29 passed, 5 failed, 0 skipped. The latest Playwright run is 43 executed, 20 passed, 23 failed, 0 skipped. AC-REC-02 and AC-PUB-01 now pass in both HTTP and the browser. Queue numbers no longer restart each day, because the unique key covers every day. BlessBoard public HTTP pages for a church whose website is published now show sermons, events, and announcements. The five remaining HTTP failures are the unpublished live theme class, the absent OTP challenge table, and the unimplemented appointment slot lock and staff overlap. The release is not ready.
+G90 continued on the same disposable database. The latest complete HTTP run is 34 executed, 28 passed, 6 failed, 0 skipped. An earlier cycle in the same session reached 29 passed and 5 failed; the later run replaces it because member recovery returned 429 before a second code was issued. The latest Playwright run, taken before that later HTTP edit, is 43 executed, 20 passed, 23 failed, 0 skipped. AC-REC-02 and AC-PUB-01 passed in both HTTP and the browser in that browser run. Queue numbers no longer restart each day, because the unique key covers every day. Church publish currently redirects to an error for missing contact and incomplete website information, so the live theme stays unpublished. The release is not ready.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ G82 verification of the original 16 regression ids:
 | AC-AUTH-04 | VERIFIED_E2E | HTTP reset path. Browser opens the used link and shows it is no longer valid | The earlier browser POST client hung. The GET replay is the passing assertion |
 | AC-REC-03 | VERIFIED_E2E | HTTP and browser save 72 bpm. An anonymous request is redirected to login. The other clinic receives 403 | None in the G88 run |
 | BB-REG-07 | VERIFIED_HTTP | HTTP duplicate church phone | Browser URL assertion failed |
-| BB-AUTH-04 | VERIFIED_HTTP | HTTP recovery rejects a wrong code and an expired challenge, then the old password still works | Browser requires `E2E_BB_MEMBER_OTP` |
+| BB-AUTH-04 | PARTIAL | HTTP recovery rejected a wrong code in the earlier cycle | The later run returned 429 before a second code existed. Browser requires `E2E_BB_MEMBER_OTP` |
 | BB-MEM-01 | VERIFIED_HTTP | HTTP member form | Browser registration did not finish |
 | BB-MEM-02 | VERIFIED_HTTP | HTTP missing CSRF returns 403 | Browser status assertion failed |
 | AC-WEB-08 | PARTIAL | — | Draft section heading is absent on the public page |

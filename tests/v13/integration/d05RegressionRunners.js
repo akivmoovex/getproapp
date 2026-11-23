@@ -732,10 +732,12 @@ async function runBbWeb08(pool, connectionString, env) {
         confirm_publish: "1",
         preview_reviewed: "1",
         mobile_preview_confirmed: "1",
+        defer_service_times: "1",
         from_confirmation: "1",
         [CSRF_FIELD]: publishCsrf.token,
       });
-    assert.ok(published.status < 400, published.text.slice(0, 200));
+    assert.equal(published.status, 303, String(published.headers.location || published.text).slice(0, 240));
+    assert.doesNotMatch(String(published.headers.location || ""), /error|not_ready/);
     const live = await request(app).get("/").set("Host", church.host);
     assert.match(live.text, /gp-website-theme--bb-community/);
   });
