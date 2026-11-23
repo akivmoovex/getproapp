@@ -14,10 +14,6 @@ const {
 
 async function submitPublicChurchEnquiry(pool, scope, body) {
   const source = scope || {};
-  const validation = validatePublicContactBody(body || {});
-  if (!validation.ok) {
-    return { ok: false, status: 400, error: validation.error };
-  }
   const organizationId = String(source.organizationId || "").trim();
   const churchId = String(source.churchId || "").trim();
   const branchId = String(source.branchId || "").trim();
@@ -27,6 +23,10 @@ async function submitPublicChurchEnquiry(pool, scope, body) {
       status: 404,
       error: "This church cannot receive messages right now.",
     };
+  }
+  const validation = validatePublicContactBody(body || {});
+  if (!validation.ok) {
+    return { ok: false, status: 400, error: validation.error };
   }
   if (!pool || typeof pool.query !== "function") {
     return {

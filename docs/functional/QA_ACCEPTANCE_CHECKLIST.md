@@ -8,7 +8,8 @@ A box may be checked only after an authorized run. Nothing below was executed in
 - [ ] Confirm a duplicate candidate is not merged
 - [ ] Start an encounter and see it on the clinical list
 - [ ] Check in a walk-in at a service point in that facility
-- [ ] Record a vital as a nurse and confirm a receptionist cannot
+- [x] Record a vital as clinical staff and confirm an anonymous session is sent to login and another clinic is denied (G88 AC-REC-03)
+- [ ] Sign a consultation and confirm it cannot be overwritten
 - [ ] Sign a consultation and confirm it cannot be overwritten
 - [ ] Order a laboratory test with urgency routine, urgent, or stat
 - [ ] Confirm an unknown urgency is rejected and no reference range is invented
@@ -30,7 +31,7 @@ A box may be checked only after an authorized run. Nothing below was executed in
 - [ ] Confirm create does not activate the portal
 - [ ] Save a sermon with `preachedAt` and an event with `startsAt`
 - [ ] Publish an announcement to the public audience and open its id
-- [ ] Confirm an upload is refused while the media flag is unset
+- [x] Confirm an upload is refused while the media flag is unset (G88 HTTP 403 `media_uploads_disabled`)
 - [ ] Confirm a section is not written without its church id
 - [ ] Confirm another product’s theme is rejected
 

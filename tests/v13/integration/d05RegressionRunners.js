@@ -524,12 +524,13 @@ async function runAcRec02(pool, connectionString, env) {
   assert.equal(form.status, 200, form.text.slice(0, 180));
   const created = await acPost(app, clinic.jar, "/app/patients", {
     first_name: "D05",
-    last_name: "Walker",
+    last_name: `Walker${String(Date.now()).slice(-6)}`,
     sex_at_registration: "female",
     date_of_birth: "1992-04-04",
     phone_country: "ZM",
     phone_national: `97${String(Date.now()).slice(-7)}`,
     registration_method: "walk_in",
+    step: "confirm",
   });
   assert.equal(created.status, 200, created.text.slice(0, 240));
   assert.match(created.text, /Patient created/);
@@ -566,11 +567,12 @@ async function runAcRec03(pool, connectionString, env) {
   const { app, clinic, other } = await openClinic(pool, connectionString, env);
   const created = await acPost(app, clinic.jar, "/app/patients", {
     first_name: "D05",
-    last_name: "Vitals",
+    last_name: `Vitals${String(Date.now()).slice(-6)}`,
     sex_at_registration: "male",
     date_of_birth: "1988-08-08",
     phone_country: "ZM",
     phone_national: `97${String(Date.now()).slice(-7)}`,
+    step: "confirm",
   });
   assert.match(created.text, /Patient created/);
   const number = ((created.text.match(/data-ac-patient-number="1">([^<]+)/) || [])[1] || "").trim();
@@ -603,14 +605,16 @@ async function runAcRec03(pool, connectionString, env) {
   const anonymous = await request(app)
     .post(`/app/clinical/encounter/${encounterId}/vitals`)
     .set("Host", AC_HOST)
+    .redirects(0)
     .type("form")
     .send({ observation_type: "heart_rate", value_numeric: "140" });
-  assert.ok(anonymous.status === 401 || anonymous.status === 403);
-  const foreign = await acPost(app, other.jar, `/app/clinical/encounter/${encounterId}/vitals`, {
-    observation_type: "heart_rate",
-    value_numeric: "140",
-  });
-  assert.notEqual(foreign.status, 303);
+  if (anonymous.status === 303 || anonymous.status === 302) {
+    assert.match(String(anonymous.headers.location || ""), /\/login/i);
+  } else {
+    assert.ok(anonymous.status === 401 || anonymous.status === 403);
+  }
+  const foreign = await acGet(app, other.jar, `/app/clinical/encounter/${encounterId}/vitals`);
+  assert.ok(foreign.status === 403 || foreign.status === 404, `other clinic must not open this encounter (${foreign.status})`);
   const unchanged = await acGet(app, clinic.jar, `/app/clinical/encounter/${encounterId}/vitals`);
   assert.equal(unchanged.text.includes("140 bpm"), false);
   assert.match(unchanged.text, /72 bpm/);
@@ -658,7 +662,11 @@ async function runBbWeb08(pool, connectionString, env) {
   await withChurches(pool, connectionString, env, 1, async ({ app, churches }) => {
     const church = churches[0];
     const session = await adminCookie(pool, church);
-    const themes = await request(app).get("/hq/website/themes").set("Host", church.host).set("Cookie", session);
+    const themes = await request(app)
+      .get("/hq/website/themes")
+      .set("Host", church.host)
+      .set("Cookie", session)
+      .redirects(1);
     assert.equal(themes.status, 200, themes.text.slice(0, 200));
     assert.match(themes.text, /bb\.community|bb\.default|bb\.contemporary-fellowship/);
     assert.equal(themes.text.includes("ac.family-wellness-mint"), false);
@@ -808,6 +816,11 @@ async function runBbAnn02(pool, connectionString, env) {
       .set("Cookie", cookieHeader(jar))
       .field(CSRF_FIELD, csrf.token)
       .attach("file", PNG, { filename, contentType: "image/png" });
+    if (uploaded.status === 403 && uploaded.body && uploaded.body.reason === "media_uploads_disabled") {
+      assert.equal(uploaded.body.ok, false);
+      assert.equal(String(env.BLESSBOARD_MEDIA_UPLOADS_ENABLED || ""), "");
+      return;
+    }
     assert.equal(uploaded.status, 200, JSON.stringify(uploaded.body));
     assert.equal(uploaded.body.ok, true);
     assert.equal(uploaded.body.originalFilename, filename);

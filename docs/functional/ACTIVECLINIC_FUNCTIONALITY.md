@@ -2,7 +2,7 @@
 
 Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 
-Shared fields for every row: tenant scope is `organization_id`; facility scope is the selected facility. Implementation status stays the G35 class. G82 added HTTP and browser evidence only for the journeys named in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md), on `getpro_v13_e2e_g78d2301` only. Rows that are not named there still have no HTTP or browser assertion. Migration 044 is present on that disposable database and was not applied to a deployment database. No numeric reference range was inserted. Public booking stayed disabled.
+Shared fields for every row: tenant scope is `organization_id`; facility scope is the selected facility. Implementation status stays the G35 class. G88 HTTP and browser evidence is named in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md). AC-REC-03 now has a passing HTTP and browser vital save. AC-REC-02 passes over HTTP and still fails in the browser on the existing clinic. Migration 044 is present on `getpro_v13_e2e_g78d2301` only. No numeric reference range was inserted. Public booking stayed disabled.
 
 ### AC-01 Organisation and facilities
 

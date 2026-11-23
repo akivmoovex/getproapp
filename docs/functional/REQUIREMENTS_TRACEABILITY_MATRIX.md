@@ -1,8 +1,8 @@
 # Requirements traceability matrix
 
-Sources in the repository: G27 register, G35 matrix, current routes, and database-free tests. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Implementation counts are unchanged.
+Sources in the repository: G27 register, G35 matrix, current routes, database-free tests, and the G88 isolated runs. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Implementation counts are unchanged.
 
-`IMPLEMENTED` below means `IMPLEMENTED_UNVERIFIED`. G82 did not promote a row to `VERIFIED_E2E` in this table. The G82 classes for the original regression ids are in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md). HTTP and browser evidence exists only for the journeys named there, and only against `getpro_v13_e2e_g78d2301`.
+`IMPLEMENTED` below means `IMPLEMENTED_UNVERIFIED` unless [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md) records a later class. G88 classes are only for the journeys named there, on `getpro_v13_e2e_g78d2301`.
 
 ## ActiveClinic — 30
 

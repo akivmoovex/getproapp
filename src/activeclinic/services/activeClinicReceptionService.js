@@ -429,6 +429,9 @@ async function checkInWalkInPatient(db, input) {
       return { ok: true, code: RESULT.OK, arrival: mapReceptionArrival(arrival) };
     } catch (err) {
       await client.query("ROLLBACK");
+      if (err && (err.code === "23503" || err.code === "23514")) {
+        return { ok: false, code: RESULT.INVALID_INPUT, arrival: null };
+      }
       throw err;
     }
   });

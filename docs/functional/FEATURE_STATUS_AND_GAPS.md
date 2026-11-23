@@ -2,7 +2,9 @@
 
 G65–G76 keep the G35 counts. A saved prescription now says when it is not on the pharmacy queue. The laboratory reference-rule page previews a rule and does not store it. Stored clinical thresholds, media enablement, and production OTP delivery remain unactivated.
 
-G82 ran the safe suite, the HTTP suite, and Playwright only against the disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`. Migrations 043 and 044 are applied on that disposable database only. Hosted QA, production, port 5432, and `getpro_v13_e2e_regression213101` were not migrated. Implementation counts stay 16 / 7 / 6 / 1 for ActiveClinic and 13 / 3 / 1 for BlessBoard. No requirement moves to `VERIFIED_E2E` except AC-REG-01, whose HTTP and browser assertions both passed. The release is not ready.
+G82 ran the safe suite, the HTTP suite, and Playwright only against the disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`. Migrations 043 and 044 are applied on that disposable database only. Hosted QA, production, port 5432, and `getpro_v13_e2e_regression213101` were not migrated.
+
+G83–G89 repaired verified failures without a new feature cycle. The G88 HTTP run is 34 executed, 20 passed, 14 failed, 0 skipped. The G88 Playwright run is 43 executed, 19 passed, 24 failed, 0 skipped. AC-REG-01, AC-AUTH-04, and AC-REC-03 now have both HTTP and browser passes. AC-REC-02 and AC-WEB-09 remain HTTP-only. Implementation counts stay 16 / 7 / 6 / 1 for ActiveClinic and 13 / 3 / 1 for BlessBoard. The release is not ready.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |
@@ -27,15 +29,16 @@ G82 ran the safe suite, the HTTP suite, and Playwright only against the disposab
 
 Original regression ids, all `IMPLEMENTED_UNVERIFIED` except where noted: AC-REG-01, BB-REG-07, AC-AUTH-04, BB-AUTH-04, BB-MEM-01, BB-MEM-02, AC-WEB-08, AC-WEB-09, BB-WEB-09, BB-WEB-10, BB-ANN-01, AC-REC-02, AC-REC-03, AC-PUB-01. BB-WEB-08 is `PARTIAL`. BB-ANN-02 is `PARTIAL`.
 
-The D28 browser matrix records `TOTAL_BROWSER_ISSUES=9` and lists the later observations: AC-WEB-09, AC-REC-02, AC-REC-03, AC-AUTH-04, AC-PUB-01, BB-MEM-01, BB-MEM-02, BB-ANN-01, BB-ANN-02, BB-WEB-09, BB-WEB-10, and BB-WEB-08. That document’s own total is 9. This file does not renumber it. G82 executed those browser tests. AC-PUB-01’s disabled-booking browser assertion passed. The other listed observations failed or stayed partial. None of those rows is `VERIFIED_E2E`.
+The D28 browser matrix records `TOTAL_BROWSER_ISSUES=9` and lists the later observations: AC-WEB-09, AC-REC-02, AC-REC-03, AC-AUTH-04, AC-PUB-01, BB-MEM-01, BB-MEM-02, BB-ANN-01, BB-ANN-02, BB-WEB-09, BB-WEB-10, and BB-WEB-08. That document’s own total is 9. This file does not renumber it. G88 browser result on those observations: AC-PUB-01, AC-AUTH-04, and AC-REC-03 passed. AC-WEB-09, AC-REC-02, BB-MEM-01, BB-MEM-02, BB-ANN-01, BB-ANN-02, BB-WEB-09, BB-WEB-10, and BB-WEB-08 failed.
 
 G82 verification of the original 16 regression ids:
 
 | ID | G82 class | What passed | What remains |
 | --- | --- | --- | --- |
-| AC-REG-01 | VERIFIED_E2E | HTTP duplicate-phone denial and the browser registration denial | None in this run |
+| AC-REG-01 | VERIFIED_E2E | HTTP duplicate-phone denial and the browser registration denial | None in the G88 run |
+| AC-AUTH-04 | VERIFIED_E2E | HTTP reset path. Browser opens the used link and shows it is no longer valid | The earlier browser POST client hung. The GET replay is the passing assertion |
+| AC-REC-03 | VERIFIED_E2E | HTTP and browser save 72 bpm. An anonymous request is redirected to login. The other clinic receives 403 | None in the G88 run |
 | BB-REG-07 | VERIFIED_HTTP | HTTP duplicate church phone | Browser URL assertion failed |
-| AC-AUTH-04 | VERIFIED_HTTP | HTTP reset path | Browser replay POST exceeded 90s |
 | BB-AUTH-04 | PARTIAL | — | Expired OTP was not captured. Browser requires `E2E_BB_MEMBER_OTP` |
 | BB-MEM-01 | VERIFIED_HTTP | HTTP member form | Browser registration did not finish |
 | BB-MEM-02 | VERIFIED_HTTP | HTTP missing CSRF returns 403 | Browser status assertion failed |
@@ -44,8 +47,7 @@ G82 verification of the original 16 regression ids:
 | BB-WEB-09 | PARTIAL | — | Public sermon marker missing. Browser failed |
 | BB-WEB-10 | PARTIAL | — | Public event marker missing. Browser failed |
 | BB-ANN-01 | PARTIAL | — | Public announcement marker missing. Browser failed |
-| AC-REC-02 | PARTIAL | Browser created a uniquely named patient | Walk-in stayed on `/app/reception/walk-in` |
-| AC-REC-03 | PARTIAL | Browser created a uniquely named patient | Vitals page did not show Heart rate |
+| AC-REC-02 | VERIFIED_HTTP | HTTP creates the patient with `step=confirm` and reaches the queue | Browser check-in on the existing clinic still shows the generic error page |
 | AC-PUB-01 | PARTIAL | Browser: booking stays disabled and no coupon | HTTP did not find the expected disabled-booking text |
-| BB-WEB-08 | PARTIAL | — | HTTP returned 303. Browser theme assertion failed |
-| BB-ANN-02 | PARTIAL | HTTP returned 403 `media_uploads_disabled` while the flag is unset | That refusal is the intended disabled state. The upload journey did not pass |
+| BB-WEB-08 | PARTIAL | Canonical theme page returns 200 after one redirect | The page has no CSRF field the scenario can extract. Browser failed |
+| BB-ANN-02 | VERIFIED_HTTP | HTTP returned 403 `media_uploads_disabled` and the test now requires that refusal while the flag is unset | Browser upload journey still fails. Uploads stay disabled |

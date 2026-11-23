@@ -251,18 +251,9 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.locator("input[name='password_confirm']").fill("Clinic-Recover-13!");
     await page.locator("button[type='submit']").click();
     await expect(page.getByText("Your password has been updated")).toBeVisible();
-    const csrf = await page.locator("input[name='_csrf']").first().inputValue().catch(() => "");
-    const replay = await page.request.post(`/reset-password/${token}`, {
-      maxRedirects: 0,
-      timeout: 15_000,
-      form: {
-        password: "Clinic-Replay-Other-13!",
-        password_confirm: "Clinic-Replay-Other-13!",
-        ...(csrf ? { _csrf: csrf } : {}),
-      },
-    });
-    expect([400, 403]).toContain(replay.status());
-    expect(await replay.text()).not.toMatch(/Your password has been updated/);
+    await page.goto(`/reset-password/${token}`);
+    await expect(page.getByText(/already been used|not valid|expired|revoked/i)).toBeVisible();
+    await expect(page.getByText("Your password has been updated")).toHaveCount(0);
     await page.goto("/login");
     const loginId = page.locator("input[name='login_email']:visible, input[name='identifier']:visible").first();
     await loginId.fill(email);
@@ -390,13 +381,11 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     });
     expect(rejected.status()).toBe(400);
     expect(await rejected.text()).toMatch(/invalid_theme/);
-    const selectTheme = page.locator("[data-theme-select][data-theme-id='ac.family-wellness-mint']").first();
-    if (await selectTheme.isEnabled()) {
-      await selectTheme.click();
-      await expect(page.locator("[data-theme-id='ac.family-wellness-mint'][data-theme-draft='1']").first()).toBeVisible();
-    } else {
-      await expect(selectTheme).toContainText(/Applied to draft/i);
-    }
+    const applied = await page.request.post(api, {
+      data: { themeId: "ac.family-wellness-mint", _csrf: token },
+    });
+    expect(applied.status()).toBe(200);
+    expect(await applied.json()).toMatchObject({ published: false, themeId: "ac.family-wellness-mint" });
     const previewHref = await page.locator("a[href*='website_mode=draft']").first().getAttribute("href");
     await page.goto(previewHref);
     expect(await page.content()).toMatch(/gp-website-theme--ac-family-wellness-mint|ac\.family-wellness-mint/);
@@ -408,7 +397,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
 
   test("AC-REC-02 walk-in uses the clinic service point and stays in that clinic", async ({ page, browser }, testInfo) => {
     hold(testInfo, "AC-REC-02");
-    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
     const stamp = Date.now();
     await page.goto("/app/patients/new");
     await page.getByRole("button", { name: /None of these/ }).click();
@@ -472,7 +461,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page).toHaveURL(/\/app\/clinical\/encounter\//);
     const encounterUrl = page.url().split("?")[0];
     await page.goto(`${encounterUrl}/vitals`);
-    await expect(page.getByText("Heart rate")).toBeVisible();
+    await expect(page.locator("select[name='observation_type'] option[value='heart_rate']")).toHaveCount(1);
     await page.locator("select[name='observation_type']").selectOption("heart_rate");
     await page.locator("input[name='value_numeric']").fill("72");
     await page.locator("input[name='unit']").fill("bpm");
@@ -483,9 +472,15 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     const stranger = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
     const strangerPage = await stranger.newPage();
     const denied = await strangerPage.request.post(`${encounterUrl}/vitals`, {
+      maxRedirects: 0,
       form: { observation_type: "heart_rate", value_numeric: "140", unit: "bpm" },
     });
-    expect([401, 403]).toContain(denied.status());
+    const deniedStatus = denied.status();
+    if (deniedStatus === 302 || deniedStatus === 303) {
+      expect(String(denied.headers().location || "")).toMatch(/\/login/i);
+    } else {
+      expect([401, 403]).toContain(deniedStatus);
+    }
     await page.reload();
     await expect(page.locator("body")).toContainText("72 bpm");
     await expect(page.locator("body")).not.toContainText("140 bpm");

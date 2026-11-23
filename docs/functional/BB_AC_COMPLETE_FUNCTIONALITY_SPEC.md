@@ -2,7 +2,7 @@
 
 Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G82. It does not describe a production deployment.
 
-G82 executed safe tests, HTTP tests, and Playwright against the disposable database `getpro_v13_e2e_g78d2301` only. Safe tests: 526 passed, 0 failed, 2 skipped. HTTP: 34 executed, 16 passed, 18 failed, 0 skipped. Playwright full suites: 43 executed, 17 passed, 26 failed, 0 skipped. Migrations 043 and 044 are applied on that disposable database and were not applied to hosted QA or production. Implementation counts below are unchanged. AC-REG-01 is the only original regression id at `VERIFIED_E2E`. The release is not ready.
+G82 executed safe tests, HTTP tests, and Playwright against the disposable database `getpro_v13_e2e_g78d2301` only. G88, after the G83–G87 repairs, recorded safe tests 526 passed, 0 failed, 2 skipped; HTTP 34 executed, 20 passed, 14 failed, 0 skipped; Playwright 43 executed, 19 passed, 24 failed, 0 skipped. Migrations 043 and 044 are applied on that disposable database and were not applied to hosted QA or production. Implementation counts below are unchanged. AC-REG-01, AC-AUTH-04, and AC-REC-03 are `VERIFIED_E2E`. The release is not ready.
 
 The healthcare brief PDF and both office QA documents are `SOURCE_UNAVAILABLE`. Repository evidence is the source, the migrations, the database-free tests, and the G01–G36 reports.
 
