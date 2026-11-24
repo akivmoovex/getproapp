@@ -8,7 +8,7 @@ G83–G89 repaired verified failures without a new feature cycle. The G88 HTTP r
 
 G90 continued on the same disposable database. Two complete HTTP runs after the fixture and recovery repairs each executed 34 tests, passed 30, failed 4, and skipped 0. The four failures are the absent OTP challenge table and the unimplemented appointment slot lock and staff overlap. Safe tests are 526 passed, 0 failed, and 2 skipped. The latest Playwright run is 43 executed, 20 passed, 23 failed, and 0 skipped. AC-REC-02 and AC-PUB-01 pass in both HTTP and the browser. The release is not ready. QA is NO-GO until the browser failures and the four blocked HTTP gates are resolved without enabling booking, media uploads, or platform.otp_challenges.
 
-G101–G110 kept the same disposable database and did not add a migration. Two HTTP runs each executed 34, passed 30, failed 4, and skipped 0. Two Playwright runs each executed 43, passed 39, and failed 4. Safe tests are 528 executed, 526 passed, 0 failed, and 2 skipped. AC-WEB-08, AC-WEB-09, and the BlessBoard publish, member, directory, and theme journeys now pass in the browser. BB-AUTH-04, member login on the apex, and the staff-invite browser journey remain open. QA stays NO-GO.
+G120 kept the same disposable database and did not add a migration. Two HTTP runs each executed 34, passed 30, failed 4, and skipped 0. Two Playwright runs each executed 43, passed 43, and failed 0. Safe tests are 531 executed, 529 passed, 0 failed, and 2 skipped. Member login, staff invitation, and member recovery now pass in the browser. QA stays NO-GO because the OTP table and appointment locks still fail.
 
 | ID | Can continue without a new approval | Why it stays |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ G82 verification of the original 16 regression ids:
 | AC-AUTH-04 | VERIFIED_E2E | HTTP reset path. Browser opens the used link and shows it is no longer valid | The earlier browser POST client hung. The GET replay is the passing assertion |
 | AC-REC-03 | VERIFIED_E2E | HTTP and browser save 72 bpm. An anonymous request is redirected to login. The other clinic receives 403 | None in the G88 run |
 | BB-REG-07 | VERIFIED_E2E | HTTP duplicate church phone. Browser reaches the administrator step and shows the phone error | None in the G110 browser runs |
-| BB-AUTH-04 | VERIFIED_HTTP | Two complete HTTP runs sign in after a wrong code, an expired challenge, and a valid code | Browser requires `E2E_BB_MEMBER_OTP`, which is not set |
+| BB-AUTH-04 | VERIFIED_E2E | HTTP recovery and the browser journey accept one code, reject a wrong code, and hide the code on the page | The testing read is refused outside the testing deployment |
 | BB-MEM-01 | VERIFIED_E2E | HTTP member form. Browser review and directory read-back pass | None in the G110 browser runs |
 | BB-MEM-02 | VERIFIED_E2E | HTTP missing CSRF returns 403. Browser rejects the missing token and accepts the shell token | None in the G110 browser runs |
 | AC-WEB-08 | VERIFIED_E2E | HTTP and browser draft, publish, and public heading | None in the two ActiveClinic browser runs |

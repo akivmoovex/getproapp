@@ -53,10 +53,20 @@ function createMemberPortalAuthRouter(deps) {
     notFoundMessage: "Not found.",
   });
 
+  function portalBase(req) {
+    const base = String(req.baseUrl || "").replace(/\/+$/, "");
+    return base.startsWith("/c/") ? base : "";
+  }
+
+  function memberHref(req, path) {
+    const suffix = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+    return `${portalBase(req)}${suffix}`;
+  }
+
   function csrfLocals(req, res) {
     const token = issueCsrfToken(env);
     setCsrfCookie(res, token, env);
-    return { csrfToken: token, csrfField: CSRF_FIELD };
+    return { csrfToken: token, csrfField: CSRF_FIELD, portalBase: portalBase(req) };
   }
 
   function tenantScope(req, res) {
@@ -99,9 +109,9 @@ function createMemberPortalAuthRouter(deps) {
       churchName: scope.churchName,
       error: null,
       memberNumberValue: "",
-      activateHref: "/member/activate",
-      forgotHref: "/member/forgot-password",
-      lostChurchIdHref: "/member/forgot-password?lost=1",
+      activateHref: memberHref(req, "/member/activate"),
+      forgotHref: memberHref(req, "/member/forgot-password"),
+      lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
     });
   });
 
@@ -121,9 +131,9 @@ function createMemberPortalAuthRouter(deps) {
           churchName: scope.churchName,
           error: "Sign-in is temporarily unavailable.",
           memberNumberValue: (req.body && req.body.member_number) || "",
-          activateHref: "/member/activate",
-          forgotHref: "/member/forgot-password",
-          lostChurchIdHref: "/member/forgot-password?lost=1",
+          activateHref: memberHref(req, "/member/activate"),
+          forgotHref: memberHref(req, "/member/forgot-password"),
+          lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
         },
         503
       );
@@ -153,7 +163,7 @@ function createMemberPortalAuthRouter(deps) {
         getPool,
         otpWorkflow: "blessboard.member_login",
       });
-      return res.redirect(303, "/member");
+      return res.redirect(303, memberHref(req, "/member"));
     }
 
     const blocked = result.code === RESULT.PORTAL_BLOCKED;
@@ -168,9 +178,9 @@ function createMemberPortalAuthRouter(deps) {
         error: result.message || NEUTRAL_LOGIN,
         errorState: blocked ? "portal_blocked" : "invalid_credentials",
         memberNumberValue: (req.body && req.body.member_number) || "",
-        activateHref: "/member/activate",
-        forgotHref: "/member/forgot-password",
-        lostChurchIdHref: "/member/forgot-password?lost=1",
+        activateHref: memberHref(req, "/member/activate"),
+        forgotHref: memberHref(req, "/member/forgot-password"),
+        lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
       },
       blocked ? 403 : 401
     );
@@ -188,7 +198,7 @@ function createMemberPortalAuthRouter(deps) {
       churchName: scope.churchName,
       error: null,
       values: {},
-      loginHref: "/member/login",
+      loginHref: memberHref(req, "/member/login"),
     });
   });
 
@@ -254,7 +264,7 @@ function createMemberPortalAuthRouter(deps) {
           fullName: body.full_name,
           email: body.email,
         },
-        loginHref: "/member/login",
+        loginHref: memberHref(req, "/member/login"),
       },
       verified.code === RESULT.RATE_LIMITED ? 429 : 400
     );
@@ -285,7 +295,7 @@ function createMemberPortalAuthRouter(deps) {
         stitchScreen: "BB-M16",
         churchName: scope.churchName,
         memberNumber: completed.memberNumber,
-        loginHref: "/member/login",
+        loginHref: memberHref(req, "/member/login"),
       });
     }
 
@@ -320,8 +330,8 @@ function createMemberPortalAuthRouter(deps) {
         churchName: scope.churchName,
         title: "Lost Church ID",
         message: guidance.message || LOST_CHURCH_ID,
-        loginHref: "/member/login",
-        activateHref: "/member/activate",
+        loginHref: memberHref(req, "/member/login"),
+        activateHref: memberHref(req, "/member/activate"),
       });
     }
     return authPage(res, "forgot-password.ejs", {
@@ -332,8 +342,8 @@ function createMemberPortalAuthRouter(deps) {
       error: null,
       message: null,
       memberNumberValue: "",
-      loginHref: "/member/login",
-      lostHref: "/member/forgot-password?lost=1",
+      loginHref: memberHref(req, "/member/login"),
+      lostHref: memberHref(req, "/member/forgot-password?lost=1"),
     });
   });
 
@@ -364,8 +374,8 @@ function createMemberPortalAuthRouter(deps) {
           error: started.message,
           message: null,
           memberNumberValue: (req.body && req.body.member_number) || "",
-          loginHref: "/member/login",
-          lostHref: "/member/forgot-password?lost=1",
+          loginHref: memberHref(req, "/member/login"),
+          lostHref: memberHref(req, "/member/forgot-password?lost=1"),
         },
         429
       );
@@ -394,8 +404,8 @@ function createMemberPortalAuthRouter(deps) {
       error: null,
       message: started.message || NEUTRAL_RECOVERY,
       memberNumberValue: (req.body && req.body.member_number) || "",
-      loginHref: "/member/login",
-      lostHref: "/member/forgot-password?lost=1",
+      loginHref: memberHref(req, "/member/login"),
+      lostHref: memberHref(req, "/member/forgot-password?lost=1"),
     });
   });
 
@@ -425,7 +435,7 @@ function createMemberPortalAuthRouter(deps) {
         stitchScreen: "BB-M16",
         churchName: scope.churchName,
         memberNumber: completed.memberNumber,
-        loginHref: "/member/login",
+        loginHref: memberHref(req, "/member/login"),
         successTitle: "Password updated",
         successBody: "Sign in with your Church ID and new password.",
       });
@@ -444,9 +454,9 @@ function createMemberPortalAuthRouter(deps) {
           message:
             completed.message ||
             "We could not complete password recovery. Contact your church administration if you need help.",
-          loginHref: "/member/login",
-          activateHref: "/member/activate",
-          retryHref: "/member/forgot-password",
+          loginHref: memberHref(req, "/member/login"),
+          activateHref: memberHref(req, "/member/activate"),
+          retryHref: memberHref(req, "/member/forgot-password"),
         },
         400
       );

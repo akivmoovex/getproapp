@@ -54,6 +54,9 @@ function buildMemberShellLocals(req, res, opts) {
     memberNavItems.find((item) => item.key === key)
   ).filter(Boolean);
 
+  const mountedBase = String(req.baseUrl || "").replace(/\/+$/, "");
+  const portalBase = mountedBase.startsWith("/c/") ? mountedBase : "";
+
   const defaultTitles = {
     home: "Dashboard",
     profile: "Profile",
@@ -72,6 +75,7 @@ function buildMemberShellLocals(req, res, opts) {
     activeNav,
     csrfToken,
     csrfField: CSRF_FIELD,
+    portalBase,
     churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
     branchDisplayName: tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
     displayName: preferred || "",

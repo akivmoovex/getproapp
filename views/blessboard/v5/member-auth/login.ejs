@@ -7,7 +7,7 @@
   stitchScreen: 'BB-M13',
   churchName: typeof churchName !== 'undefined' ? churchName : '',
   bodyClass: 'bb-v204-m13',
-  loginHref: '/member/login',
+  loginHref: (typeof portalBase !== 'undefined' ? portalBase : '') + '/member/login',
   errorState: typeof errorState !== 'undefined' ? errorState : null
 }) %>
 
@@ -23,7 +23,7 @@
 </div>
 <% } %>
 
-<form class="bb-auth-form" method="post" action="/member/login" novalidate autocomplete="on">
+<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login" novalidate autocomplete="on">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
   <div class="bb-auth-field">
     <label class="bb-auth-label" for="member_number">Church ID</label>

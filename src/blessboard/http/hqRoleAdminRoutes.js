@@ -290,12 +290,10 @@ function createHqRoleAdminRouter(deps) {
       return renderRolesPage(req, res, scope, { error, form });
     }
 
-    const host = String(req.hostname || req.get("host") || "")
-      .split(":")[0]
-      .toLowerCase();
-    const inviteLink =
-      tenantAbsoluteUrl(host, `/invite/accept?token=${encodeURIComponent(result.rawToken)}`, env) ||
-      `${getApexOrigin(env)}/invite/accept?token=${encodeURIComponent(result.rawToken)}`;
+    const requestHost = String(req.get("host") || "").trim();
+    const inviteLink = requestHost
+      ? `${req.protocol}://${requestHost}/invite/accept?token=${encodeURIComponent(result.rawToken)}`
+      : `${getApexOrigin(env)}/invite/accept?token=${encodeURIComponent(result.rawToken)}`;
 
     return renderRolesPage(req, res, scope, {
       notice: result.invitation.resent

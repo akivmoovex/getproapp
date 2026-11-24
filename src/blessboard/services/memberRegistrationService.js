@@ -1406,6 +1406,8 @@ async function getChurchMemberForManager(db, input) {
           preferredName: member.preferredName,
           emailDisplay: member.emailDisplay,
           phoneDisplay: member.phoneDisplay,
+          memberNumber: member.memberNumber || null,
+          portalAccessStatus: member.portalAccessStatus || "not_activated",
           status: member.status,
           membershipStatus: member.membershipStatus,
           isPrimary: member.isPrimary,

@@ -86,7 +86,7 @@
           <span class="bb-mp-user__meta"><%= mpChurch %><% if (mpBranch) { %> · <%= mpBranch %><% } %></span>
         </p>
         <% } %>
-        <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">
+        <form class="bb-mp-logout" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/logout" data-bb-member-logout="1">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit">
             <span class="material-symbols-outlined" aria-hidden="true">logout</span>
@@ -181,7 +181,7 @@
             </ul>
           </div>
           <div class="bb-mp-drawer__account">
-            <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">
+            <form class="bb-mp-logout" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/logout" data-bb-member-logout="1">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button type="submit">
                 <span class="material-symbols-outlined" aria-hidden="true">logout</span>

@@ -42,6 +42,58 @@ async function signIn(page, email, password) {
   await expect(page.locator("[role='alert']")).toHaveCount(0);
 }
 
+const MEMBER_PASSWORD = "V13-synthetic-qa-password";
+
+function churchPath(envName, suffix) {
+  return `${required(envName).replace(/\/$/, "")}${suffix}`;
+}
+
+async function createActivatedMember(page) {
+  await signIn(page, required("E2E_BB_ADMIN_EMAIL"), required("E2E_BB_ADMIN_PASSWORD"));
+  const stamp = Date.now();
+  const fullName = `Portal Member ${stamp}`;
+  await page.goto("/hq/members/new");
+  await page.locator("input[name='full_name']").fill(fullName);
+  await page.locator("input[name='email']").fill(`bbmem-${stamp}@v13d19.example`);
+  await page.locator("input[name='phone']").fill(`+26097${String(stamp).slice(-7)}`);
+  await page.locator("input[name='address_line_1']").fill("1 Test Road");
+  await page.locator("select[name='marital_status']").selectOption("single");
+  await page.locator("input[name='next_of_kin_name']").fill("Kin Person");
+  await page.locator("select[name='next_of_kin_relationship']").selectOption("parent");
+  await page.locator("input[name='next_of_kin_phone']").fill("+260977009990");
+  await page.locator("select[name='branch_id']").selectOption({ index: 1 });
+  await page.locator("form[data-bb-hq-add-member-form] button[type='submit']").click();
+  await expect(page.getByRole("heading", { name: "Review new member" })).toBeVisible();
+  await page.getByRole("button", { name: "Create member" }).click();
+  const churchId = (await page.locator(".bb-v204-m01__church-id").innerText()).trim();
+  expect(churchId).toMatch(/^CH-/);
+  await page.getByRole("link", { name: "Issue portal invitation" }).click();
+  await page.getByRole("button", { name: "Issue invitation" }).click();
+  const link = (await page.getByLabel("Invitation link").inputValue()).trim();
+  expect(link).toMatch(/token=/);
+  await page.context().clearCookies();
+  await page.goto(link);
+  await page.locator("input[name='password']").fill(MEMBER_PASSWORD);
+  await expect(page.locator("input[name='_csrf']")).toHaveCount(1);
+  await page.locator("button[type='submit']").click();
+  await expect(page).toHaveURL(/\/login/);
+  return { churchId, fullName };
+}
+
+async function issueWebsiteEditorInvite(page) {
+  await signIn(page, required("E2E_BB_ADMIN_EMAIL"), required("E2E_BB_ADMIN_PASSWORD"));
+  const stamp = Date.now();
+  const email = `editor-${stamp}@v13d19.example`;
+  await page.goto("/hq/roles");
+  await page.locator("#invite-email").fill(email);
+  await page.locator("#invite-display-name").fill(`Editor ${stamp}`);
+  await page.locator("#invite-role-key").selectOption("website_editor");
+  await page.locator("form[data-bb-hq-role-invite='1'] button[type='submit']").click();
+  const link = (await page.locator("[data-bb-invite-link='1']").innerText()).trim();
+  expect(link).toMatch(/token=/);
+  return { email, link };
+}
+
 test.describe("V13 BB QA browser regression", () => {
   test("BB-01 administrator creates a homepage section", async ({ page }, testInfo) => {
     hold(testInfo, "BB-01 create");
@@ -210,12 +262,35 @@ test.describe("V13 BB QA browser regression", () => {
 
   test("BB-06 member logs in with the activated account", async ({ page }, testInfo) => {
     hold(testInfo, "BB-06 login");
+    const { churchId, fullName } = await createActivatedMember(page);
+    const loginPath = churchPath("E2E_BB_PUBLIC_HOME_PATH", "/member/login");
+    const homePath = churchPath("E2E_BB_PUBLIC_HOME_PATH", "/member");
     await page.goto("/member/login");
-    await page.locator("input[name='member_number']").fill(required("E2E_BB_MEMBER_NUMBER"));
-    await page.locator("input[name='password']").fill("V13-synthetic-qa-password");
+    await expect(page.locator("input[name='member_number']")).toHaveCount(0);
+    await page.goto("/c/v13-not-a-church/member/login");
+    await expect(page.getByText("Not found.")).toBeVisible();
+    await page.goto(loginPath);
+    await page.locator("input[name='member_number']").fill(churchId);
+    await page.locator("input[name='password']").fill("wrong-password-value");
     await page.locator("button[type='submit']").click();
-    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.locator("[role='alert']")).toBeVisible();
+    await expect(page.locator("[data-bb-member-dashboard='1']")).toHaveCount(0);
+    await page.locator("input[name='member_number']").fill(churchId);
+    await page.locator("input[name='password']").fill(MEMBER_PASSWORD);
+    await page.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+    await expect(page.locator("[data-bb-member-dashboard='1']")).toBeVisible();
+    await expect(page.getByText(fullName).first()).toBeVisible();
+    await expect(page.getByText(required("E2E_BB_CHURCH_A_NAME")).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /website|members admin|hq/i })).toHaveCount(0);
+    const otherHome = required("E2E_BB_OTHER_PUBLIC_ANNOUNCEMENTS_PATH").replace(/\/announcements$/, "");
+    await page.goto(`${otherHome}/member`);
+    await expect(page.getByText("You do not have member access to this site.")).toBeVisible();
+    await expect(page.locator("[data-bb-member-dashboard='1']")).toHaveCount(0);
+    await page.goto(homePath);
+    await page.locator("form[data-bb-member-logout='1'] button").first().click();
+    await page.goto(homePath);
+    await expect(page.locator("input[name='member_number']")).toBeVisible();
   });
 
   test("BB-24 public visitor contacts a selected church", async ({ page }, testInfo) => {
@@ -246,28 +321,44 @@ test.describe("V13 BB QA browser regression", () => {
 
   test("INV-01 staff member accepts invitation and sets password", async ({ page }, testInfo) => {
     hold(testInfo, "INV-01 accept");
-    const token = required("E2E_BB_STAFF_INVITE_TOKEN");
+    const { link } = await issueWebsiteEditorInvite(page);
+    const token = new URL(link, "http://127.0.0.1").searchParams.get("token");
+    expect(token).toBeTruthy();
+    await page.context().clearCookies();
     await page.goto(`/invite/accept?token=${encodeURIComponent(token)}`);
-    await page.locator("input[name='password']").fill("V13-synthetic-qa-password");
-    await page.locator("input[name='password_confirm']").fill("V13-synthetic-qa-password");
+    await page.locator("input[name='password']").fill(MEMBER_PASSWORD);
+    await page.locator("input[name='password_confirm']").fill(MEMBER_PASSWORD);
     await expect(page.locator("input[name='token']")).toHaveValue(token);
     await expect(page.locator("input[name='_csrf']")).toHaveCount(1);
     await page.locator("button[type='submit']").click();
     await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
     await page.goto(`/invite/accept?token=${encodeURIComponent(token)}`);
-    await page.locator("input[name='password']").fill("V13-synthetic-qa-password");
-    await page.locator("input[name='password_confirm']").fill("V13-synthetic-qa-password");
-    await page.locator("button[type='submit']").click();
-    await expect(page.locator("[role='alert'], .error")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Invitation unavailable" })).toBeVisible();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.locator("input[name='password']")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
   });
 
   test("INV-01 invited staff member signs in with the correct permissions", async ({ page }, testInfo) => {
     hold(testInfo, "INV-01 login");
-    await signIn(page, required("E2E_BB_STAFF_EMAIL"), "V13-synthetic-qa-password");
+    const { email, link } = await issueWebsiteEditorInvite(page);
+    const token = new URL(link, "http://127.0.0.1").searchParams.get("token");
+    await page.context().clearCookies();
+    await page.goto(`/invite/accept?token=${encodeURIComponent(token)}`);
+    await page.locator("input[name='password']").fill(MEMBER_PASSWORD);
+    await page.locator("input[name='password_confirm']").fill(MEMBER_PASSWORD);
+    await page.locator("button[type='submit']").click();
+    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
+    await signIn(page, email, MEMBER_PASSWORD);
     await expect(page).not.toHaveURL(/\/login$/);
-    await page.goto("/hq/members/new");
-    const denied = page.url().includes("/login") || (await page.locator("[role='alert']").count()) > 0;
-    expect(denied).toBe(true);
+    const denied = await page.goto("/hq/members/new");
+    expect(denied.status()).toBe(403);
+    await expect(page.getByText("You do not have access to this site.")).toBeVisible();
+    await expect(page.locator("form[data-bb-hq-add-member-form]")).toHaveCount(0);
+    await page.context().clearCookies();
+    await signIn(page, required("E2E_BB_OTHER_ADMIN_EMAIL"), required("E2E_BB_OTHER_ADMIN_PASSWORD"));
+    await page.goto("/hq/roles");
+    await expect(page.getByText(email)).toHaveCount(0);
   });
 
   test("D14C OTP session gate stays blocked on existing deployments", async ({ page }, testInfo) => {
@@ -279,32 +370,44 @@ test.describe("V13 BB QA browser regression", () => {
 
   test("BB-AUTH-04 member recovery hides the testing code and signs in after reset", async ({ page }, testInfo) => {
     hold(testInfo, "BB-AUTH-04");
-    const memberNumber = required("E2E_BB_MEMBER_NUMBER");
-    const code = required("E2E_BB_MEMBER_OTP");
-    await page.goto("/member/forgot-password");
-    await page.locator("input[name='member_number']").fill(memberNumber);
+    const { churchId } = await createActivatedMember(page);
+    const forgotPath = churchPath("E2E_BB_PUBLIC_HOME_PATH", "/member/forgot-password");
+    const loginPath = churchPath("E2E_BB_PUBLIC_HOME_PATH", "/member/login");
+    const nextPassword = "V13-Member-Recover-9!";
+    await page.goto(forgotPath);
+    await page.locator("input[name='member_number']").fill(churchId);
     await page.locator("button[type='submit']").click();
+    await expect(page.locator("input[name='code']")).toBeVisible();
     await expect(page.locator("[data-bb-test-otp]")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("Test code:");
+    const verificationId = await page.locator("input[name='verification_id']").inputValue();
+    const delivery = await page.request.get(
+      `/__platform/qa/blessboard-member-otp-delivery?verificationId=${encodeURIComponent(verificationId)}`
+    );
+    expect(delivery.status()).toBe(200);
+    const payload = await delivery.json();
+    const code = String(payload.code || "");
+    expect(code).toMatch(/^\d{6}$/);
     await expect(page.locator("body")).not.toContainText(code);
     await page.locator("input[name='code']").fill(code);
-    await page.locator("input[name='password']").fill("V13-Member-Recover-9!");
-    await page.locator("input[name='password_confirm']").fill("V13-Member-Recover-9!");
+    await page.locator("input[name='password']").fill(nextPassword);
+    await page.locator("input[name='password_confirm']").fill(nextPassword);
     await page.locator("button[type='submit']").click();
     await expect(page.getByText("Password updated")).toBeVisible();
-    await page.goto("/member/login");
-    await page.locator("input[name='member_number']").fill(memberNumber);
-    await page.locator("input[name='password']").fill("V13-Member-Recover-9!");
+    await page.goto(loginPath);
+    await page.locator("input[name='member_number']").fill(churchId);
+    await page.locator("input[name='password']").fill(nextPassword);
     await page.locator("button[type='submit']").click();
     await expect(page.locator("[data-bb-member-dashboard='1']")).toBeVisible();
-    await page.goto("/member/forgot-password");
-    await page.locator("input[name='member_number']").fill(memberNumber);
+    await page.context().clearCookies();
+    await page.goto(forgotPath);
+    await page.locator("input[name='member_number']").fill(churchId);
     await page.locator("button[type='submit']").click();
     await page.locator("input[name='code']").fill(code === "000000" ? "111111" : "000000");
-    await page.locator("input[name='password']").fill("V13-Member-Recover-9!");
-    await page.locator("input[name='password_confirm']").fill("V13-Member-Recover-9!");
+    await page.locator("input[name='password']").fill(nextPassword);
+    await page.locator("input[name='password_confirm']").fill(nextPassword);
     await page.locator("button[type='submit']").click();
-    await expect(page.getByText("Recovery unsuccessful")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recovery unsuccessful" })).toBeVisible();
   });
 
   test("BB-MEM-01 member form shows mandatory fields and completes registration", async ({ page }, testInfo) => {

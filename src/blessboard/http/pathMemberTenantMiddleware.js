@@ -29,9 +29,6 @@ function createPathMemberTenantMiddleware(deps) {
       if (pathOnly !== "/member" && !pathOnly.startsWith("/member/")) {
         return next();
       }
-      if (req.blessBoardTenantContext && req.blessBoardTenantContext.resolved === true) {
-        return next();
-      }
       const rawKey = String(req.params.organizationKey || "").trim().toLowerCase();
       if (!rawKey || isReservedOrganizationKey(rawKey)) {
         return res.status(404).type("text").send("Not found.");

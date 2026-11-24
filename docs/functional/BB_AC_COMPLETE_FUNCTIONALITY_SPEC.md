@@ -1,6 +1,6 @@
 # BlessBoard and ActiveClinic complete functionality specification
 
-G110 ran the disposable database twice. Each HTTP run passed 30 of 34. Each Playwright run passed 39 of 43. The four HTTP failures are the unauthorized OTP challenge table and the unauthorized appointment locks. The four browser failures are member login on the apex, the staff invitation token, the invited-staff denial, and member OTP recovery. QA is NO-GO. See `docs/qa/V13_G110_FINAL_QA_HANDOFF.md`.
+G120 ran the disposable database twice. Each HTTP run passed 30 of 34. Each Playwright run passed 43 of 43. The four HTTP failures are the unauthorized OTP challenge table and the unauthorized appointment locks. BlessBoard member login, staff invitation, and member recovery now pass in the browser. QA is NO-GO until those four HTTP gates pass. See `docs/qa/V13_G120_FINAL_MORNING_HANDOFF.md`.
 
 Product version 2.13.1. Branch `V13`. This specification describes the system that is in the repository after G82. It does not describe a production deployment.
 

@@ -22,12 +22,17 @@ function createRequireActiveMember(deps) {
    * @param {import('express').Response} res
    * @param {import('express').NextFunction} next
    */
+  function memberLoginPath(req) {
+    const base = String(req.baseUrl || "").replace(/\/+$/, "");
+    return base.startsWith("/c/") ? `${base}/member/login` : "/member/login";
+  }
+
   return async function requireActiveMember(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated && req.v5Session.session);
     if (!sessionOk) {
       const wantsHtml = String(req.get("accept") || "").includes("text/html");
       if (wantsHtml) {
-        return res.redirect(303, "/member/login");
+        return res.redirect(303, memberLoginPath(req));
       }
       return res.status(401).type("text").send("Sign-in is required.");
     }
@@ -48,14 +53,14 @@ function createRequireActiveMember(deps) {
       if (access.status === STATUS.UNAUTHENTICATED || access.status === STATUS.INACTIVE_USER) {
         const wantsHtml = String(req.get("accept") || "").includes("text/html");
         if (wantsHtml) {
-          return res.redirect(303, "/member/login");
+          return res.redirect(303, memberLoginPath(req));
         }
         return res.status(401).type("text").send("Sign-in is required.");
       }
       if (access.status === STATUS.PORTAL_BLOCKED) {
         const wantsHtml = String(req.get("accept") || "").includes("text/html");
         if (wantsHtml) {
-          return res.redirect(303, "/member/login");
+          return res.redirect(303, memberLoginPath(req));
         }
         return res
           .status(403)

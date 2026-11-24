@@ -6,7 +6,7 @@
   stitchScreen: 'BB-M18',
   churchName: typeof churchName !== 'undefined' ? churchName : '',
   bodyClass: 'bb-v204-m18',
-  loginHref: '/member/login',
+  loginHref: (typeof portalBase !== 'undefined' ? portalBase : '') + '/member/login',
   errorState: typeof error !== 'undefined' && error ? 'otp_failed' : null
 }) %>
 <%
@@ -28,7 +28,7 @@
 </div>
 <% } %>
 
-<form class="bb-auth-form" method="post" action="/member/forgot-password/verify" novalidate autocomplete="off">
+<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/forgot-password/verify" novalidate autocomplete="off">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
   <input type="hidden" name="draft_token" value="<%= draftToken || '' %>" />
   <input type="hidden" name="verification_id" value="<%= verificationId || '' %>" />

@@ -900,6 +900,7 @@ async function findMemberInChurch(client, input) {
   const { rows } = await client.query(
     `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            m.member_number, m.portal_access_status,
             m.status, m.created_at, m.updated_at,
             mb.membership_status, mb.is_primary, mb.joined_at, mb.branch_id,
             b.branch_key, b.display_name AS branch_display_name

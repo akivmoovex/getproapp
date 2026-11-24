@@ -656,7 +656,36 @@ function createMoovexPlatformRuntimeApp(options) {
     }
   });
 
-  // Testing-only: obtain BlessBoard password-reset URL from QA delivery outbox / token metadata.
+  // Testing-only: read a BlessBoard member OTP from the in-process test provider.
+  // Ordinary member pages never receive the code. Production deployments are refused.
+  app.get("/__platform/qa/blessboard-member-otp-delivery", async (req, res) => {
+    const {
+      isPlatformRuntimeDiagnosticsEndpointAllowed,
+    } = require("../../startup/platformRuntimeSnapshot");
+    if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+      return res.status(404).json({ ok: false, code: "not_found" });
+    }
+    if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+      return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+    }
+    if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+      return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
+    }
+    if (String(env.BLESSBOARD_OTP_PROVIDER || "test").trim().toLowerCase() !== "test") {
+      return res.status(404).json({ ok: false, code: "not_found" });
+    }
+    const verificationId = String(req.query.verificationId || "").trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(verificationId)) {
+      return res.status(400).json({ ok: false, code: "verification_id_required" });
+    }
+    const { peekTestCode } = require("../../blessboard/services/otp/blessBoardOtpService");
+    const code = peekTestCode(verificationId);
+    if (!code) {
+      return res.status(404).json({ ok: false, code: "delivery_not_found" });
+    }
+    return res.status(200).json({ ok: true, verificationId, code });
+  });
+
   app.get("/__platform/qa/blessboard-password-reset-delivery", async (req, res) => {
     const {
       isPlatformRuntimeDiagnosticsEndpointAllowed,

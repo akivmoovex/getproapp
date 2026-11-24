@@ -1,6 +1,6 @@
 # ActiveClinic functionality
 
-Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. Two ActiveClinic Playwright runs each passed 20 of 20. Public booking stays off.
+Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. G120 left ActiveClinic Playwright at 20 of 20 on both runs. Public booking stays off. The appointment slot and overlap HTTP tests remain blocked.
 
 Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 

@@ -3,6 +3,7 @@
   <h1 class="bb-hq-page-head__title">Member created</h1>
   <p><strong><%= member && member.firstName %> <%= member && member.lastName %></strong> was added to the church membership directory.</p>
   <dl data-bb-member-fields="full_name,phone,email,branch_id">
+    <dt>Church ID</dt><dd><span class="bb-v204-m01__church-id"><%= (member && member.memberNumber) || (typeof productIdentifier !== 'undefined' ? productIdentifier : '') || '—' %></span></dd>
     <dt>Phone</dt><dd><%= (member && (member.phoneDisplay || member.phone)) || '—' %></dd>
     <dt>Email</dt><dd><%= (member && (member.emailDisplay || member.email)) || 'Not provided' %></dd>
     <dt>Authorized branch</dt><dd><%= (member && (member.branchDisplayName || member.branchName)) || 'Authorized branch' %></dd>

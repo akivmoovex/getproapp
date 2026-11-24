@@ -127,6 +127,7 @@
           <option value="">Select role</option>
           <option value="church_hq_admin" <%= formState.roleKey === 'church_hq_admin' ? 'selected' : '' %>>HQ admin</option>
           <option value="branch_admin" <%= formState.roleKey === 'branch_admin' ? 'selected' : '' %>>Branch admin</option>
+          <option value="website_editor" <%= formState.roleKey === 'website_editor' ? 'selected' : '' %>>Website editor</option>
         </select>
       </div>
       <div class="bb-hq-field">
@@ -154,7 +155,7 @@
       <% pending.forEach(function (inv) { %>
       <li data-bb-invite-id="<%= inv.id %>">
         <strong><%= inv.emailDisplay %></strong>
-        — <%= inv.roleKey === 'church_hq_admin' ? 'HQ admin' : 'Branch admin' %>
+        — <%= inv.roleKey === 'church_hq_admin' ? 'HQ admin' : inv.roleKey === 'website_editor' ? 'Website editor' : 'Branch admin' %>
         <% if (inv.branchDisplayName || inv.branchKey) { %>
         (<%= inv.branchDisplayName || inv.branchKey %>)
         <% } %>
