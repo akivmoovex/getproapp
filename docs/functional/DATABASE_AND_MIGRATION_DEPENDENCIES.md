@@ -1,6 +1,6 @@
 # Database and migration dependencies
 
-Migrations 043 and 044 remain applied only on `getpro_v13_e2e_g78d2301`. No new migration was applied. `platform.otp_challenges` was not created.
+Migrations 043 and 044 remain applied only on `getpro_v13_e2e_g78d2301`. G110 applied no migration. `platform.otp_challenges` was not created. The synthetic churches were published through `publishChurchWebsite`, not by a direct status update.
 
 The shared PostgreSQL cluster on port 5432 is out of scope and was not contacted in G82. The older isolated QA database `getpro_v13_e2e_regression213101` on `127.0.0.1:55432` was not contacted. G78–G82 used only the disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`, role `v13_regression_213101`.
 

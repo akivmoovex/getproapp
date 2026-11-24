@@ -1,6 +1,6 @@
 # Requirements traceability matrix
 
-The original 16 regressions are 5 VERIFIED_E2E and 11 VERIFIED_HTTP. None of those 16 are blocked. The OTP table and appointment locks are separate blocked gates. See `docs/qa/V13_G99_REGRESSION_ACCEPTANCE_MATRIX.md`.
+The original 16 regressions are 15 VERIFIED_E2E and 1 VERIFIED_HTTP. BB-AUTH-04 is the HTTP-only row because the browser recovery code is not issued. None of those 16 are blocked. The OTP table and appointment locks are separate blocked gates. See `docs/qa/V13_G109_ACCEPTANCE_MATRIX.md`.
 
 Sources in the repository: G27 register, G35 matrix, current routes, database-free tests, and the G88 isolated runs. The healthcare brief and both office QA files are `SOURCE_UNAVAILABLE`. Their wording was not invented. Implementation counts are unchanged.
 

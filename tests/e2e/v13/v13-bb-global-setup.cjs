@@ -13,7 +13,18 @@ async function v13BbGlobalSetup(options) {
   const env = injected ? options.env : process.env;
   const load = injected ? options.loadGlobalSetup : () => require("../global-setup.cjs");
   const harness = assertV13BrowserHarness(env, { fallbackPort: "4186" });
-  if (String(env.GETPRO_V13_SKIP_LEGACY_CHURCH_SCHEMA || "") === "1") return;
+  if (String(env.GETPRO_V13_SKIP_LEGACY_CHURCH_SCHEMA || "") === "1") {
+    const connectionString = String(env.E2E_DATABASE_URL || env.DATABASE_URL || "");
+    if (
+      connectionString.includes("127.0.0.1:55432") &&
+      connectionString.includes("getpro_v13_e2e_g78d2301") &&
+      !connectionString.includes(":5432/")
+    ) {
+      const { ensureSyntheticChurchesPublished } = require("./v13-bb-public-fixture.cjs");
+      await ensureSyntheticChurchesPublished(env);
+    }
+    return;
+  }
   if (!injected) {
     process.env.NODE_ENV = "test";
     process.env.GETPRO_TEST_DB = "1";

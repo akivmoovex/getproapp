@@ -47,7 +47,7 @@
   </label>
   <p class="gp-we-media-field__preview-wrap ac-mw-media-preview-wrap bb-wb-media-preview-wrap">
     <img
-      src="<%= src %>"
+      <% if (src) { %>src="<%= src %>"<% } %>
       alt="<%= alt %>"
       class="gp-we-media-field__preview ac-mw-media-preview bb-wb-media-preview<%= previewClass ? ' ' + previewClass : '' %>"
       data-gp-we-media-preview="1"

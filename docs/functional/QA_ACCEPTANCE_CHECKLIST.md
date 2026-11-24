@@ -1,6 +1,6 @@
 # QA acceptance checklist
 
-QA decision for this handoff is NO-GO. Safe tests passed. HTTP left 4 blocked failures. Playwright left 23 failures. Do not treat this build as ready for release.
+QA decision for this handoff is NO-GO. Safe tests passed 526 with 2 skipped. Two HTTP runs each left the same 4 blocked failures. Two Playwright runs each left the same 4 failures. Do not treat this build as ready for release.
 
 A box may be checked only after an authorized run. Nothing below was executed in G37–G44. G82 executed the checked rows on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`. `NOT_RUN` is not a pass. A failed assertion stays unchecked.
 

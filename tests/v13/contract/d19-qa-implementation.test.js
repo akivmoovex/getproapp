@@ -18,7 +18,7 @@ describe("D19 QA implementation discovery", () => {
     assert.doesNotMatch(spec, /NOT_IMPLEMENTED/);
     assert.match(spec, /NOT_RUN/);
     assert.match(spec, /input\[name='section_key'\]/);
-    assert.match(spec, /input\[name='sermon_date'\]/);
+    assert.match(spec, /form\[data-bb-sermons-form='create'\]/);
     assert.match(spec, /\/invite\/accept/);
     assert.match(spec, /data-bb-hq-add-member-form/);
     const names = [...spec.matchAll(/test\("([^"]+)"/g)].map((match) => match[1]);

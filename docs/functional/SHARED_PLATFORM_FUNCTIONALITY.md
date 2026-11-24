@@ -1,6 +1,6 @@
 # Shared platform functionality
 
-Shared OTP persistence stays blocked because `platform.otp_challenges` is not authorized. The appointment slot lock and the in-transaction staff overlap stay unimplemented.
+Shared OTP persistence stays blocked because `platform.otp_challenges` is not authorized. The appointment slot lock and the in-transaction staff overlap stay unimplemented. G110 did not create the table and did not add a lock. An empty website image no longer requests the current page, which had been rotating the CSRF cookie. Single-site church contact now posts on `/c/:organizationKey/contact`.
 
 Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.1 in `src/platform/build/applicationBuildInfo.js`. G65–G82 did not change OTP delivery, CSRF, or tenant isolation. Production OTP delivery stays inactive. `platform.otp_challenges` is still absent by contract. G82 did not add that migration. The local-browser domain exception accepts `local.test` only when the profile is `testing`, the host is `127.0.0.1`, `NODE_ENV` is `test`, and `GETPRO_V13_BROWSER_AUTHORIZED` is `1`. Production profiles stay refused.
 

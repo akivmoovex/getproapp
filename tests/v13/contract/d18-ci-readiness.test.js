@@ -16,7 +16,7 @@ describe("D18 CI readiness guards", () => {
     const spec = fs.readFileSync(path.join(ROOT, "tests/e2e/v13/v13-bb-qa-regression.spec.js"), "utf8");
     assert.doesNotMatch(spec, /goto\("\/healthz"\)/);
     assert.match(spec, /NOT_RUN/);
-    assert.match(spec, /input\[name='sermon_date'\]/);
+    assert.match(spec, /form\[data-bb-sermons-form='create'\]/);
   });
 
   it("keeps the ActiveClinic browser file out of the BlessBoard Playwright selection", () => {

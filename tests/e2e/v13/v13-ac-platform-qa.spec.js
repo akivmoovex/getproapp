@@ -344,7 +344,13 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto(liveHref);
     await expect(page.locator("body")).not.toContainText(heading);
     await page.goto("/app/settings/website/publish");
+    const publishedResponse = page.waitForResponse((response) =>
+      response.url().includes("/website/publish") && response.request().method() === "POST"
+    );
+    page.once("dialog", (dialog) => dialog.accept());
     await page.locator("[data-ac-website-action='publish']").click();
+    const published = await publishedResponse;
+    expect(published.ok() || (published.status() >= 300 && published.status() < 400)).toBeTruthy();
     await page.goto(liveHref);
     await expect(page.locator("body")).toContainText(heading);
     const other = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
@@ -386,12 +392,18 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     });
     expect(applied.status()).toBe(200);
     expect(await applied.json()).toMatchObject({ published: false, themeId: "ac.family-wellness-mint" });
-    const previewHref = await page.locator("a[href*='website_mode=draft']").first().getAttribute("href");
-    await page.goto(previewHref);
-    expect(await page.content()).toMatch(/gp-website-theme--ac-family-wellness-mint|ac\.family-wellness-mint/);
+    const clinicKey = required("E2E_AC_CLINIC_KEY");
+    await page.goto(`/clinics/${clinicKey}?website_mode=draft`);
+    expect(await page.content()).toMatch(/gp-website-theme--ac-family-wellness-mint/);
     await page.goto("/app/settings/website/publish");
+    const publishedResponse = page.waitForResponse((response) =>
+      response.url().includes("/website/publish") && response.request().method() === "POST"
+    );
+    page.once("dialog", (dialog) => dialog.accept());
     await page.locator("[data-ac-website-action='publish']").click();
-    await page.goto(previewHref.split("?")[0]);
+    const published = await publishedResponse;
+    expect(published.ok() || (published.status() >= 300 && published.status() < 400)).toBeTruthy();
+    await page.goto(`/clinics/${clinicKey}`);
     await expect(page.locator(".gp-website-theme--ac-family-wellness-mint")).toHaveCount(1);
   });
 

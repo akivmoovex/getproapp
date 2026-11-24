@@ -1,6 +1,6 @@
 # BlessBoard functionality
 
-The BlessBoard HTTP regressions in the latest two full runs passed, including theme publish for a church that has contact details and public pages, and the disabled media upload. The browser journeys still fail. Production media upload stays off.
+The BlessBoard HTTP regressions passed, including theme publish and the disabled media upload. Two browser runs each passed 19 of 23. Member login on the apex, the staff invitation, and member OTP recovery remain open. Production media upload stays off.
 
 Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. G65–G82 did not enable media uploads and did not insert public-page rows.
 

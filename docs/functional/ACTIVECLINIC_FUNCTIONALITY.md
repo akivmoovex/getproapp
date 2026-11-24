@@ -1,6 +1,6 @@
 # ActiveClinic functionality
 
-Registration denial, password-reset replay, walk-in, vitals, and disabled public booking pass over HTTP. Walk-in, vitals, reset replay, and disabled booking also pass in the browser. The browser section heading and the existing-clinic theme preview do not. Public booking stays off.
+Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. Two ActiveClinic Playwright runs each passed 20 of 20. Public booking stays off.
 
 Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 

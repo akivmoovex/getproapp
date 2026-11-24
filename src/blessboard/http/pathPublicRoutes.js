@@ -851,6 +851,62 @@ function createPathPublicRouter(deps) {
   const publicContactLimiter = createPublicChurchContactLimiter();
 
   router.post(
+    "/c/:organizationKey/contact",
+    publicContactLimiter,
+    (req, res, next) => {
+      Promise.resolve(
+        (async () => {
+          const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+          if (!resolved) return;
+          let websiteMode;
+          try {
+            websiteMode = await resolveWebsiteMode(getPool(), {
+              churchId: resolved.tenant.church.id,
+            });
+          } catch {
+            return res
+              .status(503)
+              .type("html")
+              .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+          }
+          const primary =
+            websiteMode.ok &&
+            (websiteMode.primaryActiveBranch ||
+              (websiteMode.activeBranches && websiteMode.activeBranches[0]));
+          if (!websiteMode.ok || !primary || !primary.id) {
+            return res
+              .status(404)
+              .type("html")
+              .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+          }
+          const accepted = await acceptPublicChurchContact(req, res, {
+            pool: getPool(),
+            env: getEnv(),
+            organizationId: resolved.tenant.organization && resolved.tenant.organization.id,
+            churchId: resolved.tenant.church && resolved.tenant.church.id,
+            branchId: primary.id,
+          });
+          if (!accepted.ok) {
+            return renderPathChurchWidePublic(req, res, resolved, "contact");
+          }
+          const singleSite = websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE;
+          const dest = singleSite
+            ? publicChurchHomePath(resolved.organizationKey)
+            : publicBranchPagePath(resolved.organizationKey, primary.key, "contact");
+          if (!dest) {
+            return res
+              .status(404)
+              .type("html")
+              .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+          }
+          const contactPath = singleSite ? `${dest}/contact` : dest;
+          return res.redirect(303, `${contactPath}?submitted=1`);
+        })()
+      ).catch(next);
+    }
+  );
+
+  router.post(
     "/c/:organizationKey/:branchKey/contact",
     publicContactLimiter,
     (req, res, next) => {
