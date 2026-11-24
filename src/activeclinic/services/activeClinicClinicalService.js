@@ -953,6 +953,90 @@ async function recordVitalSignObservation(db, input) {
   return { ok: true, code: RESULT.OK, observation: mapVitalSignObservation(row.rows[0]) };
 }
 
+function classifyVitalHistory(observations) {
+  const superseded = new Set();
+  for (const obs of observations || []) {
+    if (obs && obs.correctsObservationId) superseded.add(String(obs.correctsObservationId));
+  }
+  return (observations || []).map((obs) => {
+    const id = obs && obs.id != null ? String(obs.id) : "";
+    const isSuperseded = superseded.has(id);
+    return {
+      ...(obs || {}),
+      superseded: isSuperseded,
+      current: Boolean(id) && !isSuperseded,
+    };
+  });
+}
+
+/**
+ * Append a correction row. The original observation is not updated or deleted.
+ * A second correction of an already superseded row is rejected as stale.
+ */
+async function correctVitalSignObservation(db, input) {
+  const reason = String((input && input.correctionReason) || "").trim();
+  const observationId = String((input && input.correctsObservationId) || "").trim();
+  if (!reason || !UUID_RE.test(observationId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, observation: null };
+  }
+
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor && input.actor.staffMemberId,
+    platformIdentityId: input.actor && input.actor.platformIdentityId,
+    permissionKey: PERM.TRIAGE,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, observation: null };
+  }
+
+  const original = await db.query(
+    `SELECT *
+       FROM activeclinic.vital_sign_observations
+      WHERE id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+        AND facility_id = $4
+        AND encounter_id = $5`,
+    [
+      observationId,
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.facilityId,
+      input.encounterId,
+    ]
+  );
+  if (!original.rows[0]) {
+    return { ok: false, code: RESULT.OBSERVATION_NOT_FOUND, observation: null };
+  }
+  if (String(original.rows[0].patient_id) !== String(input.patientId || original.rows[0].patient_id)) {
+    if (input.patientId && String(input.patientId) !== String(original.rows[0].patient_id)) {
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND, observation: null };
+    }
+  }
+
+  const newer = await db.query(
+    `SELECT id
+       FROM activeclinic.vital_sign_observations
+      WHERE corrects_observation_id = $1
+        AND organization_id = $2
+        AND facility_id = $3
+      LIMIT 1`,
+    [observationId, input.organizationId, input.facilityId]
+  );
+  if (newer.rows[0]) {
+    return { ok: false, code: RESULT.STALE_VERSION, observation: null };
+  }
+
+  return recordVitalSignObservation(db, {
+    ...input,
+    patientId: original.rows[0].patient_id,
+    correctsObservationId: observationId,
+    correctionReason: reason.slice(0, 500),
+  });
+}
+
 /**
  * Record nursing intake note.
  */
@@ -2022,6 +2106,8 @@ module.exports = {
   getEncounterById,
   recordTriageAssessment,
   recordVitalSignObservation,
+  correctVitalSignObservation,
+  classifyVitalHistory,
   validateVitalObservationInput,
   formatVitalDisplay,
   VITAL_OBSERVATION_TYPES,

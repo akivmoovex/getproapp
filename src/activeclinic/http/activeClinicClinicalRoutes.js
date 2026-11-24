@@ -39,6 +39,7 @@ const {
   startEncounter,
   recordTriageAssessment,
   recordVitalSignObservation,
+  correctVitalSignObservation,
   recordNursingIntake,
   recordConsultationNote,
   signConsultationNote,
@@ -79,6 +80,8 @@ function mapClinicalError(code) {
       return "Cannot sign a draft note.";
     case CLINICAL_RESULT.CANNOT_EDIT_SIGNED:
       return "Cannot edit a signed note.";
+    case CLINICAL_RESULT.OBSERVATION_NOT_FOUND:
+      return "That observation was not found for this encounter.";
     case CLINICAL_RESULT.INVALID_INPUT:
       return "Check the submitted details and try again.";
     default:
@@ -510,9 +513,11 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             { label: "Vitals" },
           ],
           flash:
-            req.query && req.query.recorded === "1"
-              ? { type: "success", message: "Observation recorded." }
-              : null,
+            req.query && req.query.corrected === "1"
+              ? { type: "success", message: "Correction recorded. The original value is unchanged." }
+              : req.query && req.query.recorded === "1"
+                ? { type: "success", message: "Observation recorded." }
+                : null,
           pageData: { vitals: loaded.vitals },
         });
       } catch (err) {
@@ -584,6 +589,64 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         }
 
         return res.redirect(303, `/app/clinical/encounter/${encounterId}/vitals?recorded=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/clinical/encounter/:encounterId/vitals/:observationId/correct",
+    requireAuth,
+    requirePermission(PERM.TRIAGE),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const encounterId = String(req.params.encounterId || "");
+        const observationId = String(req.params.observationId || "");
+        const auth = req.activeClinicAuth;
+        const result = await correctVitalSignObservation(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          encounterId,
+          patientId: String(req.body.patient_id || "").trim() || null,
+          correctsObservationId: observationId,
+          correctionReason: String(req.body.correction_reason || ""),
+          observationType: String(req.body.observation_type || "").trim(),
+          valueNumeric: req.body.value_numeric ? parseFloat(req.body.value_numeric) : null,
+          valueText: String(req.body.value_text || "").trim() || null,
+          unit: String(req.body.unit || "").trim() || null,
+          systolic: req.body.systolic ? parseInt(req.body.systolic, 10) : null,
+          diastolic: req.body.diastolic ? parseInt(req.body.diastolic, 10) : null,
+          actor: actor(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!result.ok) {
+          const reloaded = await loadActiveClinicVitalSignsEntryScreen(getPool(), {
+            auth,
+            encounterId,
+            error: mapClinicalError(result.code),
+          });
+          return renderShell(req, res, {
+            activeNav: "clinical",
+            content: "app/vital-signs-entry-content.ejs",
+            status: result.code === CLINICAL_RESULT.ACCESS_DENIED ? 403 : 400,
+            pageHeader: {
+              title: "Vitals & Observations",
+              description: "Record encounter vitals. Corrections append a new row.",
+            },
+            pageData: {
+              vitals: reloaded.ok
+                ? { ...reloaded.vitals, error: mapClinicalError(result.code) }
+                : { encounter: { id: encounterId }, observations: [], error: mapClinicalError(result.code) },
+            },
+          });
+        }
+        return res.redirect(303, `/app/clinical/encounter/${encounterId}/vitals?corrected=1`);
       } catch (err) {
         return next(err);
       }

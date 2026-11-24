@@ -160,6 +160,25 @@ function mapServiceType(row) {
   };
 }
 
+async function lockStaffAppointmentScope(client, input) {
+  if (!input || !input.assignedStaffId) return null;
+  const key = [
+    "ac-staff-appt",
+    input.organizationId,
+    input.healthcareOrganizationId,
+    input.assignedStaffId,
+  ].join(":");
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [key.slice(0, 240)]);
+  return repo.findStaffCollision(client, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    assignedStaffId: input.assignedStaffId,
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+    excludeAppointmentId: input.excludeAppointmentId || null,
+  });
+}
+
 async function withClient(db, fn) {
   if (db && typeof db.query === "function" && typeof db.release === "function") {
     return fn(db);
@@ -462,20 +481,22 @@ async function createAppointment(db, input) {
     return { ok: false, code: RESULT.STAFF_REQUIRED, appointment: null };
   }
 
-  if (assignedStaffId) {
-    const collision = await repo.findStaffCollision(db, {
-      organizationId,
-      healthcareOrganizationId,
-      assignedStaffId,
-      startsAt,
-      endsAt,
-    });
-    if (collision) return { ok: false, code: RESULT.COLLISION, appointment: null };
-  }
-
   return withClient(db, async (client) => {
     await client.query("BEGIN");
     try {
+      if (assignedStaffId) {
+        const collision = await lockStaffAppointmentScope(client, {
+          organizationId,
+          healthcareOrganizationId,
+          assignedStaffId,
+          startsAt,
+          endsAt,
+        });
+        if (collision) {
+          await client.query("ROLLBACK");
+          return { ok: false, code: RESULT.COLLISION, appointment: null };
+        }
+      }
       const row = await repo.insertAppointment(client, {
         organizationId,
         healthcareOrganizationId,
@@ -772,21 +793,23 @@ async function updateAppointment(db, input) {
         : null
       : detail.appointment.assignedStaffId;
 
-  if (assignedStaffId) {
-    const collision = await repo.findStaffCollision(db, {
-      organizationId: input.organizationId,
-      healthcareOrganizationId: input.healthcareOrganizationId,
-      assignedStaffId,
-      startsAt,
-      endsAt,
-      excludeAppointmentId: detail.appointment.id,
-    });
-    if (collision) return { ok: false, code: RESULT.COLLISION, appointment: null };
-  }
-
   return withClient(db, async (client) => {
     await client.query("BEGIN");
     try {
+      if (assignedStaffId) {
+        const collision = await lockStaffAppointmentScope(client, {
+          organizationId: input.organizationId,
+          healthcareOrganizationId: input.healthcareOrganizationId,
+          assignedStaffId,
+          startsAt,
+          endsAt,
+          excludeAppointmentId: detail.appointment.id,
+        });
+        if (collision) {
+          await client.query("ROLLBACK");
+          return { ok: false, code: RESULT.COLLISION, appointment: null };
+        }
+      }
       const updated = await repo.updateAppointmentByOrgAndId(client, {
         id: detail.appointment.id,
         organizationId: input.organizationId,
@@ -867,21 +890,23 @@ async function rescheduleAppointment(db, input) {
   const tz = normalizeTimezone(input.timezone || detail.appointment.timezone);
   if (!tz.ok) return { ok: false, code: RESULT.INVALID_INPUT, appointment: null };
 
-  if (assignedStaffId) {
-    const collision = await repo.findStaffCollision(db, {
-      organizationId: input.organizationId,
-      healthcareOrganizationId: input.healthcareOrganizationId,
-      assignedStaffId,
-      startsAt,
-      endsAt,
-      excludeAppointmentId: detail.appointment.id,
-    });
-    if (collision) return { ok: false, code: RESULT.COLLISION, appointment: null };
-  }
-
   return withClient(db, async (client) => {
     await client.query("BEGIN");
     try {
+      if (assignedStaffId) {
+        const collision = await lockStaffAppointmentScope(client, {
+          organizationId: input.organizationId,
+          healthcareOrganizationId: input.healthcareOrganizationId,
+          assignedStaffId,
+          startsAt,
+          endsAt,
+          excludeAppointmentId: detail.appointment.id,
+        });
+        if (collision) {
+          await client.query("ROLLBACK");
+          return { ok: false, code: RESULT.COLLISION, appointment: null };
+        }
+      }
       const prior = await repo.updateAppointmentByOrgAndId(client, {
         id: detail.appointment.id,
         organizationId: input.organizationId,

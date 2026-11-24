@@ -12,11 +12,15 @@ function read(rel) {
 }
 
 describe("D25 appointment contract", () => {
-  it("checks assigned-staff overlap before the create transaction and does not lock the slot", () => {
+  it("rechecks assigned-staff overlap inside the create transaction and does not lock a slot capacity", () => {
     const service = read("src/activeclinic/services/activeClinicAppointmentService.js");
-    const collision = service.indexOf("const collision = await repo.findStaffCollision");
-    const begin = service.indexOf('await client.query("BEGIN")');
-    assert.ok(collision > 0 && begin > collision);
+    const start = service.indexOf("async function createAppointment(");
+    const end = service.indexOf("async function listAppointments(");
+    const body = service.slice(start, end);
+    const begin = body.indexOf('await client.query("BEGIN")');
+    const lock = body.indexOf("lockStaffAppointmentScope");
+    const insert = body.indexOf("insertAppointment");
+    assert.ok(begin >= 0 && lock > begin && insert > lock);
     assert.match(service, /appointment_collision/);
     assert.match(service, /if \(assignedStaffId\)/);
     assert.doesNotMatch(service, /FOR UPDATE/);

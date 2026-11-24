@@ -537,7 +537,8 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           } else if (registered.code === "patient_already_linked") {
             errorMsg = "This patient is already linked to an account.";
           } else if (registered.code === "no_patient_match") {
-            errorMsg = "No matching patient record found. Please contact the clinic.";
+            errorMsg =
+              "No matching patient record found. Patients are registered by clinic staff. If you already have a record, use the phone number and name on file. This form does not create a new patient record.";
           } else if (registered.code === "ambiguous_patient_match") {
             errorMsg =
               "Multiple patient records found. Please contact the clinic to resolve.";

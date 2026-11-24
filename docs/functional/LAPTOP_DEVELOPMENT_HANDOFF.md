@@ -42,4 +42,4 @@ The G76 safe command was 487 passed and 0 failed. The G82 safe command, includin
 
 ## Product version
 
-Stay on 2.13.1. Do not call the branch production-ready or healthcare-compliant. G82 already ran isolated HTTP and Playwright and left critical failures open. The next action is to repair the reset-token replay hang, the unpublished website section, the mint-theme preview, the walk-in queue transition, the vitals screen, and the BlessBoard public markers, without enabling booking, media uploads, production OTP, or the missing OTP-challenge migration.
+Current candidate is 2.13.2. QA is NO-GO. Do not deploy. Do not call the branch production-ready or healthcare-compliant. G82 already ran isolated HTTP and Playwright and left critical failures open. The next action is to repair the reset-token replay hang, the unpublished website section, the mint-theme preview, the walk-in queue transition, the vitals screen, and the BlessBoard public markers, without enabling booking, media uploads, production OTP, or the missing OTP-challenge migration.

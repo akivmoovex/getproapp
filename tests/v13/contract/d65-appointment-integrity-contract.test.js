@@ -20,18 +20,20 @@ const billing = fs.readFileSync(
 );
 
 function createAppointmentBody() {
-  const start = appointment.indexOf("async function createAppointment");
-  const end = appointment.indexOf("async function listAppointments");
+  const start = appointment.indexOf("async function createAppointment(");
+  const end = appointment.indexOf("async function listAppointments(");
   return appointment.slice(start, end);
 }
 
 describe("D65 appointment and transaction contracts", () => {
-  it("keeps the staff overlap check ahead of the insert transaction", () => {
+  it("rechecks staff overlap inside the insert transaction", () => {
     const body = createAppointmentBody();
-    const collision = body.indexOf("findStaffCollision");
     const begin = body.indexOf('await client.query("BEGIN")');
-    assert.equal(collision > 0, true);
-    assert.equal(begin > collision, true);
+    const lock = body.indexOf("lockStaffAppointmentScope");
+    const insert = body.indexOf("insertAppointment");
+    assert.equal(begin >= 0, true);
+    assert.equal(lock > begin, true);
+    assert.equal(insert > lock, true);
     assert.equal(appointment.includes("FOR UPDATE"), false);
     assert.equal(appointment.includes("slot_capacity"), false);
   });

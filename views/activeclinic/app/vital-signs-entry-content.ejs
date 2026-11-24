@@ -42,6 +42,10 @@
   }
 
   var selectedType = values.observation_type || '';
+  var supersededIds = {};
+  observations.forEach(function (obs) {
+    if (obs && obs.correctsObservationId) supersededIds[String(obs.correctsObservationId)] = true;
+  });
 %>
 <section
   class="ac-clinical-leaf ac-vitals-leaf"
@@ -161,17 +165,40 @@
             <tr>
               <th>Type</th>
               <th>Value</th>
+              <th>Status</th>
               <th>Observed</th>
               <th>Recorded by</th>
+              <th>Correct</th>
             </tr>
           </thead>
           <tbody>
             <% observations.forEach(function (obs) { %>
-            <tr>
+            <tr data-ac-vital-row="<%= obs.id %>">
               <td><%= obsLabel(obs.observationType) %></td>
               <td><%= formatObs(obs) %></td>
+              <td><%= supersededIds[String(obs.id)] ? 'Superseded' : (obs.correctsObservationId ? 'Current correction' : 'Current') %></td>
               <td><%= obs.observedAt ? new Date(obs.observedAt).toLocaleString() : '—' %></td>
               <td><%= obs.recordedByStaffDisplayName || '—' %></td>
+              <td>
+                <% if (!supersededIds[String(obs.id)]) { %>
+                <form method="post" action="/app/clinical/encounter/<%= encounterId %>/vitals/<%= obs.id %>/correct" data-ac-vital-correct="1">
+                  <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>">
+                  <input type="hidden" name="observation_type" value="<%= obs.observationType %>">
+                  <input type="hidden" name="unit" value="<%= obs.unit || '' %>">
+                  <input type="hidden" name="patient_id" value="<%= obs.patientId || '' %>">
+                  <% if (obs.observationType === 'blood_pressure') { %>
+                  <label class="ac-muted">Systolic <input name="systolic" inputmode="numeric" required></label>
+                  <label class="ac-muted">Diastolic <input name="diastolic" inputmode="numeric" required></label>
+                  <% } else { %>
+                  <label class="ac-muted">Corrected value <input name="value_numeric" inputmode="decimal" required></label>
+                  <% } %>
+                  <label class="ac-muted">Reason <input name="correction_reason" required maxlength="500"></label>
+                  <button type="submit">Correct</button>
+                </form>
+                <% } else { %>
+                <span class="ac-muted">Preserved</span>
+                <% } %>
+              </td>
             </tr>
             <% }) %>
           </tbody>

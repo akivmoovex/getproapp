@@ -2,7 +2,7 @@
 
 The BlessBoard HTTP regressions passed, including theme publish and the disabled media upload. Two browser runs each passed 23 of 23, including member login on the church path, website-editor invitation, and member recovery. Production media upload stays off. The platform OTP table and appointment locks remain separate blocked HTTP gates.
 
-Product version 2.13.1. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. G65–G82 did not enable media uploads and did not insert public-page rows.
+Product version 2.13.2 development candidate. QA is NO-GO. The healthcare brief is not a BlessBoard specification. Statuses match the G35 register. G65–G82 did not enable media uploads and did not insert public-page rows.
 
 Shared fields: tenant scope is the church organisation; branch scope is the selected branch. Implementation status stays the G35 class. G88 HTTP passed BB-01 through BB-05, BB-24, and the disabled-upload assertion for BB-ANN-02. Public sermon, event, and announcement pages still render the unpublished-website setup page. `BLESSBOARD_MEDIA_UPLOADS_ENABLED` stays unset.
 

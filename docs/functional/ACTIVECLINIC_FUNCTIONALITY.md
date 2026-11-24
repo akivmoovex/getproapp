@@ -2,7 +2,7 @@
 
 Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. G120 left ActiveClinic Playwright at 20 of 20 on both runs. Public booking stays off. The appointment slot and overlap HTTP tests remain blocked.
 
-Product version 2.13.1. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
+Product version 2.13.2 development candidate. QA is NO-GO. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 
 Shared fields for every row: tenant scope is `organization_id`; facility scope is the selected facility. Implementation status stays the G35 class. G88 HTTP and browser evidence is named in [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md). AC-REC-03 now has a passing HTTP and browser vital save. AC-REC-02 passes over HTTP and still fails in the browser on the existing clinic. Migration 044 is present on `getpro_v13_e2e_g78d2301` only. No numeric reference range was inserted. Public booking stayed disabled.
 

@@ -44,6 +44,7 @@ const VERSION_ORDER = Object.freeze([
   "2.12",
   "2.13",
   "2.13.1",
+  "2.13.2",
 ]);
 
 /**
@@ -3660,6 +3661,61 @@ const VERSIONS = Object.freeze([
     qaChecklist: [],
     testCases: [],
     sources: ["src/platform/build/applicationBuildInfo.js"],
+  }),
+  Object.freeze({
+    version: "2.13.2",
+    summary:
+      "Version 2.13.2 is a bug-fix development candidate for BlessBoard and ActiveClinic on branch V13. It is not a production release.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V13. Not released or deployed.",
+    qaVerification: "NO-GO — hosted QA is not verified. OTP and slot-capacity gates remain.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.13.2",
+      "Historical 2.13 and 2.13.1 release notes remain available",
+    ],
+    pendingDevelopment: [
+      "Platform OTP challenge persistence is not activated.",
+      "Appointment slot capacity remains unapproved.",
+      "Public booking, production media upload, and production OTP stay disabled.",
+    ],
+    knownIssues: [
+      "D14C and D16 OTP persistence tests remain failed because platform.otp_challenges is not created.",
+      "D25 slot-capacity booking remains blocked pending an approved capacity policy.",
+      "Public self-registration of an unknown patient remains outside the approved staff-created-patient policy.",
+    ],
+    documentationGaps: [
+      "Hosted QA retest of the 23 November 2026 ActiveClinic scenarios is not claimed.",
+    ],
+    architectureWork: {
+      title: "V2.13.2 maintenance candidate",
+      body:
+        "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Version metadata is 2.13.2.",
+      items: [
+        "Same-staff appointment overlap is locked inside the transaction",
+        "Vitals correction keeps the original observation",
+        "Historical release notes preserved",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "BlessBoard 2.13.2 bug-fix candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "ActiveClinic 2.13.2 bug-fix candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared GetPro 2.13.2 bug-fix candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: ["src/platform/build/applicationBuildInfo.js", "docs/releases/V2.13.2_RELEASE_NOTES.md"],
   }),
 ]);
 
