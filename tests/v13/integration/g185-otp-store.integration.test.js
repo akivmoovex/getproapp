@@ -8,23 +8,22 @@ const { runGated } = require("./v13AuthorizedScenarios");
 const { runSharedOtpPersistence } = require("./g185SharedOtpPersistence");
 
 describe("G185 shared OTP persistence", () => {
-  it("does not create the challenge table and runs only after a separate authorization", async (t) => {
-    await runGated(t, "G185", async (pool) => {
+  it("reports BLOCKED_BY_SCHEMA and does not create platform.otp_challenges", async (t) => {
+    await runGated(t, "G185", async (pool, connectionString) => {
       const relation = await pool.query(`SELECT to_regclass('platform.otp_challenges') AS rel`);
-      const authorized = String(process.env.GETPRO_V13_OTP_PERSISTENCE_AUTHORIZED || "") === "1";
-      if (!authorized) {
-        assert.equal(relation.rows[0].rel, null);
-        assert.equal(
-          fs.existsSync(path.join(__dirname, "../../../db/migrations/platform/048_otp_challenges.sql")),
-          false
+      const buckets = await pool.query(`SELECT to_regclass('platform.otp_rate_buckets') AS rel`);
+      if (!relation.rows[0].rel || !buckets.rows[0].rel) {
+        const error = new Error(
+          "BLOCKED_BY_SCHEMA: platform.otp_challenges is not present. Refusing to create it."
         );
-        return;
+        error.code = "BLOCKED_BY_SCHEMA";
+        throw error;
       }
-      assert.ok(
-        relation.rows[0].rel,
-        "approved migration is missing; refusing to create platform.otp_challenges"
+      assert.equal(
+        fs.existsSync(path.join(__dirname, "../../../db/migrations/platform/048_otp_challenges.sql")),
+        false
       );
-      await runSharedOtpPersistence(pool);
+      await runSharedOtpPersistence(pool, connectionString);
     });
   });
 });

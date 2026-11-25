@@ -12,10 +12,33 @@ const { resolveOtpActivation } = require("./otpActivation");
 const { getOtpWorkflow } = require("./otpWorkflows");
 
 let sharedService = null;
+let sharedPool = null;
+
+function attachOtpDatabase(pool) {
+  if (!pool || typeof pool.query !== "function") {
+    const error = new Error("otp_store_unavailable");
+    error.code = "otp_store_unavailable";
+    throw error;
+  }
+  sharedPool = pool;
+  sharedService = null;
+  return pool;
+}
+
+function resetOtpDatabaseAttachment() {
+  sharedPool = null;
+  sharedService = null;
+}
 
 function serviceFor(input) {
   if (input && input.service) return input.service;
-  if (!sharedService) sharedService = createOtpService();
+  return resolveProcessOtpService();
+}
+
+function resolveProcessOtpService() {
+  if (!sharedService) {
+    sharedService = sharedPool ? createOtpService({ pool: sharedPool }) : createOtpService();
+  }
   return sharedService;
 }
 
@@ -120,4 +143,7 @@ async function holdIfOtpRequired(input, env) {
 module.exports = {
   evaluateOtpSessionGate,
   holdIfOtpRequired,
+  attachOtpDatabase,
+  resetOtpDatabaseAttachment,
+  resolveProcessOtpService,
 };

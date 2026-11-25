@@ -269,6 +269,35 @@ describe("G185 shared OTP store", () => {
     assert.equal(String(consumed.message).includes("1234"), false);
     assert.equal(calls.some((sql) => sql.includes("consumed = false")), true);
   });
+
+  it("uses one process pool for later workers and does not keep a second memory store", async () => {
+    const { attachOtpDatabase, resetOtpDatabaseAttachment, resolveProcessOtpService } = require(
+      "../../../src/platform/otp/otpSessionGate"
+    );
+    const calls = [];
+    const pool = {
+      async query(sql) {
+        calls.push(sql);
+        return { rows: [] };
+      },
+    };
+    attachOtpDatabase(pool);
+    try {
+      const service = resolveProcessOtpService();
+      await service.store.findPending({
+        productCode: "blessboard",
+        organizationId: "11111111-1111-4111-8111-111111111111",
+        accountId: "22222222-2222-4222-8222-222222222222",
+        purpose: "login",
+        channel: "email",
+        sessionId: null,
+      });
+      assert.match(calls[0], /platform\.otp_challenges/);
+      assert.equal(calls[0].includes("CREATE TABLE"), false);
+    } finally {
+      resetOtpDatabaseAttachment();
+    }
+  });
 });
 
 describe("G186 OTP session boundary", () => {

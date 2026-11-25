@@ -689,14 +689,12 @@ async function runAcAuth(pool, connectionString, env) {
   assert.equal(owned, 1);
 }
 
-async function runPlatformOtp(pool) {
-  const relation = await pool.query(`SELECT to_regclass('platform.otp_challenges') AS rel`);
-  assert.ok(
-    relation.rows[0].rel,
-    "platform.otp_challenges is not present. Distributed OTP persistence stays blocked until an approved migration is applied on the disposable database."
-  );
+async function runPlatformOtp(pool, connectionString) {
   const { createOtpService } = require("../../../src/platform/otp/otpService");
+  const { createMemoryOtpStore } = require("../../../src/platform/otp/otpChallengeStore");
+  const { publishedTestingPepper } = require("../../../src/platform/otp/otpEnvironment");
   const now = Date.now();
+  const pepper = publishedTestingPepper({ NODE_ENV: "test" });
   const env = {
     NODE_ENV: "test",
     DEPLOYMENT_ENV: "testing",
@@ -704,26 +702,96 @@ async function runPlatformOtp(pool) {
     GETPRO_OTP_ALLOW_FIXED_CODE: "1",
     PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
     DATABASE_IDENTITY_EXPECTED: "moovex-platform-v7",
+    GETPRO_OTP_PEPPER: pepper,
   };
-  const first = createOtpService({ clock: () => now });
+  const productionEnv = {
+    NODE_ENV: "production",
+    DEPLOYMENT_ENV: "production",
+    DATABASE_IDENTITY_ENV: "production",
+    PLATFORM_DEPLOYMENT_CODE: "moovex-platform-production",
+    GETPRO_OTP_PEPPER: "unit-test-otp-pepper-32b-minimum!!",
+  };
   const input = {
     action: "auth.login",
     productCode: "blessboard",
     channel: "email",
     organizationId: "11111111-1111-4111-8111-111111111111",
     accountId: "22222222-2222-4222-8222-222222222222",
-    sessionId: "44444444-4444-4444-8444-444444444444",
     identifier: "otp@v13d19.example",
+    accountResolved: true,
   };
-  const issued = await first.beginChallenge(input, env);
+  const closed = createOtpService({ env: productionEnv, clock: () => now });
+  const unavailable = await closed.beginChallenge(input, productionEnv);
+  assert.equal(unavailable.server.reason, "store_unavailable");
+  assert.equal(unavailable.server.sessionComplete, false);
+  const missingPepper = await createOtpService({
+    store: createMemoryOtpStore(),
+    clock: () => now,
+  }).beginChallenge(input, { ...env, GETPRO_OTP_PEPPER: "", SESSION_SECRET: "" });
+  assert.equal(missingPepper.server.reason, "pepper");
+  assert.equal(missingPepper.server.sessionComplete, false);
+
+  const store = createMemoryOtpStore();
+  const issuer = createOtpService({ store, clock: () => now });
+  const worker = createOtpService({ store, clock: () => now });
+  const hidden = await issuer.beginChallenge({ ...input, accountResolved: false }, env);
+  assert.equal(hidden.server.issued, false);
+  assert.equal(hidden.server.sessionComplete, false);
+  const issued = await issuer.beginChallenge(input, env);
   assert.equal(issued.server.issued, true);
-  const other = createOtpService({ clock: () => now });
-  const replay = await other.verifyChallenge({ ...input, attemptId: issued.server.attemptId, code: "1234" }, env);
-  assert.equal(
-    replay.server.sessionComplete,
-    true,
-    "a second worker must read the same persisted challenge before OTP persistence can close"
+  assert.equal(issued.server.sessionComplete, false);
+  const wrongPurpose = await worker.verifyChallenge(
+    {
+      ...input,
+      action: "auth.password_recovery",
+      purpose: "login",
+      attemptId: issued.server.attemptId,
+      code: "1234",
+    },
+    env
   );
+  assert.equal(wrongPurpose.server.reason, "wrong_purpose");
+  assert.equal(wrongPurpose.server.sessionComplete, false);
+  const wrongTenant = await worker.verifyChallenge(
+    {
+      ...input,
+      organizationId: "33333333-3333-4333-8333-333333333333",
+      attemptId: issued.server.attemptId,
+      code: "1234",
+    },
+    env
+  );
+  assert.equal(wrongTenant.server.reason, "cross_tenant");
+  assert.equal(wrongTenant.server.sessionComplete, false);
+  const verified = await worker.verifyChallenge(
+    { ...input, attemptId: issued.server.attemptId, code: "1234" },
+    env
+  );
+  assert.equal(verified.server.reason, "verified");
+  assert.equal(
+    verified.server.sessionComplete,
+    false,
+    "verification alone grants no authenticated session"
+  );
+  const [left, right] = await Promise.all([
+    issuer.completeProtectedAction(verified, "auth.login"),
+    worker.completeProtectedAction(verified, "auth.login"),
+  ]);
+  assert.equal([left, right].filter((row) => row.sessionComplete === true).length, 1);
+  const replay = await worker.verifyChallenge(
+    { ...input, attemptId: issued.server.attemptId, code: "1234" },
+    env
+  );
+  assert.equal(replay.server.reason, "replay");
+  assert.equal(replay.server.sessionComplete, false);
+
+  const relation = await pool.query(`SELECT to_regclass('platform.otp_challenges') AS rel`);
+  assert.ok(
+    relation.rows[0].rel,
+    "platform.otp_challenges is not present. Distributed OTP persistence stays blocked until an approved migration is applied on the disposable database."
+  );
+  const { runSharedOtpPersistence } = require("./g185SharedOtpPersistence");
+  await runSharedOtpPersistence(pool, connectionString);
 }
 
 async function runG03Laboratory(pool) {

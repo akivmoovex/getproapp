@@ -30,7 +30,8 @@ describe("G185 OTP store contract", () => {
     assert.match(service, /sessionComplete: false/);
     const d16 = read("tests/v13/integration/v13AuthorizedScenarios.js");
     assert.match(d16, /platform\.otp_challenges is not present/);
-    assert.match(d16, /replay\.server\.sessionComplete/);
+    assert.match(d16, /verification alone grants no authenticated session/);
+    assert.match(read("src/platform/http/moovexPlatformRuntimeServer.js"), /attachOtpDatabase/);
     assert.match(read("src/platform/email/resendSenderCatalog.js"), /notify\.pronline\.org/);
     assert.match(read("src/platform/email/resendSenderCatalog.js"), /qa-blessboard@pronline\.org/);
   });

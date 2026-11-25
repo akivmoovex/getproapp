@@ -904,6 +904,8 @@ async function startMoovexPlatformRuntimeServer(opts) {
   }
 
   const pool = getPgPool();
+  const { attachOtpDatabase } = require("../otp/otpSessionGate");
+  attachOtpDatabase(pool);
   const {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");

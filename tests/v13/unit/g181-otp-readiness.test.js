@@ -67,8 +67,9 @@ describe("G181 OTP persistence readiness", () => {
     assert.doesNotMatch(sql, /^\s*(otp_code|plaintext|email|phone)\s+/m);
     const d16 = read("tests/v13/integration/v13AuthorizedScenarios.js");
     assert.match(d16, /platform\.otp_challenges is not present/);
-    assert.match(d16, /replay\.server\.sessionComplete/);
-    assert.match(d16, /a second worker must read the same persisted challenge/);
+    assert.match(d16, /verification alone grants no authenticated session/);
+    assert.match(d16, /completeProtectedAction/);
+    assert.doesNotMatch(d16, /sessionComplete,\s*\n\s*true/m);
   });
 
   it("does not let a second memory worker verify a challenge, and verify does not complete the session", async () => {
