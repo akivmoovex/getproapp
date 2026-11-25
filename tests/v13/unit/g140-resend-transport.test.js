@@ -173,4 +173,42 @@ describe("G140 Resend sender and transport", () => {
     }
     assert.match(deliveryErrorTemplate("ActiveClinic").text, /could not send/i);
   });
+
+  it("keeps pronline.org distinct from notify.pronline.org until that exact domain is verified", () => {
+    const reported = { GETPRO_RESEND_VERIFIED_DOMAINS: "pronline.org" };
+    const production = resolveProductSender("pronline", reported);
+    assert.equal(production.ok, false);
+    assert.equal(production.reason, "domain_not_verified");
+    assert.equal(production.sender.domain, "notify.pronline.org");
+    const qaWithoutProof = resolveProductSender("blessboard", {
+      GETPRO_RESEND_SENDER_PROFILE: "hosted-qa",
+    });
+    assert.equal(qaWithoutProof.ok, false);
+    assert.equal(qaWithoutProof.reason, "domain_not_verified");
+    const qaOnNotify = resolveProductSender("activeclinic", {
+      GETPRO_RESEND_SENDER_PROFILE: "hosted-qa",
+      GETPRO_RESEND_VERIFIED_DOMAINS: "notify.pronline.org",
+    });
+    assert.equal(qaOnNotify.ok, false);
+    assert.equal(qaOnNotify.sender.domain, "pronline.org");
+    const qaReady = resolveProductSender("blessboard", {
+      GETPRO_RESEND_SENDER_PROFILE: "hosted-qa",
+      GETPRO_RESEND_VERIFIED_DOMAINS: "pronline.org",
+    });
+    assert.equal(qaReady.ok, true);
+    assert.equal(qaReady.fromHeader, "BlessBoard QA <qa-blessboard@pronline.org>");
+    assert.equal(resolveProductSender("pronline", {
+      GETPRO_RESEND_SENDER_PROFILE: "hosted-qa",
+      GETPRO_RESEND_VERIFIED_DOMAINS: "pronline.org",
+    }).reason, "not_configured");
+    assert.equal(SENDERS.pronline.email, "security@notify.pronline.org");
+    assert.equal(resolveOtpActivation({
+      NODE_ENV: "production",
+      DEPLOYMENT_ENV: "production",
+      GETPRO_OTP_PROVIDER: "resend",
+      GETPRO_RESEND_SENDER_PROFILE: "hosted-qa",
+      GETPRO_RESEND_VERIFIED_DOMAINS: "pronline.org",
+      RESEND_API_KEY: KEY,
+    }).status, "BLOCKED");
+  });
 });

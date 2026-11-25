@@ -1,6 +1,19 @@
 # QA acceptance checklist
 
-QA decision for this handoff is NO-GO. Safe tests passed 559 with 2 skipped, of 561. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. Two Playwright cycles each passed 45 of 45, ActiveClinic 22 and BlessBoard 23. Do not treat this build as ready for release while the OTP and slot-capacity HTTP gates fail.
+QA decision for this handoff is NO-GO. Two safe runs each passed 569 of 571, with 2 skipped. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. Two Playwright cycles each passed 49 of 49, ActiveClinic 26 and BlessBoard 23. The execution sheet is `docs/qa/V2132_G143_QA_EXECUTION_GUIDE.md`.
+
+Known open items, which are not resolved bugs:
+
+1. Production OTP is disabled.
+2. Patient OTP recovery is not release-ready.
+3. D25 slot-capacity policy remains unapproved.
+4. Public self-registration is not an approved feature.
+5. Public appointment booking remains disabled.
+6. Production binary media upload remains disabled.
+7. Hosting may still have an older commit until separately deployed.
+8. Resend domain setup does not prove OTP delivery.
+
+QA decision for the G141 handoff was NO-GO. Safe tests passed 567 with 2 skipped, of 569. Two HTTP runs each executed 35, passed 32, and failed the same three gates. Two Playwright cycles each passed 49 of 49. Do not treat this build as ready for release while the OTP and slot-capacity HTTP gates fail.
 
 QA decision for the G120 handoff was NO-GO. Safe tests passed 529 with 2 skipped. Two HTTP runs each left the same 4 blocked failures. Two Playwright runs each passed 43 of 43. Do not treat this build as ready for release while the OTP and appointment HTTP gates fail.
 

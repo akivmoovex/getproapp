@@ -818,15 +818,23 @@ async function attachRegressionClinicOperations(db, input) {
   };
 }
 
+function uniqueFixturePhone(phone, stamp, serial, offset) {
+  const raw = String(phone || "");
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 9) return raw;
+  const head = digits.slice(0, digits.length - 6);
+  const tail = String((Number(stamp) + Number(serial) * 97 + Number(offset)) % 1000000).padStart(6, "0");
+  const next = `${head}${tail}`;
+  return raw.trim().startsWith("+") ? `+${next}` : next;
+}
+
 function isolateHttpClinic(clinic) {
   if (!fixtureSuffix()) return clinic;
   httpClinicSerial += 1;
   const n = httpClinicSerial;
   const unique = `${Date.now().toString(36)}${n}`;
-  const tick = Number(String(Date.now()).slice(-3));
-  const tail = (offset) => String((tick + n * 17 + offset) % 1000).padStart(3, "0");
   const mail = (email) => String(email || "").replace("@", `+c${unique}@`);
-  const phone = (value, offset) => String(value || "").replace(/(\d{3})$/, tail(offset));
+  const phone = (value, offset) => uniqueFixturePhone(value, Date.now(), n, offset);
   return {
     ...clinic,
     key: `${clinic.key}-${unique}`,
@@ -1033,6 +1041,7 @@ async function cleanupBlessBoardFixtures(db, connectionString, created, env) {
 module.exports = {
   SYNTHETIC_PASSWORD,
   scopedKey,
+  uniqueFixturePhone,
   DEPLOYMENT_CODE,
   buildBlessBoardFixturePlan,
   buildActiveClinicFixturePlan,
