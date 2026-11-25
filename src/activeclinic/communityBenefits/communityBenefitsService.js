@@ -166,7 +166,8 @@ function recordIntroduction(store, input) {
   };
   store.introductions.push(event);
   const current = currentAcquisition(store, input.personId, input.clinicId);
-  if (!current) {
+  const reopen = !current || current.state === "CLINIC_EXITED";
+  if (reopen) {
     store.acquisitions.push({
       id: id(),
       personId: input.personId,
@@ -189,12 +190,29 @@ function recordIntroduction(store, input) {
     introduction: event,
     acquisition: currentAcquisition(store, input.personId, input.clinicId),
     converted: !current,
+    reopened: Boolean(current && current.state === "CLINIC_EXITED"),
   };
+}
+
+function recordClinicExit(store, input) {
+  if (!person(store, input.personId)) return fail("person_not_found");
+  if (!input.clinicId || !input.actorId) return fail("binding");
+  const row = {
+    id: id(),
+    personId: input.personId,
+    clinicId: input.clinicId,
+    state: "CLINIC_EXITED",
+    at: input.at || Date.now(),
+    actorId: input.actorId,
+  };
+  store.acquisitions.push(row);
+  audit(store, { type: "acquisition.clinic_exit", personId: input.personId, clinicId: input.clinicId, at: row.at });
+  return { ok: true, acquisition: row, history: acquisitionsFor(store, input.personId, input.clinicId) };
 }
 
 function issuePass(store, input) {
   const row = membership(store, input.personId);
-  if (!row || row.status === "revoked") return fail("membership_not_found");
+  if (!row || row.status === "revoked" || row.status === "suspended") return fail("membership_blocked");
   const token = crypto.randomBytes(32).toString("base64url");
   const record = {
     id: id(),
@@ -237,7 +255,13 @@ function presentPass(store, input) {
   if (now >= row.expiresAt) return fail("expired_pass");
   const member = membership(store, row.personId);
   const who = person(store, row.personId);
-  audit(store, { type: "pass.presented", personId: row.personId, clinicId: input.clinicId || null, at: now });
+  audit(store, {
+    type: "pass.presented",
+    personId: row.personId,
+    clinicId: input.clinicId || null,
+    actorId: input.actorId || null,
+    at: now,
+  });
   return {
     ok: true,
     presentation: {
@@ -301,7 +325,14 @@ async function linkMember(store, input) {
       actorId: input.actorId,
     };
     store.links.push(row);
-    audit(store, { type: "link.created", personId: input.personId, clinicId: input.clinicId, at: row.at });
+    audit(store, {
+      type: "link.created",
+      personId: input.personId,
+      clinicId: input.clinicId,
+      patientId: patient.id,
+      actorId: input.actorId || null,
+      at: row.at,
+    });
     return { ok: true, link: row };
   });
 }
@@ -340,10 +371,13 @@ function decideEligibility(store, input) {
     return { decision: "NOT_ELIGIBLE", reason: "membership_blocked" };
   }
   if (member.status !== "active") return { decision: "NOT_ELIGIBLE", reason: "membership_pending" };
+  const acquisition = currentAcquisition(store, input.personId, input.clinicId);
+  if (acquisition && acquisition.state === "CLINIC_EXITED") {
+    return { decision: "NOT_ELIGIBLE", reason: "clinic_exit" };
+  }
   const introduced = store.introductions.some((row) => (
     row.personId === input.personId && row.clinicId === input.clinicId && row.sourceType === "platform_introduction"
   ));
-  const acquisition = currentAcquisition(store, input.personId, input.clinicId);
   if (!introduced) {
     if (acquisition && acquisition.state === "CLINIC_DIRECT") {
       return { decision: "NOT_ELIGIBLE", reason: "walk_in_no_introduction" };
@@ -356,8 +390,13 @@ function decideEligibility(store, input) {
     return { decision: "NOT_ELIGIBLE", reason: "stale_policy" };
   }
   const now = input.at || Date.now();
+  if (agreement.effectiveFrom && now < agreement.effectiveFrom) {
+    return { decision: "NOT_ELIGIBLE", reason: "agreement_not_started" };
+  }
   if (agreement.effectiveTo && now > agreement.effectiveTo) return { decision: "NOT_ELIGIBLE", reason: "agreement_expired" };
-  if (agreement.status !== "ACTIVE") return { decision: "MEMBER_ONLY", reason: "agreement_inactive" };
+  if (agreement.status !== "ACTIVE" || agreement.legalApproval !== "approved") {
+    return { decision: "MEMBER_ONLY", reason: "agreement_inactive" };
+  }
   if (agreement.exclusions.includes(input.serviceCode)) return { decision: "NOT_ELIGIBLE", reason: "service_excluded" };
   if (agreement.eligibleServices.length && !agreement.eligibleServices.includes(input.serviceCode)) {
     return { decision: "NOT_ELIGIBLE", reason: "service_excluded" };
@@ -381,12 +420,18 @@ function previewInvoice(store, input) {
     };
   }
   const agreement = store.agreements.find((row) => row.id === input.agreementId);
-  const quote = calculateBenefit({
-    model: agreement.model,
-    amountMinor,
-    discountBps: agreement.discountBps,
-    contributionBps: agreement.contributionBps,
-  });
+  if (!agreement) return fail("agreement_missing");
+  let quote;
+  try {
+    quote = calculateBenefit({
+      model: agreement.model,
+      amountMinor,
+      discountBps: agreement.discountBps,
+      contributionBps: agreement.contributionBps,
+    });
+  } catch (error) {
+    return fail(error.code || "unsupported_model");
+  }
   return {
     ok: true,
     decision,
@@ -399,20 +444,27 @@ function previewInvoice(store, input) {
 }
 
 function planLedger(store, input) {
-  if (!input.idempotencyKey) return fail("idempotency_required");
+  if (!input.idempotencyKey) return Promise.resolve(fail("idempotency_required"));
+  return store.serial(`plan:${input.idempotencyKey}`, async () => {
   const existing = store.plans.get(input.idempotencyKey);
   if (existing) return { ok: true, plan: existing, duplicate: true };
   const decision = decideEligibility(store, input);
   if (decision.decision !== "ELIGIBLE") return { ok: false, code: "not_eligible", decision };
   const agreement = store.agreements.find((row) => row.id === input.agreementId);
+  if (!agreement) return fail("agreement_missing");
   const paid = input.paidMinor == null ? input.amountMinor : input.paidMinor;
   if (!Number.isInteger(paid) || paid < 0 || paid > input.amountMinor) return fail("invalid_amount");
-  const full = calculateBenefit({
-    model: agreement.model,
-    amountMinor: input.amountMinor,
-    discountBps: agreement.discountBps,
-    contributionBps: agreement.contributionBps,
-  });
+  let full;
+  try {
+    full = calculateBenefit({
+      model: agreement.model,
+      amountMinor: input.amountMinor,
+      discountBps: agreement.discountBps,
+      contributionBps: agreement.contributionBps,
+    });
+  } catch (error) {
+    return fail(error.code || "unsupported_model");
+  }
   const contributionMinor = input.amountMinor === 0 ? 0 : Math.floor((full.contributionMinor * paid) / input.amountMinor);
   const plan = {
     id: id(),
@@ -424,6 +476,23 @@ function planLedger(store, input) {
   };
   store.plans.set(input.idempotencyKey, plan);
   return { ok: true, plan, duplicate: false };
+  });
+}
+
+function selectAgreementForClinic(store, clinicId, at) {
+  const rows = store.agreements.filter((row) => row.clinicId === clinicId);
+  const now = at || Date.now();
+  const active = rows.filter((row) => (
+    row.status === "ACTIVE"
+    && row.legalApproval === "approved"
+    && (!row.effectiveFrom || now >= row.effectiveFrom)
+    && (!row.effectiveTo || now <= row.effectiveTo)
+  ));
+  if (active.length) {
+    const ordered = active.slice().sort((left, right) => left.version - right.version);
+    return ordered[ordered.length - 1];
+  }
+  return rows.length ? rows[rows.length - 1] : null;
 }
 
 function commitLedger(store, input) {
@@ -433,6 +502,8 @@ function commitLedger(store, input) {
 }
 
 function planRefund(store, input) {
+  if (!input.idempotencyKey) return Promise.resolve(fail("idempotency_required"));
+  return store.serial(`plan:${input.idempotencyKey}`, async () => {
   const original = store.plans.get(input.idempotencyKey);
   if (!original) return fail("plan_not_found");
   const key = `${input.idempotencyKey}:refund`;
@@ -447,6 +518,7 @@ function planRefund(store, input) {
   };
   store.plans.set(key, plan);
   return { ok: true, plan, duplicate: false };
+  });
 }
 
 module.exports = {
@@ -462,6 +534,7 @@ module.exports = {
   recordWalkIn,
   recordStaffRegistration,
   recordIntroduction,
+  recordClinicExit,
   issuePass,
   rotatePass,
   revokePass,
@@ -474,6 +547,7 @@ module.exports = {
   decideEligibility,
   previewInvoice,
   planLedger,
+  selectAgreementForClinic,
   commitLedger,
   planRefund,
   currentAcquisition,

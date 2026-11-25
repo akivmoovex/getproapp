@@ -13,9 +13,14 @@ describe("community benefits contracts", () => {
     assert.equal(fs.existsSync(path.join(ROOT, "db/migrations/platform/048_otp_challenges.sql")), false);
     assert.equal(fs.existsSync(path.join(ROOT, "db/migrations/activeclinic/049_community_benefits.sql")), false);
     const sql = fs.readFileSync(path.join(ROOT, "docs/qa/community-benefits/V2132_COMMUNITY_BENEFITS_SCHEMA.sql"), "utf8");
+    const statements = sql.split("\n").filter((line) => !line.trim().startsWith("--")).join("\n");
     assert.match(sql, /NOT APPLIED/);
     assert.match(sql, /community_memberships/);
     assert.match(sql, /clinic_acquisitions/);
+    assert.match(statements, /CREATE TABLE IF NOT EXISTS/);
+    assert.match(statements, /DEFAULT 'INACTIVE'/);
+    assert.match(statements, /legal_approval/);
+    assert.doesNotMatch(statements, /DROP TABLE|DELETE FROM|TRUNCATE/i);
     assert.equal(financialPostingEnabled(), false);
     const server = fs.readFileSync(path.join(ROOT, "src/activeclinic/http/activeClinicFoundationServer.js"), "utf8");
     assert.match(server, /allowTestActor: false/);

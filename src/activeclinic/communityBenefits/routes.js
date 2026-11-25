@@ -5,6 +5,22 @@ const { communityBenefitsEnabled } = require("./flags");
 const pages = require("./pages");
 const service = require("./communityBenefitsService");
 
+function staffRole(actor) {
+  return Boolean(actor && (actor.role === "reception" || actor.role === "clinic_admin"));
+}
+
+function canReadPass(actor, personId) {
+  if (staffRole(actor)) return true;
+  return Boolean(actor && actor.personId && actor.personId === personId);
+}
+
+function minorUnits(value) {
+  const text = String(value == null ? "" : value).trim();
+  if (!/^\d+$/.test(text)) return null;
+  const parsed = Number(text);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
 function actorFrom(req, allowTestActor) {
   if (req.communityActor) return req.communityActor;
   if (!allowTestActor) return null;
@@ -74,6 +90,11 @@ function registerCommunityBenefitsRoutes(app, deps) {
 
   app.get("/app/community/pass", gate, (req, res) => {
     const personId = String(req.query.person || "");
+    const actor = actorFrom(req, allowTestActor);
+    if (!canReadPass(actor, personId)) {
+      res.status(401).type("text/plain").send("Sign in required");
+      return;
+    }
     const member = store.memberships.get(`${service.PROGRAM_ID}:${personId}`);
     res.type("html").send(pages.passPage({
       csrf: csrf(),
@@ -85,23 +106,29 @@ function registerCommunityBenefitsRoutes(app, deps) {
 
   app.post("/app/community/pass", gate, (req, res) => {
     const actor = actorFrom(req, allowTestActor);
+    const personId = String((req.body && req.body.person_id) || "");
     if (!actor) {
       res.status(401).type("text/plain").send("Sign in required");
+      return;
+    }
+    if (!canReadPass(actor, personId)) {
+      res.status(403).type("text/plain").send("This pass belongs to another person");
       return;
     }
     if (!csrfOk(req)) {
       res.status(403).type("text/plain").send("CSRF rejected");
       return;
     }
-    const issued = service.issuePass(store, { personId: req.body.person_id });
+    const issued = service.issuePass(store, { personId });
     if (!issued.ok) {
-      res.status(404).type("html").send(pages.passPage({ csrf: csrf(), personId: req.body.person_id, message: "No membership is available for a pass." }));
+      res.status(404).type("html").send(pages.passPage({ csrf: csrf(), personId, message: "No membership is available for a pass." }));
       return;
     }
+    const member = store.memberships.get(`${service.PROGRAM_ID}:${personId}`);
     res.type("html").send(pages.passPage({
       csrf: csrf(),
-      personId: req.body.person_id,
-      status: "issued",
+      personId,
+      status: member ? member.status : "none",
       token: issued.token,
       fallbackCode: issued.fallbackCode,
     }));
@@ -109,23 +136,29 @@ function registerCommunityBenefitsRoutes(app, deps) {
 
   app.post("/app/community/pass/rotate", gate, (req, res) => {
     const actor = actorFrom(req, allowTestActor);
+    const personId = String((req.body && req.body.person_id) || "");
     if (!actor) {
       res.status(401).type("text/plain").send("Sign in required");
+      return;
+    }
+    if (!canReadPass(actor, personId)) {
+      res.status(403).type("text/plain").send("This pass belongs to another person");
       return;
     }
     if (!csrfOk(req)) {
       res.status(403).type("text/plain").send("CSRF rejected");
       return;
     }
-    const rotated = service.rotatePass(store, { personId: req.body.person_id });
+    const rotated = service.rotatePass(store, { personId });
     if (!rotated.ok) {
       res.status(404).type("text/plain").send("Pass not rotated");
       return;
     }
+    const member = store.memberships.get(`${service.PROGRAM_ID}:${personId}`);
     res.type("html").send(pages.passPage({
       csrf: csrf(),
-      personId: req.body.person_id,
-      status: "rotated",
+      personId,
+      status: member ? member.status : "none",
       token: rotated.token,
       fallbackCode: rotated.fallbackCode,
     }));
@@ -133,7 +166,7 @@ function registerCommunityBenefitsRoutes(app, deps) {
 
   app.get("/app/reception/community-check-in", gate, (req, res) => {
     const actor = actorFrom(req, allowTestActor);
-    if (!allowTestActor && !actor) {
+    if (!staffRole(actor)) {
       res.status(401).type("text/plain").send("Sign in required");
       return;
     }
@@ -147,7 +180,7 @@ function registerCommunityBenefitsRoutes(app, deps) {
 
   app.post("/app/reception/community-check-in", gate, async (req, res) => {
     const actor = actorFrom(req, allowTestActor);
-    if (!actor || (actor.role !== "reception" && actor.role !== "clinic_admin")) {
+    if (!actor || !staffRole(actor)) {
       res.status(401).type("text/plain").send("Sign in required");
       return;
     }
@@ -182,8 +215,8 @@ function registerCommunityBenefitsRoutes(app, deps) {
       }));
       return;
     }
-    const presented = service.presentPass(store, { token: req.body.pass_code, clinicId });
-    const byFallback = presented.ok ? presented : service.presentPass(store, { fallbackCode: req.body.pass_code, clinicId });
+    const presented = service.presentPass(store, { token: req.body.pass_code, clinicId, actorId: actor.staffId });
+    const byFallback = presented.ok ? presented : service.presentPass(store, { fallbackCode: req.body.pass_code, clinicId, actorId: actor.staffId });
     const result = presented.ok ? presented : byFallback;
     if (!result.ok) {
       res.status(400).type("html").send(pages.checkInPage({
@@ -196,7 +229,8 @@ function registerCommunityBenefitsRoutes(app, deps) {
       }));
       return;
     }
-    const agreement = (store.agreements || []).find((row) => row.clinicId === clinicId);
+    const agreement = service.selectAgreementForClinic(store, clinicId);
+    const amountMinor = minorUnits(req.body.amount_minor);
     const decision = service.decideEligibility(store, {
       personId: result.presentation.personId,
       clinicId,
@@ -217,13 +251,20 @@ function registerCommunityBenefitsRoutes(app, deps) {
       });
       linkMessage = linked.ok ? " Local chart linked." : ` Link not created (${linked.code}).`;
     }
-    const preview = service.previewInvoice(store, {
-      personId: result.presentation.personId,
-      clinicId,
-      agreementId: agreement && agreement.id,
-      serviceCode: req.body.service_code || "consultation",
-      amountMinor: Number(req.body.amount_minor || 0),
-    });
+    let disclosure = "No community discount is applied.";
+    let amountError = amountMinor == null;
+    if (amountMinor != null) {
+      const preview = service.previewInvoice(store, {
+        personId: result.presentation.personId,
+        clinicId,
+        agreementId: agreement && agreement.id,
+        serviceCode: req.body.service_code || "consultation",
+        amountMinor,
+      });
+      if (!preview.ok) amountError = true;
+      else disclosure = preview.disclosure;
+    }
+    const identity = `${result.presentation.displayName} is ${result.presentation.membershipStatus}.${linkMessage}`;
     res.type("html").send(pages.checkInPage({
       csrf: csrf(),
       clinicId,
@@ -231,8 +272,9 @@ function registerCommunityBenefitsRoutes(app, deps) {
       clinics: deps.clinics || [],
       decision: decision.decision,
       reason: decision.reason,
-      disclosure: preview.ok ? preview.disclosure : "No community discount is applied.",
-      message: `${result.presentation.displayName} is ${result.presentation.membershipStatus}.${linkMessage}`,
+      disclosure,
+      error: amountError,
+      message: amountError ? `Enter the quoted amount in whole ngwee. ${identity}` : identity,
     }));
   });
 }

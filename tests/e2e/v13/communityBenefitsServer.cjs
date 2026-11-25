@@ -58,8 +58,8 @@ function seed(store) {
     actorId: "seed",
     correlationId: "seed-sam",
   });
-  service.suspendMembership(store, { personId: suspended.id });
   const suspendedPass = service.issuePass(store, { personId: suspended.id });
+  service.suspendMembership(store, { personId: suspended.id });
 
   const expiredPerson = service.addPerson(store, { displayName: "Expired Eve" }).person;
   activate(store, expiredPerson.id);
@@ -113,6 +113,7 @@ function seed(store) {
     eligibleServices: ["consultation"],
   }).agreement;
   synthetic.status = "ACTIVE";
+  synthetic.legalApproval = "approved";
 
   return {
     clinicA: CLINIC_A,

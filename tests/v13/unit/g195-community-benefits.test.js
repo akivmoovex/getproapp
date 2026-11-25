@@ -46,6 +46,7 @@ describe("community benefits attribution and eligibility", () => {
       eligibleServices: ["consultation"],
     }).agreement;
     agreement.status = "ACTIVE";
+    agreement.legalApproval = "approved";
     const first = service.decideEligibility(store, { personId, clinicId: A, agreementId: agreement.id, serviceCode: "consultation" });
     const repeat = service.decideEligibility(store, { personId, clinicId: A, agreementId: agreement.id, serviceCode: "consultation" });
     assert.equal(first.decision, "ELIGIBLE");
@@ -77,6 +78,7 @@ describe("community benefits attribution and eligibility", () => {
       eligibleServices: ["consultation"],
     }).agreement;
     agreementB.status = "ACTIVE";
+    agreementB.legalApproval = "approved";
     assert.equal(service.decideEligibility(store, {
       personId: walker, clinicId: B, agreementId: agreementB.id, serviceCode: "consultation",
     }).decision, "ELIGIBLE");
@@ -138,6 +140,7 @@ describe("community benefits attribution and eligibility", () => {
       version: 2,
     }).agreement;
     agreement.status = "ACTIVE";
+    agreement.legalApproval = "approved";
     assert.equal(service.decideEligibility(store, {
       personId, clinicId: C, agreementId: agreement.id, serviceCode: "cosmetic",
     }).reason, "service_excluded");
@@ -240,7 +243,7 @@ describe("community benefits attribution and eligibility", () => {
     assert.equal(service.readChart(store, { actorClinicId: A, clinicId: B, patientId: "p3" }).code, "cross_clinic_chart");
   });
 
-  it("calculates synthetic ZMW models without posting or inventing savings", () => {
+  it("calculates synthetic ZMW models without posting or inventing savings", async () => {
     const modelA = calculateBenefit({ model: "MODEL_A_DIRECT_DISCOUNT", amountMinor: 100000, discountBps: 1000 });
     assert.equal(modelA.discountMinor, 10000);
     assert.equal(modelA.payableMinor, 90000);
@@ -272,6 +275,7 @@ describe("community benefits attribution and eligibility", () => {
     assert.equal(inactive.disclosure, "No community discount is applied.");
     assert.equal(inactive.posted, false);
     agreement.status = "ACTIVE";
+    agreement.legalApproval = "approved";
     const active = service.previewInvoice(store, {
       personId, clinicId: A, agreementId: agreement.id, serviceCode: "consultation", amountMinor: 100000,
     });
@@ -280,28 +284,29 @@ describe("community benefits attribution and eligibility", () => {
       clinicId: A, model: "MODEL_B_COMMUNITY_CONTRIBUTION", contributionBps: 1000, eligibleServices: ["consultation"],
     }).agreement;
     modelBAgreement.status = "ACTIVE";
-    const contribution = service.planLedger(store, {
+    modelBAgreement.legalApproval = "approved";
+    const contribution = await service.planLedger(store, {
       personId, clinicId: A, agreementId: modelBAgreement.id, serviceCode: "consultation",
       amountMinor: 100000, paidMinor: 50000, idempotencyKey: "pay-b",
     });
     assert.equal(contribution.plan.contributionMinor, 5000);
-    const contributionAgain = service.planLedger(store, {
+    const contributionAgain = await service.planLedger(store, {
       personId, clinicId: A, agreementId: modelBAgreement.id, serviceCode: "consultation",
       amountMinor: 100000, paidMinor: 50000, idempotencyKey: "pay-b",
     });
     assert.equal(contributionAgain.duplicate, true);
-    assert.equal(service.planRefund(store, { idempotencyKey: "pay-b" }).plan.contributionMinor, -5000);
-    const plan = service.planLedger(store, {
+    assert.equal((await service.planRefund(store, { idempotencyKey: "pay-b" })).plan.contributionMinor, -5000);
+    const plan = await service.planLedger(store, {
       personId, clinicId: A, agreementId: agreement.id, serviceCode: "consultation",
       amountMinor: 100000, paidMinor: 50000, idempotencyKey: "pay-1",
     });
-    const repeat = service.planLedger(store, {
+    const repeat = await service.planLedger(store, {
       personId, clinicId: A, agreementId: agreement.id, serviceCode: "consultation",
       amountMinor: 100000, paidMinor: 50000, idempotencyKey: "pay-1",
     });
     assert.equal(plan.plan.contributionMinor, 0);
     assert.equal(repeat.duplicate, true);
-    const refund = service.planRefund(store, { idempotencyKey: "pay-1" });
+    const refund = await service.planRefund(store, { idempotencyKey: "pay-1" });
     assert.equal(refund.plan.contributionMinor, 0);
     const commit = service.commitLedger(store, { idempotencyKey: "pay-1" });
     assert.equal(commit.code, "posting_disabled");

@@ -27,10 +27,12 @@ test("enrollment stays pending consent and the pass is a presentation code", asy
   await page.getByRole("link", { name: "Continue to community pass" }).click();
   await expect(page.locator("#membership_status")).toHaveText("pending_consent");
   await page.getByRole("button", { name: "Issue pass" }).click();
+  await expect(page.locator("#membership_status")).toHaveText("pending_consent");
   const first = await page.locator("#fallback_code").innerText();
   await page.getByRole("button", { name: "Rotate pass" }).click();
   const second = await page.locator("#fallback_code").innerText();
   expect(second).not.toBe(first);
+  await expect(page.locator("#membership_status")).toHaveText("pending_consent");
   await expect(page.locator("#pass_token")).toBeVisible();
 });
 
@@ -155,6 +157,20 @@ test("mobile layout, keyboard labels, cancel, and a reused form token are reject
     form: { csrf, pass_code: "not-a-real-code", clinic_id: CLINIC_A, action: "preview", amount_minor: "100000", service_code: "consultation" },
   });
   expect(second.status()).toBe(403);
+});
+
+test("a fractional quote does not disclose a discount", async ({ page, request }) => {
+  const fixtures = await (await request.get("/__test/fixtures")).json();
+  const hidden = await request.get(`/app/community/pass?person=${fixtures.patientId}`);
+  expect(hidden.status()).toBe(401);
+  await page.setExtraHTTPHeaders({ "x-community-test-actor": actor(CLINIC_B, "Clinic B") });
+  await page.goto("/app/reception/community-check-in");
+  await page.getByLabel("QR or fallback code").fill(fixtures.introducedCode);
+  await page.getByLabel("Quoted amount in ngwee").fill("100000.5");
+  await page.getByRole("button", { name: "Check in" }).click();
+  await expect(page.locator("#eligibility_decision")).toContainText("ELIGIBLE introduced_repeat");
+  await expect(page.getByRole("alert")).toContainText("whole ngwee");
+  await expect(page.locator("#benefit_disclosure")).toHaveText("No community discount is applied.");
 });
 
 test("unauthenticated and unsupported-role check-in is refused", async ({ request }) => {
