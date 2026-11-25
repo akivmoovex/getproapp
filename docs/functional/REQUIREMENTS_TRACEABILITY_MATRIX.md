@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+G175 kept the original 16 regressions passing in the browser. D14C, D16 platform OTP, and D25 slot capacity still fail. Same-staff overlap passed on two concurrent clients in both HTTP runs. A clinician now saves, isolates, and signs a consultation note in the browser, and a prescription without a catalogue id does not create a pharmacy row. See `docs/qa/V2132_G167_COMPLETE_BUG_MATRIX.md`.
+
 G165 kept the original 16 regressions passing in the browser on the disposable database. D14C, D16 platform OTP, and D25 slot capacity still fail. Same-staff overlap passed on two concurrent clients in both HTTP runs. Patient search, staff duplicate phone search, and member directory search were added to the browser proof. See `docs/qa/V2132_G152_ALL_QA_BUG_COVERAGE.md`.
 
 G138 kept the original 16 regressions passing on the disposable database. The OTP table and D25 slot capacity remain separate blocked gates. Same-staff overlap passed on two concurrent clients. See `docs/qa/V2132_G138_QA_READINESS.md`.

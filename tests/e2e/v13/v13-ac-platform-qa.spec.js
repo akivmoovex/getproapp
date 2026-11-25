@@ -849,6 +849,121 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     expect(after.rows[0].n).toBe(1);
     await client.end();
   });
+
+  test("G168 consultation draft is signed on complete and another clinic cannot change it", async ({ page, browser }, testInfo) => {
+    hold(testInfo, "G168 consultation");
+    const stamp = Date.now();
+    const complaint = `Complaint ${stamp}`;
+    const lastName = `Note${String(stamp).slice(-6)}`;
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Consult");
+    await page.locator("input[name='last_name']").fill(lastName);
+    await page.locator("select[name='sex_at_registration']").selectOption("female");
+    await page.locator("input[name='date_of_birth']").fill("1990-01-09");
+    await page.locator("input[name='phone_national']").fill(`97${String(stamp).slice(-7)}`);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    expect(number).toMatch(/^AC-/);
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    const found = await client.query(
+      "SELECT id FROM activeclinic.patients WHERE patient_number = $1",
+      [number]
+    );
+    expect(found.rowCount).toBe(1);
+    await page.goto("/app/clinical/start-encounter");
+    await page.locator("input[name='patient_id']").fill(found.rows[0].id);
+    await page.locator("form:has(input[name='patient_id']) button[type='submit']").click();
+    await expect(page).toHaveURL(/\/app\/clinical\/encounter\//);
+    const encounterUrl = page.url().split("?")[0];
+    const encounterId = encounterUrl.split("/").pop();
+    await page.context().clearCookies();
+    await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
+    await page.goto(encounterUrl);
+    await expect(page.locator("#chief_complaint")).toBeVisible();
+    await page.locator("#chief_complaint").fill(complaint);
+    await page.locator("[data-ac-action='save-draft']:visible").click();
+    await expect(page).toHaveURL(/updated=1/);
+    await expect(page.locator("#chief_complaint")).toHaveValue(complaint);
+    const draft = await client.query(
+      `SELECT status, subjective_text, signed_at
+       FROM activeclinic.consultation_notes
+       WHERE encounter_id = $1`,
+      [encounterId]
+    );
+    expect(draft.rowCount).toBe(1);
+    expect(draft.rows[0].status).toBe("draft");
+    expect(draft.rows[0].subjective_text).toBe(complaint);
+    expect(draft.rows[0].signed_at).toBeNull();
+    await page.goto(`${encounterUrl}/order/prescription`);
+    await page.locator("#drug_name").fill(`SyntheticCompound ${stamp}`);
+    await page.locator("#dose").fill("1");
+    await page.locator("#frequency").fill("once");
+    await page.locator("#duration").fill("1 day");
+    await page.locator("[data-ac-rx-submit='1'] button[type='submit']").click();
+    await expect(page).toHaveURL(/pharmacy_queue=waiting_for_catalogue/);
+    await expect(page.locator("body")).toContainText("not on the pharmacy queue");
+    const orders = await client.query(
+      `SELECT count(*)::int AS n FROM activeclinic.clinical_orders
+       WHERE encounter_id = $1 AND order_type = 'prescription'`,
+      [encounterId]
+    );
+    const queued = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.pharmacy_prescriptions WHERE encounter_id = $1",
+      [encounterId]
+    );
+    expect(orders.rows[0].n).toBe(1);
+    expect(queued.rows[0].n).toBe(0);
+    const other = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
+    const otherPage = await other.newPage();
+    await staffSignIn(otherPage, "admin-b@v13d19.example", required("E2E_AC_ADMIN_PASSWORD"));
+    await otherPage.goto(encounterUrl);
+    await expect(otherPage.locator("#chief_complaint")).toHaveCount(0);
+    await expect(otherPage.locator("body")).not.toContainText(complaint);
+    const denied = await otherPage.request.post(`${encounterUrl}/consultation`, {
+      maxRedirects: 0,
+      form: { chief_complaint: `Hijack ${stamp}` },
+    });
+    expect([401, 403, 404, 302, 303]).toContain(denied.status());
+    if (denied.status() === 302 || denied.status() === 303) {
+      expect(String(denied.headers().location || "")).not.toMatch(/updated=1/);
+    }
+    const unchanged = await client.query(
+      `SELECT status, subjective_text FROM activeclinic.consultation_notes WHERE encounter_id = $1`,
+      [encounterId]
+    );
+    expect(unchanged.rows[0].status).toBe("draft");
+    expect(unchanged.rows[0].subjective_text).toBe(complaint);
+    await other.close();
+    await page.goto(encounterUrl);
+    await page.locator("[data-ac-action='complete-encounter']:visible").click();
+    await expect(page).toHaveURL(/\/app\/clinical\?completed=1/);
+    const signed = await client.query(
+      `SELECT status, subjective_text, signed_at, signed_by_staff_id
+       FROM activeclinic.consultation_notes WHERE encounter_id = $1`,
+      [encounterId]
+    );
+    expect(signed.rowCount).toBe(1);
+    expect(signed.rows[0].status).toBe("signed");
+    expect(signed.rows[0].subjective_text).toBe(complaint);
+    expect(signed.rows[0].signed_at).toBeTruthy();
+    expect(signed.rows[0].signed_by_staff_id).toBeTruthy();
+    const stillQueued = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.pharmacy_prescriptions WHERE encounter_id = $1",
+      [encounterId]
+    );
+    expect(stillQueued.rows[0].n).toBe(0);
+    await page.goto(encounterUrl);
+    await expect(page.locator("body")).toContainText(complaint);
+    await expect(page.locator("[data-ac-action='save-draft']")).toHaveCount(0);
+    await client.end();
+  });
 });
 
 async function fillVisible(page, name, value) {

@@ -1,5 +1,7 @@
 # Database and migration dependencies
 
+G175 executed no migration. `platform.otp_challenges` is still absent, and `db/migrations/platform/048_otp_challenges.sql` was not added. Writes stayed on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`.
+
 G165 executed no migration. `platform.otp_challenges` is still absent, and `db/migrations/platform/048_otp_challenges.sql` was not added. Writes stayed on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`.
 
 G146 executed no migration. `platform.otp_challenges` is still absent, and `db/migrations/platform/048_otp_challenges.sql` was not added. Public `/healthz` `schemaCompatible=true` covers the V7 required checks only. It does not show migrations 043 or 044, and those two files remain applied only on `getpro_v13_e2e_g78d2301`. The hosted testing database was not contacted.

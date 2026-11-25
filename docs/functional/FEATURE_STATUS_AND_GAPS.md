@@ -1,5 +1,7 @@
 # Feature status and gaps
 
+G175 kept QA at NO-GO. Two safe runs each executed 572, passed 570, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 29 and BlessBoard 23. A clinician consultation draft is now signed through the encounter complete action, and a prescription without a catalogue id stays off the pharmacy queue. No migration was applied. No email was sent.
+
 G165 kept QA at NO-GO. Two safe runs each executed 572, passed 570, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 28 and BlessBoard 23. No migration was applied. No email was sent. Hosted QA was not deployed.
 
 G146 kept QA at NO-GO. Two safe runs each executed 571, passed 569, failed 0, and skipped 2. Two HTTP runs after the fixture-phone repair each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 26 and BlessBoard 23. Public `/healthz` on the pronline hosts showed `a8e6e688b084` during the read-only preflight. This cycle did not deploy. Resend domain verification was not observed.

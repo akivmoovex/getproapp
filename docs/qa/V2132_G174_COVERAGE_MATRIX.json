@@ -1,0 +1,40 @@
+{
+  "cycle": "G166-G175",
+  "branch": "V13",
+  "baseSha": "269c03c3259d27fe96bf074c19e03a6cc27b8c8f",
+  "productVersion": "2.13.2",
+  "database": "getpro_v13_e2e_g78d2301",
+  "host": "127.0.0.1",
+  "port": 55432,
+  "counts": {
+    "majorJourneysTotal": 38,
+    "majorJourneysBrowserCovered": 35,
+    "majorJourneysHttpCovered": 32,
+    "majorJourneysPersistenceVerified": 13,
+    "qaBugsMapped": 36,
+    "qaBugsVerified": 32,
+    "qaBugsBlocked": 4,
+    "p0Gaps": 0,
+    "p1Gaps": 1
+  },
+  "runs": {
+    "safeA": { "executed": 572, "passed": 570, "failed": 0, "skipped": 2 },
+    "safeB": { "executed": 572, "passed": 570, "failed": 0, "skipped": 2 },
+    "httpA": { "executed": 35, "passed": 32, "failed": 3, "skipped": 0 },
+    "httpB": { "executed": 35, "passed": 32, "failed": 3, "skipped": 0 },
+    "playwrightA": { "activeclinic": 29, "blessboard": 23, "failed": 0 },
+    "playwrightB": { "activeclinic": 29, "blessboard": 23, "failed": 0 }
+  },
+  "newTests": { "unit": 0, "contract": 0, "http": 0, "playwright": 1 },
+  "p1Gaps": [
+    {
+      "id": "AC-DISPENSE-STOCKED",
+      "status": "IMPLEMENTED_WITHOUT_SUCCESS_PATH",
+      "blocker": "No stock batch was seeded. A blank catalogue id stores a clinical order and zero pharmacy rows."
+    }
+  ],
+  "blockedGates": ["D14C", "D16", "D25_SLOT", "AC-FU-PORTAL-04"],
+  "hostedQaDeployed": false,
+  "realEmailSent": false,
+  "newMigrationsExecuted": false
+}
