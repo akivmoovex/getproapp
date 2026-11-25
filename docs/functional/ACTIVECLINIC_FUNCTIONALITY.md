@@ -1,6 +1,8 @@
 # ActiveClinic functionality
 
-Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. G120 left ActiveClinic Playwright at 20 of 20 on both runs. Public booking stays off. The appointment slot and overlap HTTP tests remain blocked.
+G138 left ActiveClinic Playwright at 22 of 22 on both runs. Staff-created portal activation, vitals correction, and published website text plus an authorized https image reference passed on the disposable database. Public booking stays off. Unknown public registration does not create a patient. Slot capacity remains `BLOCKED_APPROVAL_REQUIRED`. Same-staff overlap now passes inside the appointment transaction, including one winner from two concurrent clients. Production media upload was not enabled.
+
+Registration denial, password-reset replay, walk-in, vitals, disabled public booking, the website section heading, and the mint theme preview pass over HTTP and in the browser. G120 left ActiveClinic Playwright at 20 of 20 on both runs. Public booking stays off. The appointment slot HTTP test remains blocked.
 
 Product version 2.13.2 development candidate. QA is NO-GO. Statuses match `docs/qa/V13_G35_FINAL_REQUIREMENTS_MATRIX.md`. The healthcare brief is `SOURCE_UNAVAILABLE`.
 

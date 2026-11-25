@@ -1,6 +1,8 @@
 # QA acceptance checklist
 
-QA decision for this handoff is NO-GO. Safe tests passed 529 with 2 skipped. Two HTTP runs each left the same 4 blocked failures. Two Playwright runs each passed 43 of 43. Do not treat this build as ready for release while the OTP and appointment HTTP gates fail.
+QA decision for this handoff is NO-GO. Safe tests passed 559 with 2 skipped, of 561. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. Two Playwright cycles each passed 45 of 45, ActiveClinic 22 and BlessBoard 23. Do not treat this build as ready for release while the OTP and slot-capacity HTTP gates fail.
+
+QA decision for the G120 handoff was NO-GO. Safe tests passed 529 with 2 skipped. Two HTTP runs each left the same 4 blocked failures. Two Playwright runs each passed 43 of 43. Do not treat this build as ready for release while the OTP and appointment HTTP gates fail.
 
 A box may be checked only after an authorized run. Nothing below was executed in G37–G44. G82 executed the checked rows on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`. `NOT_RUN` is not a pass. A failed assertion stays unchecked.
 

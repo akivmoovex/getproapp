@@ -25,6 +25,7 @@ describe("D25 appointment contract", () => {
     assert.match(service, /if \(assignedStaffId\)/);
     assert.doesNotMatch(service, /FOR UPDATE/);
     assert.doesNotMatch(service, /slot_capacity|capacity_limit/);
+    assert.doesNotMatch(service, /evaluateSlotCapacity/);
   });
 
   it("keeps facility and organization scope on the create path", () => {

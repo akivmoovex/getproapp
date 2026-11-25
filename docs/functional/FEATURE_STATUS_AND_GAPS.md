@@ -1,5 +1,7 @@
 # Feature status and gaps
 
+G138 used `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432` only. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 22 and BlessBoard 23. Safe tests passed 559 of 561, with 2 skipped. QA is NO-GO. Hosted QA, binary media upload, public self-registration, and public booking are not claimed. D21-05 still has no capacity number.
+
 G65–G76 keep the G35 counts. A saved prescription now says when it is not on the pharmacy queue. The laboratory reference-rule page previews a rule and does not store it. Stored clinical thresholds, media enablement, and production OTP delivery remain unactivated.
 
 G82 ran the safe suite, the HTTP suite, and Playwright only against the disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`. Migrations 043 and 044 are applied on that disposable database only. Hosted QA, production, port 5432, and `getpro_v13_e2e_regression213101` were not migrated.

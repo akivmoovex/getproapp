@@ -3693,7 +3693,7 @@ const VERSIONS = Object.freeze([
       body:
         "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Staff-created patients can activate one existing portal record. Published website sections render new text and an authorized image reference. Version metadata is 2.13.2.",
       items: [
-        "Same-staff appointment overlap is locked inside the transaction",
+        "Same-staff appointment overlap is locked inside the transaction and one of two concurrent bookings is stored",
         "Vitals correction keeps the original observation",
         "Staff review keeps the patient phone used for portal activation",
         "Published website text and authorized image references stay separate from drafts",

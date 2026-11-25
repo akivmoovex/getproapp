@@ -443,14 +443,24 @@ async function createAppointment(db, input) {
     facilityIds: [facilityId],
   });
   if (!visible) {
-    await registrationRepo.insertFacilityLink(db, {
-      organizationId,
-      healthcareOrganizationId,
-      patientId,
-      facilityId,
-      relationshipType: "administrative_link",
-      status: "active",
-    });
+    try {
+      await registrationRepo.insertFacilityLink(db, {
+        organizationId,
+        healthcareOrganizationId,
+        patientId,
+        facilityId,
+        relationshipType: "administrative_link",
+        status: "active",
+      });
+    } catch (err) {
+      if (
+        !err ||
+        err.code !== "23505" ||
+        err.constraint !== "patient_facility_links_active_uidx"
+      ) {
+        throw err;
+      }
+    }
   }
 
   const service = await repo.findServiceTypeByOrgAndId(db, {
