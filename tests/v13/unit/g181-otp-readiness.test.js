@@ -92,9 +92,9 @@ describe("G181 OTP persistence readiness", () => {
     );
     assert.equal(verified.server.ok, true);
     assert.equal(verified.server.sessionComplete, false);
-    const completed = first.completeProtectedAction(verified, "auth.login");
+    const completed = await first.completeProtectedAction(verified, "auth.login");
     assert.equal(completed.sessionComplete, true);
-    const replay = first.completeProtectedAction(verified, "auth.login");
+    const replay = await first.completeProtectedAction(verified, "auth.login");
     assert.equal(replay.sessionComplete, false);
 
     const otherOrg = await createOtpService({ store, clock: () => now }).verifyChallenge(

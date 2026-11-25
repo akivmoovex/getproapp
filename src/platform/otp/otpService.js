@@ -10,7 +10,8 @@ const crypto = require("crypto");
 const { OTP_POLICY, CHANNELS, PRODUCTS } = require("./otpPolicy");
 const { getProtectedAction } = require("./otpProtectedActions");
 const { isFixedOtpPermitted, isProductionSignal } = require("./otpEnvironment");
-const { createMemoryOtpStore } = require("./otpChallengeStore");
+const { createMemoryOtpStore, createUnavailableOtpStore } = require("./otpChallengeStore");
+const { createPostgresOtpStore } = require("./otpPostgresStore");
 const { createInactiveOtpProvider, resolveOtpProvider } = require("./otpProviders");
 const { normalizeZambiaSms } = require("./otpPhone");
 const { sanitizeDelivery } = require("./otpDelivery");
@@ -95,7 +96,7 @@ function denied(reason) {
 
 function createOtpService(options) {
   const opts = options || {};
-  const store = opts.store || createMemoryOtpStore();
+  const store = selectOtpStore(opts);
   const provider = opts.provider || createInactiveOtpProvider();
   if (provider && provider.deliveryActivated === true) {
     throw new Error("otp_delivery_activation_forbidden");
@@ -108,6 +109,9 @@ function createOtpService(options) {
       delete safe.code;
       delete safe.otp;
       delete safe.codeHash;
+      delete safe.identifier;
+      delete safe.destination;
+      delete safe.pepper;
       opts.log(safe);
     }
     return row;
@@ -153,14 +157,19 @@ function createOtpService(options) {
 
     const now = nowMs(opts);
     const attemptId = crypto.randomUUID();
-    const existing = store.findPending({
-      productCode,
-      organizationId,
-      accountId,
-      purpose: action.purpose,
-      channel,
-      sessionId,
-    });
+    let existing;
+    try {
+      existing = await store.findPending({
+        productCode,
+        organizationId,
+        accountId,
+        purpose: action.purpose,
+        channel,
+        sessionId,
+      });
+    } catch {
+      return denied("store_unavailable");
+    }
     if (existing) {
       const elapsed = now - existing.lastSentAt;
       if (elapsed < OTP_POLICY.resendCooldownSeconds * 1000) {
@@ -189,7 +198,7 @@ function createOtpService(options) {
     for (const [key, cap] of limits) {
       let count;
       try {
-        count = store.consumeRate(key, now, HOUR_MS);
+        count = await store.consumeRate(key, now, HOUR_MS);
       } catch {
         return denied("rate_limit_unavailable");
       }
@@ -208,7 +217,11 @@ function createOtpService(options) {
     }
 
     if (existing) {
-      store.update(existing.id, { status: "cancelled" });
+      try {
+        await store.update(existing.id, { status: "cancelled" });
+      } catch {
+        return denied("store_unavailable");
+      }
     }
 
     let code;
@@ -218,7 +231,9 @@ function createOtpService(options) {
       return denied("generation_failed");
     }
     const codeHash = hashOtpCode(code, pepper);
-    const record = store.insert({
+    let record;
+    try {
+      record = await store.insert({
       id: crypto.randomUUID(),
       productCode,
       organizationId,
@@ -234,7 +249,11 @@ function createOtpService(options) {
       maxAttempts: OTP_POLICY.maxAttempts,
       createdAt: now,
       expiresAt: now + OTP_POLICY.ttlSeconds * 1000,
-    });
+      });
+    } catch (error) {
+      if (error && error.code === "otp_plaintext_rejected") throw error;
+      return denied("store_unavailable");
+    }
     audit({
       type: "otp.issued",
       reason: "issued",
@@ -309,15 +328,20 @@ function createOtpService(options) {
       return denied("wrong_purpose");
     }
 
-    const row = store.findByAttempt({
-      productCode,
-      organizationId: null,
-      accountId,
-      purpose: action.purpose,
-      channel,
-      attemptId,
-      sessionId,
-    });
+    let row;
+    try {
+      row = await store.findByAttempt({
+        productCode,
+        organizationId: null,
+        accountId,
+        purpose: action.purpose,
+        channel,
+        attemptId,
+        sessionId,
+      });
+    } catch {
+      return denied("store_unavailable");
+    }
     if (!row) return denied("verification_failed");
     if (row.organizationId !== organizationId || row.productCode !== productCode) {
       audit({ type: "otp.denied", reason: "cross_tenant", productCode, channel, action: input.action });
@@ -337,29 +361,42 @@ function createOtpService(options) {
     if (row.status === "exhausted") return denied("exhausted");
     if (row.status !== "pending") return denied("verification_failed");
     if (now >= row.expiresAt) {
-      store.update(row.id, { status: "expired" });
+      try {
+        await store.markExpired(row.id, now);
+      } catch {
+        return denied("store_unavailable");
+      }
       audit({ type: "otp.denied", reason: "expired", productCode, channel, action: input.action });
       return denied("expired");
     }
     if (row.attemptCount >= row.maxAttempts) {
-      store.update(row.id, { status: "exhausted" });
+      try {
+        await store.update(row.id, { status: "exhausted" });
+      } catch {
+        return denied("store_unavailable");
+      }
       return denied("exhausted");
     }
 
     const submitted = String((input && input.code) || "").trim();
     if (isProductionSignal(env) && submitted === OTP_POLICY.testingCode) {
-      store.update(row.id, { attemptCount: row.attemptCount + 1 });
+      try {
+        await store.recordFailedAttempt(row.id);
+      } catch {
+        return denied("store_unavailable");
+      }
       audit({ type: "otp.denied", reason: "testing_code_rejected", productCode, channel, action: input.action });
       return denied("testing_code_rejected");
     }
     const expected = hashOtpCode(submitted, pepper);
     if (!hashesEqual(expected, row.codeHash)) {
-      const next = row.attemptCount + 1;
-      const exhausted = next >= row.maxAttempts;
-      store.update(row.id, {
-        attemptCount: next,
-        status: exhausted ? "exhausted" : "pending",
-      });
+      let failed;
+      try {
+        failed = await store.recordFailedAttempt(row.id);
+      } catch {
+        return denied("store_unavailable");
+      }
+      const exhausted = !failed || failed.status === "exhausted" || failed.attemptCount >= failed.maxAttempts;
       audit({
         type: "otp.denied",
         reason: exhausted ? "exhausted" : "invalid_code",
@@ -370,7 +407,13 @@ function createOtpService(options) {
       return denied(exhausted ? "exhausted" : "invalid_code");
     }
 
-    store.update(row.id, { status: "verified", verifiedAt: now });
+    let verifiedRow;
+    try {
+      verifiedRow = await store.compareAndVerify(row.id, now);
+    } catch {
+      return denied("store_unavailable");
+    }
+    if (!verifiedRow) return denied("replay");
     audit({ type: "otp.verified", reason: "verified", productCode, channel, action: input.action });
     return {
       public: Object.freeze({ ok: true, status: "verified" }),
@@ -390,7 +433,7 @@ function createOtpService(options) {
     };
   }
 
-  function completeProtectedAction(verification, actionName) {
+  async function completeProtectedAction(verification, actionName) {
     const action = getProtectedAction(actionName);
     const server = verification && verification.server;
     if (!action || action.mandatory !== true || !server || server.ok !== true || server.reason !== "verified") {
@@ -399,22 +442,35 @@ function createOtpService(options) {
     if (server.action !== actionName || server.purpose !== action.purpose) {
       return { ok: false, sessionComplete: false, otpRequired: true, reason: "wrong_purpose" };
     }
-    const row = store.findByAttempt({
-      productCode: server.productCode,
-      organizationId: server.organizationId,
-      accountId: server.accountId,
-      purpose: server.purpose,
-      channel: verification.channel || undefined,
-      attemptId: server.attemptId,
-      sessionId: server.sessionId,
-    });
+    let row;
+    try {
+      row = await store.findByAttempt({
+        productCode: server.productCode,
+        organizationId: server.organizationId,
+        accountId: server.accountId,
+        purpose: server.purpose,
+        channel: verification.channel || undefined,
+        attemptId: server.attemptId,
+        sessionId: server.sessionId,
+      });
+    } catch {
+      return { ok: false, sessionComplete: false, otpRequired: true, reason: "store_unavailable" };
+    }
     if (!row || row.status !== "verified" || row.consumed === true) {
       return { ok: false, sessionComplete: false, otpRequired: true, reason: "otp_required" };
     }
     if (row.channel && verification.channel && row.channel !== verification.channel) {
       return { ok: false, sessionComplete: false, otpRequired: true, reason: "otp_required" };
     }
-    store.update(row.id, { consumed: true });
+    let consumed;
+    try {
+      consumed = await store.consumeVerified(row.id);
+    } catch {
+      return { ok: false, sessionComplete: false, otpRequired: true, reason: "store_unavailable" };
+    }
+    if (!consumed) {
+      return { ok: false, sessionComplete: false, otpRequired: true, reason: "replay" };
+    }
     return {
       ok: true,
       sessionComplete: true,
@@ -437,7 +493,7 @@ async function dispatchChallenge(provider, store, input) {
   if (name !== "inactive") {
     let count = 0;
     try {
-      count = store.consumeRate(`provider:${name}:${input.channel}`, input.now, HOUR_MS);
+      count = await store.consumeRate(`provider:${name}:${input.channel}`, input.now, HOUR_MS);
     } catch {
       return sanitizeDelivery({
         publicStatus: "failed",
@@ -478,6 +534,15 @@ async function dispatchChallenge(provider, store, input) {
       providerName: name,
     });
   }
+}
+
+function selectOtpStore(opts) {
+  if (opts.store) return opts.store;
+  if (opts.pool) return createPostgresOtpStore(opts.pool);
+  if (isProductionSignal(process.env) || isProductionSignal(opts.env || {})) {
+    return createUnavailableOtpStore();
+  }
+  return createMemoryOtpStore();
 }
 
 function nowMs(opts) {

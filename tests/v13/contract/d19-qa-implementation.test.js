@@ -40,7 +40,7 @@ describe("D19 QA implementation discovery", () => {
   it("points every integration file at a real gated runner", () => {
     const dir = path.join(ROOT, "tests/v13/integration");
     const files = fs.readdirSync(dir).filter((name) => name.endsWith(".integration.test.js"));
-    assert.equal(files.length, 19);
+    assert.equal(files.length, 20);
     for (const file of files) {
       const source = fs.readFileSync(path.join(dir, file), "utf8");
       assert.match(source, /runGated/);

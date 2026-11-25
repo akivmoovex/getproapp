@@ -1,5 +1,7 @@
 # Feature status and gaps
 
+G188 kept QA at NO-GO. Two safe runs each executed 582, passed 580, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed D14C, D16 platform OTP, and D25 slot capacity. One Playwright cycle passed ActiveClinic 30 and BlessBoard 23. A shared OTP repository is now in source. It is not applied to a database, and a production process does not fall back to a private memory store. No email was sent. No deployment was performed.
+
 G180 kept QA at NO-GO. Two safe runs each executed 573, passed 571, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 30 and BlessBoard 23. Stocked dispensing of a synthetic catalogue item now has unit, HTTP, browser, and persistence proof. The P1 stocked-dispense gap is closed. Slot capacity and platform OTP persistence stay blocked. Resend DNS for pronline.org was observed and the domain was not verified. No migration was applied. No email was sent. No deployment was performed.
 
 G175 kept QA at NO-GO. Two safe runs each executed 572, passed 570, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 29 and BlessBoard 23. A clinician consultation draft is now signed through the encounter complete action, and a prescription without a catalogue id stays off the pharmacy queue. No migration was applied. No email was sent.

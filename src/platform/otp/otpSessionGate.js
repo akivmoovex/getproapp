@@ -96,7 +96,7 @@ async function evaluateOtpSessionGate(input, env) {
     },
     source
   );
-  const completed = otp.completeProtectedAction(verified, workflow.action);
+  const completed = await otp.completeProtectedAction(verified, workflow.action);
   return {
     ok: completed.sessionComplete === true,
     sessionAllowed: completed.sessionComplete === true,

@@ -70,7 +70,7 @@ describe("D17 OTP behavior", () => {
     assert.notEqual(old.server.reason, "verified");
     const current = await first.verifyChallenge({ ...login(A), attemptId: next.server.attemptId, code: "1234" }, env);
     assert.equal(current.server.reason, "verified");
-    assert.equal(first.completeProtectedAction(current, "auth.password_recovery").sessionComplete, false);
+    assert.equal((await first.completeProtectedAction(current, "auth.password_recovery")).sessionComplete, false);
 
     const otherWorker = createOtpService({ clock: () => now });
     const lost = await otherWorker.verifyChallenge({ ...login(A), attemptId: next.server.attemptId, code: "1234" }, env);

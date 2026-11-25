@@ -1,5 +1,7 @@
 # Database and migration dependencies
 
+G188 executed no migration. The shared OTP repository is source only. `platform.otp_challenges` was not created, and `db/migrations/platform/048_otp_challenges.sql` was not added. The reviewed script remains `docs/qa/V2132_G181_OTP_CHALLENGES.sql`.
+
 G175 executed no migration. `platform.otp_challenges` is still absent, and `db/migrations/platform/048_otp_challenges.sql` was not added. Writes stayed on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`.
 
 G165 executed no migration. `platform.otp_challenges` is still absent, and `db/migrations/platform/048_otp_challenges.sql` was not added. Writes stayed on `getpro_v13_e2e_g78d2301` at `127.0.0.1:55432`.

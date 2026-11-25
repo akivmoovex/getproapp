@@ -141,9 +141,9 @@ describe("D14A shared OTP", () => {
     assert.equal(verified.server.reason, "verified");
     assert.equal(verified.server.sessionComplete, false);
     noCode(verified.public);
-    const completed = otp.completeProtectedAction(verified, "auth.login");
+    const completed = await otp.completeProtectedAction(verified, "auth.login");
     assert.equal(completed.sessionComplete, true);
-    assert.equal(otp.completeProtectedAction(verified, "auth.login").sessionComplete, false);
+    assert.equal((await otp.completeProtectedAction(verified, "auth.login")).sessionComplete, false);
     const replay = await otp.verifyChallenge(
       {
         action: "auth.login",
@@ -234,7 +234,7 @@ describe("D14A shared OTP", () => {
       env
     );
     assert.equal(expired.server.reason, "expired");
-    assert.equal(otp.completeProtectedAction(expired, "auth.password_recovery").sessionComplete, false);
+    assert.equal((await otp.completeProtectedAction(expired, "auth.password_recovery")).sessionComplete, false);
 
     const fresh = clockAt(1_700_000_000_000);
     const attempts = createOtpService({ clock: fresh.clock });
@@ -347,9 +347,9 @@ describe("D14A shared OTP", () => {
       env
     );
     assert.notEqual(withoutSession.server.sessionComplete, true);
-    const done = otp.completeProtectedAction(verified, "admin.role_change");
+    const done = await otp.completeProtectedAction(verified, "admin.role_change");
     assert.equal(done.sessionComplete, true);
-    assert.equal(otp.completeProtectedAction(verified, "admin.member_export").sessionComplete, false);
+    assert.equal((await otp.completeProtectedAction(verified, "admin.member_export")).sessionComplete, false);
   });
 
   it("rejects the testing code in production and refuses a test configuration at startup", async () => {
@@ -385,7 +385,7 @@ describe("D14A shared OTP", () => {
       productionEnv()
     );
     assert.equal(rejected.server.reason, "testing_code_rejected");
-    assert.equal(otp.completeProtectedAction(rejected, "auth.login").sessionComplete, false);
+    assert.equal((await otp.completeProtectedAction(rejected, "auth.login")).sessionComplete, false);
     for (const event of otp.store.audits()) {
       assert.equal(event.code, undefined);
       assert.equal(event.otp, undefined);

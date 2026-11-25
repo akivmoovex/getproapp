@@ -249,7 +249,7 @@ describe("D16 OTP security", () => {
       env
     );
     assert.equal(verified.server.reason, "verified");
-    assert.equal(logged.completeProtectedAction(verified, "admin.role_change").sessionComplete, false);
+    assert.equal((await logged.completeProtectedAction(verified, "admin.role_change")).sessionComplete, false);
     const replay = await logged.verifyChallenge(
       {
         action: "auth.login",

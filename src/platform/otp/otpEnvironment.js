@@ -10,6 +10,7 @@ const { resolveDeploymentProfileOrError } = require("../config/deploymentProfile
 const { OTP_POLICY, assertProductionPolicyImmutable } = require("./otpPolicy");
 
 const FIXED_CODE_FLAG = "GETPRO_OTP_ALLOW_FIXED_CODE";
+const PUBLISHED_TESTING_PEPPER = "g187-published-test-pepper-not-secret";
 
 function signal(source, name) {
   return String(source[name] || "")
@@ -71,6 +72,9 @@ function collectForbiddenProductionOtpSettings(env) {
   if (String(source.GETPRO_OTP_TEST_CODE || "").trim() === OTP_POLICY.testingCode) {
     forbidden.push("testing_code_value");
   }
+  if (String(source.GETPRO_OTP_PEPPER || "") === PUBLISHED_TESTING_PEPPER) {
+    forbidden.push("published_testing_pepper");
+  }
   for (const problem of assertProductionPolicyImmutable(source)) {
     forbidden.push(problem);
   }
@@ -81,6 +85,15 @@ function collectForbiddenProductionOtpSettings(env) {
  * Production boot must fail closed when a test OTP setting is present.
  * Does nothing outside production. Does not enable OTP delivery.
  */
+function publishedTestingPepper(env) {
+  if (isProductionSignal(env) || signal(env || {}, "NODE_ENV") === "production") {
+    const error = new Error("otp_test_pepper_forbidden");
+    error.code = "otp_test_pepper_forbidden";
+    throw error;
+  }
+  return PUBLISHED_TESTING_PEPPER;
+}
+
 function assertOtpProductionStartup(env) {
   const source = env || process.env;
   if (signal(source, "NODE_ENV") !== "production" && !isProductionSignal(source)) {
@@ -103,4 +116,5 @@ module.exports = {
   isFixedOtpPermitted,
   collectForbiddenProductionOtpSettings,
   assertOtpProductionStartup,
+  publishedTestingPepper,
 };
