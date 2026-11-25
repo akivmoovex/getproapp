@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+G218 classifies the Community Benefits acceptance rows in `docs/qa/community-benefits/G216_ACCEPTANCE_MATRIX.md`. Manual lookup and settlement remain partial. PostgreSQL persistence for the new tables is blocked. D14C, D16 platform OTP, and D25 slot capacity still fail.
+
 G215 maps 42 Community Benefits requirements from the source. Fourteen defects from the G210 implementation were fixed. The planned 190 scenarios were not executed. D14C, D16 platform OTP, and D25 slot capacity still fail. See `docs/qa/community-benefits/G215_FINAL_COVERAGE.json`.
 
 G210 maps the Community Benefits rules that were written in the implementation prompt. The v1.2 PDF was not in the workspace, so the planned figure of 190 was not turned into invented cases. The mapped source behavior is in `docs/qa/community-benefits/G209_COVERAGE_MATRIX.json`. Live posting and the new tables remain blocked. D14C, D16 platform OTP, and D25 slot capacity still fail.
