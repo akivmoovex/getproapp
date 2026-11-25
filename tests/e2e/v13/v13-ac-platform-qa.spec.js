@@ -695,6 +695,80 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.reload();
     await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveAttribute("src", imageSrc);
   });
+
+  test("AC-FU-REC-03 a new patient appears on the reception queue", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-REC-03");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    const stamp = Date.now();
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Queue");
+    await page.locator("input[name='last_name']").fill(`New${String(stamp).slice(-6)}`);
+    await page.locator("select[name='sex_at_registration']").selectOption("female");
+    await page.locator("input[name='date_of_birth']").fill("1994-04-04");
+    await page.locator("input[name='phone_national']").fill(`97${String(stamp).slice(-7)}`);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    expect(number).toMatch(/^AC-/);
+    await page.goto("/app/reception/walk-in");
+    const serviceId = await page.locator("select[name='service_point_id'] option").nth(1).getAttribute("value");
+    await page.locator("input[name='patient_number']").fill(number);
+    await page.locator("select[name='service_point_id']").selectOption(serviceId);
+    await page.locator("form[data-ac-form='reception-walk-in'] button[type='submit']").click();
+    await expect(page).toHaveURL(/\/app\/reception\/queue\//);
+    await expect(page.locator("body")).toContainText(number);
+  });
+
+  test("AC-FU-REC-04 an existing patient number checks in without a second chart", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-REC-04");
+    const number = required("E2E_AC_PATIENT_NUMBER");
+    const clinicKey = required("E2E_AC_CLINIC_KEY");
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    const scopedCount = `SELECT count(*)::int AS n
+         FROM activeclinic.patients p
+         JOIN platform.organizations o ON o.id = p.organization_id
+        WHERE p.patient_number = $1 AND o.organization_key = $2`;
+    const before = await client.query(scopedCount, [number, clinicKey]);
+    await page.goto("/app/reception/walk-in");
+    const serviceId = await page.locator("select[name='service_point_id'] option").nth(1).getAttribute("value");
+    await page.locator("input[name='patient_number']").fill(number);
+    await page.locator("select[name='service_point_id']").selectOption(serviceId);
+    await page.locator("form[data-ac-form='reception-walk-in'] button[type='submit']").click();
+    await expect.poll(async () => {
+      if (/\/app\/reception\/queue\//.test(page.url())) return "queued";
+      const text = await page.locator("body").innerText();
+      return text.includes("already has an active queue entry") ? "already" : "pending";
+    }).not.toBe("pending");
+    if (/\/app\/reception\/queue\//.test(page.url())) {
+      await expect(page.locator("body")).toContainText(number);
+    }
+    const after = await client.query(scopedCount, [number, clinicKey]);
+    await client.end();
+    expect(before.rows[0].n).toBeGreaterThan(0);
+    expect(after.rows[0].n).toBe(before.rows[0].n);
+  });
+
+  test("AC-FU-REC-05 clinical staff can open the practitioner worklist", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-REC-05");
+    await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
+    await page.goto("/app/clinical");
+    await expect(page.locator("body")).toContainText("Practitioner worklist");
+    await expect(page).not.toHaveURL(/\/login$/);
+  });
+
+  test("AC-FU-CLIN-01 the clinician worklist offers start encounter", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-CLIN-01");
+    await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
+    await page.goto("/app/clinical");
+    await expect(page.locator("a[href='/app/clinical/start-encounter']").first()).toBeVisible();
+    await expect(page.locator("[data-ac-action='start-encounter']").first()).toBeVisible();
+  });
 });
 
 async function fillVisible(page, name, value) {

@@ -23,8 +23,14 @@ const PROVIDER_CODE = Object.freeze({
   RATE_LIMITED: "rate_limited",
   REQUEST_REJECTED: "request_rejected",
   CONFIGURATION_ERROR: "configuration_error",
+  TIMEOUT: "timeout",
+  RETRY_EXHAUSTED: "retry_exhausted",
+  DUPLICATE: "duplicate_suppressed",
+  DOMAIN_NOT_VERIFIED: "domain_not_verified",
   UNKNOWN: "unknown_provider_error",
 });
+
+const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
 
 function maskEmail(value) {
   const s = String(value || "").trim().toLowerCase();
@@ -110,6 +116,21 @@ function emitSafeLog(log, fields) {
   });
 }
 
+function isTimeoutError(err) {
+  if (!err) return false;
+  const name = String(err.name || "");
+  const code = String(err.code || "");
+  return name === "TimeoutError" || name === "AbortError" || code === "ABORT_ERR" || code === "timeout";
+}
+
+function fromDomain(from) {
+  const raw = String(from || "").trim().toLowerCase();
+  const angled = raw.match(/<([^>]+)>/);
+  const email = angled ? angled[1] : raw;
+  const at = email.lastIndexOf("@");
+  return at > 0 ? email.slice(at + 1) : "";
+}
+
 function createResendAdapter(opts) {
   const options = opts && typeof opts === "object" ? opts : {};
   const apiKey = String(options.apiKey || "").trim();
@@ -117,6 +138,14 @@ function createResendAdapter(opts) {
   const replyTo = options.replyTo ? String(options.replyTo).trim() : "";
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const log = options.log;
+  const maxAttempts = Math.min(3, Math.max(1, Number(options.maxAttempts) || 1));
+  const enforceApprovedSender = options.enforceApprovedSender === true;
+  const verifiedDomains = new Set(
+    (Array.isArray(options.verifiedDomains) ? options.verifiedDomains : [])
+      .map((domain) => String(domain || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const seen = new Set();
 
   const configured =
     Boolean(apiKey) && Boolean(from) && typeof fetchImpl === "function";
@@ -137,6 +166,7 @@ function createResendAdapter(opts) {
           delivered: false,
           status: STATUS.SENDING_UNAVAILABLE,
           providerCode: PROVIDER_CODE.CONFIGURATION_ERROR,
+          reason: apiKey ? "configuration_error" : "missing_api_key",
         };
         emitSafeLog(log, {
           templateKey,
@@ -146,6 +176,41 @@ function createResendAdapter(opts) {
           providerCode: result.providerCode,
         });
         return result;
+      }
+
+      if (!EMAIL_RE.test(recipient)) {
+        const result = failedResult(PROVIDER_CODE.INVALID_RECIPIENT);
+        emitSafeLog(log, {
+          templateKey,
+          recipient,
+          idempotencyKey,
+          status: result.status,
+          providerCode: result.providerCode,
+        });
+        return result;
+      }
+
+      if (enforceApprovedSender && !verifiedDomains.has(fromDomain(from))) {
+        const result = failedResult(PROVIDER_CODE.DOMAIN_NOT_VERIFIED);
+        emitSafeLog(log, {
+          templateKey,
+          recipient,
+          idempotencyKey,
+          status: result.status,
+          providerCode: result.providerCode,
+        });
+        return result;
+      }
+
+      if (idempotencyKey && seen.has(idempotencyKey)) {
+        return {
+          sendingAvailable: true,
+          accepted: true,
+          delivered: false,
+          status: STATUS.QUEUED,
+          providerCode: PROVIDER_CODE.DUPLICATE,
+          duplicate: true,
+        };
       }
 
       const headers = {
@@ -165,19 +230,83 @@ function createResendAdapter(opts) {
       };
       if (replyTo) payload.reply_to = replyTo;
 
-      let response;
-      try {
-        const init = {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        };
-        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
-          init.signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+      let lastCode = PROVIDER_CODE.PROVIDER_UNAVAILABLE;
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        let response;
+        try {
+          const init = {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+          };
+          if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+            init.signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+          }
+          response = await fetchImpl(RESEND_EMAILS_URL, init);
+        } catch (err) {
+          lastCode = isTimeoutError(err) ? PROVIDER_CODE.TIMEOUT : PROVIDER_CODE.PROVIDER_UNAVAILABLE;
+          if (attempt < maxAttempts) continue;
+          const result = failedResult(
+            maxAttempts > 1 ? PROVIDER_CODE.RETRY_EXHAUSTED : lastCode,
+            { attempts: attempt }
+          );
+          emitSafeLog(log, {
+            templateKey,
+            recipient,
+            idempotencyKey,
+            status: result.status,
+            providerCode: result.providerCode,
+          });
+          return result;
         }
-        response = await fetchImpl(RESEND_EMAILS_URL, init);
-      } catch {
-        const result = failedResult(PROVIDER_CODE.PROVIDER_UNAVAILABLE);
+
+        const json = await readJsonObject(response);
+        const httpStatus = Number(response && response.status) || 0;
+        const ok = Boolean(response && response.ok) && httpStatus >= 200 && httpStatus < 300;
+        const providerMessageId = pickProviderMessageId(json);
+
+        if (ok && providerMessageId) {
+          if (idempotencyKey) seen.add(idempotencyKey);
+          const result = {
+            sendingAvailable: true,
+            accepted: true,
+            delivered: false,
+            status: STATUS.QUEUED,
+            providerCode: PROVIDER_CODE.RESEND,
+            providerMessageId,
+            attempts: attempt,
+          };
+          emitSafeLog(log, {
+            templateKey,
+            recipient,
+            idempotencyKey,
+            status: result.status,
+            providerCode: result.providerCode,
+            providerMessageId,
+          });
+          return result;
+        }
+
+        if (ok && !providerMessageId) {
+          const result = failedResult(PROVIDER_CODE.UNKNOWN, { attempts: attempt });
+          emitSafeLog(log, {
+            templateKey,
+            recipient,
+            idempotencyKey,
+            status: result.status,
+            providerCode: result.providerCode,
+          });
+          return result;
+        }
+
+        lastCode = classifyResendFailure(httpStatus, pickErrorName(json));
+        const retryable =
+          lastCode === PROVIDER_CODE.RATE_LIMITED || lastCode === PROVIDER_CODE.PROVIDER_UNAVAILABLE;
+        if (retryable && attempt < maxAttempts) continue;
+        const result = failedResult(
+          retryable && maxAttempts > 1 ? PROVIDER_CODE.RETRY_EXHAUSTED : lastCode,
+          { attempts: attempt }
+        );
         emitSafeLog(log, {
           templateKey,
           recipient,
@@ -187,53 +316,6 @@ function createResendAdapter(opts) {
         });
         return result;
       }
-
-      const json = await readJsonObject(response);
-      const httpStatus = Number(response && response.status) || 0;
-      const ok = Boolean(response && response.ok) && httpStatus >= 200 && httpStatus < 300;
-      const providerMessageId = pickProviderMessageId(json);
-
-      if (ok && providerMessageId) {
-        const result = {
-          sendingAvailable: true,
-          accepted: true,
-          delivered: false,
-          status: STATUS.QUEUED,
-          providerCode: PROVIDER_CODE.RESEND,
-          providerMessageId,
-        };
-        emitSafeLog(log, {
-          templateKey,
-          recipient,
-          idempotencyKey,
-          status: result.status,
-          providerCode: result.providerCode,
-          providerMessageId,
-        });
-        return result;
-      }
-
-      if (ok && !providerMessageId) {
-        const result = failedResult(PROVIDER_CODE.UNKNOWN);
-        emitSafeLog(log, {
-          templateKey,
-          recipient,
-          idempotencyKey,
-          status: result.status,
-          providerCode: result.providerCode,
-        });
-        return result;
-      }
-
-      const result = failedResult(classifyResendFailure(httpStatus, pickErrorName(json)));
-      emitSafeLog(log, {
-        templateKey,
-        recipient,
-        idempotencyKey,
-        status: result.status,
-        providerCode: result.providerCode,
-      });
-      return result;
     },
   });
 }

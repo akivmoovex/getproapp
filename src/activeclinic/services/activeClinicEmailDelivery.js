@@ -22,6 +22,7 @@ const {
   adapterNameFromEnv,
 } = require("../../platform/email/outboundEmailTransport");
 const { createResendAdapter } = require("../../platform/email/resendEmailAdapter");
+const { approvedSenderOptions } = require("../../platform/email/resendSenderCatalog");
 
 /** AC-preferred sender env keys (platform also accepts generic EMAIL_*). */
 const AC_SENDER_ENV_KEYS = Object.freeze({
@@ -96,6 +97,7 @@ function resolveActiveClinicEmailAdapter(env, deps) {
     replyTo: config.replyTo || null,
     fetchImpl: deps && deps.fetchImpl,
     log: deps && deps.log,
+    ...approvedSenderOptions(config.fromHeader, source),
   });
 }
 

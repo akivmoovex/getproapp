@@ -9,6 +9,7 @@ const {
   readResendSenderConfig,
 } = require("../../platform/email/outboundEmailTransport");
 const { createResendAdapter } = require("../../platform/email/resendEmailAdapter");
+const { approvedSenderOptions } = require("../../platform/email/resendSenderCatalog");
 
 const BB_SENDER_ENV_KEYS = Object.freeze({
   adapterKeys: ["BLESSBOARD_EMAIL_DELIVERY_ADAPTER", "EMAIL_DELIVERY_ADAPTER"],
@@ -67,6 +68,7 @@ function resolvePasswordResetEmailAdapter(env, deps) {
     replyTo: config.replyTo || null,
     fetchImpl: deps && deps.fetchImpl,
     log: deps && deps.log,
+    ...approvedSenderOptions(config.fromHeader, source),
   });
 }
 

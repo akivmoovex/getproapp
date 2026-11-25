@@ -9,6 +9,7 @@
 const { OTP_POLICY } = require("./otpPolicy");
 const { isFixedOtpPermitted, isProductionSignal } = require("./otpEnvironment");
 const { buildOtpMessage, deliverWithPolicy } = require("./otpDelivery");
+const { createResendOtpEmailTransport } = require("../email/resendOtpTransport");
 
 const UNAPPROVED_PROVIDERS = new Set([
   "twilio",
@@ -86,8 +87,12 @@ function adapterName(value) {
     .toLowerCase();
 }
 
-function createChannelAdapter(channel, configuredName, transport) {
+function createChannelAdapter(channel, configuredName, transport, env) {
   const name = adapterName(configuredName) || "unconfigured";
+  const sendTransport =
+    channel === "email" && name === "resend" && typeof transport !== "function"
+      ? createResendOtpEmailTransport(env)
+      : transport;
   return {
     name,
     channel,
@@ -103,7 +108,7 @@ function createChannelAdapter(channel, configuredName, transport) {
           retryable: false,
         };
       }
-      if (name !== "interface" || typeof transport !== "function") {
+      if ((name !== "interface" && name !== "resend") || typeof sendTransport !== "function") {
         return {
           ok: false,
           reason: "provider_not_configured",
@@ -122,11 +127,13 @@ function createChannelAdapter(channel, configuredName, transport) {
         };
       }
       const message = buildOtpMessage(input && input.code);
-      const response = await transport({
+      const response = await sendTransport({
         channel,
         destination: input.destination,
         subject: message.subject,
         text: message.text,
+        productCode: input.productCode,
+        idempotencyKey: input.idempotencyKey,
         timeoutMs: OTP_POLICY.deliveryTimeoutMs,
         attempt: input.attempt,
       });
@@ -147,7 +154,8 @@ function createConfigurableOtpProvider(env, deps) {
   const email = createChannelAdapter(
     "email",
     source.GETPRO_OTP_EMAIL_PROVIDER,
-    options.emailTransport
+    options.emailTransport,
+    source
   );
   const sms = createChannelAdapter(
     "sms",
@@ -183,7 +191,13 @@ function resolveOtpProvider(env, deps) {
     if (!isFixedOtpPermitted(env) || isProductionSignal(env)) return createInactiveOtpProvider();
     return createFakeOtpProvider();
   }
-  if (requested === "interface") return createConfigurableOtpProvider(env, deps);
+  if (requested === "interface" || requested === "resend") {
+    const source = { ...(env || {}) };
+    if (requested === "resend" && !adapterName(source.GETPRO_OTP_EMAIL_PROVIDER)) {
+      source.GETPRO_OTP_EMAIL_PROVIDER = "resend";
+    }
+    return createConfigurableOtpProvider(source, deps);
+  }
   return createInactiveOtpProvider();
 }
 

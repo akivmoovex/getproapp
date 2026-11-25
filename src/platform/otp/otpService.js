@@ -253,6 +253,8 @@ function createOtpService(options) {
       code,
       env,
       now,
+      productCode,
+      idempotencyKey: attemptId,
       cap: isProductionSignal(env)
         ? OTP_POLICY.providerHourlyCap
         : Number(opts.providerHourlyCap) || OTP_POLICY.providerHourlyCap,
@@ -465,6 +467,8 @@ async function dispatchChallenge(provider, store, input) {
       destination: input.destination,
       code: input.code,
       env: input.env,
+      productCode: input.productCode,
+      idempotencyKey: input.idempotencyKey,
     });
     return sanitizeDelivery(raw);
   } catch {

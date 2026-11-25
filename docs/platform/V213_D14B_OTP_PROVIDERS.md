@@ -8,8 +8,10 @@ BlessBoard and ActiveClinic keep the single OTP engine from D14A. Delivery is a 
 
 | Variable | Meaning |
 |---|---|
-| `GETPRO_OTP_PROVIDER` | `inactive` (default), `fake` (verified testing only), or `interface` |
-| `GETPRO_OTP_EMAIL_PROVIDER` | `interface`, or unset. A commercial name is refused |
+| `GETPRO_OTP_PROVIDER` | `inactive` (default), `fake` (verified testing only), `interface`, or `resend` |
+| `GETPRO_OTP_EMAIL_PROVIDER` | `interface`, `resend`, or unset. Any other commercial name is refused |
+| `RESEND_API_KEY` | Sending-only key. Read at send time. Never logged and never stored in git |
+| `GETPRO_RESEND_VERIFIED_DOMAINS` | Comma-separated domains the operator has confirmed in Resend. Empty means none |
 | `GETPRO_OTP_SMS_GATEWAY` | `interface`, or unset. A commercial name is refused |
 | `GETPRO_OTP_ALLOW_FIXED_CODE` | Required with the rest of the D14A testing identity before `fake` is used |
 
@@ -27,6 +29,8 @@ API keys may exist in the process environment for a future adapter. This build d
 | SMS interface | Same, and only for a Zambia `+260` E.164 number |
 
 Commercial names, including Twilio, Infobip, Africa's Talking, Zamtel, MTN, Airtel, SES, SendGrid, Mailgun, Postmark, and SMTP, return `provider_not_selected`. No SDK is loaded.
+
+Resend is the email delivery adapter only. `GETPRO_OTP_PROVIDER=resend` selects it when the email provider name is empty. It calls `https://api.resend.com/emails` with native fetch. It does not create, store, or verify an OTP challenge. A send requires `RESEND_API_KEY` and the product domain in `GETPRO_RESEND_VERIFIED_DOMAINS`. The catalog domains are `notify.blessboard.com`, `notify.activeclinic.org`, and `notify.pronline.org`. NEUniversity returns `not_configured`. An unverified catalog domain returns `domain_not_verified` and does not call the network. Production OTP activation stays blocked while `platform.otp_challenges` is absent.
 
 ## Delivery behaviour
 

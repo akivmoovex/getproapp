@@ -1,5 +1,7 @@
 # Shared platform functionality
 
+G141 adds a Resend email transport on the existing OTP provider interface. It does not create `platform.otp_challenges`. Production OTP stays blocked. Catalog domains stay unverified until `GETPRO_RESEND_VERIFIED_DOMAINS` lists them. No email was sent.
+
 Shared OTP persistence stays blocked because `platform.otp_challenges` is not authorized. Slot capacity stays unimplemented. Same-staff overlap is now rechecked inside the appointment transaction. G120 did not create the OTP table, and this candidate still does not add that migration file. BlessBoard member recovery uses the existing phone verification store and a testing-only delivery read. A church path now selects that church instead of keeping an earlier session church.
 
 Both products use the same session, CSRF, OTP, organisation, and job services. Product version is 2.13.2 in `src/platform/build/applicationBuildInfo.js`. QA is NO-GO. G65–G82 did not change OTP delivery, CSRF, or tenant isolation. Production OTP delivery stays inactive. `platform.otp_challenges` is still absent by contract. G82 did not add that migration. The local-browser domain exception accepts `local.test` only when the profile is `testing`, the host is `127.0.0.1`, `NODE_ENV` is `test`, and `GETPRO_V13_BROWSER_AUTHORIZED` is `1`. Production profiles stay refused.

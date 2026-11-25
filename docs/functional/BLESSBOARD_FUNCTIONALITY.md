@@ -1,5 +1,7 @@
 # BlessBoard functionality
 
+G141 ran BlessBoard Playwright twice. Each run passed 23 of 23. Resend is wired as a delivery adapter and was not connected. The platform OTP table remains a blocked HTTP gate.
+
 G138 ran BlessBoard Playwright twice. Each run passed 23 of 23. Production media upload stays off. The platform OTP table remains a blocked HTTP gate. ActiveClinic slot capacity remains a separate blocked gate. Same-staff appointment overlap is no longer that blocked gate.
 
 The BlessBoard HTTP regressions passed, including theme publish and the disabled media upload. Two browser runs each passed 23 of 23, including member login on the church path, website-editor invitation, and member recovery. Production media upload stays off. The platform OTP table and the ActiveClinic slot-capacity test remain separate blocked HTTP gates.

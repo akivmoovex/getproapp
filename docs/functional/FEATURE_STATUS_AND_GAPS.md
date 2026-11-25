@@ -1,5 +1,7 @@
 # Feature status and gaps
 
+G141 kept the disposable database `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432`. Two safe runs each executed 569, passed 567, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 26 and BlessBoard 23. Resend email transport is implemented and was not connected. No email was sent. QA is NO-GO.
+
 G138 used `getpro_v13_e2e_g78d2301` on `127.0.0.1:55432` only. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 22 and BlessBoard 23. Safe tests passed 559 of 561, with 2 skipped. QA is NO-GO. Hosted QA, binary media upload, public self-registration, and public booking are not claimed. D21-05 still has no capacity number.
 
 G65–G76 keep the G35 counts. A saved prescription now says when it is not on the pharmacy queue. The laboratory reference-rule page previews a rule and does not store it. Stored clinical thresholds, media enablement, and production OTP delivery remain unactivated.
