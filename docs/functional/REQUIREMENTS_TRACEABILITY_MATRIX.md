@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+G210 maps the Community Benefits rules that were written in the implementation prompt. The v1.2 PDF was not in the workspace, so the planned figure of 190 was not turned into invented cases. The mapped source behavior is in `docs/qa/community-benefits/G209_COVERAGE_MATRIX.json`. Live posting and the new tables remain blocked. D14C, D16 platform OTP, and D25 slot capacity still fail.
+
 G180 kept the original 16 regressions passing in the browser. D14C, D16 platform OTP, and D25 slot capacity still fail. Same-staff overlap passed on two concurrent clients in both HTTP runs. A synthetic catalogue prescription is now dispensed once in HTTP and in the browser, with the quantity, movement, and prescription row read back. A prescription without a catalogue id still creates no pharmacy row. Thirty-two historical QA bugs stay verified and four stay blocked. See `docs/qa/V2132_G176_FINAL_COVERAGE_AUDIT.md`.
 
 G175 kept the original 16 regressions passing in the browser. D14C, D16 platform OTP, and D25 slot capacity still fail. Same-staff overlap passed on two concurrent clients in both HTTP runs. A clinician now saves, isolates, and signs a consultation note in the browser, and a prescription without a catalogue id does not create a pharmacy row. See `docs/qa/V2132_G167_COMPLETE_BUG_MATRIX.md`.

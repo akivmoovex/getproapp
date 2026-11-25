@@ -306,6 +306,10 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicPatientRoutes(app, { getPool, env, isProduction });
   registerActiveClinicAppointmentRoutes(app, { getPool, env, isProduction });
   registerActiveClinicReceptionRoutes(app, { getPool, env, isProduction });
+  const {
+    registerCommunityBenefitsRoutes,
+  } = require("../communityBenefits/routes");
+  registerCommunityBenefitsRoutes(app, { env, isProduction, allowTestActor: false });
   registerActiveClinicBookingLinkageRoutes(app, { getPool, env, isProduction });
   registerActiveClinicContactInquiryRoutes(app, { getPool, env, isProduction });
   registerActiveClinicClinicalRoutes(app, { getPool, env, isProduction });

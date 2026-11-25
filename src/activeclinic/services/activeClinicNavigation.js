@@ -338,6 +338,18 @@ function buildActiveClinicNavigation(permissions, activeKey, options) {
         : options.activeDepartmentTypes;
     items = filterNavItemsByDepartments(items, types);
   }
+  const { communityBenefitsEnabled } = require("../communityBenefits/flags");
+  if (communityBenefitsEnabled(options && options.env) && set.has("activeclinic.reception.view")) {
+    items.push({
+      key: "community_check_in",
+      label: "Community Check-in",
+      href: "/app/reception/community-check-in",
+      permission: "activeclinic.reception.view",
+      icon: "qr_code_scanner",
+      slot: "operations",
+      current: activeKey === "community_check_in",
+    });
+  }
   items = sortNavItemsByAdminConsoleSlot(items);
   const groups = groupNavItemsByAdminConsoleSlot(items);
 
@@ -360,6 +372,7 @@ function matchActiveNavKey(pathname) {
   if (path === "/app" || path === "/app/") return "home";
   if (path.startsWith("/app/patients")) return "patients";
   if (path.startsWith("/app/appointments")) return "appointments";
+  if (path.startsWith("/app/reception/community-check-in")) return "community_check_in";
   if (path.startsWith("/app/reception")) return "reception";
   if (path.startsWith("/app/booking-requests")) return "booking_requests";
   if (path.startsWith("/app/operations/contact-inquiries")) return "contact_inquiries";
