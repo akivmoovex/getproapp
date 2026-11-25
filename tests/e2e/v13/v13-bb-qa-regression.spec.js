@@ -418,9 +418,12 @@ test.describe("V13 BB QA browser regression", () => {
     await expect(page.locator("form[data-bb-hq-add-member-form] input[name='phone']")).toHaveAttribute("required", "");
     await expect(page.locator("form[data-bb-hq-add-member-form] select[name='branch_id']")).toHaveAttribute("required", "");
     await expect(page.getByText("Portal activation remains pending after creation.")).toBeVisible();
-    const name = `D04 Browser Member ${Date.now()}`;
+    const stamp = Date.now();
+    const name = `D04 Browser Member ${stamp}`;
+    const email = `mem-${stamp}@v13d19.example`;
     await page.locator("input[name='full_name']").fill(name);
-    await page.locator("input[name='phone']").fill(`+26097${String(Date.now()).slice(-7)}`);
+    await page.locator("input[name='email']").fill(email);
+    await page.locator("input[name='phone']").fill(`+26097${String(stamp).slice(-7)}`);
     await page.locator("input[name='address_line_1']").fill("1 Test Road");
     await page.locator("select[name='marital_status']").selectOption("single");
     await page.locator("input[name='next_of_kin_name']").fill("Kin Person");
@@ -432,8 +435,25 @@ test.describe("V13 BB QA browser regression", () => {
     await page.getByRole("button", { name: "Create member" }).click();
     await expect(page.getByText(name)).toBeVisible();
     await expect(page.getByText("not_activated", { exact: true })).toBeVisible();
-    await page.goto("/hq/members");
-    await expect(page.getByText(name).first()).toBeVisible();
+    const churchId = (await page.locator(".bb-v204-m01__church-id").innerText()).trim();
+    expect(churchId).toMatch(/^CH-/);
+    await page.getByRole("link", { name: "View member" }).click();
+    await expect(page.locator("body")).toContainText(email);
+    await page.reload();
+    await expect(page.locator("body")).toContainText(String(stamp));
+    await page.goto(`/hq/members?q=${encodeURIComponent(String(stamp))}`);
+    await expect(page.locator("body")).toContainText(String(stamp));
+    await page.goto("/hq/members?q=NoSuchMember999999");
+    await expect(page.locator("body")).not.toContainText(email);
+    const fresh = await page.locator("form[data-bb-hq-logout='1'] input[name='_csrf']").first().inputValue();
+    const loggedOut = await page.request.post("/hq/logout", {
+      maxRedirects: 0,
+      form: { _csrf: fresh },
+    });
+    expect([302, 303]).toContain(loggedOut.status());
+    await page.goto("/hq/members/new");
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.locator("form[data-bb-hq-add-member-form]")).toHaveCount(0);
   });
 
   test("BB-MEM-02 HQ member registration rejects a missing CSRF token and accepts the shell token", async ({ page }, testInfo) => {
@@ -690,6 +710,7 @@ test.describe("V13 BB QA browser regression", () => {
     await expect(page.locator("body")).not.toContainText(filename);
     await expect(page.locator("body")).not.toContainText(title);
   });
+
 });
 
 async function fillVisible(page, name, value) {

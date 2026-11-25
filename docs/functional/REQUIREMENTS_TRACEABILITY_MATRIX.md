@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+G165 kept the original 16 regressions passing in the browser on the disposable database. D14C, D16 platform OTP, and D25 slot capacity still fail. Same-staff overlap passed on two concurrent clients in both HTTP runs. Patient search, staff duplicate phone search, and member directory search were added to the browser proof. See `docs/qa/V2132_G152_ALL_QA_BUG_COVERAGE.md`.
+
 G138 kept the original 16 regressions passing on the disposable database. The OTP table and D25 slot capacity remain separate blocked gates. Same-staff overlap passed on two concurrent clients. See `docs/qa/V2132_G138_QA_READINESS.md`.
 
 The original 16 regressions are 16 VERIFIED_E2E. BB-AUTH-04 now passes in the browser through the testing delivery read, and the page does not show the code. None of those 16 are blocked. The OTP table and the slot-capacity test are separate blocked gates. See `docs/qa/V13_G119_ACCEPTANCE_MATRIX.md`.

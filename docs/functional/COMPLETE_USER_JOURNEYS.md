@@ -1,6 +1,6 @@
 # Complete user journeys
 
-The executed journeys that pass in the browser include registration denial, password-reset replay, disabled booking, walk-in, vitals, clinic section publish, clinic theme publish, church registration, members, member login, staff invitation, member recovery, sermons, events, announcements, church theme publish, and directory contact. Apex `/member/login` still has no church context. The church path `/c/{organizationKey}/member/login` is the supported portal when no tenant host is configured.
+G165 browser journeys that pass include patient number search with logout, staff phone search that keeps a single chart, and member directory search with HQ logout. The executed journeys that pass in the browser include registration denial, password-reset replay, disabled booking, walk-in, vitals, clinic section publish, clinic theme publish, church registration, members, member login, staff invitation, member recovery, sermons, events, announcements, church theme publish, and directory contact. Apex `/member/login` still has no church context. The church path `/c/{organizationKey}/member/login` is the supported portal when no tenant host is configured.
 
 Verification for every journey is `IMPLEMENTED_UNVERIFIED` or the more specific status in the traceability matrix, unless [FEATURE_STATUS_AND_GAPS.md](FEATURE_STATUS_AND_GAPS.md) records a G82 class. G37–G44 did not execute HTTP or browser journeys. G82 did, only on `getpro_v13_e2e_g78d2301`. A journey that is not named in that G82 table was not promoted.
 

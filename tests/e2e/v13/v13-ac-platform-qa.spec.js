@@ -769,6 +769,86 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.locator("a[href='/app/clinical/start-encounter']").first()).toBeVisible();
     await expect(page.locator("[data-ac-action='start-encounter']").first()).toBeVisible();
   });
+
+  test("G165 patient search reads the new chart back and logout closes it", async ({ page }, testInfo) => {
+    hold(testInfo, "G165 AC search logout");
+    const stamp = Date.now();
+    const lastName = `Find${String(stamp).slice(-6)}`;
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Search");
+    await page.locator("input[name='last_name']").fill(lastName);
+    await page.locator("select[name='sex_at_registration']").selectOption("female");
+    await page.locator("input[name='date_of_birth']").fill("1993-03-03");
+    await page.locator("input[name='phone_national']").fill(`97${String(stamp).slice(-7)}`);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    expect(number).toMatch(/^AC-/);
+    await page.goto(`/app/patients?patient_number=${encodeURIComponent(number)}`);
+    await expect(page.locator("body")).toContainText(number);
+    await expect(page.locator("body")).toContainText(lastName);
+    await page.goto(`/app/patients/${encodeURIComponent(number)}`);
+    await expect(page.locator("body")).toContainText(number);
+    await page.reload();
+    await expect(page.locator("body")).toContainText(number);
+    await page.goto("/app/patients?patient_number=AC-1999-000000");
+    await expect(page.locator("body")).not.toContainText(number);
+    await page.goto("/logout");
+    await page.goto("/app/patients");
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.locator("body")).not.toContainText(number);
+  });
+
+  test("G165 staff phone search finds the existing chart and does not create another", async ({ page }, testInfo) => {
+    hold(testInfo, "G165 AC duplicate find");
+    const stamp = Date.now();
+    const lastName = `Dup${String(stamp).slice(-6)}`;
+    const phone = `97${String(stamp).slice(-7)}`;
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Duplicate");
+    await page.locator("input[name='last_name']").fill(lastName);
+    await page.locator("select[name='sex_at_registration']").selectOption("male");
+    await page.locator("input[name='date_of_birth']").fill("1988-08-08");
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    expect(number).toMatch(/^AC-/);
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    const before = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.patients WHERE patient_number = $1",
+      [number]
+    );
+    expect(before.rows[0].n).toBe(1);
+    await page.goto("/app/patients/new");
+    await page.locator("input[name='find_phone']").fill(phone);
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page.locator("[data-ac-find-matches='1']")).toContainText(number);
+    await expect(page.locator("[data-ac-find-matches='1']")).toContainText(lastName);
+    await page.locator("[data-ac-find-matches='1'] a", { hasText: "Open patient" }).click();
+    await expect(page.locator("body")).toContainText(number);
+    await page.reload();
+    await expect(page.locator("body")).toContainText(number);
+    await page.goto("/app/patients/new");
+    await page.locator("input[name='find_phone']").fill("960000000");
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page.locator("[data-ac-find-matches='1']")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(number);
+    const after = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.patients WHERE patient_number = $1",
+      [number]
+    );
+    expect(after.rows[0].n).toBe(1);
+    await client.end();
+  });
 });
 
 async function fillVisible(page, name, value) {

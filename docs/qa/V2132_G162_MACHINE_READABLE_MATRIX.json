@@ -1,0 +1,54 @@
+{
+  "cycle": "G150-G165",
+  "branch": "V13",
+  "baseSha": "3e695871c5801a2225c93f574abad5143b494473",
+  "productVersion": "2.13.2",
+  "database": "getpro_v13_e2e_g78d2301",
+  "host": "127.0.0.1",
+  "port": 55432,
+  "counts": {
+    "routesRepresented": 38,
+    "majorJourneysTotal": 38,
+    "majorJourneysBrowserCovered": 34,
+    "majorJourneysHttpCovered": 32,
+    "majorJourneysPersistenceVerified": 12,
+    "qaBugsTotal": 36,
+    "qaBugsCovered": 32,
+    "qaBugsBlocked": 4,
+    "criticalSecurityGatesTotal": 8,
+    "criticalSecurityGatesVerified": 7
+  },
+  "runs": {
+    "safeA": { "executed": 572, "passed": 570, "failed": 0, "skipped": 2 },
+    "safeB": { "executed": 572, "passed": 570, "failed": 0, "skipped": 2 },
+    "httpA": { "executed": 35, "passed": 32, "failed": 3, "skipped": 0 },
+    "httpB": { "executed": 35, "passed": 32, "failed": 3, "skipped": 0 },
+    "playwrightA": { "activeclinic": 28, "blessboard": 23, "failed": 0 },
+    "playwrightB": { "activeclinic": 28, "blessboard": 23, "failed": 0 }
+  },
+  "newTests": {
+    "unit": 0,
+    "contract": 0,
+    "http": 0,
+    "playwright": 2,
+    "security": 0,
+    "concurrency": 0
+  },
+  "blockedGates": [
+    { "id": "D14C", "status": "FAIL", "reason": "platform.otp_challenges absent" },
+    { "id": "D16", "status": "FAIL", "reason": "platform.otp_challenges absent" },
+    { "id": "D25_SLOT", "status": "FAIL", "reason": "BLOCKED_APPROVAL_REQUIRED" },
+    { "id": "D25_OVERLAP", "status": "PASS", "reason": "two-client proof both HTTP runs" }
+  ],
+  "p1Gaps": [
+    { "id": "AC-SIGN", "status": "IMPLEMENTED_WITHOUT_BROWSER_TEST", "blocker": "consultation note fixture not created" },
+    { "id": "AC-DISPENSE", "status": "IMPLEMENTED_WITHOUT_BROWSER_TEST", "blocker": "no stock batch seeded; denial is covered" }
+  ],
+  "policyBlockers": ["public self-registration", "public booking", "binary media upload", "slot capacity"],
+  "migrationBlockers": ["platform.otp_challenges", "048_otp_challenges.sql not authorized"],
+  "externalBlockers": ["RESEND_ACCOUNT_NOT_CONNECTED", "RESEND_API_KEY absent", "live email not authorized"],
+  "hostedQaDeployed": false,
+  "productionTouched": false,
+  "realEmailSent": false,
+  "newMigrationsExecuted": false
+}
