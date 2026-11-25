@@ -975,8 +975,12 @@ async function dispensePrescription(pool, input) {
       // Load batch.
       const batchResult = await client.query(
         `SELECT * FROM activeclinic.inventory_batches
-         WHERE id = $1 AND healthcare_organization_id = $2 AND organization_id = $3`,
-        [batchId, prescription.healthcareOrganizationId, organizationId]
+         WHERE id = $1
+           AND healthcare_organization_id = $2
+           AND organization_id = $3
+           AND facility_id = $4
+         FOR UPDATE`,
+        [batchId, prescription.healthcareOrganizationId, organizationId, prescription.facilityId]
       );
 
       if (batchResult.rows.length === 0) {

@@ -964,6 +964,72 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.locator("[data-ac-action='save-draft']")).toHaveCount(0);
     await client.end();
   });
+
+  test("G177 pharmacist dispenses stocked synthetic inventory once", async ({ page }, testInfo) => {
+    hold(testInfo, "G177 stocked dispense");
+    const { Pool, Client } = require("pg");
+    const { provisionSyntheticStockedDispense } = require("../../v13/fixtures/v13SyntheticStockFixture");
+    const pool = createAuthorizedPgClient(process.env, (options) => new Pool(options));
+    let prepared;
+    try {
+      prepared = await provisionSyntheticStockedDispense(pool, {
+        password: required("E2E_AC_ADMIN_PASSWORD"),
+        env: process.env,
+      });
+    } finally {
+      await pool.end();
+    }
+    const client = createAuthorizedPgClient(process.env, (options) => new Client(options));
+    await client.connect();
+    try {
+      const readQuantity = async () => {
+        const row = await client.query(
+          "SELECT current_quantity FROM activeclinic.inventory_items WHERE id = $1",
+          [prepared.inventoryItemId]
+        );
+        return Number(row.rows[0].current_quantity);
+      };
+      const starting = await readQuantity();
+      expect(starting).toBe(5);
+      await staffSignIn(page, prepared.receptionistEmail, required("E2E_AC_RECEPTIONIST_PASSWORD"));
+      await expect(page).not.toHaveURL(/\/login$/);
+      const denied = await page.request.get(
+        `/app/pharmacy/prescriptions/${prepared.prescriptionId}/dispense`,
+        { maxRedirects: 0 }
+      );
+      expect([401, 403]).toContain(denied.status());
+      expect(await readQuantity()).toBe(starting);
+      await page.context().clearCookies();
+      await staffSignIn(page, prepared.pharmacistEmail, required("E2E_AC_ADMIN_PASSWORD"));
+      await expect(page).not.toHaveURL(/\/login$/);
+      const dispenseUrl = `/app/pharmacy/prescriptions/${prepared.prescriptionId}/dispense`;
+      await page.goto("/app/select-facility");
+      if (await page.locator("#facility_id").count()) {
+        await page.locator("#facility_id").selectOption(prepared.facilityId);
+        await page.locator("form[data-ac-form='select-facility'] button[type='submit']").click();
+      }
+      await page.goto(dispenseUrl);
+      await expect(page.locator("body")).toContainText(prepared.genericName);
+      await page.locator(`#quantity_${prepared.itemId}`).fill("2");
+      await page.locator(`#batch_${prepared.itemId}`).selectOption(prepared.batchId);
+      await page.getByRole("button", { name: "Continue to confirmation" }).click();
+      await page.getByRole("button", { name: "Confirm dispense" }).click();
+      await expect(page.getByRole("heading", { level: 1, name: "Dispensing completed" })).toBeVisible();
+      expect(await readQuantity()).toBe(starting - 2);
+      const movements = await client.query(
+        `SELECT count(*)::int AS n
+           FROM activeclinic.stock_movements
+          WHERE inventory_item_id = $1
+            AND movement_type = 'dispense_decrement'`,
+        [prepared.inventoryItemId]
+      );
+      expect(movements.rows[0].n).toBe(1);
+      await page.goto(dispenseUrl);
+      expect(await readQuantity()).toBe(starting - 2);
+    } finally {
+      await client.end();
+    }
+  });
 });
 
 async function fillVisible(page, name, value) {

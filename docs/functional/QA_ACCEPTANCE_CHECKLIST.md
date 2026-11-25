@@ -1,5 +1,7 @@
 # QA acceptance checklist
 
+QA decision for the G180 handoff is NO-GO. Two safe runs each executed 573, passed 571, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed in both HTTP runs. Two Playwright cycles each passed ActiveClinic 30 and BlessBoard 23. Stocked synthetic dispensing passed in HTTP and in the browser, including one stock movement and a rejected second-facility batch. The evidence is `docs/qa/V2132_G180_FINAL_QA_HANDOFF.md`.
+
 QA decision for the G175 handoff is NO-GO. Two safe runs each executed 572, passed 570, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed in both HTTP runs. Two Playwright cycles each passed ActiveClinic 29 and BlessBoard 23. The evidence is `docs/qa/V2132_G175_FINAL_QA_HANDOFF.md`.
 
 QA decision for the G165 handoff was NO-GO. Two safe runs each executed 572, passed 570, failed 0, and skipped 2. Two HTTP runs each executed 35, passed 32, and failed 3: D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed in both HTTP runs. Two Playwright cycles each passed ActiveClinic 28 and BlessBoard 23. The evidence is `docs/qa/V2132_G165_EXHAUSTIVE_QA_HANDOFF.md`.

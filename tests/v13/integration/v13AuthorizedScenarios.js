@@ -741,6 +741,160 @@ async function runG03Laboratory(pool) {
   assert.equal(missing.code, RESULT.REQUEST_NOT_FOUND);
 }
 
+async function quantityOf(pool, inventoryItemId) {
+  const row = await pool.query(
+    `SELECT current_quantity
+       FROM activeclinic.inventory_items
+      WHERE id = $1`,
+    [inventoryItemId]
+  );
+  return Number(row.rows[0].current_quantity);
+}
+
+async function runG177StockedDispense(pool) {
+  const { provisionSyntheticStockedDispense } = require("../fixtures/v13SyntheticStockFixture");
+  const { SYNTHETIC_PASSWORD } = require("../fixtures/v13SyntheticFixtures");
+  const {
+    dispensePrescription,
+    listPrescriptionQueue,
+    RESULT,
+  } = require("../../../src/activeclinic/services/activeClinicPharmacyService");
+  const prepared = await provisionSyntheticStockedDispense(pool, {
+    password: SYNTHETIC_PASSWORD,
+    env: process.env,
+  });
+  const queue = await listPrescriptionQueue(pool, {
+    staffId: prepared.pharmacistId,
+    organizationId: prepared.organizationId,
+    facilityId: prepared.facilityId,
+    status: "pending",
+  });
+  assert.equal(queue.ok, true);
+  const queuedIds = queue.prescriptions.map((row) => row.id);
+  assert.equal(queuedIds.includes(prepared.prescriptionId), true);
+  assert.equal(queuedIds.includes(prepared.overflow.prescriptionId), true);
+  const blank = await pool.query(
+    `SELECT COUNT(*)::int AS n
+       FROM activeclinic.pharmacy_prescriptions
+      WHERE clinical_order_id = $1
+        AND organization_id = $2`,
+    [prepared.blankClinicalOrderId, prepared.organizationId]
+  );
+  assert.equal(blank.rows[0].n, 0);
+
+  const starting = await quantityOf(pool, prepared.inventoryItemId);
+  const otherStarting = await quantityOf(pool, prepared.otherInventoryItemId);
+  assert.equal(starting, 5);
+  assert.equal(otherStarting, 4);
+
+  function request(overrides) {
+    return {
+      staffId: prepared.pharmacistId,
+      organizationId: prepared.organizationId,
+      prescriptionId: prepared.prescriptionId,
+      itemDispenses: [{
+        prescriptionItemId: prepared.itemId,
+        quantityToDispense: 2,
+        batchId: prepared.batchId,
+      }],
+      dispenseType: "full",
+      ...overrides,
+    };
+  }
+
+  const overflow = await dispensePrescription(pool, request({
+    prescriptionId: prepared.overflow.prescriptionId,
+    itemDispenses: [{
+      prescriptionItemId: prepared.overflow.itemId,
+      quantityToDispense: 10,
+      batchId: prepared.batchId,
+    }],
+  }));
+  assert.equal(overflow.ok, false);
+  assert.equal(overflow.result, RESULT.INSUFFICIENT_STOCK);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting);
+
+  const wrongPatient = await dispensePrescription(pool, request({
+    patientId: "00000000-0000-4000-8000-000000000099",
+  }));
+  assert.equal(wrongPatient.ok, false);
+  assert.equal(wrongPatient.result, RESULT.PATIENT_NOT_FOUND);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting);
+
+  const wrongFacility = await dispensePrescription(pool, request({
+    itemDispenses: [{
+      prescriptionItemId: prepared.itemId,
+      quantityToDispense: 2,
+      batchId: prepared.otherBatchId,
+    }],
+  }));
+  assert.equal(wrongFacility.ok, false);
+  assert.equal(wrongFacility.result, RESULT.BATCH_NOT_FOUND);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting);
+  assert.equal(await quantityOf(pool, prepared.otherInventoryItemId), otherStarting);
+
+  const receptionist = await dispensePrescription(pool, request({
+    staffId: prepared.receptionistId,
+  }));
+  assert.equal(receptionist.ok, false);
+  assert.equal(receptionist.result, RESULT.ACCESS_DENIED);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting);
+
+  const raced = await Promise.all([
+    dispensePrescription(pool, request()),
+    dispensePrescription(pool, request()),
+  ]);
+  assert.equal(raced.filter((row) => row.ok).length, 1);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting - 2);
+  assert.equal(await quantityOf(pool, prepared.otherInventoryItemId), otherStarting);
+
+  const retry = await dispensePrescription(pool, request());
+  assert.equal(retry.ok, false);
+  assert.equal(retry.result, RESULT.INVALID_STATUS);
+  assert.equal(await quantityOf(pool, prepared.inventoryItemId), starting - 2);
+  assert.equal((await quantityOf(pool, prepared.inventoryItemId)) >= 0, true);
+
+  const movement = await pool.query(
+    `SELECT movement_type, quantity_delta, facility_id, performed_by_staff_id, reference_type
+       FROM activeclinic.stock_movements
+      WHERE inventory_item_id = $1
+        AND movement_type = 'dispense_decrement'`,
+    [prepared.inventoryItemId]
+  );
+  assert.equal(movement.rowCount, 1);
+  assert.equal(Number(movement.rows[0].quantity_delta), -2);
+  assert.equal(movement.rows[0].facility_id, prepared.facilityId);
+  assert.equal(movement.rows[0].performed_by_staff_id, prepared.pharmacistId);
+  assert.equal(movement.rows[0].reference_type, "dispense");
+
+  const stored = await pool.query(
+    `SELECT pp.organization_id, pp.healthcare_organization_id, pp.facility_id,
+            pp.patient_id, pp.prescriber_staff_id, pp.status,
+            ppi.quantity_dispensed
+       FROM activeclinic.pharmacy_prescriptions pp
+       JOIN activeclinic.pharmacy_prescription_items ppi
+         ON ppi.pharmacy_prescription_id = pp.id
+      WHERE pp.id = $1`,
+    [prepared.prescriptionId]
+  );
+  assert.equal(stored.rowCount, 1);
+  assert.equal(stored.rows[0].organization_id, prepared.organizationId);
+  assert.equal(stored.rows[0].healthcare_organization_id, prepared.healthcareOrganizationId);
+  assert.equal(stored.rows[0].facility_id, prepared.facilityId);
+  assert.equal(stored.rows[0].patient_id, prepared.patientId);
+  assert.equal(stored.rows[0].prescriber_staff_id, prepared.clinicianId);
+  assert.equal(stored.rows[0].status, "dispensed");
+  assert.equal(Number(stored.rows[0].quantity_dispensed), 2);
+
+  const events = await pool.query(
+    `SELECT COUNT(*)::int AS n
+       FROM activeclinic.dispense_events
+      WHERE pharmacy_prescription_id = $1`,
+    [prepared.prescriptionId]
+  );
+  assert.equal(events.rows[0].n, 1);
+}
+
 async function runG04PharmacyBilling(pool) {
   const { dispensePrescription, RESULT } = require(
     "../../../src/activeclinic/services/activeClinicPharmacyService"
@@ -789,6 +943,7 @@ module.exports = {
   runGated,
   runG03Laboratory,
   runG04PharmacyBilling,
+  runG177StockedDispense,
   runG05Records,
   runG66ReferenceRules,
   runBb01,
