@@ -9,14 +9,14 @@ const {
 } = require("../src/platform/build/applicationBuildInfo");
 const { VERSION_ORDER, VERSIONS } = require("../src/platform/release-notes/releaseNotesCatalog");
 
-test("V2.13.1 current version metadata is shared by About surfaces", () => {
-  assert.equal(VERSION_BASE, "2.13.1");
-  assert.equal(PRODUCT_VERSION, "2.13.1");
+test("V2.13.2 current version metadata is shared by About surfaces", () => {
+  assert.equal(VERSION_BASE, "2.13.2");
+  assert.equal(PRODUCT_VERSION, "2.13.2");
   assert.equal(
     getApplicationBuildInfo({
       env: { DEPLOYMENT_ENV: "testing", GETPRO_GIT_SHA: "0123456789abcdef" },
     }).version,
-    "2.13.1"
+    "2.13.2"
   );
 });
 

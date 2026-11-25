@@ -518,6 +518,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
           registered = await registerPatientWithPhoneMatch(getPool(), {
             phone,
+            phoneNational: phone,
             password,
             email: email || null,
             firstName,
@@ -526,6 +527,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             organizationId: clinic.organizationId,
             healthcareOrganizationId: clinic.healthcareOrganizationId,
             country: phoneCountry,
+            clinicDefaultCountry: phoneCountry,
           });
         }
 

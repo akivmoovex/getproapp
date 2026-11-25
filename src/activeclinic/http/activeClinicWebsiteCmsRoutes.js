@@ -110,6 +110,7 @@ function slugErrorMessage(code) {
   if (code === "validation_failed") return "Check those details and try again. Use a full website address starting with https://.";
   if (code === "conflict") return "A profile or service with that key already exists. Choose another name or key.";
   if (code === "invalid_input") return "Check the details and try again.";
+  if (code === "invalid_url") return "That website address is not allowed.";
   if (code === "has_login") return "This staff member has a login. Remove only the public profile, or manage the account under Staff.";
   return "Unable to save website changes.";
 }

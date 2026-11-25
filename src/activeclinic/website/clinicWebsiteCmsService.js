@@ -31,6 +31,7 @@ const {
   navCustomPages,
   findCustomPageBySlug,
   findDraftCustomPageBySlug,
+  safeSectionLink,
 } = require("./clinicWebsiteCms");
 const { registerActiveClinicWebsiteTemplate } = require("./activeClinicWebsiteTemplate");
 const {
@@ -446,8 +447,9 @@ async function addSection(db, input) {
     body: String((input && input.body) || "").trim().slice(0, 4000),
     image: input.image && typeof input.image === "object" ? input.image : null,
     button_label: String((input && input.buttonLabel) || "").trim().slice(0, 60),
-    button_url: String((input && input.buttonUrl) || "").trim().slice(0, 500),
+    button_url: safeSectionLink(input && input.buttonUrl),
   };
+  if (section.button_url == null) return { ok: false, code: "invalid_url" };
   const owned = await assertOwnedImages(db, seeded.instance, [section]);
   if (!owned.ok) return owned;
   const sections = seeded.sections.concat([section]);
@@ -468,7 +470,11 @@ async function updateSection(db, input) {
   if (input.heading != null) next.heading = String(input.heading).trim().slice(0, 160);
   if (input.body != null) next.body = String(input.body).trim().slice(0, 4000);
   if (input.buttonLabel != null) next.button_label = String(input.buttonLabel).trim().slice(0, 60);
-  if (input.buttonUrl != null) next.button_url = String(input.buttonUrl).trim().slice(0, 500);
+  if (input.buttonUrl != null) {
+    const link = safeSectionLink(input.buttonUrl);
+    if (link == null) return { ok: false, code: "invalid_url" };
+    next.button_url = link;
+  }
   if (input.visible != null) next.visible = boolValue(input.visible, next.visible);
   if (input.image !== undefined) next.image = input.image && typeof input.image === "object" ? input.image : null;
   const owned = await assertOwnedImages(db, seeded.instance, [next]);
@@ -533,7 +539,7 @@ function normalizeBlockInput(input, pageId, sortOrder) {
     body: String((input && input.body) || "").trim().slice(0, 4000),
     image: input.image && typeof input.image === "object" ? input.image : null,
     button_label: String((input && (input.buttonLabel || input.button_label)) || "").trim().slice(0, 60),
-    button_url: String((input && (input.buttonUrl || input.button_url)) || "").trim().slice(0, 500),
+    button_url: safeSectionLink(input && (input.buttonUrl || input.button_url)),
     library_item_id: String((input && (input.libraryItemId || input.library_item_id)) || "").trim().slice(0, 40),
   };
 }
@@ -552,6 +558,7 @@ async function addBlock(db, input) {
   }
   const nextOrder = pageBlocks.reduce((max, block) => Math.max(max, sortKey(block.sort_order)), -1) + 1;
   const block = normalizeBlockInput(input, page.id, nextOrder);
+  if (block.button_url == null) return { ok: false, code: "invalid_url" };
   const owned = await assertOwnedImages(db, seeded.instance, [block]);
   if (!owned.ok) return owned;
   const blocks = seeded.blocks.concat([block]);
@@ -570,6 +577,7 @@ async function updateBlock(db, input) {
   const merged = { ...current, ...input, type: input.type || current.type };
   if (input.image === undefined) merged.image = current.image;
   const next = normalizeBlockInput(merged, current.page_id, current.sort_order);
+  if (next.button_url == null) return { ok: false, code: "invalid_url" };
   next.id = current.id;
   const owned = await assertOwnedImages(db, seeded.instance, [next]);
   if (!owned.ok) return owned;

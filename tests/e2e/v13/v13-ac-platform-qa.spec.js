@@ -481,6 +481,14 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page).toHaveURL(/recorded=1/);
     await page.reload();
     await expect(page.locator("body")).toContainText("72 bpm");
+    const correct = page.locator("form[data-ac-vital-correct='1']").first();
+    await correct.locator("input[name='value_numeric']").fill("80");
+    await correct.locator("input[name='correction_reason']").fill("entry error");
+    await correct.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(/corrected=1/);
+    await expect(page.locator("body")).toContainText("72 bpm");
+    await expect(page.locator("body")).toContainText("80 bpm");
+    await expect(page.locator("body")).toContainText("Superseded");
     const stranger = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
     const strangerPage = await stranger.newPage();
     const denied = await strangerPage.request.post(`${encounterUrl}/vitals`, {
@@ -495,6 +503,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     }
     await page.reload();
     await expect(page.locator("body")).toContainText("72 bpm");
+    await expect(page.locator("body")).toContainText("80 bpm");
     await expect(page.locator("body")).not.toContainText("140 bpm");
     await stranger.close();
   });
@@ -547,6 +556,144 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.getByLabel("Medication / active compound")).toBeVisible();
     await expect(page.getByText("without placing it on the pharmacy queue")).toBeVisible();
     await expect(page.locator("input[name='medication_catalogue_item_id']")).toHaveCount(1);
+  });
+
+  test("AC-FU-PORTAL-01 staff-created patient activates one record and signs in", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-PORTAL-01");
+    const stamp = Date.now();
+    const lastName = `Portal${String(stamp).slice(-6)}`;
+    const phone = `97${String(stamp).slice(-7)}`;
+    const email = `portal-${stamp}@example.invalid`;
+    const password = "V13-synthetic-qa-password";
+    const clinicKey = required("E2E_AC_CLINIC_KEY");
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Portal");
+    await page.locator("input[name='last_name']").fill(lastName);
+    await page.locator("select[name='sex_at_registration']").selectOption("female");
+    await page.locator("input[name='date_of_birth']").fill("1991-03-03");
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    await expect(page.locator("[data-ac-patient-number='1']")).toBeVisible();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    const before = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.patients WHERE patient_number = $1",
+      [number]
+    );
+    expect(before.rows[0].n).toBe(1);
+    await page.context().clearCookies();
+    await page.goto(`/clinics/${clinicKey}/patient/register`);
+    await page.locator("input[name='firstName']").fill("Portal");
+    await page.locator("input[name='lastName']").fill(lastName);
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.locator("input[name='email']").fill(email);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("form:has(input[name='firstName']) button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`/clinics/${clinicKey}/patient/login`));
+    await page.goto(`/clinics/${clinicKey}/patient/login`);
+    await page.locator("input[name='identifier']").fill(email);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`/clinics/${clinicKey}/patient(?:\\?|$)`));
+    await expect(page.locator("body")).toContainText("Welcome back, Portal");
+    await page.goto(`/clinics/${clinicKey}/patient/profile`);
+    await expect(page.locator("body")).toContainText(number);
+    await page.context().clearCookies();
+    await page.goto(`/clinics/${clinicKey}/patient/register`);
+    await page.locator("input[name='firstName']").fill("Nobody");
+    await page.locator("input[name='lastName']").fill("Unknown");
+    await page.locator("input[name='phone_national']").fill(`96${String(stamp).slice(-7)}`);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("form:has(input[name='firstName']) button[type='submit']").click();
+    await expect(page.getByText(/No matching patient record/i).first()).toBeVisible();
+    await expect(page.getByText(/does not create a new patient record/i).first()).toBeVisible();
+    await page.goto(`/clinics/${required("E2E_AC_OTHER_CLINIC_KEY")}/patient/register`);
+    await page.locator("input[name='firstName']").fill("Portal");
+    await page.locator("input[name='lastName']").fill(lastName);
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("form:has(input[name='firstName']) button[type='submit']").click();
+    await expect(page.getByText(/already exists|No matching patient record/i).first()).toBeVisible();
+    const after = await client.query(
+      "SELECT count(*)::int AS n FROM activeclinic.patients WHERE patient_number = $1",
+      [number]
+    );
+    expect(after.rows[0].n).toBe(1);
+    await client.end();
+  });
+
+  test("AC-FU-WEB-02 new text stays private until publish and an authorized image renders", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-WEB-02");
+    const stamp = Date.now();
+    const heading = `Public text ${stamp}`;
+    const email = `web02-${stamp}@example.invalid`;
+    const password = "clinic-admin-pass-12";
+    await submitClinicRegistration(page, {
+      clinicName: `Web02 ${stamp}`,
+      clinicType: "clinic",
+      countryCode: "ZM",
+      city: "Lusaka",
+      contactName: "Web02 Admin",
+      contactEmail: email,
+      phone_national: `95${String(stamp).slice(-7)}`,
+      password,
+      passwordConfirm: password,
+    });
+    if (!/\/app/.test(page.url())) await staffSignIn(page, email, password);
+    await page.goto("/app/settings/website/sections");
+    await page.locator("[data-ac-mw-open='ac-mw-add-section']").click();
+    await page.locator("#ac-mw-add-section input[name='type'][value='text']").check();
+    await page.locator("#ac-mw-add-section button[type='submit']").click();
+    await page.locator("[data-ac-section-id] a", { hasText: "Settings" }).last().click();
+    await page.locator("input[name='heading']").fill(heading);
+    await page.locator("textarea[name='body']").fill("Published body text");
+    await page.locator("input[name='buttonUrl']").fill("javascript:alert(1)");
+    await page.locator("button[type='submit']", { hasText: "Save Changes" }).click();
+    await expect(page.getByText(/not allowed/i).first()).toBeVisible();
+    await page.goto("/app/settings/website/sections");
+    await page.locator("[data-ac-section-id] a", { hasText: "Settings" }).last().click();
+    await page.locator("input[name='heading']").fill(heading);
+    await page.locator("textarea[name='body']").fill("Published body text");
+    await page.locator("input[name='visible']").check();
+    await page.locator("button[type='submit']", { hasText: "Save Changes" }).click();
+    const previewHref = await page.locator("a[href*='website_mode=draft']").first().getAttribute("href");
+    const liveHref = String(previewHref || "").split("?")[0];
+    await page.goto(liveHref);
+    await expect(page.locator("body")).not.toContainText(heading);
+    await page.goto("/app/settings/website/publish");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator("[data-ac-website-action='publish']").click();
+    await page.goto(liveHref);
+    await expect(page.locator("body")).toContainText(heading);
+    await expect(page.locator("body")).toContainText("Published body text");
+    await page.reload();
+    await expect(page.locator("body")).toContainText(heading);
+    await page.goto("/app/settings/website/sections");
+    await page.locator("[data-ac-mw-open='ac-mw-add-section']").click();
+    await page.locator("#ac-mw-add-section input[name='type'][value='image_text']").check();
+    await page.locator("#ac-mw-add-section button[type='submit']").click();
+    await page.locator("[data-ac-section-id] a", { hasText: "Settings" }).last().click();
+    const imageSrc = "https://example.invalid/v13-synthetic-section.png";
+    await page.locator("input[name='imageSrc']").fill(imageSrc);
+    await page.locator("input[name='imageAlt']").fill("Synthetic clinic image");
+    await page.locator("input[name='visible']").check();
+    await page.locator("button[type='submit']", { hasText: "Save Changes" }).click();
+    await page.goto(liveHref);
+    await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveCount(0);
+    await page.goto("/app/settings/website/publish");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator("[data-ac-website-action='publish']").click();
+    await page.goto(liveHref);
+    await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveAttribute("src", imageSrc);
+    await page.reload();
+    await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveAttribute("src", imageSrc);
   });
 });
 

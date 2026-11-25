@@ -101,11 +101,11 @@
     data-ac-cms-section-type="<%= section.type %>"
   >
     <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
-    <% if ((section.type === 'image' || section.type === 'image_text') && image && image.src) { %>
+    <% if ((section.type === 'image' || section.type === 'image_text') && image && image.src && !/^(javascript:|data:|vbscript:)/i.test(String(image.src))) { %>
       <img src="<%= image.src %>" alt="<%= image.alt || '' %>" data-ac-cms-section-image="1"/>
     <% } %>
     <% if (section.body) { %><div data-ac-cms-section-body="1"><%= section.body %></div><% } %>
-    <% if (section.button_label && section.button_url) { %>
+    <% if (section.button_label && section.button_url && !/^(javascript:|data:|vbscript:)/i.test(String(section.button_url))) { %>
       <a href="<%= section.button_url %>"><%= section.button_label %></a>
     <% } %>
     <% if (editingHome) { %>

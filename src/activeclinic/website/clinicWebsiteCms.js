@@ -644,6 +644,21 @@ function applyLibraryPresentation(list, libraryItems, type, keyField) {
     });
 }
 
+function safeSectionLink(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const lower = raw.toLowerCase();
+  if (
+    lower.startsWith("javascript:") ||
+    lower.startsWith("data:") ||
+    lower.startsWith("vbscript:") ||
+    lower.startsWith("//")
+  ) {
+    return null;
+  }
+  return raw.slice(0, 500);
+}
+
 module.exports = {
   CMS_KEYS,
   PAGE_KIND,
@@ -677,6 +692,7 @@ module.exports = {
   navCustomPages,
   findCustomPageBySlug,
   findDraftCustomPageBySlug,
+  safeSectionLink,
   sectionTypeLabel,
   blockTypeLabel,
   isAddableSectionType,

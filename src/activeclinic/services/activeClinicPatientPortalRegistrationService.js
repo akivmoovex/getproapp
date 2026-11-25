@@ -326,8 +326,11 @@ async function registerPatientWithPhoneMatch(db, input) {
     return { ok: false, code: RESULT.WEAK_PASSWORD, message: "password_too_short" };
   }
 
-  const phoneNorm = normalizeActiveClinicPhone(phoneRaw, {
-    country: input.country || "ZM",
+  const phoneNorm = normalizeActiveClinicPhone({
+    phone: input.phoneNational ? null : phoneRaw,
+    phoneNational: input.phoneNational || null,
+    phoneCountry: input.country || "ZM",
+    clinicDefaultCountry: input.clinicDefaultCountry || input.country || "ZM",
   });
   if (!phoneNorm.ok || !phoneNorm.normalized) {
     return {

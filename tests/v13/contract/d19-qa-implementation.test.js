@@ -34,7 +34,7 @@ describe("D19 QA implementation discovery", () => {
     assert.doesNotMatch(spec, /NOT_IMPLEMENTED/);
     const names = [...spec.matchAll(/test\("([^"]+)"/g)].map((match) => match[1]);
     assert.match(spec, /PAT-01/);
-    assert.equal(names.length, 20);
+    assert.equal(names.length, 22);
   });
 
   it("points every integration file at a real gated runner", () => {

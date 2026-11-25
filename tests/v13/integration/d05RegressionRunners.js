@@ -496,6 +496,54 @@ async function runAcWeb08(pool, connectionString, env) {
   const still = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
   assert.equal(still.text.includes("Foreign overwrite"), false);
   assert.equal(still.text.includes(heading), true);
+  assert.equal(still.text.includes("Draft section body"), true);
+  const reloaded = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
+  assert.equal(reloaded.text.includes(heading), true);
+  const unsafe = await acPost(app, clinic.jar, `/app/settings/website/sections/${createdId}`, {
+    heading,
+    body: "Draft section body",
+    buttonLabel: "Go",
+    buttonUrl: "javascript:alert(1)",
+    visible: "1",
+  });
+  assert.equal(unsafe.status, 400);
+  assert.match(unsafe.text, /not allowed/);
+  const imageExisting = new Set(
+    [...listed.text.matchAll(/\/app\/settings\/website\/sections\/([0-9a-f-]{36})/gi)].map((match) => match[1])
+  );
+  const imageAdded = await acPost(app, clinic.jar, "/app/settings/website/sections", {
+    pageId: "tpl_home",
+    type: "image_text",
+  });
+  assert.equal(imageAdded.status, 303);
+  const imageListed = await acGet(app, clinic.jar, "/app/settings/website/sections");
+  const imageId = [...imageListed.text.matchAll(/\/app\/settings\/website\/sections\/([0-9a-f-]{36})/gi)]
+    .map((match) => match[1])
+    .find((id) => !imageExisting.has(id));
+  assert.ok(imageId, "image section must appear in the section list");
+  const imageSrc = "https://example.invalid/v13-synthetic-section.png";
+  const imageSaved = await acPost(app, clinic.jar, `/app/settings/website/sections/${imageId}`, {
+    heading: `${heading} image`,
+    body: "Published image caption",
+    imageSrc,
+    imageAlt: "Synthetic clinic image",
+    visible: "1",
+  });
+  assert.equal(imageSaved.status, 303, imageSaved.text.slice(0, 240));
+  const imageLiveBefore = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
+  assert.equal(imageLiveBefore.text.includes("Synthetic clinic image"), false);
+  const imagePublished = await acPost(
+    app,
+    clinic.jar,
+    `/clinics/${clinic.key}/website/publish`,
+    {},
+    "/app/settings/website/themes"
+  );
+  assert.ok(imagePublished.status < 400, imagePublished.text.slice(0, 240));
+  const imageLive = await request(app).get(`/clinics/${clinic.key}`).set("Host", AC_HOST);
+  assert.equal(imageLive.text.includes(imageSrc), true);
+  assert.equal(imageLive.text.includes("Synthetic clinic image"), true);
+  assert.equal(imageLive.text.includes("javascript:"), false);
 }
 
 async function runAcWeb09(pool, connectionString, env) {
@@ -640,6 +688,67 @@ async function runAcRec03(pool, connectionString, env) {
   const unchanged = await acGet(app, clinic.jar, `/app/clinical/encounter/${encounterId}/vitals`);
   assert.equal(unchanged.text.includes("140 bpm"), false);
   assert.match(unchanged.text, /72 bpm/);
+  const observationId = (unchanged.text.match(/vitals\/([0-9a-f-]{36})\/correct/i) || [])[1];
+  assert.ok(observationId, "saved vital must offer a correction action");
+  const vitalsPath = `/app/clinical/encounter/${encounterId}/vitals`;
+  const corrected = await acPost(
+    app,
+    clinic.jar,
+    `${vitalsPath}/${observationId}/correct`,
+    {
+      observation_type: "heart_rate",
+      value_numeric: "80",
+      unit: "bpm",
+      correction_reason: "entry error",
+      patient_id: patientId,
+    },
+    vitalsPath
+  );
+  assert.equal(corrected.status, 303, corrected.text.slice(0, 240));
+  assert.match(String(corrected.headers.location || ""), /corrected=1/);
+  const history = await acGet(app, clinic.jar, `/app/clinical/encounter/${encounterId}/vitals`);
+  assert.match(history.text, /72 bpm/);
+  assert.match(history.text, /80 bpm/);
+  assert.match(history.text, /Superseded/);
+  assert.match(history.text, /entry error|Current correction/);
+  const stale = await acPost(
+    app,
+    clinic.jar,
+    `${vitalsPath}/${observationId}/correct`,
+    {
+      observation_type: "heart_rate",
+      value_numeric: "90",
+      unit: "bpm",
+      correction_reason: "late retry",
+      patient_id: patientId,
+    },
+    vitalsPath
+  );
+  assert.equal(stale.status, 400);
+  assert.match(stale.text, /updated by someone else/);
+  const foreignCorrect = await acPost(
+    app,
+    other.jar,
+    `${vitalsPath}/${observationId}/correct`,
+    {
+      observation_type: "heart_rate",
+      value_numeric: "99",
+      unit: "bpm",
+      correction_reason: "wrong clinic",
+      patient_id: patientId,
+    },
+    "/app"
+  );
+  assert.ok(
+    foreignCorrect.status === 400 || foreignCorrect.status === 403 || foreignCorrect.status === 404,
+    `other clinic correction status ${foreignCorrect.status}`
+  );
+  assert.equal(foreignCorrect.text.includes("99 bpm"), false);
+  assert.match(foreignCorrect.text, /not found|do not have permission/i);
+  const preserved = await acGet(app, clinic.jar, `/app/clinical/encounter/${encounterId}/vitals`);
+  assert.equal(preserved.text.includes("99 bpm"), false);
+  assert.match(preserved.text, /72 bpm/);
+  assert.match(preserved.text, /80 bpm/);
 }
 
 async function runAcPub01(pool, connectionString, env) {

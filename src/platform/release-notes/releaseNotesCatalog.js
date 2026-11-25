@@ -3686,14 +3686,17 @@ const VERSIONS = Object.freeze([
     ],
     documentationGaps: [
       "Hosted QA retest of the 23 November 2026 ActiveClinic scenarios is not claimed.",
+      "Local disposable proof does not replace hosted QA, and production media upload stays disabled.",
     ],
     architectureWork: {
       title: "V2.13.2 maintenance candidate",
       body:
-        "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Version metadata is 2.13.2.",
+        "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Staff-created patients can activate one existing portal record. Published website sections render new text and an authorized image reference. Version metadata is 2.13.2.",
       items: [
         "Same-staff appointment overlap is locked inside the transaction",
         "Vitals correction keeps the original observation",
+        "Staff review keeps the patient phone used for portal activation",
+        "Published website text and authorized image references stay separate from drafts",
         "Historical release notes preserved",
       ],
     },

@@ -113,7 +113,7 @@
       <div><dt>Name</dt><dd><%= values.firstName %> <%= values.middleName || '' %> <%= values.lastName %></dd></div>
       <div><dt>Sex</dt><dd><%= values.sexAtRegistration || '—' %></dd></div>
       <div><dt>Date of birth</dt><dd><%= values.dateOfBirth || '—' %><%= values.estimatedDateOfBirth ? ' (estimated)' : '' %></dd></div>
-      <div><dt>Phone</dt><dd><%= values.phone || '—' %></dd></div>
+      <div><dt>Phone</dt><dd><%= values.phoneNational || values.phone || '—' %></dd></div>
       <div><dt>Town</dt><dd><%= values.city || '—' %></dd></div>
       <div><dt>Email</dt><dd><%= values.email || '—' %></dd></div>
       <div><dt>Identifier</dt><dd><%= values.identifierType ? (values.identifierType + ' · ' + values.identifierValue) : '—' %></dd></div>
@@ -126,7 +126,7 @@
       var map = {
         firstName:'first_name', middleName:'middle_name', lastName:'last_name', preferredName:'preferred_name',
         dateOfBirth:'date_of_birth', sexAtRegistration:'sex_at_registration', nationalityCountryCode:'nationality_country_code',
-        primaryLanguage:'primary_language', phone:'phone', email:'email', addressLine1:'address_line_1', addressLine2:'address_line_2',
+        primaryLanguage:'primary_language', phone:'phone', phoneCountry:'phone_country', phoneNational:'phone_national', email:'email', addressLine1:'address_line_1', addressLine2:'address_line_2',
         city:'city', district:'district', province:'province', countryCode:'country_code', postalCode:'postal_code',
         preferredContactMethod:'preferred_contact_method', facilityId:'facility_id', registrationMethod:'registration_method',
         identifierType:'identifier_type', identifierValue:'identifier_value', emergencyFullName:'emergency_full_name',

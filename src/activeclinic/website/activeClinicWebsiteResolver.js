@@ -390,6 +390,21 @@ async function resolveActiveClinicWebsite(db, input) {
       hydrateKey("about.story.image"),
       hydrateKey("seo.image"),
     ]);
+    if (Array.isArray(clinicPresented.cmsSections)) {
+      clinicPresented.cmsSections = await Promise.all(
+        clinicPresented.cmsSections.map(async (section) => {
+          if (!section || !section.image || typeof section.image !== "object") return section;
+          const hydrated = await mediaService.hydrateWebsiteImageValue(db, {
+            organizationId: clinic.organizationId,
+            instance,
+            value: section.image,
+            env,
+          });
+          if (!hydrated || !hydrated.src) return section;
+          return { ...section, image: { ...section.image, ...hydrated } };
+        })
+      );
+    }
     if (clinicPresented.websiteContent && clinicPresented.websiteContent["seo.image"]) {
       const seo = clinicPresented.websiteContent["seo.image"];
       if (seo && seo.src) clinicPresented.seoImageUrl = seo.src;
