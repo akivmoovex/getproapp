@@ -268,6 +268,19 @@
           <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="soap" onclick="window.print()">Print SOAP note</button>
           <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="referral" onclick="window.print()">Print referral</button>
         </div>
+        <div class="ac-panel ac-clinical-print-identity" data-ac-print-identity="1">
+          <p>
+            <span class="ac-muted">Patient</span>
+            <strong data-ac-print-patient-number="1"><%= encounter.patientNumber || "" %></strong>
+            <% if (encounter.encounterNumber) { %>
+            <span class="ac-muted">· Encounter</span>
+            <strong data-ac-print-encounter-number="1"><%= encounter.encounterNumber %></strong>
+            <% } %>
+          </p>
+          <% if (chiefComplaint) { %>
+          <p data-ac-print-chief-complaint="1"><span class="ac-muted">Chief complaint</span> <%= chiefComplaint %></p>
+          <% } %>
+        </div>
         <article class="ac-panel" id="ac-enc-subjective" data-ac-encounter-card="subjective">
           <div class="ac-clinical-encounter__card-head">
             <span class="ac-clinical-encounter__soap" aria-hidden="true">S</span>
@@ -325,9 +338,12 @@
             <label class="ac-label" for="follow_up_due_at">Follow-up due date <span class="ac-muted">(optional)</span></label>
             <input class="ac-input" type="date" id="follow_up_due_at" name="follow_up_due_at" />
           </div>
-          <div class="ac-field">
+          <div class="ac-field" id="encounter-referral-print" data-ac-print-region="referral">
             <label class="ac-label" for="referral">Referral</label>
-            <textarea class="ac-input" id="referral" name="referral" rows="2" maxlength="4000"><%= referral %></textarea>
+            <textarea class="ac-input" id="referral" name="referral" rows="2" maxlength="4000" data-ac-print-referral="1"><%= referral %></textarea>
+            <% if (referral) { %>
+            <p class="ac-muted" data-ac-print-referral-text="1"><%= referral %></p>
+            <% } %>
           </div>
         </article>
 

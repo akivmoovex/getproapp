@@ -1,0 +1,22 @@
+{
+  "cycle": "G281-G300",
+  "bbVersion": "2.13.4",
+  "acVersion": "2.13.4",
+  "safe": { "run1": "566/0", "run2": "566/0" },
+  "http": { "run1": "41/40/1", "run2": "41/40/1", "onlyFail": "D25_SLOT" },
+  "acBrowser": { "run1": 32, "run2": 32 },
+  "bbBrowser": { "run1": 23, "run2": 23 },
+  "communityBrowser": { "run1": 9, "run2": 9 },
+  "postgresql": { "run1": 3, "run2": 3, "suites": ["g185", "g206", "g272"] },
+  "newThisCycle": {
+    "unit": ["g300-clinical-print-identity.test.js"],
+    "browserStrengthening": ["G168 SOAP/referral print identity"],
+    "sourceFix": ["consultation-workspace SOAP patient+complaint print identity"]
+  },
+  "d14c": "PASS_DISPOSABLE",
+  "d16": "PASS_DISPOSABLE",
+  "d25Slot": "FAIL_UNAPPROVED",
+  "d25Overlap": "PASS",
+  "otpLiveMailbox": "BLOCKED",
+  "qa": "NO-GO"
+}

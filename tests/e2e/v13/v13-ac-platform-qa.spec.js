@@ -888,11 +888,23 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto(encounterUrl);
     await expect(page.locator("#chief_complaint")).toBeVisible();
     await page.locator("#chief_complaint").fill(complaint);
+    await page.locator("#referral").fill(`Refer ortho ${stamp}`);
     await page.locator("[data-ac-action='save-draft']:visible").click();
     await expect(page).toHaveURL(/updated=1/);
     await expect(page.locator("#chief_complaint")).toHaveValue(complaint);
+    await expect(page.locator("[data-ac-print-region='soap']")).toContainText(number);
+    await expect(page.locator("[data-ac-print-chief-complaint='1']")).toContainText(complaint);
+    await expect(page.locator("[data-ac-print-region='referral']")).toContainText(`Refer ortho ${stamp}`);
+    await page.evaluate(() => {
+      window.__g300PrintCount = 0;
+      window.print = () => {
+        window.__g300PrintCount += 1;
+      };
+    });
+    await page.getByRole("button", { name: "Print SOAP note" }).click();
+    expect(await page.evaluate(() => window.__g300PrintCount)).toBe(1);
     const draft = await client.query(
-      `SELECT status, subjective_text, signed_at
+      `SELECT status, subjective_text, referral_text, signed_at
        FROM activeclinic.consultation_notes
        WHERE encounter_id = $1`,
       [encounterId]
@@ -900,6 +912,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     expect(draft.rowCount).toBe(1);
     expect(draft.rows[0].status).toBe("draft");
     expect(draft.rows[0].subjective_text).toBe(complaint);
+    expect(draft.rows[0].referral_text).toBe(`Refer ortho ${stamp}`);
     expect(draft.rows[0].signed_at).toBeNull();
     await page.goto(`${encounterUrl}/order/prescription`);
     await page.locator("#drug_name").fill(`SyntheticCompound ${stamp}`);
