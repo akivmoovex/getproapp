@@ -1,14 +1,18 @@
 # G231 clinical printing
 
-Confirmed supported print actions include patient cards, billing/cashier
-documents, the G224 laboratory result view, and the G229 radiology report
-view. Laboratory and radiology print controls are authorized by the existing
-request scope and render the patient, request, findings/summary and status in
-a print-ready region. Browser and HTTP journeys assert the print control is
-present after a recorded result/report.
+Supported print-ready controls now include:
 
-SOAP notes, encounter summaries, prescriptions and referrals do not have an
-equivalent independently verified print journey. A browser presence check
-would be insufficient, so these remain incomplete P1 coverage where the
-source exposes no approved print contract. No PDF format or new clinical
-document policy was invented.
+- Patient cards
+- Billing/cashier documents
+- Laboratory request and laboratory result views
+- Radiology request and radiology report views
+- Encounter SOAP note and referral print controls on the consultation workspace
+- Encounter vitals print control when vitals exist
+- Vitals observation log print control
+- Pharmacy prescription detail print control
+
+These are `window.print()` regions bound to the authenticated clinical screens.
+They do not invent PDF templates or new document policies. Cross-clinic denial
+and role gates remain those of the parent clinical and diagnostics routes.
+
+SOAP/referral field-by-field persistence matrices remain separate depth work.

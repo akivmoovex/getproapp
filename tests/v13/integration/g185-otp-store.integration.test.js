@@ -8,7 +8,7 @@ const { runGated } = require("./v13AuthorizedScenarios");
 const { runSharedOtpPersistence } = require("./g185SharedOtpPersistence");
 
 describe("G185 shared OTP persistence", () => {
-  it("reports BLOCKED_BY_SCHEMA and does not create platform.otp_challenges", async (t) => {
+  it("persists challenges across two workers when the reviewed disposable schema is present", async (t) => {
     await runGated(t, "G185", async (pool, connectionString) => {
       const relation = await pool.query(`SELECT to_regclass('platform.otp_challenges') AS rel`);
       const buckets = await pool.query(`SELECT to_regclass('platform.otp_rate_buckets') AS rel`);
@@ -21,7 +21,8 @@ describe("G185 shared OTP persistence", () => {
       }
       assert.equal(
         fs.existsSync(path.join(__dirname, "../../../db/migrations/platform/048_otp_challenges.sql")),
-        false
+        false,
+        "reviewed disposable apply must not promote 048 into db/migrations"
       );
       await runSharedOtpPersistence(pool, connectionString);
     });

@@ -1,4 +1,7 @@
-<div data-ac-stitch="07d08d75a44248acab897adb33254426" data-ac-screen="radiology-request-detail">
+<div data-ac-stitch="07d08d75a44248acab897adb33254426" data-ac-screen="radiology-request-detail" id="radiology-request-print" data-ac-print-region="radiology-request">
+  <div class="ac-form-actions">
+    <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="radiology-request" onclick="window.print()">Print radiology request</button>
+  </div>
   <div class="ac-panel ac-form-section ac-detail">
     <dl class="ac-dl">
       <div><dt>Request</dt><dd><%= pageData.request.requestNumber %></dd></div>

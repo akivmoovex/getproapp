@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const crypto = require("crypto");
 const { Pool } = require("pg");
 const { createOtpService } = require("../../../src/platform/otp/otpService");
 const { publishedTestingPepper } = require("../../../src/platform/otp/otpEnvironment");
@@ -11,7 +12,8 @@ async function runSharedOtpPersistence(pool, connectionString) {
   const org = await pool.query(`SELECT id FROM platform.organizations LIMIT 1`);
   assert.ok(org.rows[0], "organization prerequisite missing");
   const organizationId = org.rows[0].id;
-  const accountId = "22222222-2222-4222-8222-222222222222";
+  const accountId = crypto.randomUUID();
+  const stamp = `${Date.now().toString(36)}${crypto.randomBytes(2).toString("hex")}`;
   const now = Date.now();
   const env = {
     NODE_ENV: "test",
@@ -28,7 +30,7 @@ async function runSharedOtpPersistence(pool, connectionString) {
     channel: "email",
     organizationId,
     accountId,
-    identifier: "otp@v13d19.example",
+    identifier: `otp-${stamp}@v13d19.example`,
     accountResolved: true,
   };
   const workerB = new Pool({ connectionString, ssl: false, max: 1 });

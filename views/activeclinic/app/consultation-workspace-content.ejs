@@ -188,7 +188,7 @@
           <% if (!vitalCards.length) { %>
           <p class="ac-muted">No vitals recorded yet.</p>
           <% } else { %>
-          <div class="ac-clinical-encounter__vitals-grid">
+          <div class="ac-clinical-encounter__vitals-grid" id="encounter-vitals-print" data-ac-print-region="vitals">
             <% vitalCards.forEach(function (obs) { %>
             <div class="ac-clinical-encounter__vital" data-ac-vital-type="<%= obs.observationType %>">
               <p class="ac-clinical-encounter__vital-label"><%= vitalLabel(obs.observationType) %></p>
@@ -199,6 +199,7 @@
             </div>
             <% }) %>
           </div>
+          <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="vitals" onclick="window.print()">Print vitals</button>
           <% } %>
         </article>
 
@@ -262,7 +263,11 @@
         <% } %>
       </aside>
 
-      <div class="ac-clinical-encounter__main" data-ac-encounter-documentation="1">
+      <div class="ac-clinical-encounter__main" data-ac-encounter-documentation="1" id="encounter-soap-print" data-ac-print-region="soap">
+        <div class="ac-form-actions ac-form-actions--wrap">
+          <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="soap" onclick="window.print()">Print SOAP note</button>
+          <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="referral" onclick="window.print()">Print referral</button>
+        </div>
         <article class="ac-panel" id="ac-enc-subjective" data-ac-encounter-card="subjective">
           <div class="ac-clinical-encounter__card-head">
             <span class="ac-clinical-encounter__soap" aria-hidden="true">S</span>

@@ -147,10 +147,13 @@
       </p>
     </section>
 
-    <aside class="ac-panel ac-clinical-leaf__side" data-ac-vitals-log="1">
+    <aside class="ac-panel ac-clinical-leaf__side" data-ac-vitals-log="1" id="vitals-log-print" data-ac-print-region="vitals-log">
       <div class="ac-clinical-leaf__card-head">
         <h3 class="ac-panel__title">Observation log</h3>
         <p class="ac-muted">Encounter history (newest first).</p>
+        <% if (observations.length) { %>
+        <button type="button" class="ac-btn ac-btn--ghost" data-ac-print="vitals-log" onclick="window.print()">Print vitals log</button>
+        <% } %>
       </div>
 
       <% if (observations.length === 0) { %>
