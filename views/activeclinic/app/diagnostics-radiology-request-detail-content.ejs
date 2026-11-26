@@ -1,0 +1,42 @@
+<div data-ac-stitch="07d08d75a44248acab897adb33254426" data-ac-screen="radiology-request-detail">
+  <div class="ac-panel ac-form-section ac-detail">
+    <dl class="ac-dl">
+      <div><dt>Request</dt><dd><%= pageData.request.requestNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= pageData.request.patientDisplayName %></dd></div>
+      <div><dt>Study</dt><dd><%= pageData.request.studyType %><% if (pageData.request.studyDescription) { %> · <%= pageData.request.studyDescription %><% } %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= pageData.request.status %>"><%= pageData.request.status %></span></dd></div>
+      <div><dt>Urgency</dt><dd><%= pageData.request.urgency %></dd></div>
+      <% if (pageData.request.clinicalIndication) { %>
+      <div><dt>Clinical indication</dt><dd><%= pageData.request.clinicalIndication %></dd></div>
+      <% } %>
+    </dl>
+  </div>
+
+  <% if (pageData.request.report) { %>
+  <div class="ac-panel" id="radiology-report-print" data-ac-rad-report="1">
+    <h3>Radiology report</h3>
+    <% if (pageData.request.report.technique) { %>
+    <p class="ac-muted">Technique: <%= pageData.request.report.technique %></p>
+    <% } %>
+    <% if (pageData.request.report.findings) { %>
+    <p data-ac-rad-findings="1"><%= pageData.request.report.findings %></p>
+    <% } %>
+    <% if (pageData.request.report.impression) { %>
+    <p data-ac-rad-impression="1"><%= pageData.request.report.impression %></p>
+    <% } %>
+    <p class="ac-muted">Status <%= pageData.request.report.status %></p>
+    <% if (pageData.request.actions.canPrint) { %>
+    <button type="button" class="ac-btn" onclick="window.print()">Print report</button>
+    <% } %>
+    <% if (pageData.request.actions.canVerify) { %>
+    <form method="post" action="/app/diagnostics/radiology/reports/<%= pageData.request.report.id %>/verify">
+      <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
+      <input type="hidden" name="request_id" value="<%= pageData.request.id %>" />
+      <button type="submit" class="ac-btn">Verify report</button>
+    </form>
+    <% } %>
+  </div>
+  <% } else if (pageData.request.actions.canEnterReport) { %>
+  <p class="ac-muted">No report recorded yet. Use Enter report to attach findings.</p>
+  <% } %>
+</div>

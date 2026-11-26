@@ -36,6 +36,7 @@ const {
   loadActiveClinicEnterLaboratoryResultScreen,
   loadActiveClinicRadiologyDashboardScreen,
   loadActiveClinicRadiologyQueueScreen,
+  loadActiveClinicRadiologyRequestDetailScreen,
   loadActiveClinicEnterRadiologyReportScreen,
   loadActiveClinicCriticalResultAlertScreen,
   actorFromAuth,
@@ -948,6 +949,69 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     }
   );
 
+  app.get(
+    "/app/diagnostics/radiology/request/:requestId",
+    requireAuth,
+    requirePermission(RADIOLOGY_VIEW_ANY),
+    requireDepartment("radiology"),
+    async (req, res, next) => {
+      try {
+        const requestId = String(req.params.requestId || "");
+        if (!UUID_RE.test(requestId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invalid request ID", { status: 404 })
+          );
+        }
+        const loaded = await loadActiveClinicRadiologyRequestDetailScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          requestId,
+        });
+        if (!loaded.ok) {
+          const status = loaded.code === DIAGNOSTICS_RESULT.ACCESS_DENIED ? 403 : 404;
+          return res.status(status).type("html").send(
+            renderSimpleState("Request unavailable", mapDiagnosticsError(loaded.code), {
+              status,
+              linkHref: "/app/diagnostics/radiology",
+              linkLabel: "Back to radiology",
+            })
+          );
+        }
+        const headerActions = [];
+        if (loaded.request.actions.canEnterReport) {
+          headerActions.push({
+            href: `/app/diagnostics/radiology/request/${requestId}/report`,
+            label: "Enter report",
+          });
+        }
+        const flash =
+          req.query.report_entered === "1"
+            ? { type: "success", message: "Radiology report recorded." }
+            : req.query.verified === "1"
+              ? { type: "success", message: "Radiology report verified." }
+              : null;
+        return renderShell(req, res, {
+          activeNav: "diagnostics",
+          content: "app/diagnostics-radiology-request-detail-content.ejs",
+          pageHeader: {
+            title: `Request ${loaded.request.requestNumber}`,
+            description: `Patient: ${loaded.request.patientDisplayName}`,
+            actions: headerActions,
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Diagnostics" },
+            { label: "Radiology", href: "/app/diagnostics/radiology" },
+            { label: "Request" },
+          ],
+          flash,
+          pageData: { request: loaded.request },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   // Enter radiology report (GET form)
   app.get(
     "/app/diagnostics/radiology/request/:requestId/report",
@@ -980,6 +1044,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
             { label: "Home", href: "/app" },
             { label: "Diagnostics" },
             { label: "Radiology", href: "/app/diagnostics/radiology" },
+            { label: "Request", href: `/app/diagnostics/radiology/request/${requestId}` },
             { label: "Enter report" },
           ],
           pageData: { reportEntry: loaded.reportEntry },
@@ -1037,7 +1102,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           return res.redirect(303, `/app/diagnostics/critical-alert/${result.report.id}?report_entered=1`);
         }
 
-        return res.redirect(303, `/app/diagnostics/radiology/queue?report_entered=1`);
+        return res.redirect(303, `/app/diagnostics/radiology/request/${requestId}?report_entered=1`);
       } catch (err) {
         return next(err);
       }
@@ -1199,6 +1264,47 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           );
         }
         return res.redirect(303, "/app/diagnostics/laboratory?released=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/diagnostics/radiology/reports/:reportId/verify",
+    requireAuth,
+    requirePermission([PERM.RADIOLOGY_VERIFY, PERM.VERIFY]),
+    requireDepartment("radiology"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const reportId = String(req.params.reportId || "");
+        if (!UUID_RE.test(reportId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invalid report ID", { status: 404 })
+          );
+        }
+        const auth = req.activeClinicAuth;
+        const verified = await verifyRadiologyReport(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          radiologyReportId: reportId,
+          actor: actor(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!verified.ok) {
+          const status = verified.code === DIAGNOSTICS_RESULT.ACCESS_DENIED ? 403 : 400;
+          return res.status(status).type("html").send(
+            renderSimpleState("Verification failed", mapDiagnosticsError(verified.code), { status })
+          );
+        }
+        const requestId = String(req.body.request_id || "");
+        const nextUrl = UUID_RE.test(requestId)
+          ? `/app/diagnostics/radiology/request/${requestId}?verified=1`
+          : "/app/diagnostics/radiology?verified=1";
+        return res.redirect(303, nextUrl);
       } catch (err) {
         return next(err);
       }

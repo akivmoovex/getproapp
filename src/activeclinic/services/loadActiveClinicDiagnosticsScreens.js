@@ -7,6 +7,7 @@
 const { RESULT: DIAGNOSTICS_RESULT } = require("./activeClinicDiagnosticsService");
 const {
   canAttachLaboratoryResult,
+  canAttachRadiologyReport,
   laboratoryQueueTabs,
   radiologyQueueTabs,
   laboratoryDashboardStats,
@@ -69,6 +70,7 @@ async function loadRadStatusCounts(client, auth) {
     pending: 0,
     in_progress: 0,
     completed: 0,
+    reported: 0,
     verified: 0,
     total: 0,
   };
@@ -658,7 +660,77 @@ async function loadActiveClinicRadiologyQueueScreen(pool, params) {
           patientNumber: r.patient_number || null,
           orderingClinicianDisplayName: r.ordering_clinician_display_name || null,
           requestedAt: r.requested_at,
+          canEnterReport: canAttachRadiologyReport(r.status),
         })),
+      },
+    };
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Load radiology request detail screen
+ */
+async function loadActiveClinicRadiologyRequestDetailScreen(pool, params) {
+  const { auth, requestId } = params;
+  const client = await pool.connect();
+  try {
+    const requestRes = await client.query(
+      `SELECT rr.id, rr.request_number, rr.study_type, rr.study_description,
+              rr.clinical_indication, rr.urgency, rr.status, rr.requested_at,
+              p.first_name || ' ' || p.last_name as patient_display_name
+         FROM activeclinic.radiology_requests rr
+         INNER JOIN activeclinic.patients p ON rr.patient_id = p.id
+        WHERE rr.id = $1
+          AND rr.organization_id = $2
+          AND rr.healthcare_organization_id = $3
+          AND rr.facility_id = $4`,
+      [requestId, auth.organization.id, auth.healthcareOrganization.id, auth.selectedFacility.id]
+    );
+    if (requestRes.rows.length === 0) {
+      return { ok: false, code: DIAGNOSTICS_RESULT.REQUEST_NOT_FOUND };
+    }
+    const request = requestRes.rows[0];
+    const reportRes = await client.query(
+      `SELECT id, status, findings, impression, technique, patient_id, reported_by_staff_id
+         FROM activeclinic.radiology_reports
+        WHERE radiology_request_id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [requestId, auth.organization.id, auth.healthcareOrganization.id]
+    );
+    const report = reportRes.rows[0] || null;
+    return {
+      ok: true,
+      request: {
+        id: request.id,
+        requestNumber: request.request_number,
+        studyType: request.study_type,
+        studyDescription: request.study_description,
+        clinicalIndication: request.clinical_indication,
+        urgency: request.urgency,
+        status: request.status,
+        patientDisplayName: request.patient_display_name,
+        requestedAt: request.requested_at,
+        report: report
+          ? {
+              id: report.id,
+              status: report.status,
+              findings: report.findings,
+              impression: report.impression,
+              technique: report.technique,
+              patientId: report.patient_id,
+              reportedByStaffId: report.reported_by_staff_id,
+            }
+          : null,
+        actions: {
+          canEnterReport: canAttachRadiologyReport(request.status) && !report,
+          canVerify: Boolean(report && report.status === "reported"),
+          canPrint: Boolean(report),
+        },
       },
     };
   } finally {
@@ -676,7 +748,7 @@ async function loadActiveClinicEnterRadiologyReportScreen(pool, params) {
   try {
     const requestRes = await client.query(
       `SELECT rr.id, rr.request_number, rr.study_type, rr.study_description,
-              rr.clinical_indication,
+              rr.clinical_indication, rr.status,
               p.first_name || ' ' || p.last_name as patient_display_name
        FROM activeclinic.radiology_requests rr
        INNER JOIN activeclinic.patients p ON rr.patient_id = p.id
@@ -691,6 +763,9 @@ async function loadActiveClinicEnterRadiologyReportScreen(pool, params) {
     }
 
     const request = requestRes.rows[0];
+    if (!canAttachRadiologyReport(request.status)) {
+      return { ok: false, code: DIAGNOSTICS_RESULT.INVALID_STATUS };
+    }
 
     return {
       ok: true,
@@ -804,6 +879,7 @@ module.exports = {
   loadActiveClinicEnterLaboratoryResultScreen,
   loadActiveClinicRadiologyDashboardScreen,
   loadActiveClinicRadiologyQueueScreen,
+  loadActiveClinicRadiologyRequestDetailScreen,
   loadActiveClinicEnterRadiologyReportScreen,
   loadActiveClinicCriticalResultAlertScreen,
   actorFromAuth,

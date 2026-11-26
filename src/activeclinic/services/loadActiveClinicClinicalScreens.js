@@ -181,6 +181,10 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
             labres.result_summary AS lab_result_summary,
             labres.status AS lab_result_status,
             labres.patient_id AS lab_result_patient_id,
+            radrep.findings AS rad_report_findings,
+            radrep.impression AS rad_report_impression,
+            radrep.status AS rad_report_status,
+            radrep.patient_id AS rad_report_patient_id,
             o.patient_id
        FROM activeclinic.clinical_orders o
        LEFT JOIN activeclinic.staff_members s ON s.id = o.ordered_by_staff_id
@@ -194,6 +198,16 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
           ORDER BY created_at DESC
           LIMIT 1
        ) labres ON true
+       LEFT JOIN activeclinic.radiology_requests rr
+         ON rr.clinical_order_id = o.id
+        AND rr.organization_id = o.organization_id
+       LEFT JOIN LATERAL (
+         SELECT findings, impression, status, patient_id
+           FROM activeclinic.radiology_reports
+          WHERE radiology_request_id = rr.id
+          ORDER BY created_at DESC
+          LIMIT 1
+       ) radrep ON true
       WHERE o.encounter_id = $1
         AND o.organization_id = $2
         AND o.facility_id = $3

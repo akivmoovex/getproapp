@@ -10,6 +10,7 @@ const {
 } = require("./activeClinicAuthorizationService");
 const {
   canAttachLaboratoryResult,
+  canAttachRadiologyReport,
   isClosedDiagnosticStatus,
 } = require("./clinicalOperationsRules");
 const {
@@ -586,6 +587,10 @@ async function enterRadiologyReport(pool, params) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
     }
+    if (!canAttachRadiologyReport(request.status)) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.INVALID_STATUS };
+    }
 
     // Create report
     const reportRes = await client.query(
@@ -760,7 +765,7 @@ async function verifyRadiologyReport(pool, params) {
 
     // Verify report exists
     const reportRes = await client.query(
-      `SELECT id, status, reported_by_staff_id
+      `SELECT id, status, reported_by_staff_id, patient_id, radiology_request_id
        FROM activeclinic.radiology_reports
        WHERE id = $1
          AND organization_id = $2
@@ -774,6 +779,13 @@ async function verifyRadiologyReport(pool, params) {
     }
 
     const report = reportRes.rows[0];
+    if (
+      params.patientId &&
+      String(params.patientId) !== String(report.patient_id)
+    ) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: RESULT.PATIENT_NOT_FOUND };
+    }
     if (isClosedDiagnosticStatus(report.status)) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.ALREADY_VERIFIED };
@@ -800,6 +812,16 @@ async function verifyRadiologyReport(pool, params) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.INVALID_STATUS };
     }
+
+    await client.query(
+      `UPDATE activeclinic.radiology_requests
+          SET status = 'verified'
+        WHERE id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+          AND status = 'reported'`,
+      [report.radiology_request_id, organizationId, healthcareOrganizationId]
+    );
 
     await client.query("COMMIT");
 

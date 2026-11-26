@@ -45,7 +45,7 @@ describe("D66 diagnostic writes", () => {
     const pool = scriptedPool((sql) => {
       if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
       if (sql.includes("FROM activeclinic.radiology_requests")) {
-        return { rows: [{ id: REQUEST, patient_id: OTHER, status: "requested" }] };
+        return { rows: [{ id: REQUEST, patient_id: OTHER, status: "pending" }] };
       }
       if (sql.includes("INSERT INTO activeclinic.radiology_reports")) {
         return { rows: [{ id: RESULT_ID }] };
@@ -77,7 +77,7 @@ describe("D66 diagnostic writes", () => {
     const pool = scriptedPool((sql) => {
       if (sql === "BEGIN" || sql === "ROLLBACK") return { rows: [] };
       if (sql.includes("FROM activeclinic.radiology_requests")) {
-        return { rows: [{ id: REQUEST, patient_id: OTHER, status: "requested" }] };
+        return { rows: [{ id: REQUEST, patient_id: OTHER, status: "pending" }] };
       }
       if (sql.includes("INSERT INTO activeclinic.radiology_reports")) {
         return { rows: [{ id: RESULT_ID }] };

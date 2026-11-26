@@ -1,12 +1,15 @@
 # G238 coverage saturation
 
-The second independent audit found no safely actionable P0 gap. The
-laboratory journey was repaired and independently executed through HTTP,
-PostgreSQL read-back and Playwright. Remaining P1 items are depth work:
-radiology end-to-end persistence/browser coverage, complete clinical print
-contracts, and a field-by-field SOAP/referral matrix.
+Independently actionable P0 gaps for diagnostics journeys are exhausted.
+Laboratory and radiology order-to-result/report journeys are each covered by
+unit, HTTP, PostgreSQL read-back and Playwright evidence.
 
-Those items require additional synthetic fixture design and should not be
-declared complete from route existence or page loads. OTP, Community
-Benefits persistence, public booking, slot capacity and financial posting are
-blocked by explicit migration or policy constraints.
+Remaining P1 items that still require approved product contracts before
+further safe automation:
+
+- clinical print formats beyond laboratory results and radiology reports;
+- SOAP and referral field-by-field browser/persistence matrix.
+
+OTP, Community Benefits persistence, public booking, slot capacity and
+financial posting remain blocked by explicit migration or policy constraints.
+They are not counted as PASS and are not hidden as skips.

@@ -1,14 +1,23 @@
 # G229 radiology QA
 
-The source supports radiology request creation, queue loading, report entry,
-verification, release and critical-result handling. Stored request statuses
-are `pending`, `in_progress`, `completed`, `verified`, `released`, `rejected`,
-and `cancelled` where applicable. The G224 filter repair adds an explicit
-`completed` queue and counter without treating it as verified.
+Stored request statuses used by the journey are `pending`, `in_progress`,
+`completed`, `reported`, `verified`, `released`, and `cancelled`. Report
+entry is allowed only for `pending`, `in_progress`, and `completed`. Entering
+a report sets the request to `reported`. A second staff member with
+`activeclinic.radiology.verify` (or legacy diagnostics verify) verifies the
+report and moves the request to `verified`.
 
-The full order → report → verify → clinician read-back journey is not yet
-covered by an executed PostgreSQL/browser test equivalent to the laboratory
-journey. This is an incomplete P1 coverage gap, not a fabricated PASS.
-Wrong-clinic and permission middleware are covered by the existing route and
-security contracts, but a synthetic persisted radiology journey is the next
-safe action.
+Covered and executed:
+
+- clinician radiology order creates a facility-scoped request;
+- open queue excludes `reported` and `verified`;
+- reported tab and dashboard counters include `reported`;
+- report entry rejects wrong-patient and closed statuses;
+- self-verify is denied; foreign clinic cannot read the report;
+- second staff verifies; request and report statuses become `verified`;
+- clinician encounter shows the same-patient findings via
+  `data-ac-rad-readback`;
+- print control is present on the recorded report.
+
+Evidence: unit filters (`g224-diagnostics-filters`), scripted service denials
+(`d66`, `d74`), HTTP `runG229Radiology`, and Playwright G229.

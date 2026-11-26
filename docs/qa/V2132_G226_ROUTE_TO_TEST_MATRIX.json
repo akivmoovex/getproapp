@@ -1,20 +1,20 @@
 {
   "cycle": "G225-G240",
-  "sourceSha": "df517e571ae076b79e01fac5f85e0039c2e3682e",
+  "sourceSha": "8ef0a1517071c29196f6dda29ff925e955e0ef01",
   "docxReportsAvailable": false,
   "majorJourneys": {
     "implemented": 20,
-    "browserCovered": 16,
-    "httpCovered": 18,
-    "unitContractCovered": 19,
-    "persistenceVerified": 15,
-    "securityNegativeCovered": 18
+    "browserCovered": 17,
+    "httpCovered": 19,
+    "unitContractCovered": 20,
+    "persistenceVerified": 16,
+    "securityNegativeCovered": 19
   },
   "surfaces": [
     {"product":"activeclinic","module":"diagnostics","feature":"laboratory result journey","status":"covered","evidence":"G224/G228"},
-    {"product":"activeclinic","module":"diagnostics","feature":"radiology result journey","status":"partial","evidence":"service and route contracts; full persistence/browser journey pending"},
-    {"product":"activeclinic","module":"diagnostics","feature":"queue counters and filters","status":"partial","evidence":"G224 unit/HTTP coverage; broader facility/status matrix pending"},
-    {"product":"activeclinic","module":"clinical","feature":"printable clinical documents","status":"partial","evidence":"patient card, billing and laboratory result controls; broader document matrix pending"},
+    {"product":"activeclinic","module":"diagnostics","feature":"radiology result journey","status":"covered","evidence":"G229 HTTP/browser/postgres"},
+    {"product":"activeclinic","module":"diagnostics","feature":"queue counters and filters","status":"covered","evidence":"G224/G229 unit/HTTP/browser"},
+    {"product":"activeclinic","module":"clinical","feature":"printable clinical documents","status":"partial","evidence":"patient card, billing, laboratory result and radiology report controls; broader document matrix pending"},
     {"product":"activeclinic","module":"community","feature":"Community Benefits persistence","status":"blocked","evidence":"schema not applied; PostgreSQL pass 0"},
     {"product":"shared","module":"otp","feature":"cross-worker OTP persistence","status":"blocked","evidence":"D14C/D16 blocked by absent platform.otp_challenges"},
     {"product":"shared","module":"appointments","feature":"slot capacity","status":"policy-blocked","evidence":"D25 capacity unapproved; overlap protected"}

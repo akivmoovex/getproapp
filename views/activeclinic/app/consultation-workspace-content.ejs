@@ -353,6 +353,12 @@
               <% if (o.lab_result_summary && String(o.lab_result_patient_id) === String(o.patient_id)) { %>
               <p class="ac-muted" data-ac-lab-readback="1"><%= o.lab_result_summary %></p>
               <% } %>
+              <% if (o.rad_report_findings && String(o.rad_report_patient_id) === String(o.patient_id)) { %>
+              <p class="ac-muted" data-ac-rad-readback="1"><%= o.rad_report_findings %></p>
+              <% } %>
+              <% if (o.rad_report_impression && String(o.rad_report_patient_id) === String(o.patient_id)) { %>
+              <p class="ac-muted" data-ac-rad-impression-readback="1"><%= o.rad_report_impression %></p>
+              <% } %>
               <% if (o.ordered_by_staff_display_name) { %>
               <span class="ac-muted">· <%= o.ordered_by_staff_display_name %></span>
               <% } %>

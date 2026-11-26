@@ -1,14 +1,13 @@
 # G230 diagnostics counters
 
-Laboratory and radiology counters are now derived from persisted status
-aggregates scoped by facility, organisation and healthcare organisation.
-Laboratory tabs distinguish pending collection, collected, received,
-processing, resulted, verified and all. Radiology distinguishes pending,
-in-progress, completed, verified and all.
+Laboratory and radiology dashboard counters are loaded from independent
+`GROUP BY status` queries on the facility-scoped request tables. Queue tabs
+use the same counts.
 
-G224 executes received-count, processing-exclusion, and laboratory result
-status assertions against PostgreSQL. Unit tests cover zero, one and multiple
-counts and the open-count arithmetic. A broader multi-facility/date-filter
-matrix and a full radiology persisted journey remain P1 coverage work.
-Counters are not written by fixtures and are not inflated to make assertions
-green.
+Laboratory open queue excludes `resulted` and `verified`. Radiology open
+queue excludes `reported` and `verified`. Reported radiology has its own tab
+and `data-ac-rad-count="reported"` metric. Verified radiology is counted
+separately from completed and reported.
+
+HTTP and browser journeys assert the request number appears under the correct
+filter and that dashboard counters move with the stored status.

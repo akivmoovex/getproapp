@@ -3691,12 +3691,13 @@ const VERSIONS = Object.freeze([
     architectureWork: {
       title: "V2.13.2 maintenance candidate",
       body:
-        "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Staff-created patients can activate one existing portal record. Published website sections render new text and an authorized image reference. Version metadata is 2.13.2.",
+        "Staff-overlap checks run inside the appointment transaction. Vitals corrections append a new row. Staff-created patients can activate one existing portal record. Published website sections render new text and an authorized image reference. Laboratory result entry after specimen receipt and radiology report entry with verification and clinician read-back are covered by authorized HTTP and browser journeys. Version metadata is 2.13.2.",
       items: [
         "Same-staff appointment overlap is locked inside the transaction and one of two concurrent bookings is stored",
         "Vitals correction keeps the original observation",
         "Staff review keeps the patient phone used for portal activation",
         "Published website text and authorized image references stay separate from drafts",
+        "Laboratory and radiology request status filters, counters, verification, and clinician read-back are persisted",
         "Historical release notes preserved",
       ],
     },

@@ -9,7 +9,7 @@ const { describe, it } = require("node:test");
 const { dbWritesAuthorized } = require("../helpers/v13DbWriteGate");
 const { RESULTS } = require("../helpers/v13QaStatus");
 const { runGated, runG03Laboratory } = require("./v13AuthorizedScenarios");
-const { runG224Laboratory } = require("./d05RegressionRunners");
+const { runG224Laboratory, runG229Radiology } = require("./d05RegressionRunners");
 
 describe("G03 laboratory HTTP", () => {
   it("denies a laboratory request that is outside the organization", async (t) => {
@@ -33,6 +33,18 @@ describe("G03 laboratory HTTP", () => {
     const result = await runGated(t, "G224", runG224Laboratory);
     if (result !== RESULTS.PASS) {
       throw new Error(`G224 authorized run did not pass (${result})`);
+    }
+  });
+
+  it("records a radiology report, verifies it with a second staff member, and reads it back", async (t) => {
+    if (!dbWritesAuthorized()) {
+      t.diagnostic(`V13_RESULT=${RESULTS.NOT_RUN}`);
+      t.skip("NOT_RUN: radiology report HTTP waits for disposable database authorization");
+      return;
+    }
+    const result = await runGated(t, "G229", runG229Radiology);
+    if (result !== RESULTS.PASS) {
+      throw new Error(`G229 authorized run did not pass (${result})`);
     }
   });
 });

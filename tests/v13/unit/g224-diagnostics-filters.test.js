@@ -4,6 +4,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
   canAttachLaboratoryResult,
+  canAttachRadiologyReport,
   laboratoryQueueTabs,
   radiologyQueueTabs,
   laboratoryDashboardStats,
@@ -59,5 +60,34 @@ describe("G224 diagnostics filters", () => {
     const stats = radiologyDashboardStats({ completed: 3, pending: 1, total: 4 });
     assert.equal(stats.completed, 3);
     assert.equal(stats.verified, 0);
+  });
+
+  it("keeps reported radiology out of the open queue and eligible only before a report exists", () => {
+    assert.equal(canAttachRadiologyReport("pending"), true);
+    assert.equal(canAttachRadiologyReport("in_progress"), true);
+    assert.equal(canAttachRadiologyReport("completed"), true);
+    assert.equal(canAttachRadiologyReport("reported"), false);
+    assert.equal(canAttachRadiologyReport("verified"), false);
+    const tabs = radiologyQueueTabs({
+      pending: 1,
+      in_progress: 1,
+      completed: 1,
+      reported: 2,
+      verified: 3,
+      total: 8,
+    }, "reported");
+    assert.equal(tabs.find((tab) => tab.key === "open").count, 3);
+    assert.equal(tabs.find((tab) => tab.key === "reported").count, 2);
+    assert.equal(tabs.find((tab) => tab.key === "reported").active, true);
+    const stats = radiologyDashboardStats({
+      pending: 1,
+      in_progress: 1,
+      completed: 1,
+      reported: 2,
+      verified: 3,
+      total: 8,
+    });
+    assert.equal(stats.reported, 2);
+    assert.equal(stats.verified, 3);
   });
 });

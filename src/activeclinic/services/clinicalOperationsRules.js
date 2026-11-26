@@ -21,6 +21,12 @@ const RESULTABLE_LABORATORY_REQUEST_STATUSES = Object.freeze([
   "processing",
 ]);
 
+const RESULTABLE_RADIOLOGY_REQUEST_STATUSES = Object.freeze([
+  "pending",
+  "in_progress",
+  "completed",
+]);
+
 function isStoredOrderType(value) {
   return STORED_ORDER_TYPES.includes(String(value || ""));
 }
@@ -31,6 +37,10 @@ function isStoredOrderStatus(value) {
 
 function canAttachLaboratoryResult(status) {
   return RESULTABLE_LABORATORY_REQUEST_STATUSES.includes(status);
+}
+
+function canAttachRadiologyReport(status) {
+  return RESULTABLE_RADIOLOGY_REQUEST_STATUSES.includes(status);
 }
 
 function laboratoryQueueTabs(counts, currentStatus) {
@@ -69,6 +79,7 @@ function radiologyQueueTabs(counts, currentStatus) {
     ["pending", "Pending intake", safe.pending || 0],
     ["in_progress", "In progress", safe.in_progress || 0],
     ["completed", "Completed", safe.completed || 0],
+    ["reported", "Reported", safe.reported || 0],
     ["verified", "Verified", safe.verified || 0],
     ["all", "All", safe.total || 0],
   ];
@@ -100,6 +111,7 @@ function radiologyDashboardStats(counts) {
     pending: safe.pending || 0,
     in_progress: safe.in_progress || 0,
     completed: safe.completed || 0,
+    reported: safe.reported || 0,
     verified: safe.verified || 0,
     total: safe.total || 0,
   };
@@ -180,9 +192,11 @@ module.exports = {
   STORED_ORDER_TYPES,
   STORED_ORDER_STATUSES,
   RESULTABLE_LABORATORY_REQUEST_STATUSES,
+  RESULTABLE_RADIOLOGY_REQUEST_STATUSES,
   isStoredOrderType,
   isStoredOrderStatus,
   canAttachLaboratoryResult,
+  canAttachRadiologyReport,
   laboratoryQueueTabs,
   radiologyQueueTabs,
   laboratoryDashboardStats,

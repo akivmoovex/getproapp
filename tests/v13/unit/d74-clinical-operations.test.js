@@ -238,7 +238,7 @@ describe("D74 laboratory association", () => {
   it("does not attach a radiology report to another patient", async () => {
     const pool = scriptedPool((sql) => {
       if (sql.includes("FROM activeclinic.radiology_requests")) {
-        return { rows: [{ id: REQUEST, patient_id: PATIENT, status: "requested" }] };
+        return { rows: [{ id: REQUEST, patient_id: PATIENT, status: "pending" }] };
       }
       throw new Error("insert_not_allowed");
     });
@@ -256,6 +256,28 @@ describe("D74 laboratory association", () => {
     });
     assert.equal(result.code, LAB.PATIENT_NOT_FOUND);
     assert.equal(pool.statements.some((sql) => sql.includes("INSERT INTO activeclinic.radiology_reports")), false);
+  });
+
+  it("does not enter a radiology report for a closed request", async () => {
+    const pool = scriptedPool((sql) => {
+      if (sql.includes("FROM activeclinic.radiology_requests")) {
+        return { rows: [{ id: REQUEST, patient_id: PATIENT, status: "reported" }] };
+      }
+      throw new Error("insert_not_allowed");
+    });
+    const result = await enterRadiologyReport(pool, {
+      organizationId: ORG,
+      healthcareOrganizationId: HCO,
+      facilityId: FACILITY,
+      radiologyRequestId: REQUEST,
+      findings: "seen",
+      impression: "clear",
+      technique: "plain",
+      isCritical: false,
+      actor: { staffId: STAFF },
+    });
+    assert.equal(result.code, LAB.INVALID_STATUS);
+    assert.equal(pool.statements.includes("COMMIT"), false);
   });
 
   it("does not verify a laboratory result for another patient", async () => {

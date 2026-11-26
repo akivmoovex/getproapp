@@ -21,19 +21,23 @@
   <div class="ac-metric-grid ac-stats" data-ac-diagnostics-metrics="radiology">
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Pending</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= stats.pending || 0 %></p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="pending"><%= stats.pending || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">In progress</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= stats.in_progress || 0 %></p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="in_progress"><%= stats.in_progress || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Completed</p>
       <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="completed"><%= stats.completed || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Reported</p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="reported"><%= stats.reported || 0 %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Verified</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= stats.verified || 0 %></p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="verified"><%= stats.verified || 0 %></p>
     </article>
   </div>
 </section>

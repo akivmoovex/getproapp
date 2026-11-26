@@ -2,10 +2,17 @@
 
 ## P1 coverage
 
-- Full radiology order, report, verify and clinician read-back journey.
-- Independent print-ready assertions for supported clinical documents beyond
-  the laboratory result.
+- Independent print-ready assertions for clinical documents beyond laboratory
+  results and radiology reports (SOAP, prescriptions, referrals) without
+  inventing unapproved print formats.
 - Complete SOAP and referral field-by-field browser/persistence matrix.
+
+## Closed this cycle
+
+- Full radiology order → report → verify → clinician read-back journey
+  (HTTP + browser + PostgreSQL read-back).
+- Radiology reported filter/tab and dashboard counter.
+- Radiology request detail with print and second-staff verification.
 
 ## Blocked gates
 

@@ -1162,6 +1162,135 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
       await pool.end();
     }
   });
+
+  test("G229 radiology report follows order, verification, filters, and clinician read-back", async ({ page }, testInfo) => {
+    hold(testInfo, "G229 radiology");
+    const stamp = Date.now();
+    const findings = `Chest clear ${stamp}`;
+    const impression = `No acute finding ${stamp}`;
+    await staffSignIn(page, required("E2E_AC_RECEPTIONIST_EMAIL"), required("E2E_AC_RECEPTIONIST_PASSWORD"));
+    const blocked = await page.request.get("/app/diagnostics/radiology/queue", { maxRedirects: 0 });
+    expect([401, 403]).toContain(blocked.status());
+    await page.context().clearCookies();
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Rad");
+    await page.locator("input[name='last_name']").fill(`Journey${String(stamp).slice(-6)}`);
+    await page.locator("select[name='sex_at_registration']").selectOption("male");
+    await page.locator("input[name='date_of_birth']").fill("1988-07-07");
+    await page.locator("input[name='phone_national']").fill(`96${String(stamp).slice(-7)}`);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    const pool = createAuthorizedPgClient(process.env, (options) => {
+      const { Pool } = require("pg");
+      return new Pool({ ...options, max: 2 });
+    });
+    try {
+      const found = await pool.query(
+        `SELECT p.id, p.organization_id, p.healthcare_organization_id
+           FROM activeclinic.patients p
+          WHERE p.patient_number = $1`,
+        [number]
+      );
+      expect(found.rowCount).toBe(1);
+      const patient = found.rows[0];
+      await page.goto("/app/clinical/start-encounter");
+      await page.locator("input[name='patient_id']").fill(patient.id);
+      await page.locator("form:has(input[name='patient_id']) button[type='submit']").click();
+      await expect(page).toHaveURL(/\/app\/clinical\/encounter\//);
+      const encounterUrl = page.url().split("?")[0];
+      const encounterId = encounterUrl.split("/").pop();
+      await page.context().clearCookies();
+      await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
+      await page.goto(`${encounterUrl}/order/radiology`);
+      await page.locator("#imaging_type").selectOption("x_ray");
+      await page.locator("#body_part").fill("Chest");
+      await page.locator("#instructions").fill("G229 browser radiology order");
+      await page.getByRole("button", { name: "Create radiology request" }).click();
+      await expect(page).toHaveURL(/order_created=1/);
+      const request = await pool.query(
+        `SELECT id, request_number, patient_id, facility_id, status
+           FROM activeclinic.radiology_requests
+          WHERE encounter_id = $1`,
+        [encounterId]
+      );
+      expect(request.rowCount).toBe(1);
+      expect(request.rows[0].patient_id).toBe(patient.id);
+      expect(request.rows[0].status).toBe("pending");
+      const { provisionFacilityStaff } = require("../../v13/fixtures/v13SyntheticFixtures");
+      const { RADIOLOGY_STAFF } = require("../../../src/activeclinic/services/activeClinicAuthorizationService");
+      const password = required("E2E_AC_ADMIN_PASSWORD");
+      const enterEmail = `rad-enter-${stamp}@v13d19.example`;
+      const verifyEmail = `rad-verify-${stamp}@v13d19.example`;
+      await provisionFacilityStaff(pool, {
+        organizationId: patient.organization_id,
+        healthcareOrganizationId: patient.healthcare_organization_id,
+        facilityId: request.rows[0].facility_id,
+        env: process.env,
+      }, {
+        email: enterEmail,
+        phone: `+26094${String(stamp).slice(-7)}`,
+        password,
+      }, RADIOLOGY_STAFF);
+      await provisionFacilityStaff(pool, {
+        organizationId: patient.organization_id,
+        healthcareOrganizationId: patient.healthcare_organization_id,
+        facilityId: request.rows[0].facility_id,
+        env: process.env,
+      }, {
+        email: verifyEmail,
+        phone: `+26093${String(stamp).slice(-7)}`,
+        password,
+      }, RADIOLOGY_STAFF);
+      const requestUrl = `/app/diagnostics/radiology/request/${request.rows[0].id}`;
+      await page.context().clearCookies();
+      await staffSignIn(page, enterEmail, password);
+      await page.goto("/app/diagnostics/radiology/queue?status=pending");
+      await expect(page.locator("body")).toContainText(request.rows[0].request_number);
+      await page.goto("/app/diagnostics/radiology");
+      await expect(page.locator("[data-ac-rad-count='pending']")).not.toHaveText("0");
+      await page.goto(requestUrl);
+      await page.getByRole("link", { name: "Enter report" }).click();
+      await page.locator("#findings").fill(findings);
+      await page.locator("#impression").fill(impression);
+      await page.locator("#technique").fill("PA chest");
+      await page.getByRole("button", { name: "Enter report" }).click();
+      await expect(page.locator("[data-ac-rad-findings='1']")).toHaveText(findings);
+      await expect(page.getByRole("button", { name: "Print report" })).toBeVisible();
+      await page.goto("/app/diagnostics/radiology/queue?status=open");
+      await expect(page.locator("body")).not.toContainText(request.rows[0].request_number);
+      await page.goto("/app/diagnostics/radiology/queue?status=reported");
+      await expect(page.locator("body")).toContainText(request.rows[0].request_number);
+      await page.goto("/app/diagnostics/radiology");
+      await expect(page.locator("[data-ac-rad-count='reported']")).not.toHaveText("0");
+      await page.goto(requestUrl);
+      await page.getByRole("button", { name: "Verify report" }).click();
+      await expect(page.locator("body")).toContainText("Verification failed");
+      await page.context().clearCookies();
+      await staffSignIn(page, verifyEmail, password);
+      await page.goto(requestUrl);
+      await page.getByRole("button", { name: "Verify report" }).click();
+      await expect(page).toHaveURL(/verified=1/);
+      const finalRow = await pool.query(
+        `SELECT rr.status AS request_status, rep.status AS report_status, rep.patient_id
+           FROM activeclinic.radiology_requests rr
+           JOIN activeclinic.radiology_reports rep ON rep.radiology_request_id = rr.id
+          WHERE rr.id = $1`,
+        [request.rows[0].id]
+      );
+      expect(finalRow.rows[0].request_status).toBe("verified");
+      expect(finalRow.rows[0].report_status).toBe("verified");
+      expect(finalRow.rows[0].patient_id).toBe(patient.id);
+      await page.context().clearCookies();
+      await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
+      await page.goto(encounterUrl);
+      await expect(page.locator("[data-ac-rad-readback='1']")).toHaveText(findings);
+    } finally {
+      await pool.end();
+    }
+  });
 });
 
 async function fillVisible(page, name, value) {
