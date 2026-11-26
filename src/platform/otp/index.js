@@ -17,6 +17,11 @@ const {
   resolveOtpProvider,
   createFakeOtpProvider,
 } = require("./otpProviders");
+const {
+  diagnoseOtpReadiness,
+  diagnoseOtpReadinessAsync,
+  probeOtpTables,
+} = require("./otpReadinessDiagnostics");
 
 function bindProduct(productCode, options) {
   const service = createOtpService(options);
@@ -45,4 +50,7 @@ module.exports = {
   bindProduct,
   isFixedOtpPermitted,
   assertOtpProductionStartup,
+  diagnoseOtpReadiness,
+  diagnoseOtpReadinessAsync,
+  probeOtpTables,
 };

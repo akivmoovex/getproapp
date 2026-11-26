@@ -34,10 +34,16 @@ describe("D16 ActiveClinic V2.13.1 contracts", () => {
     assert.doesNotMatch(registration, /patient_portal_activation/);
 
     const csrf = recovery.indexOf("validateCsrf");
-    const hold = recovery.indexOf("holdIfOtpRequired");
+    const hold = Math.max(
+      recovery.indexOf("holdIfOtpRequired"),
+      recovery.indexOf("holdPasswordRecoveryIfOtpRequired")
+    );
     assert.ok(csrf > 0 && hold > csrf);
     const patientCsrf = patient.indexOf("validateCsrf");
-    const patientHold = patient.indexOf("holdIfOtpRequired");
+    const patientHold = Math.max(
+      patient.indexOf("holdIfOtpRequired"),
+      patient.indexOf("holdPasswordRecoveryIfOtpRequired")
+    );
     assert.ok(patientCsrf > 0 && patientHold > patientCsrf);
   });
 

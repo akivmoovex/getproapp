@@ -32,6 +32,8 @@ async function runSharedOtpPersistence(pool, connectionString) {
     accountId,
     identifier: `otp-${stamp}@v13d19.example`,
     accountResolved: true,
+    // Isolate the shared context hourly bucket from other disposable OTP runs.
+    context: `g185-${stamp}`,
   };
   const workerB = new Pool({ connectionString, ssl: false, max: 1 });
   const first = createOtpService({ pool, clock: () => now });

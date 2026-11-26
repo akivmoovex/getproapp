@@ -83,6 +83,13 @@ async function evaluateOtpSessionGate(input, env) {
   }
 
   const otp = serviceFor(input);
+  // Password recovery defaults to unresolved until the route proves an eligible
+  // account. That keeps enumeration-safe link reset working when OTP is ACTIVE
+  // but binding fields are not yet supplied. Login/admin must pass explicit true.
+  const accountResolved =
+    input.accountResolved !== undefined && input.accountResolved !== null
+      ? input.accountResolved !== false
+      : workflow.action !== "auth.password_recovery";
   const binding = {
     action: workflow.action,
     productCode: workflow.productCode,
@@ -91,11 +98,31 @@ async function evaluateOtpSessionGate(input, env) {
     accountId: input.accountId,
     sessionId: input.sessionId || null,
     identifier: input.identifier,
-    accountResolved: input.accountResolved !== false,
+    accountResolved,
     context: input.context || workflow.id,
   };
   if (!input.verification) {
     const started = await otp.beginChallenge(binding, source);
+    const suppressed =
+      started &&
+      started.server &&
+      started.server.ok === true &&
+      started.server.issued === false;
+    if (suppressed && workflow.action === "auth.password_recovery") {
+      return {
+        ok: true,
+        sessionAllowed: true,
+        otpRequired: false,
+        sessionComplete: false,
+        activation: "ACTIVE",
+        workflow: workflow.id,
+        productCode: workflow.productCode,
+        action: workflow.action,
+        public: started.public,
+        reason: "account_unresolved_suppressed",
+        recoveryMode: "password_reset_link",
+      };
+    }
     return {
       ok: false,
       sessionAllowed: false,
@@ -108,6 +135,7 @@ async function evaluateOtpSessionGate(input, env) {
       public: started.public,
       attemptId: started.server && started.server.attemptId,
       reason: started.server && started.server.reason,
+      recoveryMode: "code_otp_required",
     };
   }
   const verified = await otp.verifyChallenge(

@@ -27,7 +27,10 @@ describe("D14C OTP auth contracts", () => {
 
     const reset = read("src/blessboard/http/passwordResetRoutes.js");
     const csrfAt = reset.indexOf("validateCsrf");
-    const holdAt = reset.indexOf("holdIfOtpRequired");
+    const holdAt = Math.max(
+      reset.indexOf("holdIfOtpRequired"),
+      reset.indexOf("holdPasswordRecoveryIfOtpRequired")
+    );
     assert.ok(csrfAt > 0 && holdAt > csrfAt);
 
     const booking = read("src/activeclinic/http/activeClinicPublicRoutes.js");

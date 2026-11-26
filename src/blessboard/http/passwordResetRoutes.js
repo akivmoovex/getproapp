@@ -192,10 +192,14 @@ function createPasswordResetRouter(opts) {
       return res.status(403).type("html").send(html);
     }
 
-    const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
-    const otpHold = await holdIfOtpRequired({
+    const {
+      holdPasswordRecoveryIfOtpRequired,
+    } = require("../../platform/otp/otpPasswordRecoveryBridge");
+    const otpHold = await holdPasswordRecoveryIfOtpRequired({
       workflow: "blessboard.forgot_password",
       env,
+      identifier: emailRaw || phoneResolved.e164 || null,
+      channel: emailRaw ? "email" : "sms",
     });
     if (otpHold) {
       const html = renderV5Ejs(
@@ -203,6 +207,9 @@ function createPasswordResetRouter(opts) {
         forgotLocals(req, res, {
           error: "Additional verification is required.",
           emailValue: emailRaw,
+          otpRequired: true,
+          otpAttemptId: otpHold.attemptId || null,
+          otpReason: otpHold.reason || "otp_required",
         })
       );
       return res.status(401).type("html").send(html);

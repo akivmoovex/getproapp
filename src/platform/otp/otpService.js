@@ -132,18 +132,9 @@ function createOtpService(options) {
     if (!PRODUCTS.includes(productCode)) return denied("unknown_product");
     const channel = String((input && input.channel) || "").trim().toLowerCase();
     if (!CHANNELS.includes(channel)) return denied("channel");
-    const organizationId = String((input && input.organizationId) || "").trim();
-    const accountId = String((input && input.accountId) || "").trim();
-    if (!UUID_RE.test(organizationId) || !UUID_RE.test(accountId)) return denied("binding");
-    const sessionIdRaw = input && input.sessionId != null ? String(input.sessionId).trim() : "";
-    if (action.requiresSession && !UUID_RE.test(sessionIdRaw)) return denied("session_required");
-    const sessionId = sessionIdRaw || null;
-    const identifier = normalizeIdentifier(channel, input && input.identifier, env);
-    if (!identifier) return denied("identifier");
-    const pepper = pepperFrom(env);
-    if (!pepper) return denied("pepper");
-
     const preAuth = action.preAuth === true;
+    // Enumeration-safe pre-auth: suppress before binding/identifier checks so
+    // unresolved recovery/login lookups cannot leak account existence.
     if (preAuth && input && input.accountResolved === false) {
       audit({
         type: "otp.suppressed",
@@ -154,6 +145,16 @@ function createOtpService(options) {
       });
       return { public: PUBLIC_ACCEPTED, server: { ok: true, issued: false, sessionComplete: false } };
     }
+    const organizationId = String((input && input.organizationId) || "").trim();
+    const accountId = String((input && input.accountId) || "").trim();
+    if (!UUID_RE.test(organizationId) || !UUID_RE.test(accountId)) return denied("binding");
+    const sessionIdRaw = input && input.sessionId != null ? String(input.sessionId).trim() : "";
+    if (action.requiresSession && !UUID_RE.test(sessionIdRaw)) return denied("session_required");
+    const sessionId = sessionIdRaw || null;
+    const identifier = normalizeIdentifier(channel, input && input.identifier, env);
+    if (!identifier) return denied("identifier");
+    const pepper = pepperFrom(env);
+    if (!pepper) return denied("pepper");
 
     const now = nowMs(opts);
     const attemptId = crypto.randomUUID();

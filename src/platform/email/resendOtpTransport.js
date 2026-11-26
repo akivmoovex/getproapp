@@ -15,6 +15,30 @@ const PRODUCT_LABEL = Object.freeze({
   pronline: "PROnline",
 });
 
+/**
+ * Fail-closed Resend OTP preflight. Does not call the network and does not
+ * invent dashboard verification — only reports configured allowlist state.
+ */
+function diagnoseResendOtpTransport(env, productCode) {
+  const source = env || {};
+  const routed = resolveProductSender(productCode, source);
+  const apiKeyConfigured = Boolean(String(source.RESEND_API_KEY || "").trim());
+  const blockers = [];
+  if (!routed.ok) blockers.push(routed.reason || "sender_not_ready");
+  if (!apiKeyConfigured) blockers.push("missing_api_key");
+  return Object.freeze({
+    ok: blockers.length === 0,
+    productCode: routed.product || String(productCode || "").trim().toLowerCase() || "missing",
+    apiKeyConfigured,
+    senderOk: routed.ok === true,
+    senderReason: routed.reason || "unknown",
+    senderProfile: routed.profile || null,
+    senderDomain: routed.sender ? routed.sender.domain : null,
+    blockers: Object.freeze(blockers),
+    liveSendAuthorized: false,
+  });
+}
+
 function createResendOtpEmailTransport(env, deps) {
   const source = env || {};
   const options = deps || {};
@@ -24,6 +48,19 @@ function createResendOtpEmailTransport(env, deps) {
     const key = input.idempotencyKey ? String(input.idempotencyKey).slice(0, 256) : "";
     if (key && sent.has(key)) {
       return { ok: true, reason: "duplicate_suppressed", retryable: false };
+    }
+    const preflight = diagnoseResendOtpTransport(source, input.productCode);
+    if (!preflight.ok) {
+      return {
+        ok: false,
+        reason: preflight.blockers[0] || "resend_preflight_failed",
+        retryable: false,
+        diagnostic: {
+          apiKeyConfigured: preflight.apiKeyConfigured,
+          senderReason: preflight.senderReason,
+          senderDomain: preflight.senderDomain,
+        },
+      };
     }
     const routed = resolveProductSender(input.productCode, source);
     if (!routed.ok) {
@@ -68,4 +105,5 @@ function createResendOtpEmailTransport(env, deps) {
 
 module.exports = {
   createResendOtpEmailTransport,
+  diagnoseResendOtpTransport,
 };

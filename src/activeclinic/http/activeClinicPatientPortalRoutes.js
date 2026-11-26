@@ -614,10 +614,14 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         }
 
         const identifier = String((req.body && req.body.identifier) || "").trim();
-        const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
-        const otpHold = await holdIfOtpRequired({
+        const {
+          holdPasswordRecoveryIfOtpRequired,
+        } = require("../../platform/otp/otpPasswordRecoveryBridge");
+        const otpHold = await holdPasswordRecoveryIfOtpRequired({
           workflow: "activeclinic.patient_forgot_password",
           env,
+          identifier,
+          channel: "email",
         });
         if (otpHold) {
           const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -627,6 +631,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
               csrfField: CSRF_FIELD,
               clinicKey,
               error: "Additional verification is required.",
+              otpRequired: true,
+              otpAttemptId: otpHold.attemptId || null,
+              otpReason: otpHold.reason || "otp_required",
             })
           );
         }

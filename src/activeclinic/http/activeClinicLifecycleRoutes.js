@@ -197,10 +197,14 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
           })
         );
       }
-      const { holdIfOtpRequired } = require("../../platform/otp/otpSessionGate");
-      const otpHold = await holdIfOtpRequired({
+      const {
+        holdPasswordRecoveryIfOtpRequired,
+      } = require("../../platform/otp/otpPasswordRecoveryBridge");
+      const otpHold = await holdPasswordRecoveryIfOtpRequired({
         workflow: "activeclinic.forgot_password",
         env,
+        identifier: req.body && req.body.identifier,
+        channel: "email",
       });
       if (otpHold) {
         return res.status(401).type("html").send(
@@ -210,6 +214,9 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
             error: "Additional verification is required.",
             identifier: req.body && req.body.identifier,
             phoneCountry: req.body && req.body.phone_country,
+            otpRequired: true,
+            otpAttemptId: otpHold.attemptId || null,
+            otpReason: otpHold.reason || "otp_required",
           })
         );
       }

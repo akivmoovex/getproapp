@@ -178,6 +178,9 @@ function renderForgotPage(input) {
     identifier: String((input && input.identifier) || ""),
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     composition: "mf04-forgot",
+    otpRequired: Boolean(input && input.otpRequired),
+    otpAttemptId: (input && input.otpAttemptId) || null,
+    otpReason: (input && input.otpReason) || null,
   });
   const bodyHtml = renderAuthContent("auth/forgot-password.ejs", locals);
   return renderAuthShell("forgot-password", locals.pageTitle, bodyHtml, {
