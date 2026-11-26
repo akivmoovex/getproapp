@@ -89,6 +89,12 @@ function diagnoseOtpReadiness(env, options) {
     if (domains.length === 0) blockers.push("resend_verified_domains_unconfigured");
     const anySender = products.some((row) => row.senderOk);
     if (!anySender) blockers.push("resend_sender_not_verified_in_config");
+    if (
+      senderProfileName === "hosted-qa" &&
+      !String(source.GETPRO_RESEND_QA_RECIPIENTS || "").trim()
+    ) {
+      blockers.push("qa_recipient_allowlist_missing");
+    }
   }
   if (provider.deliveryActivated === true) blockers.push("delivery_activated_forbidden");
 

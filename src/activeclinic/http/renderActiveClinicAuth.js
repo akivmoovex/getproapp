@@ -181,6 +181,8 @@ function renderForgotPage(input) {
     otpRequired: Boolean(input && input.otpRequired),
     otpAttemptId: (input && input.otpAttemptId) || null,
     otpReason: (input && input.otpReason) || null,
+    otpAccountId: (input && input.otpAccountId) || null,
+    otpOrganizationId: (input && input.otpOrganizationId) || null,
   });
   const bodyHtml = renderAuthContent("auth/forgot-password.ejs", locals);
   return renderAuthShell("forgot-password", locals.pageTitle, bodyHtml, {

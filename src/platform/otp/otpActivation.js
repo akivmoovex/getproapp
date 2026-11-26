@@ -14,12 +14,22 @@ const BLOCK_REASONS = Object.freeze([
   "release_not_verified",
 ]);
 
+function envActivationOverride(env) {
+  const value = String((env && env.GETPRO_OTP_ACTIVATION) || "")
+    .trim()
+    .toUpperCase();
+  return value === "ACTIVE" ? "ACTIVE" : null;
+}
+
 function resolveOtpActivation(env, override) {
   const source = env || {};
   if (isProductionSignal(source)) {
     return { status: "BLOCKED", reasons: BLOCK_REASONS.slice() };
   }
-  if (override === "ACTIVE") {
+  // Explicit call-site override wins for tests. Otherwise honor non-production
+  // GETPRO_OTP_ACTIVATION=ACTIVE for authorized disposable/hosted-QA only.
+  const requested = override === "ACTIVE" ? "ACTIVE" : envActivationOverride(source);
+  if (requested === "ACTIVE") {
     return { status: "ACTIVE", reasons: [] };
   }
   return { status: "BLOCKED", reasons: BLOCK_REASONS.slice() };
@@ -28,4 +38,5 @@ function resolveOtpActivation(env, override) {
 module.exports = {
   BLOCK_REASONS,
   resolveOtpActivation,
+  envActivationOverride,
 };

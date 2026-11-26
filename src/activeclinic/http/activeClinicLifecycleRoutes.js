@@ -24,6 +24,7 @@ const {
   requestActiveClinicPasswordReset,
   previewResetToken,
   completeActiveClinicPasswordReset,
+  peekEligibleActiveClinicPasswordReset,
   RESULT: RESET_RESULT,
   NEUTRAL_MESSAGE,
 } = require("../services/activeClinicPasswordRecoveryService");
@@ -198,32 +199,104 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
         );
       }
       const {
-        holdPasswordRecoveryIfOtpRequired,
+        beginEligibleRecoveryOtp,
       } = require("../../platform/otp/otpPasswordRecoveryBridge");
-      const otpHold = await holdPasswordRecoveryIfOtpRequired({
-        workflow: "activeclinic.forgot_password",
-        env,
-        identifier: req.body && req.body.identifier,
-        channel: "email",
+      const identifier = req.body && req.body.identifier;
+      const peek = await peekEligibleActiveClinicPasswordReset(getPool(), {
+        identifier,
+        country: req.body && req.body.phone_country,
       });
-      if (otpHold) {
+      const otpGate = await beginEligibleRecoveryOtp(
+        {
+          workflow: "activeclinic.forgot_password",
+          env,
+          found: Boolean(peek && peek.found),
+          organizationId: peek && peek.organizationId,
+          accountId: peek && peek.accountId,
+          identifier: (peek && peek.normalized) || identifier,
+          channel: peek && peek.kind === "phone" ? "sms" : "email",
+        },
+        env
+      );
+      if (otpGate.requireCode) {
         return res.status(401).type("html").send(
           renderForgotPage({
             csrfToken,
             message: null,
-            error: "Additional verification is required.",
-            identifier: req.body && req.body.identifier,
+            error: "Enter the verification code sent to your email.",
+            identifier,
             phoneCountry: req.body && req.body.phone_country,
             otpRequired: true,
-            otpAttemptId: otpHold.attemptId || null,
-            otpReason: otpHold.reason || "otp_required",
+            otpAttemptId: otpGate.attemptId || null,
+            otpReason: otpGate.reason || "otp_required",
+            otpAccountId: peek && peek.accountId,
+            otpOrganizationId: peek && peek.organizationId,
+          })
+        );
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      await requestActiveClinicPasswordReset(getPool(), {
+        identifier,
+        country: req.body && req.body.phone_country,
+        deploymentCode: deployment.ok ? deployment.code : CODE_FALLBACK(),
+        requestIp: clientIp(req),
+        requestId: req.requestId || req.id || null,
+        env,
+      });
+      return res.redirect(303, "/forgot-password/check");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/forgot-password/otp-verify", forgotLimiter, async (req, res, next) => {
+    try {
+      const csrfToken = issuePageCsrf(res);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(
+          renderForgotPage({
+            csrfToken,
+            message: null,
+            error: "Your session expired. Please try again.",
+            otpRequired: true,
+            otpAttemptId: req.body && req.body.otp_attempt_id,
+          })
+        );
+      }
+      const {
+        completeEligibleRecoveryOtp,
+      } = require("../../platform/otp/otpPasswordRecoveryBridge");
+      const completed = await completeEligibleRecoveryOtp(
+        {
+          workflow: "activeclinic.forgot_password",
+          env,
+          organizationId: req.body && req.body.otp_organization_id,
+          accountId: req.body && req.body.otp_account_id,
+          identifier: req.body && req.body.identifier,
+          channel: "email",
+          attemptId: req.body && req.body.otp_attempt_id,
+          code: req.body && req.body.otp_code,
+        },
+        env
+      );
+      if (!completed.proceedWithLinkReset || completed.gate.sessionComplete !== true) {
+        return res.status(401).type("html").send(
+          renderForgotPage({
+            csrfToken,
+            message: null,
+            error: "Verification failed. Request a new code.",
+            identifier: req.body && req.body.identifier,
+            otpRequired: true,
+            otpAttemptId: req.body && req.body.otp_attempt_id,
+            otpReason: (completed.gate && completed.gate.reason) || "otp_failed",
+            otpAccountId: req.body && req.body.otp_account_id,
+            otpOrganizationId: req.body && req.body.otp_organization_id,
           })
         );
       }
       const deployment = getPlatformDeploymentCode(env);
       await requestActiveClinicPasswordReset(getPool(), {
         identifier: req.body && req.body.identifier,
-        country: req.body && req.body.phone_country,
         deploymentCode: deployment.ok ? deployment.code : CODE_FALLBACK(),
         requestIp: clientIp(req),
         requestId: req.requestId || req.id || null,

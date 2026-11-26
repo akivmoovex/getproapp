@@ -6,7 +6,7 @@
  */
 
 const { createResendAdapter } = require("./resendEmailAdapter");
-const { resolveProductSender } = require("./resendSenderCatalog");
+const { resolveProductSender, senderProfile } = require("./resendSenderCatalog");
 const { verificationTemplate } = require("./transactionalTemplates");
 
 const PRODUCT_LABEL = Object.freeze({
@@ -14,6 +14,31 @@ const PRODUCT_LABEL = Object.freeze({
   activeclinic: "ActiveClinic",
   pronline: "PROnline",
 });
+
+function qaRecipientAllowlist(env) {
+  return new Set(
+    String((env && env.GETPRO_RESEND_QA_RECIPIENTS) || "")
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function assertQaRecipientAllowed(env, destination) {
+  const profile = senderProfile(env);
+  if (profile !== "hosted-qa") return { ok: true, reason: "production_profile" };
+  const allow = qaRecipientAllowlist(env);
+  if (allow.size === 0) {
+    return { ok: false, reason: "qa_recipient_allowlist_missing" };
+  }
+  const email = String(destination || "")
+    .trim()
+    .toLowerCase();
+  if (!email || !allow.has(email)) {
+    return { ok: false, reason: "qa_recipient_not_allowlisted" };
+  }
+  return { ok: true, reason: "allowlisted" };
+}
 
 /**
  * Fail-closed Resend OTP preflight. Does not call the network and does not
@@ -23,17 +48,23 @@ function diagnoseResendOtpTransport(env, productCode) {
   const source = env || {};
   const routed = resolveProductSender(productCode, source);
   const apiKeyConfigured = Boolean(String(source.RESEND_API_KEY || "").trim());
+  const profile = senderProfile(source);
+  const qaAllowlistConfigured = qaRecipientAllowlist(source).size > 0;
   const blockers = [];
   if (!routed.ok) blockers.push(routed.reason || "sender_not_ready");
   if (!apiKeyConfigured) blockers.push("missing_api_key");
+  if (profile === "hosted-qa" && !qaAllowlistConfigured) {
+    blockers.push("qa_recipient_allowlist_missing");
+  }
   return Object.freeze({
     ok: blockers.length === 0,
     productCode: routed.product || String(productCode || "").trim().toLowerCase() || "missing",
     apiKeyConfigured,
     senderOk: routed.ok === true,
     senderReason: routed.reason || "unknown",
-    senderProfile: routed.profile || null,
+    senderProfile: routed.profile || profile,
     senderDomain: routed.sender ? routed.sender.domain : null,
+    qaRecipientAllowlistConfigured: qaAllowlistConfigured,
     blockers: Object.freeze(blockers),
     liveSendAuthorized: false,
   });
@@ -68,6 +99,10 @@ function createResendOtpEmailTransport(env, deps) {
     }
     const apiKey = String(source.RESEND_API_KEY || "").trim();
     if (!apiKey) return { ok: false, reason: "missing_api_key", retryable: false };
+    const recipientGate = assertQaRecipientAllowed(source, input.destination);
+    if (!recipientGate.ok) {
+      return { ok: false, reason: recipientGate.reason, retryable: false };
+    }
     const label = PRODUCT_LABEL[routed.product] || "GetPro";
     const branded = verificationTemplate(label, input.text);
     const adapter = createResendAdapter({
@@ -106,4 +141,6 @@ function createResendOtpEmailTransport(env, deps) {
 module.exports = {
   createResendOtpEmailTransport,
   diagnoseResendOtpTransport,
+  assertQaRecipientAllowed,
+  qaRecipientAllowlist,
 };

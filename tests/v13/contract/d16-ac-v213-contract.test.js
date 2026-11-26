@@ -36,7 +36,8 @@ describe("D16 ActiveClinic V2.13.1 contracts", () => {
     const csrf = recovery.indexOf("validateCsrf");
     const hold = Math.max(
       recovery.indexOf("holdIfOtpRequired"),
-      recovery.indexOf("holdPasswordRecoveryIfOtpRequired")
+      recovery.indexOf("holdPasswordRecoveryIfOtpRequired"),
+      recovery.indexOf("beginEligibleRecoveryOtp")
     );
     assert.ok(csrf > 0 && hold > csrf);
     const patientCsrf = patient.indexOf("validateCsrf");

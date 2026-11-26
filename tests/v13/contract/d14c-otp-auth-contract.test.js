@@ -29,7 +29,8 @@ describe("D14C OTP auth contracts", () => {
     const csrfAt = reset.indexOf("validateCsrf");
     const holdAt = Math.max(
       reset.indexOf("holdIfOtpRequired"),
-      reset.indexOf("holdPasswordRecoveryIfOtpRequired")
+      reset.indexOf("holdPasswordRecoveryIfOtpRequired"),
+      reset.indexOf("beginEligibleRecoveryOtp")
     );
     assert.ok(csrfAt > 0 && holdAt > csrfAt);
 

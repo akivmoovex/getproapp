@@ -49,6 +49,15 @@ describe("G272 email OTP readiness and recovery bridge", () => {
     assert.equal(fs.existsSync(path.join(__dirname, "../../../db/migrations/platform/048_otp_challenges.sql")), false);
   });
 
+  it("surfaces non-production GETPRO_OTP_ACTIVATION=ACTIVE in readiness", () => {
+    const report = diagnoseOtpReadiness(
+      testingEnv({ GETPRO_OTP_ACTIVATION: "ACTIVE", GETPRO_OTP_PROVIDER: "fake" })
+    );
+    assert.equal(report.activation, "ACTIVE");
+    assert.equal(report.recoveryMode, "code_otp_required");
+    assert.equal(report.deliveryActivated, false);
+  });
+
   it("diagnoses Resend transport preflight without sending mail", () => {
     const missing = diagnoseResendOtpTransport(testingEnv(), "activeclinic");
     assert.equal(missing.ok, false);

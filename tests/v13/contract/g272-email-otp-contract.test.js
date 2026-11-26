@@ -28,9 +28,11 @@ describe("G272 email OTP contracts", () => {
     const ac = read("src/activeclinic/http/activeClinicLifecycleRoutes.js");
     const bb = read("src/blessboard/http/passwordResetRoutes.js");
     const patient = read("src/activeclinic/http/activeClinicPatientPortalRoutes.js");
-    assert.match(ac, /holdPasswordRecoveryIfOtpRequired/);
-    assert.match(bb, /holdPasswordRecoveryIfOtpRequired/);
-    assert.match(patient, /holdPasswordRecoveryIfOtpRequired/);
+    assert.match(ac, /beginEligibleRecoveryOtp|holdPasswordRecoveryIfOtpRequired/);
+    assert.match(bb, /beginEligibleRecoveryOtp|holdPasswordRecoveryIfOtpRequired/);
+    assert.match(patient, /holdPasswordRecoveryIfOtpRequired|beginEligibleRecoveryOtp/);
+    assert.match(ac, /forgot-password\/otp-verify/);
+    assert.match(bb, /forgot-password\/otp-verify/);
     assert.match(ac, /activeclinic\.forgot_password/);
     assert.match(bb, /blessboard\.forgot_password/);
   });

@@ -749,6 +749,35 @@ async function lookupTestingPasswordResetDelivery(db, input) {
   };
 }
 
+/**
+ * Enumeration-safe eligibility peek for OTP recovery. Does not create tokens.
+ */
+async function peekEligibleActiveClinicPasswordReset(db, input) {
+  const src = input && typeof input === "object" ? input : {};
+  const identifier = parseIdentifier(src.identifier || src.phone || src.email, {
+    country: src.country || src.phoneCountry || src.phone_country || null,
+  });
+  if (!identifier.normalized || identifier.invalid) {
+    return { ok: false, found: false, kind: identifier.kind || null };
+  }
+  const eligible = await withClient(db, (client) => findEligibleIdentityForReset(client, identifier));
+  if (!eligible) {
+    return { ok: true, found: false, kind: identifier.kind, normalized: identifier.normalized };
+  }
+  const organizationId =
+    (eligible.staffRows[0] &&
+      (eligible.staffRows[0].organization_id || eligible.staffRows[0].organizationId)) ||
+    null;
+  return {
+    ok: true,
+    found: true,
+    kind: identifier.kind,
+    normalized: identifier.normalized,
+    accountId: eligible.identity.id,
+    organizationId,
+  };
+}
+
 module.exports = {
   RESULT,
   PURPOSE_RESET,
@@ -760,4 +789,5 @@ module.exports = {
   completeActiveClinicPasswordReset,
   lookupTestingPasswordResetDelivery,
   resolvePublicOrigin,
+  peekEligibleActiveClinicPasswordReset,
 };

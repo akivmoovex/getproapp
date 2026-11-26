@@ -192,32 +192,10 @@ function createPasswordResetRouter(opts) {
       return res.status(403).type("html").send(html);
     }
 
-    const {
-      holdPasswordRecoveryIfOtpRequired,
-    } = require("../../platform/otp/otpPasswordRecoveryBridge");
-    const otpHold = await holdPasswordRecoveryIfOtpRequired({
-      workflow: "blessboard.forgot_password",
-      env,
-      identifier: emailRaw || phoneResolved.e164 || null,
-      channel: emailRaw ? "email" : "sms",
-    });
-    if (otpHold) {
-      const html = renderV5Ejs(
-        "apex/forgot-password.ejs",
-        forgotLocals(req, res, {
-          error: "Additional verification is required.",
-          emailValue: emailRaw,
-          otpRequired: true,
-          otpAttemptId: otpHold.attemptId || null,
-          otpReason: otpHold.reason || "otp_required",
-        })
-      );
-      return res.status(401).type("html").send(html);
-    }
-
     let emailForReset = emailRaw;
+    let resolvedUser = null;
     // Phone-first: resolve account by phone, then deliver reset via email when present.
-    // Apex staff recovery does not send SMS/OTP (member portal recovery is separate).
+    // Apex staff recovery does not send SMS for OTP; email channel is used when present.
     if (!emailForReset && phoneResolved.e164) {
       try {
         const byPhone = await authRepo.findUserByPhone(
@@ -226,10 +204,62 @@ function createPasswordResetRouter(opts) {
         );
         if (byPhone && (byPhone.email_normalized || byPhone.email_display)) {
           emailForReset = byPhone.email_normalized || byPhone.email_display;
+          resolvedUser = byPhone;
         }
       } catch (_err) {
         /* enumeration-safe: fall through to neutral message */
       }
+    } else if (emailForReset) {
+      try {
+        resolvedUser = await authRepo.findUserByEmail(
+          getPool(),
+          String(emailForReset).trim().toLowerCase()
+        );
+      } catch (_err) {
+        resolvedUser = null;
+      }
+    }
+
+    const {
+      beginEligibleRecoveryOtp,
+    } = require("../../platform/otp/otpPasswordRecoveryBridge");
+    let organizationId = null;
+    if (resolvedUser && resolvedUser.id) {
+      try {
+        organizationId = await authRepo.findAuditOrganizationIdForUser(
+          getPool(),
+          resolvedUser.id
+        );
+      } catch (_err) {
+        organizationId = null;
+      }
+    }
+    const otpGate = await beginEligibleRecoveryOtp(
+      {
+        workflow: "blessboard.forgot_password",
+        env,
+        found: Boolean(resolvedUser && resolvedUser.id && organizationId && emailForReset),
+        organizationId,
+        accountId: resolvedUser && resolvedUser.id,
+        identifier: emailForReset || emailRaw || phoneResolved.e164 || null,
+        channel: "email",
+      },
+      env
+    );
+    if (otpGate.requireCode) {
+      const html = renderV5Ejs(
+        "apex/forgot-password.ejs",
+        forgotLocals(req, res, {
+          error: "Enter the verification code sent to your email.",
+          emailValue: emailForReset || emailRaw,
+          otpRequired: true,
+          otpAttemptId: otpGate.attemptId || null,
+          otpReason: otpGate.reason || "otp_required",
+          otpAccountId: resolvedUser && resolvedUser.id,
+          otpOrganizationId: organizationId,
+        })
+      );
+      return res.status(401).type("html").send(html);
     }
 
     if (emailForReset) {
@@ -249,6 +279,69 @@ function createPasswordResetRouter(opts) {
         emailValue: "",
         phoneCountryValue: "",
         phoneNationalValue: "",
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/forgot-password/otp-verify", requireApex, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      const html = renderV5Ejs(
+        "apex/forgot-password.ejs",
+        forgotLocals(req, res, {
+          error: "Your session expired. Please try again.",
+          otpRequired: true,
+          otpAttemptId: req.body && req.body.otp_attempt_id,
+        })
+      );
+      return res.status(403).type("html").send(html);
+    }
+    const {
+      completeEligibleRecoveryOtp,
+    } = require("../../platform/otp/otpPasswordRecoveryBridge");
+    const emailForReset = String((req.body && req.body.email) || "").trim();
+    const completed = await completeEligibleRecoveryOtp(
+      {
+        workflow: "blessboard.forgot_password",
+        env,
+        organizationId: req.body && req.body.otp_organization_id,
+        accountId: req.body && req.body.otp_account_id,
+        identifier: emailForReset,
+        channel: "email",
+        attemptId: req.body && req.body.otp_attempt_id,
+        code: req.body && req.body.otp_code,
+      },
+      env
+    );
+    if (!completed.proceedWithLinkReset || completed.gate.sessionComplete !== true) {
+      const html = renderV5Ejs(
+        "apex/forgot-password.ejs",
+        forgotLocals(req, res, {
+          error: "Verification failed. Request a new code.",
+          emailValue: emailForReset,
+          otpRequired: true,
+          otpAttemptId: req.body && req.body.otp_attempt_id,
+          otpAccountId: req.body && req.body.otp_account_id,
+          otpOrganizationId: req.body && req.body.otp_organization_id,
+        })
+      );
+      return res.status(401).type("html").send(html);
+    }
+    if (emailForReset) {
+      await requestPasswordReset(getPool(), {
+        email: emailForReset,
+        requestIp: clientIp(req),
+        env,
+        publicBaseUrl: getApexOrigin(env, req.hostname),
+        source: "public_forgot_password_otp",
+      });
+    }
+    const html = renderV5Ejs(
+      "apex/forgot-password.ejs",
+      forgotLocals(req, res, {
+        message: NEUTRAL_MESSAGE,
+        emailValue: "",
       })
     );
     return res.status(200).type("html").send(html);
