@@ -1,13 +1,14 @@
 # V2.13.4 Sensitive Approval Register
 
-**Status:** RECREATED FROM G301–G315 OWNER AUTHORIZATION  
-**Source attachment:** `V2134_SENSITIVE_APPROVAL_REGISTER.md` was not accessible in the worktree, Downloads, Documents, or Cursor uploads at execution time.  
-**Unverified details:** Any fields that existed only in the inaccessible attachment (exact Resend dashboard verification timestamps, named QA mailbox identities beyond the product-owner terms, secret-store path names, and operator contact names) are marked `UNVERIFIED_ATTACHMENT` and must not be invented.
+**Status:** ACTIVE — OWNER AUTHORIZATION 26 NOVEMBER 2026 (G301 re-execution)  
+**Source attachment:** Prior attachment may be unavailable; this register is authoritative for authorized scope.  
+**Unverified details:** Resend dashboard verification timestamps, concrete QA mailbox identities, and secret-store path names remain `UNVERIFIED_ATTACHMENT` / operator-supplied outside Git.
 
 **Date of authorization:** 26 November 2026  
 **Branch:** V13  
 **Target version after completion:** 2.13.4  
-**Starting tip:** actual `origin/V13` HEAD at work start (do not reset or discard newer commits)
+**Starting tip (this re-execution):** `0b4058d8cf8d595c17878783a99dd76372174e6a`  
+**Prompt tip note:** `1fd1144…` was historical; actual HEAD preserved without reset
 
 This register records owner-approved QA operations and the hard limits that remain. It contains no secrets, patient data, OTP codes, or private QA-mailbox credentials.
 

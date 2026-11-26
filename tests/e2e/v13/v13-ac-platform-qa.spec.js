@@ -887,24 +887,39 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await staffSignIn(page, required("E2E_AC_STAFF_EMAIL"), required("E2E_AC_STAFF_PASSWORD"));
     await page.goto(encounterUrl);
     await expect(page.locator("#chief_complaint")).toBeVisible();
+    const history = `HPI ${stamp}`;
+    const assessment = `Assessment ${stamp}`;
+    const plan = `Plan ${stamp}`;
+    const referral = `Refer ortho ${stamp}`;
     await page.locator("#chief_complaint").fill(complaint);
-    await page.locator("#referral").fill(`Refer ortho ${stamp}`);
+    await page.locator("#history_text").fill(history);
+    await page.locator("#observations").fill(`Objective ${stamp}`);
+    await page.locator("#diagnosis").fill(assessment);
+    await page.locator("#treatment_plan").fill(plan);
+    await page.locator("#referral").fill(referral);
     await page.locator("[data-ac-action='save-draft']:visible").click();
     await expect(page).toHaveURL(/updated=1/);
     await expect(page.locator("#chief_complaint")).toHaveValue(complaint);
+    await expect(page.locator("#history_text")).toHaveValue(history);
+    await expect(page.locator("#diagnosis")).toHaveValue(assessment);
+    await expect(page.locator("#treatment_plan")).toHaveValue(plan);
+    await expect(page.locator("#referral")).toHaveValue(referral);
     await expect(page.locator("[data-ac-print-region='soap']")).toContainText(number);
     await expect(page.locator("[data-ac-print-chief-complaint='1']")).toContainText(complaint);
-    await expect(page.locator("[data-ac-print-region='referral']")).toContainText(`Refer ortho ${stamp}`);
+    await expect(page.locator("[data-ac-print-region='referral']")).toContainText(referral);
     await page.evaluate(() => {
-      window.__g300PrintCount = 0;
+      window.__g301PrintCount = 0;
       window.print = () => {
-        window.__g300PrintCount += 1;
+        window.__g301PrintCount += 1;
       };
     });
     await page.getByRole("button", { name: "Print SOAP note" }).click();
-    expect(await page.evaluate(() => window.__g300PrintCount)).toBe(1);
+    expect(await page.evaluate(() => window.__g301PrintCount)).toBe(1);
+    await page.getByRole("button", { name: "Print referral" }).click();
+    expect(await page.evaluate(() => window.__g301PrintCount)).toBe(2);
     const draft = await client.query(
-      `SELECT status, subjective_text, referral_text, signed_at
+      `SELECT status, subjective_text, history_text, objective_text, assessment_text,
+              plan_text, referral_text, signed_at
        FROM activeclinic.consultation_notes
        WHERE encounter_id = $1`,
       [encounterId]
@@ -912,8 +927,17 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     expect(draft.rowCount).toBe(1);
     expect(draft.rows[0].status).toBe("draft");
     expect(draft.rows[0].subjective_text).toBe(complaint);
-    expect(draft.rows[0].referral_text).toBe(`Refer ortho ${stamp}`);
+    expect(draft.rows[0].history_text).toBe(history);
+    expect(draft.rows[0].objective_text).toBe(`Objective ${stamp}`);
+    expect(draft.rows[0].assessment_text).toBe(assessment);
+    expect(draft.rows[0].plan_text).toBe(plan);
+    expect(draft.rows[0].referral_text).toBe(referral);
     expect(draft.rows[0].signed_at).toBeNull();
+    await page.reload();
+    await expect(page.locator("#history_text")).toHaveValue(history);
+    await expect(page.locator("#diagnosis")).toHaveValue(assessment);
+    await expect(page.locator("#treatment_plan")).toHaveValue(plan);
+    await expect(page.locator("#referral")).toHaveValue(referral);
     await page.goto(`${encounterUrl}/order/prescription`);
     await page.locator("#drug_name").fill(`SyntheticCompound ${stamp}`);
     await page.locator("#dose").fill("1");
@@ -1021,6 +1045,26 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
         await page.locator("#facility_id").selectOption(prepared.facilityId);
         await page.locator("form[data-ac-form='select-facility'] button[type='submit']").click();
       }
+      await page.goto(`/app/pharmacy/prescriptions/${prepared.prescriptionId}`);
+      const patientRow = await client.query(
+        "SELECT patient_number FROM activeclinic.patients WHERE id = $1",
+        [prepared.patientId]
+      );
+      expect(patientRow.rowCount).toBe(1);
+      await expect(page.locator("[data-ac-print-region='prescription']")).toContainText(
+        prepared.genericName
+      );
+      await expect(page.locator("[data-ac-print-region='prescription']")).toContainText(
+        patientRow.rows[0].patient_number
+      );
+      await page.evaluate(() => {
+        window.__g301RxPrintCount = 0;
+        window.print = () => {
+          window.__g301RxPrintCount += 1;
+        };
+      });
+      await page.getByRole("button", { name: "Print prescription" }).click();
+      expect(await page.evaluate(() => window.__g301RxPrintCount)).toBe(1);
       await page.goto(dispenseUrl);
       await expect(page.locator("body")).toContainText(prepared.genericName);
       await page.locator(`#quantity_${prepared.itemId}`).fill("2");
