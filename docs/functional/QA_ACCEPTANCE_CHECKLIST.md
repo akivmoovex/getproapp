@@ -1,5 +1,11 @@
 # QA acceptance checklist
 
+G241–G260 overnight tip audit remains NO-GO on **2.13.4**. Safe 615/0/2 twice;
+HTTP 40 pass with D25 slot only; AC 32 and BB 23 browser twice after flake
+rerun; Community mock 9 twice; disposable OTP/Community PG PASS. Live Resend
+mailbox, hosted deploy, and D25 capacity stay closed. Evidence:
+`docs/qa/V2132_G260_FINAL_QA_HANDOFF.md`.
+
 G225–G240 system-wide audit remains NO-GO. Laboratory workflow coverage is
 substantial and persisted. Radiology depth, broader clinical printing and
 SOAP/referral depth remain P1 coverage gaps. D14C, D16 and D25 capacity remain

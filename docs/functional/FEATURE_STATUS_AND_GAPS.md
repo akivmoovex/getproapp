@@ -1,5 +1,11 @@
 # Feature status and gaps
 
+G241–G260 overnight hardening on tip **2.13.4** reconfirms laboratory and
+radiology E2E coverage, disposable OTP/Community PostgreSQL evidence, and dual
+browser suites. Live Resend mailbox OTP, D25 slot capacity, hosted retest, and
+financial posting remain blocked or disabled. Clinical printing and SOAP field
+matrix depth remain P1. QA remains NO-GO.
+
 G225–G240 completed a system-wide source-to-test inventory. Laboratory result
 entry, queue status, persisted counters and result printing are covered by
 the G224 journey. Radiology end-to-end persistence/browser coverage, broader

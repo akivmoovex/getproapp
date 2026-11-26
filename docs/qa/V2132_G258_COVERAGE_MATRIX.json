@@ -1,0 +1,32 @@
+{
+  "cycle": "G241-G260",
+  "final": "V2132_G260_OVERNIGHT_QA_HARDENED",
+  "branch": "V13",
+  "workStartedFrom": "157b2fc48217044e6fe0a0032962428706b6963d",
+  "bbVersion": "2.13.4",
+  "acVersion": "2.13.4",
+  "promptRequestedVersion": "2.13.2",
+  "versionNote": "Tip already at 2.13.4; not downgraded",
+  "majorJourneys": {
+    "inventoried": 25,
+    "browserVerified": 18,
+    "httpVerified": 20,
+    "persistenceVerified": 18
+  },
+  "safe": { "executed": 617, "passed": 615, "failed": 0, "skipped": 2, "runs": 2 },
+  "http": { "executed": 41, "passed": 40, "failed": 1, "runs": 2, "onlyFail": "D25_SLOT" },
+  "activeClinicBrowserPassed": 32,
+  "blessBoardBrowserPassed": 23,
+  "communityMockBrowserPassed": 9,
+  "communityPostgresE2E": 1,
+  "d14cOtp": "PASS",
+  "d16Otp": "PASS",
+  "d25Slot": "UNAPPROVED",
+  "d25Overlap": "PASS",
+  "otpLiveMailbox": "BLOCKED",
+  "resendVerified": "NOT_OBSERVED",
+  "p0Gaps": 1,
+  "p1Gaps": 2,
+  "qa": "NO-GO",
+  "releaseReady": false
+}

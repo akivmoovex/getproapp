@@ -1,5 +1,10 @@
 # Requirements traceability matrix
 
+G241–G260 overnight inventory is
+`docs/qa/V2132_G242_SOURCE_COVERAGE_MATRIX.json` and
+`docs/qa/V2132_G258_COVERAGE_MATRIX.json` on tip **2.13.4**. Live Resend
+mailbox and D25 capacity remain external/policy gates.
+
 G225–G240 maps implemented ActiveClinic, BlessBoard, shared security,
 diagnostics, pharmacy and Community Benefits journeys to their actual
 evidence. The complete inventory is
