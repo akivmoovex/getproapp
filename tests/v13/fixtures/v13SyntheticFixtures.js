@@ -206,7 +206,7 @@ function buildAppointmentConcurrencyPlan() {
     ],
     staffMemberId: "abababab-abab-4aba-8aba-abababababab",
     existingConflict: "assigned_staff_overlap",
-    missingProtection: "slot_capacity_lock",
+    missingProtection: "assigned_staff_non_overlap",
   };
 }
 

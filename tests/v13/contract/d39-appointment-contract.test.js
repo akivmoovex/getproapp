@@ -31,6 +31,6 @@ describe("D39 appointment contract", () => {
     );
     assert.match(source, /runGated/);
     assert.match(source, /D39-STAFF-OVERLAP-RACE/);
-    assert.match(source, /BLOCKED_APPROVAL_REQUIRED/);
+    assert.match(source, /APT-01-03_OPTION_C_POLICY/);
   });
 });

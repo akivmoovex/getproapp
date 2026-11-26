@@ -5,10 +5,10 @@ const assert = require("node:assert/strict");
 const { runGated } = require("./v13AuthorizedScenarios");
 
 describe("D25 appointment persistence", () => {
-  it("keeps simultaneous slot booking unexecuted", async (t) => {
+  it("records that Option C requires no separate slot-capacity integration test", async (t) => {
     const result = await runGated(t, "APT-01-03", async () => {
       throw new Error(
-        "APT-01-03_NOT_IMPLEMENTED: slot capacity lock is not in the product (BLOCKED_APPROVAL_REQUIRED)"
+        "APT-01-03_OPTION_C_POLICY: assigned-staff non-overlap is the complete capacity rule; no separate slot-capacity integer exists"
       );
     });
     assert.equal(result, "NOT_RUN");

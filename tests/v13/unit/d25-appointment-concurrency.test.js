@@ -15,6 +15,12 @@ const {
   buildAppointmentConcurrencyPlan,
   applyActiveClinicFixtures,
 } = require("../fixtures/v13SyntheticFixtures");
+const {
+  BLOCKING_APPOINTMENT_STATUSES,
+  intervalsOverlap,
+  staffOverlapApplies,
+  evaluateSlotCapacity,
+} = require("../../../src/activeclinic/services/appointmentSchedulingRules");
 
 const ORG_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const HCO_A = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -42,7 +48,7 @@ describe("D25 appointment concurrency", () => {
     assert.equal(plan.persisted, false);
     assert.equal(plan.capacity, null);
     assert.equal(plan.existingConflict, "assigned_staff_overlap");
-    assert.equal(plan.missingProtection, "slot_capacity_lock");
+    assert.equal(plan.missingProtection, "assigned_staff_non_overlap");
     const db = { async query() { throw new Error("query"); } };
     await assert.rejects(
       () => applyActiveClinicFixtures(db, "postgres://127.0.0.1/getpro_v13_ci_d25local01", {}),
@@ -146,5 +152,31 @@ describe("D25 appointment concurrency", () => {
     };
     assert.equal(assertStatusTransition("confirmed", "cancelled", allowed).ok, true);
     assert.equal(assertStatusTransition("cancelled", "confirmed", allowed).ok, false);
+  });
+
+  it("defines Option C as the complete appointment-capacity rule", () => {
+    assert.deepEqual(BLOCKING_APPOINTMENT_STATUSES, [
+      "requested",
+      "confirmed",
+      "arrived",
+      "waiting",
+      "with_practitioner",
+    ]);
+    assert.equal(staffOverlapApplies(STAFF), true);
+    assert.equal(staffOverlapApplies(null), false);
+    assert.equal(
+      intervalsOverlap(STARTS, ENDS, new Date("2026-12-01T09:15:00.000Z"), new Date("2026-12-01T09:45:00.000Z")),
+      true
+    );
+    assert.equal(
+      intervalsOverlap(STARTS, ENDS, ENDS, new Date("2026-12-01T10:00:00.000Z")),
+      false
+    );
+    assert.deepEqual(evaluateSlotCapacity(), {
+      ok: false,
+      code: "BLOCKED_APPROVAL_REQUIRED",
+      capacity: null,
+      reason: "slot_capacity_not_approved",
+    });
   });
 });
