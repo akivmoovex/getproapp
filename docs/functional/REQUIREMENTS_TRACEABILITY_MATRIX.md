@@ -1,5 +1,11 @@
 # Requirements traceability matrix
 
+G225–G240 maps implemented ActiveClinic, BlessBoard, shared security,
+diagnostics, pharmacy and Community Benefits journeys to their actual
+evidence. The complete inventory is
+`docs/qa/V2132_G226_ROUTE_TO_TEST_MATRIX.json`; it intentionally does not
+claim 100% coverage or PostgreSQL acceptance for blocked schemas.
+
 G224 maps the named 25 November findings that were present in the request. The two DOCX reports were not available, so the figure of 26 role scenarios is not claimed as executed. Laboratory result entry, filters, counters, radiology completed status, and result printing are now covered by unit, HTTP, and browser tests. Vitals, portal activation, and website text remain previously fixed. OTP, slot capacity, and public booking stay blocked or disabled. See `docs/qa/V2132_G224_NEW_QA_REPORT_RECONCILIATION.md`.
 
 G223 maps the written Community Benefits rules after lookup and settlement preview. The v1.2 PDF was still unavailable, so PDF traceability is not claimed. Manual lookup is executed in unit and mock browser tests. Settlement preparation is a pending preview. Settlement execution and PostgreSQL persistence stay blocked. D14C, D16 platform OTP, and D25 slot capacity still fail. See `docs/qa/community-benefits/G219_REQUIREMENTS_RECONCILIATION.md`.

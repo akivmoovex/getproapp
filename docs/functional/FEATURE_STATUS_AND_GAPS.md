@@ -1,5 +1,12 @@
 # Feature status and gaps
 
+G225–G240 completed a system-wide source-to-test inventory. Laboratory result
+entry, queue status, persisted counters and result printing are covered by
+the G224 journey. Radiology end-to-end persistence/browser coverage, broader
+clinical printing, and the complete SOAP/referral field matrix remain P1
+coverage gaps. OTP, Community Benefits persistence, public booking, slot
+capacity and financial posting remain blocked or disabled by policy.
+
 G224 closes the laboratory result-entry gap after specimen receipt. Received and collected orders stay visible in their own filters, dashboard counters include those stored statuses, and a second staff member can verify the result. The clinician encounter shows the result for the same patient. Public booking, production OTP, production uploads, and community financial posting stay disabled. Two safe runs each executed 598, passed 596, failed 0, and skipped 2. Two HTTP runs each executed 37, passed 34, and failed D14C, D16 platform OTP, and D25 slot capacity. QA remains NO-GO.
 
 G223 closes the reception name and phone lookup gap and adds settlement batch preparation. Lookup is clinic-scoped, masked, and does not auto-link. Settlement preview stays `PENDING_APPROVAL` and is not posted. Two safe runs each executed 596, passed 594, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed D14C, D16 platform OTP, and D25 slot capacity. Two Playwright cycles each passed ActiveClinic 30 and BlessBoard 23. Community mock browser passed 9 twice. PostgreSQL persistence for the new tables passed 0. Commercial rates, consent text, agreement activation, schema application, and deployment remain unapproved. QA remains NO-GO.

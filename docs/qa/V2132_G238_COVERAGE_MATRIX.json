@@ -1,0 +1,37 @@
+{
+  "cycle": "G225-G240",
+  "sourceSha": "df517e571ae076b79e01fac5f85e0039c2e3682e",
+  "TOTAL_IMPLEMENTED_MAJOR_JOURNEYS": 20,
+  "BROWSER_COVERED": 16,
+  "HTTP_COVERED": 18,
+  "UNIT_CONTRACT_COVERED": 19,
+  "PERSISTENCE_VERIFIED": 15,
+  "SECURITY_NEGATIVE_COVERED": 18,
+  "TOTAL_HISTORICAL_BUGS": 50,
+  "BUGS_WITH_BROWSER_REGRESSION": 42,
+  "BUGS_WITH_NON_BROWSER_REGRESSION": 48,
+  "BUGS_VERIFIED_EXECUTED": 44,
+  "BUGS_BLOCKED": 6,
+  "LABORATORY_JOURNEYS": 1,
+  "RADIOLOGY_JOURNEYS": 0,
+  "CLINICAL_PRINT_JOURNEYS": 1,
+  "COMMUNITY_BENEFITS_JOURNEYS": 1,
+  "P0_GAPS": 0,
+  "P1_GAPS": [
+    "full persisted/browser radiology order-report-verify-readback journey",
+    "independent print-ready coverage for every supported clinical document",
+    "complete SOAP and referral field matrix"
+  ],
+  "P2_GAPS": [
+    "broader mobile interaction matrix",
+    "date-filter diagnostics matrix"
+  ],
+  "POLICY_BLOCKERS": ["D25 slot capacity", "public booking", "financial posting", "production uploads"],
+  "MIGRATION_BLOCKERS": ["platform.otp_challenges", "Community Benefits tables"],
+  "PROVIDER_BLOCKERS": ["production OTP and live email delivery"],
+  "claims": {
+    "oneHundredPercent": false,
+    "postgresAcceptance": false,
+    "plannedReportScenariosExecuted": false
+  }
+}
