@@ -30,7 +30,9 @@
           <td><%= spec.requestNumber %></td>
           <td><span class="ac-status" data-ac-status="<%= spec.status %>"><%= spec.status %></span></td>
           <td>
+            <% if (spec.status === 'collected') { %>
             <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">Receive</a>
+            <% } %>
           </td>
         </tr>
         <% }) %>
@@ -40,7 +42,7 @@
   <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="lab-worklist">
     <% pageData.worklist.specimens.forEach(function (spec) { %>
     <li class="ac-card ac-mobile-record-card">
-      <a class="ac-card__link" href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">
+      <a class="ac-card__link" href="<%= spec.status === 'collected' ? '/app/diagnostics/laboratory/specimen/' + spec.id + '/receive' : '/app/diagnostics/laboratory/queue?status=' + spec.status %>">
         <p class="ac-card__title"><%= spec.specimenIdentifier %></p>
         <p class="ac-muted"><%= spec.patientDisplayName %> · <%= spec.specimenType %></p>
         <p class="ac-muted">Request <%= spec.requestNumber %></p>

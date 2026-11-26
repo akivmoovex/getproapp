@@ -1,5 +1,7 @@
 # QA acceptance checklist
 
+QA decision for the G224 laboratory repair is NO-GO. Two safe runs each executed 598, passed 596, failed 0, and skipped 2. Two HTTP runs each executed 37, passed 34, and failed D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. ActiveClinic Playwright passed 31 twice. BlessBoard Playwright passed 23 twice. Community mock browser passed 9 twice. The evidence is `docs/qa/V2132_G224_FINAL_EXECUTION.md`.
+
 QA decision for the G223 handoff is NO-GO. Two safe runs each executed 596, passed 594, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. Two Playwright cycles each passed ActiveClinic 30 and BlessBoard 23. Community browser evidence is mock-backed, 9 passed twice. Community PostgreSQL persistence passed 0. Financial posting stays disabled. The evidence is `docs/qa/community-benefits/G223_QA_HANDOFF.md`.
 
 QA decision for the G218 handoff is NO-GO. Two safe runs each executed 594, passed 592, failed 0, and skipped 2. Two HTTP runs each executed 36, passed 33, and failed D14C, D16 platform OTP, and D25 slot capacity. Same-staff overlap passed. Two Playwright cycles each passed ActiveClinic 30 and BlessBoard 23. Community browser evidence is mock-backed, 8 passed twice. Community PostgreSQL persistence passed 0. Financial posting stays disabled. The evidence is `docs/qa/community-benefits/G218_FINAL_RELEASE_GATES.md`.

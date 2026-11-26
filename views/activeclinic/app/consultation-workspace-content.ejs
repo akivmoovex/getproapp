@@ -350,6 +350,9 @@
             <li>
               <strong><%= o.order_type %></strong>
               <span class="ac-muted">· <%= o.status %></span>
+              <% if (o.lab_result_summary && String(o.lab_result_patient_id) === String(o.patient_id)) { %>
+              <p class="ac-muted" data-ac-lab-readback="1"><%= o.lab_result_summary %></p>
+              <% } %>
               <% if (o.ordered_by_staff_display_name) { %>
               <span class="ac-muted">· <%= o.ordered_by_staff_display_name %></span>
               <% } %>

@@ -1051,6 +1051,7 @@ module.exports = {
   buildRegressionClinicOperationsPlan,
   assertRegressionClinicOperationsPlan,
   attachRegressionClinicOperations,
+  provisionFacilityStaff,
   buildAc05EvidencePlan,
   buildAppointmentConcurrencyPlan,
   assertSyntheticPlan,

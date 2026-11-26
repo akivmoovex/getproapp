@@ -37,4 +37,24 @@
     </table>
   </div>
   <% } %>
+
+  <% if (pageData.request.result) { %>
+  <div class="ac-panel" id="laboratory-result-print" data-ac-lab-result="1">
+    <h3>Laboratory result</h3>
+    <% if (pageData.request.result.summary) { %>
+    <p data-ac-lab-result-summary="1"><%= pageData.request.result.summary %></p>
+    <% } %>
+    <p class="ac-muted">Status <%= pageData.request.result.status %></p>
+    <% if (pageData.request.actions.canPrint) { %>
+    <button type="button" class="ac-btn" onclick="window.print()">Print result</button>
+    <% } %>
+    <% if (pageData.request.actions.canVerify) { %>
+    <form method="post" action="/app/diagnostics/laboratory/results/<%= pageData.request.result.id %>/verify">
+      <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
+      <input type="hidden" name="request_id" value="<%= pageData.request.id %>" />
+      <button type="submit" class="ac-btn">Verify result</button>
+    </form>
+    <% } %>
+  </div>
+  <% } %>
 </div>

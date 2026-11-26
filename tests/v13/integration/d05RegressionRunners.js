@@ -1039,6 +1039,235 @@ async function runBbAnn02(pool, connectionString, env) {
   });
 }
 
+async function loginClinic(app, email, password) {
+  const loginPage = await request(app).get("/login").set("Host", AC_HOST);
+  const loginCsrf = issuedCsrf(loginPage);
+  const login = await request(app)
+    .post("/login")
+    .set("Host", AC_HOST)
+    .set("Cookie", cookieHeader(loginCsrf.jar))
+    .redirects(0)
+    .type("form")
+    .send({
+      identifier: email,
+      password: password || CLINIC_PASSWORD,
+      [CSRF_FIELD]: loginCsrf.token,
+    });
+  assert.equal(login.status, 303, login.text.slice(0, 180));
+  return absorbCookies({}, login);
+}
+
+async function runG224Laboratory(pool, connectionString, env) {
+  const { enterLaboratoryResult, RESULT } = require(
+    "../../../src/activeclinic/services/activeClinicDiagnosticsService"
+  );
+  const { assignStaffRole, LAB_TECHNICIAN, CLINICIAN } = require(
+    "../../../src/activeclinic/services/activeClinicAuthorizationService"
+  );
+  const { provisionFacilityStaff, SYNTHETIC_PASSWORD } = require("../fixtures/v13SyntheticFixtures");
+  const { app, clinic, other } = await openClinic(pool, connectionString, env);
+  const receptionist = await pool.query(
+    `SELECT COALESCE(s.email_normalized, i.email_normalized) AS email
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       JOIN activeclinic.staff_members s ON s.id = a.staff_member_id
+       LEFT JOIN platform.identities i ON i.id = s.platform_identity_id
+      WHERE a.organization_id = $1
+        AND r.role_key = 'activeclinic_receptionist'
+        AND COALESCE(s.email_normalized, i.email_normalized) LIKE 'reception-%'
+      LIMIT 1`,
+    [clinic.organizationId]
+  );
+  assert.equal(receptionist.rowCount, 1);
+  const receptionistJar = await loginClinic(app, receptionist.rows[0].email, SYNTHETIC_PASSWORD);
+  const denied = await acGet(app, receptionistJar, "/app/diagnostics/laboratory/queue");
+  assert.equal(denied.status, 403);
+
+  const scope = await pool.query(
+    `SELECT f.id AS facility_id,
+            f.healthcare_organization_id,
+            s.id AS staff_id
+       FROM activeclinic.facilities f
+       JOIN activeclinic.staff_members s
+         ON s.organization_id = f.organization_id
+        AND s.status = 'active'
+      WHERE f.organization_id = $1
+      ORDER BY f.is_primary DESC, f.created_at ASC
+      LIMIT 1`,
+    [clinic.organizationId]
+  );
+  assert.equal(scope.rowCount, 1);
+  const found = scope.rows[0];
+  for (const roleKey of [CLINICIAN, LAB_TECHNICIAN]) {
+    const assigned = await assignStaffRole(pool, {
+      organizationId: clinic.organizationId,
+      staffMemberId: found.staff_id,
+      roleKey,
+      scopeType: "facility",
+      facilityId: found.facility_id,
+      assignmentOrigin: "system",
+      env,
+    });
+    assert.equal(assigned.ok, true, assigned.code || roleKey);
+  }
+  const verifierEmail = `lab-verify-${stamp()}@example.invalid`;
+  await provisionFacilityStaff(pool, {
+    organizationId: clinic.organizationId,
+    healthcareOrganizationId: found.healthcare_organization_id,
+    facilityId: found.facility_id,
+    env,
+  }, {
+    email: verifierEmail,
+    phone: `+26095${String(Date.now()).slice(-7)}`,
+    password: CLINIC_PASSWORD,
+  }, LAB_TECHNICIAN);
+
+  const jar = await loginClinic(app, clinic.email);
+  const created = await acPost(app, jar, "/app/patients", {
+    first_name: "Lab",
+    last_name: `Result${String(Date.now()).slice(-6)}`,
+    sex_at_registration: "female",
+    date_of_birth: "1991-03-03",
+    phone_country: "ZM",
+    phone_national: `97${String(Date.now()).slice(-7)}`,
+    step: "confirm",
+  });
+  assert.match(created.text, /Patient created/);
+  const number = ((created.text.match(/data-ac-patient-number="1">([^<]+)/) || [])[1] || "").trim();
+  const storedPatient = await pool.query(
+    `SELECT id FROM activeclinic.patients WHERE organization_id = $1 AND patient_number = $2`,
+    [clinic.organizationId, number]
+  );
+  assert.equal(storedPatient.rowCount, 1);
+  const patientId = storedPatient.rows[0].id;
+  const started = await acPost(app, jar, "/app/clinical/start-encounter", {
+    patient_id: patientId,
+    encounter_type: "outpatient",
+  });
+  assert.equal(started.status, 303, started.text.slice(0, 200));
+  const encounterId = String(started.headers.location).split("/").pop().split("?")[0];
+  const ordered = await acPost(app, jar, `/app/clinical/encounter/${encounterId}/order/lab`, {
+    test_code: "CBC",
+    urgency: "routine",
+    reason: "G224 synthetic order",
+  }, `/app/clinical/encounter/${encounterId}/order/lab`);
+  assert.equal(ordered.status, 303, ordered.text.slice(0, 240));
+  const requestRow = await pool.query(
+    `SELECT id, request_number, patient_id, status
+       FROM activeclinic.laboratory_requests
+      WHERE encounter_id = $1 AND organization_id = $2`,
+    [encounterId, clinic.organizationId]
+  );
+  assert.equal(requestRow.rowCount, 1);
+  assert.equal(requestRow.rows[0].patient_id, patientId);
+  assert.equal(requestRow.rows[0].status, "pending_collection");
+  const requestId = requestRow.rows[0].id;
+  const requestNumber = requestRow.rows[0].request_number;
+
+  const detail = await acGet(app, jar, `/app/diagnostics/laboratory/request/${requestId}`);
+  assert.equal(detail.status, 200, detail.text.slice(0, 200));
+  assert.match(detail.text, /Collect specimen/);
+  const collected = await acPost(app, jar, `/app/diagnostics/laboratory/request/${requestId}/collect`, {
+    specimen_type: "blood",
+  });
+  assert.equal(collected.status, 303, collected.text.slice(0, 200));
+  const specimen = await pool.query(
+    `SELECT id, patient_id, status FROM activeclinic.specimens WHERE laboratory_request_id = $1`,
+    [requestId]
+  );
+  assert.equal(specimen.rowCount, 1);
+  assert.equal(specimen.rows[0].patient_id, patientId);
+  assert.equal(specimen.rows[0].status, "collected");
+  const received = await acPost(
+    app,
+    jar,
+    `/app/diagnostics/laboratory/specimen/${specimen.rows[0].id}/receive`,
+    { event_note: "G224 received" }
+  );
+  assert.equal(received.status, 303, received.text.slice(0, 200));
+  const afterReceipt = await pool.query(
+    `SELECT status FROM activeclinic.laboratory_requests WHERE id = $1`,
+    [requestId]
+  );
+  assert.equal(afterReceipt.rows[0].status, "received");
+  const receivedQueue = await acGet(app, jar, "/app/diagnostics/laboratory/queue?status=received");
+  assert.match(receivedQueue.text, new RegExp(requestNumber));
+  const processingQueue = await acGet(app, jar, "/app/diagnostics/laboratory/queue?status=processing");
+  assert.equal(processingQueue.text.includes(requestNumber), false);
+  const dashboard = await acGet(app, jar, "/app/diagnostics/laboratory");
+  assert.match(dashboard.text, /data-ac-lab-count="received">1</);
+  const ready = await acGet(app, jar, `/app/diagnostics/laboratory/request/${requestId}`);
+  assert.match(ready.text, /Enter result/);
+
+  const mismatched = await enterLaboratoryResult(pool, {
+    organizationId: clinic.organizationId,
+    healthcareOrganizationId: found.healthcare_organization_id,
+    facilityId: found.facility_id,
+    laboratoryRequestId: requestId,
+    patientId: "00000000-0000-4000-8000-000000000099",
+    resultSummary: "wrong patient",
+    isCritical: false,
+    components: [],
+    actor: { staffId: found.staff_id },
+  });
+  assert.equal(mismatched.code, RESULT.PATIENT_NOT_FOUND);
+  const summary = `Hemoglobin recorded ${requestNumber}`;
+  const entered = await acPost(app, jar, `/app/diagnostics/laboratory/request/${requestId}/result`, {
+    result_summary: summary,
+    components: "[]",
+  });
+  assert.equal(entered.status, 303, entered.text.slice(0, 240));
+  const stored = await pool.query(
+    `SELECT id, patient_id, status, result_summary, entered_by_staff_id
+       FROM activeclinic.laboratory_results
+      WHERE laboratory_request_id = $1`,
+    [requestId]
+  );
+  assert.equal(stored.rowCount, 1);
+  assert.equal(stored.rows[0].patient_id, patientId);
+  assert.equal(stored.rows[0].status, "resulted");
+  assert.equal(stored.rows[0].result_summary, summary);
+  const recorded = await acGet(app, jar, `/app/diagnostics/laboratory/request/${requestId}`);
+  assert.match(recorded.text, /Print result/);
+  assert.match(recorded.text, new RegExp(summary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  const selfVerify = await acPost(
+    app,
+    jar,
+    `/app/diagnostics/laboratory/results/${stored.rows[0].id}/verify`,
+    { request_id: requestId },
+    `/app/diagnostics/laboratory/request/${requestId}`
+  );
+  assert.equal(selfVerify.status, 403);
+
+  const verifier = await loginClinic(app, verifierEmail);
+  const foreign = await acGet(app, other.jar, `/app/diagnostics/laboratory/request/${requestId}`);
+  assert.notEqual(foreign.status, 200);
+  assert.equal(foreign.text.includes(summary), false);
+  const verified = await acPost(
+    app,
+    verifier,
+    `/app/diagnostics/laboratory/results/${stored.rows[0].id}/verify`,
+    { request_id: requestId },
+    `/app/diagnostics/laboratory/request/${requestId}`
+  );
+  assert.equal(verified.status, 303, verified.text.slice(0, 200));
+  const finalRequest = await pool.query(
+    `SELECT status FROM activeclinic.laboratory_requests WHERE id = $1`,
+    [requestId]
+  );
+  const finalResult = await pool.query(
+    `SELECT status, verified_by_staff_id FROM activeclinic.laboratory_results WHERE id = $1`,
+    [stored.rows[0].id]
+  );
+  assert.equal(finalRequest.rows[0].status, "verified");
+  assert.equal(finalResult.rows[0].status, "verified");
+  assert.notEqual(finalResult.rows[0].verified_by_staff_id, found.staff_id);
+  const readBack = await acGet(app, jar, `/app/clinical/encounter/${encounterId}`);
+  assert.equal(readBack.status, 200, readBack.text.slice(0, 200));
+  assert.match(readBack.text, /data-ac-lab-readback="1"/);
+  assert.match(readBack.text, new RegExp(summary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+}
+
 module.exports = {
   runAcWeb08,
   runAcWeb09,
@@ -1049,4 +1278,5 @@ module.exports = {
   runBbWeb09,
   runBbWeb10,
   runBbAnn02,
+  runG224Laboratory,
 };

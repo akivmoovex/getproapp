@@ -33,6 +33,78 @@ function canAttachLaboratoryResult(status) {
   return RESULTABLE_LABORATORY_REQUEST_STATUSES.includes(status);
 }
 
+function laboratoryQueueTabs(counts, currentStatus) {
+  const status = String(currentStatus || "open");
+  const safe = counts || {};
+  const openCount =
+    (safe.pending_collection || 0) +
+    (safe.collected || 0) +
+    (safe.received || 0) +
+    (safe.processing || 0);
+  const rows = [
+    ["open", "Open queue", openCount],
+    ["pending_collection", "Pending collection", safe.pending_collection || 0],
+    ["collected", "Collected", safe.collected || 0],
+    ["received", "Received", safe.received || 0],
+    ["processing", "Processing", safe.processing || 0],
+    ["resulted", "Resulted", safe.resulted || 0],
+    ["verified", "Verified", safe.verified || 0],
+    ["all", "All", safe.total || 0],
+  ];
+  return rows.map(([key, label, count]) => ({
+    key,
+    label,
+    count,
+    active: status === key,
+    href: `/app/diagnostics/laboratory/queue?status=${key}`,
+  }));
+}
+
+function radiologyQueueTabs(counts, currentStatus) {
+  const status = String(currentStatus || "open");
+  const safe = counts || {};
+  const openCount = (safe.pending || 0) + (safe.in_progress || 0) + (safe.completed || 0);
+  const rows = [
+    ["open", "Open queue", openCount],
+    ["pending", "Pending intake", safe.pending || 0],
+    ["in_progress", "In progress", safe.in_progress || 0],
+    ["completed", "Completed", safe.completed || 0],
+    ["verified", "Verified", safe.verified || 0],
+    ["all", "All", safe.total || 0],
+  ];
+  return rows.map(([key, label, count]) => ({
+    key,
+    label,
+    count,
+    active: status === key,
+    href: `/app/diagnostics/radiology/queue?status=${key}`,
+  }));
+}
+
+function laboratoryDashboardStats(counts) {
+  const safe = counts || {};
+  return {
+    pending_collection: safe.pending_collection || 0,
+    collected: safe.collected || 0,
+    received: safe.received || 0,
+    processing: safe.processing || 0,
+    resulted: safe.resulted || 0,
+    verified: safe.verified || 0,
+    total: safe.total || 0,
+  };
+}
+
+function radiologyDashboardStats(counts) {
+  const safe = counts || {};
+  return {
+    pending: safe.pending || 0,
+    in_progress: safe.in_progress || 0,
+    completed: safe.completed || 0,
+    verified: safe.verified || 0,
+    total: safe.total || 0,
+  };
+}
+
 const STORED_DIAGNOSTIC_URGENCIES = Object.freeze(["routine", "urgent", "stat"]);
 
 const CLOSED_DIAGNOSTIC_STATUSES = Object.freeze(["verified", "released"]);
@@ -111,6 +183,10 @@ module.exports = {
   isStoredOrderType,
   isStoredOrderStatus,
   canAttachLaboratoryResult,
+  laboratoryQueueTabs,
+  radiologyQueueTabs,
+  laboratoryDashboardStats,
+  radiologyDashboardStats,
   CLOSED_DIAGNOSTIC_STATUSES,
   isClosedDiagnosticStatus,
   STORED_DIAGNOSTIC_URGENCIES,

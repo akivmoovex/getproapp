@@ -28,6 +28,10 @@
       <p class="ac-stat-card__value ac-stat-value"><%= stats.in_progress || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Completed</p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-rad-count="completed"><%= stats.completed || 0 %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Verified</p>
       <p class="ac-stat-card__value ac-stat-value"><%= stats.verified || 0 %></p>
     </article>

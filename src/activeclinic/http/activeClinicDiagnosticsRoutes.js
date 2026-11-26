@@ -444,7 +444,24 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
               ? { type: "success", message: "Specimen received." }
               : req.query.rejected === "1"
                 ? { type: "success", message: "Specimen rejected." }
-                : null;
+                : req.query.result_entered === "1"
+                  ? { type: "success", message: "Laboratory result recorded." }
+                  : req.query.verified === "1"
+                    ? { type: "success", message: "Laboratory result verified." }
+                    : null;
+        const headerActions = [];
+        if (loaded.request.actions.canCollect) {
+          headerActions.push({
+            href: `/app/diagnostics/laboratory/request/${requestId}/collect`,
+            label: "Collect specimen",
+          });
+        }
+        if (loaded.request.actions.canEnterResult) {
+          headerActions.push({
+            href: `/app/diagnostics/laboratory/request/${requestId}/result`,
+            label: "Enter result",
+          });
+        }
 
         return renderShell(req, res, {
           activeNav: "diagnostics",
@@ -452,9 +469,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           pageHeader: {
             title: `Request ${loaded.request.requestNumber}`,
             description: `Patient: ${loaded.request.patientDisplayName}`,
-            actions: loaded.request.actions.canCollect
-              ? [{ href: `/app/diagnostics/laboratory/request/${requestId}/collect`, label: "Collect specimen" }]
-              : [],
+            actions: headerActions,
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
@@ -785,7 +800,29 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
         const requestId = String(req.params.requestId || "");
         const auth = req.activeClinicAuth;
 
-        const components = req.body.components ? JSON.parse(req.body.components) : [];
+        let components = [];
+        if (req.body.components) {
+          try {
+            components = JSON.parse(req.body.components);
+          } catch (parseError) {
+            components = null;
+          }
+        }
+        if (!Array.isArray(components)) {
+          return renderShell(req, res, {
+            activeNav: "diagnostics",
+            content: "app/diagnostics-enter-laboratory-result-content.ejs",
+            status: 400,
+            pageHeader: { title: "Enter laboratory result" },
+            pageData: {
+              resultEntry: {
+                request: { id: requestId },
+                values: req.body,
+                error: "Result components must be a JSON array.",
+              },
+            },
+          });
+        }
 
         const result = await enterLaboratoryResult(getPool(), {
           organizationId: auth.organization.id,
@@ -1079,6 +1116,47 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
         }
 
         return res.redirect(303, "/app/diagnostics/laboratory?critical_acknowledged=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/diagnostics/laboratory/results/:resultId/verify",
+    requireAuth,
+    requirePermission([PERM.LAB_VERIFY, PERM.VERIFY]),
+    requireDepartment("laboratory"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const resultId = String(req.params.resultId || "");
+        if (!UUID_RE.test(resultId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invalid result ID", { status: 404 })
+          );
+        }
+        const auth = req.activeClinicAuth;
+        const verified = await verifyLaboratoryResult(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          laboratoryResultId: resultId,
+          actor: actor(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!verified.ok) {
+          const status = verified.code === DIAGNOSTICS_RESULT.ACCESS_DENIED ? 403 : 400;
+          return res.status(status).type("html").send(
+            renderSimpleState("Verification failed", mapDiagnosticsError(verified.code), { status })
+          );
+        }
+        const requestId = String(req.body.request_id || "");
+        const nextUrl = UUID_RE.test(requestId)
+          ? `/app/diagnostics/laboratory/request/${requestId}?verified=1`
+          : "/app/diagnostics/laboratory?verified=1";
+        return res.redirect(303, nextUrl);
       } catch (err) {
         return next(err);
       }

@@ -21,11 +21,23 @@
   <div class="ac-metric-grid ac-stats" data-ac-diagnostics-metrics="laboratory">
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Pending collection</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= stats.pending_collection || 0 %></p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-lab-count="pending_collection"><%= stats.pending_collection || 0 %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Collected</p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-lab-count="collected"><%= stats.collected || 0 %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Received</p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-lab-count="received"><%= stats.received || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Processing</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= stats.processing || 0 %></p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-lab-count="processing"><%= stats.processing || 0 %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Resulted</p>
+      <p class="ac-stat-card__value ac-stat-value" data-ac-lab-count="resulted"><%= stats.resulted || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Verified</p>

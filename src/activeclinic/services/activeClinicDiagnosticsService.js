@@ -673,7 +673,7 @@ async function verifyLaboratoryResult(pool, params) {
 
     // Verify result exists
     const resultRes = await client.query(
-      `SELECT id, status, entered_by_staff_id
+      `SELECT id, status, entered_by_staff_id, patient_id, laboratory_request_id
        FROM activeclinic.laboratory_results
        WHERE id = $1
          AND organization_id = $2
@@ -720,6 +720,16 @@ async function verifyLaboratoryResult(pool, params) {
       await client.query("ROLLBACK");
       return { ok: false, code: RESULT.INVALID_STATUS };
     }
+
+    await client.query(
+      `UPDATE activeclinic.laboratory_requests
+          SET status = 'verified'
+        WHERE id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+          AND status = 'resulted'`,
+      [result.laboratory_request_id, organizationId, healthcareOrganizationId]
+    );
 
     await client.query("COMMIT");
 

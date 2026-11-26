@@ -177,9 +177,23 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
 
   const ordersRes = await db.query(
     `SELECT o.id, o.order_type, o.order_details, o.instructions, o.status,
-            o.created_at, s.display_name AS ordered_by_staff_display_name
+            o.created_at, s.display_name AS ordered_by_staff_display_name,
+            labres.result_summary AS lab_result_summary,
+            labres.status AS lab_result_status,
+            labres.patient_id AS lab_result_patient_id,
+            o.patient_id
        FROM activeclinic.clinical_orders o
        LEFT JOIN activeclinic.staff_members s ON s.id = o.ordered_by_staff_id
+       LEFT JOIN activeclinic.laboratory_requests lr
+         ON lr.clinical_order_id = o.id
+        AND lr.organization_id = o.organization_id
+       LEFT JOIN LATERAL (
+         SELECT result_summary, status, patient_id
+           FROM activeclinic.laboratory_results
+          WHERE laboratory_request_id = lr.id
+          ORDER BY created_at DESC
+          LIMIT 1
+       ) labres ON true
       WHERE o.encounter_id = $1
         AND o.organization_id = $2
         AND o.facility_id = $3

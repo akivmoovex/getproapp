@@ -5,6 +5,13 @@
  */
 
 const { RESULT: DIAGNOSTICS_RESULT } = require("./activeClinicDiagnosticsService");
+const {
+  canAttachLaboratoryResult,
+  laboratoryQueueTabs,
+  radiologyQueueTabs,
+  laboratoryDashboardStats,
+  radiologyDashboardStats,
+} = require("./clinicalOperationsRules");
 
 const STITCH_B2 = Object.freeze({
   diagnosticsDesktop: "07d08d75a44248acab897adb33254426",
@@ -35,6 +42,7 @@ async function loadLabStatusCounts(client, auth) {
     collected: 0,
     received: 0,
     processing: 0,
+    resulted: 0,
     verified: 0,
     total: 0,
   };
@@ -125,12 +133,7 @@ async function loadActiveClinicLaboratoryDashboardScreen(pool, params) {
       dashboard: {
         facilityDisplayName:
           (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
-        stats: {
-          pending_collection: stats.pending_collection,
-          processing: stats.processing,
-          verified: stats.verified,
-          total: stats.total,
-        },
+        stats: laboratoryDashboardStats(stats),
         stitch: {
           desktop: STITCH_B2.diagnosticsDesktop,
           mobile: STITCH_B2.diagnosticsMobile,
@@ -195,49 +198,7 @@ async function loadActiveClinicLaboratoryQueueScreen(pool, params) {
     );
 
     const counts = await loadLabStatusCounts(client, auth);
-    const openCount =
-      (counts.pending_collection || 0) +
-      (counts.collected || 0) +
-      (counts.received || 0) +
-      (counts.processing || 0);
-
-    const statusTabs = [
-      {
-        key: "open",
-        label: "Open queue",
-        href: "/app/diagnostics/laboratory/queue?status=open",
-        count: openCount,
-        active: status === "open",
-      },
-      {
-        key: "pending_collection",
-        label: "Pending collection",
-        href: "/app/diagnostics/laboratory/queue?status=pending_collection",
-        count: counts.pending_collection || 0,
-        active: status === "pending_collection",
-      },
-      {
-        key: "processing",
-        label: "In analysis",
-        href: "/app/diagnostics/laboratory/queue?status=processing",
-        count: counts.processing || 0,
-        active: status === "processing",
-      },
-      {
-        key: "verified",
-        label: "Verified",
-        href: "/app/diagnostics/laboratory/queue?status=verified",
-        count: counts.verified || 0,
-        active: status === "verified",
-      },
-      {
-        key: "all",
-        label: "All",
-        href: "/app/diagnostics/laboratory/queue?status=all",
-        count: counts.total || 0,
-        active: status === "all",
-      },
-    ];
+    const statusTabs = laboratoryQueueTabs(counts, status);
 
     return {
       ok: true,
@@ -344,6 +305,17 @@ async function loadActiveClinicLaboratoryRequestDetailScreen(pool, params) {
     }
 
     const request = requestRes.rows[0];
+    const resultRes = await client.query(
+      `SELECT id, status, result_summary, patient_id, entered_by_staff_id
+         FROM activeclinic.laboratory_results
+        WHERE laboratory_request_id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [requestId, auth.organization.id, auth.healthcareOrganization.id]
+    );
+    const result = resultRes.rows[0] || null;
 
     // Load specimen events
     const eventsRes = await client.query(
@@ -368,8 +340,20 @@ async function loadActiveClinicLaboratoryRequestDetailScreen(pool, params) {
         patientDisplayName: request.patient_display_name,
         requestedAt: request.requested_at,
         events: eventsRes.rows,
+        result: result
+          ? {
+              id: result.id,
+              status: result.status,
+              summary: result.result_summary,
+              patientId: result.patient_id,
+              enteredByStaffId: result.entered_by_staff_id,
+            }
+          : null,
         actions: {
           canCollect: request.status === "pending_collection",
+          canEnterResult: canAttachLaboratoryResult(request.status) && !result,
+          canVerify: Boolean(result && result.status === "resulted"),
+          canPrint: Boolean(result),
         },
       },
     };
@@ -527,7 +511,7 @@ async function loadActiveClinicEnterLaboratoryResultScreen(pool, params) {
   const client = await pool.connect();
   try {
     const requestRes = await client.query(
-      `SELECT lr.id, lr.request_number, lr.test_panel_name, lr.test_panel_code,
+      `SELECT lr.id, lr.request_number, lr.test_panel_name, lr.test_panel_code, lr.status,
               p.first_name || ' ' || p.last_name as patient_display_name
        FROM activeclinic.laboratory_requests lr
        INNER JOIN activeclinic.patients p ON lr.patient_id = p.id
@@ -542,6 +526,9 @@ async function loadActiveClinicEnterLaboratoryResultScreen(pool, params) {
     }
 
     const request = requestRes.rows[0];
+    if (!canAttachLaboratoryResult(request.status)) {
+      return { ok: false, code: DIAGNOSTICS_RESULT.INVALID_STATUS };
+    }
 
     return {
       ok: true,
@@ -579,12 +566,7 @@ async function loadActiveClinicRadiologyDashboardScreen(pool, params) {
       dashboard: {
         facilityDisplayName:
           (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
-        stats: {
-          pending: stats.pending,
-          in_progress: stats.in_progress,
-          verified: stats.verified,
-          total: stats.total,
-        },
+        stats: radiologyDashboardStats(stats),
         stitch: {
           desktop: STITCH_B2.diagnosticsDesktop,
           mobile: STITCH_B2.diagnosticsMobile,
@@ -650,46 +632,7 @@ async function loadActiveClinicRadiologyQueueScreen(pool, params) {
     );
 
     const counts = await loadRadStatusCounts(client, auth);
-    const openCount =
-      (counts.pending || 0) + (counts.in_progress || 0) + (counts.completed || 0);
-
-    const statusTabs = [
-      {
-        key: "open",
-        label: "Open queue",
-        href: "/app/diagnostics/radiology/queue?status=open",
-        count: openCount,
-        active: status === "open",
-      },
-      {
-        key: "pending",
-        label: "Pending intake",
-        href: "/app/diagnostics/radiology/queue?status=pending",
-        count: counts.pending || 0,
-        active: status === "pending",
-      },
-      {
-        key: "in_progress",
-        label: "In progress",
-        href: "/app/diagnostics/radiology/queue?status=in_progress",
-        count: counts.in_progress || 0,
-        active: status === "in_progress",
-      },
-      {
-        key: "verified",
-        label: "Verified",
-        href: "/app/diagnostics/radiology/queue?status=verified",
-        count: counts.verified || 0,
-        active: status === "verified",
-      },
-      {
-        key: "all",
-        label: "All",
-        href: "/app/diagnostics/radiology/queue?status=all",
-        count: counts.total || 0,
-        active: status === "all",
-      },
-    ];
+    const statusTabs = radiologyQueueTabs(counts, status);
 
     return {
       ok: true,
