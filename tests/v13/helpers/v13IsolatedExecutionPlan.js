@@ -13,6 +13,11 @@ const SHARED_POSTGRES_PORT = "5432";
 const ISOLATED_POSTGRES_PORT = "55432";
 const ISOLATED_HOST = "127.0.0.1";
 const TARGET_DATABASE_NAME = "getpro_v13_e2e_regression213101";
+const OTP_QA_DATABASE_NAME = "getpro_v13_e2e_otpqa135";
+const APPROVED_DATABASE_TARGETS = Object.freeze([
+  TARGET_DATABASE_NAME,
+  OTP_QA_DATABASE_NAME,
+]);
 const G78_HTTP_DATABASE = "getpro_v13_e2e_g78d2301";
 const TARGET_ROLE = "v13_regression_213101";
 const ISOLATED_DIR_NAME = ".v13-isolated-pg";
@@ -47,25 +52,58 @@ function fail(message) {
 }
 
 function parseTargetUrl(connectionString) {
+  const raw = String(connectionString || "").trim();
+  const rawUrl = raw.replace(/^postgresql:/i, "postgres:");
   let parsed;
   try {
-    parsed = new URL(String(connectionString || "").trim().replace(/^postgresql:/i, "postgres:"));
+    parsed = new URL(rawUrl);
   } catch {
     fail("connection string is not a PostgreSQL URL");
+  }
+  const authorityAndPath = rawUrl.slice(rawUrl.indexOf("//") + 2);
+  const pathStart = authorityAndPath.search(/[/?#]/);
+  const rawPathAndQuery = pathStart < 0 ? "" : authorityAndPath.slice(pathStart);
+  const rawPath = rawPathAndQuery.split(/[?#]/, 1)[0];
+  const rawDatabase = rawPath.startsWith("/") ? rawPath.slice(1) : "";
+  if (
+    rawPathAndQuery.includes("?database=") ||
+    rawPathAndQuery.includes("?db=") ||
+    rawPathAndQuery.includes("&database=") ||
+    rawPathAndQuery.includes("&db=")
+  ) {
+    fail("database query override is not allowed");
   }
   return {
     host: String(parsed.hostname || "").toLowerCase(),
     port: parsed.port || SHARED_POSTGRES_PORT,
-    database: decodeURIComponent((parsed.pathname || "").replace(/^\//, "")),
+    database: rawDatabase,
     username: decodeURIComponent(parsed.username || ""),
   };
+}
+
+function selectedDatabaseTarget(env) {
+  const source = env || {};
+  const hasSelector = Object.prototype.hasOwnProperty.call(
+    source,
+    "GETPRO_V13_APPROVED_DB_TARGET"
+  );
+  if (!hasSelector) return TARGET_DATABASE_NAME;
+  const requested = source.GETPRO_V13_APPROVED_DB_TARGET;
+  if (typeof requested !== "string" || requested.length === 0 || requested.trim() !== requested) {
+    fail("database target selector must be an exact value");
+  }
+  const target = requested;
+  if (!APPROVED_DATABASE_TARGETS.includes(target)) {
+    fail("database target is not explicitly approved");
+  }
+  return target;
 }
 
 /**
  * Accept only the designed loopback instance. Port 5432 is the shared cluster.
  * The returned object never includes a password.
  */
-function assertIsolatedConnectionTarget(connectionString) {
+function assertIsolatedConnectionTarget(connectionString, options = {}) {
   const target = parseTargetUrl(connectionString);
   if (target.host !== ISOLATED_HOST) {
     fail(`host must be ${ISOLATED_HOST}`);
@@ -76,11 +114,12 @@ function assertIsolatedConnectionTarget(connectionString) {
   if (target.port !== ISOLATED_POSTGRES_PORT) {
     fail(`port must be ${ISOLATED_POSTGRES_PORT}`);
   }
-  if (target.database !== TARGET_DATABASE_NAME) {
-    fail(`database must be ${TARGET_DATABASE_NAME}`);
-  }
   if (target.username !== TARGET_ROLE) {
     fail(`role must be ${TARGET_ROLE}`);
+  }
+  const expectedDatabase = options.expectedDatabaseName || TARGET_DATABASE_NAME;
+  if (target.database !== expectedDatabase) {
+    fail(`database must be ${expectedDatabase}`);
   }
   return {
     host: target.host,
@@ -162,7 +201,7 @@ function assertIsolatedDataDirectory(worktree, dataDir) {
   };
 }
 
-function expectedRoleCatalogSnapshot() {
+function expectedRoleCatalogSnapshot(expectedDatabase = TARGET_DATABASE_NAME) {
   return {
     rolname: TARGET_ROLE,
     rolsuper: false,
@@ -172,7 +211,7 @@ function expectedRoleCatalogSnapshot() {
     rolbypassrls: false,
     rolinherit: false,
     rolcanlogin: true,
-    databases: [TARGET_DATABASE_NAME],
+    databases: [expectedDatabase],
   };
 }
 
@@ -294,7 +333,11 @@ function isolatedConnectionString() {
 
 function resolveLaunchTarget(source) {
   const override = String(source.GETPRO_V13_HTTP_DATABASE_NAME || "").trim();
-  if (!override) return assertIsolatedConnectionTarget(String(source.E2E_DATABASE_URL || "").trim());
+  if (!override) {
+    return assertIsolatedConnectionTarget(String(source.E2E_DATABASE_URL || "").trim(), {
+      expectedDatabaseName: selectedDatabaseTarget(source),
+    });
+  }
   if (String(source.GETPRO_V13_HTTP_AUTHORIZED || "") !== "1") {
     fail("HTTP database override requires GETPRO_V13_HTTP_AUTHORIZED=1");
   }
@@ -416,6 +459,8 @@ module.exports = {
   ISOLATED_POSTGRES_PORT,
   ISOLATED_HOST,
   TARGET_DATABASE_NAME,
+  OTP_QA_DATABASE_NAME,
+  APPROVED_DATABASE_TARGETS,
   G78_HTTP_DATABASE,
   TARGET_ROLE,
   ISOLATED_DIR_NAME,
@@ -429,6 +474,7 @@ module.exports = {
   expectedRoleCatalogSnapshot,
   isolatedBootstrapEnv,
   isolatedConnectionString,
+  selectedDatabaseTarget,
   assertProjectLocalIsolationPath,
   assertRoleCatalogSnapshot,
   assertIsolatedBootstrapLaunch,

@@ -10,7 +10,9 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
-const { runV13FoundationBootstrap } = require("../../../scripts/ci/v13-foundation-bootstrap.cjs");
+const {
+  runV13FoundationBootstrap,
+} = require("../../../scripts/ci/v13-foundation-bootstrap.cjs");
 const {
   isolatedBootstrapEnv,
   isolatedConnectionString,
@@ -18,6 +20,7 @@ const {
   assertIsolatedDataDirectory,
   assertProjectLocalIsolationPath,
   assertRoleCatalogSnapshot,
+  assertIsolatedConnectionTarget,
 } = require("../helpers/v13IsolatedExecutionPlan");
 const { assertV13BrowserHarness } = require("../helpers/v13BrowserIsolation");
 
@@ -67,6 +70,91 @@ async function rejectsBeforeLoad(candidate, pattern) {
 }
 
 describe("D21 isolated PostgreSQL provisioning readiness", () => {
+  it("accepts the explicitly selected OTP QA target without opening PostgreSQL", async () => {
+    const target = "getpro_v13_e2e_otpqa135";
+    const url = `postgresql://v13_regression_213101@127.0.0.1:55432/${target}`;
+    await runV13FoundationBootstrap({
+      env: env({
+        GETPRO_V13_APPROVED_DB_TARGET: target,
+        E2E_DATABASE_URL: url,
+        TEST_DATABASE_URL: url,
+        DATABASE_URL: url,
+        GETPRO_V13_OWNED_DB_NAME: target,
+        GETPRO_V13_ROLE_CATALOG_SNAPSHOT: JSON.stringify(
+          expectedRoleCatalogSnapshot(target)
+        ),
+      }),
+      loadBootstrap() {
+        return { bootstrapFoundation: async () => ({ ok: true }) };
+      },
+    });
+  });
+
+  it("rejects the OTP QA target unless it is explicitly selected", async () => {
+    const target = "getpro_v13_e2e_otpqa135";
+    const url = `postgresql://v13_regression_213101@127.0.0.1:55432/${target}`;
+    await rejectsBeforeLoad(
+      env({
+        E2E_DATABASE_URL: url,
+        TEST_DATABASE_URL: url,
+        DATABASE_URL: url,
+        GETPRO_V13_OWNED_DB_NAME: target,
+        GETPRO_V13_ROLE_CATALOG_SNAPSHOT: JSON.stringify(
+          expectedRoleCatalogSnapshot(target)
+        ),
+      }),
+      /expected approved target|explicitly approved|database must be/
+    );
+    await rejectsBeforeLoad(
+      env({
+        GETPRO_V13_APPROVED_DB_TARGET: "getpro_v13_e2e_unapproved1",
+      }),
+      /explicitly approved/
+    );
+  });
+
+  it("rejects noncanonical database paths and malformed selectors", () => {
+    const canonical =
+      "postgresql://v13_regression_213101@127.0.0.1:55432/getpro_v13_e2e_otpqa135";
+    assert.doesNotThrow(
+      () => assertIsolatedConnectionTarget(canonical, {
+        expectedDatabaseName: "getpro_v13_e2e_otpqa135",
+      })
+    );
+    for (const suffix of [
+      "getpro_v13_e2e_otpqa%3135",
+      "getpro_v13_e2e_otpqa%5F135",
+      "getpro_v13_e2e_otpqa%2F135",
+      "getpro_v13_e2e_otpqa%255F135",
+      "getpro_v13_e2e_otpqa135/extra",
+      "getpro_v13_e2e_otpqa135/",
+    ]) {
+      assert.throws(
+        () => assertIsolatedConnectionTarget(
+          `postgresql://v13_regression_213101@127.0.0.1:55432/${suffix}`,
+          { expectedDatabaseName: "getpro_v13_e2e_otpqa135" }
+        ),
+        /database must be|database query override/
+      );
+    }
+    assert.throws(
+      () => assertIsolatedConnectionTarget(
+        `${canonical}?database=getpro_v13_e2e_regression213101`,
+        { expectedDatabaseName: "getpro_v13_e2e_otpqa135" }
+      ),
+      /database query override/
+    );
+  });
+
+  it("rejects explicit empty, whitespace, wildcard, and encoded selectors", async () => {
+    for (const selector of ["", " ", "\tgetpro_v13_e2e_otpqa135", "getpro_v13_e2e_otpqa135\n", "*", "getpro_v13_e2e_otpqa%3135"]) {
+      await rejectsBeforeLoad(
+        env({ GETPRO_V13_APPROVED_DB_TARGET: selector }),
+        /exact value|explicitly approved/
+      );
+    }
+  });
+
   it("rejects shared port, shared data directory, remote hosts, missing flags, and the wrong identity", async () => {
     const sharedPort = "postgresql://v13_regression_213101@127.0.0.1:5432/getpro_v13_e2e_regression213101";
     await rejectsBeforeLoad(

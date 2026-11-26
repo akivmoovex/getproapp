@@ -19,6 +19,10 @@ const TARGET_IDENTITY_KEY = "moovex-platform-v7";
 function assertV13RegressionBootstrapEnv(env) {
   const { resolveDisposableConnectionString } = require("../../tests/v13/helpers/v13CiDatabaseGuard");
   const {
+    APPROVED_DATABASE_TARGETS,
+    selectedDatabaseTarget,
+  } = require("../../tests/v13/helpers/v13IsolatedExecutionPlan");
+  const {
     assertIsolatedBootstrapLaunch,
   } = require("../../tests/v13/helpers/v13IsolatedExecutionPlan");
   if (String(env.FOUNDATION_ALLOW_LOCALHOST || "") !== "1") {
@@ -31,9 +35,10 @@ function assertV13RegressionBootstrapEnv(env) {
     throw new Error("V13_CI_DB_GUARD: DATABASE_IDENTITY_EXPECTED must be moovex-platform-v7");
   }
   const target = resolveDisposableConnectionString(env);
-  if (target.database !== TARGET_DATABASE_NAME) {
+  const approvedTarget = selectedDatabaseTarget(env);
+  if (!APPROVED_DATABASE_TARGETS.includes(approvedTarget) || target.database !== approvedTarget) {
     throw new Error(
-      `V13_CI_DB_GUARD: refusing unexpected database name "${target.database}" (expected ${TARGET_DATABASE_NAME})`
+      `V13_CI_DB_GUARD: refusing unexpected database name "${target.database}" (expected approved target)`
     );
   }
   if (target.hostname !== "127.0.0.1" && target.hostname !== "localhost" && target.hostname !== "::1") {
