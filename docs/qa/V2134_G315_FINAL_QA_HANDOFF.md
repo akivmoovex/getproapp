@@ -8,7 +8,7 @@ Started from: `1fd1144be49a4e5c8593cbe6ee6c3bb4a9f7dad8` (`origin/V13` at work s
 Target version: `2.13.4`  
 Functional commit: `4b17879669c894ada1faf5915488b7956b4ef7c9`  
 Version commit: `bd79736a06a36216af1615c68f0c986bf675b773`  
-Final tip: `dfd3802ee31255a8608e9948f9ed65680b4f1f28` 
+Final tip: verify with `git rev-parse origin/V13` after the G315 push sequence (do not hard-code a chasing docs-only SHA). 
 
 ## Authorization
 
