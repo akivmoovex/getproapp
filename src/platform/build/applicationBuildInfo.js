@@ -101,7 +101,7 @@ function getApplicationBuildInfo(options) {
   const environmentLabel =
     environment.charAt(0).toUpperCase() + environment.slice(1);
 
-  // Canonical V2.13.2: show product version alone; Git SHA lives in `build` only.
+  // Canonical V2.13.4: show product version alone; Git SHA lives in `build` only.
   const version = scheme.versionBase;
 
   return {
