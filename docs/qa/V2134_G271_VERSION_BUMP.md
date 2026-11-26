@@ -14,3 +14,7 @@
 Tip About constants were already 2.13.4 before this attestation. G271 adds a dedicated
 assertion suite, corrects a stale V2.13.2 comment, and records the version-only commit
 separately from G270 QA packaging.
+## G301 version attestation
+
+BlessBoard and ActiveClinic About remain **2.13.4** after G301 re-execution. No functional change in this commit.
+
