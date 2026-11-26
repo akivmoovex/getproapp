@@ -1,7 +1,7 @@
 <%
   var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
-    productVersion: "2.13.2",
-    version: "2.13.2",
+    productVersion: "2.13.4",
+    version: "2.13.4",
     build: "(unavailable)",
     available: false,
     environmentLabel: "Production",
@@ -9,7 +9,7 @@
     platformLine: "v8"
   };
   var envIsTesting = bi.environment === "testing";
-  var productLabel = bi.productVersion || "2.13.2";
+  var productLabel = bi.productVersion || "2.13.4";
   var isV8About = bi.platformLine === "v8";
   var versionDisplay = isV8About
     ? (bi.productVersionLabel || ("Version " + productLabel))
@@ -47,7 +47,7 @@
             <h2 id="ac-about-intro-title">ActiveClinic Core Suite</h2>
             <span class="ac-about-v11__intro-tag">Enterprise v<%= productLabel %></span>
           </div>
-          <p>ActiveClinic 2.13.2 is a maintenance version on branch V13. This version records bug-fix maintenance work without claiming unidentified fixes or release approval.</p>
+          <p>ActiveClinic 2.13.4 is a maintenance version on branch V13. This version records bug-fix maintenance work without claiming unidentified fixes or release approval.</p>
         </div>
         <div class="ac-about-v11__intro-pill ac-about-v11__desktop-only" aria-hidden="true">
           <span class="material-symbols-outlined">verified_user</span>

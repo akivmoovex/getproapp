@@ -45,6 +45,7 @@ const VERSION_ORDER = Object.freeze([
   "2.13",
   "2.13.1",
   "2.13.2",
+  "2.13.4",
 ]);
 
 /**
@@ -3720,6 +3721,67 @@ const VERSIONS = Object.freeze([
     qaChecklist: [],
     testCases: [],
     sources: ["src/platform/build/applicationBuildInfo.js", "docs/releases/V2.13.2_RELEASE_NOTES.md"],
+  }),
+  Object.freeze({
+    version: "2.13.4",
+    summary:
+      "Version 2.13.4 is an approved disposable-QA remediation candidate for BlessBoard and ActiveClinic on branch V13. It is not a production release.",
+    releaseDate: null,
+    products: [PRODUCTS.AC, PRODUCTS.BB, PRODUCTS.SHARED],
+    deploymentStatus: "DEVELOPMENT on branch V13. Not released or deployed.",
+    qaVerification:
+      "NO-GO — disposable OTP and Community Benefits PostgreSQL suites pass; live Resend mailbox OTP and hosted QA remain open. D25 slot capacity stays unapproved.",
+    acceptanceCriteria: [
+      "BlessBoard and ActiveClinic About pages display Version 2.13.4",
+      "Historical 2.13, 2.13.1, and 2.13.2 release notes remain available",
+    ],
+    pendingDevelopment: [
+      "Live Resend mailbox OTP browser proof requires operator secret-store and allowlisted recipients.",
+      "Appointment slot capacity remains unapproved.",
+      "Community Benefits financial posting and live agreements stay disabled.",
+      "Public booking, production media upload, and production OTP stay disabled.",
+    ],
+    knownIssues: [
+      "D25 slot-capacity booking remains blocked pending an approved capacity policy.",
+      "Real Resend mailbox delivery was not executed in the agent environment.",
+      "Public self-registration of an unknown patient remains outside the approved staff-created-patient policy.",
+    ],
+    documentationGaps: [
+      "Hosted QA retest is not claimed and requires separate authorization.",
+      "Disposable proof does not replace hosted QA, and production media upload stays disabled.",
+    ],
+    architectureWork: {
+      title: "V2.13.4 approved disposable QA remediation",
+      body:
+        "Owner-authorized disposable OTP and Community Benefits schemas were applied only on the isolated QA database. D14C, D16, and shared OTP persistence pass. Community Benefits PostgreSQL persistence, Model B preview, and consent draft coverage pass with posting disabled. Laboratory and radiology journeys remain covered. Clinical print-ready controls were extended. Version metadata is 2.13.4.",
+      items: [
+        "Disposable OTP schema enables D14C/D16/G185 without promoting migration 048",
+        "Community Benefits schema enables PostgreSQL persistence with inactive agreements",
+        "Model B 10% contribution remains preview-only",
+        "Financial posting remains hard-disabled",
+        "Same-staff appointment overlap remains protected; slot capacity stays unapproved",
+        "Historical release notes preserved",
+      ],
+    },
+    productNarratives: Object.freeze({
+      [PRODUCTS.BB]: Object.freeze({
+        intro: "BlessBoard 2.13.4 QA remediation candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.AC]: Object.freeze({
+        intro: "ActiveClinic 2.13.4 QA remediation candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+      [PRODUCTS.SHARED]: Object.freeze({
+        intro: "Shared GetPro 2.13.4 QA remediation candidate on branch V13. Not deployed.",
+        sections: Object.freeze([]),
+      }),
+    }),
+    features: [],
+    bugs: [],
+    qaChecklist: [],
+    testCases: [],
+    sources: ["src/platform/build/applicationBuildInfo.js", "docs/releases/V2.13.4_RELEASE_NOTES.md"],
   }),
 ]);
 

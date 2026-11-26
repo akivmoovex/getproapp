@@ -6,9 +6,9 @@
  * Does not shell out to git on each call beyond the existing env/.git HEAD read.
  *
  * Canonical current product line (all deployments, including production):
- *   productVersion  → "2.13.2"
- *   versionBase     → "2.13.2"
- *   version         → "2.13.2" (Git SHA is shown separately as `build`; no invented build number)
+ *   productVersion  → "2.13.4"
+ *   versionBase     → "2.13.4"
+ *   version         → "2.13.4" (Git SHA is shown separately as `build`; no invented build number)
  *
  * Legacy V7 catalogue labels (historical reference only; not selected for About):
  *   productVersion  → "1.3"
@@ -26,8 +26,8 @@ const VERSION_BASE_V7 = "1.03";
 const PRODUCT_VERSION_V7 = "1.3";
 
 /** System / product version for the canonical GetPro V2.13 development line. */
-const VERSION_BASE_V8 = "2.13.2";
-const PRODUCT_VERSION_V8 = "2.13.2";
+const VERSION_BASE_V8 = "2.13.4";
+const PRODUCT_VERSION_V8 = "2.13.4";
 
 /**
  * Canonical aliases — current product About/version source is V2.13.
@@ -61,7 +61,7 @@ function resolveBuildSha(options) {
  * }}
  */
 function resolveVersionScheme(env) {
-  // About/product version is canonical V2.13.2 for every deployment profile,
+  // About/product version is canonical V2.13.4 for every deployment profile,
   // including production (moovex-platform-production / activeclinic-org-production).
   // Deployment isolation platformLine (v7 vs v8) is orthogonal and must not
   // pin About to the legacy 1.03 catalogue label.
