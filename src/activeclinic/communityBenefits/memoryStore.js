@@ -17,6 +17,7 @@ function createMemoryCommunityStore() {
     audits: [],
     ledger: [],
     plans: new Map(),
+    settlements: new Map(),
     serial(key, fn) {
       const prev = tails.get(key) || Promise.resolve();
       const run = prev.then(fn, fn);

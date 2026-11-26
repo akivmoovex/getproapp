@@ -470,6 +470,8 @@ function planLedger(store, input) {
     id: id(),
     idempotencyKey: input.idempotencyKey,
     clinicId: input.clinicId,
+    agreementId: agreement.id,
+    agreementVersion: agreement.version,
     contributionMinor,
     currency: "ZMW",
     reversalOf: null,
@@ -495,6 +497,78 @@ function selectAgreementForClinic(store, clinicId, at) {
   return rows.length ? rows[rows.length - 1] : null;
 }
 
+function maskPhone(phone) {
+  const text = String(phone || "");
+  if (text.length < 4) return "****";
+  return `****${text.slice(-4)}`;
+}
+
+function searchLocalPatients(store, input) {
+  if (!input.clinicId || input.actorClinicId !== input.clinicId) return fail("wrong_clinic");
+  if (input.staffRole !== "reception" && input.staffRole !== "clinic_admin") return fail("access_denied");
+  const name = String(input.name || "").trim().toLowerCase();
+  const phone = String(input.phone || "").trim();
+  if (name.length < 2 && phone.length < 4) return fail("invalid_search");
+  const rows = store.patients.filter((row) => {
+    if (row.clinicId !== input.clinicId) return false;
+    if (input.facilityId && row.facilityId !== input.facilityId) return false;
+    const nameMatches = name.length >= 2 && String(row.displayName || "").toLowerCase().includes(name);
+    const phoneMatches = phone.length >= 4 && row.phone === phone;
+    if (name && phone) return nameMatches && phoneMatches;
+    return nameMatches || phoneMatches;
+  });
+  audit(store, { type: "patient.search", clinicId: input.clinicId, actorId: input.actorId || null, count: rows.length });
+  const candidates = rows.map((row) => ({
+    patientId: row.id,
+    displayName: row.displayName,
+    phoneMask: maskPhone(row.phone),
+    facilityId: row.facilityId,
+  }));
+  const outcome = candidates.length === 0 ? "none" : candidates.length === 1 ? "one" : "ambiguous";
+  return { ok: true, outcome, candidates, linked: false, introduced: false };
+}
+
+function planSettlementBatch(store, input) {
+  if (!input.batchKey || !input.clinicId) return Promise.resolve(fail("binding"));
+  if (input.actorClinicId !== input.clinicId) return Promise.resolve(fail("wrong_clinic"));
+  if (input.staffRole !== "reception" && input.staffRole !== "clinic_admin") return Promise.resolve(fail("access_denied"));
+  return store.serial(`settle:${input.batchKey}`, async () => {
+    const existing = store.settlements.get(input.batchKey);
+    if (existing) return { ok: true, batch: existing, duplicate: true };
+    const lines = [...store.plans.values()].filter((row) => row.clinicId === input.clinicId);
+    const contributionMinor = lines.reduce((sum, row) => sum + row.contributionMinor, 0);
+    const batch = {
+      id: id(),
+      batchKey: input.batchKey,
+      clinicId: input.clinicId,
+      status: "PENDING_APPROVAL",
+      contributionMinor,
+      currency: "ZMW",
+      posted: false,
+      lineIds: lines.map((row) => row.id),
+      agreementVersions: lines.map((row) => ({
+        agreementId: row.agreementId,
+        version: row.agreementVersion,
+      })),
+    };
+    store.settlements.set(input.batchKey, batch);
+    audit(store, {
+      type: "settlement.planned",
+      clinicId: input.clinicId,
+      batchKey: input.batchKey,
+      contributionMinor,
+      actorId: input.actorId || null,
+    });
+    return { ok: true, batch, duplicate: false };
+  });
+}
+
+function commitSettlement(store) {
+  if (financialPostingEnabled() !== false) return fail("posting_guard_missing");
+  audit(store, { type: "settlement.refused" });
+  return { ok: false, code: "posting_disabled", posted: false, ledgerCount: store.ledger.length };
+}
+
 function commitLedger(store, input) {
   if (financialPostingEnabled() !== false) return fail("posting_guard_missing");
   audit(store, { type: "ledger.refused", idempotencyKey: input.idempotencyKey, at: input.at });
@@ -512,6 +586,8 @@ function planRefund(store, input) {
     id: id(),
     idempotencyKey: key,
     clinicId: original.clinicId,
+    agreementId: original.agreementId,
+    agreementVersion: original.agreementVersion,
     contributionMinor: original.contributionMinor === 0 ? 0 : -original.contributionMinor,
     currency: "ZMW",
     reversalOf: original.id,
@@ -541,12 +617,15 @@ module.exports = {
   presentPass,
   addPatient,
   localPatients,
+  searchLocalPatients,
   readChart,
   linkMember,
   createAgreement,
   decideEligibility,
   previewInvoice,
   planLedger,
+  planSettlementBatch,
+  commitSettlement,
   selectAgreementForClinic,
   commitLedger,
   planRefund,

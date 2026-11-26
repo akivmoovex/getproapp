@@ -146,7 +146,13 @@ function createCommunityBenefitsTestApp() {
     ],
   });
   app.get("/__test/fixtures", (_req, res) => {
-    res.json({ ...fixtures, ledgerCount: store.ledger.length });
+    res.json({
+      ...fixtures,
+      ledgerCount: store.ledger.length,
+      linkCount: store.links.length,
+      introductionCount: store.introductions.length,
+      patientCount: store.patients.length,
+    });
   });
   app.post("/__test/reset", (_req, res) => {
     store.persons.clear();
@@ -161,6 +167,7 @@ function createCommunityBenefitsTestApp() {
     store.agreements.length = 0;
     store.audits.length = 0;
     store.ledger.length = 0;
+    store.settlements.clear();
     Object.assign(fixtures, seed(store));
     res.json({ ok: true });
   });

@@ -215,6 +215,55 @@ function registerCommunityBenefitsRoutes(app, deps) {
       }));
       return;
     }
+    if (req.body.action === "search") {
+      const found = service.searchLocalPatients(store, {
+        clinicId,
+        actorClinicId: actor.clinicId,
+        facilityId: actor.facilityId,
+        staffRole: actor.role,
+        actorId: actor.staffId,
+        name: req.body.patient_name,
+        phone: req.body.patient_phone,
+      });
+      const text = !found.ok
+        ? "Enter a name of at least 2 characters or a phone of at least 4 digits."
+        : found.outcome === "none"
+          ? "No local patient matches this clinic."
+          : found.outcome === "ambiguous"
+            ? "More than one local patient matches. Confirm the chart explicitly."
+            : "One local patient matches. Confirm the chart before linking.";
+      res.type("html").send(pages.checkInPage({
+        csrf: csrf(),
+        clinicId,
+        clinicName: actor.clinicName,
+        clinics: deps.clinics || [],
+        error: !found.ok || found.outcome !== "one",
+        message: text,
+        candidates: found.ok ? found.candidates : [],
+        disclosure: "No community discount is applied.",
+      }));
+      return;
+    }
+    if (req.body.action === "settlement") {
+      const batch = await service.planSettlementBatch(store, {
+        batchKey: `clinic:${clinicId}`,
+        clinicId,
+        actorClinicId: actor.clinicId,
+        staffRole: actor.role,
+        actorId: actor.staffId,
+      });
+      const refused = service.commitSettlement(store);
+      res.type("html").send(pages.checkInPage({
+        csrf: csrf(),
+        clinicId,
+        clinicName: actor.clinicName,
+        clinics: deps.clinics || [],
+        settlement: batch.ok ? `${batch.batch.status} ${batch.batch.contributionMinor} ngwee` : batch.code,
+        disclosure: refused.posted ? "Settlement posted." : "No settlement is posted.",
+        message: "Settlement remains pending approval.",
+      }));
+      return;
+    }
     const presented = service.presentPass(store, { token: req.body.pass_code, clinicId, actorId: actor.staffId });
     const byFallback = presented.ok ? presented : service.presentPass(store, { fallbackCode: req.body.pass_code, clinicId, actorId: actor.staffId });
     const result = presented.ok ? presented : byFallback;

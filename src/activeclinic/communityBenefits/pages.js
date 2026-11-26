@@ -96,15 +96,23 @@ function checkInPage(vm) {
       </select>
       <label for="amount_minor">Quoted amount in ngwee</label>
       <input id="amount_minor" name="amount_minor" inputmode="numeric" value="100000">
+      <label for="patient_name">Local patient name</label>
+      <input id="patient_name" name="patient_name" autocomplete="off">
+      <label for="patient_phone">Local patient phone</label>
+      <input id="patient_phone" name="patient_phone" autocomplete="off" inputmode="tel">
       <label for="patient_id">Existing local patient</label>
       <input id="patient_id" name="patient_id" autocomplete="off">
       <label for="confirm_link"><input id="confirm_link" name="confirm_link" type="checkbox" value="yes"> I confirmed this is the same person</label>
+      <button type="submit" name="action" value="search">Find patient</button>
       <button type="submit" name="action" value="preview">Check in</button>
+      <button type="submit" name="action" value="settlement">Preview settlement</button>
       <button type="submit" name="action" value="cancel">Cancel</button>
     </form>
     ${vm.message ? `<p class="${vm.error ? "error" : "muted"}" id="checkin_result" role="${vm.error ? "alert" : "status"}">${esc(vm.message)}</p>` : ""}
     ${vm.disclosure ? `<p id="benefit_disclosure">${esc(vm.disclosure)}</p>` : ""}
     ${vm.decision ? `<p id="eligibility_decision">${esc(vm.decision)} ${esc(vm.reason || "")}</p>` : ""}
+    ${vm.candidates ? `<ul id="lookup_results">${vm.candidates.map((row) => `<li>${esc(row.displayName)} ${esc(row.phoneMask)} <code>${esc(row.patientId)}</code></li>`).join("")}</ul>` : ""}
+    ${vm.settlement ? `<p id="settlement_status">${esc(vm.settlement)}</p>` : ""}
   `);
 }
 

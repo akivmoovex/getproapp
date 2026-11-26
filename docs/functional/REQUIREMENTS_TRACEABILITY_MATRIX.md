@@ -1,5 +1,7 @@
 # Requirements traceability matrix
 
+G223 maps the written Community Benefits rules after lookup and settlement preview. The v1.2 PDF was still unavailable, so PDF traceability is not claimed. Manual lookup is executed in unit and mock browser tests. Settlement preparation is a pending preview. Settlement execution and PostgreSQL persistence stay blocked. D14C, D16 platform OTP, and D25 slot capacity still fail. See `docs/qa/community-benefits/G219_REQUIREMENTS_RECONCILIATION.md`.
+
 G218 classifies the Community Benefits acceptance rows in `docs/qa/community-benefits/G216_ACCEPTANCE_MATRIX.md`. Manual lookup and settlement remain partial. PostgreSQL persistence for the new tables is blocked. D14C, D16 platform OTP, and D25 slot capacity still fail.
 
 G215 maps 42 Community Benefits requirements from the source. Fourteen defects from the G210 implementation were fixed. The planned 190 scenarios were not executed. D14C, D16 platform OTP, and D25 slot capacity still fail. See `docs/qa/community-benefits/G215_FINAL_COVERAGE.json`.

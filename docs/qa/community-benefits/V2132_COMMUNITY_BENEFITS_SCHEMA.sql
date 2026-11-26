@@ -90,3 +90,35 @@ CREATE TABLE IF NOT EXISTS activeclinic.community_agreements (
   CONSTRAINT community_agreements_contribution
     CHECK (contribution_bps IS NULL OR (contribution_bps >= 0 AND contribution_bps <= 10000))
 );
+
+CREATE TABLE IF NOT EXISTS activeclinic.community_audit_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL,
+  clinic_id UUID NULL,
+  event_type TEXT NOT NULL,
+  actor_id TEXT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS community_audit_events_clinic_idx
+  ON activeclinic.community_audit_events (clinic_id, recorded_at);
+
+CREATE TABLE IF NOT EXISTS activeclinic.community_settlement_batches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL,
+  clinic_id UUID NOT NULL,
+  batch_key TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING_APPROVAL',
+  contribution_minor INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'ZMW',
+  posted BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (clinic_id, batch_key),
+  CONSTRAINT community_settlement_batches_status
+    CHECK (status = 'PENDING_APPROVAL'),
+  CONSTRAINT community_settlement_batches_not_posted
+    CHECK (posted = false)
+);
+
+CREATE INDEX IF NOT EXISTS clinic_acquisitions_person_idx
+  ON activeclinic.clinic_acquisitions (person_id, clinic_id, recorded_at);

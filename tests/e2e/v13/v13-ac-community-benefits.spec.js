@@ -173,6 +173,38 @@ test("a fractional quote does not disclose a discount", async ({ page, request }
   await expect(page.locator("#benefit_disclosure")).toHaveText("No community discount is applied.");
 });
 
+test("manual lookup and settlement preview do not create a referral or a posting", async ({ page, request }) => {
+  const before = await (await request.get("/__test/fixtures")).json();
+  await page.setExtraHTTPHeaders({ "x-community-test-actor": actor(CLINIC_A, "Clinic A") });
+  await page.goto("/app/reception/community-check-in");
+  await page.getByLabel("Local patient name").fill("Walk In Ada");
+  await page.getByRole("button", { name: "Find patient" }).click();
+  await expect(page.locator("#lookup_results")).toContainText("Walk In Ada");
+  await expect(page.locator("#lookup_results")).toContainText("****0001");
+  await expect(page.locator("body")).not.toContainText("private-chart-note-a");
+  await expect(page.getByRole("status")).toContainText("Confirm the chart");
+  await page.goto("/app/reception/community-check-in");
+  await page.getByLabel("Local patient phone").fill("0977000001");
+  await page.getByRole("button", { name: "Find patient" }).click();
+  await expect(page.getByRole("alert")).toContainText("More than one local patient");
+  await page.goto("/app/reception/community-check-in");
+  await page.getByLabel("Local patient name").fill("Nobody Here");
+  await page.getByRole("button", { name: "Find patient" }).click();
+  await expect(page.getByRole("alert")).toContainText("No local patient matches");
+  await page.goto("/app/reception/community-check-in");
+  await page.getByRole("button", { name: "Find patient" }).click();
+  await expect(page.getByRole("alert")).toContainText("at least 2 characters");
+  await page.goto("/app/reception/community-check-in");
+  await page.getByRole("button", { name: "Preview settlement" }).click();
+  await expect(page.locator("#settlement_status")).toContainText("PENDING_APPROVAL");
+  await expect(page.locator("#benefit_disclosure")).toHaveText("No settlement is posted.");
+  const after = await (await request.get("/__test/fixtures")).json();
+  expect(after.introductionCount).toBe(before.introductionCount);
+  expect(after.linkCount).toBe(before.linkCount);
+  expect(after.patientCount).toBe(before.patientCount);
+  expect(after.ledgerCount).toBe(0);
+});
+
 test("unauthenticated and unsupported-role check-in is refused", async ({ request }) => {
   const missing = await request.post("/app/reception/community-check-in", {
     form: { csrf: "missing", pass_code: "x", clinic_id: CLINIC_A, action: "preview" },

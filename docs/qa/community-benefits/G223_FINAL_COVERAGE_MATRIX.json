@@ -1,0 +1,43 @@
+{
+  "cycle": "G223",
+  "baseSha": "f2ea819fc1a0d208dd5d7b95c78edb0d8a7701ab",
+  "specificationPdfRead": false,
+  "specificationPdf": "ActiveClinic_Community_Benefits_Product_Technical_QA_Specification_v1_2(1).pdf",
+  "plannedScenarioCount": 190,
+  "plannedScenariosExecuted": false,
+  "manualLookup": "IMPLEMENTED_AND_EXECUTED",
+  "settlementBatchPreparation": "IMPLEMENTED_PREVIEW_ONLY",
+  "financialPosting": "DISABLED",
+  "newUnitTests": 2,
+  "newHttpTests": 0,
+  "newBrowserTests": 1,
+  "newSecurityTests": 0,
+  "securityAssertionsInsideNewUnitTests": true,
+  "safe": { "executed": 596, "passed": 594, "failed": 0, "skipped": 2, "runs": 2 },
+  "http": { "executed": 36, "passed": 33, "failed": 3, "runs": 2 },
+  "activeClinicBrowserPassed": 30,
+  "blessBoardBrowserPassed": 23,
+  "communityMockBrowserPassed": 9,
+  "communityPostgresBrowserPassed": 0,
+  "communityPostgresPersistencePass": 0,
+  "newMigrationsExecuted": false,
+  "d14cOtp": "BLOCKED_BY_MIGRATION",
+  "d16PlatformOtp": "BLOCKED_BY_MIGRATION",
+  "d25Slot": "APT-01-03_NOT_IMPLEMENTED",
+  "d25Overlap": "PASS",
+  "p0Gaps": 0,
+  "p1Gaps": 0,
+  "policyBlockers": [
+    "COMMERCIAL_RATE_UNAPPROVED",
+    "ZAMBIA_CONSENT_NOTICE_UNAPPROVED",
+    "AGREEMENT_ACTIVATION_UNAPPROVED",
+    "SETTLEMENT_EXECUTION_BLOCKED_BY_POLICY"
+  ],
+  "schemaBlockers": [
+    "COMMUNITY_TABLES_NOT_APPLIED",
+    "OTP_CHALLENGES_NOT_APPLIED"
+  ],
+  "qa": "NO-GO",
+  "releaseReady": false,
+  "deployment": "NOT_PERFORMED"
+}
