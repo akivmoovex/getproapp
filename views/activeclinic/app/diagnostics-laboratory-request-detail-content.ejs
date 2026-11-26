@@ -42,14 +42,36 @@
   <% } %>
 
   <% if (pageData.request.result) { %>
-  <div class="ac-panel" id="laboratory-result-print" data-ac-lab-result="1">
+  <div class="ac-panel" id="laboratory-result-print" data-ac-lab-result="1" data-ac-print-region="laboratory-result">
     <h3>Laboratory result</h3>
     <% if (pageData.request.result.summary) { %>
     <p data-ac-lab-result-summary="1"><%= pageData.request.result.summary %></p>
     <% } %>
+    <% if (pageData.request.result.components && pageData.request.result.components.length) { %>
+    <table class="ac-table" data-ac-lab-components="1">
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>Value</th>
+          <th>Unit</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pageData.request.result.components.forEach(function (comp) { %>
+        <tr data-ac-lab-component="1" data-ac-lab-component-name="<%= comp.testName %>">
+          <td><%= comp.testName %><% if (comp.testCode) { %> (<%= comp.testCode %>)<% } %></td>
+          <td data-ac-lab-component-value="1"><%= comp.valueNumeric != null ? comp.valueNumeric : (comp.valueText || '') %></td>
+          <td><%= comp.unit || '' %></td>
+          <td><%= comp.interpretation || '' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
     <p class="ac-muted">Status <%= pageData.request.result.status %></p>
     <% if (pageData.request.actions.canPrint) { %>
-    <button type="button" class="ac-btn" onclick="window.print()">Print result</button>
+    <button type="button" class="ac-btn" data-ac-print="laboratory-result" onclick="window.print()">Print result</button>
     <% } %>
     <% if (pageData.request.actions.canVerify) { %>
     <form method="post" action="/app/diagnostics/laboratory/results/<%= pageData.request.result.id %>/verify">

@@ -1212,9 +1212,23 @@ async function runG224Laboratory(pool, connectionString, env) {
   });
   assert.equal(mismatched.code, RESULT.PATIENT_NOT_FOUND);
   const summary = `Hemoglobin recorded ${requestNumber}`;
+  const componentsPayload = JSON.stringify([
+    { test_name: "Hemoglobin", test_code: "HGB", value_numeric: 12.4, unit: "g/dL" },
+    { test_name: "WBC", test_code: "WBC", value_numeric: 6.1, unit: "10^9/L" },
+  ]);
+  const invalidComponents = await acPost(
+    app,
+    jar,
+    `/app/diagnostics/laboratory/request/${requestId}/result`,
+    {
+      result_summary: summary,
+      components: "{not-json",
+    }
+  );
+  assert.equal(invalidComponents.status, 400);
   const entered = await acPost(app, jar, `/app/diagnostics/laboratory/request/${requestId}/result`, {
     result_summary: summary,
-    components: "[]",
+    components: componentsPayload,
   });
   assert.equal(entered.status, 303, entered.text.slice(0, 240));
   const stored = await pool.query(
@@ -1227,9 +1241,25 @@ async function runG224Laboratory(pool, connectionString, env) {
   assert.equal(stored.rows[0].patient_id, patientId);
   assert.equal(stored.rows[0].status, "resulted");
   assert.equal(stored.rows[0].result_summary, summary);
+  const storedComponents = await pool.query(
+    `SELECT test_name, test_code, value_numeric, unit
+       FROM activeclinic.laboratory_result_components
+      WHERE laboratory_result_id = $1
+      ORDER BY component_order ASC`,
+    [stored.rows[0].id]
+  );
+  assert.equal(storedComponents.rowCount, 2);
+  assert.equal(storedComponents.rows[0].test_name, "Hemoglobin");
+  assert.equal(Number(storedComponents.rows[0].value_numeric), 12.4);
+  assert.equal(storedComponents.rows[1].test_code, "WBC");
   const recorded = await acGet(app, jar, `/app/diagnostics/laboratory/request/${requestId}`);
   assert.match(recorded.text, /Print result/);
+  assert.match(recorded.text, /data-ac-print-region="laboratory-result"/);
+  assert.match(recorded.text, /data-ac-lab-components="1"/);
+  assert.match(recorded.text, /data-ac-lab-component-name="Hemoglobin"/);
+  assert.match(recorded.text, /12\.4/);
   assert.match(recorded.text, new RegExp(summary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(recorded.text, new RegExp(requestNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   const selfVerify = await acPost(
     app,
     jar,

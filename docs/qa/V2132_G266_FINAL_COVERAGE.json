@@ -1,0 +1,45 @@
+{
+  "final": "V2132_G266_INDEPENDENT_QA",
+  "branch": "V13",
+  "startSha": "8ca60bd2cbff796ac78579002e570e484dd92f57",
+  "bbVersion": "2.13.4",
+  "acVersion": "2.13.4",
+  "promptRequestedVersion": "2.13.2",
+  "versionNote": "Tip already at 2.13.4; not downgraded",
+  "newDefectsFound": 2,
+  "newDefectsFixed": 2,
+  "safe": {
+    "command": "unset DB/auth flags; node --test --test-concurrency=1 --test-timeout=120000 tests/v13/contract/*.test.js tests/v13/unit/*.test.js tests/v13/quality/*.test.js",
+    "run1": { "executed": 561, "passed": 561, "failed": 0, "skipped": 0 },
+    "run2": { "executed": 561, "passed": 561, "failed": 0, "skipped": 0 }
+  },
+  "http": {
+    "command": "node .v13-isolated-pg/g79-run.cjs",
+    "run1": { "executed": 41, "passed": 40, "failed": 1, "onlyFail": "D25_SLOT" },
+    "run2": { "executed": 41, "passed": 40, "failed": 1, "onlyFail": "D25_SLOT" }
+  },
+  "activeClinicBrowser": { "run1": 32, "run2": 32 },
+  "blessBoardBrowser": { "run1": 23, "run2": 23 },
+  "communityMockBrowser": { "run1": 9, "run2": 9 },
+  "postgresql": {
+    "otpG185": "PASS",
+    "otpG272": "PASS",
+    "communityG206": "PASS",
+    "runs": 2,
+    "migration048AppliedShared": false
+  },
+  "statuses": {
+    "otp": "DISPOSABLE_PASS_LIVE_MAILBOX_BLOCKED",
+    "community": "MOCK_AND_DISPOSABLE_PG_PASS_POSTING_DISABLED",
+    "lab": "PASS_WITH_COMPONENTS_PRINT",
+    "radiology": "PASS",
+    "print": "STRENGTHENED_PARTIAL_HOSTED_VISUAL"
+  },
+  "p0Gaps": ["LIVE_OTP_MAILBOX"],
+  "p1Gaps": ["D25_SLOT_UNAPPROVED", "CLINICAL_PRINT_HOSTED_VISUAL"],
+  "qa": "NO-GO",
+  "releaseReady": false,
+  "liveEmailSent": false,
+  "hostedDeployment": "NOT_PERFORMED",
+  "mainUnchanged": true
+}

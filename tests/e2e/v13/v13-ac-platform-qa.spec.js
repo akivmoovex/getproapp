@@ -1134,9 +1134,41 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
       await page.goto(requestUrl);
       await page.getByRole("link", { name: "Enter result" }).click();
       await page.locator("#result_summary").fill(summary);
+      await page.locator("#components").fill(
+        JSON.stringify([
+          { test_name: "Hemoglobin", test_code: "HGB", value_numeric: 12.4, unit: "g/dL" },
+          { test_name: "WBC", test_code: "WBC", value_numeric: 6.1, unit: "10^9/L" },
+        ])
+      );
       await page.getByRole("button", { name: "Enter result" }).click();
       await expect(page.locator("[data-ac-lab-result-summary='1']")).toHaveText(summary);
-      await expect(page.getByRole("button", { name: "Print result" })).toBeVisible();
+      await expect(page.locator("[data-ac-print-region='laboratory-request']")).toContainText(
+        request.rows[0].request_number
+      );
+      await expect(page.locator("[data-ac-print-region='laboratory-result']")).toContainText(summary);
+      await expect(page.locator("[data-ac-lab-component-name='Hemoglobin']")).toContainText("12.4");
+      await expect(page.locator("[data-ac-lab-component-name='WBC']")).toContainText("6.1");
+      const printCalls = [];
+      await page.evaluate(() => {
+        window.__g266PrintCount = 0;
+        window.print = () => {
+          window.__g266PrintCount += 1;
+        };
+      });
+      await page.getByRole("button", { name: "Print result" }).click();
+      expect(await page.evaluate(() => window.__g266PrintCount)).toBe(1);
+      const componentRows = await pool.query(
+        `SELECT c.test_name, c.value_numeric, c.unit, r.patient_id
+           FROM activeclinic.laboratory_result_components c
+           JOIN activeclinic.laboratory_results r ON r.id = c.laboratory_result_id
+          WHERE r.laboratory_request_id = $1
+          ORDER BY c.component_order ASC`,
+        [request.rows[0].id]
+      );
+      expect(componentRows.rowCount).toBe(2);
+      expect(componentRows.rows[0].test_name).toBe("Hemoglobin");
+      expect(Number(componentRows.rows[0].value_numeric)).toBe(12.4);
+      expect(componentRows.rows[0].patient_id).toBe(patient.id);
       await page.getByRole("button", { name: "Verify result" }).click();
       await expect(page.locator("body")).toContainText("Verification failed");
       await page.context().clearCookies();
@@ -1258,7 +1290,19 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
       await page.locator("#technique").fill("PA chest");
       await page.getByRole("button", { name: "Enter report" }).click();
       await expect(page.locator("[data-ac-rad-findings='1']")).toHaveText(findings);
-      await expect(page.getByRole("button", { name: "Print report" })).toBeVisible();
+      await expect(page.locator("[data-ac-rad-impression='1']")).toHaveText(impression);
+      await expect(page.locator("[data-ac-print-region='radiology-request']")).toContainText(
+        request.rows[0].request_number
+      );
+      await expect(page.locator("[data-ac-print-region='radiology-request']")).toContainText(findings);
+      await page.evaluate(() => {
+        window.__g266PrintCount = 0;
+        window.print = () => {
+          window.__g266PrintCount += 1;
+        };
+      });
+      await page.getByRole("button", { name: "Print report" }).click();
+      expect(await page.evaluate(() => window.__g266PrintCount)).toBe(1);
       await page.goto("/app/diagnostics/radiology/queue?status=open");
       await expect(page.locator("body")).not.toContainText(request.rows[0].request_number);
       await page.goto("/app/diagnostics/radiology/queue?status=reported");

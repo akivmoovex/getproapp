@@ -318,6 +318,33 @@ async function loadActiveClinicLaboratoryRequestDetailScreen(pool, params) {
       [requestId, auth.organization.id, auth.healthcareOrganization.id]
     );
     const result = resultRes.rows[0] || null;
+    let components = [];
+    if (result) {
+      const componentRes = await client.query(
+        `SELECT test_name, test_code, value_numeric, value_text, unit,
+                reference_range_low, reference_range_high, reference_range_text,
+                interpretation, is_abnormal, component_order
+           FROM activeclinic.laboratory_result_components
+          WHERE laboratory_result_id = $1
+            AND organization_id = $2
+            AND healthcare_organization_id = $3
+          ORDER BY component_order ASC, created_at ASC`,
+        [result.id, auth.organization.id, auth.healthcareOrganization.id]
+      );
+      components = componentRes.rows.map((row) => ({
+        testName: row.test_name,
+        testCode: row.test_code,
+        valueNumeric: row.value_numeric,
+        valueText: row.value_text,
+        unit: row.unit,
+        referenceRangeLow: row.reference_range_low,
+        referenceRangeHigh: row.reference_range_high,
+        referenceRangeText: row.reference_range_text,
+        interpretation: row.interpretation,
+        isAbnormal: row.is_abnormal,
+        componentOrder: row.component_order,
+      }));
+    }
 
     // Load specimen events
     const eventsRes = await client.query(
@@ -349,6 +376,7 @@ async function loadActiveClinicLaboratoryRequestDetailScreen(pool, params) {
               summary: result.result_summary,
               patientId: result.patient_id,
               enteredByStaffId: result.entered_by_staff_id,
+              components,
             }
           : null,
         actions: {

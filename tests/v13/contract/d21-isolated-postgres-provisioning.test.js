@@ -8,7 +8,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
 
 const { runV13FoundationBootstrap } = require("../../../scripts/ci/v13-foundation-bootstrap.cjs");
@@ -152,8 +151,13 @@ describe("D21 isolated PostgreSQL provisioning readiness", () => {
       assert.equal(layout.socketExists, false);
     }
 
-    const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "v13-d21-root-"));
-    const outside = fs.mkdtempSync(path.join(os.tmpdir(), "v13-d21-out-"));
+    // Keep the disposable worktree inside the project isolation root. Shared
+    // /tmp paths are refused before symlink inspection, so /tmp fixtures cannot
+    // exercise the symlink denial this case is meant to prove.
+    const scratchRoot = path.join(ROOT, ".v13-isolated-pg", "d21-scratch");
+    fs.mkdirSync(scratchRoot, { recursive: true });
+    const worktree = fs.mkdtempSync(path.join(scratchRoot, "root-"));
+    const outside = fs.mkdtempSync(path.join(scratchRoot, "out-"));
     try {
       fs.symlinkSync(outside, path.join(worktree, ".v13-isolated-pg"));
       assert.throws(
@@ -162,12 +166,11 @@ describe("D21 isolated PostgreSQL provisioning readiness", () => {
       );
       assert.throws(
         () => assertProjectLocalIsolationPath(worktree, "/tmp/not-the-isolation-root"),
-        /outside/
+        /outside|shared temporary|symlink/
       );
     } finally {
-      fs.unlinkSync(path.join(worktree, ".v13-isolated-pg"));
-      fs.rmdirSync(worktree);
-      fs.rmdirSync(outside);
+      fs.rmSync(worktree, { recursive: true, force: true });
+      fs.rmSync(outside, { recursive: true, force: true });
     }
   });
 
