@@ -33,7 +33,7 @@ const ACCOUNT = "22222222-2222-4222-8222-222222222222";
 function databaseUrl(extra) {
   const host = extra && extra.host ? extra.host : "127.0.0.1";
   const port = extra && extra.port ? extra.port : "55432";
-  const database = extra && extra.database ? extra.database : "getpro_v13_e2e_otpqa135";
+  const database = extra && extra.database ? extra.database : "getpro_v13_e2e_g78d2301";
   const role = extra && extra.role ? extra.role : "v13_regression_213101";
   return `postgresql://${role}:${PASSWORD}@${host}:${port}/${database}`;
 }
@@ -51,7 +51,7 @@ function approvedEnv(extra) {
     RESEND_API_KEY: KEY,
     GETPRO_OTP_PEPPER: PEPPER,
     GETPRO_OTP_QA_PROVIDER_BUDGET: "3",
-    GETPRO_V13_APPROVED_DB_TARGET: "getpro_v13_e2e_otpqa135",
+    GETPRO_V13_APPROVED_DB_TARGET: "getpro_v13_e2e_g78d2301",
     DATABASE_URL: databaseUrl(),
     GETPRO_OTP_PROVIDER: "resend",
     ...(extra || {}),
@@ -61,7 +61,7 @@ function approvedEnv(extra) {
 function identity(extra) {
   return {
     ok: true,
-    currentDatabase: "getpro_v13_e2e_otpqa135",
+    currentDatabase: "getpro_v13_e2e_g78d2301",
     host: "127.0.0.1",
     port: "55432",
     identityEnv: "testing",
@@ -212,7 +212,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           ok: true,
           evidence: "postgresql_observation",
           nonce: request.nonce,
-          currentDatabase: "getpro_v13_e2e_g78d2301",
+          currentDatabase: "getpro_v13_e2e_otpqa135",
           inetServerPort: "55432",
           host: "127.0.0.1",
           currentUser: "v13_regression_213101",
@@ -221,6 +221,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           instanceId: QA_INSTANCE_ID,
           dataDirectory: APPROVED_QA_DATA_DIRECTORY,
           socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+          pathEvidence: "listener_postmaster_pid",
         };
       },
     });
@@ -340,7 +341,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           ok: true,
           evidence: "postgresql_observation",
           nonce: request.nonce,
-          currentDatabase: "getpro_v13_e2e_otpqa135",
+          currentDatabase: "getpro_v13_e2e_g78d2301",
           inetServerPort: "55432",
           host: "127.0.0.1",
           currentUser: "v13_regression_213101",
@@ -349,6 +350,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           instanceId: QA_INSTANCE_ID,
           dataDirectory: APPROVED_QA_DATA_DIRECTORY,
           socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+          pathEvidence: "listener_postmaster_pid",
         };
       },
     });
@@ -358,7 +360,7 @@ describe("D145 Resend QA live-delivery gate", () => {
     assert.deepEqual(seen[0].connect, {
       host: "127.0.0.1",
       port: "55432",
-      database: "getpro_v13_e2e_otpqa135",
+      database: "getpro_v13_e2e_g78d2301",
       username: "v13_regression_213101",
     });
     assert.equal(seen[0].identityKey, undefined);
@@ -393,7 +395,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           ok: true,
           evidence: "postgresql_observation",
           nonce: request.nonce,
-          currentDatabase: "getpro_v13_e2e_otpqa135",
+          currentDatabase: "getpro_v13_e2e_g78d2301",
           inetServerPort: "55432",
           host: "127.0.0.1",
           currentUser: "v13_regression_213101",
@@ -402,6 +404,7 @@ describe("D145 Resend QA live-delivery gate", () => {
           instanceId: QA_INSTANCE_ID,
           dataDirectory: APPROVED_QA_DATA_DIRECTORY,
           socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+          pathEvidence: "listener_postmaster_pid",
         }),
       });
       assert.equal(provider.deliveryActivated, false);
@@ -427,7 +430,7 @@ describe("D145 Resend QA live-delivery gate", () => {
         ok: true,
         evidence: "postgresql_observation",
         nonce: request.nonce,
-        currentDatabase: "getpro_v13_e2e_otpqa135",
+        currentDatabase: "getpro_v13_e2e_g78d2301",
         inetServerPort: "55432",
         host: "127.0.0.1",
         currentUser: "v13_regression_213101",
@@ -436,6 +439,7 @@ describe("D145 Resend QA live-delivery gate", () => {
         instanceId: QA_INSTANCE_ID,
         dataDirectory: APPROVED_QA_DATA_DIRECTORY,
         socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+          pathEvidence: "listener_postmaster_pid",
       });
       const exhaustedStore = createMockDurableBudget({ used: 3 });
       const transport = createResendOtpEmailTransport(approvedEnv(), {
@@ -564,7 +568,7 @@ describe("D145 Resend QA live-delivery gate", () => {
       ok: true,
       evidence: "postgresql_observation",
       nonce: request.nonce,
-      currentDatabase: "getpro_v13_e2e_otpqa135",
+      currentDatabase: "getpro_v13_e2e_g78d2301",
       inetServerPort: "55432",
       host: "127.0.0.1",
       currentUser: "v13_regression_213101",
@@ -573,6 +577,7 @@ describe("D145 Resend QA live-delivery gate", () => {
       instanceId: QA_INSTANCE_ID,
       dataDirectory: APPROVED_QA_DATA_DIRECTORY,
       socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+          pathEvidence: "listener_postmaster_pid",
     });
     const transport = createResendOtpEmailTransport(approvedEnv(), {
       fetchImpl,

@@ -8,17 +8,19 @@
  *
  * A future probe must query the approved cluster and return observations:
  * current_database(), inet_server_port(), current_user, connection host,
- * platform.database_identity identity_key and environment_code,
- * data_directory, and cluster instance id. The gate compares those
- * observations with the constants below. It does not treat DATABASE_URL
- * or DATABASE_IDENTITY_EXPECTED as identity evidence.
+ * platform.database_identity identity_key and environment_code, and
+ * cluster instance id. Data-directory and socket-directory evidence comes
+ * from the listener postmaster.pid, not from current_setting(). The gate
+ * compares those observations with the constants below. It does not treat
+ * DATABASE_URL or DATABASE_IDENTITY_EXPECTED as identity evidence.
  */
 
 const crypto = require("crypto");
 const path = require("path");
 const { isProductionSignal, PUBLISHED_TESTING_PEPPER } = require("./otpEnvironment");
 
-const QA_DATABASE_NAME = "getpro_v13_e2e_otpqa135";
+const QA_DATABASE_NAME = "getpro_v13_e2e_g78d2301";
+const LISTENER_PATH_EVIDENCE = "listener_postmaster_pid";
 const QA_DATABASE_HOST = "127.0.0.1";
 const QA_DATABASE_PORT = "55432";
 const QA_DATABASE_ROLE = "v13_regression_213101";
@@ -155,6 +157,9 @@ function validateIdentityObservation(request, report) {
   }
   if (!request || report.nonce !== request.nonce) return "database_identity_stale";
   if (report.ok !== true || report.evidence !== "postgresql_observation") {
+    return "database_identity_unverified";
+  }
+  if (report.pathEvidence !== LISTENER_PATH_EVIDENCE) {
     return "database_identity_unverified";
   }
   const port = String(report.inetServerPort != null ? report.inetServerPort : report.port || "");
@@ -451,6 +456,7 @@ function createAttemptBudget(backend) {
 
 module.exports = {
   QA_DATABASE_NAME,
+  LISTENER_PATH_EVIDENCE,
   QA_DATABASE_HOST,
   QA_DATABASE_PORT,
   QA_SHARED_PORT,

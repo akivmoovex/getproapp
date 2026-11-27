@@ -18,7 +18,8 @@ describe("D145 Resend QA activation contracts", () => {
     const service = read("src/platform/otp/otpService.js");
     assert.match(gate, /authorized: reasons\.length === 0/);
     assert.match(gate, /database_identity_unverified/);
-    assert.match(gate, /getpro_v13_e2e_otpqa135/);
+    assert.match(gate, /getpro_v13_e2e_g78d2301/);
+    assert.doesNotMatch(gate, /getpro_v13_e2e_otpqa135/);
     assert.match(gate, /55432/);
     assert.doesNotMatch(gate, /deliveryActivated:\s*true/);
     assert.doesNotMatch(gate, /require\(["']pg["']\)/);

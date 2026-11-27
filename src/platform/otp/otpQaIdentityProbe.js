@@ -2,15 +2,18 @@
 
 /**
  * Database identity probe for a future BlessBoard QA send.
- * Construction does not open PostgreSQL. A positive observation is built
- * only from a query result. Expected names are compared later by the gate;
- * they are not sent as claims and they are not copied from environment
- * variables into the observation.
+ * Construction does not open PostgreSQL. Database name, port, role, and
+ * identity come from the query. Data-directory and socket-directory values
+ * come only from the listener postmaster.pid. Expected names are compared
+ * later by the gate. They are not sent as claims and they are not copied
+ * from environment variables into the observation.
  */
 
+const fs = require("fs");
 const path = require("path");
+const { execFile } = require("child_process");
 const {
-  APPROVED_QA_SOCKET_DIRECTORY,
+  LISTENER_PATH_EVIDENCE,
   QA_DATABASE_HOST,
   QA_DATABASE_NAME,
   QA_DATABASE_PORT,
@@ -23,8 +26,6 @@ SELECT current_database() AS current_database,
        inet_server_port()::text AS inet_server_port,
        host(inet_server_addr()) AS server_addr,
        current_user AS current_user,
-       current_setting('data_directory') AS data_directory,
-       current_setting('unix_socket_directories') AS unix_socket_directories,
        current_setting('cluster_name') AS cluster_name,
        di.identity_key AS identity_key,
        di.environment_code AS environment_code
@@ -115,6 +116,81 @@ async function defaultLiveQuery(sql, connect, env, clientFactory) {
   }
 }
 
+function execFileText(file, args) {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, { timeout: 2000, maxBuffer: 1024 * 1024 }, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(String(stdout || ""));
+    });
+  });
+}
+
+function parseLoopbackListenerPid(lsofText, port) {
+  const needle = `127.0.0.1:${port}`;
+  const pids = [];
+  for (const line of String(lsofText || "").split("\n")) {
+    if (!line.includes(needle) || !line.includes("(LISTEN)")) continue;
+    if (line.includes(`*:${port}`) || line.includes(`[::]:${port}`)) return "";
+    const fields = line.trim().split(/\s+/);
+    if (fields[0] !== "postgres" || !/^\d+$/.test(fields[1] || "")) return "";
+    pids.push(fields[1]);
+  }
+  const unique = [...new Set(pids)];
+  return unique.length === 1 ? unique[0] : "";
+}
+
+function parseDataDirectoryArg(argsText) {
+  const match = String(argsText || "").match(/(?:^|\s)-D\s+(\S+)/);
+  if (!match) return "";
+  try {
+    return path.resolve(match[1]);
+  } catch {
+    return "";
+  }
+}
+
+function readPostmasterIdentity(pidFileText, listenerPid, port, dataDirectory) {
+  const lines = String(pidFileText || "").split("\n");
+  const recordedPid = String(lines[0] || "").trim();
+  const recordedData = String(lines[1] || "").trim();
+  const recordedPort = String(lines[3] || "").trim();
+  const recordedSocket = String(lines[4] || "").trim();
+  if (!recordedPid || recordedPid !== String(listenerPid)) return null;
+  if (recordedPort !== String(port) || !recordedSocket || !recordedData) return null;
+  let resolvedData = "";
+  let resolvedSocket = "";
+  try {
+    resolvedData = path.resolve(recordedData);
+    resolvedSocket = path.resolve(recordedSocket);
+  } catch {
+    return null;
+  }
+  if (resolvedData !== dataDirectory) return null;
+  return {
+    evidence: LISTENER_PATH_EVIDENCE,
+    port: recordedPort,
+    dataDirectory: resolvedData,
+    socketDirectory: resolvedSocket,
+  };
+}
+
+async function defaultObserveListener(host, port) {
+  if (host !== QA_DATABASE_HOST || String(port) === QA_SHARED_PORT || !/^\d{2,5}$/.test(String(port))) {
+    return null;
+  }
+  const lsofText = await execFileText("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"]);
+  const pid = parseLoopbackListenerPid(lsofText, String(port));
+  if (!pid) return null;
+  const argsText = await execFileText("ps", ["-ww", "-o", "args=", "-p", pid]);
+  const dataDirectory = parseDataDirectoryArg(argsText);
+  if (!dataDirectory) return null;
+  const pidFileText = await fs.promises.readFile(path.join(dataDirectory, "postmaster.pid"), "utf8");
+  return readPostmasterIdentity(pidFileText, pid, String(port), dataDirectory);
+}
+
 async function observeApprovedDatabaseIdentity(request, deps) {
   const blocked = guardConnect(request);
   if (blocked) return refused(blocked);
@@ -129,16 +205,33 @@ async function observeApprovedDatabaseIdentity(request, deps) {
   if (!row || typeof row !== "object" || Array.isArray(row)) {
     return refused("database_identity_malformed");
   }
-  const socketRaw = String(row.unix_socket_directories || "").split(",")[0].trim();
+  const observeListener =
+    typeof options.observeListener === "function" ? options.observeListener : defaultObserveListener;
+  let listener;
+  try {
+    listener = await observeListener(request.connect.host, request.connect.port);
+  } catch {
+    return refused("database_identity_unverified");
+  }
+  if (
+    !listener ||
+    listener.evidence !== LISTENER_PATH_EVIDENCE ||
+    String(listener.port || "") !== String(request.connect.port)
+  ) {
+    return refused("database_identity_unverified");
+  }
+  let dataDirectory = "";
   let socketDirectory = "";
   try {
-    socketDirectory = socketRaw ? path.resolve(socketRaw) : "";
+    dataDirectory = path.resolve(String(listener.dataDirectory || ""));
+    socketDirectory = path.resolve(String(listener.socketDirectory || ""));
   } catch {
-    socketDirectory = "";
+    return refused("database_identity_malformed");
   }
   return {
     ok: true,
     evidence: "postgresql_observation",
+    pathEvidence: LISTENER_PATH_EVIDENCE,
     nonce: request.nonce,
     currentDatabase: row.current_database,
     inetServerPort: row.inet_server_port != null ? String(row.inet_server_port) : "",
@@ -147,7 +240,7 @@ async function observeApprovedDatabaseIdentity(request, deps) {
     identityKey: row.identity_key,
     identityEnv: row.environment_code,
     instanceId: row.cluster_name,
-    dataDirectory: row.data_directory,
+    dataDirectory,
     socketDirectory,
   };
 }
@@ -159,7 +252,10 @@ function createDatabaseIdentityProbe(deps) {
       typeof options.query === "function"
         ? options.query
         : (sql, connect) => defaultLiveQuery(sql, connect, options.env, options.clientFactory);
-    return observeApprovedDatabaseIdentity(request, { query });
+    return observeApprovedDatabaseIdentity(request, {
+      query,
+      observeListener: options.observeListener,
+    });
   };
 }
 
@@ -169,8 +265,10 @@ function qaProbeDiagnostics() {
 
 module.exports = {
   OBSERVATION_SQL,
-  APPROVED_QA_SOCKET_DIRECTORY,
   guardConnect,
+  parseLoopbackListenerPid,
+  parseDataDirectoryArg,
+  readPostmasterIdentity,
   observeApprovedDatabaseIdentity,
   createDatabaseIdentityProbe,
   qaProbeDiagnostics,

@@ -74,6 +74,7 @@ function postgresqlObservation(request, extra) {
     instanceId: QA_INSTANCE_ID,
     dataDirectory: APPROVED_QA_DATA_DIRECTORY,
     socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
+    pathEvidence: "listener_postmaster_pid",
     ...(extra || {}),
   };
 }

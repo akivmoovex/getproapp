@@ -10,6 +10,7 @@ const { resolveOtpActivation } = require("../../../src/platform/otp/otpActivatio
 const {
   APPROVED_QA_DATA_DIRECTORY,
   APPROVED_QA_SOCKET_DIRECTORY,
+  LISTENER_PATH_EVIDENCE,
   QA_DATABASE_HOST,
   QA_DATABASE_NAME,
   QA_DATABASE_PORT,
@@ -24,7 +25,10 @@ const {
   OBSERVATION_SQL,
   createDatabaseIdentityProbe,
   observeApprovedDatabaseIdentity,
+  parseDataDirectoryArg,
+  parseLoopbackListenerPid,
   qaProbeDiagnostics,
+  readPostmasterIdentity,
 } = require("../../../src/platform/otp/otpQaIdentityProbe");
 const { attachQaOtpBoot } = require("../../../src/platform/otp/otpQaBoot");
 const { resetOtpDatabaseAttachment, evaluateOtpSessionGate } = require("../../../src/platform/otp/otpSessionGate");
@@ -55,8 +59,18 @@ function approvedRow(extra) {
     identity_key: QA_IDENTITY_KEY,
     environment_code: "testing",
     cluster_name: QA_INSTANCE_ID,
-    data_directory: APPROVED_QA_DATA_DIRECTORY,
-    unix_socket_directories: APPROVED_QA_SOCKET_DIRECTORY,
+    data_directory: "/tmp/sql-must-not-be-trusted",
+    unix_socket_directories: "/tmp",
+    ...(extra || {}),
+  };
+}
+
+function approvedListener(extra) {
+  return {
+    evidence: LISTENER_PATH_EVIDENCE,
+    port: QA_DATABASE_PORT,
+    dataDirectory: APPROVED_QA_DATA_DIRECTORY,
+    socketDirectory: APPROVED_QA_SOCKET_DIRECTORY,
     ...(extra || {}),
   };
 }
@@ -110,8 +124,8 @@ describe("D157 OTP integration", () => {
     assert.match(OBSERVATION_SQL, /current_database\(\)/);
     assert.match(OBSERVATION_SQL, /inet_server_port\(\)/);
     assert.match(OBSERVATION_SQL, /current_user/);
-    assert.match(OBSERVATION_SQL, /data_directory/);
-    assert.match(OBSERVATION_SQL, /unix_socket_directories/);
+    assert.doesNotMatch(OBSERVATION_SQL, /data_directory/);
+    assert.doesNotMatch(OBSERVATION_SQL, /unix_socket_directories/);
     assert.match(OBSERVATION_SQL, /cluster_name/);
     assert.match(OBSERVATION_SQL, /platform\.database_identity/);
     assert.equal(OBSERVATION_SQL.includes(QA_DATABASE_NAME), false);
@@ -145,11 +159,122 @@ describe("D157 OTP integration", () => {
     assert.equal(queries, 0);
   });
 
+  it("accepts listener evidence and rejects spoofed, wrong-role, and wrong-cluster rows", async () => {
+    const env = approvedQaEnv();
+    const deps = {
+      productCode: "blessboard",
+      purpose: "login",
+      destination: RECIPIENT,
+      attemptBudgetStore: createMockDurableBudget(),
+    };
+    const accepted = await evaluateQaLiveDelivery(env, {
+      ...deps,
+      databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener(),
+        query: async () => approvedRow(),
+      }),
+    });
+    assert.equal(accepted.authorized, true);
+
+    const wrongDatabase = await observeApprovedDatabaseIdentity(
+      { nonce: "db", connect: { host: "127.0.0.1", port: "55432", database: QA_DATABASE_NAME, username: QA_DATABASE_ROLE } },
+      {
+        observeListener: async () => approvedListener(),
+        query: async () => approvedRow({ current_database: "getpro_v13_e2e_otpqa135" }),
+      }
+    );
+    assert.equal(wrongDatabase.currentDatabase, "getpro_v13_e2e_otpqa135");
+    assert.equal(wrongDatabase.dataDirectory, APPROVED_QA_DATA_DIRECTORY);
+    const wrongDatabaseDecision = await evaluateQaLiveDelivery(env, {
+      ...deps,
+      databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener(),
+        query: async () => approvedRow({ current_database: "getpro_v13_e2e_otpqa135" }),
+      }),
+    });
+    assert.ok(wrongDatabaseDecision.reasons.includes("database_identity_mismatch"));
+
+    const wrongRole = await evaluateQaLiveDelivery(env, {
+      ...deps,
+      databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener(),
+        query: async () => approvedRow({ current_user: "postgres" }),
+      }),
+    });
+    assert.ok(wrongRole.reasons.includes("database_identity_mismatch"));
+
+    const wrongCluster = await evaluateQaLiveDelivery(env, {
+      ...deps,
+      databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener(),
+        query: async () => approvedRow({ cluster_name: "shared-cluster" }),
+      }),
+    });
+    assert.ok(wrongCluster.reasons.includes("database_identity_mismatch"));
+
+    const sharedPort = await observeApprovedDatabaseIdentity(
+      { nonce: "port", connect: { host: "127.0.0.1", port: "5432", database: QA_DATABASE_NAME, username: QA_DATABASE_ROLE } },
+      { observeListener: async () => approvedListener({ port: "5432" }), query: async () => approvedRow() }
+    );
+    assert.equal(sharedPort.reason, "database_port_shared");
+
+    const spoofedListener = await evaluateQaLiveDelivery(env, {
+      ...deps,
+      databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener({ dataDirectory: "/tmp/spoofed-cluster" }),
+        query: async () => approvedRow({ data_directory: APPROVED_QA_DATA_DIRECTORY }),
+      }),
+    });
+    assert.equal(spoofedListener.authorized, false);
+    assert.ok(spoofedListener.reasons.includes("database_identity_mismatch"));
+  });
+
+  it("reads postmaster.pid evidence and rejects a forged listener", () => {
+    const lsof = [
+      "COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME",
+      "postgres 42963 akivsolomon 7u IPv4 0x1 0t0 TCP 127.0.0.1:55432 (LISTEN)",
+      "postgres 2116 akivsolomon 7u IPv4 0x2 0t0 TCP *:5432 (LISTEN)",
+    ].join("\n");
+    assert.equal(parseLoopbackListenerPid(lsof, "55432"), "42963");
+    assert.equal(parseLoopbackListenerPid(lsof, "5432"), "");
+    const dataDirectory = parseDataDirectoryArg(
+      "/Applications/Postgres.app/Contents/Versions/16/bin/postgres -D /approved/data -c listen_addresses=127.0.0.1"
+    );
+    assert.equal(dataDirectory, path.resolve("/approved/data"));
+    const identity = readPostmasterIdentity(
+      ["42963", "/approved/data", "1", "55432", "/approved/run", "127.0.0.1"].join("\n"),
+      "42963",
+      "55432",
+      path.resolve("/approved/data")
+    );
+    assert.equal(identity.evidence, LISTENER_PATH_EVIDENCE);
+    assert.equal(identity.port, "55432");
+    assert.equal(
+      readPostmasterIdentity(
+        ["99999", "/approved/data", "1", "55432", "/approved/run"].join("\n"),
+        "42963",
+        "55432",
+        path.resolve("/approved/data")
+      ),
+      null
+    );
+    assert.equal(
+      readPostmasterIdentity(
+        ["42963", "/approved/data", "1", "5432", "/approved/run"].join("\n"),
+        "42963",
+        "55432",
+        path.resolve("/approved/data")
+      ),
+      null
+    );
+  });
+
   it("builds the observation from the query row and rejects the wrong cluster", async () => {
     const env = approvedQaEnv({ DATABASE_IDENTITY_EXPECTED: "caller-supplied-key" });
     let seenSql = "";
     const probe = createDatabaseIdentityProbe({
       env,
+      observeListener: async () => approvedListener(),
       query: async (sql) => {
         seenSql = sql;
         return approvedRow();
@@ -173,6 +298,7 @@ describe("D157 OTP integration", () => {
       destination: RECIPIENT,
       attemptBudgetStore: createMockDurableBudget(),
       databaseIdentityProbe: createDatabaseIdentityProbe({
+        observeListener: async () => approvedListener(),
         query: async () => approvedRow({ cluster_name: "shared-cluster", inet_server_port: "5432", current_user: "postgres" }),
       }),
     });
@@ -185,7 +311,8 @@ describe("D157 OTP integration", () => {
       destination: RECIPIENT,
       attemptBudgetStore: createMockDurableBudget(),
       databaseIdentityProbe: createDatabaseIdentityProbe({
-        query: async () => approvedRow({ unix_socket_directories: "/tmp" }),
+        observeListener: async () => approvedListener({ socketDirectory: "/tmp" }),
+        query: async () => approvedRow(),
       }),
     });
     assert.equal(socket.authorized, false);
