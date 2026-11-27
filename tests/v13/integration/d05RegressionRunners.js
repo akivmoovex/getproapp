@@ -55,6 +55,14 @@ function stamp() {
   return `${Date.now().toString(36)}${crypto.randomBytes(2).toString("hex")}`;
 }
 
+function uniqueNational(prefix) {
+  return `${prefix}${crypto.randomInt(0, 10_000_000).toString().padStart(7, "0")}`;
+}
+
+function uniqueE164(prefix) {
+  return `+260${uniqueNational(prefix)}`;
+}
+
 function absorbCookies(jar, res) {
   const raw = res && res.headers ? res.headers["set-cookie"] : [];
   const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -392,8 +400,8 @@ async function openClinic(pool, connectionString, env) {
     const id = stamp();
     const email = `d05-clinic-${id}@example.invalid`;
     const otherEmail = `d05-other-${id}@example.invalid`;
-    const phone = `+26097${String(Date.now()).slice(-7)}`;
-    const otherPhone = `+26097${String(Date.now() + 17).slice(-7)}`;
+    const phone = uniqueE164("97");
+    const otherPhone = uniqueE164("95");
     const first = await registerClinic(booted.app, {
       clinicName: `D05 Clinic ${id}`,
       contactName: "D05 Admin",
@@ -598,7 +606,7 @@ async function runAcRec02(pool, connectionString, env) {
     sex_at_registration: "female",
     date_of_birth: "1992-04-04",
     phone_country: "ZM",
-    phone_national: `97${String(Date.now()).slice(-7)}`,
+    phone_national: uniqueNational("97"),
     registration_method: "walk_in",
     step: "confirm",
   });
@@ -641,7 +649,7 @@ async function runAcRec03(pool, connectionString, env) {
     sex_at_registration: "male",
     date_of_birth: "1988-08-08",
     phone_country: "ZM",
-    phone_national: `97${String(Date.now()).slice(-7)}`,
+    phone_national: uniqueNational("97"),
     step: "confirm",
   });
   assert.match(created.text, /Patient created/);
@@ -1118,7 +1126,7 @@ async function runG224Laboratory(pool, connectionString, env) {
     env,
   }, {
     email: verifierEmail,
-    phone: `+26095${String(Date.now()).slice(-7)}`,
+    phone: uniqueE164("95"),
     password: CLINIC_PASSWORD,
   }, LAB_TECHNICIAN);
 
@@ -1129,7 +1137,7 @@ async function runG224Laboratory(pool, connectionString, env) {
     sex_at_registration: "female",
     date_of_birth: "1991-03-03",
     phone_country: "ZM",
-    phone_national: `97${String(Date.now()).slice(-7)}`,
+    phone_national: uniqueNational("97"),
     step: "confirm",
   });
   assert.match(created.text, /Patient created/);
@@ -1359,7 +1367,7 @@ async function runG229Radiology(pool, connectionString, env) {
     env,
   }, {
     email: verifierEmail,
-    phone: `+26095${String(Date.now()).slice(-7)}`,
+    phone: uniqueE164("95"),
     password: CLINIC_PASSWORD,
   }, RADIOLOGY_STAFF);
 
@@ -1370,7 +1378,7 @@ async function runG229Radiology(pool, connectionString, env) {
     sex_at_registration: "male",
     date_of_birth: "1988-07-07",
     phone_country: "ZM",
-    phone_national: `96${String(Date.now()).slice(-7)}`,
+    phone_national: uniqueNational("96"),
     step: "confirm",
   });
   assert.match(created.text, /Patient created/);

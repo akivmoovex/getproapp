@@ -5,13 +5,24 @@ const assert = require("node:assert/strict");
 const { runGated } = require("./v13AuthorizedScenarios");
 
 describe("D25 appointment persistence", () => {
-  it("records that Option C requires no separate slot-capacity integration test", async (t) => {
+  it("confirms Option C: assigned-staff non-overlap is the capacity rule", async (t) => {
     const result = await runGated(t, "APT-01-03", async () => {
-      throw new Error(
-        "APT-01-03_OPTION_C_POLICY: assigned-staff non-overlap is the complete capacity rule; no separate slot-capacity integer exists"
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const { evaluateSlotCapacity } = require("../../../src/activeclinic/services/appointmentSchedulingRules");
+      const capacity = evaluateSlotCapacity();
+      assert.equal(capacity.ok, false);
+      assert.equal(capacity.code, "BLOCKED_APPROVAL_REQUIRED");
+      assert.equal(capacity.capacity, null);
+      const source = fs.readFileSync(
+        path.join(__dirname, "../../../src/activeclinic/services/activeClinicAppointmentService.js"),
+        "utf8"
       );
+      assert.equal(source.includes("slot_capacity"), false);
+      assert.equal(source.includes("evaluateSlotCapacity"), false);
+      // APT-01-03_OPTION_C_POLICY: assigned-staff non-overlap is the complete capacity rule; no separate slot-capacity integer exists
     });
-    assert.equal(result, "NOT_RUN");
+    assert.ok(result === "PASS" || result === "NOT_RUN");
   });
 
   it("rejects same-staff overlap inside the appointment transaction", async (t) => {
