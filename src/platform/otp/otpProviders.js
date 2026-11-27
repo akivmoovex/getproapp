@@ -87,11 +87,11 @@ function adapterName(value) {
     .toLowerCase();
 }
 
-function createChannelAdapter(channel, configuredName, transport, env) {
+function createChannelAdapter(channel, configuredName, transport, env, deps) {
   const name = adapterName(configuredName) || "unconfigured";
   const sendTransport =
     channel === "email" && name === "resend" && typeof transport !== "function"
-      ? createResendOtpEmailTransport(env)
+      ? createResendOtpEmailTransport(env, deps)
       : transport;
   return {
     name,
@@ -133,6 +133,7 @@ function createChannelAdapter(channel, configuredName, transport, env) {
         subject: message.subject,
         text: message.text,
         productCode: input.productCode,
+        purpose: input.purpose,
         idempotencyKey: input.idempotencyKey,
         timeoutMs: OTP_POLICY.deliveryTimeoutMs,
         attempt: input.attempt,
@@ -155,7 +156,8 @@ function createConfigurableOtpProvider(env, deps) {
     "email",
     source.GETPRO_OTP_EMAIL_PROVIDER,
     options.emailTransport,
-    source
+    source,
+    options
   );
   const sms = createChannelAdapter(
     "sms",

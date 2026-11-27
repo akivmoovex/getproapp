@@ -11,6 +11,7 @@ const path = require("path");
 const { resolveOtpActivation } = require("./otpActivation");
 const { isProductionSignal, isFixedOtpPermitted } = require("./otpEnvironment");
 const { resolveOtpProvider } = require("./otpProviders");
+const { evaluateQaLiveDeliveryConfiguration } = require("./otpQaLiveDelivery");
 const { resolveProductSender, senderProfile } = require("../email/resendSenderCatalog");
 
 const MIGRATION_048 = path.join(
@@ -67,6 +68,11 @@ function diagnoseOtpReadiness(env, options) {
   const apiKeyConfigured = hasNonEmpty(source, "RESEND_API_KEY");
   const pepperConfigured = hasNonEmpty(source, "GETPRO_OTP_PEPPER");
   const senderProfileName = senderProfile(source);
+  const qaLive = evaluateQaLiveDeliveryConfiguration(source, {
+    productCode: "blessboard",
+    databaseIdentity: opts.databaseIdentity,
+    providerRequestsUsed: opts.providerRequestsUsed,
+  });
   const products = ["activeclinic", "blessboard", "pronline"].map((productCode) => {
     const routed = resolveProductSender(productCode, source);
     return {
@@ -121,6 +127,7 @@ function diagnoseOtpReadiness(env, options) {
       probed: Boolean(opts.tablePresence),
     }),
     liveMailboxAuthorized: false,
+    qaLiveDeliveryAuthorized: qaLive.authorized === true,
     blockers: Object.freeze(blockers),
     emailOtpQaGoNoGo: "NO-GO",
   });

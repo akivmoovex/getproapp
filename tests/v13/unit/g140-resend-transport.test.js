@@ -122,18 +122,35 @@ describe("G140 Resend sender and transport", () => {
     assert.equal(rate.providerCode, PROVIDER_CODE.RETRY_EXHAUSTED);
   });
 
-  it("sends once for a verified product sender and suppresses the same idempotency key", async () => {
+  it("sends one authorized BlessBoard QA message and suppresses the same idempotency key", async () => {
     const mock = fetchMock(async () => jsonResponse(200, { id: "email_otp_1" }));
-    const transport = createResendOtpEmailTransport(
+    const blocked = createResendOtpEmailTransport(
       { RESEND_API_KEY: KEY, GETPRO_RESEND_VERIFIED_DOMAINS: "notify.activeclinic.org" },
       { fetchImpl: mock.fetchImpl }
     );
-    const payload = {
+    const denied = await blocked({
       productCode: "activeclinic",
       destination: "patient@example.com",
       text: "Your verification code is 135790. It expires in 5 minutes.",
-      idempotencyKey: "attempt-1",
+      idempotencyKey: "attempt-blocked",
       fetchImpl: mock.fetchImpl,
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(mock.calls.length, 0);
+
+    const { approvedQaEnv, postgresqlObservation, RECIPIENT } = require("../helpers/qaDeliveryFixture");
+    const { createMockDurableBudget } = require("../helpers/qaDeliveryFixture");
+    const transport = createResendOtpEmailTransport(approvedQaEnv(), {
+      fetchImpl: mock.fetchImpl,
+      databaseIdentityProbe: async (request) => postgresqlObservation(request),
+      attemptBudgetStore: createMockDurableBudget(),
+    });
+    const payload = {
+      productCode: "blessboard",
+      purpose: "login",
+      destination: RECIPIENT,
+      text: "Your verification code is 135790. It expires in 5 minutes.",
+      idempotencyKey: "attempt-1",
     };
     const first = await transport(payload);
     const second = await transport(payload);
@@ -141,12 +158,16 @@ describe("G140 Resend sender and transport", () => {
     assert.equal(second.reason, "duplicate_suppressed");
     assert.equal(mock.calls.length, 1);
     const body = JSON.parse(mock.calls[0].init.body);
-    assert.equal(body.from, "ActiveClinic Security <security@notify.activeclinic.org>");
-    assert.equal(body.to[0], "patient@example.com");
+    assert.equal(body.from, "BlessBoard QA <qa-blessboard@pronline.org>");
+    assert.equal(body.to[0], RECIPIENT);
     assert.equal(mock.calls[0].init.headers.Authorization.includes(KEY), true);
     assert.equal(JSON.stringify({ from: body.from, subject: body.subject }).includes(KEY), false);
-    const wrong = await transport({ ...payload, productCode: "blessboard", idempotencyKey: "attempt-2" });
-    assert.equal(wrong.reason, "domain_not_verified");
+    const wrong = await transport({
+      ...payload,
+      productCode: "activeclinic",
+      idempotencyKey: "attempt-2",
+    });
+    assert.equal(wrong.ok, false);
     assert.equal(mock.calls.length, 1);
   });
 

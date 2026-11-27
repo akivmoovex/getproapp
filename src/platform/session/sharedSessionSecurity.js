@@ -118,7 +118,9 @@ async function issueAuthenticatedSessionCookie(req, res, opts) {
     return { ok: false, code: "missing_token", priorRevoked: false };
   }
 
-  if (options.otpWorkflow) {
+  // A completed protected action must not be submitted to the gate again.
+  // A second evaluation is a replay and would refuse the session it just allowed.
+  if (options.otpWorkflow && options.protectedActionCompleted !== true) {
     const { evaluateOtpSessionGate } = require("../otp/otpSessionGate");
     const gate = await evaluateOtpSessionGate(
       {

@@ -18,6 +18,20 @@ const { createRejectApex } = require("./rejectApex");
 const {
   issueAuthenticatedSessionCookie,
 } = require("../../platform/session/sharedSessionSecurity");
+const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+const { establishBlessBoardSession } = require("../services/establishBlessBoardSession");
+const {
+  OTP_CODE_LENGTH,
+  memberLoginOtpActive,
+  resolveServerLoginBinding,
+  readPendingLogin,
+  writePendingCookie,
+  clearPendingCookie,
+  beginMemberLoginChallenge,
+  completeMemberLoginChallenge,
+  verificationMessage,
+  maskDestination,
+} = require("../services/blessBoardMemberLoginOtp");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
   RESULT,
@@ -42,6 +56,14 @@ function createMemberPortalAuthRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
+  const authenticate =
+    typeof deps.authenticateMemberByChurchId === "function"
+      ? deps.authenticateMemberByChurchId
+      : authenticateMemberByChurchId;
+  const establishSession =
+    typeof deps.establishBlessBoardSession === "function"
+      ? deps.establishBlessBoardSession
+      : establishBlessBoardSession;
 
   const router = express.Router({ mergeParams: true });
 
@@ -65,7 +87,7 @@ function createMemberPortalAuthRouter(deps) {
 
   function csrfLocals(req, res) {
     const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, env);
+    setCsrfCookie(res, token, { env, req });
     return { csrfToken: token, csrfField: CSRF_FIELD, portalBase: portalBase(req) };
   }
 
@@ -85,8 +107,28 @@ function createMemberPortalAuthRouter(deps) {
   }
 
   function authPage(res, template, locals, status) {
+    setV5PrivateNoStore(res);
     const html = renderV5Ejs(`member-auth/${template}`, locals);
     return res.status(status || 200).type("html").send(html);
+  }
+
+  function verifyPage(req, res, pending, error, reason, status) {
+    return authPage(
+      res,
+      "verify.ejs",
+      {
+        ...csrfLocals(req, res),
+        pageTitle: "Verification code",
+        stitchScreen: "BB-M13-OTP",
+        churchName: pending.churchName || "",
+        error,
+        reason: reason || "",
+        errorState: reason || null,
+        codeLength: OTP_CODE_LENGTH,
+        maskedDestination: maskDestination(pending.destination),
+      },
+      status || (error ? 401 : 200)
+    );
   }
 
   function validateCsrfPost(req, res) {
@@ -139,7 +181,8 @@ function createMemberPortalAuthRouter(deps) {
       );
     }
 
-    const result = await authenticateMemberByChurchId(
+    const otpActive = memberLoginOtpActive(env);
+    const result = await authenticate(
       getPool(),
       {
         churchId: scope.churchId,
@@ -150,19 +193,122 @@ function createMemberPortalAuthRouter(deps) {
         requestIp: req.ip,
         ip: req.ip,
         userAgent: req.get("user-agent"),
+        establishSession: !otpActive,
       },
       {}
     );
 
+    if (result.ok && otpActive && result.sessionDeferred) {
+      const binding = resolveServerLoginBinding({
+        organizationId: scope.organizationId,
+        accountId: result.accountId,
+        churchId: scope.churchId,
+        memberId: result.memberId,
+        verifiedEmail: result.verifiedEmail,
+      });
+      if (!binding.ok) {
+        return authPage(
+          res,
+          "login.ejs",
+          {
+            ...csrfLocals(req, res),
+            pageTitle: "Member Login",
+            stitchScreen: "BB-M13",
+            churchName: scope.churchName,
+            error: "Sign-in is temporarily unavailable.",
+            errorState: "otp_unavailable",
+            memberNumberValue: (req.body && req.body.member_number) || "",
+            activateHref: memberHref(req, "/member/activate"),
+            forgotHref: memberHref(req, "/member/forgot-password"),
+            lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
+          },
+          503
+        );
+      }
+      const started = await beginMemberLoginChallenge(binding, env, deps.otpService);
+      if (started.sessionAllowed || started.sessionComplete || !started.attemptId || started.deliveryAccepted !== true) {
+        return authPage(
+          res,
+          "login.ejs",
+          {
+            ...csrfLocals(req, res),
+            pageTitle: "Member Login",
+            stitchScreen: "BB-M13",
+            churchName: scope.churchName,
+            error: verificationMessage(started.reason || "delivery_not_activated"),
+            errorState: "otp_unavailable",
+            memberNumberValue: (req.body && req.body.member_number) || "",
+            activateHref: memberHref(req, "/member/activate"),
+            forgotHref: memberHref(req, "/member/forgot-password"),
+            lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
+          },
+          503
+        );
+      }
+      const sealed = writePendingCookie(
+        res,
+        {
+          ...binding,
+          attemptId: started.attemptId,
+          churchName: scope.churchName,
+          deliveryAccepted: true,
+        },
+        env
+      );
+      if (!sealed) {
+        return authPage(
+          res,
+          "login.ejs",
+          {
+            ...csrfLocals(req, res),
+            pageTitle: "Member Login",
+            stitchScreen: "BB-M13",
+            churchName: scope.churchName,
+            error: "Sign-in is temporarily unavailable.",
+            errorState: "otp_unavailable",
+            memberNumberValue: (req.body && req.body.member_number) || "",
+            activateHref: memberHref(req, "/member/activate"),
+            forgotHref: memberHref(req, "/member/forgot-password"),
+            lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
+          },
+          503
+        );
+      }
+      return verifyPage(req, res, binding, null, null, 200);
+    }
+
     if (result.ok && result.session && result.rawToken) {
       const isProduction = String(env.NODE_ENV || "") === "production";
-      await issueAuthenticatedSessionCookie(req, res, {
+      const issued = await issueAuthenticatedSessionCookie(req, res, {
         rawToken: result.rawToken,
         env,
         isProduction,
         getPool,
         otpWorkflow: "blessboard.member_login",
+        organizationId: scope.organizationId,
+        accountId: result.accountId,
+        otpIdentifier: result.verifiedEmail,
+        accountResolved: true,
       });
+      if (!issued.ok) {
+        return authPage(
+          res,
+          "login.ejs",
+          {
+            ...csrfLocals(req, res),
+            pageTitle: "Member Login",
+            stitchScreen: "BB-M13",
+            churchName: scope.churchName,
+            error: "Sign-in is temporarily unavailable.",
+            errorState: "otp_unavailable",
+            memberNumberValue: (req.body && req.body.member_number) || "",
+            activateHref: memberHref(req, "/member/activate"),
+            forgotHref: memberHref(req, "/member/forgot-password"),
+            lostChurchIdHref: memberHref(req, "/member/forgot-password?lost=1"),
+          },
+          503
+        );
+      }
       return res.redirect(303, memberHref(req, "/member"));
     }
 
@@ -184,6 +330,95 @@ function createMemberPortalAuthRouter(deps) {
       },
       blocked ? 403 : 401
     );
+  });
+
+  router.get("/member/login/verify", rejectApex, (req, res) => {
+    const scope = tenantScope(req, res);
+    if (!scope) return;
+    const pending = readPendingLogin(req, env);
+    if (!pending || pending.organizationId !== scope.organizationId || pending.churchId !== scope.churchId) {
+      clearPendingCookie(res);
+      return res.redirect(303, memberHref(req, "/member/login"));
+    }
+    return verifyPage(req, res, pending, null, null, 200);
+  });
+
+  router.post("/member/login/verify", rejectApex, async (req, res) => {
+    const scope = tenantScope(req, res);
+    if (!scope) return;
+    if (!validateCsrfPost(req, res)) return;
+    const pending = readPendingLogin(req, env);
+    if (!pending || pending.organizationId !== scope.organizationId || pending.churchId !== scope.churchId) {
+      clearPendingCookie(res);
+      return res.redirect(303, memberHref(req, "/member/login"));
+    }
+    if (pending.deliveryAccepted !== true) {
+      clearPendingCookie(res);
+      return verifyPage(req, res, pending, verificationMessage("delivery_not_activated"), "delivery_not_activated", 503);
+    }
+    const completed = await completeMemberLoginChallenge(
+      pending,
+      req.body && req.body.otp_code,
+      env,
+      deps.otpService
+    );
+    if (!completed.sessionComplete) {
+      if (completed.reason === "expired" || completed.reason === "exhausted" || completed.reason === "replay") {
+        clearPendingCookie(res);
+      }
+      return verifyPage(req, res, pending, verificationMessage(completed.reason), completed.reason);
+    }
+    const deployment = getPlatformDeploymentCode(env);
+    const established = deployment.ok
+      ? await establishSession(getPool(), {
+          userId: pending.accountId,
+          deploymentCode: deployment.code,
+          requireOrganizationId: pending.organizationId,
+          ip: req.ip,
+          userAgent: req.get("user-agent"),
+        })
+      : { ok: false };
+    if (!established || !established.ok || !established.rawToken) {
+      clearPendingCookie(res);
+      return verifyPage(req, res, pending, "Sign-in is temporarily unavailable.", "session_unavailable", 503);
+    }
+    clearPendingCookie(res);
+    const issued = await issueAuthenticatedSessionCookie(req, res, {
+      rawToken: established.rawToken,
+      env,
+      isProduction: String(env.NODE_ENV || "") === "production",
+      getPool,
+      otpWorkflow: "blessboard.member_login",
+      protectedActionCompleted: true,
+    });
+    if (!issued.ok) {
+      return verifyPage(req, res, pending, "Sign-in is temporarily unavailable.", "session_unavailable", 503);
+    }
+    return res.redirect(303, memberHref(req, "/member"));
+  });
+
+  router.post("/member/login/verify/resend", rejectApex, async (req, res) => {
+    const scope = tenantScope(req, res);
+    if (!scope) return;
+    if (!validateCsrfPost(req, res)) return;
+    const pending = readPendingLogin(req, env);
+    if (!pending || pending.organizationId !== scope.organizationId || pending.churchId !== scope.churchId) {
+      clearPendingCookie(res);
+      return res.redirect(303, memberHref(req, "/member/login"));
+    }
+    const started = await beginMemberLoginChallenge(pending, env, deps.otpService);
+    if (!started.attemptId || started.deliveryAccepted !== true || started.sessionAllowed) {
+      return verifyPage(
+        req,
+        res,
+        pending,
+        verificationMessage(started.reason || "delivery_not_activated"),
+        started.reason || "delivery_not_activated",
+        503
+      );
+    }
+    writePendingCookie(res, { ...pending, attemptId: started.attemptId, deliveryAccepted: true }, env);
+    return verifyPage(req, res, pending, null, null, 200);
   });
 
   // —— M14 First-Time Verification ——

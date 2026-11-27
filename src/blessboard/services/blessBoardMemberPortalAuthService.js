@@ -529,6 +529,21 @@ async function authenticateMemberByChurchId(db, input, deps) {
     };
   }
 
+  const verifiedEmail = serverMemberEmail(user, member);
+  if (input && input.establishSession === false) {
+    return {
+      ok: true,
+      code: RESULT.OK,
+      sessionDeferred: true,
+      organizationId,
+      churchId,
+      accountId: user.id,
+      memberId: member.id,
+      memberNumber: member.memberNumber,
+      verifiedEmail,
+    };
+  }
+
   const establish =
     (deps && typeof deps.establishBlessBoardSession === "function"
       ? deps.establishBlessBoardSession
@@ -558,9 +573,19 @@ async function authenticateMemberByChurchId(db, input, deps) {
     ok: true,
     code: RESULT.OK,
     ...established,
+    organizationId,
+    churchId,
+    accountId: user.id,
     memberId: member.id,
     memberNumber: member.memberNumber,
+    verifiedEmail,
   };
+}
+
+function serverMemberEmail(user, member) {
+  const accountEmail = String((user && user.email_normalized) || "").trim().toLowerCase();
+  const memberEmail = String((member && member.emailNormalized) || "").trim().toLowerCase();
+  return accountEmail || memberEmail || null;
 }
 
 /**
@@ -768,6 +793,7 @@ module.exports = {
   RATE_MAX,
   RATE_WINDOW_MS,
   validateMemberPortalPassword,
+  serverMemberEmail,
   getPasswordRuleLabels,
   verifyFirstTimeMembership,
   completeFirstTimeActivation,

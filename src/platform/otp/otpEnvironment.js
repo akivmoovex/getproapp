@@ -112,6 +112,7 @@ function assertOtpProductionStartup(env) {
 }
 
 module.exports = {
+  PUBLISHED_TESTING_PEPPER,
   isProductionSignal,
   isFixedOtpPermitted,
   collectForbiddenProductionOtpSettings,

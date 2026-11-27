@@ -1,0 +1,61 @@
+<%#
+  BlessBoard member login — pending email verification.
+  The code itself is never rendered.
+%>
+<%- include('_shell-start', {
+  pageTitle: typeof pageTitle !== 'undefined' ? pageTitle : 'Verification code',
+  stitchScreen: 'BB-M13-OTP',
+  churchName: typeof churchName !== 'undefined' ? churchName : '',
+  bodyClass: 'bb-v204-m13',
+  loginHref: (typeof portalBase !== 'undefined' ? portalBase : '') + '/member/login',
+  errorState: typeof errorState !== 'undefined' ? errorState : null
+}) %>
+
+<div class="bb-auth-card__intro">
+  <p class="bb-auth-step">Member portal · Verification</p>
+  <h1 class="bb-auth-card__title">Enter your verification code</h1>
+  <p class="bb-auth-card__lead" id="otp-instructions">
+    Enter the <%= codeLength %> digit code for <%= maskedDestination || 'your email' %>.
+  </p>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="bb-auth-error" role="alert" id="otp-error" data-bb-otp-reason="<%= reason || '' %>">
+  <p class="bb-auth-error__body"><%= error %></p>
+</div>
+<% } %>
+
+<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login/verify" autocomplete="one-time-code" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <div class="bb-auth-field">
+    <label class="bb-auth-label" for="otp_code">Verification code</label>
+    <input
+      class="bb-auth-input bb-auth-input--mono"
+      id="otp_code"
+      name="otp_code"
+      type="text"
+      inputmode="numeric"
+      autocomplete="one-time-code"
+      spellcheck="false"
+      required
+      maxlength="<%= codeLength %>"
+      pattern="[0-9]*"
+      aria-describedby="otp-instructions<%= typeof error !== 'undefined' && error ? ' otp-error' : '' %>"
+      <% if (typeof error !== 'undefined' && error) { %>aria-invalid="true"<% } %>
+    />
+  </div>
+  <div class="bb-auth-actions">
+    <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Verify and sign in</button>
+  </div>
+</form>
+
+<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login/verify/resend">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <button class="bb-auth-btn" type="submit">Send another code</button>
+</form>
+
+<p class="bb-auth-footer">
+  <a href="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login">Back to sign in</a>
+</p>
+
+<%- include('_shell-end') %>

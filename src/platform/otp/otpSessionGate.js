@@ -10,9 +10,11 @@ const { createOtpService } = require("./otpService");
 const { getProtectedAction } = require("./otpProtectedActions");
 const { resolveOtpActivation } = require("./otpActivation");
 const { getOtpWorkflow } = require("./otpWorkflows");
+const { isProductionSignal } = require("./otpEnvironment");
 
 let sharedService = null;
 let sharedPool = null;
+let sharedQaDelivery = null;
 
 function attachOtpDatabase(pool) {
   if (!pool || typeof pool.query !== "function") {
@@ -25,9 +27,30 @@ function attachOtpDatabase(pool) {
   return pool;
 }
 
+function attachOtpQaDeliveryDependencies(deps) {
+  const source = (deps && deps.env) || {};
+  if (isProductionSignal(process.env) || isProductionSignal(source)) {
+    sharedQaDelivery = null;
+    sharedService = null;
+    const error = new Error("otp_qa_dependencies_forbidden");
+    error.code = "otp_qa_dependencies_forbidden";
+    throw error;
+  }
+  const next = deps || {};
+  sharedQaDelivery = Object.freeze({
+    databaseIdentityProbe:
+      typeof next.databaseIdentityProbe === "function" ? next.databaseIdentityProbe : null,
+    attemptBudgetStore: next.attemptBudgetStore || null,
+    fetchImpl: typeof next.fetchImpl === "function" ? next.fetchImpl : null,
+  });
+  sharedService = null;
+  return true;
+}
+
 function resetOtpDatabaseAttachment() {
   sharedPool = null;
   sharedService = null;
+  sharedQaDelivery = null;
 }
 
 function serviceFor(input) {
@@ -37,7 +60,13 @@ function serviceFor(input) {
 
 function resolveProcessOtpService() {
   if (!sharedService) {
-    sharedService = sharedPool ? createOtpService({ pool: sharedPool }) : createOtpService();
+    const qa = sharedQaDelivery || {};
+    sharedService = createOtpService({
+      ...(sharedPool ? { pool: sharedPool } : {}),
+      databaseIdentityProbe: qa.databaseIdentityProbe || null,
+      attemptBudgetStore: qa.attemptBudgetStore || null,
+      fetchImpl: qa.fetchImpl || null,
+    });
   }
   return sharedService;
 }
@@ -148,6 +177,13 @@ async function evaluateOtpSessionGate(input, env) {
     source
   );
   const completed = await otp.completeProtectedAction(verified, workflow.action);
+  const verifyReason = verified && verified.server && verified.server.reason;
+  const reason =
+    completed.sessionComplete === true
+      ? completed.reason
+      : completed.reason && completed.reason !== "otp_required"
+        ? completed.reason
+        : verifyReason || completed.reason;
   return {
     ok: completed.sessionComplete === true,
     sessionAllowed: completed.sessionComplete === true,
@@ -157,7 +193,7 @@ async function evaluateOtpSessionGate(input, env) {
     workflow: workflow.id,
     productCode: workflow.productCode,
     action: workflow.action,
-    reason: completed.reason,
+    reason,
     public: verified.public,
   };
 }
@@ -172,6 +208,7 @@ module.exports = {
   evaluateOtpSessionGate,
   holdIfOtpRequired,
   attachOtpDatabase,
+  attachOtpQaDeliveryDependencies,
   resetOtpDatabaseAttachment,
   resolveProcessOtpService,
 };
