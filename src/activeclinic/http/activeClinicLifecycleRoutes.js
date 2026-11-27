@@ -28,6 +28,9 @@ const {
   RESULT: RESET_RESULT,
   NEUTRAL_MESSAGE,
 } = require("../services/activeClinicPasswordRecoveryService");
+const {
+  acRecoveryOtpObserverAuthorized,
+} = require("../../platform/otp/otpQaLoginObserver");
 const { PASSWORD_MIN } = require("../../platform/services/platformIdentityCredentialService");
 const {
   renderActivatePage,
@@ -215,6 +218,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
           accountId: peek && peek.accountId,
           identifier: (peek && peek.normalized) || identifier,
           channel: peek && peek.kind === "phone" ? "sms" : "email",
+          activation: acRecoveryOtpObserverAuthorized(env) ? "ACTIVE" : undefined,
         },
         env
       );
@@ -276,6 +280,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
           channel: "email",
           attemptId: req.body && req.body.otp_attempt_id,
           code: req.body && req.body.otp_code,
+          activation: acRecoveryOtpObserverAuthorized(env) ? "ACTIVE" : undefined,
         },
         env
       );

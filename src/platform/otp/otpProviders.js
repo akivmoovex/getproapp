@@ -11,7 +11,7 @@ const { isFixedOtpPermitted, isProductionSignal } = require("./otpEnvironment");
 const { buildOtpMessage, deliverWithPolicy } = require("./otpDelivery");
 const { createResendOtpEmailTransport } = require("../email/resendOtpTransport");
 const {
-  loginOtpObserverAuthorized,
+  qaOtpObserverFixtureAuthorized,
   rememberLoginOtpCode,
 } = require("./otpQaLoginObserver");
 
@@ -58,7 +58,7 @@ function createQaObserverOtpProvider(env) {
       const source = (input && input.env) || env || {};
       const attemptId = String((input && input.idempotencyKey) || "");
       const code = String((input && input.code) || "");
-      if (!loginOtpObserverAuthorized(source) || !rememberLoginOtpCode(attemptId, code, source)) {
+      if (!qaOtpObserverFixtureAuthorized(source) || !rememberLoginOtpCode(attemptId, code, source)) {
         return {
           ok: false,
           publicStatus: "failed",
@@ -223,7 +223,7 @@ function createConfigurableOtpProvider(env, deps) {
 function resolveOtpProvider(env, deps) {
   const requested = adapterName(env && env.GETPRO_OTP_PROVIDER) || "inactive";
   if (requested === "qa-observer") {
-    if (!loginOtpObserverAuthorized(env) || isProductionSignal(env)) return createInactiveOtpProvider();
+    if (!qaOtpObserverFixtureAuthorized(env) || isProductionSignal(env)) return createInactiveOtpProvider();
     return createQaObserverOtpProvider(env);
   }
   if (requested === "fake" || requested === "test" || requested === "fixed") {

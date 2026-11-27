@@ -693,6 +693,51 @@ function createMoovexPlatformRuntimeApp(options) {
     return socket && socket.remoteAddress ? String(socket.remoteAddress) : "";
   }
 
+  app.get("/__platform/qa/activeclinic-recovery-otp-delivery", (req, res) => {
+    const { observeLoginOtpDelivery } = require("../otp/otpQaLoginObserver");
+    const decision = observeLoginOtpDelivery({
+      env,
+      remoteAddress: loginObserverAddress(req),
+      attemptId: req.query && req.query.attemptId,
+    });
+    return res.status(decision.status).json(decision.body);
+  });
+
+  app.post("/__platform/qa/activeclinic-recovery-otp-expire", async (req, res) => {
+    const { observeLoginOtpDelivery } = require("../otp/otpQaLoginObserver");
+    const attemptId = String((req.query && req.query.attemptId) || "");
+    const decision = observeLoginOtpDelivery({
+      env,
+      remoteAddress: loginObserverAddress(req),
+      attemptId,
+    });
+    if (decision.status === 404 && decision.body && decision.body.error === "not_found") {
+      return res.status(404).json(decision.body);
+    }
+    if (decision.status === 400) return res.status(400).json(decision.body);
+    try {
+      const pool = (opts.getPool || getPgPool)();
+      const updated = await pool.query(
+        `UPDATE platform.otp_challenges
+            SET expires_at = created_at + ((clock_timestamp() - created_at) / 2)
+          WHERE attempt_id = $1
+            AND product_code = 'activeclinic'
+            AND purpose = 'password_recovery'
+            AND status = 'pending'
+            AND consumed = false
+            AND created_at < clock_timestamp()`,
+        [attemptId]
+      );
+      if (!updated.rowCount) return res.status(404).json({ ok: false, error: "delivery_not_found" });
+      return res.status(200).json({ ok: true, expired: true });
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        error: (err && err.code) || "expire_failed",
+      });
+    }
+  });
+
   app.get("/__platform/qa/blessboard-login-otp-delivery", (req, res) => {
     const { observeLoginOtpDelivery } = require("../otp/otpQaLoginObserver");
     const decision = observeLoginOtpDelivery({

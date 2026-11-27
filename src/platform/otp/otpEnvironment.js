@@ -72,6 +72,9 @@ function collectForbiddenProductionOtpSettings(env) {
   if (source.GETPRO_BB_LOGIN_OTP_OBSERVER != null && String(source.GETPRO_BB_LOGIN_OTP_OBSERVER).trim() !== "") {
     forbidden.push("GETPRO_BB_LOGIN_OTP_OBSERVER");
   }
+  if (source.GETPRO_AC_RECOVERY_OTP_OBSERVER != null && String(source.GETPRO_AC_RECOVERY_OTP_OBSERVER).trim() !== "") {
+    forbidden.push("GETPRO_AC_RECOVERY_OTP_OBSERVER");
+  }
   if (String(source.GETPRO_OTP_TEST_CODE || "").trim() === OTP_POLICY.testingCode) {
     forbidden.push("testing_code_value");
   }

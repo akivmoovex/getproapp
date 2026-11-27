@@ -264,6 +264,7 @@ describe("D08 browser isolation", () => {
       "tests/e2e/v13/v13-bb-qa-regression.spec.js",
       "tests/e2e/v13/v13-d161-member-otp.spec.js",
       "tests/e2e/v13/v13-ac-platform-qa.spec.js",
+      "tests/e2e/v13/v13-ac-email-otp.spec.js",
     ]) {
       const source = read(rel);
       const body = source.slice(source.indexOf("test.describe"));
