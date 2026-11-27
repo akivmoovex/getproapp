@@ -262,6 +262,7 @@ describe("D08 browser isolation", () => {
   it("discovers every browser test holding before navigation", () => {
     for (const rel of [
       "tests/e2e/v13/v13-bb-qa-regression.spec.js",
+      "tests/e2e/v13/v13-d161-member-otp.spec.js",
       "tests/e2e/v13/v13-ac-platform-qa.spec.js",
     ]) {
       const source = read(rel);

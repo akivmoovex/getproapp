@@ -10,6 +10,10 @@ const { OTP_POLICY } = require("./otpPolicy");
 const { isFixedOtpPermitted, isProductionSignal } = require("./otpEnvironment");
 const { buildOtpMessage, deliverWithPolicy } = require("./otpDelivery");
 const { createResendOtpEmailTransport } = require("../email/resendOtpTransport");
+const {
+  loginOtpObserverAuthorized,
+  rememberLoginOtpCode,
+} = require("./otpQaLoginObserver");
 
 const UNAPPROVED_PROVIDERS = new Set([
   "twilio",
@@ -39,6 +43,35 @@ function createInactiveOtpProvider() {
         publicStatus: "not_activated",
         reason: "delivery_not_activated",
         providerName: "inactive",
+        retryable: false,
+      };
+    },
+  });
+}
+
+function createQaObserverOtpProvider(env) {
+  return Object.freeze({
+    name: "qa-observer",
+    deliveryActivated: false,
+    contactsNetwork: false,
+    async dispatch(input) {
+      const source = (input && input.env) || env || {};
+      const attemptId = String((input && input.idempotencyKey) || "");
+      const code = String((input && input.code) || "");
+      if (!loginOtpObserverAuthorized(source) || !rememberLoginOtpCode(attemptId, code, source)) {
+        return {
+          ok: false,
+          publicStatus: "failed",
+          reason: "delivery_not_activated",
+          providerName: "qa-observer",
+          retryable: false,
+        };
+      }
+      return {
+        ok: true,
+        publicStatus: "accepted",
+        reason: "qa_observer_accepted",
+        providerName: "qa-observer",
         retryable: false,
       };
     },
@@ -189,6 +222,10 @@ function createConfigurableOtpProvider(env, deps) {
 
 function resolveOtpProvider(env, deps) {
   const requested = adapterName(env && env.GETPRO_OTP_PROVIDER) || "inactive";
+  if (requested === "qa-observer") {
+    if (!loginOtpObserverAuthorized(env) || isProductionSignal(env)) return createInactiveOtpProvider();
+    return createQaObserverOtpProvider(env);
+  }
   if (requested === "fake" || requested === "test" || requested === "fixed") {
     if (!isFixedOtpPermitted(env) || isProductionSignal(env)) return createInactiveOtpProvider();
     return createFakeOtpProvider();
@@ -211,6 +248,7 @@ function createOtpProvider(env, deps) {
 module.exports = {
   UNAPPROVED_PROVIDERS,
   createInactiveOtpProvider,
+  createQaObserverOtpProvider,
   createFakeOtpProvider,
   createConfigurableOtpProvider,
   resolveOtpProvider,

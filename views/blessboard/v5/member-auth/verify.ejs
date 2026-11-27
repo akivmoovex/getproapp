@@ -25,7 +25,7 @@
 </div>
 <% } %>
 
-<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login/verify" autocomplete="one-time-code" novalidate>
+<form class="bb-auth-form" method="post" action="<%= (typeof portalBase !== 'undefined' ? portalBase : '') %>/member/login/verify" autocomplete="one-time-code" novalidate data-bb-login-attempt="<%= typeof attemptId !== 'undefined' ? attemptId : '' %>">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
   <div class="bb-auth-field">
     <label class="bb-auth-label" for="otp_code">Verification code</label>
@@ -37,6 +37,7 @@
       inputmode="numeric"
       autocomplete="one-time-code"
       spellcheck="false"
+      autofocus
       required
       maxlength="<%= codeLength %>"
       pattern="[0-9]*"

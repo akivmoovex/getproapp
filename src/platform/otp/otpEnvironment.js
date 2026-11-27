@@ -66,8 +66,11 @@ function collectForbiddenProductionOtpSettings(env) {
     if (source[key] != null && String(source[key]).trim() !== "") forbidden.push(key);
   }
   const provider = signal(source, "GETPRO_OTP_PROVIDER");
-  if (provider === "test" || provider === "fixed" || provider === "fake") {
+  if (provider === "test" || provider === "fixed" || provider === "fake" || provider === "qa-observer") {
     forbidden.push("GETPRO_OTP_PROVIDER");
+  }
+  if (source.GETPRO_BB_LOGIN_OTP_OBSERVER != null && String(source.GETPRO_BB_LOGIN_OTP_OBSERVER).trim() !== "") {
+    forbidden.push("GETPRO_BB_LOGIN_OTP_OBSERVER");
   }
   if (String(source.GETPRO_OTP_TEST_CODE || "").trim() === OTP_POLICY.testingCode) {
     forbidden.push("testing_code_value");

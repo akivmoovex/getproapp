@@ -10,6 +10,7 @@ const crypto = require("crypto");
 const { OTP_POLICY } = require("../../platform/otp/otpPolicy");
 const { resolveOtpActivation } = require("../../platform/otp/otpActivation");
 const { evaluateOtpSessionGate } = require("../../platform/otp/otpSessionGate");
+const { loginOtpObserverAuthorized } = require("../../platform/otp/otpQaLoginObserver");
 
 const WORKFLOW = "blessboard.member_login";
 const COOKIE = "bb_member_login_otp";
@@ -21,7 +22,8 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function memberLoginOtpActive(env) {
-  return resolveOtpActivation(env).status === "ACTIVE";
+  if (resolveOtpActivation(env).status === "ACTIVE") return true;
+  return loginOtpObserverAuthorized(env);
 }
 
 function resolveServerLoginBinding(account) {
@@ -146,16 +148,28 @@ function gateInput(binding, verification) {
   };
 }
 
-function deliveryWasAccepted(started) {
-  return Boolean(started && started.attemptId && ACCEPTED_DELIVERY.has(String(started.reason || "")));
+function deliveryWasAccepted(started, env) {
+  if (!started || !started.attemptId) return false;
+  const reason = String(started.reason || "");
+  if (ACCEPTED_DELIVERY.has(reason)) return true;
+  return reason === "qa_observer_accepted" && loginOtpObserverAuthorized(env);
+}
+
+function gateActivation(env) {
+  if (resolveOtpActivation(env).status === "ACTIVE" || loginOtpObserverAuthorized(env)) return "ACTIVE";
+  return undefined;
 }
 
 async function beginMemberLoginChallenge(binding, env, service) {
   const gate = await evaluateOtpSessionGate(
-    { ...gateInput(binding), ...(service ? { service } : {}) },
+    {
+      ...gateInput(binding),
+      ...(service ? { service } : {}),
+      ...(gateActivation(env) ? { activation: gateActivation(env) } : {}),
+    },
     env
   );
-  return { ...gate, deliveryAccepted: deliveryWasAccepted(gate) };
+  return { ...gate, deliveryAccepted: deliveryWasAccepted(gate, env) };
 }
 
 async function completeMemberLoginChallenge(pending, code, env, service) {
@@ -163,6 +177,7 @@ async function completeMemberLoginChallenge(pending, code, env, service) {
     {
       ...gateInput(pending, { attemptId: pending.attemptId, code: String(code || "").trim() }),
       ...(service ? { service } : {}),
+      ...(gateActivation(env) ? { activation: gateActivation(env) } : {}),
     },
     env
   );

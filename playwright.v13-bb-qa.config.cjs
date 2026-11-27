@@ -18,14 +18,29 @@ const baseURL = harness.baseURL;
 const runId = process.env.BLESSBOARD_E2E_RUN_ID || process.env.GETPRO_V13_CI_RUN_ID;
 process.env.BLESSBOARD_E2E_RUN_ID = runId;
 const platformHost = "admin.local.test";
+const d161Selected = process.env.GETPRO_BB_LOGIN_OTP_OBSERVER === "1";
+const serverEnv = buildLocalServerEnv(process.env, harness);
+delete serverEnv.GETPRO_OTP_ALLOW_FIXED_CODE;
+delete serverEnv.GETPRO_OTP_QA_LIVE_DELIVERY;
+delete serverEnv.RESEND_API_KEY;
+delete serverEnv.GETPRO_OTP_ACTIVATION;
+if (d161Selected) {
+  serverEnv.GETPRO_OTP_PROVIDER = "qa-observer";
+  serverEnv.GETPRO_BB_LOGIN_OTP_OBSERVER = "1";
+} else {
+  delete serverEnv.GETPRO_OTP_PROVIDER;
+  delete serverEnv.GETPRO_BB_LOGIN_OTP_OBSERVER;
+}
 
 module.exports = defineConfig({
   testDir: "./tests/e2e/v13",
-  testMatch: /v13-bb-qa-regression\.spec\.js/,
+  testMatch: d161Selected
+    ? /v13-d161-member-otp\.spec\.js/
+    : /v13-bb-qa-regression\.spec\.js/,
   globalSetup: require.resolve("./tests/e2e/v13/v13-bb-global-setup.cjs"),
   globalTeardown: require.resolve("./tests/e2e/v13/v13-bb-global-teardown.cjs"),
   outputDir: path.join(__dirname, "test-results", "v13-bb-qa"),
-  timeout: 90_000,
+  timeout: d161Selected ? 180_000 : 90_000,
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
@@ -56,7 +71,7 @@ module.exports = defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      ...buildLocalServerEnv(process.env, harness),
+      ...serverEnv,
       ADMIN_USERNAME: process.env.E2E_ADMIN_USERNAME || "v13_bb_qa_admin",
       ADMIN_PASSWORD: process.env.E2E_ADMIN_PASSWORD || "V13BbQa-admin-2026!",
       ADMIN_ROLE: "super_admin",

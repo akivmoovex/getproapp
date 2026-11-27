@@ -125,6 +125,7 @@ function createMemberPortalAuthRouter(deps) {
         reason: reason || "",
         errorState: reason || null,
         codeLength: OTP_CODE_LENGTH,
+        attemptId: pending.attemptId,
         maskedDestination: maskDestination(pending.destination),
       },
       status || (error ? 401 : 200)
@@ -274,7 +275,7 @@ function createMemberPortalAuthRouter(deps) {
           503
         );
       }
-      return verifyPage(req, res, binding, null, null, 200);
+      return verifyPage(req, res, { ...binding, attemptId: started.attemptId }, null, null, 200);
     }
 
     if (result.ok && result.session && result.rawToken) {
