@@ -35,7 +35,8 @@ describe("D19 QA implementation discovery", () => {
     const names = [...spec.matchAll(/test\("([^"]+)"/g)].map((match) => match[1]);
     assert.match(spec, /PAT-01/);
     assert.match(spec, /AC-FU-PORTAL-05/);
-    assert.equal(names.length, 33);
+    assert.match(spec, /G324 public home opens/);
+    assert.equal(names.length, 34);
   });
 
   it("points every integration file at a real gated runner", () => {

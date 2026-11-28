@@ -99,6 +99,19 @@ async function staffSignIn(page, email, password) {
 }
 
 test.describe("V13 ActiveClinic and platform browser regression", () => {
+  test("G324 public home opens and a wrong staff password stays signed out", async ({ page }, testInfo) => {
+    hold(testInfo, "G324 public and rejected login");
+    const home = await page.goto("/");
+    expect(home.status()).toBeLessThan(400);
+    await expect(page.locator("body")).toBeVisible();
+    await page.goto("/login");
+    await page.locator("input[name='login_email']").fill(required("E2E_AC_ADMIN_EMAIL"));
+    await page.locator("input[name='password']").fill("wrong-password-not-the-fixture");
+    await page.locator("form[data-ac-login-form] button[type='submit']").click();
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.locator("[data-ac-shell='staff-app']")).toHaveCount(0);
+  });
+
   test("AC administrator login reaches the clinic workspace", async ({ page }, testInfo) => {
     hold(testInfo, "AC administrator login");
     await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
@@ -498,13 +511,32 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page).toHaveURL(/\/app\/clinical\/encounter\//);
     const encounterUrl = page.url().split("?")[0];
     await page.goto(`${encounterUrl}/vitals`);
-    await expect(page.locator("select[name='observation_type'] option[value='heart_rate']")).toHaveCount(1);
-    await page.locator("select[name='observation_type']").selectOption("heart_rate");
-    await page.locator("input[name='value_numeric']").fill("72");
-    await page.locator("input[name='unit']").fill("bpm");
-    await page.locator("form:has(input[name='value_numeric']) button[type='submit']").click();
+    const entry = page.locator("form[data-ac-vitals-submit='1']");
+    await expect(entry.locator("select[name='observation_type'] option[value='heart_rate']")).toHaveCount(1);
+    await entry.locator("select[name='observation_type']").selectOption("temperature");
+    await entry.locator("input[name='value_numeric']").fill("37.8");
+    await entry.locator("input[name='unit']").fill("C");
+    await entry.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(/recorded=1/);
+    await entry.locator("select[name='observation_type']").selectOption("blood_pressure");
+    await entry.locator("input[name='systolic']").fill("120");
+    await entry.locator("input[name='diastolic']").fill("80");
+    await entry.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(/recorded=1/);
+    await entry.locator("select[name='observation_type']").selectOption("oxygen_saturation");
+    await entry.locator("input[name='value_numeric']").fill("98");
+    await entry.locator("input[name='unit']").fill("%");
+    await entry.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(/recorded=1/);
+    await entry.locator("select[name='observation_type']").selectOption("heart_rate");
+    await entry.locator("input[name='value_numeric']").fill("72");
+    await entry.locator("input[name='unit']").fill("bpm");
+    await entry.locator("button[type='submit']").click();
     await expect(page).toHaveURL(/recorded=1/);
     await page.reload();
+    await expect(page.locator("body")).toContainText("37.8 C");
+    await expect(page.locator("body")).toContainText("120/80");
+    await expect(page.locator("body")).toContainText("98 %");
     await expect(page.locator("body")).toContainText("72 bpm");
     const correct = page.locator("form[data-ac-vital-correct='1']").first();
     await correct.locator("input[name='value_numeric']").fill("80");
@@ -783,8 +815,13 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto(liveHref);
     await expect(page.locator("body")).not.toContainText(heading);
     await page.goto("/app/settings/website/publish");
+    const publishedResponse = page.waitForResponse((response) =>
+      response.url().includes("/website/publish") && response.request().method() === "POST"
+    );
     page.once("dialog", (dialog) => dialog.accept());
     await page.locator("[data-ac-website-action='publish']").click();
+    const published = await publishedResponse;
+    expect(published.ok() || (published.status() >= 300 && published.status() < 400)).toBeTruthy();
     await page.goto(liveHref);
     await expect(page.locator("body")).toContainText(heading);
     await expect(page.locator("body")).toContainText("Published body text");
@@ -803,8 +840,13 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto(liveHref);
     await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveCount(0);
     await page.goto("/app/settings/website/publish");
+    const imagePublishedResponse = page.waitForResponse((response) =>
+      response.url().includes("/website/publish") && response.request().method() === "POST"
+    );
     page.once("dialog", (dialog) => dialog.accept());
     await page.locator("[data-ac-website-action='publish']").click();
+    const imagePublished = await imagePublishedResponse;
+    expect(imagePublished.ok() || (imagePublished.status() >= 300 && imagePublished.status() < 400)).toBeTruthy();
     await page.goto(liveHref);
     await expect(page.locator("img[alt='Synthetic clinic image']")).toHaveAttribute("src", imageSrc);
     await page.reload();
@@ -889,6 +931,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     hold(testInfo, "G165 AC search logout");
     const stamp = Date.now();
     const lastName = `Find${String(stamp).slice(-6)}`;
+    const phone = `97${String(stamp).slice(-7)}`;
     await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
     await page.goto("/app/patients/new");
     await page.getByRole("button", { name: /None of these/ }).click();
@@ -896,7 +939,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.locator("input[name='last_name']").fill(lastName);
     await page.locator("select[name='sex_at_registration']").selectOption("female");
     await page.locator("input[name='date_of_birth']").fill("1993-03-03");
-    await page.locator("input[name='phone_national']").fill(`97${String(stamp).slice(-7)}`);
+    await page.locator("input[name='phone_national']").fill(phone);
     await page.getByRole("button", { name: "Review" }).click();
     await page.getByRole("button", { name: "Create patient" }).click();
     const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
@@ -904,6 +947,10 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto(`/app/patients?patient_number=${encodeURIComponent(number)}`);
     await expect(page.locator("body")).toContainText(number);
     await expect(page.locator("body")).toContainText(lastName);
+    await page.goto(`/app/patients?q=${encodeURIComponent(lastName)}`);
+    await expect(page.locator("body")).toContainText(number);
+    await page.goto(`/app/patients?phone=${encodeURIComponent(phone)}`);
+    await expect(page.locator("body")).toContainText(number);
     await page.goto(`/app/patients/${encodeURIComponent(number)}`);
     await expect(page.locator("body")).toContainText(number);
     await page.reload();
@@ -1453,6 +1500,10 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
       await staffSignIn(page, enterEmail, password);
       await page.goto("/app/diagnostics/radiology/queue?status=pending");
       await expect(page.locator("body")).toContainText(request.rows[0].request_number);
+      await page.goto("/app/diagnostics/radiology/queue?status=open");
+      await expect(page.locator("body")).toContainText(request.rows[0].request_number);
+      await page.goto("/app/diagnostics/radiology/queue?status=in_progress");
+      await expect(page.locator("body")).not.toContainText(request.rows[0].request_number);
       await page.goto("/app/diagnostics/radiology");
       await expect(page.locator("[data-ac-rad-count='pending']")).not.toHaveText("0");
       await page.goto(requestUrl);
