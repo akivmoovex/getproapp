@@ -792,10 +792,15 @@ async function runAcPub01(pool, connectionString, env) {
         AND public_booking_enabled = false`,
     [clinic.organizationId]
   );
+  const requestsBefore = await pool.query(
+    `SELECT count(*)::int AS n FROM activeclinic.public_booking_requests`
+  );
   const booking = await request(app).get(`/clinics/${clinic.key}/book`).set("Host", AC_HOST);
   assert.equal(booking.status, 403);
+  assert.match(booking.text, /Online booking is not currently offered/);
   assert.match(booking.text, /Online booking is not enabled/);
   assert.match(booking.text, /does not take live bookings/);
+  assert.doesNotMatch(booking.text, /Continue to provider/);
   assert.doesNotMatch(booking.text, /coupon/i);
   assert.doesNotMatch(booking.text, /name="coupon|appointment confirmed/i);
   const posted = await request(app)
@@ -804,8 +809,41 @@ async function runAcPub01(pool, connectionString, env) {
     .type("form")
     .send({ wizardAction: "continue", serviceKey: "consult" });
   assert.equal(posted.status, 403);
+  assert.match(posted.text, /Online booking is not currently offered/);
   assert.match(posted.text, /Online booking is not enabled/);
   assert.doesNotMatch(posted.text, /appointment confirmed|coupon/i);
+  const submitted = await request(app)
+    .post(`/clinics/${clinic.key}/book/submit`)
+    .set("Host", AC_HOST)
+    .set("Accept", "application/json")
+    .type("json")
+    .send({
+      patientFirstName: "Denied",
+      patientLastName: "Visitor",
+      patientPhone: "+260977000329",
+    });
+  assert.equal(submitted.status, 403);
+  assert.match(submitted.text, /Online booking is not currently offered/);
+  const procedure = await request(app)
+    .post(`/clinics/${clinic.key}/book/procedures/general/submit`)
+    .set("Host", AC_HOST)
+    .type("form")
+    .send({ patientFirstName: "Denied", patientLastName: "Visitor" });
+  assert.equal(procedure.status, 403);
+  const patient = await request(app)
+    .post(`/clinics/${clinic.key}/book/submit`)
+    .set("Host", AC_HOST)
+    .set("Cookie", "moovex_platform_testing_sid=g329-patient-session")
+    .type("form")
+    .send({ patientFirstName: "Denied", patientLastName: "Patient" });
+  assert.equal(patient.status, 403);
+  assert.match(patient.text, /Online booking is not currently offered/);
+  const unknown = await request(app)
+    .get("/clinics/g329-unknown-clinic/book")
+    .set("Host", AC_HOST);
+  assert.equal(unknown.status, 404);
+  assert.doesNotMatch(unknown.text, /Continue to provider/);
+  assert.doesNotMatch(unknown.text, /method="post"/i);
   const appointments = await pool.query(
     `SELECT count(*)::int AS n
        FROM activeclinic.appointments
@@ -813,6 +851,10 @@ async function runAcPub01(pool, connectionString, env) {
     [clinic.organizationId]
   );
   assert.equal(Number(appointments.rows[0].n), 0);
+  const requestsAfter = await pool.query(
+    `SELECT count(*)::int AS n FROM activeclinic.public_booking_requests`
+  );
+  assert.equal(Number(requestsAfter.rows[0].n), Number(requestsBefore.rows[0].n));
 }
 
 async function postEntity(app, church, session, routeKey, fields) {

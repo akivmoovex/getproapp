@@ -5,6 +5,10 @@ const assert = require("node:assert/strict");
 const { createConsultationBookingRequest } = require(
   "../../../src/activeclinic/services/activeClinicPublicBookingService"
 );
+const {
+  ADMISSION_ENV,
+  ADMISSION_VALUE,
+} = require("../../../src/activeclinic/services/publicBookingAdmission");
 const { evaluateSlotCapacity } = require(
   "../../../src/activeclinic/services/appointmentSchedulingRules"
 );
@@ -54,6 +58,10 @@ const input = {
   patientLastName: "Ient",
   patientPhone: "+260977000222",
   idempotencyKey: "d48-retry-key",
+  env: {
+    DEPLOYMENT_ENV: "testing",
+    [ADMISSION_ENV]: ADMISSION_VALUE,
+  },
 };
 
 describe("D48 public booking retry", () => {

@@ -13,6 +13,7 @@ const {
   assessBookingIdentityMatches,
   LINK_STATUS,
 } = require("./activeClinicBookingPatientLinkageService");
+const { publicBookingAdmissionEnabled } = require("./publicBookingAdmission");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -130,6 +131,9 @@ async function finalizeBookingWithMatchAssessment(db, input) {
  * Create a consultation booking request (P24).
  */
 async function createConsultationBookingRequest(db, input) {
+  if (!publicBookingAdmissionEnabled(input && input.env)) {
+    return { ok: false, code: RESULT.BOOKING_NOT_ENABLED, booking: null };
+  }
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
   const facilityId = String((input && input.facilityId) || "").trim();
@@ -339,6 +343,9 @@ async function createConsultationBookingRequest(db, input) {
  * Create a procedure booking request (P25).
  */
 async function createProcedureBookingRequest(db, input) {
+  if (!publicBookingAdmissionEnabled(input && input.env)) {
+    return { ok: false, code: RESULT.BOOKING_NOT_ENABLED, booking: null };
+  }
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
   const facilityId = String((input && input.facilityId) || "").trim();

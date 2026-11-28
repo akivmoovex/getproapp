@@ -37,6 +37,11 @@ const {
   canModifyBookingStatus,
 } = require("../services/activeClinicPublicBookingDraft");
 const { renderPublicView } = require("./renderActiveClinicPublic");
+const {
+  publicBookingAdmissionEnabled,
+  PUBLIC_BOOKING_UNAVAILABLE_TITLE,
+  PUBLIC_BOOKING_UNAVAILABLE_LEAD,
+} = require("../services/publicBookingAdmission");
 const { resolveClinicOrRespond, sendClinicResolveFailure } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
 const { buildActiveClinicStitchPublicPage } = require("../website/activeClinicStitchPublicPages");
@@ -79,9 +84,24 @@ function procedureWizardLocals(extra) {
   };
 }
 
+function sendPublicBookingUnavailable(res, respondDeps, clinic) {
+  const csrfToken = respondDeps.issuePageCsrf(res, respondDeps.env, respondDeps.isProduction);
+  res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
+    csrfToken,
+    pageTitle: PUBLIC_BOOKING_UNAVAILABLE_TITLE,
+    pageLead: PUBLIC_BOOKING_UNAVAILABLE_LEAD,
+    shellVariant: "tenant",
+    clinic: clinic || null,
+  }));
+}
+
 async function resolveBookableClinic(getPool, req, res, respondDeps) {
   const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
   if (!clinic) return { ok: false, sent: true };
+  if (!publicBookingAdmissionEnabled(respondDeps.env)) {
+    sendPublicBookingUnavailable(res, respondDeps, clinic);
+    return { ok: false, sent: true };
+  }
   // Public booking stays off unless the clinic flag is strictly true.
   // Confirmation pages and coupon or voucher fields are deferred product scope.
   if (clinic.publicBookingEnabled !== true) {
@@ -129,6 +149,20 @@ function validatePatientFields(body) {
  */
 function registerActiveClinicPublicBookingRoutes(app, deps) {
   const { getPool, env, isProduction, respondDeps, issuePageCsrf, validateCsrf, bookingLimiter, lookupLimiter } = deps;
+
+  // Platform admission is closed by default. This runs for GET and POST,
+  // including direct submit URLs, before any clinic flag or draft write.
+  app.use("/clinics/:clinicKey/book", async (req, res, next) => {
+    if (publicBookingAdmissionEnabled(env)) return next();
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      sendPublicBookingUnavailable(res, respondDeps, clinic);
+      return undefined;
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   // ----- P24 consultation wizard -----
 
