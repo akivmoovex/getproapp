@@ -1052,12 +1052,14 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     const history = `HPI ${stamp}`;
     const assessment = `Assessment ${stamp}`;
     const plan = `Plan ${stamp}`;
+    const followUp = `Review in three days ${stamp}`;
     const referral = `Refer ortho ${stamp}`;
     await page.locator("#chief_complaint").fill(complaint);
     await page.locator("#history_text").fill(history);
     await page.locator("#observations").fill(`Objective ${stamp}`);
     await page.locator("#diagnosis").fill(assessment);
     await page.locator("#treatment_plan").fill(plan);
+    await page.locator("#follow_up").fill(followUp);
     await page.locator("#referral").fill(referral);
     await page.locator("[data-ac-action='save-draft']:visible").click();
     await expect(page).toHaveURL(/updated=1/);
@@ -1065,6 +1067,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.locator("#history_text")).toHaveValue(history);
     await expect(page.locator("#diagnosis")).toHaveValue(assessment);
     await expect(page.locator("#treatment_plan")).toHaveValue(plan);
+    await expect(page.locator("#follow_up")).toHaveValue(followUp);
     await expect(page.locator("#referral")).toHaveValue(referral);
     await expect(page.locator("[data-ac-print-region='soap']")).toContainText(number);
     await expect(page.locator("[data-ac-print-chief-complaint='1']")).toContainText(complaint);
@@ -1081,7 +1084,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     expect(await page.evaluate(() => window.__g301PrintCount)).toBe(2);
     const draft = await client.query(
       `SELECT status, subjective_text, history_text, objective_text, assessment_text,
-              plan_text, referral_text, signed_at
+              plan_text, follow_up_plan_text, referral_text, signed_at
        FROM activeclinic.consultation_notes
        WHERE encounter_id = $1`,
       [encounterId]
@@ -1093,12 +1096,14 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     expect(draft.rows[0].objective_text).toBe(`Objective ${stamp}`);
     expect(draft.rows[0].assessment_text).toBe(assessment);
     expect(draft.rows[0].plan_text).toBe(plan);
+    expect(draft.rows[0].follow_up_plan_text).toBe(followUp);
     expect(draft.rows[0].referral_text).toBe(referral);
     expect(draft.rows[0].signed_at).toBeNull();
     await page.reload();
     await expect(page.locator("#history_text")).toHaveValue(history);
     await expect(page.locator("#diagnosis")).toHaveValue(assessment);
     await expect(page.locator("#treatment_plan")).toHaveValue(plan);
+    await expect(page.locator("#follow_up")).toHaveValue(followUp);
     await expect(page.locator("#referral")).toHaveValue(referral);
     await page.goto(`${encounterUrl}/order/prescription`);
     await page.locator("#drug_name").fill(`SyntheticCompound ${stamp}`);
@@ -1557,6 +1562,293 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     } finally {
       await pool.end();
     }
+  });
+
+  test("G325 a second clinic shows the workspace prompt and a foreign clinic is refused", async ({ page }, testInfo) => {
+    hold(testInfo, "G325 workspace prompt");
+    const crypto = require("crypto");
+    const stamp = Date.now();
+    const phone = `95${String(crypto.randomInt(0, 10000000)).padStart(7, "0")}`;
+    const password = "clinic-admin-pass-12";
+    const clinicA = `G325 Alpha ${stamp}`;
+    const clinicB = `G325 Beta ${stamp}`;
+    const emailA = `g325-a-${stamp}@example.invalid`;
+    await submitClinicRegistration(page, {
+      clinicName: clinicA,
+      clinicType: "clinic",
+      countryCode: "ZM",
+      city: "Lusaka",
+      contactName: "G325 Alpha",
+      contactEmail: emailA,
+      phone_national: phone,
+      password,
+      passwordConfirm: password,
+    });
+    await submitClinicRegistration(page, {
+      clinicName: clinicB,
+      clinicType: "clinic",
+      countryCode: "ZM",
+      city: "Kitwe",
+      contactName: "G325 Beta",
+      contactEmail: `g325-b-${stamp}@example.invalid`,
+      phone_national: phone,
+      password,
+      passwordConfirm: password,
+    });
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.locator("input[name='login_email']").fill(emailA);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("form[data-ac-login-form] button[type='submit']").click();
+    await expect(page).toHaveURL(/\/login\/select-organization/);
+    await expect(page.getByRole("heading", { name: "Select Your Clinic" })).toBeVisible();
+    await expect(page.getByRole("button", { name: clinicA })).toBeVisible();
+    await expect(page.getByRole("button", { name: clinicB })).toBeVisible();
+    const csrf = await page.locator("form[data-ac-org-select='1'] input[name='_csrf']").inputValue();
+    const denied = await page.request.post("/login/select-organization", {
+      maxRedirects: 0,
+      form: {
+        _csrf: csrf,
+        organization_id: "00000000-0000-4000-8000-000000000099",
+      },
+    });
+    expect([401, 403]).toContain(denied.status());
+    await page.getByRole("button", { name: clinicB }).click();
+    await expect(page.locator("[data-ac-shell='staff-app']")).toBeVisible();
+    await page.goto("/app/settings/website/settings");
+    await expect(page.locator("input[name='siteName']")).toHaveAttribute("placeholder", clinicB);
+  });
+
+  test("G325 website upload catalogue and clinic details", async ({ page, browser }, testInfo) => {
+    test.setTimeout(150000);
+    hold(testInfo, "G325 website details");
+    const fs = require("fs");
+    const os = require("os");
+    const path = require("path");
+    const stamp = Date.now();
+    const email = `g325-web-${stamp}@example.invalid`;
+    const password = "clinic-admin-pass-12";
+    const welcome = `Welcome note ${stamp}`;
+    const aboutNote = `About note ${stamp}`;
+    const serviceName = `Synthetic visit ${stamp}`;
+    const doctorName = `Synthetic Clinician ${stamp}`;
+    const hours = `Mon-Fri 08:00-17:00 ${stamp}`;
+    const address = `Synthetic street ${stamp}`;
+    const imageName = `g325-${stamp}.png`;
+    const serviceImageName = `g325-service-${stamp}.png`;
+    const doctorImageName = `g325-doctor-${stamp}.png`;
+    const imagePath = path.join(os.tmpdir(), imageName);
+    const serviceImagePath = path.join(os.tmpdir(), serviceImageName);
+    const doctorImagePath = path.join(os.tmpdir(), doctorImageName);
+    const textPath = path.join(os.tmpdir(), `g325-${stamp}.txt`);
+    fs.writeFileSync(
+      imagePath,
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+        "base64"
+      )
+    );
+    fs.copyFileSync(imagePath, serviceImagePath);
+    fs.copyFileSync(imagePath, doctorImagePath);
+    fs.writeFileSync(textPath, "not an image");
+    await submitClinicRegistration(page, {
+      clinicName: `G325 Web ${stamp}`,
+      clinicType: "clinic",
+      countryCode: "ZM",
+      city: "Lusaka",
+      contactName: "G325 Web",
+      contactEmail: email,
+      phone_national: `96${String(stamp).slice(-7)}`,
+      password,
+      passwordConfirm: password,
+    });
+    if (!/\/app/.test(page.url())) await staffSignIn(page, email, password);
+
+    await page.goto("/app/settings/website/branding");
+    const heroFile = page.locator("[data-gp-we-media-slot='home.hero.image'] input[data-gp-we-media-file='1']");
+    await heroFile.setInputFiles(textPath);
+    await expect(page.locator("[data-gp-we-media-slot='home.hero.image'] [data-gp-we-media-status='1']")).toContainText(
+      /JPEG, PNG, WebP, or GIF/i
+    );
+    await heroFile.setInputFiles(imagePath);
+    await expect(page.locator("[data-gp-we-media-slot='home.hero.image'] [data-gp-we-media-status='1']")).toContainText(
+      /uploaded/i
+    );
+    const heroSrc = page.locator("[data-gp-we-media-slot='home.hero.image'] input[data-gp-we-media-src='1']");
+    await expect(heroSrc).not.toHaveValue("");
+    const mediaSrc = await heroSrc.inputValue();
+    await page.locator("[data-gp-we-media-slot='home.hero.image'] input[data-gp-we-media-alt='1']").fill("Synthetic cover");
+    await page.getByRole("button", { name: "Save branding" }).click();
+    await expect(page.getByText("Saved as a draft")).toBeVisible();
+    await page.reload();
+    await expect(heroSrc).toHaveValue(mediaSrc);
+
+    await page.goto("/app/settings/website/sections");
+    await page.locator("[data-ac-section-id]", { hasText: "Introduction" }).getByRole("link", { name: "Settings" }).click();
+    const sectionSettingsUrl = page.url();
+    await page.locator("input[name='heading']").fill(welcome);
+    await page.locator("textarea[name='body']").fill(`Body ${welcome}`);
+    await page.locator("input[name='visible']").check();
+    await page.getByRole("button", { name: "Save Changes" }).click();
+    await page.goto(sectionSettingsUrl);
+    await expect(page.locator("input[name='heading']")).toHaveValue(welcome);
+
+    await page.goto("/app/settings/website/pages");
+    await page.locator("[data-ac-page-id]", { hasText: "About" }).getByRole("link", { name: "Settings" }).click();
+    const aboutSettingsUrl = page.url();
+    await page.locator("textarea[name='metaDescription']").fill(aboutNote);
+    await page.getByRole("button", { name: "Save Changes" }).click();
+    await page.goto(aboutSettingsUrl);
+    await expect(page.locator("textarea[name='metaDescription']")).toHaveValue(aboutNote);
+
+    await page.goto("/app/settings/website/catalogue/services/new");
+    await page.locator("input[name='displayName']").fill(serviceName);
+    await page.locator("textarea[name='description']").fill("Disposable catalogue service");
+    await page.locator("input[data-gp-we-media-file='1']").setInputFiles(serviceImagePath);
+    await expect(page.locator("[data-gp-we-media-status='1']")).toContainText(/uploaded/i);
+    const serviceMediaSrc = await page.locator("input[data-gp-we-media-src='1']").inputValue();
+    expect(serviceMediaSrc).toBeTruthy();
+    await page.locator("input[name='publicWebsiteVisible']").check();
+    await expect(page.locator("input[name='publicBookable']")).not.toBeChecked();
+    await page.getByRole("button", { name: "Add service" }).click();
+    await expect(page.locator("body")).toContainText(serviceName);
+
+    await page.goto("/app/settings/website/catalogue/doctors/new");
+    await page.locator("input[name='publicDisplayName']").fill(doctorName);
+    await page.locator("input[name='professionalTitle']").fill("Clinician");
+    await page.locator("input[name='specialty']").fill("General practice");
+    await page.locator("input[name='qualifications']").fill("Synthetic credential");
+    await page.locator("input[data-gp-we-media-file='1']").setInputFiles(doctorImagePath);
+    await expect(page.locator("[data-gp-we-media-status='1']")).toContainText(/uploaded/i);
+    const doctorMediaSrc = await page.locator("input[data-gp-we-media-src='1']").inputValue();
+    expect(doctorMediaSrc).toBeTruthy();
+    await page.locator("input[name='publicWebsiteVisible']").check();
+    await page.getByRole("button", { name: "Add profile" }).click();
+    await expect(page.locator("body")).toContainText(doctorName);
+
+    await page.goto("/app/settings/website/settings");
+    await page.locator("input[name='phone']").fill("+260970000001");
+    await page.locator("input[name='email']").fill(`desk-${stamp}@example.invalid`);
+    await page.locator("textarea[name='hours']").fill(hours);
+    await page.getByRole("button", { name: "Save website settings" }).click();
+    await expect(page.getByText("Saved as a draft")).toBeVisible();
+    await page.reload();
+    await expect(page.locator("textarea[name='hours']")).toHaveValue(hours);
+    await expect(page.locator("input[name='email']")).toHaveValue(`desk-${stamp}@example.invalid`);
+
+    await page.goto("/app/facilities");
+    await page.locator("a[href^='/app/facilities/']:not([href$='/new'])").first().click();
+    await page.getByRole("link", { name: "Edit facility" }).click();
+    await page.locator("input[name='address_line_1']").fill(address);
+    const day = page.locator("[data-ac-hours-day]").first();
+    const closed = day.locator("[data-hours-closed]");
+    if (await closed.isChecked()) await closed.uncheck();
+    await day.locator("[data-hours-start]").fill("08:00");
+    await day.locator("[data-hours-end]").fill("17:00");
+    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("link", { name: "Edit facility" }).click();
+    await expect(page.locator("input[name='address_line_1']")).toHaveValue(address);
+
+    await page.goto("/app/settings/website/sections");
+    const previewHref = await page.getByRole("link", { name: "Preview homepage" }).getAttribute("href");
+    expect(previewHref).toBeTruthy();
+    await page.goto(previewHref);
+    await expect(page.locator("body")).toContainText(welcome);
+    const liveHref = String(previewHref).split("?")[0];
+    const visitor = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
+    const visitorPage = await visitor.newPage();
+    await visitorPage.goto(liveHref);
+    await expect(visitorPage.locator("body")).not.toContainText(welcome);
+    await expect(visitorPage.locator("body")).not.toContainText(serviceName);
+    await page.goto("/app/settings/website/publish");
+    const publishedResponse = page.waitForResponse((response) =>
+      response.url().includes("/website/publish") && response.request().method() === "POST"
+    );
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator("[data-ac-website-action='publish']").click();
+    const published = await publishedResponse;
+    expect(published.ok() || (published.status() >= 300 && published.status() < 400)).toBeTruthy();
+    await visitorPage.goto(liveHref);
+    await expect(visitorPage.locator("body")).toContainText(welcome);
+    await expect(visitorPage.locator(`img[src='${mediaSrc}']`)).toHaveCount(1);
+    await visitorPage.goto(`${liveHref}/services`);
+    await expect(visitorPage.locator("body")).toContainText(serviceName);
+    await expect(visitorPage.locator(`img[src='${serviceMediaSrc}']`)).toHaveCount(1);
+    await visitorPage.goto(`${liveHref}/doctors`);
+    await expect(visitorPage.locator("body")).toContainText(doctorName);
+    await expect(visitorPage.locator(`img[src='${doctorMediaSrc}']`)).toHaveCount(1);
+    await visitorPage.reload();
+    await expect(visitorPage.locator("body")).toContainText(doctorName);
+    await visitor.close();
+
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    try {
+      const media = await client.query(
+        `SELECT mime_type, organization_id
+           FROM platform.website_media
+          WHERE original_filename = $1`,
+        [imageName]
+      );
+      expect(media.rowCount).toBe(1);
+      expect(media.rows[0].mime_type).toBe("image/png");
+      const serviceMedia = await client.query(
+        `SELECT mime_type FROM platform.website_media WHERE original_filename = $1`,
+        [serviceImageName]
+      );
+      expect(serviceMedia.rowCount).toBe(1);
+      expect(serviceMedia.rows[0].mime_type).toBe("image/png");
+      const doctorMedia = await client.query(
+        `SELECT mime_type FROM platform.website_media WHERE original_filename = $1`,
+        [doctorImageName]
+      );
+      expect(doctorMedia.rowCount).toBe(1);
+      expect(doctorMedia.rows[0].mime_type).toBe("image/png");
+      const service = await client.query(
+        `SELECT public_website_visible, public_bookable
+           FROM activeclinic.appointment_service_types
+          WHERE display_name = $1 AND organization_id = $2`,
+        [serviceName, media.rows[0].organization_id]
+      );
+      expect(service.rowCount).toBe(1);
+      expect(service.rows[0].public_website_visible).toBe(true);
+      expect(service.rows[0].public_bookable).toBe(false);
+      const doctor = await client.query(
+        `SELECT public_display_name, public_title
+           FROM activeclinic.staff_members
+          WHERE public_display_name = $1`,
+        [doctorName]
+      );
+      expect(doctor.rowCount).toBe(1);
+      expect(doctor.rows[0].public_title).toBe("Clinician");
+      const facility = await client.query(
+        `SELECT address_line_1
+           FROM activeclinic.facilities
+          WHERE address_line_1 = $1`,
+        [address]
+      );
+      expect(facility.rowCount).toBe(1);
+    } finally {
+      await client.end();
+    }
+
+    const other = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
+    const otherPage = await other.newPage();
+    await staffSignIn(otherPage, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    const denied = await otherPage.request.get(sectionSettingsUrl, { maxRedirects: 0 });
+    expect([200, 401, 403, 404]).toContain(denied.status());
+    const deniedBody = await denied.text();
+    expect(deniedBody).not.toContain(welcome);
+    expect(deniedBody).not.toContain(serviceName);
+    expect(deniedBody).not.toContain(doctorName);
+    await other.close();
+    fs.unlinkSync(imagePath);
+    fs.unlinkSync(serviceImagePath);
+    fs.unlinkSync(doctorImagePath);
+    fs.unlinkSync(textPath);
   });
 });
 

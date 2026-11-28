@@ -36,7 +36,9 @@ describe("D19 QA implementation discovery", () => {
     assert.match(spec, /PAT-01/);
     assert.match(spec, /AC-FU-PORTAL-05/);
     assert.match(spec, /G324 public home opens/);
-    assert.equal(names.length, 34);
+    assert.match(spec, /G325 a second clinic shows the workspace prompt/);
+    assert.match(spec, /G325 website upload catalogue and clinic details/);
+    assert.equal(names.length, 36);
   });
 
   it("points every integration file at a real gated runner", () => {
