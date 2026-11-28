@@ -489,6 +489,16 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await expect(page.locator("body")).toContainText("72 bpm");
     await expect(page.locator("body")).toContainText("80 bpm");
     await expect(page.locator("body")).toContainText("Superseded");
+    await expect(page.locator("[data-ac-print-region='vitals-log']")).toContainText("72 bpm");
+    await expect(page.locator("[data-ac-print-region='vitals-log']")).toContainText("80 bpm");
+    await page.evaluate(() => {
+      window.__g322VitalPrint = 0;
+      window.print = () => {
+        window.__g322VitalPrint += 1;
+      };
+    });
+    await page.getByRole("button", { name: "Print vitals log" }).click();
+    expect(await page.evaluate(() => window.__g322VitalPrint)).toBe(1);
     const stranger = await openIsolatedContext(browser, process.env.PLAYWRIGHT_E2E_PORT || "4187");
     const strangerPage = await stranger.newPage();
     const denied = await strangerPage.request.post(`${encounterUrl}/vitals`, {
@@ -627,6 +637,86 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     );
     expect(after.rows[0].n).toBe(1);
     await client.end();
+  });
+
+  test("AC-FU-PORTAL-05 activated patient completes the testing reset and signs in", async ({ page }, testInfo) => {
+    hold(testInfo, "AC-FU-PORTAL-05");
+    const stamp = Date.now();
+    const suffix = Math.floor(Math.random() * 10_000_000).toString().padStart(7, "0");
+    const lastName = `Recover${String(stamp).slice(-6)}`;
+    const phone = `97${suffix}`;
+    const email = `portal-reset-${stamp}@example.invalid`;
+    const password = "V13-synthetic-qa-password";
+    const replacement = "V13-portal-reset-9!";
+    const clinicKey = required("E2E_AC_CLINIC_KEY");
+    await staffSignIn(page, required("E2E_AC_ADMIN_EMAIL"), required("E2E_AC_ADMIN_PASSWORD"));
+    await page.goto("/app/patients/new");
+    await page.getByRole("button", { name: /None of these/ }).click();
+    await page.locator("input[name='first_name']").fill("Recover");
+    await page.locator("input[name='last_name']").fill(lastName);
+    await page.locator("select[name='sex_at_registration']").selectOption("female");
+    await page.locator("input[name='date_of_birth']").fill("1993-05-05");
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.getByRole("button", { name: "Review" }).click();
+    await page.getByRole("button", { name: "Create patient" }).click();
+    await expect(page.locator("[data-ac-patient-number='1']")).toBeVisible();
+    const number = (await page.locator("[data-ac-patient-number='1']").innerText()).trim();
+    await page.context().clearCookies();
+    await page.goto(`/clinics/${clinicKey}/patient/register`);
+    await page.locator("input[name='firstName']").fill("Recover");
+    await page.locator("input[name='lastName']").fill(lastName);
+    await page.locator("input[name='phone_national']").fill(phone);
+    await page.locator("input[name='email']").fill(email);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("form:has(input[name='firstName']) button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`/clinics/${clinicKey}/patient/login`));
+    await page.goto(`/clinics/${clinicKey}/patient/forgot-password`);
+    await page.locator("input[name='identifier']").fill(email);
+    await page.locator("form:has(input[name='identifier']) button[type='submit']").click();
+    await expect(page.locator("body")).toContainText(/unavailable/i);
+    await expect(page.locator("body")).not.toContainText(/email sent|SMS sent/i);
+    const body = await page.locator("body").innerText();
+    const token = (body.match(/TEST TOKEN:\s*([a-f0-9]{64})/i) || [])[1];
+    expect(token, "testing reset token").toBeTruthy();
+    await page.goto(`/clinics/${clinicKey}/patient/reset-password?token=${token}`);
+    await page.locator("input[name='newPassword']").fill(replacement);
+    await page.locator("form:has(input[name='newPassword']) button[type='submit']").click();
+    await expect(page.locator("body")).toContainText(/updated|sign in/i);
+    await page.goto(`/clinics/${clinicKey}/patient/login`);
+    await page.locator("input[name='identifier']").fill(email);
+    await page.locator("input[name='password']").fill(password);
+    await page.locator("button[type='submit']").click();
+    await expect(page).not.toHaveURL(new RegExp(`/clinics/${clinicKey}/patient(?:\\?|$)`));
+    await page.goto(`/clinics/${clinicKey}/patient/login`);
+    await page.locator("input[name='identifier']").fill(email);
+    await page.locator("input[name='password']").fill(replacement);
+    await page.locator("button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`/clinics/${clinicKey}/patient(?:\\?|$)`));
+    await expect(page.locator("body")).toContainText("Welcome back, Recover");
+    const client = createAuthorizedPgClient(process.env, (options) => {
+      const { Client } = require("pg");
+      return new Client(options);
+    });
+    await client.connect();
+    const patients = await client.query(
+      `SELECT count(*)::int AS n
+         FROM activeclinic.patients p
+         JOIN platform.organizations o ON o.id = p.organization_id
+        WHERE p.patient_number = $1 AND o.organization_key = $2`,
+      [number, clinicKey]
+    );
+    const tokens = await client.query(
+      `SELECT count(*)::int AS n
+         FROM platform.identity_action_tokens t
+         JOIN platform.identities i ON i.id = t.platform_identity_id
+        WHERE i.email_normalized = $1
+          AND t.purpose = 'activeclinic_patient_password_reset'
+          AND t.consumed_at IS NOT NULL`,
+      [email]
+    );
+    await client.end();
+    expect(patients.rows[0].n).toBe(1);
+    expect(tokens.rows[0].n).toBe(1);
   });
 
   test("AC-FU-WEB-02 new text stays private until publish and an authorized image renders", async ({ page }, testInfo) => {

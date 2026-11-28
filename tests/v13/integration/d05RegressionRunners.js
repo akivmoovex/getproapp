@@ -757,6 +757,22 @@ async function runAcRec03(pool, connectionString, env) {
   assert.equal(preserved.text.includes("99 bpm"), false);
   assert.match(preserved.text, /72 bpm/);
   assert.match(preserved.text, /80 bpm/);
+  const stored = await pool.query(
+    `SELECT id, value_numeric, corrects_observation_id, correction_reason, patient_id
+       FROM activeclinic.vital_sign_observations
+      WHERE encounter_id = $1
+        AND observation_type = 'heart_rate'
+      ORDER BY observed_at ASC, id ASC`,
+    [encounterId]
+  );
+  assert.equal(stored.rowCount, 2, "correction must append a row and keep the original");
+  assert.equal(Number(stored.rows[0].value_numeric), 72);
+  assert.equal(stored.rows[0].corrects_observation_id, null);
+  assert.equal(stored.rows[0].patient_id, patientId);
+  assert.equal(Number(stored.rows[1].value_numeric), 80);
+  assert.equal(stored.rows[1].corrects_observation_id, stored.rows[0].id);
+  assert.match(String(stored.rows[1].correction_reason || ""), /entry error/);
+  assert.equal(stored.rows[1].patient_id, patientId);
 }
 
 async function runAcPub01(pool, connectionString, env) {
