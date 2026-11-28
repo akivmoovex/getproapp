@@ -234,6 +234,20 @@ async function authenticatePatientIdentity(db, input) {
     portalOnly = true;
   }
 
+  if (input.establishSession === false) {
+    return {
+      ok: true,
+      result: RESULT.AUTHENTICATED,
+      sessionDeferred: true,
+      platformIdentityId: resolved.identityRow.id,
+      organizationId,
+      healthcareOrganizationId,
+      clinicKey,
+      patientId: patient ? patient.id : null,
+      verifiedEmail: resolved.identityRow.email_normalized || null,
+    };
+  }
+
   const session = await createPlatformIdentitySession(db, {
     deploymentCode,
     platformIdentityId: resolved.identityRow.id,
@@ -280,9 +294,75 @@ async function authenticatePatientIdentity(db, input) {
   };
 }
 
+async function completeDeferredPatientLogin(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  const clinicKey = String((input && input.clinicKey) || "").trim();
+  const platformIdentityId = String((input && input.platformIdentityId) || "").trim();
+  if (!organizationId || !healthcareOrganizationId || !clinicKey || !platformIdentityId) {
+    return { ok: false, result: RESULT.INVALID_INPUT };
+  }
+  const patientResolved = await resolvePatientForIdentity(db, {
+    identityId: platformIdentityId,
+    organizationId,
+    healthcareOrganizationId,
+  });
+  const patient = patientResolved.ok ? patientResolved.patient : null;
+  if (input.patientId && (!patient || String(patient.id) !== String(input.patientId))) {
+    return { ok: false, result: RESULT.ACCESS_UNAVAILABLE, failureCategory: "patient_not_found" };
+  }
+  let portalOnly = false;
+  if (!patient) {
+    const portalBookings = await db.query(
+      `SELECT id
+         FROM activeclinic.public_booking_requests
+        WHERE portal_platform_identity_id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+        LIMIT 1`,
+      [platformIdentityId, organizationId, healthcareOrganizationId]
+    );
+    if (!portalBookings.rows[0]) {
+      return { ok: false, result: RESULT.ACCESS_UNAVAILABLE, failureCategory: "patient_not_found" };
+    }
+    portalOnly = true;
+  }
+  const session = await createPlatformIdentitySession(db, {
+    deploymentCode: String(input.deploymentCode || "").trim().toLowerCase(),
+    platformIdentityId,
+    organizationId,
+    ip: input.ip || null,
+    userAgent: input.userAgent || null,
+    contextJson: {
+      principalKind: "patient",
+      patientId: patient ? patient.id : null,
+      portalOnly,
+      clinicKey,
+      healthcareOrganizationId,
+    },
+  });
+  if (!session.ok) return { ok: false, result: RESULT.TRANSACTION_ERROR };
+  await recordIdentitySignInSuccess(db, platformIdentityId);
+  await db.query(
+    `INSERT INTO activeclinic.patient_portal_link_events
+      (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, metadata_json)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      organizationId,
+      healthcareOrganizationId,
+      patient ? patient.id : null,
+      platformIdentityId,
+      "login",
+      JSON.stringify({ clinic_key: clinicKey, portal_only: portalOnly }),
+    ]
+  );
+  return { ok: true, result: RESULT.AUTHENTICATED, rawToken: session.rawToken, patient };
+}
+
 module.exports = {
   RESULT,
   resolveIdentityForPatientLogin,
   resolvePatientForIdentity,
   authenticatePatientIdentity,
+  completeDeferredPatientLogin,
 };

@@ -1,0 +1,34 @@
+<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
+  <%- include('../partials/auth-public-header') %>
+  <div
+    class="ac-auth-card ac-auth-card--split"
+    data-ac-auth-screen="staff-login-otp"
+    data-ac-otp-required="1"
+    data-ac-otp-attempt="<%= otpAttemptId %>"
+    data-ac-otp-reason="<%= otpReason || '' %>"
+    data-ac-stitch-ref="3ce05c3cefea4fd693a15409466c0bce"
+  >
+    <%- include('../partials/auth-brand-panel', { tagline: 'Confirm this sign-in before the clinic workspace opens.' }) %>
+    <div class="ac-auth-form-panel">
+      <h1 class="ac-auth-h1">Check your email</h1>
+      <p class="ac-auth-desc">Enter the code sent to <%= maskedDestination %>. The clinic workspace stays closed until this code is accepted.</p>
+      <% if (notice) { %>
+        <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
+      <% } %>
+      <% if (error) { %>
+        <div class="ac-auth-alert ac-auth-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <form method="post" action="/login/otp" data-ac-staff-otp-form="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label for="ac-staff-otp-code">Verification code</label>
+        <input id="ac-staff-otp-code" name="otp_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required aria-describedby="ac-staff-otp-hint"/>
+        <p id="ac-staff-otp-hint" class="ac-auth-desc">The code expires after a few minutes. A new code is not sent immediately.</p>
+        <button type="submit">Verify and continue</button>
+      </form>
+      <form method="post" action="/login/otp/resend">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <button type="submit">Send a new code</button>
+      </form>
+    </div>
+  </div>
+</main>

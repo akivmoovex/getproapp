@@ -1,0 +1,27 @@
+<section
+  class="acp-auth-card ac-patient-card ac-patient-card--auth"
+  data-ac-page-section="patient-login-otp"
+  data-ac-otp-required="1"
+  data-ac-otp-attempt="<%= otpAttemptId %>"
+  data-ac-otp-reason="<%= typeof otpReason !== 'undefined' ? otpReason : '' %>"
+>
+  <header class="acp-auth-card__header acp-auth-card__header--centered">
+    <p class="ac-public-eyebrow"><%= (clinic && clinic.publicName) ? clinic.publicName : 'Patient portal' %></p>
+    <h1>Check your email</h1>
+    <p class="acp-auth-card__lede">Enter the code sent to <%= maskedDestination %>. This clinic stays closed until the code is accepted.</p>
+  </header>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <p class="ac-patient-alert" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/login/otp">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <label for="ac-patient-otp-code">Verification code</label>
+      <input id="ac-patient-otp-code" name="otp_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required/>
+    </div>
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Verify and continue</button>
+  </form>
+</section>

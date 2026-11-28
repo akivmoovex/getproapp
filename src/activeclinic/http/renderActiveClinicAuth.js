@@ -70,6 +70,7 @@ function renderLoginPage(input) {
     pageTitle: "Sign in",
     notice: (input && input.notice) || null,
     error: (input && input.error) || null,
+    otpReason: (input && input.otpReason) || "",
     identifier: String((input && input.identifier) || ""),
     loginEmail: String(
       (input && input.loginEmail) ||
@@ -88,6 +89,23 @@ function renderLoginPage(input) {
   const bodyHtml = renderAuthContent("auth/login.ejs", locals);
   return renderAuthShell("login", locals.pageTitle, bodyHtml, {
     composition: locals.composition,
+  });
+}
+
+function renderStaffLoginOtpPage(input) {
+  const locals = baseLocals({
+    pageTitle: "Verify email",
+    csrfToken: input && input.csrfToken,
+    error: (input && input.error) || null,
+    notice: (input && input.notice) || null,
+    maskedDestination: (input && input.maskedDestination) || "your email",
+    otpAttemptId: (input && input.otpAttemptId) || "",
+    otpReason: (input && input.otpReason) || "",
+    composition: "p01-login",
+  });
+  const bodyHtml = renderAuthContent("auth/login-otp.ejs", locals);
+  return renderAuthShell("login-otp", locals.pageTitle, bodyHtml, {
+    composition: "p01-login",
   });
 }
 
@@ -327,6 +345,7 @@ module.exports = {
   DEFAULT_BRANDING,
   PASSWORD_MIN,
   renderLoginPage,
+  renderStaffLoginOtpPage,
   renderOrgSelectPage,
   renderChangePasswordPage,
   renderActivatePage,

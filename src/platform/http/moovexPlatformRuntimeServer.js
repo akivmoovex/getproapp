@@ -722,7 +722,7 @@ function createMoovexPlatformRuntimeApp(options) {
             SET expires_at = created_at + ((clock_timestamp() - created_at) / 2)
           WHERE attempt_id = $1
             AND product_code = 'activeclinic'
-            AND purpose = 'password_recovery'
+            AND purpose IN ('password_recovery', 'login')
             AND status = 'pending'
             AND consumed = false
             AND created_at < clock_timestamp()`,

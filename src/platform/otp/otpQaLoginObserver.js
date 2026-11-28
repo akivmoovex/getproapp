@@ -43,8 +43,19 @@ function acRecoveryOtpObserverAuthorized(env) {
   return testingObserverDeployment(env) && text((env || {}).GETPRO_AC_RECOVERY_OTP_OBSERVER) === "1";
 }
 
+function acStaffLoginOtpObserverAuthorized(env) {
+  return testingObserverDeployment(env) && text((env || {}).GETPRO_AC_STAFF_LOGIN_OTP_OBSERVER) === "1";
+}
+
+function acPatientLoginOtpObserverAuthorized(env) {
+  return testingObserverDeployment(env) && text((env || {}).GETPRO_AC_PATIENT_LOGIN_OTP_OBSERVER) === "1";
+}
+
 function qaOtpObserverFixtureAuthorized(env) {
-  return loginOtpObserverAuthorized(env) || acRecoveryOtpObserverAuthorized(env);
+  return loginOtpObserverAuthorized(env)
+    || acRecoveryOtpObserverAuthorized(env)
+    || acStaffLoginOtpObserverAuthorized(env)
+    || acPatientLoginOtpObserverAuthorized(env);
 }
 
 function rememberLoginOtpCode(attemptId, code, env) {
@@ -88,6 +99,8 @@ module.exports = {
   isLoopbackAddress,
   loginOtpObserverAuthorized,
   acRecoveryOtpObserverAuthorized,
+  acStaffLoginOtpObserverAuthorized,
+  acPatientLoginOtpObserverAuthorized,
   qaOtpObserverFixtureAuthorized,
   rememberLoginOtpCode,
   peekLoginOtpCode,

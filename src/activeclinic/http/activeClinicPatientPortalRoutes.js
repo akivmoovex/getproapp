@@ -13,7 +13,19 @@ const {
 } = require("../../platform/session/sharedSessionSecurity");
 const {
   authenticatePatientIdentity,
+  completeDeferredPatientLogin,
 } = require("../services/activeClinicPatientPortalAuthService");
+const {
+  patientLoginOtpActive,
+  resolveServerLoginBinding,
+  readPendingLogin,
+  writePendingCookie,
+  clearPendingCookie,
+  beginPatientLoginChallenge,
+  completePatientLoginChallenge,
+  verificationMessage,
+  maskDestination,
+} = require("../services/activeClinicPatientLoginOtp");
 const {
   registerPatientWithGuestToken,
   registerPatientWithPhoneMatch,
@@ -341,6 +353,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             );
         }
 
+        const otpActive = patientLoginOtpActive(env);
         const auth = await authenticatePatientIdentity(getPool(), {
           identifier,
           password,
@@ -351,6 +364,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
           ip: clientIp(req),
           userAgent: req.headers["user-agent"] || null,
+          establishSession: otpActive ? false : undefined,
         });
 
         if (!auth.ok) {
@@ -368,6 +382,41 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             );
         }
 
+        if (otpActive && auth.sessionDeferred) {
+          const binding = resolveServerLoginBinding({
+            accountId: auth.platformIdentityId,
+            organizationId: auth.organizationId,
+            healthcareOrganizationId: auth.healthcareOrganizationId,
+            clinicKey: auth.clinicKey,
+            patientId: auth.patientId,
+            verifiedEmail: auth.verifiedEmail,
+          });
+          const started = binding.ok ? await beginPatientLoginChallenge(binding, env) : null;
+          if (!binding.ok || !started.deliveryAccepted || !started.attemptId || !writePendingCookie(res, { ...binding, attemptId: started.attemptId, deliveryAccepted: true }, env)) {
+            const csrfToken = issuePageCsrf(res, env, isProduction);
+            return res.status(503).type("html").send(
+              renderPatientView("patient/login", {
+                csrfToken,
+                csrfField: CSRF_FIELD,
+                clinicKey,
+                error: "Sign-in is temporarily unavailable.",
+              })
+            );
+          }
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res.status(200).type("html").send(
+            renderPatientView("patient/login-otp", {
+              csrfToken,
+              csrfField: CSRF_FIELD,
+              clinicKey,
+              clinic: clinic.clinic,
+              maskedDestination: maskDestination(binding.destination),
+              otpAttemptId: started.attemptId,
+              error: null,
+            })
+          );
+        }
+
         await issueAuthenticatedSessionCookie(req, res, {
           rawToken: auth.rawToken,
           env,
@@ -381,6 +430,92 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       }
     }
   );
+
+  app.post("/clinics/:clinicKey/patient/login/otp", async (req, res, next) => {
+    try {
+      const clinicKey = String(req.params.clinicKey || "");
+      const clinic = await resolveClinicContext(clinicKey);
+      if (!clinic) return sendPatientClinicNotFound(res, env, isProduction);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env) || !patientLoginOtpActive(env)) {
+        clearPendingCookie(res);
+        return res.redirect(303, `/clinics/${clinicKey}/patient/login`);
+      }
+      const pending = readPendingLogin(req, env);
+      if (!pending || pending.clinicKey !== clinicKey || pending.organizationId !== clinic.organizationId) {
+        clearPendingCookie(res);
+        return res.status(401).type("html").send(
+          renderPatientView("patient/login", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            csrfField: CSRF_FIELD,
+            clinicKey,
+            error: "Sign in again to request a new code.",
+          })
+        );
+      }
+      const verified = await completePatientLoginChallenge(pending, req.body && req.body.otp_code, env);
+      if (!verified.sessionComplete) {
+        if (verified.reason === "expired" || verified.reason === "exhausted" || verified.reason === "replay") {
+          clearPendingCookie(res);
+        }
+        return res.status(401).type("html").send(
+          renderPatientView("patient/login-otp", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            csrfField: CSRF_FIELD,
+            clinicKey,
+            clinic: clinic.clinic,
+            maskedDestination: maskDestination(pending.destination),
+            otpAttemptId: pending.attemptId,
+            otpReason: verified.reason,
+            error: verificationMessage(verified.reason),
+          })
+        );
+      }
+      const session = await completeDeferredPatientLogin(getPool(), {
+        deploymentCode,
+        platformIdentityId: pending.accountId,
+        organizationId: pending.organizationId,
+        healthcareOrganizationId: pending.healthcareOrganizationId,
+        clinicKey: pending.clinicKey,
+        patientId: pending.patientId,
+        ip: clientIp(req),
+        userAgent: req.headers["user-agent"] || null,
+      });
+      if (!session.ok || !session.rawToken) {
+        clearPendingCookie(res);
+        return res.status(403).type("html").send(
+          renderPatientView("patient/login", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            csrfField: CSRF_FIELD,
+            clinicKey,
+            error: "Invalid credentials or access unavailable.",
+          })
+        );
+      }
+      const issued = await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: session.rawToken,
+        env,
+        isProduction,
+        getPool,
+        otpWorkflow: "activeclinic.patient_login",
+        protectedActionCompleted: true,
+      });
+      if (!issued.ok) {
+        clearPendingCookie(res);
+        return res.status(503).type("html").send(
+          renderPatientView("patient/login", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            csrfField: CSRF_FIELD,
+            clinicKey,
+            error: "Sign-in is temporarily unavailable.",
+          })
+        );
+      }
+      clearPendingCookie(res);
+      return res.redirect(303, `/clinics/${clinicKey}/patient`);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   app.post("/clinics/:clinicKey/patient/logout", loadPatientAuth, async (req, res, next) => {
     try {

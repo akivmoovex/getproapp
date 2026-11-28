@@ -28,8 +28,21 @@ const { resolveHostname } = require("../../platform/host");
 const {
   authenticateActiveClinicIdentity,
   completeActiveClinicOrganizationSelection,
+  completeLoginSession,
+  readActiveClinicSelectionBinding,
   STATUS: AUTH_STATUS,
 } = require("../services/authenticateActiveClinicIdentity");
+const {
+  staffLoginOtpActive,
+  resolveServerLoginBinding,
+  readPendingLogin,
+  writePendingCookie,
+  clearPendingCookie,
+  beginStaffLoginChallenge,
+  completeStaffLoginChallenge,
+  verificationMessage,
+  maskDestination,
+} = require("../services/activeClinicStaffLoginOtp");
 const {
   changeActiveClinicPassword,
   RESULT: PW_RESULT,
@@ -40,6 +53,7 @@ const {
 const { createPlatformIdentitySession } = require("../../platform/session/createDeploymentSession");
 const {
   renderLoginPage,
+  renderStaffLoginOtpPage,
   renderOrgSelectPage,
   renderChangePasswordPage,
   renderAccessUnavailablePage,
@@ -149,6 +163,48 @@ function registerActiveClinicAuthRoutes(app, deps) {
     return token;
   }
 
+  async function startStaffLoginOtp(req, res, account) {
+    const binding = resolveServerLoginBinding(account);
+    if (!binding.ok) {
+      return res.status(503).type("html").send(
+        renderLoginPage({
+          csrfToken: issuePageCsrf(res, req),
+          error: "Sign-in is temporarily unavailable.",
+        })
+      );
+    }
+    const started = await beginStaffLoginChallenge(binding, env);
+    if (!started.deliveryAccepted || !started.attemptId) {
+      return res.status(503).type("html").send(
+        renderLoginPage({
+          csrfToken: issuePageCsrf(res, req),
+          error: "Sign-in is temporarily unavailable.",
+        })
+      );
+    }
+    const pending = {
+      ...binding,
+      attemptId: started.attemptId,
+      deliveryAccepted: true,
+      completion: account.completion === "selection" ? "selection" : "direct",
+    };
+    if (!writePendingCookie(res, pending, env)) {
+      return res.status(503).type("html").send(
+        renderLoginPage({
+          csrfToken: issuePageCsrf(res, req),
+          error: "Sign-in is temporarily unavailable.",
+        })
+      );
+    }
+    return res.status(200).type("html").send(
+      renderStaffLoginOtpPage({
+        csrfToken: issuePageCsrf(res, req),
+        maskedDestination: maskDestination(binding.destination),
+        otpAttemptId: started.attemptId,
+      })
+    );
+  }
+
   app.get("/login", (req, res) => {
     if (req.activeClinicAuth && req.activeClinicAuth.authenticated) {
       if (req.activeClinicAuth.mustChangePassword) {
@@ -218,6 +274,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
           })
         );
       }
+      const otpActive = staffLoginOtpActive(env);
       const result = await authenticateActiveClinicIdentity(getPool(), {
         identifier: resolved.identifier,
         password: req.body && req.body.password,
@@ -228,6 +285,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
           .toUpperCase() || "ZM",
         ip: clientIp(req),
         userAgent: req.headers["user-agent"] || null,
+        establishSession: otpActive ? false : undefined,
       });
 
       if (result.status === AUTH_STATUS.SELECT_ORGANIZATION) {
@@ -267,6 +325,17 @@ function registerActiveClinicAuthRoutes(app, deps) {
             ...buildLoginModeHrefs({ mode: loginMode }),
           })
         );
+      }
+
+      if (otpActive && result.sessionDeferred) {
+        return startStaffLoginOtp(req, res, {
+          accountId: result.platformIdentityId,
+          organizationId: result.organizationId,
+          healthcareOrganizationId: result.healthcareOrganizationId,
+          verifiedEmail: result.verifiedEmail,
+          mustChangePassword: result.mustChangePassword,
+          completion: "direct",
+        });
       }
 
       await issueAuthenticatedSessionCookie(req, res, {
@@ -362,6 +431,26 @@ function registerActiveClinicAuthRoutes(app, deps) {
       if (!deployment.ok || !selectionToken) {
         return res.redirect(303, "/login");
       }
+      if (staffLoginOtpActive(env)) {
+        const binding = await readActiveClinicSelectionBinding(getPool(), {
+          selectionToken,
+          organizationId: req.body && req.body.organization_id,
+        });
+        if (!binding.ok) {
+          if (binding.failureCategory === "organization_not_eligible") {
+            return res.status(403).type("html").send(renderAccessDisabledPage());
+          }
+          return res.status(403).type("html").send(renderAccessUnavailablePage());
+        }
+        return startStaffLoginOtp(req, res, {
+          accountId: binding.platformIdentityId,
+          organizationId: binding.organizationId,
+          healthcareOrganizationId: binding.healthcareOrganizationId,
+          verifiedEmail: binding.verifiedEmail,
+          mustChangePassword: binding.mustChangePassword,
+          completion: "selection",
+        });
+      }
       const completed = await completeActiveClinicOrganizationSelection(getPool(), {
         selectionToken,
         organizationId: req.body && req.body.organization_id,
@@ -394,6 +483,162 @@ function registerActiveClinicAuthRoutes(app, deps) {
         deployment.code
       );
       return res.redirect(303, dest);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/login/otp", loginLimiter, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(
+          renderLoginPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: "Your session expired. Please try again.",
+          })
+        );
+      }
+      if (!staffLoginOtpActive(env)) {
+        clearPendingCookie(res);
+        return res.redirect(303, "/login");
+      }
+      const pending = readPendingLogin(req, env);
+      if (!pending || pending.deliveryAccepted !== true) {
+        clearPendingCookie(res);
+        return res.status(401).type("html").send(
+          renderLoginPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: "Sign in again to request a new code.",
+          })
+        );
+      }
+      const verified = await completeStaffLoginChallenge(pending, req.body && req.body.otp_code, env);
+      if (!verified.sessionComplete) {
+        const terminal = verified.reason === "expired" || verified.reason === "exhausted" || verified.reason === "replay";
+        if (terminal) clearPendingCookie(res);
+        const page = terminal
+          ? renderLoginPage({
+              csrfToken: issuePageCsrf(res, req),
+              error: verificationMessage(verified.reason),
+              otpReason: verified.reason,
+            })
+          : renderStaffLoginOtpPage({
+              csrfToken: issuePageCsrf(res, req),
+              error: verificationMessage(verified.reason),
+              otpReason: verified.reason,
+              maskedDestination: maskDestination(pending.destination),
+              otpAttemptId: pending.attemptId,
+            });
+        return res.status(401).type("html").send(page);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      if (!deployment.ok || !deployment.code) {
+        clearPendingCookie(res);
+        return res.status(503).type("html").send("Deployment unavailable");
+      }
+      const { resolveEligibleOrganization } = require("../services/activeClinicLoginEligibility");
+      const eligible = await resolveEligibleOrganization(getPool(), {
+        platformIdentityId: pending.accountId,
+        organizationId: pending.organizationId,
+      });
+      if (!eligible.ok) {
+        clearPendingCookie(res);
+        return res.status(403).type("html").send(renderAccessUnavailablePage());
+      }
+      const selectionToken = pending.completion === "selection" ? req.cookies && req.cookies[SELECTION_COOKIE] : "";
+      const session = selectionToken
+        ? await completeActiveClinicOrganizationSelection(getPool(), {
+            selectionToken,
+            organizationId: pending.organizationId,
+            deploymentCode: deployment.code,
+            hostname: resolveHostname(req) || "activeclinic.org",
+            ip: clientIp(req),
+            userAgent: req.headers["user-agent"] || null,
+            mustChangePassword: pending.mustChangePassword,
+          })
+        : await completeLoginSession(getPool(), {
+            deploymentCode: deployment.code,
+            platformIdentityId: pending.accountId,
+            organizationId: pending.organizationId,
+            ip: clientIp(req),
+            userAgent: req.headers["user-agent"] || null,
+            eligibility: eligible.eligibility,
+            mustChangePassword: pending.mustChangePassword,
+          });
+      const rawToken = session && (session.rawToken || session.rawSessionToken);
+      if (!session.ok || !rawToken) {
+        clearPendingCookie(res);
+        return res.status(503).type("html").send(
+          renderLoginPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: "Sign-in is temporarily unavailable.",
+          })
+        );
+      }
+      const issued = await issueAuthenticatedSessionCookie(req, res, {
+        rawToken,
+        env,
+        isProduction,
+        getPool,
+        otpWorkflow: "activeclinic.staff_login",
+        protectedActionCompleted: true,
+        organizationId: pending.organizationId,
+        accountId: pending.accountId,
+      });
+      if (!issued.ok) {
+        clearPendingCookie(res);
+        return res.status(503).type("html").send(
+          renderLoginPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: "Sign-in is temporarily unavailable.",
+          })
+        );
+      }
+      clearPendingCookie(res);
+      res.clearCookie(SELECTION_COOKIE, { path: "/" });
+      if (session.mustChangePassword) return res.redirect(303, "/account/change-password");
+      const dest = await activeClinicPostLoginPath(getPool(), session, req.body && req.body.next, deployment.code);
+      return res.redirect(303, dest);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/login/otp/resend", loginLimiter, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env) || !staffLoginOtpActive(env)) {
+        return res.redirect(303, "/login");
+      }
+      const pending = readPendingLogin(req, env);
+      if (!pending) {
+        return res.status(401).type("html").send(
+          renderLoginPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: "Sign in again to request a new code.",
+          })
+        );
+      }
+      const started = await beginStaffLoginChallenge(pending, env);
+      if (!started.deliveryAccepted || !started.attemptId) {
+        return res.status(429).type("html").send(
+          renderStaffLoginOtpPage({
+            csrfToken: issuePageCsrf(res, req),
+            error: verificationMessage(started.reason),
+            otpReason: started.reason,
+            maskedDestination: maskDestination(pending.destination),
+            otpAttemptId: pending.attemptId,
+          })
+        );
+      }
+      writePendingCookie(res, { ...pending, attemptId: started.attemptId, deliveryAccepted: true }, env);
+      return res.status(200).type("html").send(
+        renderStaffLoginOtpPage({
+          csrfToken: issuePageCsrf(res, req),
+          notice: "A new code was sent.",
+          maskedDestination: maskDestination(pending.destination),
+          otpAttemptId: started.attemptId,
+        })
+      );
     } catch (err) {
       return next(err);
     }

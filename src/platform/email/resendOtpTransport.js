@@ -8,6 +8,8 @@
 const { createResendAdapter } = require("./resendEmailAdapter");
 const { resolveProductSender, senderProfile } = require("./resendSenderCatalog");
 const { verificationTemplate } = require("./transactionalTemplates");
+const { isProductionSignal } = require("../otp/otpEnvironment");
+const { resolveOtpActivation } = require("../otp/otpActivation");
 const {
   QA_SENDER_EMAIL,
   QA_HTTP_ATTEMPT_LIMIT,
@@ -24,6 +26,80 @@ const PRODUCT_LABEL = Object.freeze({
   activeclinic: "ActiveClinic",
   pronline: "PROnline",
 });
+
+const CATALOG_PURPOSES = new Set(["login", "password_recovery"]);
+
+function catalogEmailBlocker(source, input) {
+  const env = source || {};
+  const payload = input || {};
+  if (isProductionSignal(env) || String(env.NODE_ENV || "").trim().toLowerCase() === "production") {
+    return "production_environment";
+  }
+  if (String(env.GETPRO_OTP_EMAIL_DELIVERY || "").trim() !== "owner-approved") {
+    return "email_delivery_not_approved";
+  }
+  if (resolveOtpActivation(env).status !== "ACTIVE") return "otp_activation_blocked";
+  const purpose = String(payload.purpose || "").trim().toLowerCase();
+  if (!CATALOG_PURPOSES.has(purpose)) return "unauthorized_purpose";
+  const pepper = String(env.GETPRO_OTP_PEPPER || "").trim();
+  const sessionSecret = String(env.SESSION_SECRET || "").trim();
+  if (pepper.length < 32 || (sessionSecret && pepper === sessionSecret)) return "otp_pepper_rejected";
+  return null;
+}
+
+async function sendCatalogEmail(source, options, input, key, routed) {
+  const blocker = catalogEmailBlocker(source, input);
+  if (blocker) return { ok: false, reason: blocker, retryable: false };
+  const impl = options.fetchImpl || globalThis.fetch;
+  if (typeof impl !== "function") {
+    return { ok: false, reason: "provider_unavailable", retryable: false };
+  }
+  const label = PRODUCT_LABEL[routed.product] || "GetPro";
+  const branded = verificationTemplate(label, input.text);
+  const adapter = createResendAdapter({
+    id: `otp_resend_${routed.product}`,
+    apiKey: String(source.RESEND_API_KEY || "").trim(),
+    from: routed.fromHeader,
+    fetchImpl: impl,
+    maxAttempts: 1,
+    enforceApprovedSender: true,
+    verifiedDomains: [routed.sender.domain],
+    log: options.log,
+  });
+  let result;
+  try {
+    result = await adapter.send({
+      recipient: input.destination,
+      subject: branded.subject,
+      text: branded.text,
+      html: branded.html,
+      templateKey: branded.templateKey,
+      idempotencyKey: key,
+    });
+  } catch (err) {
+    const timeout = err && (err.name === "TimeoutError" || err.name === "AbortError" || err.code === "timeout");
+    return { ok: false, reason: timeout ? "timeout" : "provider_unavailable", retryable: true };
+  }
+  if (result && result.accepted === true && key) {
+    return {
+      ok: true,
+      reason: result.duplicate === true ? "duplicate_suppressed" : "resend",
+      retryable: false,
+      acceptedByProvider: true,
+      delivered: false,
+      attempts: result.attempts,
+    };
+  }
+  const code = (result && result.providerCode) || "delivery_failed";
+  const retryable = code === "rate_limited" || code === "timeout" || code === "provider_unavailable";
+  return {
+    ok: false,
+    reason: code,
+    retryable,
+    delivered: false,
+    attempts: result && result.attempts,
+  };
+}
 
 function assertQaRecipientAllowed(env, destination) {
   const profile = senderProfile(env);
@@ -99,6 +175,14 @@ function createResendOtpEmailTransport(env, deps) {
     const recipientGate = assertQaRecipientAllowed(source, input.destination);
     if (!recipientGate.ok) {
       return { ok: false, reason: recipientGate.reason, retryable: false };
+    }
+    if (
+      senderProfile(source) !== "hosted-qa" &&
+      String(source.GETPRO_OTP_EMAIL_DELIVERY || "").trim() === "owner-approved"
+    ) {
+      const catalog = await sendCatalogEmail(source, options, input, key, routed);
+      if (catalog.ok === true && key) sent.add(key);
+      return catalog;
     }
     const decision = await evaluateQaLiveDelivery(source, {
       productCode: input.productCode,

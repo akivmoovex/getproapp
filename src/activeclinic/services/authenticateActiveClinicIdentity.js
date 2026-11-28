@@ -260,6 +260,18 @@ async function authenticateActiveClinicIdentity(db, input) {
 
   if (eligible.organizations.length === 1) {
     const only = eligible.organizations[0];
+    if (input.establishSession === false) {
+      return {
+        ok: true,
+        status: verified.mustChangePassword ? STATUS.MUST_CHANGE_PASSWORD : STATUS.AUTHENTICATED,
+        sessionDeferred: true,
+        mustChangePassword: Boolean(verified.mustChangePassword),
+        platformIdentityId: resolved.identityRow.id,
+        organizationId: only.organization.id,
+        healthcareOrganizationId: only.healthcareOrganization && only.healthcareOrganization.id,
+        verifiedEmail: resolved.identityRow.email_normalized || null,
+      };
+    }
     if (verified.mustChangePassword) {
       const completed = await completeLoginSession(db, {
         deploymentCode,
@@ -407,10 +419,40 @@ async function completeActiveClinicOrganizationSelection(db, input) {
   };
 }
 
+async function readActiveClinicSelectionBinding(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const rawToken = String((input && input.selectionToken) || "");
+  if (!organizationId || !rawToken) return { ok: false, status: STATUS.INVALID_INPUT };
+  const { hashSessionToken } = require("../../platform/session/sessionToken");
+  const transferRepo = require("../../platform/repositories/authTransferRepository");
+  const existing = await transferRepo.findAuthTransferByHash(db, hashSessionToken(rawToken));
+  if (!existing || !existing.platform_identity_id) {
+    return { ok: false, status: STATUS.INVALID_CREDENTIALS, failureCategory: "invalid_transfer" };
+  }
+  const resolved = await resolveEligibleOrganization(db, {
+    platformIdentityId: existing.platform_identity_id,
+    organizationId,
+  });
+  if (!resolved.ok) {
+    return { ok: false, status: STATUS.ACCESS_UNAVAILABLE, failureCategory: "organization_not_eligible" };
+  }
+  const identity = await identityRepo.findIdentityById(db, existing.platform_identity_id);
+  const healthcare = resolved.eligibility && resolved.eligibility.healthcareOrganization;
+  return {
+    ok: true,
+    platformIdentityId: existing.platform_identity_id,
+    organizationId,
+    healthcareOrganizationId: healthcare && healthcare.id,
+    verifiedEmail: identity && identity.email_normalized,
+    mustChangePassword: Boolean(input.mustChangePassword),
+  };
+}
+
 module.exports = {
   STATUS,
   resolveIdentityForLogin,
   authenticateActiveClinicIdentity,
   completeActiveClinicOrganizationSelection,
   completeLoginSession,
+  readActiveClinicSelectionBinding,
 };
