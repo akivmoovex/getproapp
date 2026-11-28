@@ -1,17 +1,34 @@
 <% var cms = (pageData && pageData.cms) || {}; var section = cms.section || {}; %>
-<section class="ac-mw" data-ac-page-section="website-section-settings" data-ac-mw-screen="section-settings">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-section-settings"
+  data-ac-mw-screen="section-settings"
+  data-ac-stitch-screen="<%= (section.type === 'image' || section.type === 'image_text') ? 'b3bb570cc061466c9bb711a31f2f594d' : '4d200465b37d4361a2abf1ff0834b2dc' %>"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2>Section Settings</h2>
-      <p class="ac-mw-muted"><%= section.title || section.type %></p>
+      <h2><%= (section.type === 'image' || section.type === 'image_text') ? 'Image section' : 'Text section' %></h2>
+      <p class="ac-mw-muted">Draft only. Visitors see this section after you publish.</p>
     </div>
   </div>
-  <form class="ac-mw-form" method="post" action="/app/settings/website/sections/<%= section.id %>">
+  <div class="ac-mw-compare" data-ac-draft-published="1">
+    <article>
+      <h3>Draft</h3>
+      <p>Changes on this page stay in the draft until you publish.</p>
+    </article>
+    <article>
+      <h3>Published</h3>
+      <p>The public clinic page keeps the last published version.</p>
+    </article>
+  </div>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/sections/<%= section.id %>" data-ac-section-editor="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="ac-mw-alert" role="alert" data-ac-section-validation hidden>Enter the required fields before saving this draft.</p>
     <label>
       Section title
-      <input type="text" name="title" maxlength="80" value="<%= section.title || '' %>"/>
+      <input type="text" name="title" maxlength="80" value="<%= section.title || '' %>" required aria-required="true" aria-describedby="ac-section-title-hint"/>
+      <span id="ac-section-title-hint" class="ac-mw-muted">Required. Shown in the editor list.</span>
     </label>
     <label>
       Heading
@@ -32,7 +49,8 @@
       </label>
       <label>
         Alt text
-        <input type="text" name="imageAlt" maxlength="240" value="<%= section.image && section.image.alt || '' %>" required/>
+        <input type="text" name="imageAlt" maxlength="240" value="<%= section.image && section.image.alt || '' %>" required aria-required="true" aria-describedby="ac-section-alt-hint"/>
+        <span id="ac-section-alt-hint" class="ac-mw-muted">Required before this image can be saved.</span>
       </label>
       <a class="ac-mw-btn" href="/app/settings/website/media?select=1">Open Media Library</a>
     </fieldset>
@@ -53,5 +71,17 @@
       <a class="ac-mw-btn" href="/app/settings/website/sections">Discard</a>
       <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save Changes</button>
     </div>
+    <p class="ac-mw-muted" role="status">Saving keeps a draft. Publishing is a separate step.</p>
   </form>
+  <script>
+    (function () {
+      var form = document.querySelector("[data-ac-section-editor]");
+      var alertBox = document.querySelector("[data-ac-section-validation]");
+      if (!form || !alertBox) return;
+      form.addEventListener("invalid", function (event) {
+        alertBox.hidden = false;
+        if (event.target && event.target.setAttribute) event.target.setAttribute("aria-invalid", "true");
+      }, true);
+    })();
+  </script>
 </section>

@@ -4,7 +4,7 @@
   var actions = (ux.actions || website.actions) || {};
   var changes = (pageData && pageData.changes) || [];
 %>
-<section class="ac-mw" data-ac-page-section="website-publish" data-ac-mw-screen="publish">
+<section class="ac-mw" data-ac-page-section="website-publish" data-ac-mw-screen="publish" data-ac-stitch-screen="0ed58379267a4086afeab0862d0774bd">
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
@@ -42,6 +42,18 @@
       <% if (actions.editWebsite) { %>
       <p><a class="ac-mw-btn" href="<%= actions.editWebsite %>">Edit website</a></p>
       <% } %>
+    </article>
+  </div>
+  <div class="ac-mw-compare" data-ac-draft-published="1">
+    <article>
+      <h3>Published site</h3>
+      <p>Last published: <%= website.lastPublishedLabel || 'Not published yet' %></p>
+      <p><%= ux.statusLabel || 'Website not published yet' %></p>
+    </article>
+    <article>
+      <h3>Draft changes</h3>
+      <p><%= changes.length %> unpublished change<%= changes.length === 1 ? '' : 's' %>.</p>
+      <p>These stay hidden from visitors until you publish.</p>
     </article>
   </div>
   <h3>Unpublished Changes (<%= changes.length %>)</h3>
