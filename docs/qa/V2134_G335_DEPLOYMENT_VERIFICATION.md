@@ -1,7 +1,7 @@
 # V2134 G335 deployment verification
 
-This file is written before the push. The hosted SHA at the start of G335 is `9d87d73a7957` on both https://activeclinic.pronline.org/healthz and https://blessboard.pronline.org/healthz. Both returned `ok=true`, `environment=testing`, and `deploymentCode=moovex-platform-testing`.
+The first push deployed `0b230859cf35e79f2b4c2c91100fcf3b7126bcfb`. Both hosts then reported that SHA on `/healthz`, with `ok=true`, `environment=testing`, `deploymentCode=moovex-platform-testing`, and `schemaCompatible=true`.
 
-The push, if it succeeds, is one deployment of three commits. Live OTP stays off. Migration 048 is not in the push. Public booking is not enabled. The post-deploy health result is recorded in the final handoff after `/healthz` is read again.
+`GET /` returned 200 on ActiveClinic and BlessBoard. `GET /clinics/julflona-clinic/book` and `GET /clinics/activeclinic-demo/book` returned 403 with the title "Booking not available". No hosted record was created. Live OTP was not turned on. Migration 048 was not applied.
 
 Rollback, if either host becomes unhealthy: do not reset the database. The previous testing SHA is `9d87d73a7957b24b4da79dfbd9160649c0116dea`. Restoring it requires an owner decision. This gate will not force-push.
