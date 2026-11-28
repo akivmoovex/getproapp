@@ -63,6 +63,14 @@ function uniqueE164(prefix) {
   return `+260${uniqueNational(prefix)}`;
 }
 
+function metricValue(html, metric) {
+  const match = String(html).match(
+    new RegExp(`data-ac-diagnostics-metric="${metric}"[\\s\\S]{0,240}?ac-stat-card__value">(\\d+)`)
+  );
+  assert.ok(match, `diagnostics metric ${metric} must show a persisted count`);
+  return Number(match[1]);
+}
+
 function absorbCookies(jar, res) {
   const raw = res && res.headers ? res.headers["set-cookie"] : [];
   const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -1220,6 +1228,19 @@ async function runG224Laboratory(pool, connectionString, env) {
   assert.equal(processingQueue.text.includes(requestNumber), false);
   const dashboard = await acGet(app, jar, "/app/diagnostics/laboratory");
   assert.match(dashboard.text, /data-ac-lab-count="received">1</);
+  const hub = await acGet(app, jar, "/app/diagnostics");
+  assert.equal(hub.status, 200, hub.text.slice(0, 180));
+  const persisted = await pool.query(
+    `SELECT status, count(*)::int AS n
+       FROM activeclinic.laboratory_requests
+      WHERE organization_id = $1
+      GROUP BY status`,
+    [clinic.organizationId]
+  );
+  const byStatus = Object.fromEntries(persisted.rows.map((row) => [row.status, row.n]));
+  assert.equal(metricValue(hub.text, "lab-pending"), byStatus.pending_collection || 0);
+  assert.equal(metricValue(hub.text, "lab-processing"), byStatus.processing || 0);
+  assert.equal(byStatus.received, 1);
   const ready = await acGet(app, jar, `/app/diagnostics/laboratory/request/${requestId}`);
   assert.match(ready.text, /Enter result/);
 
@@ -1436,6 +1457,18 @@ async function runG229Radiology(pool, connectionString, env) {
   assert.equal(reportedQueueEmpty.text.includes(requestNumber), false);
   const dashboard = await acGet(app, jar, "/app/diagnostics/radiology");
   assert.match(dashboard.text, /data-ac-rad-count="pending">1</);
+  const hub = await acGet(app, jar, "/app/diagnostics");
+  assert.equal(hub.status, 200, hub.text.slice(0, 180));
+  const persisted = await pool.query(
+    `SELECT status, count(*)::int AS n
+       FROM activeclinic.radiology_requests
+      WHERE organization_id = $1
+      GROUP BY status`,
+    [clinic.organizationId]
+  );
+  const byStatus = Object.fromEntries(persisted.rows.map((row) => [row.status, row.n]));
+  assert.equal(metricValue(hub.text, "rad-pending"), byStatus.pending || 0);
+  assert.equal(metricValue(hub.text, "rad-progress"), byStatus.in_progress || 0);
   const detail = await acGet(app, jar, `/app/diagnostics/radiology/request/${requestId}`);
   assert.equal(detail.status, 200, detail.text.slice(0, 200));
   assert.match(detail.text, /Enter report/);

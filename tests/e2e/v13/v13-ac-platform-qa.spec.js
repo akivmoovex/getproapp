@@ -41,6 +41,30 @@ function required(name) {
   return value;
 }
 
+async function releaseSyntheticResetBudget(email) {
+  const crypto = require("crypto");
+  const { normalizeActiveClinicEmail } = require("../../../src/activeclinic/services/normalizeActiveClinicContact");
+  const normalized = normalizeActiveClinicEmail(email);
+  if (!normalized.ok || !normalized.normalized) {
+    throw new Error("synthetic reset identifier is not a valid email");
+  }
+  const scopeKey = crypto.createHash("sha256").update(`ac-reset-id:${normalized.normalized}`).digest("hex");
+  const client = createAuthorizedPgClient(process.env, (options) => {
+    const { Client } = require("pg");
+    return new Client(options);
+  });
+  await client.connect();
+  try {
+    await client.query(
+      `DELETE FROM platform.identity_action_token_rate_limits
+        WHERE scope_kind = 'identifier' AND scope_key = $1`,
+      [scopeKey]
+    );
+  } finally {
+    await client.end();
+  }
+}
+
 async function restoreSyntheticPassword(email) {
   const client = createAuthorizedPgClient(process.env, (options) => {
     const { Client } = require("pg");
@@ -228,6 +252,7 @@ test.describe("V13 ActiveClinic and platform browser regression", () => {
     await page.goto("/reset-password/not-a-valid-token");
     await expect(page.getByText(/invalid|expired|unavailable/i)).toBeVisible();
     await expect(page.getByText("Your password has been updated")).toHaveCount(0);
+    await releaseSyntheticResetBudget(email);
     await page.goto("/forgot-password");
     const identifier = page.locator("input[name='identifier']:visible, input[name='phone_national']:visible").first();
     await identifier.fill(email);
